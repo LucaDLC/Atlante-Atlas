@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Max-flow min-cut</title>
+<link rel="stylesheet" href="../assets/atlas.css">
+<link rel="stylesheet" href="../assets/tema.css">
+<script src="../assets/sito.js"></script>
+<script src="../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+SCENE.taglio = {
+  w: 520, h: 300, lato: true,
+  legenda: 'dato:insieme A (raggiungibile da s nel residuo),ora:arco del taglio (pieno)',
+  oggetti: [
+    { id: 's', tipo: 'nodo', x: 60, y: 140, t: 's' },
+    { id: 'a', tipo: 'nodo', x: 250, y: 50, t: 'a' },
+    { id: 'b', tipo: 'nodo', x: 250, y: 230, t: 'b' },
+    { id: 't', tipo: 'nodo', x: 440, y: 140, t: 't' },
+    { id: 'sa', tipo: 'arco', da: 's', a: 'a', dir: true, t: '2/3' },
+    { id: 'sb', tipo: 'arco', da: 's', a: 'b', dir: true, t: '2/2' },
+    { id: 'ab', tipo: 'arco', da: 'a', a: 'b', dir: true, t: '1/1' },
+    { id: 'at', tipo: 'arco', da: 'a', a: 't', dir: true, t: '1/1' },
+    { id: 'bt', tipo: 'arco', da: 'b', a: 't', dir: true, t: '3/3' },
+    { id: 'curva', tipo: 'linea', x1: 330, y1: 10, x2: 170, y2: 290, tratt: true, tono: 'ora', nascosto: true },
+    { id: 'v', tipo: 'testo', x: 250, y: 292, t: 'valore = 2 + 2 = 4', size: 13, bold: true }
+  ],
+  passi: [
+    { nota: 'Un flusso massimo trovato da Ford-Fulkerson: valore 4 (esce 2 su s→a e 2 su s→b). Come faccio a <b>esserne sicuro</b>?' },
+    { nota: 'Guardo il grafo residuo e cerco i nodi raggiungibili da s. s→a ha ancora 1 libero: <b>a</b> è raggiungibile. s→b è pieno; da a, a→b e a→t sono pieni. Nient\'altro.', set: { s: { tono: 'dato' }, a: { tono: 'dato' }, sa: { tono: 'dato' } } },
+    { nota: 'A = {s, a}, B = {b, t}: un <b>taglio</b>. Gli archi da A a B sono s→b, a→b, a→t: tutti <b>pieni</b>. Se uno non lo fosse, la sua testa sarebbe raggiungibile.', set: { curva: { nascosto: false }, sb: { tono: 'ora' }, ab: { tono: 'ora' }, at: { tono: 'ora' } } },
+    { nota: 'Capacità del taglio = 2 + 1 + 1 = <b>4</b> = valore del flusso. Nessun flusso può superare la capacità di un taglio: 4 è il massimo, e {s, a} | {b, t} è un taglio minimo.', set: { v: { t: 'flusso 4 = taglio 4', tono: 'ok' } } }
+  ]
+};
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Max-flow min-cut</h1>
+  <p class="lede">Il teorema più importante del capitolo (K&amp;T 7.2): il valore del flusso massimo è uguale alla capacità del taglio minimo. Dà un <b>certificato</b> di ottimalità e un modo per trovare i "colli di bottiglia" di una rete.</p>
+</header>
+
+<section>
+  <h2>Tagli</h2>
+  <div class="box regola" data-tit="Definizione">
+    <p>Un <b>taglio s-t</b> è una divisione dei nodi in due insiemi (A, B) con <span class="m">s ∈ A</span> e <span class="m">t ∈ B</span>. La sua <b>capacità</b> è la somma delle capacità degli archi che vanno <b>da A a B</b> (quelli da B ad A non contano).</p>
+  </div>
+  <figure class="passi" data-titolo="Il flusso attraversa ogni taglio">
+    <div class="passo"><div class="espr">v(f) = <mark class="ok">f<sup>out</sup>(A) − f<sup>in</sup>(A)</mark> per ogni taglio (A, B)</div><p class="nota">Tutto il flusso che parte da s deve uscire da A, al netto di quello che rientra. Si dimostra sommando la conservazione su tutti i nodi di A.</p></div>
+    <div class="passo"><div class="espr">f<sup>out</sup>(A) ≤ <mark class="dato">cap(A, B)</mark>   e   f<sup>in</sup>(A) ≥ 0</div><p class="nota">Vincolo di capacità sugli archi A→B; flussi non negativi su B→A.</p></div>
+    <div class="passo"><div class="espr">⇒ <mark class="ok">v(f) ≤ cap(A, B)</mark>  per ogni flusso e ogni taglio</div><p class="nota">Dualità debole: qualsiasi taglio è un limite superiore a qualsiasi flusso.</p></div>
+    <div class="passo"><div class="espr">se v(f) = cap(A, B): f è <mark class="ok">massimo</mark> e (A, B) è <mark class="ok">minimo</mark></div><p class="nota">Nessun flusso sta sopra quel taglio, nessun taglio sta sotto quel flusso.</p></div>
+  </figure>
+</section>
+
+<section>
+  <h2>Il teorema</h2>
+  <figure class="scena" data-scena="taglio" data-titolo="Il taglio che certifica un flusso massimo"></figure>
+  <figure class="passi" data-titolo="Max-flow min-cut: quando Ford-Fulkerson termina, esiste un taglio con cap = v(f)">
+    <div class="passo"><div class="espr">A* = nodi raggiungibili da s in <mark class="dato">G<sub>f</sub></mark>;  B* = il resto</div><p class="nota">t ∈ B*: altrimenti ci sarebbe ancora un cammino aumentante.</p></div>
+    <div class="passo"><div class="espr">ogni arco da A* a B* è <mark class="ora">pieno</mark>: f(e) = c<sub>e</sub></div><p class="nota">Se avesse capacità residua, la sua testa sarebbe raggiungibile, quindi in A*.</p></div>
+    <div class="passo"><div class="espr">ogni arco da B* ad A* è <mark class="due">vuoto</mark>: f(e) = 0</div><p class="nota">Se portasse flusso, il suo arco all'indietro nel residuo renderebbe raggiungibile la coda.</p></div>
+    <div class="passo"><div class="espr">v(f) = f<sup>out</sup>(A*) − f<sup>in</sup>(A*) = <mark class="ok">cap(A*, B*)</mark> − 0</div><p class="nota">Per la dualità debole f è massimo e il taglio minimo.</p></div>
+  </figure>
+  <div class="box regola" data-tit="Tre conseguenze da citare">
+    <ul>
+      <li><b>Max-flow = min-cut</b>: il valore massimo di un flusso è uguale alla capacità minima di un taglio.</li>
+      <li><b>Trovare il taglio minimo</b>: dopo il flusso massimo, una BFS nel residuo da s dà A*. Tempo O(m) in più.</li>
+      <li><b>Integralità</b>: con capacità intere esiste un flusso massimo con tutti i valori interi, e Ford-Fulkerson lo trova. È ciò che rende il flusso utile per problemi "sì/no" come il matching: un arco di capacità 1 porta 0 o 1, non 0.5.</li>
+    </ul>
+  </div>
+</section>
+
+</main>
+</body>
+</html>

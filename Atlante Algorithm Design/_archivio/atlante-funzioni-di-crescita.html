@@ -1,0 +1,544 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>:root{color-scheme:light dark}html{-webkit-text-size-adjust:100%}body{margin:0;padding:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Funzioni di Crescita</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=Newsreader:opsz,wght@6..72,500;6..72,600&display=swap">
+
+<style>
+:root{
+  --ground:#ECEAF1; --surface:#FFFFFF; --surface-2:#F6F4F9;
+  --ink:#17141F; --ink-2:#564E63; --ink-3:#8A8296;
+  --line:#DAD5E2; --line-soft:#E8E4EE;
+  --accent:#6D4A8C; --accent-soft:#F1EBF6;
+  --due:#A8342F; --due-soft:#F8E7E5;
+  --ok:#2C6A45; --ok-soft:#E2EFE7;
+  --warn:#8A6008; --warn-soft:#F7F0DE;
+  --c1:#2C6A45; --c2:#3F7AA8; --c3:#0C737C; --c4:#6D4A8C; --c5:#8A6008; --c6:#A8342F; --c7:#7A2E6B;
+  --shadow:0 1px 2px rgba(23,20,31,.06),0 8px 24px -14px rgba(23,20,31,.20);
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --ground:#141119; --surface:#1C1824; --surface-2:#231F2C;
+  --ink:#EAE7F0; --ink-2:#A29AAF; --ink-3:#7B7388;
+  --line:#332C3E; --line-soft:#282232;
+  --accent:#BC9BDD; --accent-soft:#271E31;
+  --due:#EE8B84; --due-soft:#2E1A19;
+  --ok:#6BC391; --ok-soft:#15271D;
+  --warn:#DFB25E; --warn-soft:#2A2210;
+  --c1:#6BC391; --c2:#7FB3DC; --c3:#2FB4BC; --c4:#BC9BDD; --c5:#DFB25E; --c6:#EE8B84; --c7:#D98AC6;
+  --shadow:0 1px 2px rgba(0,0,0,.42),0 8px 24px -14px rgba(0,0,0,.72);
+}}
+:root[data-theme="dark"]{
+  --ground:#141119; --surface:#1C1824; --surface-2:#231F2C;
+  --ink:#EAE7F0; --ink-2:#A29AAF; --ink-3:#7B7388;
+  --line:#332C3E; --line-soft:#282232;
+  --accent:#BC9BDD; --accent-soft:#271E31;
+  --due:#EE8B84; --due-soft:#2E1A19;
+  --ok:#6BC391; --ok-soft:#15271D;
+  --warn:#DFB25E; --warn-soft:#2A2210;
+  --c1:#6BC391; --c2:#7FB3DC; --c3:#2FB4BC; --c4:#BC9BDD; --c5:#DFB25E; --c6:#EE8B84; --c7:#D98AC6;
+  --shadow:0 1px 2px rgba(0,0,0,.42),0 8px 24px -14px rgba(0,0,0,.72);
+}
+
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--ground);color:var(--ink);
+  font-family:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1060px;margin:0 auto;padding:34px 24px 80px;display:flex;flex-direction:column;gap:46px}
+a{color:var(--accent)}
+.mono{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.94em}
+
+.crumb{display:flex;gap:8px;align-items:center;font-family:"IBM Plex Mono",monospace;
+  font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);flex-wrap:wrap}
+.crumb a{color:var(--ink-3);text-decoration:none;border-bottom:1px solid var(--line)}
+.crumb a:hover{color:var(--accent);border-color:var(--accent)}
+.crumb .acc{color:var(--accent)}
+h1{font-family:Newsreader,Georgia,serif;font-weight:600;font-size:clamp(31px,5vw,46px);
+  line-height:1.05;letter-spacing:-.015em;margin:14px 0 0;text-wrap:balance}
+.lede{margin:16px 0 0;max-width:64ch;color:var(--ink-2);font-size:16.5px;line-height:1.62}
+.lede b{color:var(--ink);font-weight:600}
+
+section{display:flex;flex-direction:column}
+.eyebrow{font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:600;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--accent);margin:0 0 7px}
+h2{font-family:Newsreader,Georgia,serif;font-size:28px;font-weight:600;letter-spacing:-.01em;
+  margin:0 0 10px;text-wrap:balance}
+.seclede{margin:0 0 20px;max-width:70ch;color:var(--ink-2);font-size:14.6px;line-height:1.64}
+.seclede b{color:var(--ink);font-weight:600}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow)}
+
+/* ---- lab ---- */
+.lab{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(250px,1fr);gap:16px;align-items:start}
+@media(max-width:840px){.lab{grid-template-columns:1fr}}
+.chartbox{background:var(--surface);border:1px solid var(--line);border-radius:10px;
+  box-shadow:var(--shadow);padding:16px 16px 10px;display:flex;flex-direction:column;gap:10px}
+canvas{width:100%;height:auto;display:block}
+.chartfoot{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;
+  font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--ink-3);letter-spacing:.04em}
+
+.ctrl{background:var(--surface);border:1px solid var(--line);border-radius:10px;
+  box-shadow:var(--shadow);padding:17px 18px;display:flex;flex-direction:column;gap:16px}
+.nrow{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.nrow .lbl{font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--ink-3)}
+.nrow .val{font-family:"IBM Plex Mono",monospace;font-size:27px;font-weight:600;color:var(--accent);
+  font-variant-numeric:tabular-nums;line-height:1}
+input[type=range]{width:100%;accent-color:var(--accent);cursor:pointer}
+input[type=range]:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.presets{display:flex;gap:6px;flex-wrap:wrap}
+.pbtn{font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:600;padding:5px 9px;
+  border-radius:5px;border:1px solid var(--line);background:var(--surface-2);color:var(--ink-2);cursor:pointer}
+.pbtn:hover{border-color:var(--ink-3);color:var(--ink)}
+.pbtn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.rows{display:flex;flex-direction:column;gap:1px;background:var(--line);
+  border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.row{background:var(--surface);padding:9px 12px;display:grid;
+  grid-template-columns:auto 1fr auto;gap:10px;align-items:center}
+.row .sw{width:10px;height:10px;border-radius:2px;background:var(--rc)}
+.row .fx{font-family:"IBM Plex Mono",monospace;font-size:12.5px;font-weight:600;color:var(--ink)}
+.row .fx small{display:block;font-weight:400;font-size:10.5px;color:var(--ink-3);
+  font-family:"IBM Plex Sans",sans-serif;letter-spacing:0;margin-top:1px}
+.row .ops{font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--ink-2);
+  font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+.row .ops b{display:block;color:var(--ink);font-size:12.5px}
+.row .ops span{display:block;font-size:10.5px;margin-top:1px}
+.tm-ok{color:var(--ok)}
+.tm-warn{color:var(--warn)}
+.tm-bad{color:var(--due);font-weight:600}
+
+/* ---- muro ---- */
+.wall{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px}
+.wc{background:var(--surface);border:1px solid var(--line);border-top:3px solid var(--wc,var(--accent));
+  border-radius:9px;padding:15px 16px;box-shadow:var(--shadow)}
+.wc .f{font-family:"IBM Plex Mono",monospace;font-size:17px;font-weight:600;color:var(--wc,var(--accent))}
+.wc .n{font-family:"IBM Plex Mono",monospace;font-size:24px;font-weight:600;margin:6px 0 2px;
+  font-variant-numeric:tabular-nums;color:var(--ink)}
+.wc .d{font-size:12.4px;color:var(--ink-2);line-height:1.5}
+
+/* ---- esempi ---- */
+.ex{display:flex;flex-direction:column;gap:0}
+.exr{display:grid;grid-template-columns:150px 1fr;gap:16px;padding:15px 0;
+  border-bottom:1px solid var(--line-soft);align-items:start}
+.exr:last-child{border-bottom:none}
+@media(max-width:640px){.exr{grid-template-columns:1fr;gap:6px}}
+.exr .big{font-family:"IBM Plex Mono",monospace;font-size:15px;font-weight:600;color:var(--accent)}
+.exr .big small{display:block;font-family:"IBM Plex Sans",sans-serif;font-size:11.5px;
+  font-weight:400;color:var(--ink-3);margin-top:3px;line-height:1.4}
+.exr p{margin:0;font-size:13.8px;color:var(--ink-2);line-height:1.6;max-width:74ch}
+.exr p b{color:var(--ink)}
+.exr p+p{margin-top:8px}
+
+.note{font-size:13.2px;color:var(--ink-2);border-left:2px solid var(--accent);padding:3px 0 3px 14px;
+  margin:20px 0 0;max-width:76ch;line-height:1.62}
+.note b{color:var(--ink)}
+.warnbox{font-size:13.4px;color:var(--ink-2);background:var(--warn-soft);border-left:2px solid var(--warn);
+  padding:12px 15px;border-radius:0 7px 7px 0;line-height:1.6;max-width:78ch;margin-top:18px}
+.warnbox b{color:var(--ink)}
+footer{font-size:12.5px;color:var(--ink-3);border-top:1px solid var(--line);padding-top:20px;
+  max-width:76ch;line-height:1.66}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="crumb"><a href="https://claude.ai/code/artifact/048f4b45-7d4b-4e25-80c7-bd907f48fc0c">Atlante</a><span>·</span><span class="acc">Fondamenta</span></div>
+  <h1>Funzioni di crescita</h1>
+  <p class="lede">Ogni domanda dell&rsquo;esame finisce con <b>«state the running time»</b>. Ma il punto non è saper contare i cicli annidati: è sapere <b>quale crescita è ancora accettabile</b> e quale ha già perso. Muovi <span class="mono">n</span> e guarda dove ciascuna si schianta.</p>
+</header>
+
+<section>
+  <p class="eyebrow">Il laboratorio</p>
+  <h2>Lo stesso <span class="mono">n</span>, sette destini diversi</h2>
+  <p class="seclede">Il grafico è in <b>scala logaritmica sulle y</b>: ogni tacca è mille volte la precedente. Su una scala normale tutte le curve tranne una sembrerebbero piatte — ed è già di per sé la lezione. I tempi assumono <b>un miliardo di operazioni al secondo</b>, che è una macchina ottimista.</p>
+
+  <div class="lab">
+    <div class="chartbox">
+      <canvas id="cv" width="760" height="430" role="img"
+        aria-label="Grafico in scala logaritmica delle funzioni di crescita al variare di n"></canvas>
+      <div class="chartfoot">
+        <span>n →</span>
+        <span>operazioni ↑ (scala log)</span>
+      </div>
+    </div>
+
+    <div class="ctrl">
+      <div>
+        <div class="nrow"><span class="lbl">taglia input</span><span class="val" id="nv">30</span></div>
+        <input id="ns" type="range" min="1" max="100" value="30" aria-label="Taglia dell'input n">
+        <div class="presets" style="margin-top:10px">
+          <button class="pbtn" type="button" data-n="10">n=10</button>
+          <button class="pbtn" type="button" data-n="20">20</button>
+          <button class="pbtn" type="button" data-n="30">30</button>
+          <button class="pbtn" type="button" data-n="50">50</button>
+          <button class="pbtn" type="button" data-n="100">100</button>
+        </div>
+      </div>
+      <div class="rows" id="rows"></div>
+    </div>
+  </div>
+
+  <div class="warnbox" id="verdict"></div>
+</section>
+
+<section>
+  <p class="eyebrow">Il muro</p>
+  <h2>Fin dove arriva ciascuna, in un secondo</h2>
+  <p class="seclede">Il <b>n massimo</b> che ogni crescita riesce a gestire prima di sforare un secondo di calcolo. È il numero da tenere in testa quando leggi i vincoli di un problema Kattis: se <span class="mono">n ≤ 10⁵</span> e la tua idea è O(n²), hai già la risposta.</p>
+  <div class="wall" id="wall"></div>
+  <p class="note">Questa tabella è il modo più veloce per <b>escludere</b> paradigmi. Un problema con n fino a 20 ti sta quasi urlando «exhaustive search o DP su bitmask»; uno con n fino a 10⁵ esclude tutto ciò che non sia n log n.</p>
+</section>
+
+<section>
+  <p class="eyebrow">Nel corso</p>
+  <h2>Dove le incontri davvero</h2>
+  <p class="seclede">Ogni curva del grafico ha un algoritmo del programma appeso. Non sono esempi di comodo: sono le complessità che devi saper citare all&rsquo;esame.</p>
+  <div class="panel" style="padding:4px 20px">
+    <div class="ex" id="cases"></div>
+  </div>
+</section>
+
+<section>
+  <p class="eyebrow">All&rsquo;esame</p>
+  <h2>Come si scrive un running time che prende i punti</h2>
+  <p class="seclede">Le domande d&rsquo;esame sono esplicite su cosa vogliono leggere, e non è solo la O grande.</p>
+  <div class="panel" style="padding:18px 20px 20px">
+    <div class="ex">
+      <div class="exr">
+        <div class="big">Nei parametri giusti<small>non in «n» generico</small></div>
+        <p>L&rsquo;esame dice <b>«in terms of the input parameters»</b>. Se il problema parla di <span class="mono">N</span> bitstring lunghe <span class="mono">K</span>, la risposta è in <span class="mono">N</span> e <span class="mono">K</span>. Per un grafo, in <span class="mono">n</span> e <span class="mono">m</span> — e scrivere O(n²) dove il grafo è sparso e la risposta è O(n+m) costa il punto.</p>
+      </div>
+      <div class="exr">
+        <div class="big">Con l&rsquo;algoritmo nominato<small>domanda sul flusso</small></div>
+        <p>Per il flusso va detto <b>quale</b> algoritmo usi, e l&rsquo;esame fa perfino la parodia della risposta attesa: <i>«Using Krampfmeier-Strumpfnudel's algorithm ((5.47) in the textbook), the total running time will be…»</i>. La nota a piè di pagina però rassicura: <b>deve solo essere corretto</b>, non il più furbo.</p>
+      </div>
+      <div class="exr">
+        <div class="big">Anche lo spazio<small>solo domanda DP</small></div>
+        <p>La domanda sulla programmazione dinamica è l&rsquo;unica che chiede <b>tempo <i>e</i> spazio</b>. Di solito lo spazio è la dimensione della tabella, e spesso si può comprimere tenendo solo l&rsquo;ultima riga — dirlo è un bonus gratuito.</p>
+      </div>
+      <div class="exr">
+        <div class="big">Polinomiale<small>domanda greedy</small></div>
+        <p>La domanda greedy specifica <b>«It must be polynomial in the input size»</b>. Se ti esce un esponenziale, non hai trovato il greedy: hai trovato l&rsquo;enumerazione, e stai rispondendo alla domanda sbagliata.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  Pagina dell&rsquo;<a href="https://claude.ai/code/artifact/048f4b45-7d4b-4e25-80c7-bd907f48fc0c">Atlante Algorithm Design</a> — corso di Thore Husfeldt, ITU Copenhagen, E2026. Le citazioni fra virgolette sono testuali dai testi d&rsquo;esame in archivio. I tempi assumono 10⁹ operazioni al secondo e ignorano le costanti: servono per gli ordini di grandezza, non per previsioni.
+</footer>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var FNS = [
+    {id:"log",  tex:"log n",     sub:"ricerca binaria",      c:"--c1", f:function(n){return Math.log2(Math.max(n,1));}},
+    {id:"n",    tex:"n",         sub:"scansione lineare",    c:"--c2", f:function(n){return n;}},
+    {id:"nlog", tex:"n log n",   sub:"mergesort",            c:"--c3", f:function(n){return n*Math.log2(Math.max(n,2));}},
+    {id:"n2",   tex:"n²",        sub:"closest pair naïve",   c:"--c4", f:function(n){return n*n;}},
+    {id:"n3",   tex:"n³",        sub:"Floyd-Warshall",       c:"--c5", f:function(n){return n*n*n;}},
+    {id:"2n",   tex:"2ⁿ",        sub:"tutti i sottoinsiemi", c:"--c6", f:function(n){return Math.pow(2,n);}},
+    {id:"fact", tex:"n!",        sub:"tutte le permutazioni",c:"--c7", f:function(n){
+        var r=1; for(var i=2;i<=n;i++){ r*=i; if(r===Infinity) return Infinity; } return r; }}
+  ];
+
+  var OPS = 1e9;
+
+  function cssv(v){ return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
+
+  function fmtOps(x){
+    if (!isFinite(x)) return "∞";
+    if (x < 1000) return (Math.round(x*10)/10).toString();
+    var u = ["", "mila", "mln", "mld", "×10¹²", "×10¹⁵", "×10¹⁸"];
+    var e = Math.floor(Math.log10(x));
+    if (e >= 21) return "10" + sup(e);
+    var i = Math.floor(e/3);
+    if (i < u.length && i <= 3) return (x/Math.pow(10,i*3)).toPrecision(3).replace(/\.?0+$/,"") + (u[i]?" "+u[i]:"");
+    return "10" + sup(e);
+  }
+  function sup(e){
+    var m = {"0":"⁰","1":"¹","2":"²","3":"³","4":"⁴","5":"⁵","6":"⁶","7":"⁷","8":"⁸","9":"⁹"};
+    return String(e).split("").map(function(d){ return m[d]||d; }).join("");
+  }
+  function fmtTime(ops){
+    if (!isFinite(ops)) return {t:"mai", cls:"tm-bad"};
+    var s = ops / OPS;
+    if (s < 1e-6) return {t:"istantaneo", cls:"tm-ok"};
+    if (s < 1)    return {t:(s*1000).toPrecision(2).replace(/\.?0+$/,"") + " ms", cls:"tm-ok"};
+    if (s < 60)   return {t:s.toPrecision(2).replace(/\.?0+$/,"") + " s", cls:"tm-warn"};
+    if (s < 3600) return {t:Math.round(s/60) + " min", cls:"tm-warn"};
+    if (s < 86400*365) return {t:Math.round(s/3600) + " ore", cls:"tm-bad"};
+    var y = s/(86400*365);
+    if (y < 1e6) return {t:Math.round(y).toLocaleString("it-IT") + " anni", cls:"tm-bad"};
+    if (y > 1.4e10) return {t:"10" + sup(Math.floor(Math.log10(y))) + " anni", cls:"tm-bad"};
+    return {t:Math.round(y/1e6) + " mln di anni", cls:"tm-bad"};
+  }
+
+  /* ---------- righe ---------- */
+
+  var rowsEl = document.getElementById("rows");
+  FNS.forEach(function(fn){
+    var d = document.createElement("div");
+    d.className = "row";
+    d.setAttribute("style", "--rc:var(" + fn.c + ")");
+    d.innerHTML = '<span class="sw"></span>'
+                + '<span class="fx">' + fn.tex + '<small>' + fn.sub + '</small></span>'
+                + '<span class="ops" id="o-' + fn.id + '"></span>';
+    rowsEl.appendChild(d);
+  });
+
+  /* ---------- grafico ---------- */
+
+  var cv = document.getElementById("cv");
+  var ctx = cv.getContext("2d");
+  var DPR = Math.min(window.devicePixelRatio || 1, 2);
+  var W = 760, H = 430;
+  cv.width = W * DPR; cv.height = H * DPR;
+  cv.style.aspectRatio = W + "/" + H;
+  ctx.scale(DPR, DPR);
+
+  var PAD = {l:58, r:14, t:16, b:34};
+  var NMAX = 100;
+  var YMAX = 60;            /* esponente massimo su log10 */
+
+  function px(n){ return PAD.l + (n/NMAX) * (W - PAD.l - PAD.r); }
+  function py(ops){
+    var e = ops <= 1 ? 0 : Math.log10(ops);
+    if (!isFinite(e)) e = YMAX;
+    e = Math.min(e, YMAX);
+    return H - PAD.b - (e/YMAX) * (H - PAD.t - PAD.b);
+  }
+
+  var curN = 30;
+  var animN = 30;
+
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+    var line = cssv("--line-soft") || "#e8e4ee";
+    var ink3 = cssv("--ink-3") || "#8a8296";
+    var ink  = cssv("--ink")   || "#17141f";
+    var acc  = cssv("--accent")|| "#6d4a8c";
+
+    /* griglia y */
+    ctx.font = '10px "IBM Plex Mono", monospace';
+    ctx.textAlign = "right"; ctx.textBaseline = "middle";
+    for (var e = 0; e <= YMAX; e += 10){
+      var y = py(Math.pow(10, e));
+      ctx.strokeStyle = line; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(PAD.l, y + .5); ctx.lineTo(W - PAD.r, y + .5); ctx.stroke();
+      ctx.fillStyle = ink3;
+      ctx.fillText(e === 0 ? "1" : "10" + sup(e), PAD.l - 9, y);
+    }
+
+    /* griglia x */
+    ctx.textAlign = "center"; ctx.textBaseline = "top";
+    [0,20,40,60,80,100].forEach(function(n){
+      var x = px(n);
+      ctx.strokeStyle = line;
+      ctx.beginPath(); ctx.moveTo(x + .5, PAD.t); ctx.lineTo(x + .5, H - PAD.b); ctx.stroke();
+      ctx.fillStyle = ink3;
+      ctx.fillText(String(n), x, H - PAD.b + 8);
+    });
+
+    /* curve */
+    FNS.forEach(function(fn){
+      ctx.strokeStyle = cssv(fn.c);
+      ctx.lineWidth = 2;
+      ctx.lineJoin = "round";
+      ctx.beginPath();
+      var started = false;
+      for (var n = 1; n <= NMAX; n += 0.5){
+        var v = fn.f(n);
+        if (!isFinite(v) || Math.log10(v) > YMAX) break;
+        var x = px(n), y = py(v);
+        if (!started){ ctx.moveTo(x,y); started = true; } else ctx.lineTo(x,y);
+      }
+      ctx.stroke();
+    });
+
+    /* cursore n */
+    var cx = px(animN);
+    ctx.strokeStyle = acc; ctx.lineWidth = 1.5;
+    ctx.setLineDash([4,4]);
+    ctx.beginPath(); ctx.moveTo(cx, PAD.t); ctx.lineTo(cx, H - PAD.b); ctx.stroke();
+    ctx.setLineDash([]);
+
+    /* punti sul cursore */
+    FNS.forEach(function(fn){
+      var v = fn.f(animN);
+      if (!isFinite(v) || Math.log10(Math.max(v,1)) > YMAX) return;
+      var y = py(v);
+      ctx.fillStyle = cssv(fn.c);
+      ctx.beginPath(); ctx.arc(cx, y, 4, 0, Math.PI*2); ctx.fill();
+      ctx.strokeStyle = cssv("--surface"); ctx.lineWidth = 1.5; ctx.stroke();
+    });
+
+    /* etichetta n */
+    ctx.fillStyle = acc;
+    ctx.font = '600 11px "IBM Plex Mono", monospace';
+    ctx.textAlign = cx > W - 90 ? "right" : "left";
+    ctx.textBaseline = "top";
+    ctx.fillText("n = " + Math.round(animN), cx + (cx > W - 90 ? -7 : 7), PAD.t + 2);
+
+    /* etichette curve a destra */
+    ctx.font = '600 10.5px "IBM Plex Mono", monospace';
+    ctx.textAlign = "left"; ctx.textBaseline = "middle";
+    FNS.forEach(function(fn){
+      var nEnd = NMAX, v;
+      for (var n = NMAX; n >= 1; n -= 0.5){
+        v = fn.f(n);
+        if (isFinite(v) && Math.log10(Math.max(v,1)) <= YMAX){ nEnd = n; break; }
+      }
+      v = fn.f(nEnd);
+      var x = px(nEnd), y = py(v);
+      if (x > W - PAD.r - 34) { ctx.textAlign = "right"; x = W - PAD.r - 3; }
+      else ctx.textAlign = "left";
+      ctx.fillStyle = cssv(fn.c);
+      ctx.fillText(fn.tex, x + (ctx.textAlign === "left" ? 5 : 0), y - 9);
+    });
+  }
+
+  /* ---------- aggiornamento ---------- */
+
+  var verdictEl = document.getElementById("verdict");
+
+  function update(){
+    FNS.forEach(function(fn){
+      var v = fn.f(curN);
+      var t = fmtTime(v);
+      document.getElementById("o-" + fn.id).innerHTML =
+        '<b>' + fmtOps(v) + '</b><span class="' + t.cls + '">' + t.t + '</span>';
+    });
+
+    var two = FNS[5].f(curN), fact = FNS[6].f(curN), sq = FNS[3].f(curN);
+    var msg;
+    if (curN <= 20){
+      msg = "Con <b>n = " + curN + "</b> praticamente tutto è ancora praticabile: perfino 2ⁿ sta in "
+          + fmtTime(two).t + ". È la fascia in cui l'<b>exhaustive search</b> è una risposta legittima, "
+          + "ed è il motivo per cui i problemi Kattis con n piccolissimo quasi sempre la vogliono.";
+    } else if (curN <= 40){
+      msg = "Con <b>n = " + curN + "</b> siamo sul crinale: n² fa " + fmtOps(sq) + " operazioni ("
+          + fmtTime(sq).t + "), ma 2ⁿ è già a " + fmtTime(two).t
+          + " e n! ha smesso di avere senso. È esattamente la zona dove <b>serve un'idea</b>, "
+          + "non più forza bruta.";
+    } else {
+      msg = "Con <b>n = " + curN + "</b> l'esponenziale è fuori discussione — 2ⁿ vorrebbe "
+          + fmtTime(two).t + " — mentre n² se la cava in " + fmtTime(sq).t
+          + ". Qui la differenza fra <b>polinomiale ed esponenziale</b> non è accademica: "
+          + "è la differenza fra un programma che finisce e uno che no.";
+    }
+    verdictEl.innerHTML = msg;
+    draw();
+  }
+
+  /* ---------- animazione cursore ---------- */
+
+  var raf = null;
+  function animateTo(target){
+    if (raf) cancelAnimationFrame(raf);
+    var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduce){ animN = target; draw(); return; }
+    function step(){
+      var d = target - animN;
+      if (Math.abs(d) < 0.4){ animN = target; draw(); raf = null; return; }
+      animN += d * 0.22;
+      draw();
+      raf = requestAnimationFrame(step);
+    }
+    raf = requestAnimationFrame(step);
+  }
+
+  var ns = document.getElementById("ns");
+  var nv = document.getElementById("nv");
+  ns.addEventListener("input", function(){
+    curN = +ns.value;
+    nv.textContent = curN;
+    update();
+    animateTo(curN);
+  });
+  Array.prototype.forEach.call(document.querySelectorAll(".pbtn"), function(b){
+    b.addEventListener("click", function(){
+      curN = +b.getAttribute("data-n");
+      ns.value = curN; nv.textContent = curN;
+      update(); animateTo(curN);
+    });
+  });
+
+  /* ---------- il muro ---------- */
+
+  var WALLDEF = [
+    {tex:"log n",   c:"--c1", d:"Raddoppiare l'input costa <b>una</b> operazione in più. È la crescita che praticamente non cresce."},
+    {tex:"n",       c:"--c2", d:"Leggere l'input. Nessun algoritmo può fare meglio se deve guardare tutti i dati."},
+    {tex:"n log n", c:"--c3", d:"La soglia del «veloce» nella pratica competitiva. Ordinare sta qui, e moltissimi problemi si riducono a ordinare."},
+    {tex:"n²",      c:"--c4", d:"Tutte le coppie. Accettabile fino a qualche migliaio, disastrosa oltre."},
+    {tex:"n³",      c:"--c5", d:"Tutte le triple, o Floyd-Warshall. Il confine dell'«ancora polinomiale ma pesante»."},
+    {tex:"2ⁿ",      c:"--c6", d:"Tutti i sottoinsiemi. Ogni elemento in più <b>raddoppia</b> il lavoro."},
+    {tex:"n!",      c:"--c7", d:"Tutte le permutazioni. Cresce più in fretta di qualunque esponenziale."}
+  ];
+  var wallEl = document.getElementById("wall");
+  WALLDEF.forEach(function(w, i){
+    var fn = FNS[i];
+    var lo = 1, hi = 1e18, best = 1;
+    for (var k = 0; k < 200; k++){
+      var mid = (lo + hi) / 2;
+      var v = (fn.id === "fact" || fn.id === "2n") ? fn.f(Math.round(mid)) : fn.f(mid);
+      if (isFinite(v) && v <= OPS){ best = mid; lo = mid; } else hi = mid;
+      if (hi - lo < 0.5) break;
+    }
+    var n = Math.floor(best);
+    var label = n >= 1e15 ? "enorme" : n.toLocaleString("it-IT");
+    var d = document.createElement("div");
+    d.className = "wc";
+    d.setAttribute("style","--wc:var(" + w.c + ")");
+    d.innerHTML = '<div class="f">' + w.tex + '</div>'
+                + '<div class="n">n ≈ ' + label + '</div>'
+                + '<div class="d">' + w.d + '</div>';
+    wallEl.appendChild(d);
+  });
+
+  /* ---------- casi del corso ---------- */
+
+  var CASES = [
+    {big:"O(2ⁿ · n²)", sub:"max clique, lezione 1",
+     p:"Il primo algoritmo del corso: enumera <b>tutti</b> i 2ⁿ sottoinsiemi di vertici e per ciascuno verifica in n² se è una cricca. Le note di Husfeldt lo presentano proprio così, come esempio di «just do it». È anche il problema del package <span class='mono'>maxclique</span> che hai in archivio, con tredici soluzioni accettate in quattro linguaggi."},
+    {big:"O(n!)", sub:"sorting per permutazioni",
+     p:"Genera tutte le permutazioni finché non ne trovi una ordinata. Le note lo chiamano <i>«a terrible sorting algorithm»</i> e lo tengono lì apposta: illustra il paradigma generate-and-test nella sua forma più pura e più assurda. Il confronto con O(n log n) è la prima lezione sul perché progettare algoritmi serva."},
+    {big:"O(n²) → O(n log n)", sub:"closest pair, lezione 4",
+     p:"Il confronto di tutte le coppie costa n². Divide et impera lo porta a n log n. È l'esempio manifesto del capitolo 5: <b>la stessa risposta, ottenuta osservando la struttura del problema</b> invece che ignorandola."},
+    {big:"O(n²)", sub:"Gale-Shapley, lezione 2",
+     p:"Ogni coppia (proponente, ricevente) è proposta al più una volta, quindi il totale delle proposte è limitato da n². Nota la forma dell'argomento: non conti i cicli annidati, conti <b>quante volte può accadere un evento</b>. È lo stesso ragionamento che hai usato su <span class='mono'>Draft.java</span>."},
+    {big:"O(n log n)", sub:"interval scheduling, lezione 3",
+     p:"L'ordinamento domina: una volta ordinati gli intervalli per tempo di fine, la scansione greedy è lineare. Vale per quasi tutti i greedy del capitolo 4 — <b>il costo è l'ordinamento</b>, e per questo la domanda d'esame insiste tanto su <i>quale</i> ordinamento."},
+    {big:"O(n · W)", sub:"knapsack, lezione 5–6",
+     p:"Attenzione: questo è <b>pseudo-polinomiale</b>, non polinomiale. W è un valore numerico, non la dimensione dell'input — scriverlo in binario richiede log W bit. È la distinzione su cui si regge metà del capitolo 8 sui problemi numerici NP-hard."}
+  ];
+  var casesEl = document.getElementById("cases");
+  CASES.forEach(function(c){
+    var d = document.createElement("div");
+    d.className = "exr";
+    d.innerHTML = '<div class="big">' + c.big + '<small>' + c.sub + '</small></div><p>' + c.p + '</p>';
+    casesEl.appendChild(d);
+  });
+
+  /* ---------- avvio ---------- */
+
+  update();
+  draw();
+
+  if (window.matchMedia){
+    var mq = window.matchMedia("(prefers-color-scheme: dark)");
+    if (mq.addEventListener) mq.addEventListener("change", draw);
+  }
+  window.addEventListener("resize", draw);
+})();
+</script>
+</body>
+</html>

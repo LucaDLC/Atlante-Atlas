@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Subset sum e knapsack</title>
+<link rel="stylesheet" href="../assets/atlas.css">
+<link rel="stylesheet" href="../assets/tema.css">
+<script src="../assets/sito.js"></script>
+<script src="../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  const w = [1, 2, 5, 6, 7], v = [1, 6, 18, 22, 28];
+  const M = [[0,0,0,0,0,0,0,0,0,0,0,0],[0,1,1,1,1,1,1,1,1,1,1,1],[0,1,6,7,7,7,7,7,7,7,7,7],[0,1,6,7,7,18,19,24,25,25,25,25],[0,1,6,7,7,18,22,24,28,29,29,40],[0,1,6,7,7,18,22,28,29,34,35,40]];
+  const fino = k => M.map((r, i) => r.map(x => i <= k ? String(x) : ''));
+  const intR = ['∅', ...w.map((x, i) => `${i + 1}: ${x}kg ${v[i]}€`)];
+  const passi = [
+    { nota: 'Cinque oggetti (peso, valore) e uno zaino da <b>W = 11</b> kg. La cella (i, c) = il valore massimo con gli oggetti 1…i e capacità c. Riga 0: nessun oggetto, valore 0.', righe: [1], set: { g: { valori: fino(0) } } }
+  ];
+  const note = [
+    '',
+    'Oggetto 1 (1 kg, 1 €): da capacità 1 in su conviene prenderlo.',
+    'Oggetto 2 (2 kg, 6 €). Cella (2, 3): <b>non prendo</b> 2 → M[1][3] = 1; <b>prendo</b> 2 → 6 + M[1][3−2] = 6 + 1 = 7. Massimo 7.',
+    'Oggetto 3 (5 kg, 18 €). Cella (3, 7): non prendo → 7; prendo → 18 + M[2][2] = 18 + 6 = <b>24</b>.',
+    'Oggetto 4 (6 kg, 22 €). Cella (4, 11): non prendo → 25; prendo → 22 + M[3][5] = 22 + 18 = <b>40</b>.',
+    'Oggetto 5 (7 kg, 28 €). Cella (5, 11): prendo → 28 + M[4][4] = 28 + 7 = 35; non prendo → M[4][11] = <b>40</b>. Resta 40.'
+  ];
+  for (let i = 1; i <= 5; i++) {
+    const toni = {}; for (let c = 0; c <= 11; c++) toni[i + ',' + c] = 'ora';
+    passi.push({ nota: note[i], righe: [3, 4, 5, 6], set: { g: { valori: fino(i), toni } } });
+  }
+  const tc = { '5,11': 'spento', '4,11': 'ok', '3,5': 'ok', '2,0': 'spento', '1,0': 'spento', '0,0': 'spento' };
+  passi.push({ nota: 'Risposta M[5][11] = <b>40</b>. All\'indietro: (5,11) = (4,11), quindi il 5 non c\'è. (4,11) ≠ (3,11): il 4 c\'è, tolgo 6 kg → (3,5). (3,5) ≠ (2,5): il 3 c\'è, tolgo 5 kg → capacità 0. <b>Oggetti 3 e 4</b>: 11 kg, 40 €.', righe: [], set: { g: { valori: fino(5), toni: tc }, r: { t: 'oggetti {3, 4}: 11 kg, 40 €', tono: 'ok' } } });
+  SCENE.zaino = {
+    w: 560, h: 250, lato: true,
+    legenda: 'ora:riga in calcolo,ok:oggetto preso nella ricostruzione',
+    codice: { lang: 'pseudo', testo: `M[0][c] ← 0 for all c
+for i = 1..n:
+  for c = 0..W:
+    M[i][c] ← M[i−1][c]
+    if w[i] ≤ c:
+      M[i][c] ← max(M[i][c], v[i] + M[i−1][c − w[i]])` },
+    oggetti: [
+      { id: 'g', tipo: 'griglia', x: 4, y: 6, cw: 34, ch: 30, cwR: 128, intC: [...Array(12).keys()].map(String), intR, valori: M.map(r => r.map(() => '')) },
+      { id: 'r', tipo: 'testo', x: 280, y: 238, t: '', size: 13, bold: true }
+    ],
+    passi
+  };
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Subset sum e knapsack</h1>
+  <p class="lede">Riempire uno zaino con un limite di peso (K&amp;T 6.4). Qui un solo indice non basta: il sottoproblema deve ricordare anche <b>quanta capacità resta</b>. È la programmazione dinamica "aggiungendo una variabile".</p>
+</header>
+
+<section>
+  <h2>Il problema</h2>
+  <ul>
+    <li><b>Knapsack</b>: n oggetti, l'oggetto i pesa <span class="m">wᵢ</span> (intero) e vale <span class="m">vᵢ</span>. Zaino di capacità <span class="m">W</span>. Obiettivo: valore totale massimo con peso totale ≤ W.</li>
+    <li><b>Subset sum</b>: il caso <span class="m">vᵢ = wᵢ</span>: riempire lo zaino il più possibile.</li>
+    <li>Greedy non funziona: né per valore, né per peso, né per valore/peso (nell'esempio sotto, valore/peso sceglie 5, 2, 1 e fa 35 invece di 40).</li>
+  </ul>
+</section>
+
+<section>
+  <h2>La ricorrenza</h2>
+  <figure class="passi" data-titolo="OPT(i, c) = valore massimo con gli oggetti 1…i e capacità c">
+    <div class="passo"><div class="espr">se <mark class="no">wᵢ &gt; c</mark>: l'oggetto i non entra ⇒ OPT(i, c) = OPT(i−1, c)</div><p class="nota">Non c'è scelta.</p></div>
+    <div class="passo"><div class="espr">altrimenti, <mark class="due">non prendo i</mark>: OPT(i−1, c)</div><p class="nota">Capacità invariata, un oggetto in meno.</p></div>
+    <div class="passo"><div class="espr">oppure <mark class="dato">prendo i</mark>: vᵢ + OPT(i−1, <mark class="dato">c − wᵢ</mark>)</div><p class="nota">Guadagno vᵢ, ma per gli altri resta meno capacità. È per questo che serve il secondo indice: con uno solo non saprei quanto spazio resta.</p></div>
+    <div class="passo"><div class="espr">OPT(i, c) = <mark class="ok">max</mark> dei due;   OPT(0, c) = 0</div><p class="nota">Risposta: OPT(n, W). Per subset sum stessa cosa con wᵢ al posto di vᵢ.</p></div>
+  </figure>
+  <figure class="scena" data-scena="zaino" data-titolo="L'esempio delle slide: W = 11"></figure>
+  <p class="piccolo">Tabella e ricostruzione calcolate con uno script Python.</p>
+</section>
+
+<section>
+  <h2>Tempo: pseudo-polinomiale</h2>
+  <figure class="passi" data-titolo="Attenzione a cosa è 'n'">
+    <div class="passo"><div class="espr">(n + 1)(W + 1) celle, O(1) ciascuna ⇒ <mark class="ok">O(nW)</mark></div><p class="nota">Spazio O(nW); per il solo valore bastano due righe.</p></div>
+    <div class="passo"><div class="espr">ma W nell'input occupa solo <mark class="no">log W</mark> cifre</div><p class="nota">Con W = 10¹⁸ la tabella ha 10¹⁸ colonne, anche se l'input è corto.</p></div>
+    <div class="passo"><div class="espr">polinomiale nel <b>valore</b> di W, esponenziale nella sua <b>lunghezza</b>: <mark class="ora">pseudo-polinomiale</mark></div><p class="nota">Non è una contraddizione con il fatto che subset sum è NP-completo (<a href="l10-catalogo.html">catalogo</a>): è veloce solo quando i numeri sono piccoli.</p></div>
+  </figure>
+</section>
+
+<section>
+  <h2>Walrus weights e le sue varianti</h2>
+  <p>L'esercizio della settimana (Kattis <i>walrusweights</i>): dischi di vari pesi, ognuno usabile una volta; trovare la somma <b>più vicina a 1000</b>, e in caso di parità la più grande. È subset sum con una tabella di sole somme raggiungibili.</p>
+  <figure class="codice" data-titolo="Somme raggiungibili (verificato: dischi 900, 500, 498, 4 → 1002)">
+<pre data-lang="java">boolean[] ok = new boolean[2001];
+ok[0] = true;
+for (int x : pesi)
+    for (int s = 2000; s &gt;= x; s--)
+        if (ok[s - x]) ok[s] = true;
+int best = 0;
+for (int s = 0; s &lt;= 2000; s++)
+    if (ok[s] &amp;&amp; Math.abs(1000 - s) &lt;= Math.abs(1000 - best)) best = s;</pre>
+    <ol class="spiega">
+      <li data-righe="1-2" data-segna="new boolean[2001]@dato|ok[0] = true@ok"><p><code>ok[s]</code> = "la somma s si può ottenere". All'inizio solo 0 (nessun disco). 2000 basta: una somma sopra 2000 è più lontana da 1000 della somma 0.</p></li>
+      <li data-righe="3-5" data-segna="s = 2000; s &gt;= x; s--@ora|ok[s - x]@due"><p>Per ogni disco, ogni somma già raggiungibile + x diventa raggiungibile. È la riga i della tabella, scritta sopra la riga i − 1. Il ciclo va <b>all'indietro</b>: così <code>ok[s - x]</code> è ancora il valore <i>senza</i> questo disco, e ogni disco si usa al massimo una volta.</p></li>
+      <li data-righe="6-8" data-segna="&lt;=#2@ok"><p>La somma più vicina a 1000. Scorro in avanti con <code>&lt;=</code>: a parità di distanza vince la più grande. Nell'esempio 998 e 1002 distano entrambe 2: esce 1002.</p></li>
+    </ol>
+  </figure>
+  <div class="box domanda-tua" data-tit="Perché ok[0] (nella tabella 2D, [0][0]) deve essere true?">
+    <p><b>Leggi la cella</b>: con zero dischi, riesco a fare la somma zero? Sì, bilanciere vuoto. E infatti è vera <b>solo</b> quella: con zero dischi non fai 5.</p>
+    <p><b>È il seme.</b> Una somma diventa vera solo guardando una somma già vera (<code>ok[s - x]</code>). Senza un punto di partenza non se ne accende nessuna: tolta quella riga dalla versione a tabella, sul sample 1 il programma risponde <b>0</b> invece di 1002 (verificato in Java).</p>
+    <p>La catena che lo mostra: <code>ok[0]</code> vero ⇒ <code>ok[4]</code> vero (solo il disco da 4). Il disco preso <b>da solo</b> esiste perché "nessun disco" era vero: per appoggiare il primo peso serve un bilanciere vuoto.</p>
+  </div>
+  <div class="box domanda-tua" data-tit="Sommo i dischi in ordine e mi fermo quando supero l'obiettivo?">
+    <p>No. Dischi 5, 10, 15 e obiettivo 22: sommando in ordine fai 5 → 15 → 30 e ti fermi a 30, che dista 8. Produci solo i <b>prefissi</b>.</p>
+    <p>Le somme possibili sono sette: 0, 5, 10, 15, 20, 25, 30. La risposta è <b>20 = 5 + 15</b>, che dista 2 — e in ordine non la vedi mai, perché salti il 10.</p>
+    <p>Due correzioni: il ciclo interno cammina sulle <b>somme</b> (tutte, da 0 a 2000), non sui dischi; e <b>non ti fermi mai</b>. Durante il riempimento l'obiettivo non compare: la tabella mappa tutto ciò che è raggiungibile, e il 1000 entra in gioco solo nell'ultimo ciclo.</p>
+  </div>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Variante (dalla pagina del corso)</th><th>Cosa cambia nel codice</th><th>Sull'esempio</th></tr></thead>
+    <tbody>
+      <tr><td>1. al massimo 1000 kg, la più grande possibile</td><td>alla fine prendo il più grande <code>s ≤ 1000</code> con <code>ok[s]</code></td><td>998</td></tr>
+      <tr><td>2. ogni disco disponibile in quantità illimitata</td><td>il ciclo interno va <b>in avanti</b> (<code>s = x … 2000</code>): <code>ok[s - x]</code> può già contenere lo stesso disco</td><td>1000 (500 + 500)</td></tr>
+      <tr><td>3. stampare il bilanciere, non solo il peso</td><td>per ogni somma salvo quale disco l'ha resa raggiungibile per primo, poi risalgo: <code>s -= disco[s]</code></td><td>500 + 498 + 4</td></tr>
+    </tbody>
+  </table></div>
+  <p class="piccolo">Le tre varianti sono state eseguite in Java sull'esempio: risultati nella colonna di destra.</p>
+</section>
+
+</main>
+</body>
+</html>

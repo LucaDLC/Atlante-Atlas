@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>BFS: visita in ampiezza</title>
+<link rel="stylesheet" href="../assets/atlas.css">
+<link rel="stylesheet" href="../assets/tema.css">
+<script src="../assets/sito.js"></script>
+<script src="../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+const N = (id,x,y,t) => ({id,tipo:'nodo',x,y,t,r:20});
+const A = (id,da,a) => ({id,tipo:'arco',da,a,dir:false});
+const Q = v => ({id:'q',tipo:'celle',x:120,y:218,cw:44,ch:30,valori:v,indici:false});
+SCENE.bfs = {
+  w: 520, h: 270, lato: true,
+  legenda: 'ora:nodo appena estratto,dato:in coda,ok:visitato, con la sua distanza',
+  oggetti: [
+    N('s',60,70,'s'), N('a',170,30,'a'), N('b',170,110,'b'), N('c',280,30,'c'), N('d',280,110,'d'), N('e',390,70,'e'),
+    A('sa','s','a'), A('sb','s','b'), A('ac','a','c'), A('bd','b','d'), A('ce','c','e'), A('de','d','e'),
+    {id:'lab',tipo:'testo',x:20,y:236,t:'coda',size:12,bold:true,anchor:'start'},
+    Q(['s'])
+  ],
+  passi: [
+    { nota: 'Sorgente <b>s</b>. Metto s in coda e segno <code>d(s) = 0</code>. La coda è FIFO: esce per primo chi è entrato per primo.', set: { s:{tono:'dato',sotto:'d=0'}, q:{valori:['s'],toni:{0:'dato'}} } },
+    { nota: 'Estraggo <b>s</b>. I vicini non visti sono <b>a</b> e <b>b</b>: ricevono <code>d = d(s) + 1 = 1</code> e padre s. Li metto in coda.', set: { s:{tono:'ora',sotto:'d=0'}, a:{tono:'ok',sotto:'d=1'}, b:{tono:'ok',sotto:'d=1'}, sa:{tono:'ok'}, sb:{tono:'ok'}, q:{valori:['a','b'],toni:{0:'dato',1:'dato'}} } },
+    { nota: 'Estraggo <b>a</b>. Il vicino <b>s</b> è già visto: lo salto. Il vicino <b>c</b> è nuovo: <code>d(c) = 2</code>.', set: { s:{tono:null,sotto:'d=0'}, a:{tono:'ora',sotto:'d=1'}, c:{tono:'ok',sotto:'d=2'}, ac:{tono:'ok'}, q:{valori:['b','c'],toni:{0:'dato',1:'dato'}} } },
+    { nota: 'Estraggo <b>b</b>. Vicini: s (visto), <b>d</b> (nuovo, <code>d = 2</code>).', set: { a:{tono:'ok',sotto:'d=1'}, b:{tono:'ora',sotto:'d=1'}, d:{tono:'ok',sotto:'d=2'}, bd:{tono:'ok'}, q:{valori:['c','d'],toni:{0:'dato',1:'dato'}} } },
+    { nota: 'Estraggo <b>c</b>. Vicini: a (visto), <b>e</b> (nuovo, <code>d = 3</code>).', set: { b:{tono:'ok',sotto:'d=1'}, c:{tono:'ora',sotto:'d=2'}, e:{tono:'ok',sotto:'d=3'}, ce:{tono:'ok'}, q:{valori:['d','e'],toni:{0:'dato',1:'dato'}} } },
+    { nota: 'Estraggo <b>d</b>. Il suo vicino e è già in coda con <code>d = 3</code>: la distanza da d (2 + 1) è la stessa, non cambia nulla.', set: { c:{tono:'ok',sotto:'d=2'}, d:{tono:'ora',sotto:'d=2'}, de:{tono:'ok'}, q:{valori:['e'],toni:{0:'dato'}} } },
+    { nota: 'Estraggo <b>e</b>: nessun vicino nuovo. La coda è vuota: la BFS è finita. Distanze: s 0, a e b 1, c e d 2, e 3.', set: { d:{tono:'ok',sotto:'d=2'}, e:{tono:'ok',sotto:'d=3'}, q:{valori:['vuota'],toni:{}} } }
+  ]
+};
+})();
+</script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+const N = (id,x,y,t,tono) => ({id,tipo:'nodo',x,y,t,r:20,tono});
+const A = (id,da,a,extra) => Object.assign({id,tipo:'arco',da,a,dir:false},extra||{});
+SCENE.bip = {
+  w: 520, h: 230, lato: true,
+  legenda: 'dato:strato 0,ora:strato 1,no:arco dentro uno strato (ciclo dispari)',
+  oggetti: [
+    N('a',120,40,'a'), N('b',60,160,'b'), N('c',180,160,'c'), N('d',330,100,'d'),
+    A('ab','a','b'), A('ac','a','c'), A('bc','b','c',{tono:'no',nascosto:true}), A('ad','a','d'),
+    {id:'t1',tipo:'testo',x:320,y:40,t:'',size:12,bold:true}
+  ],
+  passi: [
+    { nota: 'Faccio una BFS da <b>a</b>. Gli strati sono: strato 0 = {a}, strato 1 = i vicini di a.', set: { a:{tono:'dato'} } },
+    { nota: 'Strato 1: <b>b, c, d</b>. Colorarli con due colori alternati: la regola è che ogni arco collega due strati <b>vicini</b>.', set: { b:{tono:'ora'}, c:{tono:'ora'}, d:{tono:'ora'}, ab:{tono:'ok'}, ac:{tono:'ok'}, ad:{tono:'ok'}, t1:{t:'strati: {a} {b,c,d}'} } },
+    { nota: 'Ora l\'arco <b>b–c</b>: collega due nodi <b>dello stesso strato</b>. Se li colori diversi, il colore non torna: c\'è un ciclo di lunghezza dispari (a, b, c).', set: { bc:{tono:'no',nascosto:false}, t1:{t:'arco nello stesso strato: NON bipartito',tono:'no'} } }
+  ]
+};
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>BFS: visita in ampiezza</h1>
+  <p class="lede">La BFS (breadth-first search, visita in ampiezza) esplora il grafo a strati: prima tutti i nodi a distanza 1, poi a distanza 2, e così via. È l'algoritmo giusto ogni volta che la domanda è 'quanti passi al minimo'.</p>
+</header>
+
+<section>
+  <h2>Il problema e l'idea</h2>
+<p>Il problema: da una sorgente <code>s</code> voglio sapere quali nodi raggiungo e, per ognuno, il <b>numero minimo di archi</b>
+(la <b>distanza</b>, <code>d(v)</code>). Il grafo non ha pesi: ogni arco vale 1.</p>
+<p>L'idea è una <b>coda FIFO</b> (first in, first out). Esce per primo il nodo entrato per primo. Così i nodi escono
+in ordine di distanza: prima quelli a distanza 0, poi 1, poi 2. È la stessa cosa di scendere a strati dalla sorgente.</p>
+  <figure class="scena" data-scena="bfs" data-titolo="BFS da s: la coda e le distanze"></figure>
+</section>
+<section>
+  <h2>I passi, uno per uno</h2>
+<ol>
+  <li>Metti <code>s</code> in coda, <code>d(s) = 0</code>, segna <code>s</code> come visto.</li>
+  <li>Estrai il primo nodo <code>u</code> dalla coda.</li>
+  <li>Per ogni vicino <code>v</code> non ancora visto: <code>d(v) = d(u) + 1</code>, <code>padre(v) = u</code>, segna <code>v</code> e mettilo in coda.</li>
+  <li>Ripeti dal passo 2 finché la coda è vuota.</li>
+</ol>
+<p>Il <b>padre</b> (parent) di un nodo è il nodo da cui l'hai scoperto. Seguendo i padri a ritroso ricostruisci il cammino minimo.</p>
+<div class="box attenzione" data-tit="Visto al momento giusto"><p>Un nodo si segna come visto <b>quando entra in coda</b>, non quando esce.
+Se lo segni all'uscita, può entrare in coda più volte e la BFS diventa lenta, anche se il risultato resta corretto.</p></div>
+</section>
+<section>
+  <h2>Perché funziona</h2>
+<p>La coda fa uscire i nodi in ordine non decrescente di distanza. Quindi la <b>prima volta</b> che incontri un nodo <code>v</code>
+ci arrivi con il cammino più corto possibile. Ogni arco del grafo non diretto collega due nodi di strati che differiscono
+al massimo di 1: per questo nessun cammino più corto può sfuggire agli strati.</p>
+<div class="box idea" data-tit="Il perché in una frase"><p>La coda è sempre ordinata per distanza, e non si aggiunge mai un nodo
+più lontano di uno che sta già in coda più un passo.</p></div>
+</section>
+<section>
+  <h2>Costo e quando usarla</h2>
+<p>Ogni nodo entra in coda una volta sola, e ogni arco viene guardato al massimo due volte. Costo:
+<code>O(n + m)</code>, lineare nella taglia del grafo.</p>
+<p>Usa la BFS quando la domanda è una di queste:</p>
+<ul>
+  <li><b>raggiungibilità</b>: "da s posso arrivare a t?", "quali nodi raggiungo?";</li>
+  <li><b>distanza minima senza pesi</b>: "il numero minimo di mosse", "il minimo numero di passaggi";</li>
+  <li><b>componenti connesse</b>: una BFS per ogni nodo non ancora visitato;</li>
+  <li><b>bipartizione</b>: vedi la sezione seguente.</li>
+</ul>
+<p>Con pesi diversi da 1 la BFS sbaglia: usa Dijkstra (pesi ≥ 0) o Bellman-Ford (pesi anche negativi).</p>
+</section>
+<section>
+  <h2>Il test di bipartizione</h2>
+<p>Un grafo è <b>bipartito</b> (bipartite) se i nodi si possono colorare con due colori senza che due nodi vicini abbiano lo stesso
+colore. Equivalente: non ha cicli di lunghezza dispari.</p>
+<p>Per verificarlo fai una BFS e colora ogni strato con un colore diverso. Se un arco collega due nodi dello <b>stesso strato</b>,
+hai trovato un ciclo dispari e il grafo non è bipartito.</p>
+  <figure class="scena" data-scena="bip" data-titolo="Un arco dentro uno strato rivela un ciclo dispari"></figure>
+</section>
+<section>
+  <h2>Il codice, affiancato</h2>
+  <p>Questa pagina spiega il concetto. Il codice Java che lo implementa, con una spiegazione riga per riga e le note di sintassi che servono, è nella pagina affiancata.</p>
+  <p><a href="../codice/visita-bfs.html"><b>→ Codice Java di questo argomento</b></a></p>
+</section>
+<section>
+  <h2>All’esame</h2>
+<div class="box esame" data-tit="All’esame">
+<p>Quando la domanda chiede il <b>minimo numero di passi</b> (o di mosse, o di archi) su un grafo senza pesi, la risposta è BFS.
+Scrivi: <i>"Run BFS from s. The first time a node is discovered it is reached by a shortest path, because the queue
+processes nodes in non-decreasing distance. Time O(n + m)."</i></p>
+<p>Errore tipico: scrivere DFS. La DFS trova <i>un</i> cammino, non quello più corto.</p>
+</div>
+</section>
+<section>
+  <h2>Formulario rapido</h2>
+<div class="tab-wrap"><table class="tab"><thead><tr><th>voce</th><th>significato</th><th>nota</th></tr></thead><tbody><tr><td>d(v)</td><td>distanza minima da s</td><td>la scrive la BFS</td></tr><tr><td>padre(v)</td><td>da dove hai scoperto v</td><td>per ricostruire il cammino</td></tr><tr><td>tempo</td><td>O(n + m)</td><td>ogni nodo e arco una volta</td></tr><tr><td>quando</td><td>distanze senza pesi, raggiungibilità</td><td>non con pesi</td></tr></tbody></table></div>
+</section>
+
+</main>
+</body>
+</html>

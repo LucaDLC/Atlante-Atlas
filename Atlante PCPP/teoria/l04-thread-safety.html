@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Classi thread-safe</title>
+<link rel="stylesheet" href="../assets/atlas.css">
+<link rel="stylesheet" href="../assets/tema.css">
+<script src="../assets/sito.js"></script>
+<script src="../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+SCENE.fuga = {
+  w: 600, h: 270, lato: false,
+  legenda: 'ora:T1 (con lock),due:T2 (con lock),no:accesso senza lock,ok:soluzione',
+  oggetti: [
+    { id: 'box', tipo: 'rett', x: 175, y: 26, w: 260, h: 212 },
+    { id: 'tbox', tipo: 'testo', x: 305, y: 16, t: 'oggetto IntArrayList · lock = this', size: 12, bold: true },
+    { id: 'T1', tipo: 'nodo', x: 60, y: 60, t: 'T1' },
+    { id: 'T2', tipo: 'nodo', x: 60, y: 200, t: 'T2' },
+    { id: 'set', tipo: 'nodo', x: 250, y: 60, t: 'set', forma: 'quadrato' },
+    { id: 'get', tipo: 'nodo', x: 250, y: 200, t: 'get', forma: 'quadrato' },
+    { id: 'a', tipo: 'nodo', x: 375, y: 120, t: 'a', sotto: 'la lista (class state)' },
+    { id: 'copia', tipo: 'nodo', x: 520, y: 200, t: 'copia', nascosto: true },
+    { id: 'T1set', tipo: 'arco', da: 'T1', a: 'set', dir: true, nascosto: true },
+    { id: 'seta', tipo: 'arco', da: 'set', a: 'a', dir: true, t: 'a.set(0,1)', nascosto: true },
+    { id: 'T2get', tipo: 'arco', da: 'T2', a: 'get', dir: true, nascosto: true },
+    { id: 'geta', tipo: 'arco', da: 'get', a: 'a', dir: true, t: 'return a', nascosto: true },
+    { id: 'T2a', tipo: 'arco', da: 'T2', a: 'a', dir: true, t: 'set(0,42)', nascosto: true },
+    { id: 'getc', tipo: 'arco', da: 'get', a: 'copia', dir: true, nascosto: true },
+    { id: 'cod', tipo: 'testo', x: 300, y: 262, t: '', size: 12.5 }
+  ],
+  passi: [
+    { nota: 'Lo stato della classe è la lista <code>a</code>, <code>private</code>. L\'idea: ci si arriva solo passando dai metodi <code>synchronized</code>, cioè con il lock dell\'oggetto.' },
+    { nota: 'T1 chiama <code>array.set(0,1)</code>: prende il lock, scrive in <code>a</code>, rilascia.', set: { T1: { tono: 'ora' }, T1set: { nascosto: false, tono: 'ora' }, set: { tono: 'ora' }, seta: { nascosto: false, tono: 'ora' }, a: { tono: 'ora' }, cod: { t: 'T1: array.set(0,1)  → con lock' } } },
+    { nota: 'T2 chiama <code>array.get()</code>: anche lui prende il lock, e il metodo restituisce <code>a</code>. Ma in Java restituire un oggetto vuol dire restituire un <b>riferimento</b> a quell\'oggetto, non una copia.', set: { T1: { tono: null }, T1set: { nascosto: true }, set: { tono: null }, seta: { nascosto: true }, a: { tono: 'due' }, T2: { tono: 'due' }, T2get: { nascosto: false, tono: 'due' }, get: { tono: 'due' }, geta: { nascosto: false, tono: 'due' }, cod: { t: 'T2: array.get()  → con lock, ritorna il riferimento' } } },
+    { nota: '<code>get()</code> finisce e rilascia il lock. T2 però tiene il riferimento: con <code>.set(0,42)</code> scrive dentro <code>a</code> <b>senza nessun lock</b>. Lo stato è <b>scappato</b> (escaped).', set: { T2get: { nascosto: true }, geta: { nascosto: true }, get: { tono: null }, T2a: { nascosto: false, tono: 'no' }, T2: { tono: 'no' }, a: { tono: 'no' }, cod: { t: 'T2: array.get().set(0,42)  → senza lock' } } },
+    { nota: 'Le due scritture su <code>a</code> (T1 con lock, T2 senza) sono in conflitto e nessuna regola le ordina: la regola del monitor serve un lock <b>in entrambi</b> i thread. Data race sullo stato della classe ⇒ <code>IntArrayList</code> <b>non è thread-safe</b>.', set: { T1: { tono: 'ora' }, seta: { nascosto: false, tono: 'ora' }, set: { tono: 'ora' }, cod: { t: 'due scritture su a, non ordinate da happens-before' } } },
+    { nota: 'Soluzione: non restituire mai lo stato. <code>get</code> restituisce una <b>copia</b> (<code>new ArrayList&lt;&gt;(a)</code>) o un solo elemento (<code>a.get(i)</code>). T2 può modificare la copia quanto vuole: non è stato della classe.', set: { T1: { tono: null }, seta: { nascosto: true }, set: { tono: null }, T2a: { nascosto: true }, a: { tono: 'ok' }, T2: { tono: 'ok' }, get: { tono: 'ok' }, copia: { nascosto: false, tono: 'ok' }, getc: { nascosto: false, tono: 'ok', t: 'return new ArrayList<>(a)' }, cod: { t: 'lo stato resta dentro l\'oggetto' } } }
+  ]
+};
+</script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  const T = (id, x, y, t, extra) => Object.assign({ id, tipo: 'testo', x, y, t, size: 13 }, extra || {});
+  const R = (id, x, y, w, h, t, extra) => Object.assign({ id, tipo: 'rett', x, y, w, h, t }, extra || {});
+  const N = (id, x, y, t, tono, extra) => Object.assign({ id, tipo: 'nodo', x, y, t, tono, r: 20 }, extra || {});
+  const F = (id, x1, y1, x2, y2, t, extra) => Object.assign({ id, tipo: 'vett', x1, y1, x2, y2, t }, extra || {});
+  const vedi = (ids, v) => Object.fromEntries(ids.map(k => [k, Object.assign({ nascosto: false }, v || {})]));
+
+  // 1. correttezza e specifica
+  const comp = ['server', 'GUI', 'database', 'rete', 'log', 'cache', 'scheduler', 'parser'];
+  const og1 = [R('spec', 110, 16, 380, 36, 'specifica: "un solo scrittore, e solo senza lettori"', { tono: 'ok', nascosto: true })];
+  comp.forEach((t, i) => og1.push(R('k' + i, 30 + (i % 4) * 140, 76 + Math.floor(i / 4) * 50, 120, 36, t, { tono: 'spento', nascosto: true })));
+  og1.push(R('cls', 200, 76, 200, 86, '', { tono: 'dato', nascosto: true }), T('cl1', 300, 96, 'class ReadWriteMonitor', { bold: true, size: 12, nascosto: true }),
+    T('cl2', 300, 122, 'campi: readers, writer', { size: 12, nascosto: true }), T('cl3', 300, 146, 'metodi: readLock(), writeLock()…', { size: 12, nascosto: true }));
+  og1.push(N('t1', 90, 210, 't1', 'ora', { nascosto: true }), N('t2', 300, 210, 't2', 'ora', { nascosto: true }), N('t3', 510, 210, 't3', 'ora', { nascosto: true }));
+  og1.push(F('f1', 110, 192, 220, 162, '', { nascosto: true }), F('f2', 300, 190, 300, 164, '', { nascosto: true }), F('f3', 490, 192, 380, 162, '', { nascosto: true }));
+  SCENE.specifica = {
+    w: 600, h: 250, lato: true,
+    legenda: 'ok:specifica,spento:resto del programma,dato:la classe analizzata,ora:thread',
+    oggetti: og1,
+    passi: [
+      { nota: "Un programma è <b>corretto</b> se rispetta la sua <b>specifica</b>: una frase precisa su cosa deve fare. Nel corso le specifiche restano frasi, niente logica formale.", set: vedi(['spec']) },
+      { nota: "Un programma vero è enorme: server, interfaccia, database, migliaia di righe. Ragionare su tutti gli interleaving di tutto è ingestibile.", set: vedi(comp.map((_, i) => 'k' + i)) },
+      { nota: "L'idea della programmazione a oggetti: analizzare <b>una classe alla volta</b>. Una classe ha dei campi (lo stato) e dei metodi che li leggono e scrivono.", set: Object.assign(Object.fromEntries(comp.map((_, i) => ['k' + i, { nascosto: true }])), vedi(['cls', 'cl1', 'cl2', 'cl3'])) },
+      { nota: "In concorrenza, da fuori la classe vede solo due cose: <b>chiamate di metodo</b> e <b>accessi ai campi</b>, fatti da più thread insieme. La domanda diventa: comunque si intreccino queste chiamate, la classe si comporta bene? È la base della definizione di thread-safe.", set: vedi(['t1', 't2', 't3', 'f1', 'f2', 'f3']) }
+    ]
+  };
+
+  // 2. la definizione
+  SCENE.defts = {
+    w: 600, h: 256, lato: true,
+    legenda: 'dato:campi della classe,ora:thread,ok:accessi ordinati,no:data race',
+    oggetti: [
+      R('obj', 190, 20, 220, 120, '', { tono: 'spento' }), T('ot', 300, 38, 'oggetto c di classe C', { bold: true, size: 12 }),
+      R('fa', 210, 56, 80, 34, 'campo x', { tono: 'dato' }), R('fb', 310, 56, 80, 34, 'campo y', { tono: 'dato' }),
+      T('mt', 300, 120, 'metodi: m1(), m2(), m3()', { size: 12 }),
+      N('t1', 70, 70, 't1', 'ora'), N('t2', 70, 150, 't2', 'ora'), N('t3', 530, 110, 't3', 'ora'),
+      F('a1', 92, 70, 205, 72, 'm1()', { nascosto: true }), F('a2', 90, 145, 240, 94, 'm2()', { nascosto: true, tx: -80, ty: 34 }), F('a3', 508, 108, 395, 76, 'c.y = 5', { nascosto: true, tx: 10, ty: -10 }),
+      T('c', 300, 200, '', { size: 12, bold: true }), T('c2', 300, 228, '', { size: 12 })
+    ],
+    passi: [
+      { nota: "La definizione del corso: <b>una classe è thread-safe se nessuna esecuzione concorrente di chiamate di metodo o accessi ai campi, su oggetti della classe, produce data race sui campi della classe</b>." },
+      { nota: "\"Esecuzione concorrente\": più thread usano lo <b>stesso</b> oggetto insieme, chiamando metodi e, se sono visibili, leggendo e scrivendo i campi direttamente.", set: vedi(['a1', 'a2', 'a3']) },
+      { nota: "\"Nessuna data race sui campi\": per <b>ogni</b> coppia di accessi allo stesso campo con almeno una scrittura, c'è happens-before in un verso o nell'altro. <b>Qualsiasi</b> intreccio, non solo quelli che capitano nei test.", set: { fa: { tono: 'ok' }, fb: { tono: 'ok' }, c: { t: 'ogni coppia in conflitto sui campi è ordinata', tono: 'ok' } } },
+      { nota: "Basta <b>una</b> esecuzione con una data race su un campo e la classe non è thread-safe. Qui t3 scrive y direttamente (campo pubblico, senza lock) mentre m2() lo legge sotto lock: non ordinati.", set: { fb: { tono: 'no' }, a3: { tono: 'no' }, c: { t: 'una sola data race su un campo ⇒ non thread-safe', tono: 'no' } } },
+      { nota: "Cosa la definizione <b>non</b> promette: che il risultato sia quello giusto. Una classe thread-safe può comunque far parte di un programma con <b>race condition</b> (check-then-act, pagina confinamento). Thread-safe = niente data race, e basta.", set: { fb: { tono: 'ok' }, a3: { tono: null }, c: { t: 'thread-safe = niente data race sui campi', tono: 'ok' }, c2: { t: 'non vuol dire: niente race condition' } } }
+    ]
+  };
+
+  // 3. la checklist applicata a un contatore
+  const V = ['1 class state', '2 escaping', '3 safe publication', '4 immutability', '5 mutual exclusion'];
+  const og3 = V.map((t, i) => R('v' + i, 20, 20 + i * 42, 190, 34, t, { tono: 'spento' }));
+  og3.push(R('cod', 250, 20, 330, 110, '', { tono: 'spento' }),
+    T('k1', 265, 44, 'class Counter {', { size: 12, anchor: 'start' }), T('k2', 280, 68, 'private int count;', { size: 12, anchor: 'start' }),
+    T('k3', 280, 92, 'synchronized void inc() { count++; }', { size: 12, anchor: 'start' }), T('k4', 280, 116, 'synchronized int get() { return count; }', { size: 12, anchor: 'start' }),
+    T('r', 415, 170, '', { size: 12, bold: true }), T('r2', 415, 196, '', { size: 12 }), T('fin', 300, 240, '', { size: 12, bold: true }));
+  const pv = (i, a, b) => Object.assign(Object.fromEntries(V.map((_, k) => ['v' + k, { tono: k < i ? 'ok' : k === i ? 'ora' : 'spento' }])), { r: { t: a }, r2: { t: b } });
+  SCENE.checklist = {
+    w: 600, h: 256, lato: true,
+    legenda: 'ora:elemento che stai controllando,ok:controllato',
+    oggetti: og3,
+    passi: [
+      { nota: "Per dimostrare che una classe è thread-safe si passano <b>sempre</b> i cinque elementi, nell'ordine. Proviamo su un contatore." },
+      { nota: "<b>1 · Class state</b>: quali sono i campi? Solo <code>count</code>. Sono le variabili condivise da proteggere.", set: pv(0, 'stato: count', '(i parametri dei metodi non contano)') },
+      { nota: "<b>2 · Escaping</b>: lo stato è raggiungibile solo dai metodi? count è <code>private</code> e get() restituisce un int (una copia), non un riferimento allo stato.", set: pv(1, 'private, nessun riferimento esce', '') },
+      { nota: "<b>3 · Safe publication</b>: i valori iniziali sono visibili a tutti i thread? count parte dal default 0, e l'inizializzazione di default happens-before ogni altra azione.", set: pv(2, 'count = 0 di default: pubblicato', '') },
+      { nota: "<b>4 · Immutability</b>: quali campi non cambiano mai? Nessuno: count cambia a ogni inc(). Niente scorciatoie, serve il lock.", set: pv(3, 'count cambia: è mutabile', '') },
+      { nota: "<b>5 · Mutual exclusion</b>: ogni accesso allo stato mutabile usa lo <b>stesso</b> lock? inc() e get() sono synchronized sul lock di this: la regola del monitor ordina ogni coppia di accessi.", set: pv(4, 'inc e get: stesso lock (this)', '') },
+      { nota: "Tutti e cinque controllati: Counter è thread-safe. Una risposta che dice solo \"i metodi sono synchronized\" copre il punto 5 e basta: è incompleta.", set: Object.assign(pv(5, '', ''), { fin: { t: '5 elementi coperti ⇒ Counter è thread-safe', tono: 'ok' } }) }
+    ]
+  };
+
+  // 4. class state: il parametro non è stato della classe
+  SCENE.classstate = {
+    w: 600, h: 250, lato: true,
+    legenda: 'dato:class state di C,due:oggetto esterno (lista),ora:thread,no:data race',
+    oggetti: [
+      R('c', 60, 30, 200, 90, '', { tono: 'spento' }), T('ct', 160, 50, 'oggetto c : C', { bold: true, size: 12 }), R('ci', 100, 66, 120, 34, 'private int i', { tono: 'dato' }),
+      R('l', 360, 50, 180, 50, 'ArrayList l', { tono: 'due' }),
+      N('ta', 450, 190, 'A', 'ora'), N('tb', 160, 190, 'B', 'ora'),
+      F('fa', 450, 168, 450, 104, 'l.add(1), senza lock', { tx: -60, ty: 40, nascosto: true }),
+      F('fb', 160, 168, 160, 124, 'c.n(l)', { tx: 8, ty: 20, nascosto: true }), F('fb2', 262, 80, 356, 76, 'l.add(42)', { tx: -60, ty: -12, nascosto: true }),
+      T('k', 300, 236, '', { size: 12, bold: true })
+    ],
+    passi: [
+      { nota: "Lo <b>stato</b> di una classe sono i suoi <b>campi</b>. Lo stato di C è solo <code>i</code>. La lista l è un oggetto esterno: arriva a C come parametro del metodo n." },
+      { nota: "Il thread A aggiunge alla lista <b>senza lock</b>.", set: vedi(['fa']) },
+      { nota: "Il thread B chiama <code>c.n(l)</code>: n è synchronized (lock di c) e fa <code>l.add(42)</code>.", set: vedi(['fb', 'fb2']) },
+      { nota: "Le due add sulla lista non sono ordinate: A non prende il lock di c. <b>Data race sulla lista</b>: il programma non è thread-safe (a volte la lista ha meno di 2 elementi).", set: { l: { tono: 'no' }, k: { t: 'data race sulla lista: il programma non è thread-safe', tono: 'no' } } },
+      { nota: "Ma <b>C resta thread-safe</b>: la definizione guarda solo i campi di C, e su i non c'è nessuna data race. Una classe non può garantire happens-before su oggetti che altri usano senza passare da lei: meglio non scrivere metodi che modificano oggetti ricevuti come parametro.", set: { ci: { tono: 'ok' }, k: { t: 'C è thread-safe: la data race non è su un suo campo', tono: 'ok' } } }
+    ]
+  };
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Classi thread-safe</h1>
+  <p class="lede">Analizzare un intero programma concorrente con il JMM diventa impossibile oltre poche righe. Si analizza <b>una classe alla volta</b>. Questa pagina dà la definizione di classe thread-safe del corso e i primi due punti della checklist: <b>class state</b> ed <b>escaping</b>.</p>
+</header>
+
+<section>
+  <h2>Correttezza e specifica</h2>
+  <ul>
+    <li>Un programma è <b>corretto</b> se rispetta la sua <b>specifica</b>.</li>
+    <li>La specifica è una frase precisa sul comportamento voluto. Esempi: "più lettori insieme, un solo scrittore e solo senza lettori"; "l'output deve essere PEOPLE*num_threads".</li>
+    <li>Nel corso le specifiche restano frasi (niente logica formale).</li>
+  </ul>
+  <p>Ragionare su migliaia di righe (server, sistemi operativi, GUI) è ingestibile. In un linguaggio a oggetti si analizza la <b>classe</b>: restano solo le chiamate di metodo e gli accessi ai campi fatti in concorrenza.</p>
+  <figure class="scena" data-scena="specifica" data-titolo="Dal programma intero alla singola classe"></figure>
+</section>
+
+<section>
+  <h2>La definizione del corso</h2>
+  <div class="box regola" data-tit="Thread-safe class">
+    <p>"A class is thread-safe if no concurrent execution of method calls or field accesses (read/write) on objects of this class results in <b>data races on the fields of the class</b>."</p>
+    <p>In italiano: comunque si chiamino in parallelo i metodi (o si leggano/scrivano i campi) di un oggetto di questa classe, <b>non c'è mai una data race sui campi della classe</b>.</p>
+  </div>
+  <div class="box attenzione" data-tit="Non è un termine vago">
+    <p>Nel corso "thread-safe" <b>non</b> vuol dire "sembra funzionare in concorrenza". Vuol dire solo: nessuna data race sui campi. La specifica di questa definizione è quindi "assenza di data race". È ispirata alla definizione del JMM: "a program is correctly synchronized iff none of its executions contains data races".</p>
+    <p>È diversa da Goetz cap. 4, che parla di invarianti della classe; somiglia a Goetz cap. 2, pag. 18.</p>
+  </div>
+  <div class="box regola" data-tit="Thread-safe program">
+    <p>"A concurrent program is thread-safe if and only if it is <b>data race free</b>." Non confondere: una classe thread-safe riguarda i suoi campi, un programma thread-safe riguarda tutte le sue variabili condivise. Goetz non definisce i programmi thread-safe.</p>
+  </div>
+  <div class="colonne">
+    <div class="carta buona"><h4>Cosa garantisce</h4><p>Nessuna data race sui campi della classe, per qualsiasi uso concorrente dei suoi metodi.</p></div>
+    <div class="carta cattiva"><h4>Cosa non garantisce</h4><p>Nessuna race condition. Un programma che usa solo classi thread-safe può comunque sbagliare risultato: esempio in <a href="l04-confinamento.html">confinamento e azioni composte</a>.</p></div>
+  </div>
+  <figure class="scena" data-scena="defts" data-titolo="Thread-safe = nessuna data race sui campi"></figure>
+</section>
+
+<section>
+  <h2>La checklist: 5 elementi</h2>
+  <p>Per mostrare che una classe è thread-safe bisogna far vedere che, in qualsiasi esecuzione concorrente di accessi ai campi e chiamate di metodo con almeno una scrittura, le azioni sono ordinate da happens-before. In pratica si controllano sempre questi elementi.</p>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>#</th><th>Elemento</th><th>Domanda da farsi</th><th>Pagina</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td><b>Class state</b></td><td>Quali sono i campi della classe?</td><td>qui sotto</td></tr>
+      <tr><td>2</td><td><b>Escaping</b></td><td>Lo stato è raggiungibile solo dai metodi pubblici?</td><td>qui sotto</td></tr>
+      <tr><td>3</td><td><b>Safe publication</b></td><td>I valori iniziali dei campi sono visibili a ogni thread che usa l'oggetto?</td><td><a href="l04-pubblicazione.html">pubblicazione</a></td></tr>
+      <tr><td>4</td><td><b>Immutability</b></td><td>Quali campi non cambiano mai dopo l'inizializzazione?</td><td><a href="l04-pubblicazione.html">pubblicazione</a></td></tr>
+      <tr><td>5</td><td><b>Mutual exclusion</b></td><td>Ogni accesso allo stato mutabile avviene con lo stesso lock?</td><td><a href="l04-pubblicazione.html">pubblicazione</a></td></tr>
+    </tbody>
+  </table></div>
+  <div class="box esame" data-tit="Regola delle slide">
+    <p>"When asked to reason about the thread-safety of a class, you must <b>always cover these elements</b>." Una risposta che dice solo "i metodi sono synchronized" è incompleta. Le slide citano un teorema (letture opzionali): questi elementi insieme <b>bastano</b> a garantire la thread-safety.</p>
+  </div>
+  <figure class="scena" data-scena="checklist" data-titolo="I cinque elementi applicati a Counter"></figure>
+</section>
+
+<section>
+  <h2>1 · Class state</h2>
+  <p>Lo <b>stato</b> di una classe sono i suoi <b>campi</b>. Sono le variabili condivise da proteggere quando la classe è usata da più thread.</p>
+  <p>La definizione parla <b>solo</b> dei campi della classe. Un oggetto che arriva da fuori come parametro non è stato della classe.</p>
+  <figure class="codice" data-titolo="Un parametro non è class state (AccessNoState.java)">
+<pre data-lang="java">class C {
+    private int i = 0;                         // class state
+    public synchronized void n(List&lt;Integer&gt; l) {
+        l.add(42);                             // l non è class state
+    }
+}
+
+ArrayList&lt;Integer&gt; l = new ArrayList&lt;&gt;();
+C c = new C();
+new Thread(() -> { l.add(1); }).start();      // senza lock
+new Thread(() -> { c.n(l); }).start();        // con il lock di c</pre>
+    <ol class="spiega">
+      <li data-righe="1-2" data-segna="private int i = 0;@dato"><p>Lo stato di <code>C</code> è solo il campo <code>i</code>.</p></li>
+      <li data-righe="3-4" data-segna="synchronized@ok|l.add(42)@due"><p><code>n</code> è <code>synchronized</code> e modifica la lista ricevuta come parametro.</p></li>
+      <li data-righe="10-11" data-segna="l.add(1)@no|c.n(l)@ok"><p>Il primo thread scrive nella lista <b>senza lock</b>, il secondo passa da <code>n</code>, con il lock di <code>c</code>. Le due <code>add</code> non sono ordinate: <b>data race sulla lista</b>, il programma non è thread-safe.</p></li>
+      <li data-righe="1-6" data-segna="class C@ok"><p>Ma <code>C</code> <b>resta thread-safe</b>: la data race è sulla lista, che non è un suo campo. Il codice del corso stampa infatti a volte liste con meno di 2 elementi.</p></li>
+    </ol>
+  </figure>
+  <div class="box idea" data-tit="Morale">
+    <p>Meglio evitare metodi che prendono oggetti come parametro e li modificano: la classe non può garantire l'happens-before sulle azioni su quell'oggetto, perché altri thread lo usano come vogliono.</p>
+  </div>
+  <figure class="scena" data-scena="classstate" data-titolo="La lista passata come parametro non è stato di C"></figure>
+</section>
+
+<section>
+  <h2>2 · Escaping</h2>
+  <div class="box regola" data-tit="Definizione">
+    <p>Lo stato <b>non scappa</b> (does not escape) se si può raggiungere <b>solo attraverso i metodi pubblici</b> della classe. Se scappa, un thread può usarlo senza la sincronizzazione prevista, e non si può più garantire l'happens-before.</p>
+  </div>
+
+  <h3>Primo modo di scappare: un campo non <code>private</code></h3>
+  <figure class="codice" data-titolo="CounterEscape.java">
+<pre data-lang="java">class Counter {
+    int i = 0;                                 // manca private
+    public synchronized void inc() { i++; }
+    public synchronized int get() { return i; }
+}
+
+Counter c = new Counter();
+new Thread(() -> { c.inc(); }).start();       // (1) i++ con il lock
+new Thread(() -> { c.i++; }).start();         // (2) i++ senza lock</pre>
+    <ol class="spiega">
+      <li data-righe="2" data-segna="int i = 0;@dato"><p>Il campo non è <code>private</code>: il codice nello stesso package lo vede direttamente.</p></li>
+      <li data-righe="3-4" data-segna="synchronized*@ok"><p>La classe protegge <code>i</code> con il lock dell'oggetto, ma solo <b>dentro</b> i suoi metodi.</p></li>
+      <li data-righe="8-9" data-segna="c.inc()@ok|c.i++@no"><p>Il secondo thread scavalca i metodi e scrive <code>c.i</code> senza lock.</p></li>
+    </ol>
+  </figure>
+  <figure class="passi" data-titolo="Perché è una data race (con il JMM)">
+    <div class="passo"><div class="espr"><mark class="ora">t1(lock)</mark> → t1(1) → <mark class="ora">t1(unlock)</mark>      <mark class="no">t2(2)</mark></div><p class="nota">Program order: t1 ha lock, <code>i++</code>, unlock; t2 ha solo <code>i++</code>.</p></div>
+    <div class="passo"><div class="espr">t1(1) e t2(2): stessa variabile <mark class="dato">i</mark>, due scritture</div><p class="nota">Sono azioni in conflitto.</p></div>
+    <div class="passo"><div class="espr">m(start(t1)) → t1(lock)      m(start(t2)) → t2(2)</div><p class="nota">Le uniche coppie tra thread diversi vengono dalla start rule.</p></div>
+    <div class="passo"><div class="espr">regola del monitor: serve <mark class="no">un lock anche in t2</mark></div><p class="nota">t2 non fa azioni di lock, quindi la regola del monitor non crea coppie tra t1 e t2.</p></div>
+    <div class="passo"><div class="espr">t1(1) ↛ t2(2)  e  t2(2) ↛ t1(1)  ⇒  <mark class="no">data race sul campo i</mark>  ⇒  Counter non thread-safe</div><p class="nota">Correzione: <code>private int i</code>. Così ogni accesso passa dai metodi <code>synchronized</code>, e ogni coppia di accessi è ordinata dalla regola del monitor.</p></div>
+  </figure>
+  <p>Dichiarare <code>private</code> tutti i campi di tipo primitivo garantisce che vengano toccati solo dai metodi della classe.</p>
+
+  <h3>Secondo modo: restituire un riferimento allo stato</h3>
+  <p><code>private</code> non basta se un metodo restituisce l'oggetto che fa parte dello stato.</p>
+  <figure class="codice" data-titolo="ArrayListEscape.java">
+<pre data-lang="java">class IntArrayList {
+    private final List&lt;Integer&gt; a = new ArrayList&lt;Integer&gt;();
+    public synchronized void set(Integer index, Integer elem) { a.set(index, elem); }
+    public synchronized List&lt;Integer&gt; get() { return a; }
+}
+
+IntArrayList array = new IntArrayList();
+new Thread(() -> { array.set(0, 1); }).start();        // con lock
+new Thread(() -> { array.get().set(0, 42); }).start(); // senza lock</pre>
+    <ol class="spiega">
+      <li data-righe="2" data-segna="private final@ok|a = new@dato"><p>Il campo è <code>private</code> e <code>final</code>. <code>final</code> blocca il <b>riferimento</b>, non il contenuto della lista.</p></li>
+      <li data-righe="4" data-segna="return a;@no"><p><code>get</code> restituisce il riferimento alla lista interna. Il lock copre solo il <code>return</code>.</p></li>
+      <li data-righe="9" data-segna=".set(0, 42)@no"><p>Chi ha il riferimento modifica la lista dopo che il lock è stato rilasciato.</p></li>
+    </ol>
+  </figure>
+  <figure class="scena" data-scena="fuga" data-titolo="Come lo stato scappa da get()"></figure>
+  <div class="box regola" data-tit="Come evitarlo">
+    <p>Non scrivere metodi che restituiscono riferimenti a oggetti dello stato. Restituisci valori (un <code>int</code>, un elemento immutabile come <code>Integer</code> o <code>String</code>) oppure una copia.</p>
+  </div>
+  <div class="box inglese" data-tit="Frase modello">
+    <p>"The class state is the field <i>a</i>. It escapes through <i>get()</i>, which returns a reference to the internal list: a thread can then call <i>set</i> on it without holding the lock, so that write and the write in <i>set(…)</i> are not ordered by happens-before. This is a data race on the class state, hence the class is not thread-safe."</p>
+  </div>
+  <div class="box domanda-tua" data-tit="Perché ConcurrentSkipListSet passa i test di add/remove (esercizio 5.1.4)?">
+    <p><code>HashSet.add</code> fa "guardo se c'è → scrivo il nodo → <code>size++</code>" in tre passi separati: due thread possono guardare entrambi prima che uno scriva.</p>
+    <p><code>ConcurrentSkipListSet</code> (sopra <code>ConcurrentSkipListMap</code>) fa il passo decisivo con un <b>compare-and-set</b> (CAS): "scrivi il nuovo nodo <b>solo se</b> il puntatore vale ancora quello che ho letto". È un'unica operazione atomica dell'hardware: se un altro thread ha cambiato qualcosa nel frattempo, il CAS fallisce e il thread <b>ricomincia</b> la ricerca, e questa volta trova la chiave già presente → <code>add</code> restituisce <code>false</code>. Per <code>remove</code> è uguale: il nodo si cancella con un CAS sul valore (da <i>v</i> a <code>null</code>), e un solo thread lo vince.</p>
+    <p>Il contatore viene aggiornato (<code>addCount(±1)</code>, un <code>LongAdder</code> thread-safe) <b>solo</b> dal thread che ha vinto il CAS: niente duplicati, niente decrementi doppi. Verificato sul sorgente del JDK 26.</p>
+  </div>
+</section>
+
+</main>
+</body>
+</html>

@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Catalogo dei problemi difficili</title>
+<link rel="stylesheet" href="../assets/atlas.css">
+<link rel="stylesheet" href="../assets/tema.css">
+<script src="../assets/sito.js"></script>
+<script src="../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+const B = (id,x,y,t) => ({id,tipo:'rett',x,y,w:150,h:40,t});
+const F = (id,x1,y1,x2,y2) => ({id,tipo:'vett',x1,y1,x2,y2,t:''});
+SCENE.cat = {
+  w: 540, h: 300, lato: true,
+  legenda: 'dato:problema noto (P2),ora:problema della prova (P1),ok:riduzione verificata',
+  oggetti: [
+    B('is',30,30,'Independent Set'), B('vc',360,30,'Vertex Cover'),
+    B('sc',30,130,'Set Cover'), B('sat',360,130,'3SAT'),
+    B('ham',30,230,'Hamiltonian cycle'), B('cl',360,230,'Clique'),
+    F('f1',180,50,355,50), F('f2',180,150,355,150), F('f3',180,250,355,250),
+    {id:'c1',tipo:'testo',x:20,y:270,t:'',size:12,bold:true,anchor:'start'}
+  ],
+  passi: [
+    { nota: 'Il catalogo: problemi decisionali NP-completi. Per la prova scegli un P2 noto con la stessa struttura del tuo P1.', set:{is:{tono:'dato'},vc:{tono:'dato'},sc:{tono:'dato'},sat:{tono:'dato'},ham:{tono:'dato'},cl:{tono:'dato'}} },
+    { nota: '<b>Independent Set ≡ Vertex Cover</b>: G ha un independent set di taglia k se e solo se il complemento è una vertex cover di taglia n − k. Equivalenti.', set:{f1:{tono:'ok'},c1:{t:'IS ≡ VC'}} },
+    { nota: '<b>Set Cover</b> generalizza VC (VC è il caso in cui ogni insieme ha due elementi). <b>3SAT → Independent Set</b> con un gadget. Ogni freccia è una riduzione polinomiale, nella direzione dal noto al nuovo.', set:{f2:{tono:'ok'},f3:{tono:'ok'},c1:{t:'freccia = riduzione P2 ≤p P1 (dal noto al nuovo)',tono:'ok'}} }
+  ]
+};
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Catalogo dei problemi difficili</h1>
+  <p class="lede">I problemi NP-completi da usare come P2 nelle riduzioni. Scegli quello con la struttura più simile al tuo problema: insieme indipendente, copertura, cammino che passa per tutti i nodi, somma di sottoinsieme, colorazione.</p>
+</header>
+
+<section>
+  <h2>Il catalogo</h2>
+<p>Problemi decisionali, con il riconoscimento dalla formulazione del testo:</p>
+<ul>
+  <li><b>Independent Set</b> (k nodi a due a due non adiacenti): "no two adjacent", "never at both ends of a wire".</li>
+  <li><b>Vertex Cover</b> (k nodi che toccano ogni arco): "every wire monitored", "buy all tiles".</li>
+  <li><b>Set Cover</b> (k insiemi la cui unione è tutto): "fewest … whose union is everything".</li>
+  <li><b>3SAT</b> (clausole da tre letterali): "one of three wishes".</li>
+  <li><b>Hamiltonian cycle / path</b> (ciclo o cammino che tocca tutti i nodi): "simple path", "all".</li>
+  <li><b>3-coloring</b>, <b>Clique</b>, <b>Subset sum / Partition</b> (numeri da dividere esattamente in due).</li>
+</ul>
+  <figure class="scena" data-scena="cat" data-titolo="Come riconoscere il problema dal testo"></figure>
+</section>
+<section>
+  <h2>Il test del caso particolare</h2>
+<p>Prima di costruire la riduzione, verifica che il tuo P1 contenga P2 come caso particolare: fissa un parametro di P1 al valore estremo
+(<code>k = 2</code>, <code>r = n</code>, <code>W = V</code>, <code>t = 0</code>) e controlla se ottieni proprio P2. È il modo più veloce di scegliere il P2 giusto.</p>
+</section>
+<section>
+  <h2>La catena delle riduzioni</h2>
+  <figure class="scena" data-scena="albero" data-titolo="Da 3-SAT a tutto il resto (lo schema delle slide)"></figure>
+</section>
+<section>
+  <h2>I sosia facili</h2>
+  <p>Ogni problema difficile ha un <b>gemello</b> che sembra uguale ma si risolve in tempo polinomiale. Quello che cambia è un dettaglio: un ciclo che passa per ogni <i>nodo</i> è difficile, un ciclo che passa per ogni <i>arco</i> è facile.</p>
+  <div class="tab-wrap"><table class="tab"><thead><tr><th>difficile (NP-hard)</th><th>facile (in P)</th><th>con cosa</th></tr></thead><tbody>
+    <tr><td>longest path in un grafo qualsiasi</td><td>shortest path; longest path in un DAG</td><td>BFS/Dijkstra; DP sull’ordine topologico</td></tr>
+    <tr><td>Hamiltonian cycle (ogni nodo una volta)</td><td>ciclo di Eulero (ogni arco una volta)</td><td>controllo dei gradi</td></tr>
+    <tr><td>3-coloring</td><td>2-coloring</td><td>BFS: il grafo è bipartito?</td></tr>
+    <tr><td>3D-matching</td><td>matching bipartito (coppie)</td><td>flusso</td></tr>
+    <tr><td>3-SAT</td><td>2-SAT</td><td>componenti fortemente connesse</td></tr>
+    <tr><td>max cut</td><td>min cut</td><td>flusso</td></tr>
+    <tr><td>independent set / vertex cover in un grafo qualsiasi</td><td>gli stessi su un albero o su intervalli</td><td>DP, greedy (interval scheduling è un independent set sugli intervalli)</td></tr>
+    <tr><td>subset sum con numeri enormi</td><td>subset sum con numeri piccoli</td><td>DP in O(nW)</td></tr>
+    <tr><td>set cover</td><td>edge cover; coprire con intervalli su una retta</td><td>matching, greedy</td></tr>
+  </tbody></table></div>
+  <p>Se i numeri del problema sono piccolissimi e il problema “sembra copertura”, il testo lascia spazio alla ricerca esaustiva. All’esame però decide la struttura, non i numeri: devi saper dire da quale problema noto ridurre.</p>
+</section>
+<section>
+  <h2>Riduzioni già viste negli esami</h2>
+  <p>Negli esami passati la riduzione è quasi l’identità: si traduce ogni pezzo dell’istanza nota in un pezzo del problema nuovo. Non servono gadget complicati come in 3-SAT. Il lavoro è riconoscere il problema noto nascosto nel testo.</p>
+  <div class="tab-wrap"><table class="tab"><thead><tr><th>esame</th><th>problema nuovo</th><th>ridurre da</th><th>l’idea</th></tr></thead><tbody>
+    <tr><td>gen 2019</td><td>Antipathy</td><td>Longest Path</td><td>stessi nodi, archi del grafo complementare</td></tr>
+    <tr><td>21 dic 2021</td><td>Big Cycle</td><td>Hamiltonian Cycle</td><td>stesso grafo, con r = n: un ciclo lungo almeno n è hamiltoniano</td></tr>
+    <tr><td>9 gen 2023</td><td>Sale (domino)</td><td>Vertex Cover</td><td>ogni arco diventa una tessera con i due nodi come numeri; comprare numeri = scegliere nodi</td></tr>
+    <tr><td>note del corso</td><td>Russian Hacking</td><td>Vertex Cover</td><td>nodi → router, archi → fili</td></tr>
+    <tr><td>21 dic 2023</td><td>Bit Shelter</td><td>Set Cover</td><td>insiemi → bitstring</td></tr>
+  </tbody></table></div>
+</section>
+<section>
+  <h2>All’esame</h2>
+<div class="box esame" data-tit="All’esame">
+<p>Scegli P2 dal catalogo guardando la struttura: nodi indipendenti → Independent Set; copertura di archi → Vertex Cover; cammino su tutti i nodi → Hamiltonian; somma esatta → Subset sum.
+Errore frequente: confondere la direzione della riduzione.</p>
+</div>
+</section>
+<section>
+  <h2>Formulario rapido</h2>
+<div class="tab-wrap"><table class="tab"><thead><tr><th>problema</th><th>domanda</th><th>riconoscilo da</th></tr></thead><tbody><tr><td>Independent Set</td><td>k nodi non adiacenti</td><td>“no two adjacent”</td></tr><tr><td>Vertex Cover</td><td>k nodi che toccano ogni arco</td><td>“every wire monitored”</td></tr><tr><td>Hamiltonian</td><td>passa per tutti i nodi</td><td>“simple path … all”</td></tr><tr><td>Subset sum</td><td>somma esatta t</td><td>numeri</td></tr></tbody></table></div>
+</section>
+
+</main>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  const N = {
+    sat: [310, 25, '3-SAT'],
+    is: [80, 100, 'Independent Set'], ham: [245, 100, 'Dir. Ham. Cycle'], col: [390, 100, '3-Color'], ss: [530, 100, 'Subset Sum'],
+    vc: [80, 170, 'Vertex Cover'], hc: [245, 170, 'Ham. Cycle / Path'], ks: [530, 170, 'Knapsack'],
+    sc: [80, 240, 'Set Cover'], tsp: [245, 240, 'TSP'], lp: [390, 240, 'Longest Path']
+  };
+  const ogg = Object.entries(N).map(([id, [x, y, t]]) => ({ id, tipo: 'testo', x, y, t, size: 12.5, bold: true, nascosto: id !== 'sat' }));
+  const A = [['sat', 'is'], ['sat', 'ham'], ['sat', 'col'], ['sat', 'ss'], ['is', 'vc'], ['vc', 'sc'], ['ham', 'hc'], ['hc', 'tsp'], ['hc', 'lp'], ['ss', 'ks']];
+  A.forEach(([a, b]) => ogg.push({ id: a + '_' + b, tipo: 'vett', x1: N[a][0], y1: N[a][1] + 8, x2: N[b][0], y2: N[b][1] - 14, nascosto: true }));
+  const mostra = (...ids) => Object.fromEntries(ids.map(i => [i, { nascosto: false }]));
+  SCENE.albero = {
+    w: 620, h: 260, lato: false, legenda: 'ok:appena aggiunto alla catena',
+    oggetti: ogg,
+    passi: [
+      { nota: 'Si parte da <b>3-SAT</b>, NP-completo per il teorema di Cook-Levin. Ogni freccia A → B è una riduzione A ≤<sub>p</sub> B: B è almeno difficile quanto A.', set: { sat: { tono: 'ok' } } },
+      { nota: '<b>Packing e covering</b>: 3-SAT → Independent Set (gadget a triangoli) → Vertex Cover (complemento) → Set Cover (caso particolare).', set: Object.assign(mostra('is', 'vc', 'sc', 'sat_is', 'is_vc', 'vc_sc'), { is: { nascosto: false, tono: 'ok' }, vc: { nascosto: false, tono: 'ok' }, sc: { nascosto: false, tono: 'ok' } }) },
+      { nota: '<b>Sequencing</b>: 3-SAT → Hamiltonian Cycle orientato → non orientato → TSP e Longest Path.', set: Object.assign(mostra('ham', 'hc', 'tsp', 'lp', 'sat_ham', 'ham_hc', 'hc_tsp', 'hc_lp'), { is: { tono: null }, vc: { tono: null }, sc: { tono: null }, ham: { nascosto: false, tono: 'ok' }, hc: { nascosto: false, tono: 'ok' }, tsp: { nascosto: false, tono: 'ok' }, lp: { nascosto: false, tono: 'ok' } }) },
+      { nota: '<b>Partitioning</b>: 3-SAT → 3-Color (colorare un grafo con 3 colori). <b>Numerical</b>: 3-SAT → Subset Sum → Knapsack (nel libro Subset Sum passa da 3D-Matching).', set: Object.assign(mostra('col', 'ss', 'ks', 'sat_col', 'sat_ss', 'ss_ks'), { ham: { tono: null }, hc: { tono: null }, tsp: { tono: null }, lp: { tono: null }, col: { nascosto: false, tono: 'ok' }, ss: { nascosto: false, tono: 'ok' }, ks: { nascosto: false, tono: 'ok' } }) },
+      { nota: 'All\'esame non si rifà la catena: si prende il problema <b>più vicino</b> al nuovo (quello da cui la riduzione è più corta) e si riduce da lui.', set: { col: { tono: null }, ss: { tono: null }, ks: { tono: null } } }
+    ]
+  };
+})();
+</script>
+</body>
+</html>

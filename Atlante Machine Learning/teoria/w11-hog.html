@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>HOG: istogrammi di gradienti</title>
+<link rel="stylesheet" href="../assets/atlas.css">
+<link rel="stylesheet" href="../assets/tema.css">
+<script src="../assets/sito.js"></script>
+<script src="../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  const px = [[0, 0, 2, 0], [1, 0, 1, 0], [2, 90, 3, 2], [3, 45, 1, 1]];
+  const ogg = [{ id: 'G', tipo: 'griglia', x: 30, y: 40, cw: 44, ch: 44, valori: [['', '', '', ''], ['', '', '', ''], ['', '', '', ''], ['', '', '', '']] }];
+  ogg.push({ id: 'tg', tipo: 'testo', x: 118, y: 24, t: 'una cella (4 × 4 pixel)', size: 13 });
+  const cx = k => 30 + 22 + (k % 4) * 44, cy = k => 40 + 22 + Math.floor(k / 4) * 44;
+  const pix = [5, 6, 9, 10];
+  px.forEach(([i, ang, mag], j) => {
+    const k = pix[j], L = 8 + mag * 5, a = ang * Math.PI / 180;
+    ogg.push({ id: 'v' + j, tipo: 'vett', x1: cx(k) - Math.cos(a) * L / 2, y1: cy(k) + Math.sin(a) * L / 2, x2: cx(k) + Math.cos(a) * L / 2, y2: cy(k) - Math.sin(a) * L / 2, tono: 'dato' });
+  });
+  const base = 220, sc = 40, etich = ['0°', '45°', '90°', '135°'];
+  etich.forEach((t, b) => {
+    ogg.push({ id: 'b' + b, tipo: 'rett', x: 280 + b * 60, y: base, w: 44, h: 0.01, t: '', tono: 'ok' });
+    ogg.push({ id: 'e' + b, tipo: 'testo', x: 302 + b * 60, y: base + 14, t, size: 12 });
+    ogg.push({ id: 'h' + b, tipo: 'testo', x: 302 + b * 60, y: base - 8, t: '', size: 12, bold: true });
+  });
+  ogg.push({ id: 'th', tipo: 'testo', x: 390, y: 24, t: 'istogramma delle direzioni', size: 13 });
+  ogg.push({ id: 'n', tipo: 'testo', x: 270, y: 262, t: '', size: 13, bold: true });
+  const barra = (b, v) => ({ ['b' + b]: { y: base - v * sc, h: v * sc }, ['h' + b]: { t: String(v) } });
+  SCENE.istogramma = {
+    w: 540, h: 275, lato: false,
+    legenda: 'dato:gradiente di un pixel,ora:pixel che vota,ok:barra dell\'istogramma',
+    oggetti: ogg,
+    passi: [
+      { nota: 'Una cella con quattro pixel dove il gradiente non è zero (esempio semplificato, 4 intervalli di direzione). La freccia indica la direzione del gradiente, la lunghezza la sua grandezza.' },
+      { nota: 'Primo pixel: direzione 0°, grandezza 2. Vota nell\'intervallo 0° con peso <b>2</b>.', set: Object.assign({ v0: { tono: 'ora' } }, barra(0, 2)) },
+      { nota: 'Secondo: 0°, grandezza 1. L\'intervallo 0° arriva a <b>3</b>.', set: Object.assign({ v0: { tono: 'dato' }, v1: { tono: 'ora' } }, barra(0, 3)) },
+      { nota: 'Terzo: 90°, grandezza 3.', set: Object.assign({ v1: { tono: 'dato' }, v2: { tono: 'ora' } }, barra(2, 3)) },
+      { nota: 'Quarto: 45°, grandezza 1. I pixel senza gradiente (tutti gli altri) votano con peso 0.', set: Object.assign({ v2: { tono: 'dato' }, v3: { tono: 'ora' } }, barra(1, 1)) },
+      { nota: 'L\'istogramma della cella è [3, 1, 3, 0]. Nei blocchi si normalizza dividendo per la norma √19 ≈ 4.36: [0.69, 0.23, 0.69, 0]. Conta la forma, non il contrasto.', set: { v3: { tono: 'dato' }, n: { t: '[3, 1, 3, 0] → [0.69, 0.23, 0.69, 0]', tono: 'ok' } } }
+    ]
+  };
+})();
+</script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  const D = {"c2": [0.035, 1.061, 29.212], "v2": 0.7853981633974483, "c10": [0.483, 1.713, 2.544], "v10": 0.00249039457019272, "c100": [3.376, 4.771, 0.413], "v100": 1.8681820538375915e-70, "c1000": [12.203, 13.53, 0.109], "v1000": 0.0, "f2": 0.7851, "f3": 0.5225, "f10": 0.0024, "griglia": {"1": 10, "2": 100, "3": 1000, "10": 10000000000}, "eig": [1.0, 3.0], "V": [[-0.7071, 0.7071], [0.7071, 0.7071]], "metr": {"a": [1.5, 2.5, 1.58, 0.5], "b": [2.5, 10.5, 3.24, -1.1]}, "sbil": [0.95, 0.0, 0.0, 0.0]};
+  const T = (id, x, y, t, extra) => Object.assign({ id, tipo: 'testo', x, y, t, size: 13 }, extra || {});
+  const R = (id, x, y, w, h, t, extra) => Object.assign({ id, tipo: 'rett', x, y, w, h, t }, extra || {});
+  const P = (id, x, y, t, extra) => Object.assign({ id, tipo: 'punto', in: 'ax', x, y, t }, extra || {});
+  const L = (id, x1, y1, x2, y2, extra) => Object.assign({ id, tipo: 'linea', in: 'ax', x1, y1, x2, y2 }, extra || {});
+  const V = (id, x1, y1, x2, y2, t, extra) => Object.assign({ id, tipo: 'vett', in: 'ax', x1, y1, x2, y2, t }, extra || {});
+  const C = (id, x, y, valori, extra) => Object.assign({ id, tipo: 'celle', x, y, cw: 52, ch: 36, valori, indici: false }, extra || {});
+
+    SCENE.hogperche = {
+      w: 620, h: 250, lato: true,
+      legenda: 'dato:pixel,ok:gradiente (differenze),no:cambiato',
+      oggetti: [T('t1', 90, 52, 'pixel', { anchor: 'end', size: 12 }), C('px', 100, 34, ['10', '10', '50', '50']), T('t2', 90, 112, 'differenze', { anchor: 'end', size: 12 }), C('gr', 126, 94, ['0', '40', '0'], { toni: { 1: 'ok' } }),
+        T('c', 470, 52, '', { size: 12 }), T('c2', 470, 112, '', { size: 12 }), T('c3', 310, 180, '', { size: 12 }), T('c4', 310, 215, '', { size: 12 })],
+      passi: [
+        { nota: "Perché HOG funziona meglio dei pixel grezzi? Una riga di quattro pixel con un bordo, e le sue differenze (il gradiente): 0, 40, 0." },
+        { nota: "<b>Luce</b>: la stessa scena più illuminata (+50 a ogni pixel). I pixel cambiano tutti…", set: { px: { valori: ['60', '60', '100', '100'], toni: { 0: 'no', 1: 'no', 2: 'no', 3: 'no' } }, c: { t: 'pixel: tutti diversi', tono: 'no' } } },
+        { nota: "…le differenze <b>no</b>: 0, 40, 0. I gradienti guardano differenze, non valori assoluti; la normalizzazione per blocchi toglie anche il contrasto.", set: { c2: { t: 'gradiente: identico', tono: 'ok' } } },
+        { nota: "<b>Piccoli spostamenti</b>: dentro una cella 8 × 8 conta <b>quante</b> direzioni ci sono, non dove esattamente: un bordo spostato di un pixel lascia l'istogramma quasi uguale. <b>Forma</b>: una persona in piedi ha tanti bordi verticali in posizioni simili, e il vettore HOG lo cattura.", set: { c3: { t: 'istogramma per cella: tollera piccoli spostamenti' } } },
+        { nota: "Limiti: rotazioni grandi e cambi di scala cambiano le celle; i parametri si scelgono a mano. Ma con buone feature classi intrecciate nello spazio dei pixel diventano quasi separabili da un iperpiano: basta un classificatore lineare. Le CNN imparano da sole filtri simili.", set: { c4: { t: 'buone feature → basta un classificatore lineare' } } }
+      ]
+    };
+  
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>HOG: istogrammi di gradienti</h1>
+  <p class="lede">Lezione 9 ed esercizi della settimana 11 (<i>HoG</i>, <i>HoG classifier</i>). HOG (Histogram of Oriented Gradients) trasforma un'immagine in un vettore di feature che descrive la <b>forma</b>: le direzioni dei bordi, cella per cella. Unisce i <a href="w08-derivate-bordi.html">gradienti</a> della settimana 8 e i classificatori della settimana 10. Domande d'esame <b>Q6 (b)</b> e <b>Q8 (c)</b>.</p>
+</header>
+
+<section>
+  <h2>Come si costruisce</h2>
+  <figure class="passi" data-titolo="Dall'immagine al vettore">
+    <div class="passo"><div class="espr">1. gradiente in ogni pixel:  <mark class="dato">I<sub>x</sub>, I<sub>y</sub></mark>  →  grandezza e <mark class="ora">direzione</mark></div><p class="nota">Con filtri derivata (come Sobel): dove c'è un bordo la grandezza è grande, la direzione è perpendicolare al bordo.</p></div>
+    <div class="passo"><div class="espr">2. celle di 8 × 8 pixel  →  un <mark class="ora">istogramma delle direzioni</mark> per cella</div><p class="nota">Le direzioni si dividono in pochi intervalli (nell'esercizio <code>orientations=8</code>); ogni pixel vota per il suo intervallo con un peso pari alla grandezza del gradiente. I pixel piatti votano quasi zero.</p></div>
+    <div class="passo"><div class="espr">3. blocchi di 2 × 2 celle  →  <mark class="due">normalizzazione</mark></div><p class="nota">Ogni blocco viene diviso per la sua norma: così la luminosità e il contrasto contano poco, conta la forma. I blocchi si sovrappongono.</p></div>
+    <div class="passo"><div class="espr">4. tutti gli istogrammi in fila  →  <mark class="ok">un vettore di feature</mark></div><p class="nota">Immagine 64 × 64: 8 × 8 celle, 7 × 7 = 49 blocchi, ognuno 2 × 2 × 8 = 32 numeri ⇒ <b>1568</b> numeri. Immagine 128 × 64: <b>3360</b>. Verificato con <code>skimage.feature.hog</code>.</p></div>
+  </figure>
+  <p class="piccolo">Controllo: in un'immagine con un solo bordo verticale (nero a sinistra, bianco a destra), le celle accanto al bordo mettono tutto il peso in un solo intervallo, quello della direzione orizzontale del gradiente.</p>
+  <figure class="scena" data-scena="istogramma" data-titolo="I pixel votano: l'istogramma di una cella"></figure>
+  <figure class="codice" data-titolo="Nell'esercizio">
+<pre data-lang="python">fd, hog_image = hog(image, orientations=8, pixels_per_cell=(8, 8),
+                    cells_per_block=(2, 2), visualize=True, channel_axis=-1)
+X_train = np.array([hog(im, orientations=8, pixels_per_cell=(8, 8),
+                        cells_per_block=(2, 2)) for im in images])</pre>
+    <ol class="spiega">
+      <li data-righe="1-2" data-segna="orientations=8@ora|pixels_per_cell=(8, 8)@dato|cells_per_block=(2, 2)@due"><p>I tre parametri dei passi 2–3. <code>visualize=True</code> restituisce anche l'immagine con le "stelline" delle direzioni dominanti; <code>channel_axis=-1</code> dice che l'ultimo asse sono i colori.</p></li>
+      <li data-righe="3-4" data-segna="X_train@ok"><p>Un vettore HOG per ogni immagine: la matrice dei dati (immagini × feature) su cui si allena un classificatore lineare o un'SVM. Con una <b>finestra scorrevole</b> (Task 3 del classificatore) si applica lo stesso modello a ogni pezzo di un'immagine grande.</p></li>
+    </ol>
+  </figure>
+</section>
+
+<section>
+  <h2>Perché funziona meglio dei pixel</h2>
+  <ul>
+    <li><b>Luce</b>: i gradienti guardano differenze, non valori assoluti, e la normalizzazione per blocchi toglie il contrasto.</li>
+    <li><b>Piccoli spostamenti</b>: dentro una cella di 8 × 8 conta quante direzioni ci sono, non dove esattamente.</li>
+    <li><b>Forma</b>: una persona in piedi ha tanti bordi verticali (gambe, busto) in posizioni simili: il vettore HOG lo cattura.</li>
+    <li>Limiti: rotazioni grandi e cambi di scala cambiano le celle; i parametri (celle, intervalli) si scelgono a mano. Le reti convoluzionali imparano da sole filtri simili (settimana 14).</li>
+  </ul>
+  <div class="box idea" data-tit="Feature migliori, classificatore più semplice">
+    <p>Domanda di ripasso della settimana 9: perché scegliere buone feature conta spesso più del classificatore? Con HOG, classi che nello spazio dei pixel sono intrecciate diventano quasi separabili da un iperpiano: basta un classificatore lineare. È la stessa idea delle coordinate polari per l'<a href="w10-confini-non-lineari.html">anello</a>.</p>
+  </div>
+  <div class="box esame" data-tit="Q6 (b) e Q8 (c)">
+    <p>Q6 (b): da derivate e gradienti a HOG (passi 1–4). Q8 (c): HOG come feature per un classificatore lineare o un'SVM, con la finestra scorrevole.</p>
+  </div>
+  <figure class="scena" data-scena="hogperche" data-titolo="Luce, spostamenti, forma"></figure>
+</section>
+
+</main>
+</body>
+</html>

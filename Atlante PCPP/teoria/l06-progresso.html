@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Wait-free, lock-free, obstruction-free</title>
+<link rel="stylesheet" href="../assets/atlas.css">
+<link rel="stylesheet" href="../assets/tema.css">
+<script src="../assets/sito.js"></script>
+<script src="../assets/atlas.js" defer></script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Wait-free, lock-free, obstruction-free</h1>
+  <p class="lede">Lezione 6 (<i>Lock-Free Data Structures</i>), slide 14–17. Senza lock nessun thread resta bloccato da un altro, ma "chi finisce, e quando?" ha tre risposte diverse: sono le tre <b>condizioni di progresso</b> (progress conditions) delle strutture dati non bloccanti. Herlihy, sezione 3.8.</p>
+</header>
+
+<section>
+  <h2>Da dove si parte: il problema dei lock</h2>
+  <p>Con un lock, se il thread che lo tiene viene sospeso dallo scheduler (o si blocca), <b>tutti</b> gli altri aspettano, per un tempo che non dipende da loro. Un'implementazione <b>non bloccante</b> (non-blocking) evita i lock e usa il CAS: nessun thread può tenere fermi gli altri.</p>
+  <p>Le tre condizioni dicono <b>quanto è forte</b> la garanzia che le chiamate finiscano. Si leggono tutte con la stessa domanda: <i>"di chi</i> è garantito che finisca in un numero finito di passi?"</p>
+  <div class="box domanda-tua" data-tit="Ma queste &quot;free&quot; rendono il codice corretto in parallelo?">
+    <p><b>No: sono due domande diverse.</b></p>
+    <ul>
+      <li><b>Il risultato è giusto?</b> (safety: niente incrementi persi, niente duplicati). Lo garantisce il <b>CAS</b>: scrive solo se il valore è ancora quello letto, altrimenti non scrive niente.</li>
+      <li><b>Le chiamate finiscono? Qualcuno può restare bloccato?</b> (progresso, cioè liveness). Questo misurano wait-free, lock-free e obstruction-free.</li>
+    </ul>
+    <p>Anche un lock dà un risultato giusto. Quello che il lock <b>non</b> garantisce è il progresso: se il thread che lo tiene si ferma, si fermano tutti.</p>
+  </div>
+  <figure class="passi" data-titolo="All'atto pratico: T1 viene sospeso a metà di increment()" data-legenda="dato:T1,due:gli altri thread,no:bloccati,ok:vanno avanti">
+    <div class="passo"><div class="espr"><mark class="dato">T1</mark> legge 5, e lo scheduler lo sospende per 1 secondo</div><p class="nota">Succede davvero: fine del quanto di tempo, page fault, interrupt, un thread a priorità più alta.</p></div>
+    <div class="passo"><div class="espr">con un lock:  <mark class="dato">T1</mark> tiene il lock  →  <mark class="due">T2, T3, T4</mark> <mark class="no">aspettano 1 secondo</mark></div><p class="nota">Nessuno può entrare finché T1 non riparte e fa <code>unlock()</code>. Se T1 muore tenendo il lock, aspettano per sempre. È <b>bloccante</b>.</p></div>
+    <div class="passo"><div class="espr">con il CAS:  <mark class="due">T2, T3, T4</mark> <mark class="ok">incrementano</mark>  5 → 6 → 7 → 8</div><p class="nota">T1 non tiene niente: il suo lavoro "a metà" (ha letto 5) è solo nella sua variabile locale, e gli altri non lo vedono. Nessuno aspetta T1.</p></div>
+    <div class="passo"><div class="espr"><mark class="dato">T1</mark> riparte: CAS(5 → 6) <mark class="no">fallisce</mark>, rilegge 8, CAS(8 → 9) <mark class="ok">riesce</mark></div><p class="nota">Il valore non valeva più 5, quindi il CAS non sovrascrive: nessun incremento perso (safety). T1 riprova e finisce. Il sistema non si è mai fermato (lock-free).</p></div>
+  </figure>
+</section>
+
+<section>
+  <h2>Le tre definizioni</h2>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>condizione</th><th>garanzia (slide)</th><th>in parole</th><th>chi finisce</th></tr></thead>
+    <tbody>
+      <tr><td><b>wait-free</b></td><td>ogni chiamata finisce in un numero finito di passi</td><td>"le <b>mie</b> operazioni finiscono, qualunque cosa facciano gli altri"</td><td><mark class="ok">tutti</mark></td></tr>
+      <tr><td><b>lock-free</b></td><td>eseguire il metodo garantisce che <b>qualche</b> chiamata (anche concorrente) finisca in un numero finito di passi</td><td>"le operazioni di <b>qualcuno</b> finiscono"</td><td><mark class="due">almeno uno</mark></td></tr>
+      <tr><td><b>obstruction-free</b></td><td>da qualsiasi punto in cui esegue <b>da solo</b> (in isolation), finisce in un numero finito di passi</td><td>"le mie operazioni finiscono, <b>se mi lasciano</b> eseguire"</td><td><mark class="ora">chi resta solo</mark></td></tr>
+    </tbody>
+  </table></div>
+  <div class="box regola" data-tit="La catena (slide 15)">
+    <p><b>wait-free ⇒ lock-free ⇒ obstruction-free</b>. Ogni condizione implica quella sotto:</p>
+    <ul>
+      <li>se <b>tutti</b> finiscono, allora <b>qualcuno</b> finisce: wait-free ⇒ lock-free;</li>
+      <li>se qualcuno finisce sempre, e io sto eseguendo <b>da solo</b>, quel qualcuno posso essere solo io: lock-free ⇒ obstruction-free.</li>
+    </ul>
+    <p>Al contrario non vale: la garanzia si indebolisce scendendo.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Lock-free: il ciclo CAS</h2>
+  <p>La slide 17 chiede: che condizione ha <code>addAndGet</code> di <code>AtomicInteger</code>, scritto con un ciclo CAS?</p>
+  <pre class="cod" data-lang="java" data-segna="compareAndSet(oldValue, newValue)@ora">do {
+    oldValue = get();
+    newValue = oldValue + delta;
+} while (!compareAndSet(oldValue, newValue));</pre>
+  <figure class="passi" data-titolo="Perché è lock-free" data-legenda="ok:chi vince,no:chi perde,ora:il punto chiave">
+    <div class="passo"><div class="espr">T1 e T2 leggono 5, provano CAS(5 → 6)</div><p class="nota">Due thread nello stesso ciclo, sullo stesso valore.</p></div>
+    <div class="passo"><div class="espr">T1: CAS <mark class="ok">riesce</mark>   T2: CAS <mark class="no">fallisce</mark></div><p class="nota">Un solo CAS può riuscire: il valore è cambiato.</p></div>
+    <div class="passo"><div class="espr">T2 fallisce <mark class="ora">solo perché</mark> T1 è riuscito</div><p class="nota">Un CAS fallisce solo se un altro thread ha cambiato il valore, cioè ha <b>completato</b> la sua operazione. Quindi ogni fallimento corrisponde a un progresso di qualcun altro: il sistema non si ferma mai. È <b>lock-free</b>.</p></div>
+    <div class="passo"><div class="espr">T2 può perdere <mark class="no">per sempre</mark></div><p class="nota">Nulla vieta che T2 perda ogni giro, contro T1, T3, T4… (starvation). Non c'è un limite ai tentativi di T2: <b>non</b> è wait-free.</p></div>
+  </figure>
+  <p>La maggior parte delle strutture non bloccanti è lock-free: lo stack di Treiber, la coda di Michael-Scott, <code>ConcurrentSkipListSet</code>, il <code>CasHistogram</code> dell'esercizio 6.1 (<code>increment</code>, <code>getAndClear</code>).</p>
+</section>
+
+<section>
+  <h2>Wait-free e obstruction-free: esempi</h2>
+  <div class="colonne">
+    <div class="carta buona"><h4>Wait-free</h4><p>Nessun ciclo che dipende dagli altri. <code>getCount(bin)</code> del <code>CasHistogram</code> fa una sola <code>get()</code>: finisce in un passo, qualunque cosa succeda. Anche <code>getSpan()</code>.</p></div>
+    <div class="carta media"><h4>Obstruction-free</h4><p>Due thread possono <b>annullarsi a vicenda</b> per sempre: ognuno disfa il lavoro a metà dell'altro, e nessuno finisce (livelock). Come due persone in un corridoio che si spostano sempre dalla stessa parte. Ma se uno dei due resta solo, finisce.</p></div>
+  </div>
+</section>
+
+<section>
+  <h2>Senza lock, chi garantisce che il CAS sia atomico?</h2>
+  <div class="box domanda-tua" data-tit="Che lock è? Funziona sulla fiducia?">
+    <p>Né lock né fiducia: la garanzia viene dal <b>processore</b>. Il CAS è una <b>singola istruzione macchina</b> (slide 8: i processori moderni hanno istruzioni apposta, come compare-and-swap). Il confronto e la scrittura avvengono dentro quell'unica istruzione, e l'hardware impedisce a un altro core di toccare quella cella di memoria finché l'istruzione non è finita (su x86 è <code>LOCK CMPXCHG</code>).</p>
+    <p>Quindi un "blocco" c'è, ma dura <b>una istruzione</b>, pochi nanosecondi, e lo gestisce l'hardware. Nessun thread può tenerlo e poi addormentarsi: la differenza con un <code>lock()</code>, che resta preso per tutta la sezione critica, anche mentre il thread è sospeso.</p>
+  </div>
+  <div class="colonne">
+    <div class="carta"><h4>Lock: pessimista</h4><p>"Qualcuno potrebbe disturbarmi, quindi <b>prima</b> prenoto e chiudo la porta, poi lavoro." Gli altri aspettano fuori, anche se non avrebbero toccato niente.</p></div>
+    <div class="carta"><h4>CAS: ottimista (slide 17)</h4><p>"Probabilmente nessuno mi disturba: lavoro sulla mia copia e <b>alla fine</b> controllo. Se qualcuno ha cambiato il valore, butto il mio lavoro e rifaccio." È l'<i>optimistic concurrency</i>.</p></div>
+  </div>
+  <div class="box basi" data-tit="Se conosci Git">
+    <p>Il ciclo CAS funziona come un <code>git push</code>. Lavori in locale (leggi il valore, calcoli il nuovo). Poi fai push: se nel frattempo nessuno ha pushato, passa. Se qualcuno ha pushato prima, il push viene <b>rifiutato</b> (non sovrascrive il lavoro altrui): fai pull, rifai il calcolo sul valore nuovo, ripushi. Nessuno ha mai bloccato il repository.</p>
+  </div>
+  <div class="box attenzione" data-tit="L'hardware protegge un passo, non il tuo algoritmo">
+    <p>Il CAS è indivisibile, e nessun thread può tenere gli altri in ostaggio. Ma il codice intorno può essere sbagliato lo stesso:</p>
+    <ul>
+      <li><b>un CAS per campo quando l'invariante lega più campi</b>: <code>NumberRange</code> sotto finisce con lower &gt; upper;</li>
+      <li><b>scrivere con <code>set()</code> invece che con il CAS</b>: "leggo, calcolo, <code>set</code>" è di nuovo un read-modify-write non atomico, e gli aggiornamenti si perdono;</li>
+      <li><b>usare un valore diverso da quello del CAS</b>: in <code>getAndClear</code> va restituito il valore che il CAS ha azzerato, non una rilettura fatta dopo;</li>
+      <li><b>il valore torna uguale</b>: il CAS confronta solo il valore, quindi A → B → A sembra "non cambiato" (problema ABA, più avanti nella lezione).</li>
+    </ul>
+  </div>
+</section>
+
+<section>
+  <h2>Il CAS sostituisce i lock?</h2>
+  <div class="box domanda-tua" data-tit="Il CAS è solo un'ottimizzazione, e i lock vanno messi comunque?">
+    <p><b>No, su entrambe le cose.</b> In una struttura lock-free i lock <b>non ci sono</b>: <code>CasHistogram</code>, lo stack di Treiber e <code>ConcurrentSkipListSet</code> sono corretti senza nessun <code>lock()</code>. Il CAS fa da solo tutti e due i lavori: rende l'aggiornamento atomico (safety) e non blocca nessuno (progresso).</p>
+    <p>E non è detto che sia più veloce: con molti thread che si contendono lo stesso valore i CAS falliscono spesso e si riprova a vuoto. Le slide 32–33 (generatore di numeri casuali) mostrano che, sotto alta contesa, la versione CAS può scalare <b>peggio</b>, e che conta di più la <b>località</b> (ogni thread con il suo oggetto, <code>ThreadLocal</code>) che l'essere lock-free. Il vantaggio vero del CAS è la garanzia di progresso, non la velocità.</p>
+  </div>
+  <p>Il limite del CAS: agisce su <b>una sola variabile</b> alla volta. Se l'invariante lega più campi, due CAS separati non bastano.</p>
+  <figure class="passi" data-titolo="NumberRange: l'invariante lower ≤ upper (slide 20–22)" data-legenda="no:rotto,ok:corretto,ora:cosa cambia">
+    <div class="passo"><div class="espr">due AtomicInteger: lower, upper   stato (0, 5)</div><p class="nota">Ogni campo è atomico da solo, ma l'invariante riguarda <b>la coppia</b>.</p></div>
+    <div class="passo"><div class="espr">T1: setLower(4) controlla 4 ≤ upper=5 ✔    T2: setUpper(3) controlla 3 ≥ lower=0 ✔</div><p class="nota">Tutti e due i controlli passano, perché ognuno guarda il valore vecchio dell'altro campo.</p></div>
+    <div class="passo"><div class="espr">T1 scrive lower=4, T2 scrive upper=3  →  (4, 3)  <mark class="no">lower &gt; upper</mark></div><p class="nota">Check-then-act su due variabili: nessuna delle due scritture è sbagliata da sola, ma insieme rompono l'invariante. Goetz: "don't do this".</p></div>
+    <div class="passo"><div class="espr"><mark class="ora">AtomicReference&lt;IntPair&gt;</mark>: la coppia in un oggetto immutabile</div><p class="nota"><code>CasNumberRange</code>: si legge la coppia, si controlla, si crea una <b>nuova</b> coppia e si fa <b>un solo</b> CAS sul riferimento. Se nel frattempo qualcuno ha cambiato la coppia, il CAS fallisce e si ricontrolla: <mark class="ok">l'invariante regge</mark>.</p></div>
+  </figure>
+  <p>Regola pratica: stato in <b>una</b> variabile (o impacchettabile in un oggetto immutabile) → il CAS basta e sostituisce il lock. Stato sparso su più oggetti, oppure serve <b>aspettare</b> una condizione (buffer non vuoto) → lock e monitor restano lo strumento giusto.</p>
+</section>
+
+<section>
+  <h2>Non bloccante non vuol dire busy-wait</h2>
+  <div class="box attenzione" data-tit="Slide 14 e 16">
+    <p>Il <b>busy-wait</b> (<code>while (i &gt; 0) { }</code>) aspetta che <b>un altro thread</b> cambi qualcosa: se quel thread si ferma, il ciclo gira per sempre. Nel corso è vietato: le soluzioni con busy-wait vengono rifiutate.</p>
+    <p>Un ciclo CAS invece non aspetta nessuno: ripete perché un altro thread <b>è andato avanti</b>, e con le tre condizioni la terminazione è garantita (almeno in isolamento). Per questo il ciclo CAS è ammesso, ma <b>solo</b> per implementazioni basate su CAS.</p>
+  </div>
+  <div class="box inglese" data-tit="Frase modello">
+    <p>"The CAS loop in <i>addAndGet</i> is lock-free but not wait-free: a CAS fails only if another thread's CAS succeeded, so some call always completes, but a single thread may keep losing and never finish. Wait-free implies lock-free, which implies obstruction-free."</p>
+  </div>
+</section>
+
+<section>
+  <h2>Mettiti alla prova</h2>
+  <div class="quiz">
+    <div class="domanda">
+      <p class="q">Un metodo fa un ciclo CAS che fallisce solo quando un altro thread è riuscito. Che condizione ha?</p>
+      <div class="opzioni"><button>wait-free</button><button data-giusta>lock-free</button><button>nessuna</button></div>
+      <div class="perche"><p>Qualcuno finisce sempre (lock-free), ma un singolo thread può perdere all'infinito (non wait-free).</p></div>
+    </div>
+    <div class="domanda">
+      <p class="q">Un'implementazione è wait-free. Cosa puoi dire?</p>
+      <div class="opzioni"><button>è solo wait-free</button><button data-giusta>è anche lock-free e obstruction-free</button><button>non è lock-free</button></div>
+      <div class="perche"><p>wait-free ⇒ lock-free ⇒ obstruction-free.</p></div>
+    </div>
+    <div class="domanda">
+      <p class="q">Quale garantisce solo che un thread finisca <b>quando esegue da solo</b>?</p>
+      <div class="opzioni"><button>lock-free</button><button>wait-free</button><button data-giusta>obstruction-free</button></div>
+      <div class="perche"><p>Con altri thread attivi può non finire nessuno (livelock).</p></div>
+    </div>
+  </div>
+</section>
+
+</main>
+</body>
+</html>

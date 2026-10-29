@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Implementare Gale-Shapley (e Draft)</title>
+<link rel="stylesheet" href="../assets/atlas.css">
+<link rel="stylesheet" href="../assets/tema.css">
+<script src="../assets/sito.js"></script>
+<script src="../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  SCENE.arraygs = {
+    w: 600, h: 300, lato: true,
+    legenda: 'ora:letto adesso,due:termine di confronto,ok:fidanzati,no:torna in coda,dato:next aggiornato',
+    codice: { lang: 'java', testo: `int[][] rank = new int[n][n];
+for (int x = 0; x < n; x++)
+    for (int k = 0; k < n; k++) rank[x][prefX[x][k]] = k;
+int[] next = new int[n];
+int[] partnerX = new int[n];
+Arrays.fill(partnerX, -1);
+Deque<Integer> liberi = new ArrayDeque<>();
+for (int a = 0; a < n; a++) liberi.add(a);
+while (!liberi.isEmpty()) {
+    int a = liberi.poll();
+    int x = pref[a][next[a]++];
+    if (partnerX[x] == -1) partnerX[x] = a;
+    else if (rank[x][a] < rank[x][partnerX[x]]) {
+        liberi.add(partnerX[x]);
+        partnerX[x] = a;
+    } else liberi.add(a);
+}` },
+    oggetti: [
+      { id: 'tpref', tipo: 'testo', x: 95, y: 14, t: 'pref[a][k]', size: 12, bold: true },
+      { id: 'gpref', tipo: 'griglia', x: 20, y: 26, cw: 40, ch: 30, cwR: 30, intR: ['A', 'B', 'C'], intC: ['0', '1', '2'], valori: [['X', 'Y', 'Z'], ['X', 'Z', 'Y'], ['Y', 'X', 'Z']] },
+      { id: 'trank', tipo: 'testo', x: 305, y: 14, t: 'rank[x][a]', size: 12, bold: true },
+      { id: 'grank', tipo: 'griglia', x: 230, y: 26, cw: 40, ch: 30, cwR: 30, intR: ['X', 'Y', 'Z'], intC: ['A', 'B', 'C'], valori: [[1, 0, 2], [0, 2, 1], [0, 1, 2]] },
+      { id: 'tlib', tipo: 'testo', x: 500, y: 14, t: 'liberi (coda)', size: 12, bold: true },
+      { id: 'clib', tipo: 'celle', x: 440, y: 36, cw: 40, valori: ['A', 'B', 'C'], etichette: ['testa'] },
+      { id: 'va', tipo: 'testo', x: 500, y: 116, t: '', size: 14 },
+      { id: 'vx', tipo: 'testo', x: 500, y: 140, t: '', size: 14 },
+      { id: 'tnext', tipo: 'testo', x: 110, y: 184, t: 'next[a]', size: 12, bold: true },
+      { id: 'cnext', tipo: 'celle', x: 50, y: 196, cw: 40, valori: [0, 0, 0], etichette: ['A', 'B', 'C'] },
+      { id: 'tpart', tipo: 'testo', x: 320, y: 184, t: 'partnerX[x]', size: 12, bold: true },
+      { id: 'cpart', tipo: 'celle', x: 260, y: 196, cw: 40, valori: ['-1', '-1', '-1'], etichette: ['X', 'Y', 'Z'] },
+      { id: 'stato', tipo: 'testo', x: 300, y: 280, t: '', size: 14, bold: true }
+    ],
+    passi: [
+      { nota: "Gli stessi 3 + 3 della pagina sullo stable matching, visti dagli array. A, B, C (e X, Y, Z) sono gli <code>int</code> 0, 1, 2. <b>rank</b> è già costruita, <b>next</b> è tutto 0, <b>partnerX</b> tutto −1, tutti i proponenti sono in coda.", righe: [1, 2, 3, 4, 5, 6, 7, 8] },
+      { nota: "<code>poll()</code> toglie la testa della coda: <b>a = A</b>.", righe: [10], set: { clib: { valori: ['B', 'C'] }, va: { t: 'a = A', tono: 'ora' } } },
+      { nota: "next[A] = 0, quindi x = pref[A][0] = <b>X</b>, il primo della lista di A. Poi <code>next[a]++</code> porta next[A] a 1: A non chiederà più a X.", righe: [11], set: { gpref: { toni: { '0,0': 'ora' } }, cnext: { valori: [1, 0, 0], toni: { 0: 'dato' } }, vx: { t: 'x = X', tono: 'ora' } } },
+      { nota: "partnerX[X] == −1: X è libero e si fidanza con A. Una lettura e una scrittura: <i>O(1)</i>.", righe: [12], set: { cpart: { valori: ['A', '-1', '-1'], toni: { 0: 'ok' } }, stato: { t: 'partnerX[X] era -1: X era libero' } } },
+      { nota: "Tocca a <b>B</b>: next[B] = 0, quindi chiede a pref[B][0] = <b>X</b>.", righe: [10, 11], set: { clib: { valori: ['C'] }, va: { t: 'a = B' }, vx: { t: 'x = X' }, gpref: { toni: { '1,0': 'ora' } }, cnext: { valori: [1, 1, 0], toni: { 1: 'dato' } }, cpart: { toni: {} }, stato: { t: '' } } },
+      { nota: "X è già con A. Confronto due numeri della riga X di rank: B è in posizione <b>0</b>, A in posizione <b>1</b>. 0 &lt; 1: X preferisce B.", righe: [13], set: { grank: { toni: { '0,1': 'ora', '0,0': 'due' } }, cpart: { toni: { 0: 'due' } }, stato: { t: 'rank[X][B] = 0  <  1 = rank[X][A]' } } },
+      { nota: "A torna libero, in fondo alla coda; partnerX[X] = B.", righe: [14, 15], set: { clib: { valori: ['C', 'A'], toni: { 1: 'no' } }, cpart: { valori: ['B', '-1', '-1'], toni: { 0: 'ok' } }, grank: { toni: {} }, stato: { t: 'A torna in coda, X sta con B' } } },
+      { nota: "Tocca a <b>C</b>: chiede a pref[C][0] = <b>Y</b>.", righe: [10, 11], set: { clib: { valori: ['A'], toni: {} }, va: { t: 'a = C' }, vx: { t: 'x = Y' }, gpref: { toni: { '2,0': 'ora' } }, cnext: { valori: [1, 1, 1], toni: { 2: 'dato' } }, cpart: { toni: {} }, stato: { t: '' } } },
+      { nota: "Y è libero: partnerX[Y] = C.", righe: [12], set: { cpart: { valori: ['B', 'C', '-1'], toni: { 1: 'ok' } }, stato: { t: 'partnerX[Y] era -1: Y era libero' } } },
+      { nota: "Di nuovo <b>A</b>. next[A] = 1: chiede al <b>secondo</b> della sua lista, pref[A][1] = <b>Y</b>. Ecco a cosa serve next: A non riparte da X.", righe: [10, 11], set: { clib: { valori: [] }, va: { t: 'a = A' }, vx: { t: 'x = Y' }, gpref: { toni: { '0,1': 'ora' } }, cnext: { valori: [2, 1, 1], toni: { 0: 'dato' } }, cpart: { toni: {} }, stato: { t: '' } } },
+      { nota: "Y sta con C. Nella riga Y di rank: A è in posizione 0, C in posizione 1. 0 &lt; 1: Y preferisce A.", righe: [13], set: { grank: { toni: { '1,0': 'ora', '1,2': 'due' } }, cpart: { toni: { 1: 'due' } }, stato: { t: 'rank[Y][A] = 0  <  1 = rank[Y][C]' } } },
+      { nota: "C torna in coda; partnerX[Y] = A.", righe: [14, 15], set: { clib: { valori: ['C'], toni: { 0: 'no' } }, cpart: { valori: ['B', 'A', '-1'], toni: { 1: 'ok' } }, grank: { toni: {} }, stato: { t: 'C torna in coda, Y sta con A' } } },
+      { nota: "C chiede al secondo della sua lista: pref[C][1] = <b>X</b>.", righe: [10, 11], set: { clib: { valori: [], toni: {} }, va: { t: 'a = C' }, vx: { t: 'x = X' }, gpref: { toni: { '2,1': 'ora' } }, cnext: { valori: [2, 1, 2], toni: { 2: 'dato' } }, cpart: { toni: {} }, stato: { t: '' } } },
+      { nota: "X sta con B. C è in posizione 2, B in posizione 0: 2 &lt; 0 è falso, quindi X <b>rifiuta</b>.", righe: [13], set: { grank: { toni: { '0,2': 'ora', '0,1': 'due' } }, cpart: { toni: { 0: 'due' } }, stato: { t: 'rank[X][C] = 2  >  0 = rank[X][B]' } } },
+      { nota: "Ramo <code>else</code>: C resta libero e torna in coda. Anche un rifiuto costa <i>O(1)</i>.", righe: [16], set: { clib: { valori: ['C'], toni: { 0: 'no' } }, grank: { toni: {} }, cpart: { toni: {} }, stato: { t: 'X rifiuta: C torna in coda' } } },
+      { nota: "C chiede al terzo: pref[C][2] = <b>Z</b>. next[C] diventa 3.", righe: [10, 11], set: { clib: { valori: [], toni: {} }, va: { t: 'a = C' }, vx: { t: 'x = Z' }, gpref: { toni: { '2,2': 'ora' } }, cnext: { valori: [2, 1, 3], toni: { 2: 'dato' } }, stato: { t: '' } } },
+      { nota: "Z è libero: partnerX[Z] = C.", righe: [12], set: { cpart: { valori: ['B', 'A', 'C'], toni: { 2: 'ok' } }, stato: { t: 'partnerX[Z] era -1: Z era libero' } } },
+      { nota: "Coda vuota: il <code>while</code> finisce. partnerX = [B, A, C], cioè X–B, Y–A, Z–C: lo stesso matching stabile della pagina precedente. 6 proposte, ognuna con al massimo due letture di rank e un confronto. Traccia verificata eseguendo il codice in Java.", righe: [9], set: { gpref: { toni: {} }, cnext: { toni: {} }, cpart: { toni: { 0: 'ok', 1: 'ok', 2: 'ok' } }, va: { t: '' }, vx: { t: '' }, stato: { t: 'X–B   Y–A   Z–C', tono: 'ok' } } }
+    ]
+  };
+})();
+
+(function () {
+  const ogg = [
+    { id: 'hs', tipo: 'testo', x: 150, y: 16, t: 'squadre (2 posti)', size: 12, bold: true },
+    { id: 'hg', tipo: 'testo', x: 430, y: 16, t: 'giocatori', size: 12, bold: true },
+    { id: 'T1', tipo: 'nodo', x: 150, y: 90, t: 'T1', forma: 'quadrato', r: 22, sotto: '0/2' },
+    { id: 'T2', tipo: 'nodo', x: 150, y: 210, t: 'T2', forma: 'quadrato', r: 22, sotto: '0/2' },
+    { id: 'P1', tipo: 'nodo', x: 430, y: 60, t: 'P1' },
+    { id: 'P2', tipo: 'nodo', x: 430, y: 150, t: 'P2' },
+    { id: 'P3', tipo: 'nodo', x: 430, y: 240, t: 'P3' },
+    { id: 'lT1', tipo: 'testo', x: 112, y: 90, t: 'P1 > P2 > P3', anchor: 'end' },
+    { id: 'lT2', tipo: 'testo', x: 112, y: 210, t: 'P1 > P3 > P2', anchor: 'end' },
+    { id: 'lP1', tipo: 'testo', x: 462, y: 60, t: 'T2 > T1', anchor: 'start' },
+    { id: 'lP2', tipo: 'testo', x: 462, y: 150, t: 'T1 > T2', anchor: 'start' },
+    { id: 'lP3', tipo: 'testo', x: 462, y: 240, t: 'T1 > T2', anchor: 'start' },
+    { id: 'q', tipo: 'testo', x: 290, y: 290, t: 'free: [T1, T2]', bold: true }
+  ];
+  ['T1', 'T2'].forEach(t => ['P1', 'P2', 'P3'].forEach(p => ogg.push({ id: t + p, tipo: 'arco', da: t, a: p, dir: true, nascosto: true })));
+  SCENE.draft = {
+    w: 600, h: 305, lato: true,
+    legenda: 'ora:squadra di turno o proposta,ok:accettata,no:lasciata o rifiutata',
+    codice: { lang: 'pseudo', testo: `while (!free.isEmpty()) {
+  t = free.poll();
+  while (slot[t] < mRound && next[t] < wanted.length) {
+    p = wanted[next[t]++];
+    if (p non elenca t) continue;
+    cur = squadra attuale di p;
+    if (cur != null && p preferisce cur) continue;
+    if (cur != null) { slot[cur]--; free.add(cur); }
+    p passa a t; slot[t]++;
+  }
+}` },
+    oggetti: ogg,
+    passi: [
+      { nota: "Il tuo Draft su un input piccolo: due squadre con 2 posti ciascuna, tre giocatori. A sinistra la lista di ogni squadra, a destra quella di ogni giocatore. Tutte le squadre sono in coda." },
+      { nota: "<code>poll()</code>: tocca a <b>T1</b>. Ha 0 posti occupati su 2 e tre giocatori da chiedere.", righe: [1, 2], set: { T1: { tono: 'ora' }, q: { t: 'free: [T2]' } } },
+      { nota: "T1 → <b>P1</b>. P1 non ha squadra: accetta. T1 occupa 1 posto.", righe: [3, 4, 9], set: { T1P1: { nascosto: false, tono: 'ok' }, P1: { tono: 'ok' }, T1: { sotto: '1/2' } } },
+      { nota: "T1 → <b>P2</b>. Anche P2 è libero: accetta. T1 è <b>piena</b> (2/2): <code>slot[t] &lt; mRound</code> è falso e il <code>while</code> interno si ferma.", righe: [3, 4, 9], set: { T1P2: { nascosto: false, tono: 'ok' }, P2: { tono: 'ok' }, T1: { sotto: '2/2', tono: null } } },
+      { nota: "Tocca a <b>T2</b>. Chiede al primo della sua lista: <b>P1</b>.", righe: [2, 4], set: { T2: { tono: 'ora' }, T2P1: { nascosto: false, tono: 'ora' }, q: { t: 'free: [ ]' } } },
+      { nota: "P1 sta con T1, ma nella sua lista <b>T2 viene prima</b>: passa a T2. T1 perde un posto e torna in coda.", righe: [6, 7, 8, 9], set: { T1P1: { tono: 'no' }, T2P1: { tono: 'ok' }, lP1: { tono: 'ora' }, T1: { sotto: '1/2' }, T2: { sotto: '1/2' }, q: { t: 'free: [T1]' } } },
+      { nota: "T2 → <b>P3</b>: libero, accetta. T2 è piena.", righe: [4, 9], set: { T1P1: { nascosto: true }, lP1: { tono: null }, T2P3: { nascosto: false, tono: 'ok' }, P3: { tono: 'ok' }, T2: { sotto: '2/2', tono: null } } },
+      { nota: "Tocca di nuovo a <b>T1</b>. Non riparte da capo: ha già chiesto a P1 e P2, quindi chiede a <b>P3</b>.", righe: [2, 4], set: { T1: { tono: 'ora' }, T1P3: { nascosto: false, tono: 'ora' }, q: { t: 'free: [ ]' } } },
+      { nota: "P3 sta con T2 ma preferisce <b>T1</b>: passa a T1. T2 perde un posto e torna in coda.", righe: [6, 7, 8, 9], set: { T2P3: { tono: 'no' }, T1P3: { tono: 'ok' }, lP3: { tono: 'ora' }, T1: { sotto: '2/2', tono: null }, T2: { sotto: '1/2' }, q: { t: 'free: [T2]' } } },
+      { nota: "Tocca a <b>T2</b>, che chiede all'ultimo della sua lista, <b>P2</b>. P2 sta con T1 e la preferisce: <b>rifiuta</b> (<code>continue</code>).", righe: [2, 4, 7], set: { T2P3: { nascosto: true }, lP3: { tono: null }, T2: { tono: 'ora' }, T2P2: { nascosto: false, tono: 'no' }, lP2: { tono: 'ora' }, q: { t: 'free: [ ]' } } },
+      { nota: "La lista di T2 è finita: il <code>while</code> interno si ferma anche se T2 ha ancora un posto libero. Coda vuota: fine. È l'output del programma (traccia verificata eseguendo il tuo codice in Java).", righe: [3], set: { T2P2: { nascosto: true }, lP2: { tono: null }, T2: { tono: null }, q: { t: 'T1: P2 P3   ·   T2: P1', tono: 'ok' } } }
+    ]
+  };
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Implementare Gale-Shapley (e Draft)</h1>
+  <p class="lede">La prova dice "al massimo n² proposte". Perché anche il <b>tempo</b> sia <i>O(n²)</i> ogni proposta deve costare <i>O(1)</i>: serve la struttura dati giusta (K&amp;T 2.3). Poi la stessa idea applicata al tuo esercizio Kattis <b>Draft</b>.</p>
+</header>
+
+<section>
+  <h2>Cosa serve sapere in O(1)</h2>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Domanda dell'algoritmo</th><th>Struttura</th></tr></thead>
+    <tbody>
+      <tr><td>c'è un proponente libero? prendine uno</td><td>coda dei liberi (<code>ArrayDeque</code>)</td></tr>
+      <tr><td>a chi chiede adesso <i>a</i>?</td><td><code>next[a]</code>: indice nella lista di <i>a</i></td></tr>
+      <tr><td><i>x</i> è libero? con chi sta?</td><td><code>partner[x]</code>, −1 se libero</td></tr>
+      <tr><td><i>x</i> preferisce <i>a</i> o il suo partner?</td><td><code>rank[x][a]</code>: la posizione di <i>a</i> nella lista di <i>x</i></td></tr>
+    </tbody>
+  </table></div>
+  <figure class="passi" data-titolo="La lista inversa rank, per X: B > A > C">
+    <div class="passo"><div class="espr">pref[X] = [ <mark class="dato">B</mark>, <mark class="due">A</mark>, <mark class="ora">C</mark> ]</div><p class="nota">La lista dice "chi è in posizione k". Per sapere dov'è A dovrei scorrerla: <i>O(n)</i>.</p></div>
+    <div class="passo"><div class="espr">rank[X][<mark class="dato">B</mark>] = 0,  rank[X][<mark class="due">A</mark>] = 1,  rank[X][<mark class="ora">C</mark>] = 2</div><p class="nota">L'inversa dice "in che posizione sta la persona p". La costruisco una volta: <code>rank[x][pref[x][k]] = k</code>.</p></div>
+    <div class="passo"><div class="espr">X preferisce A a C?   rank[X][A] = 1 <mark class="ok">&lt;</mark> 2 = rank[X][C]  ⇒ sì</div><p class="nota">Un confronto tra due numeri: <i>O(1)</i>.</p></div>
+    <div class="passo"><div class="espr">costruzione <mark class="dato">O(n²)</mark> + n² proposte × <mark class="ok">O(1)</mark> = <mark class="ok">O(n²)</mark></div><p class="nota">Senza <code>rank</code> ogni confronto costerebbe <i>O(n)</i> e il totale <i>O(n³)</i>.</p></div>
+  </figure>
+  <figure class="codice" data-titolo="Gale-Shapley con array di int (verificato: 2000 istanze casuali, sempre stabile)">
+<pre data-lang="java">int[][] rank = new int[n][n];
+for (int x = 0; x &lt; n; x++)
+    for (int k = 0; k &lt; n; k++) rank[x][prefX[x][k]] = k;
+int[] next = new int[n];
+int[] partnerX = new int[n];
+Arrays.fill(partnerX, -1);
+Deque&lt;Integer&gt; liberi = new ArrayDeque&lt;&gt;();
+for (int a = 0; a &lt; n; a++) liberi.add(a);
+while (!liberi.isEmpty()) {
+    int a = liberi.poll();
+    int x = pref[a][next[a]++];
+    if (partnerX[x] == -1) partnerX[x] = a;
+    else if (rank[x][a] &lt; rank[x][partnerX[x]]) {
+        liberi.add(partnerX[x]);
+        partnerX[x] = a;
+    } else liberi.add(a);
+}</pre>
+    <ol class="spiega">
+      <li data-righe="1-3" data-segna="rank[x][prefX[x][k]] = k@due"><p>Costruisco la lista inversa per ogni ricevente. <code>prefX[x][k]</code> è il k-esimo preferito di x.</p></li>
+      <li data-righe="4-6" data-segna="next@dato|partnerX@dato|-1@dato"><p><code>next[a]</code> parte da 0 per tutti (Java azzera gli array di <code>int</code>). <code>partnerX</code> tutto a −1: nessuno fidanzato.</p></li>
+      <li data-righe="7-8" data-segna="liberi.add(a)@ora"><p>All'inizio tutti i proponenti sono liberi.</p></li>
+      <li data-righe="9-11" data-segna="liberi.poll()@ora|pref[a][next[a]++]@ora"><p>Prendo un libero e il prossimo della sua lista. <code>next[a]++</code> restituisce il valore attuale e poi lo aumenta: a non chiederà mai due volte alla stessa persona.</p></li>
+      <li data-righe="12" data-segna="partnerX[x] == -1@ok"><p>x libero: si fidanzano. a esce dalla coda e non ci rientra.</p></li>
+      <li data-righe="13-15" data-segna="rank[x][a] &lt; rank[x][partnerX[x]]@due|liberi.add(partnerX[x])@no"><p>x preferisce a (posizione più piccola = più in alto nella lista): il vecchio partner torna in coda.</p></li>
+      <li data-righe="16" data-segna="liberi.add(a)@no"><p>x rifiuta: a resta libero e torna in coda per chiedere al prossimo. Una proposta, <i>O(1)</i> lavoro.</p></li>
+    </ol>
+  </figure>
+  <figure class="scena" data-scena="arraygs" data-titolo="Gale-Shapley visto dagli array"></figure>
+</section>
+
+<section>
+  <h2>Draft: Gale-Shapley con posti multipli</h2>
+  <p>Nel tuo esercizio le <b>squadre</b> propongono ai <b>giocatori</b>, ma ogni squadra può tenere fino a <code>mRound</code> giocatori, e un giocatore può non voler giocare in certe squadre. È la versione "ospedali e specializzandi" delle slide (<i>hospital-residents</i>): chi propone ha una <b>capacità</b>.</p>
+  <p class="piccolo">Descrizione ricavata dal tuo <code>Draft.java</code>: il PDF del testo non è più sul Desktop. Per i dettagli dell'input (ordine delle squadre, giocatori che non elencano una squadra) fa fede il testo su Kattis.</p>
+  <figure class="codice" data-titolo="Draft.java: il cuore del tuo codice (lettura dell'input e stampa esclusi)">
+<pre data-lang="java">Map&lt;String, Map&lt;String, Integer&gt;&gt; playerRank = new HashMap&lt;&gt;();
+for (Map.Entry&lt;String, String[]&gt; theChoose : cleanPlayerPreferencies.entrySet()) {
+    Map&lt;String, Integer&gt; rank = new HashMap&lt;&gt;();
+    String[] prefs = theChoose.getValue();
+    for (int j = 0; j &lt; prefs.length; j++) {
+        rank.put(prefs[j], j);
+    }
+    playerRank.put(theChoose.getKey(), rank);
+}
+
+Map&lt;String, String&gt; PlayerHeldByTeam = new HashMap&lt;&gt;();
+Map&lt;String, Integer&gt; slotTeam = new HashMap&lt;&gt;();
+Map&lt;String, Integer&gt; nextProposal = new HashMap&lt;&gt;();
+
+Deque&lt;String&gt; free = new ArrayDeque&lt;&gt;();
+for (String t : teamOrder) {
+    slotTeam.put(t, 0);
+    nextProposal.put(t, 0);
+    free.add(t);
+}
+
+while (!free.isEmpty()) {
+    String t = free.poll();
+    String[] wanted = cleanTeamRanking.get(t);
+
+    while (slotTeam.get(t) &lt; mRound &amp;&amp; nextProposal.get(t) &lt; wanted.length) {
+        String p = wanted[nextProposal.get(t)];
+        nextProposal.put(t, nextProposal.get(t) + 1);
+
+        Map&lt;String, Integer&gt; rank = playerRank.get(p);
+        if (rank == null || !rank.containsKey(t)) {
+            continue;
+        }
+        String cur = PlayerHeldByTeam.get(p);
+        if (cur != null &amp;&amp; rank.get(cur) &lt;= rank.get(t)) {
+            continue;
+        }
+        if (cur != null) {
+            slotTeam.put(cur, slotTeam.get(cur) - 1);
+            free.add(cur);
+        }
+        PlayerHeldByTeam.put(p, t);
+        slotTeam.put(t, slotTeam.get(t) + 1);
+    }
+}</pre>
+    <ol class="spiega">
+      <li data-righe="1-9" data-segna="playerRank@due|rank.put(prefs[j], j)@due"><p><b>La lista inversa</b>, con le mappe al posto degli array: per ogni giocatore, "squadra → posizione nella mia lista". È esattamente <code>rank[x][a]</code> della sezione sopra. <code>Map.Entry</code> è una coppia chiave-valore della mappa: <code>getKey()</code> il giocatore, <code>getValue()</code> la sua lista.</p></li>
+      <li data-righe="11-13" data-segna="PlayerHeldByTeam@dato|slotTeam@dato|nextProposal@dato"><p><b>Lo stato</b>: con chi sta ogni giocatore (<code>partner</code>), quanti posti ha occupato ogni squadra, e a che punto della sua lista è ogni squadra (<code>next</code>).</p></li>
+      <li data-righe="15-20" data-segna="free.add(t)@ora"><p>Tutte le squadre partono libere, con 0 giocatori e dall'inizio della lista. La coda <code>free</code> contiene le squadre che <b>potrebbero</b> avere ancora posti da riempire.</p></li>
+      <li data-righe="22-24" data-segna="free.poll()@ora|wanted@dato"><p>Prendo una squadra e la sua lista di giocatori.</p></li>
+      <li data-righe="26" data-segna="slotTeam.get(t) &lt; mRound@ok|nextProposal.get(t) &lt; wanted.length@ok"><p><b>Differenza con Gale-Shapley base</b>: la squadra continua a proporre finché ha posti liberi <b>e</b> giocatori da chiedere. Qui un "proponente libero" è una squadra con meno di <code>mRound</code> giocatori.</p></li>
+      <li data-righe="27-28" data-segna="wanted[nextProposal.get(t)]@ora"><p>Il prossimo giocatore della lista, e avanzo il puntatore: non lo chiederà mai più.</p></li>
+      <li data-righe="30-33" data-segna="rank == null@no|!rank.containsKey(t)@no"><p>Il giocatore non ha una lista, o non elenca questa squadra: rifiuta sempre. <code>continue</code> salta al giro successivo del <code>while</code> interno.</p></li>
+      <li data-righe="34-37" data-segna="rank.get(cur) &lt;= rank.get(t)@due"><p>Il giocatore ha già una squadra <code>cur</code> e la preferisce (posizione più piccola o uguale): rifiuta.</p></li>
+      <li data-righe="38-41" data-segna="slotTeam.get(cur) - 1@no|free.add(cur)@no"><p>Il giocatore preferisce <code>t</code>: lascia <code>cur</code>, che perde un posto e torna in coda.</p></li>
+      <li data-righe="42-43" data-segna="PlayerHeldByTeam.put(p, t)@ok|slotTeam.get(t) + 1@ok"><p>Il giocatore passa a <code>t</code>, che occupa un posto in più.</p></li>
+    </ol>
+  </figure>
+  <figure class="passi" data-titolo="Il tuo codice su un input piccolo (eseguito: stampa T1 P2 P3 · T2 P1)">
+    <div class="passo"><div class="espr">T1: P1 P2 P3   T2: P1 P3 P2   ·   P1: T2 T1   P2: T1 T2   P3: T1 T2   ·   2 posti a squadra</div><p class="nota">Le liste di squadre e giocatori. <code>free = [T1, T2]</code>.</p></div>
+    <div class="passo"><div class="espr"><mark class="dato">T1</mark> → P1 ✓, → P2 ✓   (T1 piena)</div><p class="nota">Entrambi liberi: accettano. T1 ha 2 giocatori, il <code>while</code> interno si ferma.</p></div>
+    <div class="passo"><div class="espr"><mark class="due">T2</mark> → P1: P1 preferisce T2 a T1 ⇒ <mark class="no">T1 perde P1</mark>, T1 torna in coda</div><p class="nota">rank[P1][T2] = 0 &lt; 1 = rank[P1][T1].</p></div>
+    <div class="passo"><div class="espr"><mark class="due">T2</mark> → P3 ✓   (T2 piena)</div><p class="nota">P3 è libero.</p></div>
+    <div class="passo"><div class="espr"><mark class="dato">T1</mark> → P3: P3 preferisce T1 ⇒ <mark class="no">T2 perde P3</mark>, T2 torna in coda</div><p class="nota">T1 aveva già chiesto a P1 e P2: ora tocca a P3, il terzo della sua lista.</p></div>
+    <div class="passo"><div class="espr"><mark class="due">T2</mark> → P2: P2 preferisce la sua T1 ⇒ rifiuta. Lista di T2 finita.</div><p class="nota">T2 resta con un solo giocatore: non ha più nessuno da chiedere.</p></div>
+    <div class="passo"><div class="espr"><mark class="ok">T1: P2 P3   ·   T2: P1</mark></div><p class="nota">Coda vuota: fine. Esattamente l'output del programma.</p></div>
+  </figure>
+  <figure class="scena" data-scena="draft" data-titolo="Draft passo per passo"></figure>
+  <div class="box idea" data-tit="Come renderlo più veloce, se servisse">
+    <p>Il tuo codice fa ogni passo con <code>HashMap</code> di <code>String</code>: <i>O(1)</i> in media, ma con costanti alte (calcolo dell'hash della stringa, oggetti <code>Integer</code>). Se Kattis desse TLE: all'inizio trasforma nomi di squadre e giocatori in numeri 0…n−1, e usa <code>int[]</code> per <code>slot</code>, <code>next</code>, <code>held</code> e <code>int[][]</code> per <code>rank</code>, come nella versione sopra. La logica resta identica.</p>
+  </div>
+</section>
+
+</main>
+</body>
+</html>

@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sottoinsiemi e permutazioni</title>
+<link rel="stylesheet" href="../assets/atlas.css">
+<link rel="stylesheet" href="../assets/tema.css">
+<script src="../assets/sito.js"></script>
+<script src="../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  const insiemi = ['{ }', '{1}', '{2}', '{1, 2}', '{3}', '{1, 3}', '{2, 3}', '{1, 2, 3}'];
+  const passi = [{ nota: 'Tre elementi 1, 2, 3. Un sottoinsieme dice, per ogni elemento, <b>dentro o fuori</b>: tre sì/no, cioè tre bit. Il bit più a destra è l\'elemento 1.' }];
+  for (let k = 0; k < 8; k++) {
+    const bit = [k >> 2 & 1, k >> 1 & 1, k & 1];
+    const toni = {}; bit.forEach((b, i) => { if (b) toni[i] = 'ok'; });
+    passi.push({
+      nota: k === 0 ? '<code>k = 0</code>: tutti i bit a 0, nessun elemento: l\'insieme vuoto.'
+        : k === 7 ? '<code>k = 7 = 2³ − 1</code>: tutti i bit a 1, tutti gli elementi. Contando da 0 a 2ⁿ − 1 ho visto <b>ogni sottoinsieme esattamente una volta</b>.'
+        : `<code>k = ${k}</code> in binario è <code>${bit.join('')}</code>: prendo gli elementi dei bit a 1.`,
+      righe: k === 0 ? [1] : [2, 3, 4],
+      set: { bits: { valori: bit.map(String), toni }, kv: { t: 'k = ' + k }, S: { t: 'S = ' + insiemi[k], tono: k === 7 ? 'ok' : 'ora' } }
+    });
+  }
+  SCENE.maschere = {
+    w: 420, h: 200, lato: true,
+    legenda: 'ok:bit a 1 = elemento preso',
+    codice: { lang: 'java', testo: `for (int k = 0; k < (1 << n); k++) {
+    for (int i = 0; i < n; i++)
+        if ((k >> i & 1) == 1)
+            subset.add(i + 1);
+    // … usa subset …
+}` },
+    oggetti: [
+      { id: 'kv', tipo: 'testo', x: 210, y: 30, t: 'k = ?', size: 18, bold: true },
+      { id: 'bits', tipo: 'celle', x: 135, y: 60, cw: 50, ch: 46, valori: ['0', '0', '0'], etichette: ['elem. 3', 'elem. 2', 'elem. 1'] },
+      { id: 'S', tipo: 'testo', x: 210, y: 160, t: 'S = ?', size: 18, bold: true }
+    ],
+    passi
+  };
+
+  // albero delle decisioni della ricorsione
+  const ogg = [], X = [320], lv = [[320], [160, 480], [80, 240, 400, 560], [40, 120, 200, 280, 360, 440, 520, 600]];
+  const foglie = ['{ }', '{3}', '{2}', '{2,3}', '{1}', '{1,3}', '{1,2}', '{1,2,3}'];
+  lv.forEach((riga, d) => riga.forEach((x, j) => {
+    const foglia = d === 3;
+    ogg.push({ id: `n${d}_${j}`, tipo: 'nodo', x, y: 30 + d * 70, r: foglia ? 13 : 19, t: foglia ? '' : 'i=' + (d + 1), forma: foglia ? 'quadrato' : undefined, sotto: foglia ? foglie[j] : '' });
+  }));
+  for (let d = 0; d < 3; d++) lv[d].forEach((x, j) => {
+    ogg.push({ id: `e${d}_${j}_0`, tipo: 'arco', da: `n${d}_${j}`, a: `n${d + 1}_${2 * j}`, t: '−' + (d + 1) });
+    ogg.push({ id: `e${d}_${j}_1`, tipo: 'arco', da: `n${d}_${j}`, a: `n${d + 1}_${2 * j + 1}`, t: '+' + (d + 1) });
+  });
+  const cammino = j => { const s = {}; let idx = 0; for (let d = 0; d < 3; d++) { const b = j >> (2 - d) & 1; s[`n${d}_${idx}`] = { tono: 'ora' }; s[`e${d}_${idx}_${b}`] = { tono: 'ora' }; idx = 2 * idx + b; } s[`n3_${idx}`] = { tono: 'ok' }; return s; };
+  const spegni = () => { const s = {}; ogg.forEach(o => { if (o.tipo === 'arco' || (o.tipo === 'nodo' && !o.id.startsWith('n3'))) s[o.id] = { tono: null }; }); return s; };
+  const passiA = [{ nota: '<code>Subsets(i, S)</code> decide l\'elemento i: prima lo <b>scarta</b> (−i, ramo sinistro), poi lo <b>prende</b> (+i, ramo destro). Ogni nodo interno è un sottoinsieme parziale.' }];
+  foglie.forEach((f, j) => passiA.push({ nota: j === 0 ? 'Scarto 1, scarto 2, scarto 3: arrivo alla foglia <code>{ }</code>. Una foglia = un sottoinsieme completo, su cui "faccio qualcosa".' : `La ricorsione torna indietro e prende l'altra strada: foglia <code>${f}</code>.`, set: Object.assign(spegni(), cammino(j)) }));
+  passiA.push({ nota: 'Albero binario di profondità <b>n = 3</b> con <b>2³ = 8</b> foglie: di nuovo tutti i sottoinsiemi, una volta ciascuno. Con la ricorsione si possono anche <b>potare</b> rami: se un parziale è già senza speranza, si salta tutto il sottoalbero (backtracking).', set: spegni() });
+  SCENE.albero = { w: 640, h: 290, lato: false, legenda: 'ora:cammino di decisioni,ok:sottoinsiemi già visitati', oggetti: ogg, passi: passiA };
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Sottoinsiemi e permutazioni</h1>
+  <p class="lede">La <b>ricerca esaustiva</b> (brute force, generate-and-test, backtracking) prova <b>tutte</b> le soluzioni candidate e tiene la migliore. È sempre corretta e quasi sempre lenta: <i>O(2ⁿ)</i> o <i>O(n!)</i>. Serve per input piccoli, per controllare algoritmi più furbi, e come primo passo per capire un problema.</p>
+</header>
+
+<section>
+  <h2>Genera e prova</h2>
+  <p>Lo schema è sempre lo stesso: <b>genera</b> ogni candidato, <b>verifica</b> se è una soluzione (di solito in tempo polinomiale), tieni la migliore. Esempi dalle note di Husfeldt:</p>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Problema</th><th>Candidati</th><th>Verifica</th><th>Tempo</th></tr></thead>
+    <tbody>
+      <tr><td>clique massima</td><td>tutti i 2ⁿ sottoinsiemi di nodi</td><td>ogni coppia è un arco?</td><td><span class="m">O(2ⁿ n²)</span></td></tr>
+      <tr><td>closest pair</td><td>tutte le coppie di punti</td><td>distanza</td><td><span class="m">O(n²)</span></td></tr>
+      <tr><td>ordinamento</td><td>tutte le n! permutazioni</td><td>è in ordine?</td><td><span class="m">O(n! · n)</span></td></tr>
+      <tr><td>soddisfacibilità (SAT)</td><td>tutti i 2ⁿ assegnamenti vero/falso</td><td>ogni clausola vera?</td><td><span class="m">O(2ⁿ · m)</span></td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section>
+  <h2>Tutti i sottoinsiemi: contare in binario</h2>
+  <p>Un sottoinsieme di {1, …, n} è una fila di n sì/no. Un numero di n bit è la stessa cosa. Contare da 0 a <span class="m">2ⁿ − 1</span> genera tutti i sottoinsiemi.</p>
+  <figure class="scena" data-scena="maschere" data-titolo="Da k al sottoinsieme, per n = 3"></figure>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Scrittura Java</th><th>Significa</th></tr></thead>
+    <tbody>
+      <tr><td><code>1 &lt;&lt; n</code></td><td>2ⁿ: l'1 spostato di n posti a sinistra</td></tr>
+      <tr><td><code>k &gt;&gt; i &amp; 1</code></td><td>il bit i di k: sposto a destra di i e tengo l'ultimo bit. "L'elemento i è in k?"</td></tr>
+      <tr><td><code>k | 1 &lt;&lt; i</code></td><td>k con l'elemento i aggiunto</td></tr>
+      <tr><td><code>k &amp; -k</code></td><td>il bit a 1 più basso di k: il membro più piccolo</td></tr>
+      <tr><td><code>k ^= b</code></td><td>toglie da k il bit b (xor)</td></tr>
+      <tr><td><code>Integer.bitCount(k)</code></td><td>quanti elementi ha k</td></tr>
+    </tbody>
+  </table></div>
+  <figure class="passi" data-titolo="Perché k & -k isola il bit più basso">
+    <div class="passo"><div class="espr">x      = <mark class="ora">01100</mark></div><p class="nota">Il bit a 1 più basso è in posizione 2.</p></div>
+    <div class="passo"><div class="espr">~x     = 10011</div><p class="nota">Il complemento: ogni bit si inverte.</p></div>
+    <div class="passo"><div class="espr">-x = ~x + 1 = 10<mark class="ora">1</mark>00</div><p class="nota">In complemento a due il negativo è "inverti e somma 1". Il riporto risale gli zeri finali e si ferma sul primo 1 di x.</p></div>
+    <div class="passo"><div class="espr">x &amp; -x = 00<mark class="ok">1</mark>00</div><p class="nota">L'unico bit a 1 in entrambi è proprio il più basso di x.</p></div>
+  </figure>
+  <div class="box attenzione" data-tit="Le parentesi">
+    <p>In Java scrivi <code>((k &gt;&gt; i &amp; 1) == 1)</code>: <code>&amp;</code> ha precedenza <b>più bassa</b> di <code>==</code>. Senza parentesi <code>k &gt;&gt; i &amp; 1 == 1</code> diventa <code>k &gt;&gt; i &amp; (1 == 1)</code>, un <code>int &amp; boolean</code>, e Java rifiuta di compilarlo.</p>
+  </div>
+</section>
+
+<section>
+  <h2>La tua soluzione: Perket</h2>
+  <p>Ogni ingrediente ha acidità <i>s</i> e amarezza <i>b</i>. Con un sottoinsieme non vuoto di ingredienti l'acidità totale è il <b>prodotto</b> delle <i>s</i>, l'amarezza la <b>somma</b> delle <i>b</i>. Si vuole la differenza <span class="m">|S − B|</span> più piccola. Con n ≤ 10 si provano tutti i sottoinsiemi.</p>
+  <figure class="codice" data-titolo="Perket.java: il tuo ciclo, senza le righe vuote (provato: 7, 1, 1 su tre input, come una forza bruta in Python)">
+<pre data-lang="java">long best = 1000000000;
+for (int mask = 1; mask &lt; (1 &lt;&lt; n); mask++) {
+    long sourness = 1;
+    long bitterness = 0;
+    for (int i = 0; i &lt; n; i++) {
+        if ((mask &amp; (1 &lt;&lt; i)) != 0) {
+            sourness *= ingredients[i][0];
+            bitterness += ingredients[i][1];
+        }
+    }
+    long diff = Math.abs(sourness - bitterness);
+    if (diff &lt; best) {
+        best = diff;
+    }
+}</pre>
+    <ol class="spiega">
+      <li data-righe="1" data-segna="best@ok"><p>Il miglior valore trovato finora; parte "infinito".</p></li>
+      <li data-righe="2" data-segna="mask = 1@ora|(1 &lt;&lt; n)@dato"><p>Tutti i sottoinsiemi tranne il vuoto: <code>mask</code> parte da <b>1</b> perché il testo vuole almeno un ingrediente.</p></li>
+      <li data-righe="3-4" data-segna="sourness = 1@due|bitterness = 0@due"><p>Elemento neutro: 1 per il prodotto, 0 per la somma.</p></li>
+      <li data-righe="5-6" data-segna="(mask &amp; (1 &lt;&lt; i)) != 0@ora"><p>L'ingrediente i è nel sottoinsieme se il bit i di <code>mask</code> è 1. <code>1 &lt;&lt; i</code> ha un solo 1, in posizione i; l'<code>&amp;</code> è diverso da 0 solo se anche <code>mask</code> ha quell'1.</p></li>
+      <li data-righe="7-8" data-segna="*=@due|+=@due"><p>Aggiorno prodotto e somma. <code>long</code>: il prodotto di molti numeri cresce in fretta, e <code>long</code> arriva a circa 9·10¹⁸ invece di 2·10⁹.</p></li>
+      <li data-righe="11-14" data-segna="Math.abs(sourness - bitterness)@ok|best = diff@ok"><p>Valuto il candidato e tengo il migliore. Tempo <span class="m">O(2ⁿ · n)</span>: con n = 10 sono circa 10⁴ passi.</p></li>
+    </ol>
+  </figure>
+</section>
+
+<section>
+  <h2>La tua soluzione: Satisfaction (SAT a forza bruta)</h2>
+  <p>Ogni clausola è un "or" di letterali (<code>X1 v ~X3</code>); la formula è vera se <b>tutte</b> le clausole sono vere. Il tuo codice trasforma ogni clausola in due maschere e prova i 2ⁿ assegnamenti.</p>
+  <figure class="passi" data-titolo="Una clausola, due maschere">
+    <div class="passo"><div class="espr">clausola <mark class="dato">X1 v ~X3</mark>  →  posMask = <mark class="ok">001</mark>,  negMask = <mark class="no">100</mark></div><p class="nota">posMask: le variabili che compaiono "dritte"; negMask: quelle negate. Bit 0 = X1.</p></div>
+    <div class="passo"><div class="espr">assegnamento <mark class="ora">a = 110</mark>  (X1 = falso, X2 = vero, X3 = vero)</div><p class="nota">Un numero da 0 a 2ⁿ − 1: bit a 1 = variabile vera.</p></div>
+    <div class="passo"><div class="espr">a &amp; posMask = 110 &amp; 001 = 000   →  nessun letterale dritto vero</div><p class="nota"><code>posOk</code> è falso.</p></div>
+    <div class="passo"><div class="espr">~a &amp; negMask = 001 &amp; 100 = 000   →  nessun letterale negato vero</div><p class="nota"><code>~a</code> ha a 1 le variabili false. <code>negOk</code> è falso.</p></div>
+    <div class="passo"><div class="espr">posOk = falso, negOk = falso  ⇒  <mark class="no">clausola falsa</mark>  ⇒  a non va bene</div><p class="nota">Basta una clausola falsa per scartare l'assegnamento: il tuo <code>break</code> esce subito.</p></div>
+  </figure>
+  <p class="piccolo">Provato su due formule: <code>X1 v X2 · ~X1 · ~X2 v X3</code> → satisfiable; la formula con le 5 clausole <code>X1 v X2 v X3 · X1 v ~X2 · X2 v ~X3 · X3 v ~X1 · ~X1 v ~X2 v ~X3</code> → unsatisfiable, confermato in Python.</p>
+  <div class="box idea" data-tit="Perché conta per il corso">
+    <p>SAT è il primo problema NP-completo. Che si riesca a risolverlo solo in <i>O(2ⁿ)</i> non è pigrizia: nessuno conosce un algoritmo polinomiale. Lo ritrovi in <a href="l10-np-completo.html">NP e NP-completezza</a>.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Ricorsione e backtracking</h2>
+  <pre class="cod" data-lang="text">procedure Subsets(i, S)
+    if i &gt; n: (fai qualcosa con S); return
+    Subsets(i + 1, S)          (scarta i)
+    Subsets(i + 1, S ∪ {i})    (prendi i)</pre>
+  <figure class="scena" data-scena="albero" data-titolo="L'albero delle chiamate di Subsets(1, {}) per n = 3"></figure>
+</section>
+
+<section>
+  <h2>Tutte le permutazioni</h2>
+  <p>Le permutazioni in <b>ordine lessicografico</b>: 123 &lt; 132 &lt; 213 &lt; 231 &lt; 312 &lt; 321. Per passare alla successiva: aumenta la posizione <b>più a destra</b> che si può aumentare, del minimo possibile, e rendi tutto quello a destra il più piccolo possibile.</p>
+  <figure class="passi" data-titolo="La successiva di 132">
+    <div class="passo"><div class="espr">1 <mark class="dato">3 2</mark></div><p class="nota">Da destra cerco il suffisso <b>non crescente</b> più lungo: 3 2. Non si può aumentare restando dentro di lui.</p></div>
+    <div class="passo"><div class="espr"><mark class="ora">1</mark> 3 2</div><p class="nota">Il numero appena prima del suffisso, 1, è quello da aumentare.</p></div>
+    <div class="passo"><div class="espr"><mark class="ora">1</mark> 3 <mark class="due">2</mark></div><p class="nota">Nel suffisso prendo il più piccolo numero maggiore di 1: il 2 (cercando da destra).</p></div>
+    <div class="passo"><div class="espr"><mark class="due">2</mark> 3 <mark class="ora">1</mark></div><p class="nota">Li scambio. Il suffisso 3 1 resta non crescente.</p></div>
+    <div class="passo"><div class="espr">2 <mark class="ok">1 3</mark></div><p class="nota">Rovescio il suffisso: diventa il più piccolo possibile. La successiva di 132 è <b>213</b>.</p></div>
+  </figure>
+  <p>Generare tutte le n! permutazioni così costa <span class="m">O(n!)</span> in tutto (in media ogni passo tocca un suffisso cortissimo). Già con n = 13 sono più di 6 miliardi.</p>
+</section>
+
+</main>
+</body>
+</html>

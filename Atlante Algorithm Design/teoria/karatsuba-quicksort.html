@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Karatsuba e quicksort</title>
+<link rel="stylesheet" href="../assets/atlas.css">
+<link rel="stylesheet" href="../assets/tema.css">
+<script src="../assets/sito.js"></script>
+<script src="../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+const r = (id,x,y,t,tono) => ({id,tipo:'rett',x,y,w:58,h:34,t,tono});
+SCENE.kar = {
+  w: 540, h: 230, lato: true,
+  legenda: 'dato:cifre,ora:prodotto calcolato,ok:risultato,no:non serve (la 4ª moltiplicazione)',
+  oggetti: [
+    r('a',60,30,'5','dato'), r('b',130,30,'6','dato'), r('c',220,30,'7','dato'), r('d',290,30,'8','dato'),
+    {id:'t1',tipo:'testo',x:20,y:90,t:'56 = 5·10 + 6,   78 = 7·10 + 8',size:12,bold:true,anchor:'start'},
+    {id:'m1',tipo:'testo',x:20,y:130,t:'',size:13,bold:true,anchor:'start'},
+    {id:'m2',tipo:'testo',x:20,y:160,t:'',size:13,bold:true,anchor:'start'},
+    {id:'m3',tipo:'testo',x:20,y:190,t:'',size:13,bold:true,anchor:'start'},
+    {id:'tot',tipo:'testo',x:330,y:190,t:'',size:14,bold:true,anchor:'start'}
+  ],
+  passi: [
+    { nota: 'Moltiplico 56 × 78 spezzando ogni numero in due cifre: <b>a = 5, b = 6</b> (56), <b>c = 7, d = 8</b> (78).', set:{t1:{t:'56 = 5·10 + 6,   78 = 7·10 + 8'}} },
+    { nota: 'Schoolbook: quattro moltiplicazioni: <code>ac, ad, bc, bd</code>. Karatsuba ne fa <b>tre</b>. Prima: ac = 5·7 = 35.', set:{a:{tono:'ora'},c:{tono:'ora'},m1:{t:'ac = 35'}} },
+    { nota: 'bd = 6·8 = 48.', set:{a:{tono:'dato'},c:{tono:'dato'},b:{tono:'ora'},d:{tono:'ora'},m2:{t:'bd = 48'}} },
+    { nota: 'Il trucco: (a+b)(c+d) = 11 · 15 = 165, e <code>ad + bc = 165 − ac − bd = 165 − 83 = 82</code>. Una sola moltiplicazione in più, e ad + bc esce senza calcolarli singolarmente.', set:{b:{tono:'dato'},d:{tono:'dato'},m3:{t:'(a+b)(c+d) = 165, ad + bc = 82'}} },
+    { nota: 'Ricombino: <code>ac·100 + (ad+bc)·10 + bd = 3500 + 820 + 48 = 4368</code> = 56 · 78. Tre moltiplicazioni a metà taglia: <code>T(n) = 3T(n/2) + O(n)</code>, cioè <b>O(n^1.585)</b>.', set:{tot:{t:'= 4368 ✓',tono:'ok'}} }
+  ]
+};
+})();
+</script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+const v = (id,x,t,tono) => ({id,tipo:'rett',x,y:70,w:52,h:36,t,tono});
+SCENE.qs = {
+  w: 540, h: 230, lato: true,
+  legenda: 'ora:pivot,dato:più piccoli del pivot,due:più grandi o uguali,spento:da sistemare',
+  oggetti: [
+    v('x0',20,'3','spento'), v('x1',76,'8','spento'), v('x2',132,'2','spento'), v('x3',188,'5','ora'), v('x4',244,'1','spento'), v('x5',300,'4','spento'), v('x6',356,'7','spento'), v('x7',412,'6','spento'),
+    {id:'t1',tipo:'testo',x:20,y:50,t:'pivot = 5 (il quarto elemento)',size:12,bold:true,anchor:'start'},
+    {id:'t2',tipo:'testo',x:20,y:150,t:'',size:13,bold:true,anchor:'start'},
+    {id:'t3',tipo:'testo',x:20,y:190,t:'',size:12,anchor:'start'}
+  ],
+  passi: [
+    { nota: 'Quicksort: scelgo un <b>pivot</b>, sposto a sinistra i più piccoli e a destra i più grandi, poi ordino le due parti in modo ricorsivo.', set:{} },
+    { nota: 'Confronto ogni elemento con il pivot 5. Il 3 è più piccolo: va a sinistra. L\'8 è più grande: resta a destra.', set:{x0:{tono:'dato'},x1:{tono:'due'},x2:{tono:'dato'},x4:{tono:'dato'},x5:{tono:'dato'},x6:{tono:'due'},x7:{tono:'due'}} },
+    { nota: 'Risultato della partizione: <b>3 2 1 4 | 5 | 8 7 6</b>. Il pivot è nel suo posto definitivo.', set:{x0:{t:'3',tono:'dato'},x2:{t:'2',tono:'dato'},x4:{t:'1',tono:'dato'},x5:{t:'4',tono:'dato'},x3:{t:'5',tono:'ora'},x1:{t:'8',tono:'due'},x6:{t:'7',tono:'due'},x7:{t:'6',tono:'due'},t2:{t:'pivot al posto giusto',tono:'ok'}} },
+    { nota: 'Pivot casuale: in media <b>O(n log n)</b>. Con il pivot sempre peggiore (il minimo) diventa O(n²): per questo il pivot è casuale. Il quicksort è sul posto: poca memoria extra.', set:{t3:{t:'pivot casuale → O(n log n) atteso'}} }
+  ]
+};
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Karatsuba e quicksort</h1>
+  <p class="lede">Due algoritmi divide et impera che battono il metodo ingenuo: Karatsuba moltiplica numeri grandi con tre moltiplicazioni invece di quattro, il quicksort ordina con partizioni attorno a un pivot.</p>
+</header>
+
+<section>
+  <h2>Karatsuba: tre moltiplicazioni invece di quattro</h2>
+<p>Moltiplicare due numeri di <code>n</code> cifre a scuola costa <code>n²</code> (quattro moltiplicazioni di metà taglia).
+Karatsuba spezza ogni numero in due metà: <code>x = a·10^k + b</code>, <code>y = c·10^k + d</code>. Calcola
+<code>ac</code>, <code>bd</code> e <code>(a+b)(c+d)</code>: il termine misto <code>ad + bc</code> esce per differenza, senza una moltiplicazione in più.</p>
+<p>Ricorrenza <code>T(n) = 3T(n/2) + O(n)</code>: <code>O(n^1.585)</code>.</p>
+  <figure class="scena" data-scena="kar" data-titolo="56 × 78 con tre moltiplicazioni"></figure>
+</section>
+<section>
+  <h2>Quicksort: partizione attorno al pivot</h2>
+<p>Scegli un <b>pivot</b>. Sposta a sinistra gli elementi più piccoli, a destra i più grandi (o uguali). Il pivot è nel suo posto definitivo.
+Poi ordina ricorsivamente le due parti.</p>
+<p>Con pivot casuale il costo atteso è <code>O(n log n)</code>. Con un pivot sempre peggiore (il minimo o il massimo) diventa <code>O(n²)</code>:
+per questo il pivot si sceglie a caso.</p>
+  <figure class="scena" data-scena="qs" data-titolo="Partizione attorno al pivot"></figure>
+</section>
+<section>
+  <h2>All’esame</h2>
+<div class="box esame" data-tit="All’esame">
+<p>Moltiplicazione di interi grandi → Karatsuba, <code>O(n^log₂3)</code>. Ordinamento in media → quicksort randomizzato, O(n log n) atteso.
+Frase: <i>"Karatsuba uses three recursive multiplications of half size, so T(n) = 3T(n/2) + O(n) = O(n^1.585)."</i></p>
+</div>
+</section>
+<section>
+  <h2>Formulario rapido</h2>
+<div class="tab-wrap"><table class="tab"><thead><tr><th>algoritmo</th><th>idea</th><th>tempo</th></tr></thead><tbody><tr><td>Karatsuba</td><td>3 moltiplicazioni di metà taglia</td><td>O(n^1.585)</td></tr><tr><td>quicksort</td><td>pivot e partizione</td><td>O(n log n) atteso, O(n²) nel peggiore</td></tr></tbody></table></div>
+</section>
+
+</main>
+</body>
+</html>

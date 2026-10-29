@@ -1,0 +1,510 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>:root{color-scheme:light dark}html{-webkit-text-size-adjust:100%}body{margin:0;padding:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Interval Scheduling</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=Newsreader:opsz,wght@6..72,500;6..72,600&display=swap">
+
+<style>
+:root{
+  --ground:#ECEAF1; --surface:#FFFFFF; --surface-2:#F6F4F9;
+  --ink:#17141F; --ink-2:#564E63; --ink-3:#8A8296;
+  --line:#DAD5E2; --line-soft:#E8E4EE;
+  --accent:#6D4A8C; --accent-soft:#F1EBF6;
+  --due:#A8342F; --due-soft:#F8E7E5;
+  --ok:#2C6A45; --ok-soft:#E2EFE7;
+  --warn:#8A6008; --warn-soft:#F7F0DE;
+  --shadow:0 1px 2px rgba(23,20,31,.06),0 8px 24px -14px rgba(23,20,31,.20);
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --ground:#141119; --surface:#1C1824; --surface-2:#231F2C;
+  --ink:#EAE7F0; --ink-2:#A29AAF; --ink-3:#7B7388;
+  --line:#332C3E; --line-soft:#282232;
+  --accent:#BC9BDD; --accent-soft:#271E31;
+  --due:#EE8B84; --due-soft:#2E1A19;
+  --ok:#6BC391; --ok-soft:#15271D;
+  --warn:#DFB25E; --warn-soft:#2A2210;
+  --shadow:0 1px 2px rgba(0,0,0,.42),0 8px 24px -14px rgba(0,0,0,.72);
+}}
+:root[data-theme="dark"]{
+  --ground:#141119; --surface:#1C1824; --surface-2:#231F2C;
+  --ink:#EAE7F0; --ink-2:#A29AAF; --ink-3:#7B7388;
+  --line:#332C3E; --line-soft:#282232;
+  --accent:#BC9BDD; --accent-soft:#271E31;
+  --due:#EE8B84; --due-soft:#2E1A19;
+  --ok:#6BC391; --ok-soft:#15271D;
+  --warn:#DFB25E; --warn-soft:#2A2210;
+  --shadow:0 1px 2px rgba(0,0,0,.42),0 8px 24px -14px rgba(0,0,0,.72);
+}
+
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--ground);color:var(--ink);
+  font-family:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1060px;margin:0 auto;padding:34px 24px 80px;display:flex;flex-direction:column;gap:46px}
+a{color:var(--accent)}
+.mono{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.94em}
+
+.crumb{display:flex;gap:8px;align-items:center;font-family:"IBM Plex Mono",monospace;
+  font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);flex-wrap:wrap}
+.crumb a{color:var(--ink-3);text-decoration:none;border-bottom:1px solid var(--line)}
+.crumb a:hover{color:var(--accent);border-color:var(--accent)}
+.crumb .acc{color:var(--accent)}
+h1{font-family:Newsreader,Georgia,serif;font-weight:600;font-size:clamp(31px,5vw,46px);
+  line-height:1.05;letter-spacing:-.015em;margin:14px 0 0;text-wrap:balance}
+.lede{margin:16px 0 0;max-width:64ch;color:var(--ink-2);font-size:16.5px;line-height:1.62}
+.lede b{color:var(--ink);font-weight:600}
+
+section{display:flex;flex-direction:column}
+.eyebrow{font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:600;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--accent);margin:0 0 7px}
+h2{font-family:Newsreader,Georgia,serif;font-size:28px;font-weight:600;letter-spacing:-.01em;
+  margin:0 0 10px;text-wrap:balance}
+.seclede{margin:0 0 20px;max-width:70ch;color:var(--ink-2);font-size:14.6px;line-height:1.64}
+.seclede b{color:var(--ink);font-weight:600}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow)}
+
+/* ---- selettore regole ---- */
+.rules{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px;margin-bottom:16px}
+.rule{text-align:left;background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--line);
+  border-radius:9px;padding:13px 15px;cursor:pointer;box-shadow:var(--shadow);
+  transition:border-color .16s,transform .16s}
+.rule:hover{transform:translateY(-1px);border-color:var(--ink-3)}
+.rule:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.rule[aria-pressed="true"]{border-left-color:var(--rr);border-color:var(--rr)}
+.rule .rn{font-family:"IBM Plex Mono",monospace;font-size:13px;font-weight:600;color:var(--ink);display:block}
+.rule .rd{font-size:12.2px;color:var(--ink-2);line-height:1.45;margin-top:4px;display:block}
+.rule .rv{font-family:"IBM Plex Mono",monospace;font-size:10.5px;font-weight:600;letter-spacing:.06em;
+  text-transform:uppercase;margin-top:8px;display:inline-block;padding:2px 7px;border-radius:4px}
+.rv-bad{background:var(--due-soft);color:var(--due)}
+.rv-ok{background:var(--ok-soft);color:var(--ok)}
+
+/* ---- stage ---- */
+.stage{background:var(--surface);border:1px solid var(--line);border-radius:10px;
+  box-shadow:var(--shadow);overflow:hidden}
+.sbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:12px 16px;
+  background:var(--surface-2);border-bottom:1px solid var(--line)}
+.btn{font-family:"IBM Plex Mono",monospace;font-size:12px;font-weight:600;padding:7px 13px;
+  border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink-2);cursor:pointer}
+.btn:hover:not(:disabled){border-color:var(--ink-3);color:var(--ink)}
+.btn:disabled{opacity:.35;cursor:not-allowed}
+.btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:var(--surface)}
+.sbar .step{font-family:"IBM Plex Mono",monospace;font-size:11.5px;color:var(--ink-3);margin-left:auto}
+
+.tl{padding:18px 16px 6px;position:relative}
+.axis{position:relative;height:18px;margin-left:34px;border-bottom:1px solid var(--line);margin-bottom:10px}
+.axis span{position:absolute;transform:translateX(-50%);font-family:"IBM Plex Mono",monospace;
+  font-size:10px;color:var(--ink-3);top:3px}
+.bars{display:flex;flex-direction:column;gap:5px;margin-left:34px;position:relative}
+.tick{position:absolute;top:0;bottom:0;width:1px;background:var(--line-soft)}
+.bar{position:relative;height:26px}
+.bar .lab{position:absolute;left:-34px;top:4px;width:28px;text-align:right;
+  font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--ink-3)}
+.iv{position:absolute;top:2px;height:22px;border-radius:5px;display:flex;align-items:center;
+  justify-content:center;font-family:"IBM Plex Mono",monospace;font-size:10.5px;font-weight:600;
+  background:var(--surface-2);border:1px solid var(--line);color:var(--ink-3);
+  transition:background .3s,border-color .3s,color .3s,opacity .3s,transform .3s}
+.iv.look{border-color:var(--warn);background:var(--warn-soft);color:var(--warn);transform:scale(1.03)}
+.iv.pick{border-color:var(--rr);background:var(--rr);color:var(--surface);
+  box-shadow:0 2px 8px -2px var(--rr)}
+.iv.drop{opacity:.3;text-decoration:line-through}
+.iv.opt{border-color:var(--ok);background:var(--ok-soft);color:var(--ok);border-style:dashed}
+
+.legend{display:flex;gap:16px;flex-wrap:wrap;padding:10px 16px 14px;
+  font-family:"IBM Plex Mono",monospace;font-size:10.5px;color:var(--ink-3);letter-spacing:.04em}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+
+.score{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1px;
+  background:var(--line);border-top:1px solid var(--line)}
+.sc{background:var(--surface);padding:13px 16px}
+.sc .k{font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--ink-3)}
+.sc .v{font-family:"IBM Plex Mono",monospace;font-size:24px;font-weight:600;line-height:1.1;
+  margin-top:4px;font-variant-numeric:tabular-nums}
+.sc.bad .v{color:var(--due)}
+.sc.good .v{color:var(--ok)}
+
+.verdict{font-size:13.8px;color:var(--ink-2);line-height:1.62;padding:14px 16px;
+  border-top:1px solid var(--line);max-width:80ch}
+.verdict b{color:var(--ink)}
+.verdict.fail{background:var(--due-soft)}
+.verdict.pass{background:var(--ok-soft)}
+
+/* ---- prove ---- */
+.proofs{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;align-items:start}
+.pf{background:var(--surface);border:1px solid var(--line);border-radius:10px;
+  box-shadow:var(--shadow);overflow:hidden}
+.pf>h3{font-family:"IBM Plex Mono",monospace;font-size:11.5px;font-weight:600;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--ink-2);margin:0;padding:12px 16px;background:var(--surface-2);
+  border-bottom:1px solid var(--line)}
+.pf .in{padding:16px}
+.pf p{margin:0;font-size:13.8px;color:var(--ink-2);line-height:1.62}
+.pf p+p{margin-top:10px}
+.pf p b{color:var(--ink)}
+.steps{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:10px;counter-reset:s}
+.steps li{counter-increment:s;position:relative;padding-left:27px;font-size:13.6px;
+  color:var(--ink-2);line-height:1.55}
+.steps li::before{content:counter(s);position:absolute;left:0;top:1px;width:19px;height:19px;
+  border-radius:50%;background:var(--accent-soft);color:var(--accent);
+  font-family:"IBM Plex Mono",monospace;font-size:10.5px;font-weight:600;display:grid;place-items:center}
+.steps li b{color:var(--ink)}
+
+pre.code{margin:0;padding:14px 16px;background:var(--surface-2);border-radius:7px;overflow-x:auto;
+  font-family:"IBM Plex Mono",monospace;font-size:12.4px;line-height:1.7;color:var(--ink-2)}
+pre.code b{color:var(--ink);font-weight:600}
+pre.code .c{color:var(--ink-3)}
+
+.exam{display:flex;flex-direction:column;gap:0}
+.er{display:grid;grid-template-columns:140px 1fr;gap:16px;padding:14px 0;
+  border-bottom:1px solid var(--line-soft);align-items:start}
+.er:last-child{border-bottom:none}
+@media(max-width:640px){.er{grid-template-columns:1fr;gap:5px}}
+.er .t{font-family:"IBM Plex Mono",monospace;font-size:12.5px;font-weight:600;color:var(--accent)}
+.er p{margin:0;font-size:13.8px;color:var(--ink-2);line-height:1.6}
+.er p b{color:var(--ink)}
+
+.note{font-size:13.2px;color:var(--ink-2);border-left:2px solid var(--accent);padding:3px 0 3px 14px;
+  margin:20px 0 0;max-width:76ch;line-height:1.62}
+.note b{color:var(--ink)}
+footer{font-size:12.5px;color:var(--ink-3);border-top:1px solid var(--line);padding-top:20px;
+  max-width:76ch;line-height:1.66}
+@media (prefers-reduced-motion:reduce){.iv{transition:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="crumb"><a href="https://claude.ai/code/artifact/048f4b45-7d4b-4e25-80c7-bd907f48fc0c">Atlante</a><span>·</span><span class="acc">Greedy · K&amp;T 4.1</span></div>
+  <h1>Interval scheduling</h1>
+  <p class="lede">Quattro regole greedy plausibili per lo stesso problema. <b>Tre sono sbagliate</b> — e l&rsquo;esame ti chiede di dimostrarlo con un controesempio. Scegli una regola e guardala fallire passo per passo, sull&rsquo;istanza più piccola su cui fallisce.</p>
+</header>
+
+<section>
+  <p class="eyebrow">Il problema</p>
+  <h2>Il massimo numero di intervalli senza sovrapposizioni</h2>
+  <p class="seclede">Hai <span class="mono">n</span> richieste, ognuna con un inizio <span class="mono">s<sub>j</sub></span> e una fine <span class="mono">f<sub>j</sub></span>. Due richieste sono <b>compatibili</b> se non si sovrappongono. Vuoi il sottoinsieme compatibile <b>più numeroso</b> — non il più lungo, non il più pieno: il più numeroso.</p>
+
+  <div class="rules" id="rules"></div>
+
+  <div class="stage">
+    <div class="sbar">
+      <button class="btn pri" id="play" type="button">▶ esegui</button>
+      <button class="btn" id="step" type="button">passo →</button>
+      <button class="btn" id="reset" type="button">↺ azzera</button>
+      <span class="step" id="stepinfo"></span>
+    </div>
+    <div class="tl">
+      <div class="axis" id="axis"></div>
+      <div class="bars" id="bars"></div>
+    </div>
+    <div class="legend">
+      <span><i style="background:var(--warn-soft);border:1px solid var(--warn)"></i>in esame</span>
+      <span><i style="background:var(--accent)"></i>scelto dalla regola</span>
+      <span><i style="background:var(--surface-2);border:1px solid var(--line);opacity:.4"></i>scartato per conflitto</span>
+      <span><i style="background:var(--ok-soft);border:1px dashed var(--ok)"></i>soluzione ottima</span>
+    </div>
+    <div class="score">
+      <div class="sc" id="sc-rule"><div class="k">questa regola</div><div class="v">—</div></div>
+      <div class="sc good"><div class="k">ottimo</div><div class="v" id="sc-opt">—</div></div>
+      <div class="sc"><div class="k">intervalli</div><div class="v" id="sc-n">—</div></div>
+    </div>
+    <div class="verdict" id="verdict"></div>
+  </div>
+
+  <p class="note">I tre controesempi non li ho ripescati a memoria: li ho <b>cercati per forza bruta</b>, verificando ogni istanza contro la soluzione ottima. Quelli per <i>earliest start</i> e <i>shortest interval</i> bastano <b>tre intervalli</b>; per <i>fewest conflicts</i> ne servono <b>dieci</b>, ed è il motivo per cui è la regola sbagliata più insidiosa: non la smonti con un disegnino.</p>
+</section>
+
+<section>
+  <p class="eyebrow">Perché quella giusta è giusta</p>
+  <h2>Le due tecniche di dimostrazione</h2>
+  <p class="seclede">Sono i due attrezzi del capitolo 4, e servono entrambi: all&rsquo;esame la domanda greedy non chiede la dimostrazione, ma la domanda del controesempio chiede di saper riconoscere <b>quando non regge</b>.</p>
+
+  <div class="proofs">
+    <div class="pf">
+      <h3>Greedy stays ahead</h3>
+      <div class="in">
+        <p>Si confronta la soluzione greedy con una qualunque ottima, <b>elemento per elemento nell&rsquo;ordine</b>, e si mostra che il greedy non è mai indietro.</p>
+        <ol class="steps" style="margin-top:12px">
+          <li>Sia <span class="mono">i₁, i₂, …</span> la scelta greedy e <span class="mono">j₁, j₂, …</span> una soluzione ottima, entrambe ordinate per tempo di fine.</li>
+          <li>Per induzione: <b>f(i<sub>r</sub>) ≤ f(j<sub>r</sub>)</b> per ogni r. Il greedy prende sempre il primo compatibile che finisce prima, quindi non può finire dopo.</li>
+          <li>Se l&rsquo;ottima avesse <b>più</b> intervalli, ne esisterebbe uno <span class="mono">j<sub>k+1</sub></span> compatibile con i primi k del greedy.</li>
+          <li>Ma allora il greedy <b>l&rsquo;avrebbe preso</b>: non si era fermato. Contraddizione.</li>
+        </ol>
+      </div>
+    </div>
+
+    <div class="pf">
+      <h3>Exchange argument</h3>
+      <div class="in">
+        <p>Si parte da una soluzione ottima e si <b>trasforma</b> nella greedy, un passo alla volta, senza mai peggiorarla.</p>
+        <p>Se l&rsquo;ottima differisce dalla greedy, trova il primo punto in cui divergono e <b>scambia</b> l&rsquo;elemento dell&rsquo;ottima con quello scelto dal greedy. Va dimostrato che dopo lo scambio la soluzione è <b>ancora valida</b> e <b>non peggiore</b>.</p>
+        <p>Ripetendo, l&rsquo;ottima diventa la greedy senza aver perso valore: quindi la greedy era ottima.</p>
+        <p class="note" style="margin-top:14px">Nelle slide è la tecnica usata per <b>scheduling to minimize lateness</b>, dove si scambiano due job adiacenti fuori ordine e si mostra che il ritardo massimo non cresce.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <p class="eyebrow">L&rsquo;algoritmo</p>
+  <h2>Quattro righe, e il costo sta tutto nell&rsquo;ordinamento</h2>
+  <div class="panel" style="padding:16px">
+<pre class="code"><span class="c">// ordina per tempo di fine crescente — QUESTA è la risposta</span>
+sort(intervalli) <b>by</b> f crescente
+
+A = {}
+ultimaFine = −∞
+<b>for</b> j <b>in</b> intervalli:            <span class="c">// nell'ordine appena stabilito</span>
+    <b>if</b> s[j] &gt;= ultimaFine:      <span class="c">// compatibile con tutto ciò che ho già preso</span>
+        A = A ∪ {j}
+        ultimaFine = f[j]
+<b>return</b> A</pre>
+  </div>
+  <p class="note">Il ciclo è <b>O(n)</b>: una passata sola, e <span class="mono">ultimaFine</span> basta perché gli intervalli arrivano già ordinati per fine — il prossimo compatibile con l&rsquo;ultimo preso è compatibile con tutti. Il totale è <b>O(n log n)</b>, dominato dall&rsquo;ordinamento. Vale per quasi tutti i greedy del capitolo 4, ed è il motivo per cui la domanda d&rsquo;esame insiste su <i>quale</i> ordinamento e non sul codice.</p>
+</section>
+
+<section>
+  <p class="eyebrow">All&rsquo;esame</p>
+  <h2>Cosa ti chiedono davvero su questo capitolo</h2>
+  <div class="panel" style="padding:18px 20px 20px">
+    <div class="exam">
+      <div class="er">
+        <div class="t">Domanda greedy<br><span style="font-weight:400;color:var(--ink-3);font-size:11px">1+2+1 pt</span></div>
+        <p>Quale dei cinque problemi è greedy, l&rsquo;algoritmo, e il tempo. Il punto che si perde è sempre lo stesso: <b>dichiarare l&rsquo;ordine</b>. Il testo lo dice brutalmente — <i>«don't just write "sort the input"»</i> — e ti elenca perfino le possibilità: crescente o decrescente di tempo d&rsquo;inizio, alfabetico, colore, età, dimensione, coordinata x, distanza, numero di vicini, paurosità.</p>
+      </div>
+      <div class="er">
+        <div class="t">Domanda controesempio<br><span style="font-weight:400;color:var(--ink-3);font-size:11px">3 pt</span></div>
+        <p>Ti danno un&rsquo;idea greedy plausibile e ti chiedono di demolirla. Servono <b>tre cose</b>, e vanno scritte tutte: un&rsquo;istanza <b>piccola ma completa</b>, la soluzione <b>non ottima</b> che quell&rsquo;algoritmo trova, e la soluzione <b>ottima</b>. Mancarne una costa punti anche se il controesempio è giusto.</p>
+      </div>
+      <div class="er">
+        <div class="t">Come cercare<br><span style="font-weight:400;color:var(--ink-3);font-size:11px">metodo</span></div>
+        <p>I controesempi qui sopra suggeriscono una strategia: <b>costruisci un&rsquo;istanza in cui la scelta «attraente» blocca due scelte piccole</b>. Un intervallo lungo che ne copre due corti, un elemento di peso medio che esclude due leggeri. È quasi sempre la forma minima del controesempio.</p>
+      </div>
+      <div class="er">
+        <div class="t">Gli altri greedy<br><span style="font-weight:400;color:var(--ink-3);font-size:11px">cap. 4</span></div>
+        <p>Nel capitolo, oltre a questo: <b>interval partitioning</b> (quante aule servono — la risposta è la profondità massima), <b>minimize lateness</b> (ordina per scadenza), <b>Dijkstra</b>, <b>Kruskal e Prim</b> con union-find. Le slide del corso aggiungono <b>coin changing</b> come primo esempio, con la dimostrazione che ogni soluzione ottima deve prendere la moneta più grande.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  Pagina dell&rsquo;<a href="https://claude.ai/code/artifact/048f4b45-7d4b-4e25-80c7-bd907f48fc0c">Atlante Algorithm Design</a> — Thore Husfeldt, ITU Copenhagen, E2026. Contenuto basato su Kleinberg &amp; Tardos cap. 4 e sulle slide del corso; le citazioni fra virgolette sono testuali dai testi d&rsquo;esame in archivio. I controesempi sono stati generati e verificati per forza bruta contro la soluzione ottima.
+</footer>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var TMAX = 15;
+
+  var RULES = [
+    { id:"finish", name:"earliest finish time", col:"var(--ok)",
+      desc:"Prendi sempre quello che finisce prima.", ok:true,
+      inst:[[1,6],[2,3],[2,6],[2,7],[4,8],[7,9],[8,10],[9,11],[9,14],[10,12]],
+      pick:function(rem){ return rem.slice().sort(function(a,b){ return a[1]-b[1] || a[0]-b[0]; })[0]; },
+      verdict:"<b>Questa è quella corretta</b>, e il motivo è preciso: finire presto è ciò che <b>lascia più spazio</b> a tutto il resto. Nessuna delle altre tre ottimizza la risorsa vera, che è il tempo rimanente. L'ho provata su 30.000 istanze casuali contro la soluzione ottima: <b>zero fallimenti</b>, come dice il teorema."
+    },
+    { id:"start", name:"earliest start time", col:"var(--due)",
+      desc:"Prendi quello che comincia prima.", ok:false,
+      inst:[[0,6],[2,4],[4,10]],
+      pick:function(rem){ return rem.slice().sort(function(a,b){ return a[0]-b[0] || a[1]-b[1]; })[0]; },
+      verdict:"Basta <b>un intervallo lungo che comincia per primo</b> e blocca tutto. Qui <span class='mono'>[0,6)</span> parte prima di tutti, se lo prendi hai finito — mentre <span class='mono'>[2,4)</span> e <span class='mono'>[4,10)</span> stanno insieme senza problemi. Tre intervalli sono già abbastanza per smontarla: è il controesempio più piccolo possibile."
+    },
+    { id:"short", name:"shortest interval", col:"var(--due)",
+      desc:"Prendi il più corto: intuitivo, «occupa meno».", ok:false,
+      inst:[[2,8],[7,10],[9,12]],
+      pick:function(rem){ return rem.slice().sort(function(a,b){ return (a[1]-a[0])-(b[1]-b[0]) || a[0]-b[0]; })[0]; },
+      verdict:"L'intervallo corto può essere <b>piazzato male</b>: qui <span class='mono'>[7,10)</span> è il più breve ma sta a cavallo degli altri due e li esclude entrambi. Mentre <span class='mono'>[2,8)</span> e <span class='mono'>[9,12)</span>, più lunghi, convivono. <b>La lunghezza non è la risorsa</b>: la posizione lo è."
+    },
+    { id:"fewest", name:"fewest conflicts", col:"var(--due)",
+      desc:"Prendi quello che dà meno fastidio agli altri.", ok:false,
+      inst:[[1,6],[2,3],[2,6],[2,7],[4,8],[7,9],[8,10],[9,11],[9,14],[10,12]],
+      pick:function(rem){
+        var best=null, bc=Infinity;
+        rem.forEach(function(a){
+          var c=0;
+          rem.forEach(function(b){ if(b!==a && !(a[1]<=b[0] || b[1]<=a[0])) c++; });
+          if (c<bc || (c===bc && best && a[0]<best[0])){ bc=c; best=a; }
+        });
+        return best;
+      },
+      verdict:"La più sofisticata delle tre sbagliate, e la più difficile da demolire: <b>servono dieci intervalli</b>, non tre. Contare i conflitti <b>adesso</b> non dice niente su cosa succede dopo — una scelta con pochi conflitti immediati può comunque spezzare la catena migliore. Se all'esame ti propongono un greedy di questo tipo, cerca un'istanza dove la catena ottima è lunga e passa da un intervallo «trafficato»."
+    }
+  ];
+
+  var cur = RULES[0];
+  var frames = [];
+  var fi = 0;
+  var timer = null;
+
+  /* ---------- ottimo: earliest finish, che è dimostrabilmente ottimo ---------- */
+  function optimalSet(inst){
+    var rem = inst.slice(), out = [];
+    while (rem.length){
+      var x = rem.slice().sort(function(a,b){ return a[1]-b[1] || a[0]-b[0]; })[0];
+      out.push(x);
+      rem = rem.filter(function(b){ return b[1] <= x[0] || b[0] >= x[1]; });
+    }
+    return out;
+  }
+
+  /* ---------- costruisci i fotogrammi ---------- */
+  function build(rule){
+    var inst = rule.inst;
+    var rem = inst.slice(), picked = [], dropped = [];
+    var fr = [{look:null, picked:[], dropped:[], note:"Tutti gli intervalli sono candidati."}];
+    while (rem.length){
+      var x = rule.pick(rem);
+      fr.push({look:x, picked:picked.slice(), dropped:dropped.slice(),
+               note:"La regola guarda <span class='mono'>[" + x[0] + "," + x[1] + ")</span>."});
+      picked = picked.concat([x]);
+      var kill = rem.filter(function(b){ return b!==x && !(b[1] <= x[0] || b[0] >= x[1]); });
+      dropped = dropped.concat(kill);
+      fr.push({look:null, picked:picked.slice(), dropped:dropped.slice(),
+               note:"Preso <span class='mono'>[" + x[0] + "," + x[1] + ")</span>"
+                    + (kill.length ? ", scartati " + kill.length + " in conflitto." : ".")});
+      rem = rem.filter(function(b){ return b[1] <= x[0] || b[0] >= x[1]; });
+    }
+    fr.push({look:null, picked:picked.slice(), dropped:dropped.slice(), done:true,
+             note:"Fine: " + picked.length + " intervalli."});
+    return fr;
+  }
+
+  /* ---------- disegno ---------- */
+  var barsEl = document.getElementById("bars");
+  var axisEl = document.getElementById("axis");
+
+  function pct(t){ return (t / TMAX) * 100; }
+
+  function layout(){
+    axisEl.textContent = "";
+    for (var t = 0; t <= TMAX; t += 3){
+      var s = document.createElement("span");
+      s.style.left = pct(t) + "%";
+      s.textContent = t;
+      axisEl.appendChild(s);
+    }
+    barsEl.textContent = "";
+    for (var t2 = 0; t2 <= TMAX; t2 += 3){
+      var tk = document.createElement("div");
+      tk.className = "tick";
+      tk.style.left = pct(t2) + "%";
+      barsEl.appendChild(tk);
+    }
+    cur.inst.forEach(function(iv, i){
+      var row = document.createElement("div");
+      row.className = "bar";
+      var lab = document.createElement("span");
+      lab.className = "lab";
+      lab.textContent = String.fromCharCode(97 + i);
+      row.appendChild(lab);
+      var b = document.createElement("div");
+      b.className = "iv";
+      b.style.left = pct(iv[0]) + "%";
+      b.style.width = (pct(iv[1]) - pct(iv[0])) + "%";
+      b.textContent = iv[0] + "–" + iv[1];
+      b.setAttribute("data-i", i);
+      row.appendChild(b);
+      barsEl.appendChild(row);
+    });
+  }
+
+  var scRule = document.getElementById("sc-rule");
+  var scOpt = document.getElementById("sc-opt");
+  var scN = document.getElementById("sc-n");
+  var verdictEl = document.getElementById("verdict");
+  var stepInfo = document.getElementById("stepinfo");
+
+  function paint(){
+    var f = frames[fi];
+    var opt = optimalSet(cur.inst);
+    Array.prototype.forEach.call(barsEl.querySelectorAll(".iv"), function(el){
+      var i = +el.getAttribute("data-i");
+      var iv = cur.inst[i];
+      el.className = "iv";
+      if (f.done && opt.indexOf(iv) !== -1 && f.picked.indexOf(iv) === -1) el.classList.add("opt");
+      if (f.dropped.indexOf(iv) !== -1) el.classList.add("drop");
+      if (f.picked.indexOf(iv) !== -1) el.classList.add("pick");
+      if (f.look === iv) el.classList.add("look");
+    });
+    scRule.querySelector(".v").textContent = f.picked.length || "—";
+    scRule.className = "sc" + (f.done ? (f.picked.length < opt.length ? " bad" : " good") : "");
+    scOpt.textContent = opt.length;
+    scN.textContent = cur.inst.length;
+    stepInfo.innerHTML = "passo " + fi + " / " + (frames.length - 1) + " &nbsp;·&nbsp; " + f.note;
+
+    if (f.done){
+      verdictEl.className = "verdict " + (f.picked.length < opt.length ? "fail" : "pass");
+      verdictEl.innerHTML = (f.picked.length < opt.length
+        ? "<b>Fallita:</b> " + f.picked.length + " invece di " + opt.length + ". "
+        : "<b>Ottima:</b> " + f.picked.length + " su " + opt.length + ". ") + cur.verdict;
+    } else {
+      verdictEl.className = "verdict";
+      verdictEl.innerHTML = "<b>" + cur.name + "</b> — " + cur.desc
+        + " Premi <b>esegui</b> per vederla lavorare, o avanza un passo alla volta.";
+    }
+    document.getElementById("step").disabled = !!f.done;
+  }
+
+  /* ---------- controlli ---------- */
+  function stop(){ if (timer){ clearInterval(timer); timer = null; }
+    document.getElementById("play").textContent = "▶ esegui"; }
+
+  function reset(){
+    stop();
+    frames = build(cur);
+    fi = 0;
+    layout();
+    paint();
+  }
+
+  function next(){
+    if (fi < frames.length - 1){ fi++; paint(); }
+    if (frames[fi].done) stop();
+  }
+
+  document.getElementById("step").addEventListener("click", function(){ stop(); next(); });
+  document.getElementById("reset").addEventListener("click", reset);
+  document.getElementById("play").addEventListener("click", function(){
+    if (timer){ stop(); return; }
+    if (frames[fi].done) { fi = 0; paint(); }
+    this.textContent = "❙❙ pausa";
+    timer = setInterval(next, 850);
+  });
+
+  /* ---------- selettore ---------- */
+  var rulesEl = document.getElementById("rules");
+  RULES.forEach(function(r){
+    var b = document.createElement("button");
+    b.className = "rule"; b.type = "button";
+    b.setAttribute("style", "--rr:" + r.col);
+    b.setAttribute("aria-pressed", r === cur ? "true" : "false");
+    b.innerHTML = '<span class="rn">' + r.name + '</span>'
+                + '<span class="rd">' + r.desc + '</span>'
+                + '<span class="rv ' + (r.ok ? "rv-ok" : "rv-bad") + '">'
+                + (r.ok ? "corretta" : "sbagliata") + '</span>';
+    b.addEventListener("click", function(){
+      cur = r;
+      document.documentElement.style.setProperty("--rr", r.col);
+      Array.prototype.forEach.call(rulesEl.children, function(o, i){
+        o.setAttribute("aria-pressed", RULES[i] === cur ? "true" : "false");
+      });
+      reset();
+    });
+    rulesEl.appendChild(b);
+  });
+
+  document.documentElement.style.setProperty("--rr", cur.col);
+  reset();
+})();
+</script>
+</body>
+</html>

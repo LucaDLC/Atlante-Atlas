@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Forza bruta e branching</title>
+<link rel="stylesheet" href="../assets/atlas.css">
+<link rel="stylesheet" href="../assets/tema.css">
+<script src="../assets/sito.js"></script>
+<script src="../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+const ELEM = ['1','2','3'];
+const righe = [[0,'{}'],[1,'{1}'],[2,'{2}'],[3,'{1, 2}'],[4,'{3}'],[5,'{1, 3}'],[6,'{2, 3}'],[7,'{1, 2, 3}']];
+const celle = (k) => ['','',''].map((_,i) => ((k >> i) & 1) ? '1' : '0');
+SCENE.bits = {
+  w: 540, h: 290, lato: true,
+  legenda: 'ora:bit di k in questo passo,ok:sottoinsieme valido,dato:sottoinsiemi già visti',
+  oggetti: [
+    {id:'h',tipo:'testo',x:20,y:26,t:'k   bit (i = 2,1,0)   sottoinsieme',size:12,bold:true,anchor:'start'},
+    ...righe.map(([k,s],i) => ({id:'r'+k,tipo:'testo',x:20,y:52+i*28,t:k + '    ' + celle(k).join(' ') + '     ' + s,size:13,anchor:'start'})),
+    {id:'c1',tipo:'testo',x:20,y:282,t:'',size:12,bold:true,anchor:'start'}
+  ],
+  passi: [
+    { nota: 'Forza bruta: provo tutti i sottoinsiemi di 3 elementi. Il numero k da 0 a 2³ − 1 = 7 è una <b>maschera</b>: il suo bit i dice se l\'elemento i è nel sottoinsieme.', set:{} },
+    { nota: 'k = 0: bit 000, sottoinsieme vuoto. k = 1: bit 001 (bit 0 acceso), sottoinsieme {1}. Il bit 0 corrisponde all\'elemento 1.', set:{r0:{tono:'dato'},r1:{tono:'ora'},c1:{t:'k = 1 → {1}'}} },
+    { nota: 'k = 3: bit 011, sottoinsieme {1, 2}. Con k & (1 &lt;&lt; i) controllo il bit i in tempo costante.', set:{r0:{tono:'dato'},r1:{tono:'dato'},r2:{tono:'dato'},r3:{tono:'ora'},c1:{t:'k = 3 → {1, 2}'}} },
+    { nota: 'Lo stesso per tutti: 8 sottoinsiemi. Per ognuno verifico la condizione in tempo polinomiale e tengo il migliore. Costo <code>O(2ⁿ · poly(n))</code>: esponenziale in n, ma sempre corretto.', set:{r7:{tono:'ok'},c1:{t:'8 sottoinsiemi = 2³',tono:'ok'}} }
+  ]
+};
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Forza bruta e branching</h1>
+  <p class="lede">Quando un problema è NP-hard, l'unica strada garantita per la soluzione esatta è provare i candidati. La forza bruta li enumera tutti, il branching ramifica solo dove serve. Il costo è esponenziale, ma spesso dipende dalla taglia della soluzione, non da n.</p>
+</header>
+
+<section>
+  <h2>Enumerare con i bit</h2>
+<p>Un sottoinsieme di <code>n</code> elementi si rappresenta con un numero <code>k</code> da 0 a <code>2ⁿ − 1</code>: il bit <code>i</code> di <code>k</code> dice se l'elemento <code>i</code> è dentro.
+In Java: <code>k &amp; (1 &lt;&lt; i)</code> è diverso da zero se il bit i è acceso. Per ogni sottoinsieme verifichi la condizione e tieni il migliore.</p>
+  <figure class="scena" data-scena="bits" data-titolo="Maschere di bit: k = 0 … 7"></figure>
+</section>
+<section>
+  <h2>Branching: dentro o fuori</h2>
+<p>Il branching fa la stessa cosa come ricorsione: per un elemento, due rami, dentro o fuori. Con potatura (pruning) si scartano i rami che non possono migliorare.</p>
+<p>Esempio: vertex cover con k piccolo. Prendi un arco <code>u–v</code>: almeno uno dei due è nella copertura. Ramifica su <code>G − u</code> con <code>k − 1</code> e su <code>G − v</code> con <code>k − 1</code>.
+Profondità <code>k</code>, <code>2ᵏ</code> rami: esponenziale in <b>k</b>, non in n.</p>
+</section>
+<section>
+  <h2>Quando serve e perché è corretta</h2>
+<p>Ogni problema in NP ha un <b>certificato</b> verificabile in tempo polinomiale. Quindi provare tutti i certificati è sempre corretto, solo lento.
+Per capire i costi: <code>O(2ⁿ · poly(n))</code> per i sottoinsiemi, <code>O(n! · poly(n))</code> per le permutazioni, <code>O(2ᵏ · kn)</code> per il branching su vertex cover.</p>
+</section>
+<section>
+  <h2>Il codice, affiancato</h2>
+  <p>Questa pagina spiega il concetto. Il codice Java che lo implementa, con una spiegazione riga per riga e le note di sintassi che servono, è nella pagina affiancata.</p>
+  <p><a href="../codice/forza-bruta.html"><b>→ Codice Java di questo argomento</b></a></p>
+</section>
+<section>
+  <h2>Permutazioni in ordine lessicografico</h2>
+  <p>Una <b>permutazione</b> di 1, 2, 3 è un modo di scrivere i tre numeri in fila: 123, 132, 213, 231, 312, 321. Sono 3! = 6. L’<b>ordine lessicografico</b> è quello del dizionario: si confronta il primo numero, poi il secondo, e così via.</p>
+  <p>Per passare dalla permutazione <code>p</code> alla successiva si fanno tre mosse:</p>
+  <ol>
+    <li>Da destra cerco il primo punto dove la fila <b>smette di crescere</b>: la posizione <code>i</code> con <code>p[i] &lt; p[i+1]</code>. Il suffisso a destra di <code>i</code> è decrescente: non si può aumentare restando lì dentro.</li>
+    <li>Il numero in <code>i</code> (il <b>pivot</b>) va aumentato: cerco da destra il più piccolo numero maggiore di <code>p[i]</code>, e li scambio.</li>
+    <li>Il suffisso a destra di <code>i</code> è decrescente: lo rovescio, così diventa il più piccolo possibile (crescente).</li>
+  </ol>
+  <figure class="scena" data-scena="perm" data-titolo="Da 132 alla successiva, 213, in tre mosse"></figure>
+  <p>Generare tutte le n! permutazioni costa O(n!) in tutto: in media ogni passo tocca un suffisso brevissimo. Con n = 13 sono più di 6 miliardi: la forza bruta regge solo per n piccolo.</p>
+</section>
+<section>
+  <h2>All’esame</h2>
+<div class="box esame" data-tit="All’esame">
+<p>Problema NP-hard con istanza piccola, o con parametro piccolo (k) → forza bruta o branching. Frase: <i>"Enumerate all subsets using bit masks; each subset is checked in polynomial time. Time O(2ⁿ · poly(n))."</i></p>
+</div>
+</section>
+<section>
+  <h2>Formulario rapido</h2>
+<div class="tab-wrap"><table class="tab"><thead><tr><th>approccio</th><th>tempo</th><th>uso</th></tr></thead><tbody><tr><td>sottoinsiemi</td><td>2ⁿ · poly(n)</td><td>bit mask</td></tr><tr><td>permutazioni</td><td>n! · poly(n)</td><td>ordini</td></tr><tr><td>vertex cover, parametro k</td><td>O(2ᵏ · kn)</td><td>branching</td></tr></tbody></table></div>
+</section>
+
+</main>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+const Q = (id,x,t) => ({id,tipo:'rett',x,y:70,w:60,h:50,t});
+const ogg = [
+  Q('q0',150,'1'), Q('q1',230,'3'), Q('q2',310,'2'),
+  {id:'c',tipo:'testo',x:40,y:170,t:'',size:13,bold:true,anchor:'start'}
+];
+const passi = [
+  {nota:"Parto da <b>1 3 2</b>. Da destra: <b>3 2</b> è decrescente, la fila smette di crescere lì. Il <b>1</b> è il pivot: è il numero da aumentare, perché prima del 3 la fila cresce ancora.", set:{q0:{tono:'ora'}, q1:{tono:'due'}, q2:{tono:'due'}, c:{t:'132 → ?'}}},
+  {nota:"Nel suffisso cerco il più piccolo numero maggiore di 1: è il <b>2</b>. Li scambio: la fila diventa <b>2 3 1</b>.", set:{q0:{t:'2', tono:'ora'}, q1:{tono:'due'}, q2:{t:'1', tono:'due'}, c:{t:'scambio: 2 3 1'}}},
+  {nota:"Il suffisso <b>3 1</b> è decrescente: lo rovescio e diventa <b>1 3</b>, il più piccolo possibile. Risultato: <b>2 1 3</b>, la permutazione successiva a 132.", set:{q0:{tono:'ok'}, q1:{t:'1', tono:'ok'}, q2:{t:'3', tono:'ok'}, c:{t:'132 → 213', tono:'ok'}}}
+];
+SCENE.perm = {
+  w: 540, h: 230, lato: true,
+  legenda: 'ora:pivot,due:suffisso decrescente,ok:risultato',
+  oggetti: ogg, passi
+};
+})();
+</script>
+</body>
+</html>

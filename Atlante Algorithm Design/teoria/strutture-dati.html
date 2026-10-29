@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Strutture dati: quale scegliere e quanto costa</title>
+<link rel="stylesheet" href="../assets/atlas.css">
+<link rel="stylesheet" href="../assets/tema.css">
+<script src="../assets/sito.js"></script>
+<script src="../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+const seq = [0,1,2,3,4,5,6,7,8].map(n => n.toString(2).padStart(4,'0').split(''));
+const cc = (k) => seq[k].map(String);
+SCENE.cont = {
+  w: 540, h: 230, lato: true,
+  legenda: 'ora:bit che cambia in questo incremento,dato:bit invariato,ok:risultato',
+  oggetti: [
+    {id:'g',tipo:'celle',x:40,y:60,cw:58,ch:40,valori:cc(0),indici:false},
+    {id:'lab',tipo:'testo',x:40,y:40,t:'bit 3  bit 2  bit 1  bit 0',size:11,anchor:'start'},
+    {id:'c1',tipo:'testo',x:40,y:150,t:'',size:13,bold:true,anchor:'start'},
+    {id:'c2',tipo:'testo',x:40,y:180,t:'',size:12,anchor:'start'}
+  ],
+  passi: [
+    { nota: 'Contatore binario: un incremento flippa i bit dal basso finché trova uno 0, che diventa 1. <b>Costo di un incremento</b>: quanti bit cambiano.', set:{} },
+    { nota: '0000 → 0001: cambia 1 bit.', set:{g:{valori:cc(1),toni:{3:'ora'}},c1:{t:'0000 → 0001: 1 bit'}} },
+    { nota: '0001 → 0010: cambiano 2 bit (1 si azzera, 0 diventa 1).', set:{g:{valori:cc(2),toni:{2:'ora',3:'no'}},c1:{t:'0001 → 0010: 2 bit'}} },
+    { nota: '0011 → 0100: 3 bit. Uno solo cambia "sempre", quello più basso; gli altri cambiano di rado.', set:{g:{valori:cc(4),toni:{1:'ora',2:'no',3:'no'}},c1:{t:'0011 → 0100: 3 bit'}} },
+    { nota: 'In 8 incrementi (0 → 8) il bit 0 cambia 8 volte, il bit 1 quattro, il bit 2 due, il bit 3 una: in totale <b>15 cambi</b> per 8 operazioni, cioè circa 2 per operazione.', set:{g:{valori:cc(8),toni:{0:'ok'}},c1:{t:'totale 15 cambi in 8 incrementi',tono:'ok'},c2:{t:'costo ammortizzato: O(1) per incremento'}} }
+  ]
+};
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Strutture dati: quale scegliere e quanto costa</h1>
+  <p class="lede">All'esame le strutture dati servono a giustificare il tempo. Scegli la struttura guardando l'operazione che ripeti più spesso, e moltiplica il suo costo per quante volte la ripeti.</p>
+</header>
+
+<section>
+  <h2>Scegliere guardando l'operazione</h2>
+<table class="tab"><thead><tr><th>l'operazione che ripeti</th><th>struttura</th><th>costo</th></tr></thead><tbody>
+<tr><td>scorrere i vicini di un nodo</td><td>lista di adiacenza</td><td>O(grado)</td></tr>
+<tr><td>chiedere "c'è l'arco u–v?" (grafo denso)</td><td>matrice di adiacenza</td><td>O(1), spazio O(n²)</td></tr>
+<tr><td>tradurre un nome in un indice</td><td>hash map</td><td>O(1) atteso</td></tr>
+<tr><td>estrarre il minimo e abbassare chiavi</td><td>binary heap (Dijkstra, Prim)</td><td>O(log n) per operazione</td></tr>
+<tr><td>unire insiemi e chiedere "stesso insieme?"</td><td>union-find</td><td>quasi costante</td></tr>
+<tr><td>visita a strati / in profondità</td><td>coda FIFO / pila</td><td>O(1) per operazione</td></tr>
+</tbody></table>
+</section>
+<section>
+  <h2>Costo ammortizzato</h2>
+<p>Un costo <b>ammortizzato</b> (amortized) è un limite sulla <i>somma</i> dei costi di una sequenza di operazioni, diviso per il numero di operazioni.
+Una singola operazione può costare tanto, ma la sequenza no. Esempio: il contatore binario. Ogni incremento cambia molti bit, ma in 8 incrementi i cambi
+totali sono 15: circa 2 per operazione, quindi <code>O(1)</code> ammortizzato.</p>
+  <figure class="scena" data-scena="cont" data-titolo="Il contatore binario: quanti bit cambiano"></figure>
+</section>
+<section>
+  <h2>Dijkstra e la coda</h2>
+<p>Dijkstra con binary heap: <code>O(m log n)</code>. Con un array non ordinato: <code>O(n²)</code>, buono per grafi densi. Con un Fibonacci heap: <code>O(m + n log n)</code>,
+più teorico. L'esame accetta il binary heap come risposta standard.</p>
+</section>
+<section>
+  <h2>All’esame</h2>
+<div class="box esame" data-tit="All’esame">
+<p>Scrivi la struttura e il suo costo per operazione, poi moltiplica. Frase: <i>"We store the graph as adjacency lists; scanning the neighbours of v costs O(deg(v)), so the total over all vertices is O(m)."</i></p>
+</div>
+</section>
+<section>
+  <h2>Formulario rapido</h2>
+<div class="tab-wrap"><table class="tab"><thead><tr><th>struttura</th><th>costo</th><th>uso</th></tr></thead><tbody><tr><td>lista di adiacenza</td><td>O(n + m) spazio</td><td>scorrere i vicini</td></tr><tr><td>binary heap</td><td>O(log n) per operazione</td><td>Dijkstra, Prim</td></tr><tr><td>union-find</td><td>O(m α(m, n))</td><td>Kruskal</td></tr><tr><td>ammortizzato</td><td>somma / operazioni</td><td>contatore, tabella dinamica</td></tr></tbody></table></div>
+</section>
+
+</main>
+</body>
+</html>

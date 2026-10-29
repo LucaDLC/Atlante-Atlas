@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Codice: mergesort in Java</title>
+<link rel="stylesheet" href="../assets/atlas.css">
+<link rel="stylesheet" href="../assets/tema.css">
+<script src="../assets/sito.js"></script>
+<script src="../assets/atlas.js" defer></script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Codice: mergesort in Java</h1>
+  <p class="lede">Il divide et impera in Java: la ricorsione sugli indici, la fusione con due fronti e la copia del risultato.</p>
+</header>
+
+<section>
+  <h2>Dividere e ricorrere</h2>
+  <p>La funzione ordina il sottointervallo <code>a[lo..hi)</code>. Divide a metà e richiama se stessa sulle due metà.</p>
+  <figure class="codice" data-titolo="Dividere e ricorrere">
+<pre data-lang="java">import java.io.*;
+import java.util.*;
+
+public class Main {
+    // Divide et impera: ordina a[lo..hi) dividendo a metà e fondendo.
+    static void ordina(int[] a, int lo, int hi, int[] tmp) {
+        if (hi - lo &lt;= 1) {
+            return;                            // caso base: un elemento è già ordinato
+        }
+        int mid = (lo + hi) / 2;
+        ordina(a, lo, mid, tmp);
+        ordina(a, mid, hi, tmp);
+        int i = lo, j = mid, k = lo;
+        while (i &lt; mid &amp;&amp; j &lt; hi) {            // fusione: sposto il più piccolo dei due fronti
+            tmp[k++] = (a[i] &lt;= a[j]) ? a[i++] : a[j++];
+        }
+        while (i &lt; mid) tmp[k++] = a[i++];
+        while (j &lt; hi) tmp[k++] = a[j++];
+        System.arraycopy(tmp, lo, a, lo, hi - lo);   // ricopio la parte fusa nell'array originale
+    }
+
+    public static void main(String[] args) throws IOException {
+        BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
+        int n = Integer.parseInt(in.readLine().trim());
+        StringTokenizer st = new StringTokenizer(in.readLine());
+        int[] a = new int[n];
+        for (int i = 0; i &lt; n; i++) {
+            a[i] = Integer.parseInt(st.nextToken());
+        }
+        ordina(a, 0, n, new int[n]);
+        StringBuilder out = new StringBuilder();
+        for (int i = 0; i &lt; n; i++) {
+            out.append(a[i]).append(i + 1 &lt; n ? " " : "\n");
+        }
+        System.out.print(out);
+    }
+}</pre>
+    <ol class="spiega">
+    <li data-righe="7"><p>Caso base: un elemento o nessuno è già ordinato.</p></li>
+    <li data-righe="10"><p>Il punto di divisione. Con interi, la divisione tronca: è il centro per difetto.</p></li>
+    <li data-righe="11"><p>Ordino la metà sinistra, poi la destra. La ricorsione è la prima parte del divide et impera.</p></li>
+    </ol>
+  </figure>
+  <div class="box basi" data-tit="Note di sintassi"><ul><li>Gli intervalli sono semiaperti: <code>[lo, hi)</code> include <code>lo</code> ed esclude <code>hi</code>. È la convenzione di Java per gli indici.</li></ul></div>
+</section>
+<section>
+  <h2>Fondere</h2>
+  <p>Due fronti, uno per metà. Ad ogni passo copio il più piccolo nell'array temporaneo.</p>
+  <figure class="codice" data-titolo="Fondere">
+<pre data-lang="java">import java.io.*;
+import java.util.*;
+
+public class Main {
+    // Divide et impera: ordina a[lo..hi) dividendo a metà e fondendo.
+    static void ordina(int[] a, int lo, int hi, int[] tmp) {
+        if (hi - lo &lt;= 1) {
+            return;                            // caso base: un elemento è già ordinato
+        }
+        int mid = (lo + hi) / 2;
+        ordina(a, lo, mid, tmp);
+        ordina(a, mid, hi, tmp);
+        int i = lo, j = mid, k = lo;
+        while (i &lt; mid &amp;&amp; j &lt; hi) {            // fusione: sposto il più piccolo dei due fronti
+            tmp[k++] = (a[i] &lt;= a[j]) ? a[i++] : a[j++];
+        }
+        while (i &lt; mid) tmp[k++] = a[i++];
+        while (j &lt; hi) tmp[k++] = a[j++];
+        System.arraycopy(tmp, lo, a, lo, hi - lo);   // ricopio la parte fusa nell'array originale
+    }
+
+    public static void main(String[] args) throws IOException {
+        BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
+        int n = Integer.parseInt(in.readLine().trim());
+        StringTokenizer st = new StringTokenizer(in.readLine());
+        int[] a = new int[n];
+        for (int i = 0; i &lt; n; i++) {
+            a[i] = Integer.parseInt(st.nextToken());
+        }
+        ordina(a, 0, n, new int[n]);
+        StringBuilder out = new StringBuilder();
+        for (int i = 0; i &lt; n; i++) {
+            out.append(a[i]).append(i + 1 &lt; n ? " " : "\n");
+        }
+        System.out.print(out);
+    }
+}</pre>
+    <ol class="spiega">
+    <li data-righe="15"><p>Confronto i due fronti e copio il minore. <code>k++</code> usa il valore e poi avanza.</p></li>
+    <li data-righe="19"><p>Ricopio la parte fusa: <code>arraycopy</code> è la copia di blocchi di array.</p></li>
+    </ol>
+  </figure>
+  <div class="box basi" data-tit="Note di sintassi"><ul><li><code>i++</code> dentro un'espressione usa il valore prima dell'incremento: qui sposta il fronte in avanti di uno.</li></ul></div>
+</section>
+<section>
+  <h2>Eseguirlo</h2>
+  <p>Esempio di input e di output (compilato e lanciato davvero).</p>
+  <pre class="cod">8
+5 2 4 7 1 3 2 6
+
+(output)
+1 2 2 3 4 5 6 7</pre>
+</section>
+<section>
+  <h2>La teoria, affiancata</h2>
+  <p><a href="../teoria/mergesort.html"><b>← Torna alla teoria di questo argomento</b></a></p>
+</section>
+
+</main>
+</body>
+</html>

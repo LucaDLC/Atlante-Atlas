@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Codice: Ford-Fulkerson in Java</title>
+<link rel="stylesheet" href="../assets/atlas.css">
+<link rel="stylesheet" href="../assets/tema.css">
+<script src="../assets/sito.js"></script>
+<script src="../assets/atlas.js" defer></script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Codice: Ford-Fulkerson in Java</h1>
+  <p class="lede">Il flusso massimo con cammini aumentanti: matrice delle capacità residue, BFS sulla residua, collo di bottiglia e disfacimento del flusso.</p>
+</header>
+
+<section>
+  <h2>La rete residua</h2>
+  <p>La capacità residua è una matrice: <code>cap[u][v]</code> è quanto posso ancora mandare da u a v. Adatta a grafi piccoli.</p>
+  <figure class="codice" data-titolo="La rete residua">
+<pre data-lang="java">import java.io.*;
+import java.util.*;
+
+public class Main {
+    static int n;
+    static int[][] cap;      // capacità residua: cap[u][v] = quanto posso ancora mandare da u a v
+
+    public static void main(String[] args) throws IOException {
+        BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
+        StringTokenizer st = new StringTokenizer(in.readLine());
+        n = Integer.parseInt(st.nextToken());
+        int m = Integer.parseInt(st.nextToken());
+        int s = Integer.parseInt(st.nextToken());
+        int t = Integer.parseInt(st.nextToken());
+
+        cap = new int[n][n];                   // matrice: adatta a grafi piccoli (n piccolo)
+        for (int i = 0; i &lt; m; i++) {
+            st = new StringTokenizer(in.readLine());
+            int u = Integer.parseInt(st.nextToken());
+            int v = Integer.parseInt(st.nextToken());
+            cap[u][v] += Integer.parseInt(st.nextToken());
+        }
+
+        // Finché trovo un cammino s→t nella rete residua, aumento il flusso del collo di bottiglia.
+        int flusso = 0;
+        while (true) {
+            int[] padre = new int[n];
+            Arrays.fill(padre, -1);
+            padre[s] = s;
+            Deque&lt;Integer&gt; coda = new ArrayDeque&lt;&gt;();
+            coda.add(s);
+            while (!coda.isEmpty() &amp;&amp; padre[t] == -1) {    // BFS sulla residua
+                int u = coda.poll();
+                for (int v = 0; v &lt; n; v++) {
+                    if (padre[v] == -1 &amp;&amp; cap[u][v] &gt; 0) {
+                        padre[v] = u;
+                        coda.add(v);
+                    }
+                }
+            }
+            if (padre[t] == -1) {
+                break;                                     // nessun cammino: flusso massimo
+            }
+            int collo = Integer.MAX_VALUE;                 // collo di bottiglia del cammino
+            for (int v = t; v != s; v = padre[v]) {
+                collo = Math.min(collo, cap[padre[v]][v]);
+            }
+            for (int v = t; v != s; v = padre[v]) {
+                cap[padre[v]][v] -= collo;                 // l'avanti si riduce
+                cap[v][padre[v]] += collo;                 // l'indietro cresce: si può disfare
+            }
+            flusso += collo;
+        }
+        System.out.println("flusso massimo " + flusso);
+    }
+}</pre>
+    <ol class="spiega">
+    <li data-righe="16"><p>Matrice n×n: <code>cap[u][v]</code> è la capacità dell'arco u→v, 0 se non c'è.</p></li>
+    <li data-righe="21"><p><code>+=</code> per gli archi paralleli: due archi u→v si sommano.</p></li>
+    </ol>
+  </figure>
+  <div class="box basi" data-tit="Note di sintassi"><ul><li><code>static</code> sulle variabili globali della classe: il metodo <code>main</code> le usa senza passarle.</li></ul></div>
+</section>
+<section>
+  <h2>Cammino aumentante</h2>
+  <p>Una BFS nella residua trova un cammino s→t. Il collo di bottiglia è la capacità minima lungo il cammino: quella quantità passa.</p>
+  <figure class="codice" data-titolo="Cammino aumentante">
+<pre data-lang="java">import java.io.*;
+import java.util.*;
+
+public class Main {
+    static int n;
+    static int[][] cap;      // capacità residua: cap[u][v] = quanto posso ancora mandare da u a v
+
+    public static void main(String[] args) throws IOException {
+        BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
+        StringTokenizer st = new StringTokenizer(in.readLine());
+        n = Integer.parseInt(st.nextToken());
+        int m = Integer.parseInt(st.nextToken());
+        int s = Integer.parseInt(st.nextToken());
+        int t = Integer.parseInt(st.nextToken());
+
+        cap = new int[n][n];                   // matrice: adatta a grafi piccoli (n piccolo)
+        for (int i = 0; i &lt; m; i++) {
+            st = new StringTokenizer(in.readLine());
+            int u = Integer.parseInt(st.nextToken());
+            int v = Integer.parseInt(st.nextToken());
+            cap[u][v] += Integer.parseInt(st.nextToken());
+        }
+
+        // Finché trovo un cammino s→t nella rete residua, aumento il flusso del collo di bottiglia.
+        int flusso = 0;
+        while (true) {
+            int[] padre = new int[n];
+            Arrays.fill(padre, -1);
+            padre[s] = s;
+            Deque&lt;Integer&gt; coda = new ArrayDeque&lt;&gt;();
+            coda.add(s);
+            while (!coda.isEmpty() &amp;&amp; padre[t] == -1) {    // BFS sulla residua
+                int u = coda.poll();
+                for (int v = 0; v &lt; n; v++) {
+                    if (padre[v] == -1 &amp;&amp; cap[u][v] &gt; 0) {
+                        padre[v] = u;
+                        coda.add(v);
+                    }
+                }
+            }
+            if (padre[t] == -1) {
+                break;                                     // nessun cammino: flusso massimo
+            }
+            int collo = Integer.MAX_VALUE;                 // collo di bottiglia del cammino
+            for (int v = t; v != s; v = padre[v]) {
+                collo = Math.min(collo, cap[padre[v]][v]);
+            }
+            for (int v = t; v != s; v = padre[v]) {
+                cap[padre[v]][v] -= collo;                 // l'avanti si riduce
+                cap[v][padre[v]] += collo;                 // l'indietro cresce: si può disfare
+            }
+            flusso += collo;
+        }
+        System.out.println("flusso massimo " + flusso);
+    }
+}</pre>
+    <ol class="spiega">
+    <li data-righe="44"><p>Il collo di bottiglia parte dal massimo: ogni arco del cammino lo riduce.</p></li>
+    <li data-righe="49"><p>L'arco in avanti perde capacità.</p></li>
+    <li data-righe="50"><p>L'arco all'indietro guadagna: è il disfacimento del flusso, la rete residua.</p></li>
+    </ol>
+  </figure>
+  <div class="box basi" data-tit="Note di sintassi"><ul><li>Il <code>for</code> che risale i padri va da <code>t</code> a <code>s</code>: per ricostruire il cammino a ritroso.</li></ul></div>
+</section>
+<section>
+  <h2>Eseguirlo</h2>
+  <p>Esempio di input e di output (compilato e lanciato davvero).</p>
+  <pre class="cod">4 5 0 3
+0 1 1
+0 2 1
+1 2 1
+1 3 1
+2 3 1
+
+(output)
+flusso massimo 2</pre>
+</section>
+<section>
+  <h2>La teoria, affiancata</h2>
+  <p><a href="../teoria/ford-fulkerson.html"><b>← Torna alla teoria di questo argomento</b></a></p>
+</section>
+
+</main>
+</body>
+</html>

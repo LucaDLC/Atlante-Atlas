@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Aggiornamenti condivisi e false sharing</title>
+<link rel="stylesheet" href="../assets/atlas.css">
+<link rel="stylesheet" href="../assets/tema.css">
+<script src="../assets/sito.js"></script>
+<script src="../assets/atlas.js" defer></script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <div class="occhiello"><span>Settimana 9 · Performance</span></div>
+  <h1>Aggiornamenti condivisi e false sharing</h1>
+  <p class="lede">Un dato scritto da più thread passa di cache in cache a ogni scrittura. Due dati indipendenti sulla stessa linea di cache danno lo stesso effetto: è il false sharing.</p>
+</header>
+
+<section>
+  <h2>Scrivere sullo stesso dato è lento</h2>
+  <p>Se più thread aggiornano lo stesso dato, la linea di cache fa un viaggio continuo da una cache all’altra: ogni scrittura invalida le copie degli altri. Il nome della slide è <b>cache ping-pong</b> o <b>cache thrashing</b>, e il ciclo M → I → M → I è il suo sintomo.</p>
+  <p>Anche il lock è una scrittura in memoria: se più thread prendono lo stesso lock di frequente, si passa lo stato della sua linea di continuo. Per questo un lock condiviso molto preso è lento anche con il lock "giusto".</p>
+  <figure class="passi" data-titolo="Il ping-pong su un contatore condiviso" data-legenda="dato:linea di cache,ora:scrittura,no:invalidate,ok:stato stabile">
+    <div class="passo"><div class="espr">Thread 0 scrive: la linea è in <mark class="ora">M</mark> nella cache del core 0</div><p class="nota">Il core 0 ha la sua copia, modificata.</p></div>
+    <div class="passo"><div class="espr">Thread 1 scrive lo stesso dato: il core 1 <mark class="no">invalida</mark> la copia di core 0</div><p class="nota">La linea si sposta nella cache del core 1, che la fa in M.</p></div>
+    <div class="passo"><div class="espr">Thread 0 scrive di nuovo: la linea torna da core 1, <mark class="no">e così via</mark></div><p class="nota">Ogni scrittura è un viaggio sul bus. Il contatore resta corretto, ma lento.</p></div>
+  </figure>
+</section>
+
+<section>
+  <h2>Quando la scrittura è veloce</h2>
+  <p>Due situazioni vanno bene, e sono quelle da cercare:</p>
+  <ul>
+    <li><b>dati immutabili condivisi</b>: letti da tutti, mai scritti. Restano in S in tutte le cache, e leggerli è veloce;</li>
+    <li><b>dati locali</b>: ogni thread scrive solo il suo dato. Resta in M nella sua cache, e nessuno lo tocca.</li>
+  </ul>
+  <p>La lezione chiama questa idea "aggiornamenti thread-local": un dato che cambia deve appartenere a un solo thread.</p>
+</section>
+
+<section>
+  <h2>False sharing: due dati estranei sulla stessa linea</h2>
+  <p>La linea di cache è di 64 byte. Due dati diversi, usati da thread diversi, possono stare sulla <b>stessa linea</b>. Anche se i thread non si toccano, scrivere uno dei due invalida la copia dell’altro: è il <b>false sharing</b>, falsa condivisione. Il codice non lo mostra: due campi vicini in un oggetto possono finire sulla stessa linea.</p>
+  <figure class="passi" data-titolo="Due contatori indipendenti sulla stessa linea" data-legenda="dato:contatori,ora:scrittura,no:danno,ok:soluzione">
+    <div class="passo"><div class="espr">Thread A scrive il contatore <mark class="dato">a</mark>, Thread B il contatore <mark class="dato">b</mark>: stessa linea</div><p class="nota">I due thread non condividono nessun dato logico.</p></div>
+    <div class="passo"><div class="espr">Ogni scrittura di A <mark class="no">invalida</mark> la copia di B, e viceversa</div><p class="nota">Il ping-pong del caso precedente, senza nessun motivo logico.</p></div>
+    <div class="passo"><div class="espr"><mark class="ok">Soluzione</mark>: <mark class="ok">padding</mark>, cioè spazio vuoto tra i dati, così ognuno sta su una linea propria</div><p class="nota">Il padding costa memoria, ma toglie il ping-pong. In Java @Contended fa lo stesso, ma è usabile solo dentro le librerie del JDK.</p></div>
+  </figure>
+</section>
+
+<section>
+  <h2>Come si misura</h2>
+  <p>Il false sharing non si vede leggendo il codice: si vede misurando. La lezione confronta versioni con e senza padding sullo stesso carico, e il padding vince dove due thread scrivono dati vicini. È il motivo per cui gli esercizi della settimana chiedono di misurare sulla propria macchina.</p>
+  <div class="box attenzione" data-tit="Attenzione">Il padding non è sempre utile: se i thread non scrivono dati vicini, non cambia niente. Prima misura, poi ottimizza.</div>
+</section>
+
+</main>
+</body>
+</html>

@@ -1,0 +1,718 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>:root{color-scheme:light dark}html{-webkit-text-size-adjust:100%}body{margin:0;padding:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Atlante Algorithm Design</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=Newsreader:opsz,wght@6..72,500;6..72,600&display=swap">
+
+<style>
+:root{
+  --ground:#ECEAF1; --surface:#FFFFFF; --surface-2:#F6F4F9;
+  --ink:#17141F; --ink-2:#564E63; --ink-3:#8A8296;
+  --line:#DAD5E2; --line-soft:#E8E4EE;
+  --accent:#6D4A8C; --accent-soft:#F1EBF6;
+  --due:#A8342F; --due-soft:#F8E7E5;
+  --ok:#2C6A45; --ok-soft:#E2EFE7;
+  --warn:#8A6008; --warn-soft:#F7F0DE;
+  --shadow:0 1px 2px rgba(23,20,31,.06),0 8px 24px -14px rgba(23,20,31,.20);
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --ground:#141119; --surface:#1C1824; --surface-2:#231F2C;
+  --ink:#EAE7F0; --ink-2:#A29AAF; --ink-3:#7B7388;
+  --line:#332C3E; --line-soft:#282232;
+  --accent:#BC9BDD; --accent-soft:#271E31;
+  --due:#EE8B84; --due-soft:#2E1A19;
+  --ok:#6BC391; --ok-soft:#15271D;
+  --warn:#DFB25E; --warn-soft:#2A2210;
+  --shadow:0 1px 2px rgba(0,0,0,.42),0 8px 24px -14px rgba(0,0,0,.72);
+}}
+:root[data-theme="dark"]{
+  --ground:#141119; --surface:#1C1824; --surface-2:#231F2C;
+  --ink:#EAE7F0; --ink-2:#A29AAF; --ink-3:#7B7388;
+  --line:#332C3E; --line-soft:#282232;
+  --accent:#BC9BDD; --accent-soft:#271E31;
+  --due:#EE8B84; --due-soft:#2E1A19;
+  --ok:#6BC391; --ok-soft:#15271D;
+  --warn:#DFB25E; --warn-soft:#2A2210;
+  --shadow:0 1px 2px rgba(0,0,0,.42),0 8px 24px -14px rgba(0,0,0,.72);
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--ground);color:var(--ink);
+  font-family:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1100px;margin:0 auto;padding:0 24px 80px;display:flex;flex-direction:column;gap:46px}
+a{color:var(--accent)}
+.mono{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.94em}
+
+.nav{position:sticky;top:0;z-index:20;background:var(--ground);border-bottom:1px solid var(--line);
+  margin:0 -24px;padding:0 24px}
+.nav ul{display:flex;gap:2px;list-style:none;margin:0 auto;padding:0;overflow-x:auto;max-width:1100px}
+.nav a{display:block;padding:13px 12px;font-family:"IBM Plex Mono",monospace;font-size:11.5px;
+  font-weight:500;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-3);
+  text-decoration:none;white-space:nowrap;border-bottom:2px solid transparent}
+.nav a:hover{color:var(--ink)}
+.nav a.on{color:var(--accent);border-bottom-color:var(--accent)}
+.nav a:focus-visible{outline:2px solid var(--accent);outline-offset:-3px}
+
+.hero{display:flex;flex-direction:column;padding-top:40px}
+.crumb{display:flex;gap:8px;align-items:center;font-family:"IBM Plex Mono",monospace;
+  font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);flex-wrap:wrap}
+.crumb .acc{color:var(--accent)}
+h1{font-family:Newsreader,Georgia,serif;font-weight:600;font-size:clamp(32px,5vw,50px);
+  line-height:1.04;letter-spacing:-.015em;margin:14px 0 0;text-wrap:balance}
+.lede{margin:18px 0 0;max-width:63ch;color:var(--ink-2);font-size:16.5px;line-height:1.62}
+.lede b{color:var(--ink);font-weight:600}
+.hero .sub{margin-top:22px;display:flex;gap:24px;flex-wrap:wrap;font-family:"IBM Plex Mono",monospace;
+  font-size:11.5px;letter-spacing:.06em;color:var(--ink-3)}
+.hero .sub b{color:var(--ink-2);font-weight:600}
+
+section{display:flex;flex-direction:column;scroll-margin-top:56px}
+.eyebrow{font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:600;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--accent);margin:0 0 7px}
+h2{font-family:Newsreader,Georgia,serif;font-size:29px;font-weight:600;letter-spacing:-.01em;
+  margin:0 0 10px;text-wrap:balance}
+.seclede{margin:0 0 20px;max-width:70ch;color:var(--ink-2);font-size:14.6px;line-height:1.64}
+.seclede b{color:var(--ink);font-weight:600}
+
+/* ---- pagine interattive ---- */
+.tools{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px;margin-bottom:6px}
+.tool{display:flex;flex-direction:column;gap:8px;padding:18px;background:var(--surface);
+  border:1px solid var(--line);border-left:3px solid var(--tc,var(--accent));border-radius:10px;
+  box-shadow:var(--shadow);text-decoration:none;color:inherit;transition:transform .16s,border-color .16s}
+.tool:hover{transform:translateY(-2px);border-color:var(--tc,var(--accent))}
+.tool:focus-visible{outline:2px solid var(--tc,var(--accent));outline-offset:3px}
+.tool .ic{font-size:20px;line-height:1}
+.tool h3{margin:0;font-family:"IBM Plex Mono",monospace;font-size:14px;font-weight:600;color:var(--ink)}
+.tool p{margin:0;font-size:12.9px;color:var(--ink-2);line-height:1.55;flex:1}
+.tool .go{font-family:"IBM Plex Mono",monospace;font-size:10.5px;font-weight:600;
+  color:var(--tc,var(--accent));letter-spacing:.06em;text-transform:uppercase}
+
+/* ---- tendine argomenti ---- */
+.acc{display:flex;flex-direction:column;gap:9px}
+.top{background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--pc);
+  border-radius:10px;box-shadow:var(--shadow);overflow:hidden}
+.top>button{display:grid;grid-template-columns:auto 1fr auto auto;gap:13px;align-items:center;
+  width:100%;text-align:left;padding:14px 17px;background:transparent;border:none;cursor:pointer;color:inherit}
+.top>button:hover{background:var(--surface-2)}
+.top>button:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.top .lz{font-family:"IBM Plex Mono",monospace;font-size:10.5px;font-weight:600;color:var(--pc);
+  border:1px solid currentColor;border-radius:4px;padding:2px 7px;white-space:nowrap}
+.top .nm{font-family:Newsreader,Georgia,serif;font-size:20px;font-weight:600;color:var(--ink);
+  letter-spacing:-.01em}
+.top .nm small{display:block;font-family:"IBM Plex Sans",sans-serif;font-size:12.6px;font-weight:400;
+  color:var(--ink-3);letter-spacing:0;margin-top:2px;line-height:1.45}
+.top .qq{font-family:"IBM Plex Mono",monospace;font-size:9.5px;font-weight:600;letter-spacing:.07em;
+  text-transform:uppercase;padding:3px 8px;border-radius:4px;white-space:nowrap;
+  background:var(--pc);color:var(--surface)}
+.top .qq.none{background:var(--surface-2);color:var(--ink-3);border:1px solid var(--line)}
+.top .car{color:var(--ink-3);font-size:12px;transition:transform .2s}
+.top>button[aria-expanded="true"] .car{transform:rotate(180deg)}
+
+.body{border-top:1px solid var(--line-soft);padding:18px 17px 20px}
+.idea{margin:0 0 18px;font-size:14.4px;color:var(--ink-2);line-height:1.66;max-width:78ch}
+.idea b{color:var(--ink)}
+.h4{font-family:"IBM Plex Mono",monospace;font-size:10.5px;font-weight:600;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--pc);margin:0 0 10px}
+.grid2{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:20px;align-items:start}
+@media(max-width:800px){.grid2{grid-template-columns:1fr}}
+
+.steps{margin:0 0 18px;padding:0;list-style:none;display:flex;flex-direction:column;gap:0;counter-reset:s}
+.steps li{counter-increment:s;position:relative;padding:0 0 14px 30px;
+  border-left:1px solid var(--line);margin-left:9px}
+.steps li:last-child{border-left-color:transparent;padding-bottom:0}
+.steps li::before{content:counter(s);position:absolute;left:-10px;top:0;width:20px;height:20px;
+  border-radius:50%;background:var(--pc);color:var(--surface);
+  font-family:"IBM Plex Mono",monospace;font-size:10.5px;font-weight:600;display:grid;place-items:center}
+.steps .st{font-family:"IBM Plex Mono",monospace;font-size:12.8px;font-weight:600;color:var(--ink);
+  display:block;margin-bottom:3px}
+.steps .sx{font-size:13.5px;color:var(--ink-2);line-height:1.58;display:block}
+.steps .sx b{color:var(--ink)}
+
+pre.code{margin:0 0 12px;padding:14px 15px;background:var(--surface-2);border-radius:7px;
+  overflow-x:auto;font-family:"IBM Plex Mono",monospace;font-size:12.2px;line-height:1.7;color:var(--ink-2)}
+pre.code b{color:var(--ink);font-weight:600}
+pre.code .c{color:var(--ink-3)}
+pre.code .o{color:var(--pc);font-weight:600}
+
+.cx{display:flex;flex-direction:column;gap:1px;background:var(--line);border:1px solid var(--line);
+  border-radius:7px;overflow:hidden;margin-bottom:16px}
+.cxr{background:var(--surface);padding:9px 13px;display:flex;justify-content:space-between;gap:12px;
+  align-items:baseline}
+.cxr .k{font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.09em;
+  text-transform:uppercase;color:var(--ink-3)}
+.cxr .v{font-family:"IBM Plex Mono",monospace;font-size:13px;font-weight:600;color:var(--ink)}
+.cxn{font-size:12.6px;color:var(--ink-2);line-height:1.55;margin:0 0 16px}
+.cxn b{color:var(--ink)}
+
+.sig{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:16px}
+.sig span{font-family:"IBM Plex Mono",monospace;font-size:11.5px;padding:5px 10px;border-radius:5px;
+  background:var(--surface-2);border:1px solid var(--line);color:var(--ink-2)}
+.must{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:8px}
+.must li{position:relative;padding-left:21px;font-size:13.5px;color:var(--ink-2);line-height:1.55}
+.must li::before{content:"→";position:absolute;left:0;top:0;color:var(--pc);font-weight:600;
+  font-family:"IBM Plex Mono",monospace;font-size:12.5px}
+.must li b{color:var(--ink)}
+.deep{display:inline-flex;align-items:center;gap:7px;margin-top:16px;font-family:"IBM Plex Mono",monospace;
+  font-size:11.5px;font-weight:600;text-decoration:none;color:var(--pc);border:1px solid var(--pc);
+  border-radius:6px;padding:7px 13px}
+.deep:hover{background:var(--pc);color:var(--surface)}
+
+/* ---- calendario ---- */
+.tablewrap{overflow-x:auto}
+table.lec{width:100%;border-collapse:collapse;font-size:13.5px;min-width:700px}
+table.lec th{text-align:left;font-family:"IBM Plex Mono",monospace;font-size:10.5px;font-weight:600;
+  letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);padding:14px 14px 10px;
+  border-bottom:1px solid var(--line);white-space:nowrap}
+table.lec td{padding:10px 14px;border-bottom:1px solid var(--line-soft);vertical-align:top;color:var(--ink-2)}
+table.lec tr:last-child td{border-bottom:none}
+td.wk{font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--ink-3);
+  font-variant-numeric:tabular-nums;white-space:nowrap}
+td.lc{font-family:"IBM Plex Mono",monospace;font-size:12px;font-weight:600;color:var(--accent);white-space:nowrap}
+td.tp{color:var(--ink);font-weight:500}
+td.ch{font-family:"IBM Plex Mono",monospace;font-size:12.4px;color:var(--ink-2);white-space:nowrap}
+tr.past{opacity:.42}
+tr.now td{background:var(--accent-soft)}
+tr.now td.wk{box-shadow:inset 3px 0 0 var(--accent);color:var(--accent);font-weight:600}
+tr.brk td{background:var(--surface-2);color:var(--ink-3);font-style:italic}
+.tag{display:inline-block;font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.06em;
+  text-transform:uppercase;font-weight:600;padding:3px 7px;border-radius:4px;white-space:nowrap}
+.t-due{background:var(--due-soft);color:var(--due)}
+.t-free{background:var(--surface-2);color:var(--ink-3);border:1px solid var(--line)}
+.t-extra{background:var(--warn-soft);color:var(--warn)}
+.t-now{background:var(--accent);color:var(--surface)}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow)}
+
+/* ---- archivio ---- */
+.controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding:13px 14px;
+  background:var(--surface);border:1px solid var(--line);border-radius:10px 10px 0 0;border-bottom:none}
+#q{flex:1 1 200px;min-width:0;font-family:"IBM Plex Mono",monospace;font-size:12.5px;padding:8px 11px;
+  border:1px solid var(--line);border-radius:6px;background:var(--surface-2);color:var(--ink)}
+#q:focus{outline:2px solid var(--accent);outline-offset:-1px;border-color:var(--accent)}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:600;letter-spacing:.05em;
+  text-transform:uppercase;padding:6px 10px;border-radius:5px;border:1px solid var(--line);
+  background:var(--surface-2);color:var(--ink-2);cursor:pointer}
+.chip:hover{border-color:var(--ink-3);color:var(--ink)}
+.chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--surface)}
+.chip:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.count{font-family:"IBM Plex Mono",monospace;font-size:11.5px;color:var(--ink-3);margin-left:auto;white-space:nowrap}
+.tree{background:var(--surface);border:1px solid var(--line);border-radius:0 0 10px 10px;
+  box-shadow:var(--shadow);overflow:hidden}
+.root{border-bottom:1px solid var(--line)}
+.root:last-child{border-bottom:none}
+.roothead{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;padding:12px 16px;
+  background:var(--surface-2);border-bottom:1px solid var(--line-soft)}
+.roothead .rn{font-family:"IBM Plex Mono",monospace;font-size:12.5px;font-weight:600;color:var(--ink)}
+.roothead .rp{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--ink-3);overflow-wrap:anywhere}
+.roothead .rs{margin-left:auto;font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--ink-3)}
+.folder>button{display:flex;align-items:center;gap:9px;width:100%;text-align:left;padding:9px 16px;
+  background:transparent;border:none;border-bottom:1px solid var(--line-soft);cursor:pointer;
+  font-family:"IBM Plex Mono",monospace;font-size:12.5px;font-weight:600;color:var(--ink-2)}
+.folder>button:hover{background:var(--surface-2);color:var(--ink)}
+.folder>button:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.folder>button .caret{display:inline-block;width:9px;color:var(--accent);transition:transform .18s}
+.folder>button[aria-expanded="false"] .caret{transform:rotate(-90deg)}
+.folder>button .fsz{margin-left:auto;font-weight:400;color:var(--ink-3);font-size:11.5px}
+.file{border-bottom:1px solid var(--line-soft)}
+.file:last-child{border-bottom:none}
+.file>button{display:grid;grid-template-columns:1fr auto;gap:4px 14px;width:100%;text-align:left;
+  padding:10px 16px 10px 34px;background:transparent;border:none;cursor:pointer;color:inherit}
+.file>button:hover{background:var(--surface-2)}
+.file>button:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.file .fn{font-family:"IBM Plex Mono",monospace;font-size:12.6px;color:var(--ink);overflow-wrap:anywhere}
+.file .fm{font-family:"IBM Plex Mono",monospace;font-size:11.4px;color:var(--ink-3);
+  font-variant-numeric:tabular-nums;white-space:nowrap;text-align:right}
+.file .fd{grid-column:1/-1;font-size:12.8px;color:var(--ink-2);line-height:1.5;max-width:76ch}
+.file .fbody{grid-column:1/-1;margin-top:8px;padding:10px 13px;background:var(--surface-2);
+  border-left:2px solid var(--accent);border-radius:0 6px 6px 0}
+.file .fpath{font-family:"IBM Plex Mono",monospace;font-size:11.6px;color:var(--ink-2);
+  overflow-wrap:anywhere;user-select:all}
+.empty{padding:26px 16px;text-align:center;color:var(--ink-3);font-size:13px}
+
+.note{font-size:13.2px;color:var(--ink-2);border-left:2px solid var(--accent);padding:3px 0 3px 14px;
+  margin:20px 0 0;max-width:76ch;line-height:1.62}
+.note b{color:var(--ink)}
+footer{font-size:12.5px;color:var(--ink-3);border-top:1px solid var(--line);padding-top:20px;
+  max-width:76ch;line-height:1.66}
+@media(max-width:760px){
+  .wrap{padding:0 16px 60px;gap:38px}
+  .nav{margin:0 -16px;padding:0 16px}
+  .top>button{grid-template-columns:auto 1fr auto;gap:10px}
+  .top .qq{grid-column:2;justify-self:start;margin-top:6px}
+  .file>button{padding-left:26px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<nav class="nav">
+  <ul>
+    <li><a href="#pagine" class="on">Pagine interattive</a></li>
+    <li><a href="#argomenti">Argomenti</a></li>
+    <li><a href="#calendario">Calendario</a></li>
+    <li><a href="#archivio">Archivio</a></li>
+  </ul>
+</nav>
+
+<div class="wrap">
+
+<header class="hero">
+  <div class="crumb"><span class="acc">Algorithm Design E2026</span><span>·</span><span>ITU Copenhagen</span><span>·</span><span>Thore Husfeldt</span></div>
+  <h1>Atlante Algorithm Design</h1>
+  <p class="lede">Il corso spiegato dal verso da cui viene interrogato. L&rsquo;esame non chiede la teoria: ti dà <b>cinque problemi mai visti</b> e ti chiede quale paradigma risolve ciascuno — con le stesse sei domande, nello stesso ordine, <b>da nove appelli</b>. Ogni argomento qui sotto si apre con la spiegazione passo per passo, lo pseudocodice e la complessità.</p>
+  <div class="sub">
+    <span><b>8</b> argomenti</span>
+    <span><b>3</b> pagine interattive</span>
+    <span><b>26</b> punti d&rsquo;esame</span>
+    <span><b>4 ore</b>, open book su carta</span>
+  </div>
+</header>
+
+<section id="pagine">
+  <p class="eyebrow">Da manipolare, non da rileggere</p>
+  <h2>Pagine interattive</h2>
+  <p class="seclede">Tre pagine dove si muove qualcosa. Le altre arrivano: per ora ogni argomento ha la sua tendina con lo step-by-step completo.</p>
+  <div class="tools">
+    <a class="tool" style="--tc:#0C737C" href="https://claude.ai/code/artifact/d081c647-a119-4532-a827-da2e82cf153f">
+      <span class="ic">📈</span><h3>Funzioni di crescita</h3>
+      <p>Muovi <span class="mono">n</span> e guarda le sette curve separarsi in scala logaritmica. Con il muro del secondo e gli algoritmi del corso appesi a ogni curva.</p>
+      <span class="go">apri →</span>
+    </a>
+    <a class="tool" style="--tc:#2C6A45" href="https://claude.ai/code/artifact/a1fe9d28-fb6f-4eb5-9917-534c622ae167">
+      <span class="ic">📐</span><h3>Interval scheduling</h3>
+      <p>Quattro regole greedy, tre sbagliate. Scegline una e guardala fallire passo per passo sul controesempio minimo, generato per forza bruta.</p>
+      <span class="go">apri →</span>
+    </a>
+    <a class="tool" style="--tc:#A8342F" href="https://claude.ai/code/artifact/e9b4c794-aad2-413b-b8d8-2edc600e5ea6">
+      <span class="ic">✍️</span><h3>Sala d&rsquo;esame</h3>
+      <p>Cosa è ammesso e cosa no a livello di codice, la checklist delle sei domande, il piano delle quattro ore, i nove appelli.</p>
+      <span class="go">apri →</span>
+    </a>
+    <a class="tool" style="--tc:#8A6008" href="https://claude.ai/code/artifact/bb003124-66d7-4a45-92ae-2981087cdf37">
+      <span class="ic">🧱</span><h3>Strutture dati</h3>
+      <p>Bitmask, union-find, heap, grafo residuo, tabelle DP: cosa richiedono in input, che operazioni offrono, quanto costano. Le prime due da toccare.</p>
+      <span class="go">apri →</span>
+    </a>
+  </div>
+</section>
+
+<section id="argomenti">
+  <p class="eyebrow">Il core</p>
+  <h2>Gli otto argomenti</h2>
+  <p class="seclede">Nell&rsquo;ordine delle lezioni. Ogni tendina contiene: l&rsquo;idea, lo <b>step-by-step</b> dell&rsquo;algoritmo, lo pseudocodice con le complessità riga per riga, <b>da cosa lo riconosci</b> in un problema nuovo, e cosa devi scrivere all&rsquo;esame.</p>
+  <div class="acc" id="acc"></div>
+</section>
+
+<section id="calendario">
+  <p class="eyebrow">Dove sei</p>
+  <h2>Le tredici lezioni</h2>
+  <p class="seclede">Le lezioni 11 e 12 sono <b>extracurricolari — non entrano all&rsquo;esame</b>. La settimana corrente si evidenzia da sola.</p>
+  <div class="panel tablewrap">
+    <table class="lec">
+      <thead><tr><th>Sett.</th><th>Lez.</th><th>Argomento</th><th>K&amp;T</th><th>Consegna</th></tr></thead>
+      <tbody id="lecbody"></tbody>
+    </table>
+  </div>
+  <p class="note">Il capitolo <b>3 sui grafi non ha una lezione dedicata</b> ma ha una domanda d&rsquo;esame tutta sua: è il prerequisito da recuperare dal libro.</p>
+</section>
+
+<section id="archivio">
+  <p class="eyebrow">Il materiale</p>
+  <h2>Archivio</h2>
+  <p class="seclede">Dimensioni e pagine <b>lette dai file veri</b>. Filtra per nome o tipo; clicca un file per il percorso.</p>
+  <div class="controls">
+    <input id="q" type="search" placeholder="filtra…" aria-label="Filtra i file">
+    <div class="chips" id="chips"></div>
+    <span class="count" id="count"></span>
+  </div>
+  <div class="tree" id="tree"></div>
+  <p class="note">Le slide unite sono <b>112 MB dei 119 totali</b>: tutto il resto — nove esami, il materiale NP, le tredici soluzioni di max clique — sta in 7 MB.</p>
+</section>
+
+<footer>
+  Corso <b>Algorithm Design</b>, Thore Husfeldt, ITU Copenhagen, E2026. Libro: Kleinberg e Tardos, <i>Algorithm Design</i>, Addison-Wesley 2005 — edizione unica. Le citazioni fra virgolette sono testuali dai testi d&rsquo;esame e dalle note del docente; il resto è una rilettura del materiale, non una fonte autorevole. I file restano sul tuo disco.
+</footer>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  function esc(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+
+  /* ===================== ARGOMENTI ===================== */
+
+  var T = [
+  {
+    lz:"Lez. 1", nm:"Exhaustive search", sub:"Note di Husfeldt §1 — il paradigma «just do it»",
+    kt:"note §1", q:null, c:"#8A8296",
+    idea:"Genera <b>tutti</b> i candidati e testali. Costoso ma sempre corretto, ed è la baseline contro cui si misura ogni idea migliore. Le note danno tre modi di enumerare, e sono gli stessi tre che ritrovi in mezzo corso.",
+    steps:[
+      ["Conta in binario","Ogni intero da 0 a 2ⁿ−1, letto come stringa di bit, <b>è</b> un sottoinsieme: il bit i dice «l'elemento i è dentro?». Con n=6, il numero 100101 è l'insieme {1,3,6}. Ogni sottoinsieme nasce da esattamente un numero, quindi contare fino a 2ⁿ li genera tutti una volta sola."],
+      ["Oppure decidi a turno","La stessa cosa vista come ricorsione: prendi gli elementi in ordine e per ognuno <b>pick or drop</b>. Le chiamate formano un albero binario di profondità n, le 2ⁿ foglie sono i sottoinsiemi, e un nodo a profondità k è una soluzione parziale con i primi k elementi già decisi."],
+      ["Oppure permuta","Per gli ordinamenti serve il <b>successore lessicografico</b>: trova la posizione più a destra che puoi aumentare, aumentala il meno possibile, e rendi minimo tutto ciò che sta a destra. Le note dimostrano che la lunghezza media del suffisso è e = 2.718…, quindi tutte le n! permutazioni costano O(n!) e non O(n·n!)."],
+      ["Poi testa","Per ogni candidato, verifica se è valido e se batte il migliore finora. È qui che sta il fattore polinomiale che moltiplica l'esponenziale."]
+    ],
+    code:"<span class='c'>// tutti i sottoinsiemi via bitmask</span>\nbest ← 0\n<b>for</b> mask ← 0 <b>to</b> 2ⁿ−1:            <span class='o'>// 2ⁿ iterazioni</span>\n    S ← { i : bit i di mask è 1 }\n    <b>if</b> valido(S) <b>and</b> |S| > best:  <span class='o'>// costo del test</span>\n        best ← |S|\n<b>return</b> best\n\n<span class='c'>// la versione ricorsiva, stessa cosa</span>\n<b>procedure</b> Subsets(i, S):\n    <b>if</b> i > n: usa(S); <b>return</b>\n    Subsets(i+1, S)         <span class='c'>// lascia i</span>\n    Subsets(i+1, S ∪ {i})   <span class='c'>// prendi i</span>",
+    cx:[["tempo","O(2ⁿ · test)"],["spazio","O(n) ricorsiva"],["permutazioni","O(n!)"]],
+    cxn:"Per <b>max clique</b> il test costa n², quindi O(2ⁿ·n²). Il sorting per permutazioni è O(n!) — le note lo chiamano <i>«a terrible sorting algorithm»</i> e lo tengono lì apposta.",
+    sig:["n ≤ 20–25","«trova il sottoinsieme che…»","2ⁿ è accettabile","nessuna struttura sfruttabile"],
+    must:["All'esame <b>non c'è una domanda esaustiva</b>: serve come metro di paragone.","Torna utile per giustificare <b>perché</b> un polinomiale è un guadagno.","Su Kattis è il paradigma di <span class='mono'>maxclique</span>, <span class='mono'>Perket</span> e <span class='mono'>Satisfaction</span>."],
+    deep:{u:"https://claude.ai/code/artifact/d081c647-a119-4532-a827-da2e82cf153f", t:"vedi 2ⁿ contro n! nel grafico"}
+  },
+  {
+    lz:"Lez. 2", nm:"Stable matching", sub:"K&T 1.1 — Gale-Shapley e l'accettazione differita",
+    kt:"1.1", q:null, c:"#8A8296",
+    idea:"Due insiemi con liste di preferenza. Una <b>coppia bloccante</b> è formata da due elementi non accoppiati che preferirebbero entrambi stare insieme; un matching è <b>stabile</b> se non ne esiste nessuna. Il teorema di Gale-Shapley: esiste sempre, e si trova in tempo polinomiale.",
+    steps:[
+      ["Tutti liberi","Nessuno è accoppiato. Ogni proponente ha un puntatore a zero sulla propria lista."],
+      ["Il prossimo libero propone","Un proponente ancora libero fa la proposta al primo della sua lista che <b>non ha già rifiutato</b>. Avanza il puntatore <b>subito</b>, prima di sapere l'esito."],
+      ["Il ricevente tiene la migliore","Se è libero, accetta. Se è già impegnato, confronta: resta dov'è se sta meglio, altrimenti <b>molla</b> il precedente, che torna libero. Non accetta mai definitivamente — da qui il nome <b>accettazione differita</b>."],
+      ["Ripeti finché c'è un libero con candidati","L'algoritmo si ferma quando nessuno è libero o chi lo è ha esaurito la lista."],
+      ["Perché termina","Il puntatore non torna <b>mai</b> indietro, quindi ogni coppia è proposta al più una volta: il numero totale di proposte è limitato da n². È un argomento di <b>funzione potenziale</b>, non un conteggio di cicli annidati."],
+      ["Perché è stabile","Per assurdo, sia (p,r) bloccante. Se p preferisce r al suo attuale, allora le ha già proposto (scende la lista in ordine). r l'ha rifiutata, e la qualità di chi tiene r <b>non peggiora mai</b>: quindi r sta con qualcuno che preferisce a p. Contraddizione."]
+    ],
+    code:"<b>while</b> ∃ proponente p libero con lista non esaurita:\n    r ← prossimo nella lista di p\n    next[p] ← next[p] + 1        <span class='o'>// mai indietro: è ciò che fa terminare</span>\n    <b>if</b> r è libero:\n        accoppia(p, r)\n    <b>else if</b> r preferisce p a partner[r]:\n        libera(partner[r])       <span class='c'>// il vecchio torna in gioco</span>\n        accoppia(p, r)\n    <span class='c'>// altrimenti r rifiuta, p riprova col prossimo</span>",
+    cx:[["tempo","O(n²)"],["spazio","O(n²) le liste"],["proposte","≤ n² in totale"]],
+    cxn:"La variante <b>Hospital-Resident</b> dà capacità M a un lato: stesso algoritmo, il contatore di posti occupati sostituisce il singolo partner. È quella che hai implementato in <span class='mono'>Draft.java</span>.",
+    sig:["due lati con preferenze","«nessuno vuole rinegoziare»","capacità su un lato solo"],
+    must:["<b>Non è una delle sei domande.</b> È il capitolo 1: serve come vocabolario.","Da qui vengono <b>funzione potenziale</b>, <b>invariante</b> e <b>assurdo su una coppia</b>: gli attrezzi che poi usi nelle dimostrazioni greedy.","Chi propone ottiene l'ottimo <b>per il proprio lato</b>. L'ordine delle proposte non cambia il risultato; il lato che propone sì."]
+  },
+  {
+    lz:"Cap. 3", nm:"Grafi e visite", sub:"K&T cap. 3 — il capitolo senza lezione, con una domanda d'esame",
+    kt:"cap. 3", q:"Domanda 3", c:"#3F7AA8",
+    idea:"BFS, DFS, componenti connesse, bipartizione, DAG e ordinamento topologico. È il capitolo che <b>nessuno ti spiega a lezione</b> ma che ha una domanda d'esame dedicata: va recuperato dal libro.",
+    steps:[
+      ["BFS: a livelli","Da s, coda FIFO. Il livello i contiene esattamente i nodi a distanza i in <b>numero di archi</b>. Per questo BFS dà i cammini minimi sui grafi non pesati — e solo lì."],
+      ["DFS: in profondità","Stack, o ricorsione. Non dà distanze minime, ma dà la <b>struttura</b>: archi dell'albero contro archi indietro, e da lì i cicli."],
+      ["Componenti connesse","Lancia una visita da ogni nodo non ancora visitato. Il numero di lanci <b>è</b> il numero di componenti. Costo totale O(n+m), non O(n·(n+m)): ogni nodo è visitato una volta sola in assoluto."],
+      ["Bipartizione","BFS colorando a livelli alterni. Il grafo è bipartito se e solo se <b>nessun arco collega due nodi dello stesso livello</b>. Equivalente: nessun ciclo di lunghezza dispari."],
+      ["DAG e ordine topologico","Ripeti: prendi un nodo con grado entrante zero, mettilo in lista, rimuovilo. Se a un certo punto non ce n'è nessuno e restano nodi, <b>c'è un ciclo</b>. È anche il test di aciclicità."],
+      ["Una griglia è un grafo","Ogni cella un nodo, archi verso le quattro adiacenti. Il problema <span class='mono'>Cluster</span> dell'esame 2023 — «il più grande gruppo di 1 adiacenti» — è esattamente questo: componenti connesse su griglia."]
+    ],
+    code:"<span class='c'>// BFS: cammini minimi non pesati, e livelli</span>\ncoda ← [s];  dist[s] ← 0\n<b>while</b> coda non vuota:            <span class='o'>// O(n) estrazioni</span>\n    v ← coda.pop()\n    <b>for</b> w <b>in</b> vicini(v):         <span class='o'>// O(m) archi in totale</span>\n        <b>if</b> dist[w] non definita:\n            dist[w] ← dist[v] + 1\n            coda.push(w)\n\n<span class='c'>// componenti connesse: una visita per nodo mai visto</span>\nk ← 0\n<b>for</b> v <b>in</b> V:\n    <b>if</b> v non visitato: k ← k+1; visita(v)   <span class='o'>// O(n+m) totale</span>",
+    cx:[["BFS / DFS","O(n + m)"],["componenti","O(n + m)"],["topologico","O(n + m)"]],
+    cxn:"Sempre <b>in n e m</b>, mai «in numero di elementi». Scrivere O(n²) su un grafo sparso dove la risposta è O(n+m) costa il punto.",
+    sig:["adiacenza, raggiungibilità","componenti, regioni, cluster","cicli, livelli, distanze in passi","una griglia","«si può arrivare da A a B»"],
+    must:["<b>Non reinventare niente</b>: «I will use BFS [KT, p. 90]».","Più visite sono permesse — la domanda dice «possibly several applications».","Il tempo <b>in n e m</b>.","Se la tua risposta è complicata hai sbagliato problema: la domanda esclude esplicitamente DP e flussi."]
+  },
+  {
+    lz:"Lez. 3", nm:"Greedy", sub:"K&T cap. 4 — scegli il meglio adesso, e dimostra che basta",
+    kt:"cap. 4", q:"Domanda 2", c:"#2C6A45",
+    idea:"Costruisci la soluzione un pezzo alla volta con una regola locale, senza tornare indietro. Il difficile non è l'algoritmo — è <b>dimostrare che la regola giusta è giusta</b>, e riconoscere quando una plausibile è sbagliata.",
+    steps:[
+      ["Trova l'ordine","È la decisione che <i>è</i> l'algoritmo. Per l'interval scheduling: <b>tempo di fine crescente</b>. Per minimize lateness: <b>scadenza crescente</b>. Sbagliare l'ordine sbaglia tutto."],
+      ["Scansiona e prendi il compatibile","Una passata sola. Basta ricordare l'ultima fine: siccome gli elementi arrivano ordinati, chi è compatibile con l'ultimo preso è compatibile con tutti."],
+      ["Dimostra — greedy stays ahead","Confronta la tua soluzione con una ottima elemento per elemento: per induzione f(iᵣ) ≤ f(jᵣ). Se l'ottima avesse più elementi, ne esisterebbe uno compatibile coi tuoi primi k — ma allora <b>il greedy l'avrebbe preso</b>."],
+      ["Oppure — exchange argument","Parti da una soluzione ottima e trasformala nella greedy scambiando un elemento alla volta, mostrando che ogni scambio <b>non peggiora</b>. È la tecnica usata per minimize lateness."],
+      ["Smonta le regole sbagliate","Earliest start fallisce con 3 intervalli, shortest interval con 3, fewest conflicts richiede 10. Lo schema del controesempio è sempre lo stesso: <b>la scelta attraente che blocca due scelte piccole</b>."]
+    ],
+    code:"<span class='c'>// interval scheduling: il massimo numero di intervalli disgiunti</span>\nordina per f crescente         <span class='o'>// O(n log n) — QUESTA è la risposta</span>\nA ← {};  ultimaFine ← −∞\n<b>for</b> j <b>in</b> intervalli:           <span class='o'>// O(n)</span>\n    <b>if</b> s[j] ≥ ultimaFine:\n        A ← A ∪ {j}\n        ultimaFine ← f[j]\n<b>return</b> A\n\n<span class='c'>// interval partitioning: quante aule servono</span>\n<span class='c'>// la risposta è la PROFONDITÀ massima: ordina per inizio,</span>\n<span class='c'>// tieni le aule in una coda di priorità per ultima fine</span>",
+    cx:[["tempo","O(n log n)"],["il ciclo","O(n)"],["spazio","O(n)"]],
+    cxn:"Il costo è <b>tutto nell'ordinamento</b>, e vale per quasi ogni greedy del capitolo. È il motivo per cui la domanda d'esame insiste su <i>quale</i> ordinamento e non sul codice.",
+    sig:["si costruisce un pezzo alla volta","esiste un ordinamento naturale","una scelta locale sembra ovvia","«il massimo numero di…»"],
+    must:["<b>L'ordine è la risposta.</b> «Sort the input» da solo non vale i punti.","Pseudocodice va bene, e il parsing si può ignorare.","Il tempo <b>deve essere polinomiale</b>.","Per il controesempio: istanza piccola, soluzione trovata <b>e</b> ottima."],
+    deep:{u:"https://claude.ai/code/artifact/a1fe9d28-fb6f-4eb5-9917-534c622ae167", t:"guarda le tre regole sbagliate fallire"}
+  },
+  {
+    lz:"Lez. 4", nm:"Divide et impera", sub:"K&T cap. 5 — il jolly che compare raramente",
+    kt:"cap. 5", q:"jolly, raro", c:"#8A6008",
+    idea:"Spezza in sottoproblemi della <b>stessa forma</b>, risolvi ricorsivamente, ricombina. La differenza dalla programmazione dinamica è che qui i sottoproblemi <b>non si sovrappongono</b>: ognuno si risolve una volta e basta.",
+    steps:[
+      ["Dividi","Spezza l'input in a pezzi di taglia n/b. Per mergesort: due metà."],
+      ["Risolvi ricorsivamente","Chiama te stesso su ogni pezzo, fino al caso base."],
+      ["Ricombina","È qui che sta il lavoro vero, e determina f(n). Per mergesort è il merge lineare."],
+      ["Scrivi la ricorrenza","T(n) = a·T(n/b) + f(n). Mergesort: T(n) = 2T(n/2) + O(n), che risolve a <b>O(n log n)</b>."],
+      ["Closest pair, il caso istruttivo","Tutte le coppie costa n². Dividi per coordinata x, risolvi le due metà, e per la striscia centrale basta confrontare <b>un numero costante</b> di punti vicini — da cui O(n log n). È il manifesto del capitolo: la stessa risposta, ottenuta guardando la struttura."]
+    ],
+    code:"<span class='c'>// mergesort</span>\n<b>procedure</b> Sort(A):\n    <b>if</b> |A| ≤ 1: <b>return</b> A\n    L ← Sort(prima metà)          <span class='o'>// T(n/2)</span>\n    R ← Sort(seconda metà)        <span class='o'>// T(n/2)</span>\n    <b>return</b> Merge(L, R)           <span class='o'>// O(n)</span>\n\n<span class='c'>// T(n) = 2T(n/2) + O(n)  →  O(n log n)</span>\n<span class='c'>// log n livelli, O(n) lavoro per livello</span>",
+    cx:[["mergesort","O(n log n)"],["closest pair","O(n log n)"],["ricorrenza","T(n)=aT(n/b)+f(n)"]],
+    cxn:"Nei nove testi d'esame l'ho trovata <b>una volta sola</b>, al posto della domanda sulle visite, e con l'ipotesi esplicita «in questa domanda e solo in questa, n è una potenza di 2».",
+    sig:["«assumi n potenza di 2»","il problema si dimezza naturalmente","serve O(n log n) e il greedy non basta"],
+    must:["Compare raramente, ma è l'unica che può <b>sostituire</b> un'altra domanda: 4 punti su 26 se capita e non l'hai guardata.","Va data la ricorrenza <b>e</b> la sua soluzione.","La FFT è nel corso ma <b>extracurricolare</b>: non entra all'esame."]
+  },
+  {
+    lz:"Lez. 5–6", nm:"Programmazione dinamica", sub:"K&T cap. 6 — la domanda da 5 punti più meccanica",
+    kt:"cap. 6", q:"Domanda 4", c:"#6D4A8C",
+    idea:"Scelte sequenziali con <b>sottostruttura ottima</b> e sottoproblemi che <b>si sovrappongono</b>. Li risolvi una volta e li memorizzi. All'esame è la domanda più prevedibile: c'è una lista esatta di cose da scrivere.",
+    steps:[
+      ["Definisci OPT","È il passo che vale i punti. <b>Quali parametri, e in che range.</b> A parole: «OPT(i,w) = il valore massimo usando i primi i oggetti con capacità residua w, dove i ∈ {0,…,n} e w ∈ {0,…,W}»."],
+      ["Trova la ricorrenza","Per ogni elemento, le alternative. In genere: <b>prendo</b> o <b>lascio</b>, e prendo il migliore dei due. Weighted interval scheduling: OPT(j) = max(v(j) + OPT(p(j)), OPT(j−1))."],
+      ["Casi base","I valori dove la ricorsione si ferma: OPT(0) = 0, o l'intera prima riga. Sono la parte che si dimentica di scrivere."],
+      ["Di' quale valore risponde","OPT(n) o OPT(n,W) o il massimo sulla riga — <b>va detto esplicitamente</b>, la domanda lo chiede."],
+      ["Scegli come calcolare","<b>Memoization</b> (ricorsione più cache) o <b>iterazione</b> sulla tabella nell'ordine giusto. Stessa complessità, stesso risultato."],
+      ["Conta tempo e spazio","Numero di celle × costo per cella. Lo spazio è la tabella — e spesso basta l'ultima riga: dirlo è un bonus gratuito."]
+    ],
+    code:"<span class='c'>// weighted interval scheduling</span>\nordina per f crescente\np[j] ← ultimo intervallo compatibile con j    <span class='o'>// O(n log n)</span>\nOPT[0] ← 0\n<b>for</b> j ← 1 <b>to</b> n:                            <span class='o'>// O(n) celle</span>\n    OPT[j] ← max( v[j] + OPT[p[j]],          <span class='c'>// prendo j</span>\n                  OPT[j−1] )                 <span class='c'>// lascio j</span>\n<b>return</b> OPT[n]\n\n<span class='c'>// knapsack: due parametri, tabella n × W</span>\nOPT[i][w] ← max( OPT[i−1][w],                <span class='c'>// lascio</span>\n                 v[i] + OPT[i−1][w−p[i]] )   <span class='c'>// prendo, se ci sta</span>",
+    cx:[["interval sched.","O(n log n)"],["knapsack","O(n·W) tempo e spazio"],["edit distance","O(n·m)"]],
+    cxn:"Knapsack è <b>pseudo-polinomiale</b>: W è un valore numerico, non la dimensione dell'input, che in binario è log W bit. È la distinzione su cui si regge metà del capitolo 8.",
+    sig:["«il massimo/minimo su tutte le scelte»","ogni elemento si prende o si lascia","c'è un indice che scorre","vincolo numerico: peso, lunghezza, budget"],
+    must:["<span class='mono'>OPT(…)</span> con <b>parametri e range dichiarati a parole</b>.","La <b>ricorrenza</b>, i <b>casi base</b>, le condizioni al contorno.","<b>Quale valore di OPT</b> risponde al problema.","Tempo <b>e spazio</b> — l'unica domanda che chiede anche lo spazio."]
+  },
+  {
+    lz:"Lez. 7–8", nm:"Network flow", sub:"K&T cap. 7 — non calcolare il flusso: riconoscerlo",
+    kt:"cap. 7", q:"Domanda 5", c:"#0C737C",
+    idea:"Ford-Fulkerson e il teorema <b>max-flow = min-cut</b>. Ma il punto d'esame non è calcolare un flusso: è <b>riconoscere che un problema travestito è un flusso</b> e costruire il grafo giusto, con le capacità giuste.",
+    steps:[
+      ["Costruisci la rete","Sorgente s, pozzo t, e i nodi del problema in mezzo. Le <b>capacità</b> codificano i vincoli: 1 per «al più una volta», k per una quota, ∞ per «nessun limite»."],
+      ["Trova un cammino aumentante","Un cammino da s a t nel <b>grafo residuo</b>, dove ogni arco ha capacità residua positiva. BFS o DFS."],
+      ["Aumenta","Manda lungo il cammino il minimo delle capacità residue. Aggiorna il residuo: gli archi in avanti perdono capacità, quelli <b>indietro</b> ne guadagnano — è ciò che permette di disfare scelte sbagliate."],
+      ["Ripeti finché esistono cammini","Quando non ce n'è più, il flusso è massimo."],
+      ["Leggi il taglio","I nodi raggiungibili da s nel residuo finale formano il lato S di un <b>taglio minimo</b>, e la sua capacità è il valore del flusso. È la parte che risponde a «cosa significa» nel problema originale."],
+      ["Matching bipartito, il travestimento base","Due categorie da abbinare: s → tutti i primi (capacità 1), primi → secondi compatibili (capacità 1), secondi → t (capacità 1). Il flusso massimo <b>è</b> il matching massimo."]
+    ],
+    code:"<span class='c'>// Ford-Fulkerson</span>\nf ← 0 su tutti gli archi\n<b>while</b> ∃ cammino P da s a t nel residuo:\n    b ← min capacità residua lungo P\n    <b>for</b> ogni arco (u,v) <b>in</b> P:\n        f(u,v) ← f(u,v) + b        <span class='c'>// avanti</span>\n        f(v,u) ← f(v,u) − b        <span class='c'>// indietro: si può disfare</span>\n<b>return</b> f\n\n<span class='o'>// con BFS (Edmonds-Karp): O(n·m²), sempre polinomiale</span>\n<span class='o'>// con capacità interere e DFS: O(m·|f*|)</span>",
+    cx:[["Edmonds-Karp","O(n·m²)"],["FF con interi","O(m · valore flusso)"],["matching bipartito","O(n·m)"]],
+    cxn:"La nota d'esame toglie l'ansia: <i>«There is no requirement about choosing the cleverest flow algorithm»</i> — deve solo essere <b>corretto</b> e <b>nominato</b>.",
+    sig:["due categorie da abbinare","capacità, quote, limiti per elemento","«al massimo quanti…»","ogni X può servire solo certi Y"],
+    must:["<b>Disegna il grafo di Sample Input 1</b> — è il primo comando della domanda.","Nodi e archi: quali, <b>quanti</b> in funzione dei parametri, come orientati.","<b>Le capacità</b>, esplicitamente.","<b>Cosa significa il flusso massimo</b> nel problema, e che valore ha.","Il tempo, con l'algoritmo <b>nominato</b>."]
+  },
+  {
+    lz:"Lez. 9–10", nm:"NP-hardness", sub:"K&T cap. 8 — la domanda dove si perdono più punti",
+    kt:"cap. 8", q:"Domanda 6", c:"#A8342F",
+    idea:"Per dimostrare che un problema nuovo <b>P1</b> è difficile, riduci <b>da</b> un problema noto difficile <b>P2</b>: <b>P2 ≤<sub>p</sub> P1</b>. Se sapessi risolvere P1 sapresti risolvere P2; siccome P2 è difficile, lo è anche P1. La direzione è l'errore che Husfeldt ha scritto tre pagine per prevenire.",
+    steps:[
+      ["Dichiara","«Claim: P1 is NP-hard.»"],
+      ["Scegli da dove ridurre","«We will reduce from P2, which is known to be NP-hard.» I candidati abituali: 3-SAT, Vertex Cover, Set Cover, Independent Set, Subset Sum, Hamiltonian Cycle, 3-Coloring."],
+      ["Prendi un'istanza di P2","«Let G, k be an instance of Vertex Cover.» <b>Nomina esplicitamente</b> insiemi ed elementi: V = {v₁,…,vₙ}, E = {e₁,…,eₘ}."],
+      ["Costruisci un'istanza di P1","«Construct an instance … as follows.» Di' esattamente cosa diventa cosa: i vertici diventano insiemi, gli archi diventano elementi da coprire."],
+      ["La riga che si dimentica","«<b>Note that the size of … is polynomial in the size of …</b>» Senza questa, non è una riduzione polinomiale — e la dimostrazione non vale."],
+      ["Fai l'esempio","Un'istanza concreta piccola, disegnata, e cosa produce la costruzione. La domanda lo chiede esplicitamente."],
+      ["Chiudi nei due versi","«Now let … be a solution to P1 … <b>Conversely</b>, if … is a solution to P2, then …» Entrambe le implicazioni, non una."]
+    ],
+    code:"<span class='c'>// Vertex Cover ≤ₚ Set Cover — l'esempio di Husfeldt</span>\n<b>Claim:</b> Set Cover is NP-hard.\n<b>Proof.</b> Reduce from Vertex Cover, known NP-hard.\n\n  Let ⟨G, k⟩ be a Vertex Cover instance.\n  Enumerate V = {v₁,…,vₙ}, E = {e₁,…,e<sub>m</sub>}.\n\n  Build ⟨U, F, k′⟩:  U ← {1,…,m}\n                     S<sub>i</sub> ← indici degli archi incidenti su v<sub>i</sub>\n                     F ← {S₁,…,S<sub>n</sub>},  k′ ← k\n\n  <span class='o'>(size O(m+n): polinomiale in |G|)</span>\n\n  S ⊆ F copre U  ⟹  i v<sub>i</sub> con S<sub>i</sub> ∈ S coprono gli archi.\n  <b>Conversely</b>, C vertex cover di taglia k ⟹ gli S<sub>i</sub>\n  per v<sub>i</sub> ∈ C coprono U.",
+    cx:[["la riduzione","deve essere polinomiale"],["direzione","P2 ≤ₚ P1"],["punti","1+1+0+3"]],
+    cxn:"La sotto-domanda sulla direzione vale <b>zero punti</b> — esiste solo per farti fermare a pensarci prima di buttare via i 3 punti della riduzione.",
+    sig:["nessun paradigma polinomiale attacca","«esiste un sottoinsieme tale che…»","somiglia a vertex cover / set cover / 3-SAT","ottimo su scelte combinatorie vincolate"],
+    must:["Quale P2 usi, e <b>la direzione</b>.","«Given an instance to … we will construct an instance of … as follows».","La costruzione <b>in generale e su un esempio piccolo completo</b>.","La riga sulla <b>dimensione polinomiale</b>.","<b>Entrambi i versi</b> dell'equivalenza."],
+    deep:{u:"https://claude.ai/code/artifact/e9b4c794-aad2-413b-b8d8-2edc600e5ea6", t:"la checklist completa nella sala d'esame"}
+  }
+  ];
+
+  var accEl = document.getElementById("acc");
+  T.forEach(function(t, i){
+    var d = document.createElement("div");
+    d.className = "top";
+    d.setAttribute("style", "--pc:" + t.c);
+    var qq = t.q ? '<span class="qq">' + esc(t.q) + '</span>'
+                 : '<span class="qq none">fondamenta</span>';
+    var steps = t.steps.map(function(s){
+      return '<li><span class="st">' + s[0] + '</span><span class="sx">' + s[1] + '</span></li>';
+    }).join("");
+    var cx = t.cx.map(function(c){
+      return '<div class="cxr"><span class="k">' + esc(c[0]) + '</span><span class="v">' + c[1] + '</span></div>';
+    }).join("");
+    var sig = t.sig.map(function(s){ return "<span>" + esc(s) + "</span>"; }).join("");
+    var must = t.must.map(function(m){ return "<li>" + m + "</li>"; }).join("");
+    var deep = t.deep ? '<a class="deep" href="' + t.deep.u + '">▸ ' + t.deep.t + '</a>' : "";
+
+    d.innerHTML =
+      '<button type="button" aria-expanded="false">'
+      + '<span class="lz">' + esc(t.lz) + '</span>'
+      + '<span class="nm">' + esc(t.nm) + '<small>' + esc(t.sub) + '</small></span>'
+      + qq + '<span class="car">▾</span></button>'
+      + '<div class="body" hidden>'
+      +   '<p class="idea">' + t.idea + '</p>'
+      +   '<div class="grid2">'
+      +     '<div><p class="h4">Passo per passo</p><ul class="steps">' + steps + '</ul></div>'
+      +     '<div><p class="h4">Pseudocodice e costi</p><pre class="code">' + t.code + '</pre>'
+      +       '<div class="cx">' + cx + '</div><p class="cxn">' + t.cxn + '</p>'
+      +       '<p class="h4">Da cosa lo riconosci</p><div class="sig">' + sig + '</div>'
+      +       '<p class="h4">All&rsquo;esame</p><ul class="must">' + must + '</ul>' + deep
+      +     '</div>'
+      +   '</div>'
+      + '</div>';
+
+    var b = d.querySelector("button");
+    b.addEventListener("click", function(){
+      var open = b.getAttribute("aria-expanded") === "true";
+      b.setAttribute("aria-expanded", open ? "false" : "true");
+      d.querySelector(".body").hidden = open;
+    });
+    accEl.appendChild(d);
+  });
+
+  /* ===================== NAV ===================== */
+  var links = Array.prototype.slice.call(document.querySelectorAll(".nav a"));
+  var secs = links.map(function(a){ return document.getElementById(a.getAttribute("href").slice(1)); });
+  function spy(){
+    var best = 0, y = window.scrollY + 90;
+    secs.forEach(function(s,i){ if (s && s.offsetTop <= y) best = i; });
+    links.forEach(function(a,i){ a.className = i === best ? "on" : ""; });
+  }
+  window.addEventListener("scroll", spy, {passive:true}); spy();
+
+  /* ===================== CALENDARIO ===================== */
+  var LEC = [
+    {w:35,l:"L1",t:"Exhaustive search",c:"note §1",tag:["t-free","Kattis: Hello + Prerequisites"]},
+    {w:36,l:"L2",t:"Stable matching (Gale-Shapley)",c:"1.1",tag:null},
+    {w:37,l:"L3",t:"Algoritmi greedy",c:"cap. 4",tag:["t-due","Kattis: Hello + Stable Matching"]},
+    {w:38,l:"L4",t:"Divide et impera",c:"cap. 5",tag:["t-due","Kattis: Greedy"]},
+    {w:39,l:"L5",t:"Programmazione dinamica I",c:"cap. 6",tag:["t-due","Kattis: Closest pair"]},
+    {w:40,l:"L6",t:"Programmazione dinamica II",c:"cap. 6",tag:["t-free","nessuna deadline"]},
+    {w:41,l:"L7",t:"Network flow I",c:"cap. 7",tag:["t-due","Kattis: Dynamic Programming"]},
+    {w:42,brk:"Pausa autunnale — nessuna lezione, nessuna deadline."},
+    {w:43,l:"L8",t:"Network flow II",c:"cap. 7",tag:["t-free","nessuna deadline"]},
+    {w:44,l:"L9",t:"NP-hardness I",c:"cap. 8",tag:["t-due","Kattis: Network Flow"]},
+    {w:45,l:"L10",t:"NP-hardness II",c:"cap. 8",tag:null},
+    {w:46,l:"L11",t:"FFT",c:"—",tag:["t-extra","extracurricolare · TA Red Scare"]},
+    {w:47,l:"L12",t:"Case study: vertex cover",c:"—",tag:["t-extra","extracurricolare · 2ª TA"]},
+    {w:48,l:"L13",t:"Correzione di un vecchio esame",c:"—",tag:["t-due","Red Scare · ven 23:59"]}
+  ];
+  var W35 = new Date(2026,7,24), now = new Date();
+  var today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  var cw = 35 + Math.floor((today - W35) / 604800000);
+  function wl(w){ return new Date(W35.getTime()+(w-35)*604800000)
+    .toLocaleDateString("it-IT",{day:"numeric",month:"short"}); }
+  var tb = document.getElementById("lecbody");
+  LEC.forEach(function(r){
+    var tr = document.createElement("tr");
+    var wk = '<td class="wk">'+r.w+'<br><span style="font-size:10.5px">'+wl(r.w)+'</span></td>';
+    if (r.brk){
+      tr.className = r.w===cw ? "brk now" : (r.w<cw ? "brk past" : "brk");
+      tr.innerHTML = wk + '<td colspan="4">'+esc(r.brk)+'</td>';
+      tb.appendChild(tr); return;
+    }
+    if (r.w < cw) tr.className = "past";
+    if (r.w === cw) tr.className = "now";
+    var tag = r.tag ? '<span class="tag '+r.tag[0]+'">'+esc(r.tag[1])+'</span>'
+                    : '<span style="color:var(--ink-3)">—</span>';
+    if (r.w === cw) tag = '<span class="tag t-now">questa settimana</span> ' + tag;
+    tr.innerHTML = wk + '<td class="lc">'+r.l+'</td><td class="tp">'+esc(r.t)
+                 + '</td><td class="ch">'+esc(r.c)+'</td><td>'+tag+'</td>';
+    tb.appendChild(tr);
+  });
+
+  /* ===================== ARCHIVIO ===================== */
+  var ROOTS = [
+    { name:"Algorith Design", path:"C:\\Users\\Delchi\\Desktop\\Università\\Algorith Design",
+      size:"119 MB", folders:[
+      {name:".",size:"2 KB",flat:true,files:[
+        {n:"Examination_syllabus.txt",m:"2 KB",k:"note",d:"I capitoli che entrano all'esame: 1, 3–8 e la 13.5. La lista più corta e più importante."}]},
+      {name:"Old_exams",size:"14,3 MB · 119 pag",files:[
+        {n:"sald-231221.pdf",m:"212 KB · 7 pag",k:"esami",d:"21 dicembre 2023, v1.4. Il più recente: provalo per primo. Ha la domanda Counterexample."},
+        {n:"exams-roaring-twenties.pdf",m:"9,3 MB · 36 pag",k:"esami",d:"Quattro appelli: 16 dic 2020, 21 dic 2021 (due versioni), 9 gen 2023."},
+        {n:"sald-200103.pdf",m:"368 KB · 7 pag",k:"esami",d:"3 gennaio 2020, nome vecchio SAD1. Qui la domanda 1 si chiama «Failure» e ha tre sotto-domande."},
+        {n:"SAD1 old exams as per F2019.pdf",m:"4,4 MB · 69 pag",k:"esami",d:"Raccolta storica: 5 gen 2018, 7 gen 2019. Contiene l'unica domanda Divide-and-conquer."}]},
+      {name:"NP_support_slides",size:"326 KB",files:[
+        {n:"howtohardness.pdf.pdf",m:"108 KB · 3 pag",k:"np",d:"«How to NP-Hardness», Husfeldt, ottobre 2025. Lo scheletro più l'esempio Vertex Cover ≤ₚ Set Cover svolto."},
+        {n:"TA Walkthrough … 2021 and 2023.pdf",m:"100 KB · 6 pag",k:"np",d:"Correzione guidata sulle domande NP-hard di due appelli che hai per intero."},
+        {n:"TA-walkthrough-np_hard-2019.pdf",m:"116 KB · 1 pag",k:"np",d:"La stessa cosa per il 2019, in una pagina."}]},
+      {name:"Merged_slides",size:"112 MB",files:[
+        {n:"Lectures_slides_merged.pdf",m:"38,5 MB",k:"slide",d:"509 pagine, qualità originale. È questa quella da usare per cercare dentro."},
+        {n:"Algorithm_design_merged_compressed_quality.pdf",m:"58,3 MB",k:"slide",d:"Ricompresso: stesso testo, immagini peggiori, e pesa di più."},
+        {n:"Data_structures_merged.pdf",m:"12,1 MB",k:"slide",d:"Union-find, heap, code di priorità. Serve per Kruskal e Dijkstra."},
+        {n:"Linear_programming_merged.pdf",m:"3,0 MB",k:"slide",d:"Programmazione lineare. Non è nel syllabus d'esame."}]},
+      {name:"maxclique/submissions/accepted",size:"13 file",files:[
+        {n:"counting-bitmask.cpp",m:"1,0 KB",k:"codice",d:"Bitmask in C++, la più veloce."},
+        {n:"counting-bitmask.py",m:"742 B",k:"codice",d:"Ogni intero da 0 a 2ⁿ−1 è un sottoinsieme."},
+        {n:"recursion-pickdrop.py",m:"724 B",k:"codice",d:"La ricorsione prendi-o-lascia delle note §1.5.3."},
+        {n:"counting-list.py",m:"585 B",k:"codice",d:"Liste di adiacenza."},
+        {n:"itertools-powerset.py",m:"554 B",k:"codice",d:"L'insieme delle parti con itertools."},
+        {n:"itertools-combinations-matrix.py",m:"444 B",k:"codice",d:"Combinazioni di taglia fissa."},
+        {n:"counting-matrix.py",m:"394 B",k:"codice",d:"Matrice di adiacenza. La più corta."},
+        {n:"RecursionSets.java",m:"2,3 KB",k:"codice",d:"Prendi-o-lascia in Java."},
+        {n:"CountingListFast.java",m:"2,2 KB",k:"codice",d:"Liste più I/O veloce: la più rapida delle Java."},
+        {n:"CountingMatrixFast.java",m:"2,0 KB",k:"codice",d:"Utile per misurare quanto pesa Scanner."},
+        {n:"CountingMatrix.java",m:"1,9 KB",k:"codice",d:"Versione base con matrice."},
+        {n:"CountingListFast.cs",m:"1,3 KB",k:"codice",d:"Porting C#."},
+        {n:"RecursionSets.cs",m:"1,2 KB",k:"codice",d:"Porting C# della ricorsiva."}]}
+    ]},
+    { name:"GitHub / Algorithm Design", path:"C:\\Users\\Delchi\\Documents\\GitHub\\Algorithm Design",
+      size:"il tuo repo", folders:[
+      {name:"note",size:"196 KB",flat:true,files:[
+        {n:"main.pdf",m:"196 KB · 3 pag",k:"note",d:"Le note sulla lezione 1: max clique, closest pair, e i tre modi di generare i sottoinsiemi."}]},
+      {name:"soluzioni Kattis",size:"10 file",flat:true,files:[
+        {n:"Draft.java",m:"108 righe",k:"codice",d:"Gale-Shapley con capacità M. Il più lungo dei dieci."},
+        {n:"Satisfaction.java",m:"73 righe",k:"codice",d:"SAT con bitmask: maschere positive e negative, poi esaustivo."},
+        {n:"BaseP.java",m:"53 righe",k:"codice",d:"L'unico con I/O veloce: StreamTokenizer."},
+        {n:"Perket.java",m:"39 righe",k:"codice",d:"Sottoinsiemi di ingredienti. Exhaustive search da manuale."},
+        {n:"Matching.java",m:"33 righe",k:"codice",d:"Stable matching incompiuto: dentro c'è ancora pseudocodice in italiano."},
+        {n:"Bto01.java",m:"33 righe",k:"codice",d:"Sostituisce b/B alternando 0 e 1."},
+        {n:"Greedy.java",m:"31 righe",k:"codice",d:"Interval scheduling: è il §4.1 del libro."},
+        {n:"Backspace.java",m:"23 righe",k:"codice",d:"Simula il backspace scritto come <."},
+        {n:"Alice.java",m:"21 righe",k:"codice",d:"Città distinte con un HashSet."},
+        {n:"Echo.java",m:"17 righe",k:"codice",d:"Stampa la parola tre volte. Il più corto."}]}
+    ]}
+  ];
+  var KINDS=[{id:"esami",l:"esami"},{id:"np",l:"np-hard"},{id:"slide",l:"slide"},
+             {id:"codice",l:"codice"},{id:"note",l:"note"}];
+  var act={}, qy="", op={};
+  var chipsEl=document.getElementById("chips");
+  KINDS.forEach(function(k){
+    var b=document.createElement("button");
+    b.className="chip"; b.type="button"; b.textContent=k.l;
+    b.setAttribute("aria-pressed","false");
+    b.addEventListener("click",function(){
+      act[k.id]=!act[k.id];
+      b.setAttribute("aria-pressed",act[k.id]?"true":"false"); rt();
+    });
+    chipsEl.appendChild(b);
+  });
+  var qEl=document.getElementById("q");
+  qEl.addEventListener("input",function(){ qy=qEl.value.trim().toLowerCase(); rt(); });
+  function anyK(){ for(var k in act) if(act[k]) return true; return false; }
+  function mt(f){
+    if (anyK() && !act[f.k]) return false;
+    if (!qy) return true;
+    return (f.n+" "+f.d).toLowerCase().indexOf(qy)!==-1;
+  }
+  var treeEl=document.getElementById("tree"), cntEl=document.getElementById("count");
+  function rt(){
+    treeEl.textContent=""; var sh=0, tot=0;
+    ROOTS.forEach(function(root,ri){
+      var vis=[];
+      root.folders.forEach(function(fo,fi){
+        tot+=fo.files.length;
+        var fs=fo.files.filter(mt);
+        if(fs.length){ vis.push({fo:fo,fi:fi,files:fs}); sh+=fs.length; }
+      });
+      if(!vis.length) return;
+      var rd=document.createElement("div"); rd.className="root";
+      var hd=document.createElement("div"); hd.className="roothead";
+      hd.innerHTML='<span class="rn">'+esc(root.name)+'</span><span class="rp">'+esc(root.path)
+                 +'</span><span class="rs">'+esc(root.size)+'</span>';
+      rd.appendChild(hd);
+      vis.forEach(function(v){
+        var key=ri+":"+v.fi, isOpen=(qy||anyK())?true:(op[key]!==false);
+        var fd=document.createElement("div"); fd.className="folder";
+        var bt=document.createElement("button"); bt.type="button";
+        bt.setAttribute("aria-expanded",isOpen?"true":"false");
+        bt.innerHTML='<span class="caret">▾</span><span>'+esc(v.fo.name)
+                   +'</span><span class="fsz">'+esc(v.fo.size)+'</span>';
+        bt.addEventListener("click",function(){ op[key]=!(op[key]!==false); rt(); });
+        fd.appendChild(bt);
+        var ls=document.createElement("div"); ls.hidden=!isOpen;
+        v.files.forEach(function(f,ix){
+          var fdv=document.createElement("div"); fdv.className="file";
+          var fk="f"+key+":"+ix, ex=op[fk]===true;
+          var fb=document.createElement("button"); fb.type="button";
+          fb.setAttribute("aria-expanded",ex?"true":"false");
+          var h='<span class="fn">'+esc(f.n)+'</span><span class="fm">'+esc(f.m)
+              +'</span><span class="fd">'+esc(f.d)+'</span>';
+          if(ex){
+            var sub=v.fo.flat?"":"\\"+v.fo.name.split("/").join("\\");
+            h+='<span class="fbody"><span class="fpath">'+esc(root.path+sub+"\\"+f.n)+'</span></span>';
+          }
+          fb.innerHTML=h;
+          fb.addEventListener("click",function(){ op[fk]=!ex; rt(); });
+          fdv.appendChild(fb); ls.appendChild(fdv);
+        });
+        fd.appendChild(ls); rd.appendChild(fd);
+      });
+      treeEl.appendChild(rd);
+    });
+    if(!treeEl.children.length){
+      var e=document.createElement("div"); e.className="empty";
+      e.textContent="Nessun file corrisponde al filtro."; treeEl.appendChild(e);
+    }
+    cntEl.textContent=sh+" / "+tot+" file";
+  }
+  rt();
+})();
+</script>
+</body>
+</html>

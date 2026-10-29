@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Nil, None, null: quando usarli</title>
+<link rel="stylesheet" href="../assets/atlas.css">
+<link rel="stylesheet" href="../assets/tema.css">
+<script src="../assets/sito.js"></script>
+<script src="../assets/atlas.js" defer></script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <div class="occhiello"><span>Concetti trasversali · liste e Option</span></div>
+  <h1>Nil, None, null: quando usarli</h1>
+  <p class="lede">Scala ha tre modi di dire "niente", e non sono intercambiabili. <code>Nil</code> è una lista vuota, <code>None</code> è un Option senza valore, <code>null</code> è il riferimento vuoto di Java. Questa pagina dice quale usare, e quando non usarlo.</p>
+</header>
+
+<section>
+  <h2>Il problema: manca un valore</h2>
+  <p>A volte una funzione non ha un risultato da restituire: la ricerca non trova niente, la lista non ha elementi, un dato non c'è. Ci sono tre domande diverse, e ognuna ha un tipo diverso:</p>
+  <ul>
+    <li>la <b>collezione</b> è vuota? Risposta: <code>Nil</code>, che è una lista senza elementi;</li>
+    <li>il <b>risultato</b> può mancare? Risposta: <code>Option[A]</code>, con <code>Some(valore)</code> oppure <code>None</code>;</li>
+    <li>sto parlando con una <b>libreria Java</b> che restituisce un riferimento vuoto? Risposta: <code>null</code>, che però va convertito subito.</li>
+  </ul>
+  <figure class="passi" data-titolo="Tre domande, tre valori" data-legenda="dato:la domanda,ora:il valore giusto,ok:risultato">
+    <div class="passo"><div class="espr"><mark class="dato">la lista è vuota?</mark></div><p class="nota">Una collezione senza elementi: <mark class="ora">Nil</mark>.</p></div>
+    <div class="passo"><div class="espr"><mark class="dato">il risultato può non esserci?</mark></div><p class="nota">Una funzione che può fallire: <mark class="ora">None</mark> dentro un <code>Option</code>.</p></div>
+    <div class="passo"><div class="espr"><mark class="dato">il valore arriva da Java?</mark></div><p class="nota">Un riferimento che può essere vuoto: <mark class="ora">null</mark>, da convertire in <code>Option</code> appena arriva.</p></div>
+  </figure>
+</section>
+
+<section>
+  <h2>Nil: la lista vuota</h2>
+  <p><code>Nil</code> è la lista senza elementi. È il <b>caso base</b> delle liste costruite con <code>::</code>: la lista <code>1 :: 2 :: Nil</code> è <code>List(1, 2)</code>, e il <code>Nil</code> in fondo dice dove finisce. Nel pattern matching si scrive <code>case Nil =&gt; …</code> per il caso della lista vuota.</p>
+  <p><b>Quando usarlo</b>: per costruire liste e per riconoscere la fine di una lista ricorsiva. Una lista vuota è un <b>risultato valido</b>: se una funzione restituisce "nessun elemento", <code>Nil</code> è la risposta giusta, non <code>None</code>.</p>
+  <figure class="passi" data-titolo="Nil in fondo alla catena" data-legenda="dato:elementi,ora:la coda,ok:fine della lista">
+    <div class="passo"><div class="espr"><mark class="dato">1</mark> :: <mark class="dato">2</mark> :: <mark class="ora">Nil</mark></div><p class="nota">Il <code>::</code> aggiunge un elemento davanti alla lista che sta a destra. <code>Nil</code> è la lista che sta in fondo.</p></div>
+    <div class="passo"><div class="espr">= <mark class="ok">List(1, 2)</mark></div><p class="nota">La forma compatta è la stessa lista. <code>List(1, 2)</code> e <code>1 :: 2 :: Nil</code> sono uguali.</p></div>
+    <div class="passo"><div class="espr">xs match { case <mark class="ora">Nil</mark> =&gt; …; case h :: t =&gt; … }</div><p class="nota">Il pattern <code>Nil</code> riconosce la lista vuota. Il caso <code>h :: t</code> separa il primo elemento dal resto.</p></div>
+  </figure>
+  <div class="box attenzione" data-tit="Attenzione">Non confondere <code>Nil</code> con <code>None</code>. Una lista vuota è una lista: si può ancora chiamare <code>isEmpty</code>, <code>map</code>, <code>foldLeft</code>. <code>None</code> invece non è una lista: è l'assenza di un risultato.</div>
+</section>
+
+<section>
+  <h2>None: il risultato che può mancare</h2>
+  <p><code>Option[A]</code> ha due forme: <code>Some(a)</code>, che contiene un valore, e <code>None</code>, che dice "nessun valore". Una funzione che può fallire restituisce un <code>Option</code> invece di lanciare un'eccezione o di restituire <code>null</code>.</p>
+  <p><b>Quando usarlo</b>: ogni volta che la risposta può non esserci (una ricerca, una divisione per zero, un campo opzionale). Il chiamante è costretto a gestire il caso <code>None</code>, perché il tipo è <code>Option</code> e non <code>A</code>.</p>
+  <figure class="passi" data-titolo="Un Option, due forme" data-legenda="dato:input,ora:passo in corso,ok:risultato,no:nessun valore">
+    <div class="passo"><div class="espr">primoOpzione(<mark class="dato">List(1, 2)</mark>)</div><p class="nota">La lista ha un primo elemento: la funzione dà <mark class="ok">Some(1)</mark>.</p></div>
+    <div class="passo"><div class="espr">primoOpzione(<mark class="dato">Nil</mark>)</div><p class="nota">La lista è vuota: il caso <code>case Nil =&gt; None</code> dà <mark class="no">None</mark>.</p></div>
+    <div class="passo"><div class="espr"><mark class="no">None</mark>.getOrElse(0) = <mark class="ok">0</mark></div><p class="nota"><code>getOrElse</code> dà un valore di ripiego quando manca il risultato. Con <code>Some(3)</code> darebbe 3.</p></div>
+  </figure>
+  <div class="box regola" data-tit="Regola">Non restituire <code>None</code> per dire "lista vuota": se la funzione produce una lista, la lista vuota è <code>Nil</code>. Usa <code>None</code> solo quando "nessun risultato" è un'informazione diversa da "zero elementi".</div>
+</section>
+
+<section>
+  <h2>null: il vuoto di Java</h2>
+  <p><code>null</code> è il riferimento vuoto di Java. Scala lo accetta per parlare con le librerie Java, e in Scala 3 è un valore possibile per quasi ogni tipo di riferimento, anche <code>String</code>. Il problema: se usi un <code>null</code> (per esempio chiami <code>.length</code>), il programma lancia una <code>NullPointerException</code>, e il compilatore non ti avverte.</p>
+  <p><b>Quando usarlo</b>: quasi mai in Scala. Solo quando una libreria Java restituisce <code>null</code>: in quel punto converti subito con <code>Option(x)</code>, che dà <code>None</code> se <code>x</code> è <code>null</code> e <code>Some(x)</code> altrimenti.</p>
+  <figure class="passi" data-titolo="Da null a Option, prima che si propaghi" data-legenda="dato:valore che arriva,ora:conversione,ok:sicuro,no:pericoloso">
+    <div class="passo"><div class="espr">val testo: String = <mark class="no">null</mark></div><p class="nota">Il compilatore accetta: <code>String</code> è un tipo di riferimento, e <code>null</code> è un valore di quel tipo.</p></div>
+    <div class="passo"><div class="espr"><mark class="no">testo.length</mark></div><p class="nota">Qui il programma si ferma con una <code>NullPointerException</code>: non c'è niente a cui chiedere la lunghezza.</p></div>
+    <div class="passo"><div class="espr">Option(<mark class="dato">testo</mark>) = <mark class="ok">None</mark></div><p class="nota">Convertire subito: <code>Option(x)</code> dà <code>None</code> se <code>x</code> è <code>null</code>. Da lì in poi si usa solo <code>Option</code>.</p></div>
+  </figure>
+  <div class="box attenzione" data-tit="Attenzione">Il confronto <code>None == null</code> dà <code>false</code>: sono valori diversi. Non scrivere <code>if x == null</code> in codice Scala nuovo: usa <code>Option</code> e <code>match</code>.</div>
+</section>
+
+<section>
+  <h2>Quale usare</h2>
+  <div class="tab-wrap"><table class="tab"><thead><tr><th>situazione</th><th>usa</th><th>esempio</th></tr></thead><tbody>
+    <tr><td>costruire o chiudere una lista</td><td><code>Nil</code></td><td><code>1 :: 2 :: Nil</code></td></tr>
+    <tr><td>lista senza elementi come risultato valido</td><td><code>Nil</code> (o lista vuota)</td><td>filtrare e non trovare niente</td></tr>
+    <tr><td>risultato che può non esserci</td><td><code>Option</code>, cioè <code>Some</code> o <code>None</code></td><td>cercare un elemento</td></tr>
+    <tr><td>valore che arriva da Java e può essere <code>null</code></td><td><code>Option(x)</code> subito</td><td><code>Option(javaCall())</code></td></tr>
+    <tr><td>scrivere codice Scala nuovo</td><td>mai <code>null</code></td><td>usa <code>Option</code></td></tr>
+  </tbody></table></div>
+</section>
+
+<section>
+  <h2>All'esame</h2>
+  <div class="box esame" data-tit="All'esame">Quando scrivi una funzione che può non trovare un risultato, dichiara il tipo <code>Option[A]</code> e spiega in una frase perché <code>None</code> e non una lista vuota o un'eccezione. Non usare <code>null</code> in soluzioni Scala.</div>
+  <div class="box inglese" data-tit="Frase per l'esame">Use <code>None</code> when a result may be absent; use <code>Nil</code> for an empty list, which is a valid result; convert Java <code>null</code> to <code>Option</code> at the boundary.</div>
+</section>
+
+<section>
+  <h2>Esempi affiancati</h2>
+  <p>Il codice di questa pagina, compilato e verificato con Scala 3.8.4 e le opzioni del corso, è nella <a href="../esempi/s03-vuoti.html">pagina di esempi</a>.</p>
+</section>
+
+</main>
+</body>
+</html>

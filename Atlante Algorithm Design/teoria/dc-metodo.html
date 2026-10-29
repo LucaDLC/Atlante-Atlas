@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Divide et impera: il metodo</title>
+<link rel="stylesheet" href="../assets/atlas.css">
+<link rel="stylesheet" href="../assets/tema.css">
+<script src="../assets/sito.js"></script>
+<script src="../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+SCENE.bin = {
+  w: 540, h: 230, lato: true,
+  legenda: 'ora:mid di questo passo,dato:intervallo lo..hi,no:parte scartata,ok:trovato',
+  codice: { lang: 'pseudo', testo: `lo = 0, hi = n - 1
+while lo <= hi:
+    mid = (lo + hi) / 2
+    if A[mid] == x: trovato
+    elif A[mid] < x: lo = mid + 1
+    else: hi = mid - 1` },
+  oggetti: [
+    ...[1,3,4,7,9,11,15,18].map((v,i) => ({id:'c'+i,tipo:'rett',x:30+i*60,y:60,w:54,h:36,t:String(v)})),
+    ...[0,1,2,3,4,5,6,7].map(i => ({id:'i'+i,tipo:'testo',x:57+i*60,y:112,t:String(i),size:11})),
+    {id:'lo',tipo:'testo',x:30,y:150,t:'',size:13,bold:true,anchor:'start'}
+  ],
+  passi: [
+    { nota: 'Array ordinato, cerco x = 15. Non posso leggere tutto: ogni passo deve <b>scartare metà</b> dell\'intervallo.', set:{} },
+    { nota: '<code>lo = 0, hi = 7</code>. Centro <code>mid = (0 + 7)/2 = 3</code>: A[3] = 7 &lt; 15. Il bersaglio sta a destra: scarto la metà sinistra, <code>lo = 4</code>.', set:{c3:{tono:'ora'},lo:{t:'lo = 4, hi = 7'}} },
+    { nota: 'Nuovo centro <code>mid = (4 + 7)/2 = 5</code>: A[5] = 11 &lt; 15. Scarto ancora: <code>lo = 6</code>.', set:{c3:{tono:'no'},c5:{tono:'ora'},lo:{t:'lo = 6, hi = 7'}} },
+    { nota: 'Centro <code>mid = 6</code>: A[6] = 15 = x. <b>Trovato</b> in 3 passi. Con n = 8 il massimo è ⌈log₂ 8⌉ = 3.', set:{c5:{tono:'no'},c6:{tono:'ok'},lo:{t:'trovato: A[6] = 15',tono:'ok'}} }
+  ]
+};
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Divide et impera: il metodo</h1>
+  <p class="lede">Divide et impera (divide and conquer) spezza il problema in parti indipendenti più piccole dello stesso tipo, le risolve ricorsivamente e ricombina i risultati. Il costo si legge dalla ricorrenza con il master theorem.</p>
+</header>
+
+<section>
+  <h2>Il metodo in sei passi</h2>
+<ol>
+  <li><b>Dividi</b>: metà, quadranti, sinistra e destra di una retta.</li>
+  <li><b>Invariante</b>: perché la risposta sta nella parte scelta, o come ricomponi le parti.</li>
+  <li><b>Caso base</b>: <code>n ≤ 1</code> (o <code>n ≤ 2</code>), scritto esplicitamente.</li>
+  <li><b>Costo</b> di dividere e ricombinare: di solito <code>O(n^c)</code>.</li>
+  <li><b>Ricorrenza</b>: <code>T(n) = a·T(n/b) + O(n^c)</code>.</li>
+  <li><b>Master theorem</b> (teorema fondamentale): confronta <code>c</code> con <code>log_b a</code>.</li>
+</ol>
+</section>
+<section>
+  <h2>La ricerca binaria</h2>
+<p>Il caso più semplice: una sequenza ordinata, e l'elemento da cercare. A ogni passo guardi il centro <code>mid</code>: l'ordine ti dice
+in quale metà può stare la risposta, e scarti l'altra. L'intervallo si dimezza, quindi <code>T(n) = T(n/2) + O(1)</code>, cioè <code>O(log n)</code>.</p>
+<p>Segnale nelle prove: <b>"faster than linear"</b>: non puoi leggere tutto l'input, quindi devi scartarne metà a ogni passo.</p>
+  <figure class="scena" data-scena="bin" data-titolo="Ricerca binaria: il centro scarta metà"></figure>
+</section>
+<section>
+  <h2>Il master theorem</h2>
+<p>Data <code>T(n) = a·T(n/b) + Θ(n^c)</code> con <code>a ≥ 1</code>, <code>b ≥ 2</code>, confronta <code>c</code> con <code>log_b a</code>:</p>
+<ul>
+  <li>se <code>c &lt; log_b a</code>: <code>T(n) = Θ(n^(log_b a))</code> (le foglie dominano);</li>
+  <li>se <code>c = log_b a</code>: <code>T(n) = Θ(n^c · log n)</code> (ogni livello pesa uguale);</li>
+  <li>se <code>c &gt; log_b a</code>: <code>T(n) = Θ(n^c)</code> (la radice domina).</li>
+</ul>
+<div class="box attenzione" data-tit="Quando non si applica"><p>Il numero di sottoproblemi deve essere costante, e il lavoro extra deve essere della forma <code>n^c</code>.
+Un <code>n log n</code> di lavoro extra, o sottoproblemi di taglia diversa, richiedono un'altra analisi (si srotola la ricorsione).</p></div>
+</section>
+<section>
+  <h2>All’esame</h2>
+<div class="box esame" data-tit="All’esame">
+<p>Per il tempo di un divide et impera: scrivi la ricorrenza, poi il master theorem. Frase: <i>"T(n) = a·T(n/b) + O(n^c). Since log_b a = …, by the master theorem T(n) = Θ(…)."</i></p>
+<p>Caso base: scrivilo sempre esplicitamente. Errore frequente: dimenticare il lavoro di ricombinazione.</p>
+</div>
+</section>
+<section>
+  <h2>Formulario rapido</h2>
+<div class="tab-wrap"><table class="tab"><thead><tr><th>ricorrenza</th><th>soluzione</th><th>esempio</th></tr></thead><tbody><tr><td>T(n) = T(n/2) + O(1)</td><td>O(log n)</td><td>ricerca binaria</td></tr><tr><td>T(n) = 2T(n/2) + O(n)</td><td>O(n log n)</td><td>mergesort</td></tr><tr><td>T(n) = 3T(n/2) + O(n)</td><td>O(n^1.585)</td><td>Karatsuba</td></tr><tr><td>T(n) = 4T(n/2) + O(1)</td><td>O(n²)</td><td>tabellone 2^k × 2^k</td></tr></tbody></table></div>
+</section>
+
+</main>
+</body>
+</html>

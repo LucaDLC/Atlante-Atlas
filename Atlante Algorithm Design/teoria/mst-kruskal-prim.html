@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Albero di copertura minimo: Kruskal e Prim</title>
+<link rel="stylesheet" href="../assets/atlas.css">
+<link rel="stylesheet" href="../assets/tema.css">
+<script src="../assets/sito.js"></script>
+<script src="../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+const N = (id,x,y,t) => ({id,tipo:'nodo',x,y,t,r:18});
+const A = (id,da,a,t) => ({id,tipo:'arco',da,a,dir:false,t});
+SCENE.kru = {
+  w: 520, h: 270, lato: true,
+  legenda: 'ok:preso nell\'albero,no:scartato (ciclo),dato:non ancora considerato',
+  oggetti: [
+    N('a',60,70,'a'), N('b',180,40,'b'), N('c',300,70,'c'), N('d',300,190,'d'), N('e',180,200,'e'),
+    A('ab','a','b','1'), A('bc','b','c','2'), A('de','d','e','2'), A('ac','a','c','3'), A('cd','c','d','4'), A('be','b','e','5'),
+    {id:'c1',tipo:'testo',x:20,y:250,t:'',size:12,bold:true,anchor:'start'}
+  ],
+  passi: [
+    { nota: 'Archi con peso, sei nodi <b>a … e</b>. Un albero di copertura (spanning tree) collega tutti i nodi con <b>n − 1 = 4 archi</b> senza cicli, al costo minimo.', set:{ab:{tono:'dato'},bc:{tono:'dato'},de:{tono:'dato'},ac:{tono:'dato'},cd:{tono:'dato'},be:{tono:'dato'}} },
+    { nota: 'Ordino gli archi per peso crescente: 1, 2, 2, 3, 4, 5. Prendo il primo: <b>ab = 1</b>, non crea cicli.', set:{ab:{tono:'ok'},c1:{t:'preso: ab(1)'}} },
+    { nota: '<b>bc = 2</b>: collega c alla componente di a–b, nessun ciclo. Preso.', set:{bc:{tono:'ok'},c1:{t:'preso: ab(1), bc(2)'}} },
+    { nota: '<b>de = 2</b>: collega d–e, che è un\'altra componente. Preso.', set:{de:{tono:'ok'},c1:{t:'preso: ab, bc, de (1+2+2)'}} },
+    { nota: '<b>ac = 3</b>: a e c sono già nella stessa componente (a–b–c). Aggiungerlo chiuderebbe un ciclo: <b>scartato</b>.', set:{ac:{tono:'no'},c1:{t:'ac scartato: chiuderebbe un ciclo'}} },
+    { nota: '<b>cd = 4</b>: unisce le due componenti {a,b,c} e {d,e}. Preso: ora ho 4 = n − 1 archi, costo <b>9</b>. Mi fermo.', set:{cd:{tono:'ok'},ac:{tono:null},c1:{t:'albero: ab, bc, de, cd · costo 9',tono:'ok'}} }
+  ]
+};
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Albero di copertura minimo: Kruskal e Prim</h1>
+  <p class="lede">Collegare tutti i nodi di un grafo al costo totale minimo: il problema del minimum spanning tree (MST). Due algoritmi greedy lo risolvono: Kruskal, che aggiunge gli archi più economici, e Prim, che fa crescere un solo albero.</p>
+</header>
+
+<section>
+  <h2>Il problema</h2>
+<p>Un <b>albero di copertura</b> (spanning tree) di un grafo connesso è un sottoinsieme di archi che collega tutti i nodi senza cicli.
+Ha sempre <code>n − 1</code> archi. Il <b>minimum spanning tree</b> (MST) è quello di costo totale minimo: somma dei pesi minima.</p>
+<p>Il costo non dipende dalla radice: un albero non ha una radice intrinseca. La domanda è solo quali archi tenere.</p>
+</section>
+<section>
+  <h2>Kruskal: prendi l'arco più economico</h2>
+<p>Regola: ordina gli archi per peso crescente. Per ogni arco <code>u–v</code>: se <code>u</code> e <code>v</code> stanno in componenti
+diverse, prendilo e unisci le componenti; altrimenti scartalo, perché chiuderebbe un ciclo. Fermati a <code>n − 1</code> archi.</p>
+<p>Per sapere se <code>u</code> e <code>v</code> sono già connessi si usa la <b>union-find</b> (pagina dedicata).</p>
+  <figure class="scena" data-scena="kru" data-titolo="Kruskal: ordine per peso e test del ciclo"></figure>
+</section>
+<section>
+  <h2>Perché funziona: la cut property</h2>
+<p>La <b>cut property</b> (proprietà del taglio): dato un taglio del grafo (una divisione dei nodi in due gruppi), l'arco più economico
+che attraversa il taglio appartiene a <i>qualche</i> MST. Kruskal prende sempre questo tipo di arco: quello più economico che
+collega due componenti.</p>
+<p>Simmetrica, la <b>cycle property</b>: l'arco più costoso di un ciclo non sta in nessun MST. Per questo lo scarti quando chiude un ciclo.</p>
+</section>
+<section>
+  <h2>Prim: fai crescere un solo albero</h2>
+<p>Prim parte da un nodo e fa crescere un solo albero: a ogni passo aggiunge l'arco <b>più economico che esce dall'albero</b> verso un nodo esterno.
+È lo stesso schema di Dijkstra: una coda di priorità sui nodi esterni, con la distanza minima dall'albero.</p>
+<p>Costo <code>O(m log n)</code> con binary heap, come Kruskal. Prim è più comodo quando il grafo è denso; Kruskal quando gli archi sono già ordinati
+o quando ti serve l'ordine globale.</p>
+</section>
+<section>
+  <h2>Il codice, affiancato</h2>
+  <p>Questa pagina spiega il concetto. Il codice Java che lo implementa, con una spiegazione riga per riga e le note di sintassi che servono, è nella pagina affiancata.</p>
+  <p><a href="../codice/mst-kruskal-prim.html"><b>→ Codice Java di questo argomento</b></a></p>
+</section>
+<section>
+  <h2>All’esame</h2>
+<div class="box esame" data-tit="All’esame">
+<p>Collegare tutto al costo minimo → MST. Scrivi: <i>"Sort the edges by non-decreasing weight. Add an edge if its endpoints are in different components (union-find). The result is a minimum spanning tree by the cut property. Time O(m log n)."</i></p>
+<p>Se la domanda chiede di <b>dimostrare</b> la correttezza, cita la cut property e fai l'exchange argument sull'arco scartato.</p>
+</div>
+</section>
+<section>
+  <h2>Formulario rapido</h2>
+<div class="tab-wrap"><table class="tab"><thead><tr><th>voce</th><th>significato</th><th>nota</th></tr></thead><tbody><tr><td>arco</td><td>u–v con peso ℓ</td><td>da ordinare</td></tr><tr><td>Kruskal</td><td>archi per peso, union-find</td><td>O(m log n)</td></tr><tr><td>Prim</td><td>un albero che cresce</td><td>O(m log n) con heap</td></tr><tr><td>n − 1</td><td>archi dell'albero</td><td>sempre</td></tr></tbody></table></div>
+</section>
+
+</main>
+</body>
+</html>

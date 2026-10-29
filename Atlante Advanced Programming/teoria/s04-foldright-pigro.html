@@ -1,0 +1,327 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>foldRight pigro</title>
+<link rel="stylesheet" href="../assets/atlas.css">
+<link rel="stylesheet" href="../assets/tema.css">
+<script src="../assets/sito.js"></script>
+<script src="../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  const vuoto = ['?', '?', '?', '?', '?', '?', '?', '?'];
+  const forza = k => vuoto.map((v, i) => i <= k ? String(i) : '?');
+  const toni = (k, ult) => Object.fromEntries(vuoto.map((v, i) => [i, i < k ? 'no' : i === k ? ult : null]).filter(x => x[1]));
+  SCENE.exists = {
+    w: 560, h: 210, lato: false,
+    legenda: 'ora:testa appena calcolata,no:0 > 2 falso: serve il resto,ok:trovato,spento:mai calcolato',
+    oggetti: [
+      { id: 't', tipo: 'testo', x: 280, y: 22, t: 'from(0): 0, 1, 2, 3, 4, … (infinita)', size: 13, bold: true },
+      { id: 'L', tipo: 'celle', x: 40, y: 44, cw: 58, ch: 42, valori: vuoto, indici: false },
+      { id: 'v', tipo: 'testo', x: 280, y: 130, t: '', size: 14 },
+      { id: 'n', tipo: 'testo', x: 280, y: 180, t: '', size: 14, bold: true }
+    ],
+    passi: [
+      { nota: '<code>from(0).exists(_ &gt; 2)</code>. Una lista infinita: all\'inizio non è calcolato niente, ci sono solo "ricette" (i punti di domanda).' },
+      { nota: 'Testa 0: 0 &gt; 2 è falso. <code>false || resto</code> deve guardare la parte destra, quindi <b>forza</b> il resto.', set: { L: { valori: forza(0), toni: toni(0, 'ora') }, v: { t: 'p(0) = false  →  serve il resto' } } },
+      { nota: 'Testa 1: ancora falso, si forza ancora.', set: { L: { valori: forza(1), toni: toni(1, 'ora') }, v: { t: 'p(1) = false  →  serve il resto' } } },
+      { nota: 'Testa 2: falso.', set: { L: { valori: forza(2), toni: toni(2, 'ora') }, v: { t: 'p(2) = false  →  serve il resto' } } },
+      { nota: 'Testa 3: 3 &gt; 2 è <b>vero</b>. <code>true || qualcosa</code> è vero senza guardare il qualcosa: il resto <b>non viene mai forzato</b>.', set: { L: { valori: forza(3), toni: toni(3, 'ok') }, v: { t: 'p(3) = true  →  stop' } } },
+      { nota: 'Risultato <b>true</b>, calcolate solo le teste 0, 1, 2, 3 di una lista infinita (verificato stampando le forzature). Funziona perché il secondo argomento di f è by-name.', set: { n: { t: 'from(0).exists(_ > 2) = true', tono: 'ok' } } }
+    ]
+  };
+})();
+</script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  const T = (id, x, y, t, extra) => Object.assign({ id, tipo: 'testo', x, y, t, size: 13 }, extra || {});
+  const R = (id, x, y, w, h, t, extra) => Object.assign({ id, tipo: 'rett', x, y, w, h, t }, extra || {});
+  const N = (id, x, y, t, tono, extra) => Object.assign({ id, tipo: 'nodo', x, y, t, tono, r: 20 }, extra || {});
+  const F = (id, x1, y1, x2, y2, t, extra) => Object.assign({ id, tipo: 'vett', x1, y1, x2, y2, t }, extra || {});
+  const C = (id, x, y, valori, extra) => Object.assign({ id, tipo: 'celle', x, y, cw: 52, ch: 40, valori, indici: false }, extra || {});
+  const vuote = n => Array(n).fill('');
+  const toni = (n, tono) => Object.fromEntries(Array.from({ length: n }, (_, i) => [i, tono]));
+
+    SCENE.firmapigra = {
+      w: 560, h: 150,
+      codice: { lang: 'scala', testo: `def foldRight[B, C >: B](z: => B)(f: (A, => C) => C): C = this match
+  case Empty => z
+  case Cons(h, t) => f(h(), t().foldRight(z)(f))` },
+      legenda: 'ok:calcolato subito,due:ricetta (by-name)',
+      oggetti: [R('h', 30, 40, 180, 40, 'h(): la testa', { tono: 'spento' }), R('t', 240, 40, 290, 40, 't().foldRight(z)(f): il resto', { tono: 'spento' }), T('c', 280, 120, '', { size: 12 })],
+      passi: [
+        { nota: "La firma del corso ha due <code>=&gt;</code>, e sono il punto di tutto.", righe: [1] },
+        { nota: "Il primo parametro di f è normale: la <b>testa</b> viene calcolata subito, <code>h()</code>.", righe: [3], set: { h: { tono: 'ok' } } },
+        { nota: "Il secondo è <b>by-name</b> (<code>=&gt; C</code>): f riceve \"il risultato del resto\" come <b>ricetta</b>, non calcolata. Viene eseguita solo se f usa quel parametro.", righe: [1, 3], set: { t: { tono: 'due' }, c: { t: 'se f non usa il resto, il resto non viene mai calcolato' } } },
+        { nota: "Anche <code>z</code> è by-name: si calcola solo se si arriva davvero in fondo. <code>C &gt;: B</code> aiuta il compilatore: si parte da None o empty e si ottiene un tipo più generale, come Option[A].", righe: [1, 2], set: { c: { t: 'z: => B, calcolato solo in fondo' } } }
+      ]
+    };
+
+    SCENE.dovez = {
+      w: 580, h: 220, lato: true,
+      legenda: 'ora:foldRight,due:foldLeft,ok:formula finale',
+      oggetti: [T('hr', 290, 24, 'LazyList(1, 2, 3).fold…("z")((a, acc) => s"f($a, $acc)")', { bold: true, size: 12 }), T('r', 290, 70, '', { size: 14, tono: 'ora' }), T('l', 290, 120, '', { size: 14, tono: 'due' }), T('c', 290, 170, '', { size: 12 }), T('c2', 290, 200, '', { size: 12 })],
+      passi: [
+        { nota: "Per vedere dove finisce z, invece di fare conti stampo la <b>formula</b> che ogni fold costruisce." },
+        { nota: "<b>foldRight</b>: f riceve la testa e la ricetta del resto; si scende finché la lista finisce, e al posto del resto c'è z. <b>1 è il più lontano da z.</b>", set: { r: { t: 'foldRight: f(1, f(2, f(3, z)))' } } },
+        { nota: "<b>foldLeft</b>: f(h(), z) diventa il nuovo z e si riparte dalla coda; in coda. Stessi elementi, parentesi al contrario: <b>1 è il primo a incontrare z</b>.", set: { l: { t: 'foldLeft: f(3, f(2, f(1, z)))' } } },
+        { nota: "Conseguenze (verificate): ricostruendo con cons, foldRight dà List(1, 2, 3), foldLeft la lista invertita. Su una lista infinita foldRight si ferma se f non usa acc; foldLeft non termina mai (\"Eager; cannot be used to work with infinite lazy lists\").", set: { c: { t: 'naturals.foldRight(false)((a, acc) => a > 3 || acc) = true', tono: 'ok' }, c2: { t: 'naturals.foldLeft(…): non termina', tono: 'no' } } }
+      ]
+    };
+
+    SCENE.headopt1 = {
+      w: 560, h: 150,
+      codice: { lang: 'scala', testo: `def headOption1: Option[A] =
+  foldRight(None)((a, _) => Some(a))` },
+      legenda: 'ok:calcolato,spento:mai calcolato',
+      oggetti: [C('l', 30, 40, ['0', '?', '?', '?', '…'], { cw: 60, toni: toni(5, 'spento') }), T('c', 280, 120, '', { size: 12, bold: true })],
+      passi: [
+        { nota: "headOption con foldRight: z = None (lista vuota), f = <code>(a, _) =&gt; Some(a)</code>.", righe: [2] },
+        { nota: "Primo passo: f(0, _). f <b>ignora</b> il secondo parametro (_): la ricetta del resto non viene mai eseguita.", righe: [2], set: { l: { toni: Object.assign(toni(5, 'spento'), { 0: 'ok' }) } } },
+        { nota: "Risultato Some(0), con <b>una sola</b> testa calcolata (verificato). Su una List normale lo stesso codice attraverserebbe tutta la lista prima di rispondere.", righe: [2], set: { c: { t: 'Some(0): una testa calcolata, il resto mai', tono: 'ok' } } }
+      ]
+    };
+
+    SCENE.takewhile1 = {
+      w: 560, h: 150,
+      codice: { lang: 'scala', testo: `def takeWhile1(p: A => Boolean): LazyList[A] =
+  foldRight(empty)((a, acc) => if p(a) then cons(a, acc) else empty)` },
+      legenda: 'ok:tenuto,no:primo che non va: stop,spento:mai guardato',
+      oggetti: [C('l', 30, 40, ['1', '2', '3', '4', '5', '…'], { cw: 60, toni: toni(6, 'spento') }), T('c', 280, 120, 'naturals.takeWhile1(_ < 4)', { size: 12, bold: true })],
+      passi: [
+        { nota: "a è l'elemento, acc la ricetta del takeWhile del resto. Su naturals, p = _ &lt; 4.", righe: [2] },
+        { nota: "1, 2, 3 vanno bene: <code>cons(a, acc)</code>. cons è by-name: acc non viene forzato qui, solo quando qualcuno legge la coda.", righe: [2], set: { l: { toni: Object.assign(toni(6, 'spento'), { 0: 'ok', 1: 'ok', 2: 'ok' }) } } },
+        { nota: "4 non va: <code>empty</code>, senza guardare acc. Il resto infinito non viene mai toccato: List(1, 2, 3).", righe: [2], set: { l: { toni: Object.assign(toni(6, 'spento'), { 0: 'ok', 1: 'ok', 2: 'ok', 3: 'no' }) }, c: { t: '.toList = List(1, 2, 3)', tono: 'ok' } } }
+      ]
+    };
+
+    SCENE.appendz = {
+      w: 580, h: 200, lato: true,
+      legenda: 'dato:this,due:that (in fondo: è z),ok:risultato',
+      oggetti: [C('a', 40, 50, ['1', '2'], { toni: toni(2, 'dato') }), C('b', 300, 50, ['8', '9'], { toni: toni(2, 'due') }), T('e', 290, 130, '', { bold: true, size: 13 }), T('c', 290, 175, '', { size: 12 })],
+      passi: [
+        { nota: "Esercizio 8: map, filter, append, flatMap con foldRight, costruendo con cons così il resto resta una ricetta. Il caso interessante è <code>append</code>: cosa va in z?" },
+        { nota: "Con foldRight z è <b>quello che c'è quando la lista finisce</b>. In append, quando this finisce, arriva that. Quindi z = that.", set: { e: { t: 'foldRight(that)((a, acc) => cons(a, acc))' } } },
+        { nota: "<code>LazyList(1, 2).append(LazyList(8, 9))</code> = f(1, f(2, that)) = cons(1, cons(2, that)) = List(1, 2, 8, 9). that è by-name: si calcola solo se si arriva in fondo.", set: { e: { t: 'cons(1, cons(2, that)) → List(1, 2, 8, 9)', tono: 'ok' } } },
+        { nota: "Per map, filter e flatMap \"cosa c'è quando la lista finisce\" è <code>empty</code>; solo per append è that. Attenzione: filter con un p mai vero, su una lista infinita, non si ferma.", set: { c: { t: 'map / filter / flatMap: z = empty · append: z = that' } } }
+      ]
+    };
+
+    SCENE.findlazy = {
+      w: 580, h: 210, lato: true,
+      legenda: 'ok:calcolato,spento:mai calcolato,no:calcolato per niente',
+      oggetti: [T('h1', 290, 24, 'from(0).find(_ > 2)', { bold: true }), C('l', 40, 40, ['0', '1', '2', '3', '4', '5', '…'], { cw: 60, toni: toni(7, 'spento') }),
+        T('h2', 290, 120, 'List(1, 2, 3, 4).filter(_ > 2).headOption', { bold: true, nascosto: true }), C('s', 40, 136, ['1', '2', '3', '4'], { cw: 60, toni: toni(4, 'spento'), nascosto: true })],
+      passi: [
+        { nota: "<code>find(p) = this.filter(p).headOption</code>. Su una lista normale sembrerebbe uno spreco: filtrare tutto per usarne uno." },
+        { nota: "Su LazyList: filter produce il risultato <b>pigramente</b>, headOption chiede solo il primo. Calcolati 0, 1, 2, 3 e basta (verificato). Risultato Some(3).", set: { l: { toni: Object.assign(toni(7, 'spento'), { 0: 'ok', 1: 'ok', 2: 'ok', 3: 'ok' }) } } },
+        { nota: "Su List: filter è <b>strict</b>, controlla tutti e 4 e crea una lista intera, poi se ne usa uno (verificato stampando).", set: { h2: { nascosto: false }, s: { nascosto: false, toni: { 0: 'ok', 1: 'ok', 2: 'ok', 3: 'no' } } } }
+      ]
+    };
+  
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>foldRight pigro</h1>
+  <p class="lede">Sulle liste normali <code>foldRight</code> consuma sempre tutto. Su una LazyList no: la funzione riceve il resto <b>come ricetta</b>, e se non la usa il fold si ferma. Per questo funziona anche su liste infinite, ed è la base degli esercizi 6–9.</p>
+</header>
+
+<section>
+  <h2>La firma del corso, pezzo per pezzo</h2>
+  <figure class="codice" data-titolo="foldRight su LazyList">
+<pre data-lang="scala">def foldRight[B, C &gt;: B](z: => B)(f: (A, => C) => C): C = this match
+  case Empty => z
+  case Cons(h, t) => f(h(), t().foldRight(z)(f))</pre>
+    <ol class="spiega">
+      <li data-righe="1" data-segna="(A, => C)@ora"><p>Il punto chiave: il <b>secondo</b> argomento di <code>f</code> è by-name (<code>=> C</code>). <code>f</code> riceve "il risultato del resto" senza che sia stato calcolato.</p></li>
+      <li data-righe="3" data-segna="t().foldRight(z)(f)@due"><p>Questa espressione passa a <code>f</code> come ricetta. Viene eseguita solo se <code>f</code> usa il suo secondo parametro.</p></li>
+      <li data-righe="3" data-segna="h()@dato"><p>La testa invece viene calcolata subito, perché il primo parametro di <code>f</code> è normale.</p></li>
+      <li data-righe="1" data-segna="z: => B@ok"><p>Anche <code>z</code> è by-name: si calcola solo se si arriva davvero in fondo.</p></li>
+      <li data-righe="1" data-segna="[B, C &gt;: B]@due"><p><code>C &gt;: B</code> è un aiuto per il compilatore (è spiegato nel commento del file): permette di partire da un valore come <code>None</code> o <code>empty</code> e ottenere un tipo più generale, come <code>Option[A]</code>.</p></li>
+    </ol>
+  </figure>
+  <figure class="scena" data-scena="firmapigra" data-titolo="Testa subito, resto come ricetta"></figure>
+</section>
+
+<section>
+  <h2><code>foldRight</code> e <code>foldLeft</code>: dove finisce <code>z</code></h2>
+  <p>Il file ha già tutte e due (le ha scritte il docente). Per vederle, invece di fare conti stampo la formula che costruiscono.</p>
+  <pre class="cod" data-lang="scala">LazyList(1, 2, 3).foldRight("z")((a, acc) => s"f($a, $acc)")
+LazyList(1, 2, 3).foldLeft("z") ((a, acc) => s"f($a, $acc)")</pre>
+  <figure class="passi" data-titolo="foldRight su (1, 2, 3)" data-legenda="dato:elemento,due:resto sospeso,ok:z">
+    <div class="passo"><div class="espr">f(<mark class="dato">1</mark>, <mark class="due">foldRight su (2,3)</mark>)</div><p class="nota"><code>f</code> riceve la testa e la <b>ricetta</b> del risultato sul resto.</p></div>
+    <div class="passo"><div class="espr">f(1, f(<mark class="dato">2</mark>, <mark class="due">foldRight su (3)</mark>))</div><p class="nota">Se <code>f</code> usa la ricetta, si scende di un passo.</p></div>
+    <div class="passo"><div class="espr">f(1, f(2, f(<mark class="dato">3</mark>, <mark class="due">foldRight su ()</mark>)))</div><p class="nota">Ancora uno.</p></div>
+    <div class="passo"><div class="espr">f(1, f(2, f(3, <mark class="ok">z</mark>)))</div><p class="nota">Lista finita: al posto del resto c'è <code>z</code>. Si combina <b>dal fondo</b>. Output reale: <code>f(1, f(2, f(3, z)))</code>.</p></div>
+  </figure>
+  <figure class="passi" data-titolo="foldLeft su (1, 2, 3)" data-legenda="dato:elemento,ora:nuovo accumulatore,ok:risultato">
+    <div class="passo"><div class="espr">foldLeft(<mark class="ora">f(1, z)</mark>) su (2,3)</div><p class="nota">Nessuna ricetta: <code>f(h(), z)</code> diventa il nuovo <code>z</code> e si riparte dalla coda.</p></div>
+    <div class="passo"><div class="espr">foldLeft(<mark class="ora">f(2, f(1, z))</mark>) su (3)</div><p class="nota">L'accumulatore cresce mentre si srotola.</p></div>
+    <div class="passo"><div class="espr">foldLeft(<mark class="ora">f(3, f(2, f(1, z)))</mark>) su ()</div><p class="nota">La chiamata ricorsiva è l'ultima cosa che succede: ricorsione in coda.</p></div>
+    <div class="passo"><div class="espr"><mark class="ok">f(3, f(2, f(1, z)))</mark></div><p class="nota">Output reale. Stessi elementi, parentesi al contrario: <code>1</code> è il primo a incontrare <code>z</code>.</p></div>
+  </figure>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Prova (verificata)</th><th>foldRight</th><th>foldLeft</th></tr></thead>
+    <tbody>
+      <tr><td>ricostruire con <code>(a, acc) => cons(a, acc)</code></td><td><code>List(1, 2, 3)</code></td><td><code>List(3, 2, 1)</code>: invertita</td></tr>
+      <tr><td>su una lista infinita</td><td>si ferma se <code>f</code> non usa <code>acc</code>: <code>naturals.foldRight(false)((a, acc) => a &gt; 3 || acc)</code> → <code>true</code></td><td>non termina mai: arriva sempre in fondo</td></tr>
+    </tbody>
+  </table></div>
+  <div class="box regola" data-tit="Regola pratica">
+    <p>Su <code>LazyList</code> parti da <code>foldRight</code>. Il commento del file su <code>foldLeft</code> lo dice: <i>"Eager; cannot be used to work with infinite lazy lists"</i> e <i>"Even if f does not force z, foldLeft will continue to recurse"</i>. <code>foldLeft</code> serve su liste finite, quando vuoi la pila costante o proprio l'ordine invertito.</p>
+  </div>
+  <figure class="scena" data-scena="dovez" data-titolo="La formula costruita da ciascun fold"></figure>
+</section>
+
+<section>
+  <h2><code>exists</code> che si ferma</h2>
+  <pre class="cod" data-lang="scala">def exists(p: A => Boolean): Boolean =
+  foldRight(false)((a, b) => p(a) || b)</pre>
+  <figure class="passi" data-titolo="from(0).exists(_ > 2)">
+    <div class="passo"><div class="espr">f(<mark class="dato">0</mark>, <mark class="due">[resto]</mark>) = p(0) || <mark class="due">[resto]</mark> = <mark class="no">false</mark> || <mark class="due">[resto]</mark></div><p class="nota">0 &gt; 2 è falso: <code>||</code> deve guardare la parte destra, quindi forza il resto.</p></div>
+    <div class="passo"><div class="espr">f(<mark class="dato">1</mark>, [resto]) = false || [resto]</div><p class="nota">Stessa cosa per 1.</p></div>
+    <div class="passo"><div class="espr">f(<mark class="dato">2</mark>, [resto]) = false || [resto]</div><p class="nota">E per 2.</p></div>
+    <div class="passo"><div class="espr">f(<mark class="dato">3</mark>, <mark class="no">[resto]</mark>) = <mark class="ok">true</mark> || <mark class="no">[resto]</mark></div><p class="nota">3 &gt; 2: <code>true ||</code> qualcosa è vero senza guardare il qualcosa. Il resto <b>non viene mai forzato</b>.</p></div>
+    <div class="passo"><div class="espr"><mark class="ok">true</mark></div><p class="nota">Calcolate solo le teste 0, 1, 2, 3 (verificato stampando le forzature), su una lista infinita.</p></div>
+  </figure>
+  <figure class="scena" data-scena="exists" data-titolo="Si calcola solo quello che serve"></figure>
+</section>
+
+<section>
+  <h2><code>headOption</code> con foldRight (esercizio 7)</h2>
+  <pre class="cod" data-lang="scala">def headOption1: Option[A] =
+  foldRight(None)((a, _) => Some(a))</pre>
+  <figure class="passi" data-titolo="from(0).headOption1">
+    <div class="passo"><div class="espr">f(<mark class="dato">0</mark>, <mark class="no">_</mark>) = Some(0)</div><p class="nota"><code>f</code> ignora il resto (<code>_</code>): non lo usa, quindi non viene calcolato.</p></div>
+    <div class="passo"><div class="espr"><mark class="ok">Some(0)</mark></div><p class="nota">Una sola testa calcolata (verificato). Su Empty il risultato è <code>z = None</code>.</p></div>
+  </figure>
+  <div class="box domanda-tua" data-tit="Dubbio: allora il foldRight qui non serve a niente?">
+    <p>È proprio il punto dell'esercizio: dimostrare che foldRight <b>può</b> fermarsi al primo passo. Su una List normale lo stesso codice attraverserebbe tutta la lista prima di rispondere.</p>
+  </div>
+  <figure class="scena" data-scena="headopt1" data-titolo="Una sola testa calcolata"></figure>
+</section>
+
+<section>
+  <h2><code>takeWhile</code> con foldRight (esercizio 6)</h2>
+  <figure class="codice" data-titolo="La tua soluzione">
+<pre data-lang="scala">def takeWhile1(p: A => Boolean): LazyList[A] =
+  foldRight(empty)((a, acc) => if p(a) then cons(a, acc) else empty)</pre>
+    <ol class="spiega">
+      <li data-righe="2" data-segna="foldRight(empty)@ok"><p>Se la lista è finita, il prefisso è vuoto.</p></li>
+      <li data-righe="2" data-segna="(a, acc) =>@dato"><p><code>a</code> è l'elemento, <code>acc</code> è (la ricetta de) il takeWhile del resto.</p></li>
+      <li data-righe="2" data-segna="cons(a, acc)@ora"><p>Se <code>a</code> va bene, lo tengo e ci attacco il resto. <code>cons</code> è by-name: <code>acc</code> <b>non</b> viene forzato qui.</p></li>
+      <li data-righe="2" data-segna="else empty@no"><p>Al primo elemento che non va, mi fermo: <code>empty</code> senza guardare <code>acc</code>.</p></li>
+    </ol>
+  </figure>
+  <pre class="cod" data-lang="scala">naturals.takeWhile1(_ &lt; 4).toList   // List(1, 2, 3)</pre>
+  <figure class="scena" data-scena="takewhile1" data-titolo="Fermarsi al primo che non va"></figure>
+</section>
+
+<section>
+  <h2>map, filter, append, flatMap (esercizio 8)</h2>
+  <p>Tutte con <code>foldRight</code>, senza ricorsione esplicita. Il trucco è sempre lo stesso: costruire con <code>cons</code>, così il resto (<code>acc</code>) resta una ricetta.</p>
+  <figure class="codice" data-titolo="Le quattro funzioni">
+<pre data-lang="scala">def map[B](f: A => B): LazyList[B] =
+  foldRight(empty[B])((a, acc) => cons(f(a), acc))
+
+def filter(p: A => Boolean): LazyList[A] =
+  foldRight(empty[A])((a, acc) => if p(a) then cons(a, acc) else acc)
+
+def append[B &gt;: A](that: => LazyList[B]): LazyList[B] =
+  foldRight(that)((a, acc) => cons(a, acc))
+
+def flatMap[B](f: A => LazyList[B]): LazyList[B] =
+  foldRight(empty[B])((a, acc) => f(a).append(acc))</pre>
+    <ol class="spiega">
+      <li data-righe="1" data-segna="[B](f: A => B): LazyList[B]@due"><p><b>Firme</b>: il file le lascia volutamente sbagliate (<code>Any</code>), vanno progettate. Si copiano da quelle delle liste.</p></li>
+      <li data-righe="2" data-segna="empty[B]@ok|cons(f(a), acc)@ora"><p><b>map</b>: ogni elemento trasformato, davanti al resto trasformato. <code>empty[B]</code> dice al compilatore di che tipo è la lista vuota.</p></li>
+      <li data-righe="5" data-segna="if p(a) then cons(a, acc) else acc@ora"><p><b>filter</b>: tengo o salto. Attenzione: se <code>p</code> non è mai vero, <code>filter</code> su una lista infinita non si ferma mai.</p></li>
+      <li data-righe="7" data-segna="that: => LazyList[B]@dato|[B &gt;: A]@due"><p><b>append</b>: il testo chiede che sia <b>non strict</b> nell'argomento, quindi <code>that</code> è by-name. <code>B &gt;: A</code>: posso attaccare una lista di un tipo più generale (Int + Double → numeri).</p></li>
+      <li data-righe="8" data-segna="foldRight(that)@ok"><p>Il valore iniziale è <code>that</code>: in fondo alla prima lista c'è la seconda. Grazie al by-name di <code>z</code>, <code>that</code> si calcola solo se si arriva in fondo.</p></li>
+      <li data-righe="11" data-segna="f(a).append(acc)@ora"><p><b>flatMap</b>: ogni elemento diventa una lazy list, e le attacco una dietro l'altra.</p></li>
+    </ol>
+  </figure>
+  <div class="box domanda-tua" data-tit="Dubbio: A è this? E perché [B]?">
+    <p>No, sono cose diverse. <code>A</code> è un <b>tipo</b>: il tipo degli elementi, nasce in <code>enum LazyList[+A]</code> e vale per tutti i metodi. <code>this</code> è un <b>valore</b>: la lista su cui chiami il metodo, di tipo <code>LazyList[A]</code>. Su <code>LazyList(1, 2, 3).map(…)</code>: <code>this</code> = la lista (1, 2, 3), <code>A</code> = <code>Int</code>.</p>
+    <p><code>B</code> invece non esiste finché non lo dichiari fra quadre dopo il nome: <code>def map[B](…)</code>. Lo sceglie la <code>f</code> a ogni chiamata: <code>map(_ * 2)</code> → <code>B = Int</code>, <code>map(_.toString)</code> → <code>B = String</code>.</p>
+  </div>
+  <div class="box domanda-tua" data-tit="Dubbio: z è il valore di partenza? Allora in append that va prima?">
+    <p>Con <code>foldRight</code> <code>z</code> finisce <b>in fondo</b>: è quello che c'è quando la lista finisce. Quindi in <code>append</code> <code>that</code> va <b>dopo</b> <code>this</code>:</p>
+    <pre class="cod" data-lang="scala">LazyList(1, 2).append(LazyList(8, 9))
+= f(1, f(2, that))  =  cons(1, cons(2, that))   // List(1, 2, 8, 9)</pre>
+    <p>Per <code>map</code>, <code>filter</code> e <code>flatMap</code> "cosa c'è quando la lista finisce" è <code>empty</code>; solo per <code>append</code> è <code>that</code>.</p>
+  </div>
+  <div class="errori">
+    <div class="errore">
+      <pre data-lang="scala">def map(f: A => B): LazyList[B] = …</pre>
+      <pre class="msg">Not found: type B</pre>
+      <div class="fix"><code>B</code> è usato ma mai dichiarato. Va fra quadre dopo il nome: <code>def map[B](f: A => B)</code>.</div>
+    </div>
+    <div class="errore">
+      <pre data-lang="scala">foldRight(empty)((a,acc => cons(f(a), acc)))</pre>
+      <pre class="msg">Not found: a</pre>
+      <div class="fix">Parentesi della lambda al posto sbagliato: Scala legge una coppia <code>(a, acc => …)</code> e <code>a</code> non è definito. Si scrive <code>(a, acc) => …</code>: parametri dentro le parentesi, freccia subito dopo.</div>
+    </div>
+    <div class="errore">
+      <pre data-lang="scala">foldRight(empty)((a,acc) => cons((a,that,acc)))</pre>
+      <pre class="msg">Found:    (A, adpro.lazyList.LazyList[B], adpro.lazyList.LazyList[B])
+Required: B</pre>
+      <div class="fix"><code>cons</code> prende due argomenti; con le parentesi doppie gli arriva <b>una</b> tripla, nello slot della testa. In <code>append</code> <code>that</code> non va nel passo ma in <code>z</code>: <code>foldRight(that)((a, acc) => cons(a, acc))</code>.</div>
+    </div>
+    <div class="errore">
+      <pre data-lang="scala">def flatMap[B](f: A => LazyList[B]): LazyList[B] =
+  foldRight(empty)((a,acc) => cons(f(a), acc))</pre>
+      <pre class="msg">Found:    adpro.lazyList.LazyList[B]
+Required: B</pre>
+      <div class="fix">Copiato da <code>map</code>, ma qui <code>f(a)</code> è già una <b>lista</b>: non può fare da testa. Si attacca al resto: <code>f(a).append(acc)</code>.</div>
+    </div>
+  </div>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Caso di prova del testo</th><th>Risultato (verificato)</th></tr></thead>
+    <tbody>
+      <tr><td><code>naturals.map(_*2).drop(30).take(5).toList</code></td><td><code>List(62, 64, 66, 68, 70)</code></td></tr>
+      <tr><td><code>naturals.drop(42).filter(_%2 == 0).take(5).toList</code></td><td><code>List(44, 46, 48, 50, 52)</code></td></tr>
+      <tr><td><code>naturals.take(3).append(naturals).take(6).toList</code></td><td><code>List(1, 2, 3, 1, 2, 3)</code></td></tr>
+      <tr><td><code>naturals.flatMap(to).take(10).toList</code></td><td><code>List(1, 0, -1, …, -8)</code></td></tr>
+    </tbody>
+  </table></div>
+  <div class="box idea" data-tit="Perché flatMap(to) non arriva mai a 2">
+    <p><code>to(1)</code> è infinita: 1, 0, −1, … . <code>flatMap</code> attacca <code>to(2)</code> <b>dopo</b> la fine di <code>to(1)</code>, che non arriva mai. Con <code>take(10)</code> ottieni solo pezzi di <code>to(1)</code>.</p>
+  </div>
+  <p class="piccolo">Dettaglio misurato: <code>from(0).map(_ * 2)</code>, anche senza <code>toList</code>, calcola già la prima testa, perché <code>foldRight</code> esegue <code>h()</code> subito. Nessuna coda viene toccata.</p>
+  <figure class="scena" data-scena="appendz" data-titolo="Cosa va in z: empty, oppure that"></figure>
+</section>
+
+<section>
+  <h2>Esercizio 9: perché <code>find</code> con <code>filter</code> va bene qui</h2>
+  <pre class="cod" data-lang="scala">def find(p: A => Boolean): Option[A] = this.filter(p).headOption</pre>
+  <div class="colonne">
+    <div class="carta buona">
+      <h4>Su LazyList</h4>
+      <p><code>from(0).find(_ &gt; 2)</code>: <code>filter</code> costruisce il risultato pigramente, <code>headOption</code> chiede solo il primo. Calcolati 0, 1, 2, 3 e basta (verificato).</p>
+    </div>
+    <div class="carta cattiva">
+      <h4>Su List</h4>
+      <p><code>List(1, 2, 3, 4).filter(_ &gt; 2).headOption</code>: <code>filter</code> è strict, controlla <b>tutti</b> e 4 gli elementi e crea una lista intera, poi se ne usa uno (verificato stampando).</p>
+    </div>
+  </div>
+  <div class="box inglese" data-tit="Risposta in inglese (l'esame può avere domande aperte)">
+    <p>"On a lazy list, filter does not traverse the whole list: it only produces elements when they are demanded. headOption demands just the first one, so find stops as soon as it meets the first element satisfying p. On a strict List, filter would first test every element and build a new list, only to keep its head, which wastes time and memory, and would not terminate on an infinite structure."</p>
+  </div>
+  <div class="box domanda-tua" data-tit="Dubbio: perché Some? Posso scrivere Some(x > 2)?">
+    <p><code>find</code> può non trovare niente, quindi restituisce un <code>Option</code>: <code>LazyList(1, 2, 3).find(_ &gt; 10)</code> → <code>None</code>. Dentro <code>Some</code> c'è <b>l'elemento trovato</b>, non la condizione: <code>find(_ &gt; 2)</code> → <code>Some(3)</code>. <code>Some(x &gt; 2)</code> sarebbe <code>Some(true)</code>: un <code>Option[Boolean]</code>.</p>
+    <p>È il <b>primo</b> elemento che soddisfa <code>p</code>: <code>LazyList(1, 2, 3, 4).find(_ &gt; 2)</code> → <code>Some(3)</code>, il 4 non viene nemmeno guardato. Se ti serve solo sapere se esiste, c'è <code>exists</code>, che dà <code>true</code>/<code>false</code>.</p>
+  </div>
+  <figure class="scena" data-scena="findlazy" data-titolo="filter + headOption: pigro contro strict"></figure>
+</section>
+
+</main>
+</body>
+</html>

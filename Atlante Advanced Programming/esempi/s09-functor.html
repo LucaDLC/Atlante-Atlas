@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Esempi: map, distribute e map2 in Scala</title>
+<link rel="stylesheet" href="../assets/atlas.css">
+<link rel="stylesheet" href="../assets/tema.css">
+<script src="../assets/sito.js"></script>
+<script src="../assets/atlas.js" defer></script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <div class="occhiello"><span>Settimana 9 · esempi</span></div>
+  <h1>Esempi: map, distribute e map2 in Scala</h1>
+  <p class="lede">Il codice della <a href="../teoria/s09-functor.html">pagina sul functor</a>, con <code>map</code> su List e Option, la legge di identità, <code>distribute</code> e <code>map2</code>. Verificato con Scala 3.8.4 e le opzioni del corso.</p>
+</header>
+
+<section>
+  <h2>Il file intero</h2>
+  <p>Eseguilo con <code>scala-cli run Functor.scala</code>. <code>distribute</code> è scritto per le liste, <code>map2</code> per le Option: sono le versioni concrete del concetto.</p>
+  <figure class="codice" data-titolo="Functor.scala">
+<pre data-lang="scala">//&gt; using scala 3.8.4
+//&gt; using options -Werror -deprecation -feature -source:future
+
+def distribute[A, B](fab: List[(A, B)]): (List[A], List[B]) =
+  (fab.map(_._1), fab.map(_._2))
+
+def map2[A, B, C](fa: Option[A], fb: Option[B])(f: (A, B) =&gt; C): Option[C] =
+  fa.flatMap(a =&gt; fb.map(b =&gt; f(a, b)))
+
+@main def esempiFunctor(): Unit =
+  val doppio: Int =&gt; Int = _ * 2
+  println(List(1, 2, 3).map(doppio))
+  println(Option(3).map(doppio))
+  println(Option.empty[Int].map(doppio))
+  // legge dell'identità: map(identity) non cambia la struttura
+  println(List(1, 2, 3).map(identity) == List(1, 2, 3))
+  println(Option(3).map(identity) == Option(3))
+  // distribute: da una lista di coppie a una coppia di liste
+  val persone = List(("John", 35), ("Andrzej", 39), ("Stefan", 18))
+  println(distribute(persone))
+  // map2: combina due contenitori, se uno dei due è vuoto il risultato è None
+  println(map2(Some("John"), Some(35))((n, e) =&gt; s"$n ($e)"))
+  println(map2(Some("John"), Option.empty[Int])((n, e) =&gt; s"$n ($e)"))</pre>
+    <ol class="spiega">
+      <li data-righe="4-5" data-segna="fab.map(_._1)@ora|fab.map(_._2)@due"><p><code>distribute</code>. <code>fab.map(_._1)</code> prende il primo elemento di ogni coppia, <code>_._2</code> il secondo. Il risultato è una coppia di liste. <code>_</code> è il segnaposto per l’elemento corrente della lambda.</p></li>
+      <li data-righe="7-8" data-segna="fa.flatMap(a =&gt; fb.map(b =&gt; f(a, b)))@ora"><p><code>map2</code> con <code>flatMap</code>. Se <code>fa</code> è None il risultato è None senza eseguire il resto. Altrimenti, nella lambda <code>a =&gt; …</code>, prende il valore <code>a</code>, poi con <code>fb.map</code> combina con <code>b</code> usando <code>f</code>.</p></li>
+      <li data-righe="11" data-segna="_ * 2@ora"><p><code>val doppio</code> è una funzione: <code>_ * 2</code> è la forma breve di <code>x =&gt; x * 2</code>. Sarà la f di <code>map</code>.</p></li>
+      <li data-righe="12-14" data-segna="map(doppio)@ora"><p>Lo stesso <code>map</code> sui tre contenitori: List, Option con valore, Option vuoto. Il secondo produce <code>Some(6)</code>, il terzo <code>None</code>: la forma non cambia.</p></li>
+      <li data-righe="16-17" data-segna="map(identity)@ora"><p>Legge di identità: <code>identity</code> restituisce l’argomento invariato, quindi <code>map(identity)</code> dà un contenitore uguale all’input. Il confronto <code>==</code> risponde <code>true</code>.</p></li>
+      <li data-righe="19-20" data-segna="persone"><p>Una lista di coppie (nome, età) passata a <code>distribute</code>: il risultato è una coppia di liste, la prima dei nomi e la seconda delle età.</p></li>
+      <li data-righe="22" data-segna="Some(35)@ora"><p>Due Option con valore: <code>map2</code> applica la lambda <code>(n, e) =&gt; s"$n ($e)"</code> e restituisce <code>Some("John (35)")</code>. <code>s"…"</code> è l’interpolazione di stringhe: <code>$n</code> inserisce il valore di n.</p></li>
+      <li data-righe="23" data-segna="Option.empty[Int]@no"><p>Stesso codice con età mancante: <code>Option.empty[Int]</code> è None. Il risultato è None: se manca un valore, <code>map2</code> non ha niente da combinare.</p></li>
+    </ol>
+  </figure>
+</section>
+
+<section>
+  <h2>L’output</h2>
+  <figure class="codice" data-titolo="Output dell’esecuzione">
+<pre data-lang="text">List(2, 4, 6)
+Some(6)
+None
+true
+true
+(List(John, Andrzej, Stefan),List(35, 39, 18))
+Some(John (35))
+None</pre>
+    <ol class="spiega">
+      <li data-righe="1-3"><p><code>map</code> su List, Option pieno e Option vuoto.</p></li>
+      <li data-righe="4-5"><p>Legge di identità su List e su Option: <code>true</code> in entrambi i casi.</p></li>
+      <li data-righe="6"><p><code>distribute</code>: una coppia di liste.</p></li>
+      <li data-righe="7-8"><p><code>map2</code>: con entrambi i valori, il risultato è <code>Some</code>; con un valore mancante, <code>None</code>.</p></li>
+    </ol>
+  </figure>
+</section>
+
+<section>
+  <h2>Da ricordare</h2>
+  <div class="box inglese" data-tit="Frase per l’esame">A functor is a type constructor with a map operation that preserves the structure: mapping the identity changes nothing.</div>
+  <div class="box regola" data-tit="Regola pratica">Un <code>map</code> sui contenitori del corso è sempre la stessa forma: se hai due contenitori da combinare, non basta <code>map</code>, serve <code>map2</code> (e la sua forma con <code>flatMap</code>).</div>
+</section>
+
+</main>
+</body>
+</html>

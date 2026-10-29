@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Codice: union-find in Java</title>
+<link rel="stylesheet" href="../assets/atlas.css">
+<link rel="stylesheet" href="../assets/tema.css">
+<script src="../assets/sito.js"></script>
+<script src="../assets/atlas.js" defer></script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Codice: union-find in Java</h1>
+  <p class="lede">La struttura degli insiemi disgiunti in Java: make-set, find con path compression, union by size, con l'esempio della scena.</p>
+</header>
+
+<section>
+  <h2>Find e union</h2>
+  <p>Due array: <code>padre</code> e <code>dimensione</code>. Il padre di una radice è sé stessa.</p>
+  <figure class="codice" data-titolo="Find e union">
+<pre data-lang="java">import java.util.*;
+
+public class Main {
+    static int[] padre;
+    static int[] dimensione;
+
+    // find: risale alla radice; con path compression collega ogni nodo incontrato alla radice.
+    static int find(int x) {
+        if (padre[x] != x) {
+            padre[x] = find(padre[x]);
+        }
+        return padre[x];
+    }
+
+    // union by size: la radice del gruppo più piccolo va sotto quella del più grande.
+    static void union(int x, int y) {
+        int rx = find(x);
+        int ry = find(y);
+        if (rx == ry) {
+            return;                       // già nello stesso gruppo
+        }
+        if (dimensione[rx] &lt; dimensione[ry]) {
+            int t = rx;
+            rx = ry;
+            ry = t;                       // scambio: rx è sempre la radice più grande
+        }
+        padre[ry] = rx;
+        dimensione[rx] += dimensione[ry];
+    }
+
+    public static void main(String[] args) {
+        int n = 5;                        // nodi 0..4 corrispondono ad a..e
+        padre = new int[n];
+        dimensione = new int[n];
+        for (int i = 0; i &lt; n; i++) {
+            padre[i] = i;                 // make-set: ogni nodo è un gruppo
+            dimensione[i] = 1;
+        }
+        union(0, 1);                      // a b
+        union(2, 3);                      // c d
+        union(0, 2);                      // a c: fonde {a,b} e {c,d}
+        System.out.println("find(3) = " + find(3));
+        System.out.println("stesso gruppo 3 e 4? " + (find(3) == find(4)));
+        System.out.println("padre di 3 dopo find: " + padre[3]);
+    }
+}</pre>
+    <ol class="spiega">
+    <li data-righe="10"><p>Path compression, come nella pagina di Kruskal.</p></li>
+    <li data-righe="22"><p>Union by size: scambio le variabili, così <code>rx</code> resta la radice più grande.</p></li>
+    <li data-righe="27"><p>Collego la radice più piccola sotto quella più grande.</p></li>
+    <li data-righe="28"><p><code>+=</code> somma e assegna: la dimensione del gruppo unito.</p></li>
+    </ol>
+  </figure>
+  <div class="box basi" data-tit="Note di sintassi"><ul><li><code>int t = rx; rx = ry; ry = t;</code> è lo scambio con una variabile temporanea: Java non ha lo scambio diretto.</li></ul></div>
+</section>
+<section>
+  <h2>Eseguirlo</h2>
+  <p>Esempio di input e di output (compilato e lanciato davvero).</p>
+  <pre class="cod">(output)
+find(3) = 0
+stesso gruppo 3 e 4? false
+padre di 3 dopo find: 0</pre>
+</section>
+<section>
+  <h2>La teoria, affiancata</h2>
+  <p><a href="../teoria/union-find.html"><b>← Torna alla teoria di questo argomento</b></a></p>
+</section>
+
+</main>
+</body>
+</html>

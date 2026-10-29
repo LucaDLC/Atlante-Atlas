@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Codice: interval scheduling in Java</title>
+<link rel="stylesheet" href="../assets/atlas.css">
+<link rel="stylesheet" href="../assets/tema.css">
+<script src="../assets/sito.js"></script>
+<script src="../assets/atlas.js" defer></script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Codice: interval scheduling in Java</h1>
+  <p class="lede">Earliest finish time in Java: un array di intervalli, un ordinamento con una lambda, e la scansione greedy.</p>
+</header>
+
+<section>
+  <h2>Leggere e ordinare</h2>
+  <p>Ogni intervallo è un array di due interi, <code>{inizio, fine}</code>. Ordino l'array di array per la fine.</p>
+  <figure class="codice" data-titolo="Leggere e ordinare">
+<pre data-lang="java">import java.io.*;
+import java.util.*;
+
+public class Main {
+    public static void main(String[] args) throws IOException {
+        BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
+        int n = Integer.parseInt(in.readLine().trim());
+
+        // Ogni intervallo è un array di due interi: {inizio, fine}.
+        int[][] iv = new int[n][2];
+        for (int i = 0; i &lt; n; i++) {
+            StringTokenizer st = new StringTokenizer(in.readLine());
+            iv[i][0] = Integer.parseInt(st.nextToken());
+            iv[i][1] = Integer.parseInt(st.nextToken());
+        }
+
+        // Ordino per fine crescente. Il comparatore e una lambda: confronta la colonna 1.
+        // Integer.compare evita l'overflow che avrebbe x[1] - y[1] con valori enormi.
+        Arrays.sort(iv, (x, y) -&gt; Integer.compare(x[1], y[1]));
+
+        List&lt;String&gt; scelti = new ArrayList&lt;&gt;();
+        int ultimaFine = Integer.MIN_VALUE;   // fine dell'ultimo intervallo preso
+        for (int[] c : iv) {                  // for-each su un array di array
+            if (c[0] &gt;= ultimaFine) {         // compatibile: non inizia prima della fine
+                scelti.add("[" + c[0] + "," + c[1] + ")");
+                ultimaFine = c[1];
+            }
+        }
+        System.out.println(scelti.size() + " intervalli: " + String.join(" ", scelti));
+    }
+}</pre>
+    <ol class="spiega">
+    <li data-righe="10"><p>Un array bidimensionale: <code>n</code> righe, ognuna di due colonne. <code>iv[i][0]</code> è l'inizio, <code>iv[i][1]</code> la fine.</p></li>
+    <li data-righe="19"><p>Ordino per la colonna 1, cioè la fine. La <b>lambda</b> <code>(x, y) -> …</code> è la funzione di confronto.</p></li>
+    </ol>
+  </figure>
+  <div class="box basi" data-tit="Note di sintassi"><ul><li><code>Integer.compare(a, b)</code> restituisce −1, 0 o 1. Non usare <code>a − b</code>: con numeri grandi va in overflow e il confronto diventa sbagliato.</li><li>Una lambda è una funzione senza nome passata come argomento: qui implementa l'interfaccia <code>Comparator</code>.</li></ul></div>
+</section>
+<section>
+  <h2>La scansione greedy</h2>
+  <p>Scorro gli intervalli in ordine di fine. Preso uno, aggiorno la fine dell'ultimo preso.</p>
+  <figure class="codice" data-titolo="La scansione greedy">
+<pre data-lang="java">import java.io.*;
+import java.util.*;
+
+public class Main {
+    public static void main(String[] args) throws IOException {
+        BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
+        int n = Integer.parseInt(in.readLine().trim());
+
+        // Ogni intervallo è un array di due interi: {inizio, fine}.
+        int[][] iv = new int[n][2];
+        for (int i = 0; i &lt; n; i++) {
+            StringTokenizer st = new StringTokenizer(in.readLine());
+            iv[i][0] = Integer.parseInt(st.nextToken());
+            iv[i][1] = Integer.parseInt(st.nextToken());
+        }
+
+        // Ordino per fine crescente. Il comparatore e una lambda: confronta la colonna 1.
+        // Integer.compare evita l'overflow che avrebbe x[1] - y[1] con valori enormi.
+        Arrays.sort(iv, (x, y) -&gt; Integer.compare(x[1], y[1]));
+
+        List&lt;String&gt; scelti = new ArrayList&lt;&gt;();
+        int ultimaFine = Integer.MIN_VALUE;   // fine dell'ultimo intervallo preso
+        for (int[] c : iv) {                  // for-each su un array di array
+            if (c[0] &gt;= ultimaFine) {         // compatibile: non inizia prima della fine
+                scelti.add("[" + c[0] + "," + c[1] + ")");
+                ultimaFine = c[1];
+            }
+        }
+        System.out.println(scelti.size() + " intervalli: " + String.join(" ", scelti));
+    }
+}</pre>
+    <ol class="spiega">
+    <li data-righe="22"><p>Fine dell'ultimo intervallo scelto. All'inizio è il minimo intero: nessun intervallo blocca il primo.</p></li>
+    <li data-righe="23"><p><i>for-each</i> su un array di array: <code>c</code> è una riga, cioè un intervallo.</p></li>
+    <li data-righe="24" data-segna="c[0] >= ultimaFine@ok"><p>Compatibile: il nuovo intervallo non inizia prima della fine dell'ultimo preso.</p></li>
+    <li data-righe="26"><p>Aggiorno la fine: è la nuova barriera per i successivi.</p></li>
+    </ol>
+  </figure>
+  <div class="box basi" data-tit="Note di sintassi"><ul><li><code>String.join(" ", scelti)</code> unisce gli elementi di una lista con un separatore.</li><li><code>"[" + c[0] + ","</code>: la concatenazione con <code>+</code> converte gli <code>int</code> in testo.</li></ul></div>
+</section>
+<section>
+  <h2>Eseguirlo</h2>
+  <p>Esempio di input e di output (compilato e lanciato davvero).</p>
+  <pre class="cod">6
+0 3
+2 5
+4 7
+1 8
+6 9
+8 10
+
+(output)
+3 intervalli: [0,3) [4,7) [8,10)</pre>
+</section>
+<section>
+  <h2>La teoria, affiancata</h2>
+  <p><a href="../teoria/interval-scheduling.html"><b>← Torna alla teoria di questo argomento</b></a></p>
+</section>
+
+</main>
+</body>
+</html>

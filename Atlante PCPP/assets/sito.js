@@ -1,0 +1,249 @@
+/* Manifesto dell'atlante PCPP: menu, calendario, scadenze, orari e data d'esame.
+   Per aggiungere una pagina: crea il file e aggiungi { t:'Titolo', h:'teoria/nome.html' } nel gruppo giusto.
+   Una voce senza pagina ancora pronta: { t:'Titolo', arriva:'21 set' }. */
+try { const t = localStorage.getItem('atlante:tema'); if (t) document.documentElement.dataset.theme = t; } catch (e) { }
+
+window.SITO = {
+  sigla: 'PCPP',
+  nome: 'Practical Concurrent and Parallel Programming',
+  esame: { data: '2027-01-21T09:00', etichetta: 'orale di 30 minuti (primo giorno della finestra 21–29 gennaio)' },
+
+
+  calendario: [
+    { da: '2026-08-24', t: 'Introduzione alla concorrenza e mutua esclusione', sub: 'Goetz cap. 1–2 · note 1', h: 'teoria/l01-perche-concorrenza.html' },
+    { da: '2026-08-31', t: 'Memoria condivisa I: monitor, visibility, volatile', sub: 'Goetz cap. 3 · Herlihy cap. 8 · note 2', h: 'teoria/l02-monitor.html' },
+    { da: '2026-09-07', t: 'Java Memory Model', sub: 'oral feedback · consegna Assignment 1 lun 7 set 07:59', h: 'teoria/l03-azioni-esecuzioni.html' },
+    { da: '2026-09-14', t: 'Memoria condivisa II: classi thread-safe', sub: 'Goetz cap. 4–5 · note 4', h: 'teoria/l04-thread-safety.html' },
+    { da: '2026-09-21', t: 'Testing e verifica', sub: 'oral feedback · consegna Assignment 2 lun 21 set 07:59', h: 'teoria/l05-proprieta.html' },
+    { da: '2026-09-28', t: 'Strutture dati lock-free', sub: 'Herlihy 3.8', h: 'teoria/l06-progresso.html' },
+    { da: '2026-10-05', t: 'Linearizzabilità', sub: 'oral feedback · Assignment 3', h: 'teoria/l07-consistenza-linearizzabilita.html' },
+    { da: '2026-10-12', t: 'Pausa autunnale', sub: 'nessuna lezione', pausa: true },
+    { da: '2026-10-19', t: 'Misure di performance', sub: 'Peter Sestoft', h: 'teoria/l08-microbenchmark.html' },
+    { da: '2026-10-26', t: 'Performance e scalabilità', sub: 'oral feedback · Assignment 4 · Goetz 6.1, 6.2, 11 · Sestoft cap. 8–9', h: 'teoria/l09-thread-virtuali.html' },
+    { da: '2026-11-02', t: 'Parallel streams (React)', sub: '' },
+    { da: '2026-11-09', t: 'Programmazione GPU', sub: 'oral feedback · Assignment 5' },
+    { da: '2026-11-16', t: 'Message passing I (Erlang)', sub: 'serve Erlang installato' },
+    { da: '2026-11-23', t: 'Message passing II', sub: '' },
+    { da: '2026-11-30', t: 'Lezione ospite e preparazione all\'esame', sub: 'oral feedback · Assignment 6', h: 'esame/formato.html' },
+    { da: '2027-01-21', giorni: 9, t: 'Esami orali', sub: 'dal 21 al 29 gennaio 2027, 30 minuti a testa', h: 'esame/formato.html', esame: true, etichetta: '21–29 gen' }
+  ],
+  orario: [
+    {"giorno": "Lunedì", "quando": "08:00–10:00 Aud 1<br>10:00–12:00 esercizi", "nota": "Esercizi in 2A12-14 · 2A52 · 2A54. Deadline assignment alle <b>07:59</b>, prima della lezione, nelle sett. 37 · 39 · 41 · 44 · 46 · 49."}
+  ],
+  task: [
+    {"data": "2026-08-31", "t": "Formare il gruppo PCPP (2–3 persone)", "nota": "Group Selection su LearnIT. Se non trovi nessuno, usa il forum Q&A o scrivi ad Abdulrahman (abdmoh@itu.dk).", "tipo": "azione"},
+    {"data": "2026-09-04", "t": "Prenotare lo slot orale PCPP", "nota": "Unica prenotazione del semestre: uno slot da 40 min con 5 posti (quindi fino a due gruppi) nell'Oral Feedback Scheduler, ricorrente per tutte e sei le sessioni. Ogni membro si iscrive individualmente allo stesso slot. Prima sessione già in settimana 37.", "tipo": "azione"},
+    {"data": "2026-09-07", "ora": "07:59", "t": "Assignment 1 — consegna", "nota": "Soluzioni degli esercizi delle due settimane precedenti (l'ultimo assignment ne copre una sola). Group submission su LearnIT con il link al repo github.itu.dk: un solo branch, il codice deve compilare, niente modifiche dopo la consegna.", "tipo": "consegna"},
+    {"data": "2026-09-07", "t": "Oral feedback 1", "nota": "<b>Non è un'attività obbligatoria: in alternativa si può chiedere il feedback scritto.</b> Se ci vai, il giorno e l'ora sono quelli dello slot ricorrente prenotato, non necessariamente il lunedì: fissa è solo la settimana. Lo slot dura 40 min ma ha 5 posti, quindi può ospitare due gruppi. È l'occasione in cui il TA valuta l'assignment e in cui puoi portare i punti che non ti tornano: codice pronto da eseguire e proiettare, tutti i membri devono saper spiegare tutto.", "tipo": "consegna", "facoltativa": true, "soloSettimana": 37},
+    {"data": "2026-09-21", "ora": "07:59", "t": "Assignment 2 — consegna", "nota": "Soluzioni degli esercizi delle due settimane precedenti (l'ultimo assignment ne copre una sola). Group submission su LearnIT con il link al repo github.itu.dk: un solo branch, il codice deve compilare, niente modifiche dopo la consegna.", "tipo": "consegna"},
+    {"data": "2026-09-21", "t": "Oral feedback 2", "nota": "<b>Non è un'attività obbligatoria: in alternativa si può chiedere il feedback scritto.</b> Se ci vai, il giorno e l'ora sono quelli dello slot ricorrente prenotato, non necessariamente il lunedì: fissa è solo la settimana. Lo slot dura 40 min ma ha 5 posti, quindi può ospitare due gruppi. È l'occasione in cui il TA valuta l'assignment e in cui puoi portare i punti che non ti tornano: codice pronto da eseguire e proiettare, tutti i membri devono saper spiegare tutto.", "tipo": "consegna", "facoltativa": true, "soloSettimana": 39},
+    {"data": "2026-10-05", "ora": "07:59", "t": "Assignment 3 — consegna", "nota": "Soluzioni degli esercizi delle due settimane precedenti (l'ultimo assignment ne copre una sola). Group submission su LearnIT con il link al repo github.itu.dk: un solo branch, il codice deve compilare, niente modifiche dopo la consegna.", "tipo": "consegna"},
+    {"data": "2026-10-05", "t": "Oral feedback 3", "nota": "<b>Non è un'attività obbligatoria: in alternativa si può chiedere il feedback scritto.</b> Se ci vai, il giorno e l'ora sono quelli dello slot ricorrente prenotato, non necessariamente il lunedì: fissa è solo la settimana. Lo slot dura 40 min ma ha 5 posti, quindi può ospitare due gruppi. È l'occasione in cui il TA valuta l'assignment e in cui puoi portare i punti che non ti tornano: codice pronto da eseguire e proiettare, tutti i membri devono saper spiegare tutto.", "tipo": "consegna", "facoltativa": true, "soloSettimana": 41},
+    {"data": "2026-10-26", "ora": "07:59", "t": "Assignment 4 — consegna", "nota": "Soluzioni degli esercizi delle due settimane precedenti (l'ultimo assignment ne copre una sola). Group submission su LearnIT con il link al repo github.itu.dk: un solo branch, il codice deve compilare, niente modifiche dopo la consegna.", "tipo": "consegna"},
+    {"data": "2026-10-26", "t": "Oral feedback 4", "nota": "<b>Non è un'attività obbligatoria: in alternativa si può chiedere il feedback scritto.</b> Se ci vai, il giorno e l'ora sono quelli dello slot ricorrente prenotato, non necessariamente il lunedì: fissa è solo la settimana. Lo slot dura 40 min ma ha 5 posti, quindi può ospitare due gruppi. È l'occasione in cui il TA valuta l'assignment e in cui puoi portare i punti che non ti tornano: codice pronto da eseguire e proiettare, tutti i membri devono saper spiegare tutto.", "tipo": "consegna", "facoltativa": true, "soloSettimana": 44},
+    {"data": "2026-11-09", "ora": "07:59", "t": "Assignment 5 — consegna", "nota": "Soluzioni degli esercizi delle due settimane precedenti (l'ultimo assignment ne copre una sola). Group submission su LearnIT con il link al repo github.itu.dk: un solo branch, il codice deve compilare, niente modifiche dopo la consegna.", "tipo": "consegna"},
+    {"data": "2026-11-09", "t": "Oral feedback 5", "nota": "<b>Non è un'attività obbligatoria: in alternativa si può chiedere il feedback scritto.</b> Se ci vai, il giorno e l'ora sono quelli dello slot ricorrente prenotato, non necessariamente il lunedì: fissa è solo la settimana. Lo slot dura 40 min ma ha 5 posti, quindi può ospitare due gruppi. È l'occasione in cui il TA valuta l'assignment e in cui puoi portare i punti che non ti tornano: codice pronto da eseguire e proiettare, tutti i membri devono saper spiegare tutto.", "tipo": "consegna", "facoltativa": true, "soloSettimana": 46},
+    {"data": "2026-11-30", "ora": "07:59", "t": "Assignment 6 — consegna", "nota": "Soluzioni degli esercizi delle due settimane precedenti (l'ultimo assignment ne copre una sola). Group submission su LearnIT con il link al repo github.itu.dk: un solo branch, il codice deve compilare, niente modifiche dopo la consegna.", "tipo": "consegna"},
+    {"data": "2026-11-30", "t": "Oral feedback 6", "nota": "<b>Non è un'attività obbligatoria: in alternativa si può chiedere il feedback scritto.</b> Se ci vai, il giorno e l'ora sono quelli dello slot ricorrente prenotato, non necessariamente il lunedì: fissa è solo la settimana. Lo slot dura 40 min ma ha 5 posti, quindi può ospitare due gruppi. È l'occasione in cui il TA valuta l'assignment e in cui puoi portare i punti che non ti tornano: codice pronto da eseguire e proiettare, tutti i membri devono saper spiegare tutto.", "tipo": "consegna", "facoltativa": true, "soloSettimana": 49}
+  ],
+  daConfermare: [],
+
+  traduzioni: {
+    "en": {
+      "Home del corso": "Course home",
+      "Teoria": "Theory",
+      "Esame": "Exam",
+      "In arrivo": "Coming up",
+      "basi": "basics",
+      "pratica": "practice",
+      "Parti da zero": "Start from zero",
+      "Java per la concorrenza": "Java for concurrency",
+      "Glossario dell'orale": "Oral exam glossary",
+      "L1 · Concorrenza e mutua esclusione": "L1 · Concurrency and mutual exclusion",
+      "Perché la concorrenza": "Why concurrency",
+      "Thread, stati, scheduler": "Threads, states, scheduler",
+      "Interleaving e race condition": "Interleaving and race conditions",
+      "Sezione critica e lock": "Critical section and locks",
+      "L2 · Memoria condivisa I": "L2 · Shared memory I",
+      "Monitor e condition variable": "Monitors and condition variables",
+      "Fairness, starvation, Mesa": "Fairness, starvation, Mesa",
+      "synchronized: lock intrinseci": "synchronized: intrinsic locks",
+      "Visibility, reordering, volatile": "Visibility, reordering, volatile",
+      "L3 · Java Memory Model": "L3 · Java Memory Model",
+      "Azioni ed esecuzioni": "Actions and executions",
+      "Happens-before: le regole": "Happens-before: the rules",
+      "Data race e correttezza": "Data races and correctness",
+      "Esercizio 3.1 svolto": "Exercise 3.1 solved",
+      "L4 · Memoria condivisa II": "L4 · Shared memory II",
+      "Classi thread-safe": "Thread-safe classes",
+      "Pubblicazione sicura e immutabilità": "Safe publication and immutability",
+      "Semafori, barriere, produttore-consumatore": "Semaphores, barriers, producer-consumer",
+      "Confinamento e azioni composte": "Confinement and compound actions",
+      "Mappa delle primitive": "Map of the primitives",
+      "L5 · Testing e verifica": "L5 · Testing and verification",
+      "Proprietà e controesempi": "Properties and counterexamples",
+      "Scrivere test concorrenti": "Writing concurrent tests",
+      "Verifica formale e JavaPathFinder": "Formal verification and JavaPathFinder",
+      "L6 · Lock-free": "L6 · Lock-free",
+      "Wait-free, lock-free, obstruction-free": "Wait-free, lock-free, obstruction-free",
+      "Esercizio 6.1: CasHistogram": "Exercise 6.1: CasHistogram",
+      "Esercizio 6.2: read-write lock CAS": "Exercise 6.2: read-write lock with CAS",
+      "L7 · Linearizzabilità": "L7 · Linearizability",
+      "Consistenza sequenziale e linearizzabilità": "Sequential consistency and linearizability",
+      "Esercizio 7.2: Treiber stack": "Exercise 7.2: Treiber stack",
+      "L8 · Misure di performance": "L8 · Performance measurements",
+      "Microbenchmark: da Mark0 a Mark8Setup": "Microbenchmarks: from Mark0 to Mark8Setup",
+      "L9 · Performance e scalabilità": "L9 · Performance and scalability",
+      "Thread virtuali e di piattaforma": "Virtual and platform threads",
+      "Task, future ed executor": "Tasks, futures and executors",
+      "Cache e coerenza (MESI)": "Cache and coherence (MESI)",
+      "Aggiornamenti condivisi e false sharing": "Shared updates and false sharing",
+      "Lock striping e LongAdder": "Lock striping and LongAdder",
+      "Mappe concorrenti": "Concurrent maps",
+      "L10 · Parallel streams": "L10 · Parallel streams",
+      "L11 · GPU": "L11 · GPU",
+      "L12 · Message passing I": "L12 · Message passing I",
+      "L13 · Message passing II": "L13 · Message passing II",
+      "Com'è l'esame orale": "What the oral exam is like",
+      "Assignment e oral feedback": "Assignments and oral feedback",
+      "Vincoli e divieti": "Constraints and prohibitions",
+      "Come rispondere all'orale": "How to answer at the oral",
+      "Domande orali e risposte modello": "Oral questions and model answers",
+      "orale di 30 minuti (primo giorno della finestra 21–29 gennaio)": "30-minute oral (first day of the 21–29 January window)"
+    },
+    "da": {
+      "Home del corso": "Kursets forside",
+      "Teoria": "Teori",
+      "Esame": "Eksamen",
+      "In arrivo": "Kommer",
+      "basi": "grundlag",
+      "pratica": "praksis",
+      "Parti da zero": "Start fra bunden",
+      "Java per la concorrenza": "Java til concurrency",
+      "Glossario dell'orale": "Ordliste til den mundtlige eksamen",
+      "L1 · Concorrenza e mutua esclusione": "L1 · Concurrency og gensidig udelukkelse",
+      "Perché la concorrenza": "Hvorfor concurrency",
+      "Thread, stati, scheduler": "Tråde, tilstande, scheduler",
+      "Interleaving e race condition": "Interleaving og race conditions",
+      "Sezione critica e lock": "Kritisk sektion og låse",
+      "L2 · Memoria condivisa I": "L2 · Delt hukommelse I",
+      "Monitor e condition variable": "Monitorer og betingelsesvariabler",
+      "Fairness, starvation, Mesa": "Fairness, starvation, Mesa",
+      "synchronized: lock intrinseci": "synchronized: indbyggede låse",
+      "Visibility, reordering, volatile": "Synlighed, omordning, volatile",
+      "L3 · Java Memory Model": "L3 · Java Memory Model",
+      "Azioni ed esecuzioni": "Handlinger og eksekveringer",
+      "Happens-before: le regole": "Happens-before: reglerne",
+      "Data race e correttezza": "Data races og korrekthed",
+      "Esercizio 3.1 svolto": "Øvelse 3.1 løst",
+      "L4 · Memoria condivisa II": "L4 · Delt hukommelse II",
+      "Classi thread-safe": "Trådsikre klasser",
+      "Pubblicazione sicura e immutabilità": "Sikker publicering og uforanderlighed",
+      "Semafori, barriere, produttore-consumatore": "Semaforer, barrierer, producent-forbruger",
+      "Confinamento e azioni composte": "Indesluttning og sammensatte handlinger",
+      "Mappa delle primitive": "Oversigt over primitiverne",
+      "L5 · Testing e verifica": "L5 · Test og verifikation",
+      "Proprietà e controesempi": "Egenskaber og modeksempler",
+      "Scrivere test concorrenti": "At skrive concurrency-tests",
+      "Verifica formale e JavaPathFinder": "Formel verifikation og JavaPathFinder",
+      "L6 · Lock-free": "L6 · Lock-free",
+      "Wait-free, lock-free, obstruction-free": "Wait-free, lock-free, obstruction-free",
+      "Esercizio 6.1: CasHistogram": "Øvelse 6.1: CasHistogram",
+      "Esercizio 6.2: read-write lock CAS": "Øvelse 6.2: read-write lock med CAS",
+      "L7 · Linearizzabilità": "L7 · Linearisérbarhed",
+      "Consistenza sequenziale e linearizzabilità": "Sekventiel konsistens og linearisérbarhed",
+      "Esercizio 7.2: Treiber stack": "Øvelse 7.2: Treiber-stak",
+      "L8 · Misure di performance": "L8 · Ydeevnemålinger",
+      "Microbenchmark: da Mark0 a Mark8Setup": "Mikrobenchmarks: fra Mark0 til Mark8Setup",
+      "L9 · Performance e scalabilità": "L9 · Ydeevne og skalerbarhed",
+      "Thread virtuali e di piattaforma": "Virtuelle og platform-tråde",
+      "Task, future ed executor": "Tasks, futures og executors",
+      "Cache e coerenza (MESI)": "Cache og sammenhæng (MESI)",
+      "Aggiornamenti condivisi e false sharing": "Delte opdateringer og false sharing",
+      "Lock striping e LongAdder": "Lock striping og LongAdder",
+      "Mappe concorrenti": "Samtidige maps",
+      "L10 · Parallel streams": "L10 · Parallelle streams",
+      "L11 · GPU": "L11 · GPU",
+      "L12 · Message passing I": "L12 · Message passing I",
+      "L13 · Message passing II": "L13 · Message passing II",
+      "Com'è l'esame orale": "Sådan er den mundtlige eksamen",
+      "Assignment e oral feedback": "Assignments og mundtlig feedback",
+      "Vincoli e divieti": "Begrænsninger og forbud",
+      "Come rispondere all'orale": "Sådan svarer du til den mundtlige eksamen",
+      "Domande orali e risposte modello": "Mundtlige spørgsmål og modelsvar",
+      "orale di 30 minuti (primo giorno della finestra 21–29 gennaio)": "30 minutters mundtlig eksamen (første dag i vinduet 21.–29. januar)"
+    }
+  },
+  menu: [
+    { t: 'Home del corso', h: 'index.html', noCapito: true },
+
+    { sez: 'Teoria' },
+    { g: 'Parti da zero', quando: 'basi', aperto: true, figli: [
+      { t: 'Java per la concorrenza', h: 'teoria/basi-java.html' },
+      { t: 'Glossario dell\'orale', h: 'teoria/basi-glossario.html' }
+    ] },
+    { g: 'L1 · Concorrenza e mutua esclusione', quando: '24 ago', figli: [
+      { t: 'Perché la concorrenza', h: 'teoria/l01-perche-concorrenza.html' },
+      { t: 'Thread, stati, scheduler', h: 'teoria/l01-thread.html' },
+      { t: 'Interleaving e race condition', h: 'teoria/l01-interleaving.html' },
+      { t: 'Sezione critica e lock', h: 'teoria/l01-lock.html' }
+    ] },
+    { g: 'L2 · Memoria condivisa I', quando: '31 ago', figli: [
+      { t: 'Monitor e condition variable', h: 'teoria/l02-monitor.html' },
+      { t: 'Fairness, starvation, Mesa', h: 'teoria/l02-fairness.html' },
+      { t: 'synchronized: lock intrinseci', h: 'teoria/l02-synchronized.html' },
+      { t: 'Visibility, reordering, volatile', h: 'teoria/l02-visibility.html' }
+    ] },
+    { g: 'L3 · Java Memory Model', quando: '7 set', figli: [
+      { t: 'Azioni ed esecuzioni', h: 'teoria/l03-azioni-esecuzioni.html' },
+      { t: 'Happens-before: le regole', h: 'teoria/l03-happens-before.html' },
+      { t: 'Data race e correttezza', h: 'teoria/l03-data-race.html' },
+      { t: 'Esercizio 3.1 svolto', h: 'teoria/l03-esercizio-31.html' }
+    ] },
+    { g: 'L4 · Memoria condivisa II', quando: '14 set', figli: [
+      { t: 'Classi thread-safe', h: 'teoria/l04-thread-safety.html' },
+      { t: 'Pubblicazione sicura e immutabilità', h: 'teoria/l04-pubblicazione.html' },
+      { t: 'Semafori, barriere, produttore-consumatore', h: 'teoria/l04-semafori.html' },
+      { t: 'Confinamento e azioni composte', h: 'teoria/l04-confinamento.html' },
+      { t: 'Mappa delle primitive', h: 'teoria/l04-mappa-primitive.html' }
+    ] },
+    { g: 'L5 · Testing e verifica', quando: '21 set', figli: [
+      { t: 'Proprietà e controesempi', h: 'teoria/l05-proprieta.html' },
+      { t: 'Scrivere test concorrenti', h: 'teoria/l05-test-concorrenti.html' },
+      { t: 'Verifica formale e JavaPathFinder', h: 'teoria/l05-verifica-formale.html' }
+    ] },
+    { g: 'L6 · Lock-free', quando: '28 set', figli: [
+      { t: 'Wait-free, lock-free, obstruction-free', h: 'teoria/l06-progresso.html' },
+      { t: 'Esercizio 6.1: CasHistogram', h: 'teoria/l06-esercizio-61.html' },
+      { t: 'Esercizio 6.2: read-write lock CAS', h: 'teoria/l06-esercizio-62.html' }
+    ] },
+    { g: 'L7 · Linearizzabilità', quando: '5 ott', figli: [
+      { t: 'Consistenza sequenziale e linearizzabilità', h: 'teoria/l07-consistenza-linearizzabilita.html' },
+      { t: 'Esercizio 7.2: Treiber stack', h: 'teoria/l07-esercizio-72.html' }
+    ] },
+    { g: 'L8 · Misure di performance', quando: '19 ott', figli: [
+      { t: 'Microbenchmark: da Mark0 a Mark8Setup', h: 'teoria/l08-microbenchmark.html' }
+    ] },
+    { g: 'L9 · Performance e scalabilità', quando: '26 ott', figli: [
+      { t: 'Thread virtuali e di piattaforma', h: 'teoria/l09-thread-virtuali.html' },
+      { t: 'Task, future ed executor', h: 'teoria/l09-executor.html' },
+      { t: 'Cache e coerenza (MESI)', h: 'teoria/l09-cache-mesi.html' },
+      { t: 'Aggiornamenti condivisi e false sharing', h: 'teoria/l09-falsa-condivisione.html' },
+      { t: 'Lock striping e LongAdder', h: 'teoria/l09-striping.html' },
+      { t: 'Mappe concorrenti', h: 'teoria/l09-mappe.html' }
+    ] },
+    { g: 'In arrivo', quando: 'L9–L14', figli: [
+      { t: 'L10 · Parallel streams', arriva: '2 nov' },
+      { t: 'L11 · GPU', arriva: '9 nov' },
+      { t: 'L12 · Message passing I', arriva: '16 nov' },
+      { t: 'L13 · Message passing II', arriva: '23 nov' }
+    ] },
+
+    { sez: 'Esame' },
+    { t: 'Com\'è l\'esame orale', h: 'esame/formato.html', noCapito: true },
+    { t: 'Assignment e oral feedback', h: 'esame/assignment.html', noCapito: true },
+    { t: 'Vincoli e divieti', h: 'esame/vincoli.html' },
+    { t: 'Come rispondere all\'orale', h: 'esame/come-rispondere.html' },
+    { t: 'Domande orali e risposte modello', h: 'esame/allenamento.html' }
+  ]
+};

@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Classi e dispatch dinamico</title>
+<link rel="stylesheet" href="../assets/atlas.css">
+<link rel="stylesheet" href="../assets/tema.css">
+<script src="../assets/sito.js"></script>
+<script src="../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+SCENE.dispatch = {
+  w: 580, h: 270, lato: false,
+  legenda: 'due:tipo statico (compilatore),dato:oggetto vero (esecuzione),ora:dove si cerca il metodo,ok:stampato',
+  oggetti: [
+    { id: 'ca', tipo: 'nodo', forma: 'quadrato', r: 34, x: 420, y: 60, t: 'class A', sotto: 'f() = A', tono: null },
+    { id: 'cb', tipo: 'nodo', forma: 'quadrato', r: 34, x: 420, y: 190, t: 'class B', sotto: 'override f() = B' },
+    { id: 'ext', tipo: 'arco', da: 'cb', a: 'ca', dir: true, t: 'extends' },
+    { id: 'ob', tipo: 'nodo', r: 30, x: 220, y: 190, t: 'B()', tono: 'dato', nascosto: true },
+    { id: 'va', tipo: 'nodo', forma: 'quadrato', r: 26, x: 70, y: 110, t: 'a2: A', tono: 'due', nascosto: true },
+    { id: 'rif', tipo: 'arco', da: 'va', a: 'ob', dir: true, nascosto: true },
+    { id: 'di', tipo: 'arco', da: 'ob', a: 'cb', dir: true, t: 'è un', nascosto: true },
+    { id: 'n', tipo: 'testo', x: 200, y: 40, t: '', size: 14, bold: true }
+  ],
+  passi: [
+    { nota: 'Due classi: B estende A e ridefinisce f (con <code>override</code>).' },
+    { nota: '<code>val b1 = B()</code> crea un oggetto di classe B. Resterà un B per sempre.', set: { ob: { nascosto: false }, di: { nascosto: false } } },
+    { nota: '<code>val a2: A = b1</code>: la variabile ha tipo <b>A</b> (upcast), ma punta allo stesso oggetto B.', set: { va: { nascosto: false }, rif: { nascosto: false } } },
+    { nota: '<code>a2.f()</code>: il <b>compilatore</b> guarda il tipo statico A e controlla solo che f esista in A. Esiste: compila.', set: { va: { tono: 'ora' }, ca: { tono: 'due' }, n: { t: 'compila: A ha f()', tono: 'due' } } },
+    { nota: 'All\'<b>esecuzione</b> la JVM parte dalla classe dell\'oggetto vero, B, e lì trova f: stampa <b>B</b>. È il dispatch dinamico. (Anche il val g ridefinito in B stampa B, verificato con Scala 3.8.)', set: { va: { tono: 'due' }, ca: { tono: null }, ob: { tono: 'ora' }, cb: { tono: 'ora' }, di: { tono: 'ora' }, n: { t: 'a2.f() stampa B', tono: 'ok' } } }
+  ]
+};
+</script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  const T = (id, x, y, t, extra) => Object.assign({ id, tipo: 'testo', x, y, t, size: 13 }, extra || {});
+  const R = (id, x, y, w, h, t, extra) => Object.assign({ id, tipo: 'rett', x, y, w, h, t }, extra || {});
+  const N = (id, x, y, t, tono, extra) => Object.assign({ id, tipo: 'nodo', x, y, t, tono, r: 20 }, extra || {});
+  const C = (id, x, y, valori, extra) => Object.assign({ id, tipo: 'celle', x, y, cw: 52, ch: 40, valori, indici: false }, extra || {});
+  const A = (id, da, a, extra) => Object.assign({ id, tipo: 'arco', da, a }, extra || {});
+
+    SCENE.costruttore = {
+      w: 560, h: 170,
+      codice: { lang: 'scala', testo: `class Person(val name: String, val age: Int):
+  println("Just constructed a person")
+  def description =
+    s"$name is $age years old"
+val p = Person("Ada", 36)` },
+      legenda: 'dato:campo,ora:eseguito alla creazione,ok:risultato',
+      oggetti: [R('o', 40, 30, 200, 90, '', { tono: 'spento', nascosto: true }), T('ot', 140, 50, 'p: Person', { bold: true, size: 12, nascosto: true }), T('f1', 140, 78, 'name = "Ada"', { size: 12, nascosto: true, tono: 'dato' }), T('f2', 140, 102, 'age = 36', { size: 12, nascosto: true, tono: 'dato' }),
+        T('out', 400, 50, '', { size: 12 }), T('d', 400, 100, '', { size: 12 }), T('c', 280, 150, '', { size: 12 })],
+      passi: [
+        { nota: "Il <b>costruttore primario</b>: i parametri stanno nella prima riga, subito dopo il nome della classe.", righe: [1] },
+        { nota: "<code>Person(\"Ada\", 36)</code> (in Scala 3 new non serve) crea l'oggetto. <code>val</code> davanti ai parametri li rende campi pubblici di sola lettura: p.name funziona.", righe: [5], set: { o: { nascosto: false }, ot: { nascosto: false }, f1: { nascosto: false }, f2: { nascosto: false } } },
+        { nota: "Le istruzioni nel corpo della classe sono il <b>corpo del costruttore</b>: vengono eseguite a ogni creazione. Stampa \"Just constructed a person\" (verificato).", righe: [2], set: { out: { t: 'stampa: Just constructed a person', tono: 'ora' } } },
+        { nota: "Un metodo che usa i campi: <code>p.description</code> = \"Ada is 36 years old\". <code>$name</code> è la forma breve di ${name}. In Java servirebbero campi, getter e costruttore scritti a mano.", righe: [3, 4], set: { d: { t: 'p.description = "Ada is 36 years old"', tono: 'ok' }, c: { t: 'Cons(head: A, tail: List[A]) è proprio un costruttore primario' } } }
+      ]
+    };
+
+    const K = [['x.hello()', 'Square', 'square'], ['((Printable) x).hello()', 'Square', 'square'], ['y.hello()', 'Triangle', 'triangle'], ['((Printable) y).hello()', 'Triangle', 'triangle']];
+    SCENE.dispatchjava = {
+      w: 580, h: 230, lato: true,
+      legenda: 'dato:tipo dichiarato (compilatore),ora:oggetto vero (runtime),ok:stampa',
+      oggetti: [
+        R('x', 20, 30, 250, 40, 'Square x = new Square()', { tono: 'dato' }), R('y', 310, 30, 250, 40, 'Printable y = new Triangle()', { tono: 'dato' }),
+        T('call', 290, 110, '', { bold: true, size: 14 }), T('ogg', 290, 145, '', { size: 12 }), T('out', 290, 185, '', { bold: true }), T('tot', 290, 216, '', { size: 12 })
+      ],
+      passi: [{ nota: "Il sondaggio della lezione: quattro chiamate a <code>hello()</code>. Il tipo <b>dichiarato</b> serve al compilatore; a runtime la JVM guarda l'oggetto <b>vero</b> e cerca hello partendo dalla sua classe." }].concat(K.map(([c, o, s], i) => ({
+        nota: ['x è un Square: stampa square.', 'Il cast dice al compilatore \"trattalo come un Printable\", ma l\'oggetto resta un <b>Square</b>: stampa square.', 'y è dichiarato Printable, ma l\'oggetto creato è un <b>Triangle</b>: stampa triangle.', 'Stesso oggetto, stesso risultato: triangle. È il <b>dispatch dinamico</b>. In Scala, come in Java, Python e JavaScript, tutti i metodi d\'istanza sono virtuali.'][i],
+        set: { call: { t: c }, ogg: { t: 'oggetto vero: ' + o, tono: 'ora' }, out: { t: s, tono: 'ok' }, tot: { t: 'finora: ' + K.slice(0, i + 1).map(k => k[2]).join(' ') } }
+      })))
+    };
+  
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Classi e dispatch dinamico</h1>
+  <p class="lede">Due argomenti di programmazione a oggetti con cui si apre la settimana 3: il <b>costruttore primario</b> (una classe Java di 15 righe diventa una riga) e il <b>dispatch dinamico</b> (quale metodo viene chiamato davvero quando una sottoclasse lo ridefinisce).</p>
+</header>
+
+<section>
+  <h2>Il costruttore primario</h2>
+  <p>In Scala i parametri del costruttore si scrivono <b>subito dopo il nome della classe</b>. Tutto il resto del corpo della classe viene eseguito quando l'oggetto viene creato.</p>
+  <div class="colonne">
+    <div class="carta">
+      <h4>Scala</h4>
+      <pre class="cod" data-lang="scala">class Person(val name: String, val age: Int):
+  println("Just constructed a person")
+  def description =
+    s"$name is $age years old"</pre>
+    </div>
+    <div class="carta">
+      <h4>Lo stesso in Java</h4>
+      <pre class="cod" data-lang="java">class Person {
+  private String name;
+  private int age;
+  public String name() { return name; }
+  public int age() { return age; }
+  public Person(String name, int age) {
+    this.name = name;
+    this.age = age;
+    System.out.println("Just constructed a person");
+  }
+  public String description() {
+    return name + " is " + age + " years old";
+  }
+}</pre>
+    </div>
+  </div>
+  <figure class="codice" data-titolo="Cosa fa ogni pezzo">
+<pre data-lang="scala">class Person(val name: String, val age: Int):
+  println("Just constructed a person")
+  def description =
+    s"$name is $age years old"
+
+val p = Person("Ada", 36)</pre>
+    <ol class="spiega">
+      <li data-righe="1" data-segna="(val name: String, val age: Int)@dato"><p>I parametri del costruttore stanno nella prima riga.</p></li>
+      <li data-righe="1" data-segna="val@ora"><p><code>val</code> davanti al parametro lo trasforma in un <b>campo pubblico di sola lettura</b>: da fuori puoi scrivere <code>p.name</code>. Senza <code>val</code> il parametro si usa solo dentro la classe.</p></li>
+      <li data-righe="2" data-segna="println@due"><p>Le istruzioni nel corpo della classe vengono eseguite <b>a ogni creazione</b>: sono il corpo del costruttore.</p></li>
+      <li data-righe="3-4" data-segna="$name@dato|$age@dato"><p>Un metodo che usa i campi. <code>$name</code> nella stringa è la forma breve di <code>${name}</code>.</p></li>
+      <li data-righe="6" data-segna="Person(&quot;Ada&quot;, 36)@ok"><p>Creazione: in Scala 3 <code>new</code> non serve. Stampa <i>Just constructed a person</i> (verificato).</p></li>
+    </ol>
+  </figure>
+  <p class="piccolo">I costruttori primari si usano con le <code>case class</code> e con i <code>case</code> degli <code>enum</code>: <code>Cons(head: A, tail: List[A])</code> è proprio un costruttore primario.</p>
+  <figure class="scena" data-scena="costruttore" data-titolo="Person("Ada", 36): cosa succede alla creazione"></figure>
+</section>
+
+<section>
+  <h2>Sondaggio: dispatch dinamico in Java</h2>
+  <pre class="cod" data-lang="java">class Printable            { void hello() { print("printable "); } }
+class Triangle extends Printable { void hello() { print("triangle "); } }
+class Square   extends Printable { void hello() { print("square "); } }
+
+Square x    = new Square();
+Printable y = new Triangle();
+
+x.hello();
+((Printable) x).hello();
+y.hello();
+((Printable) y).hello();</pre>
+  <figure class="passi" data-titolo="((Printable) y).hello(), passo per passo">
+    <div class="passo"><div class="espr">Printable y = <mark class="dato">new Triangle()</mark>;</div><p class="nota">L'oggetto creato è un <b>Triangle</b>. Resterà un Triangle per sempre.</p></div>
+    <div class="passo"><div class="espr"><mark class="due">(Printable)</mark> y</div><p class="nota">Il cast dice al compilatore "trattalo come un Printable". Serve a controllare i tipi <b>prima</b> dell'esecuzione.</p></div>
+    <div class="passo"><div class="espr">.hello()   →   di quale classe? <mark class="ora">Triangle</mark></div><p class="nota">A <b>runtime</b> la JVM guarda l'oggetto vero e cerca <code>hello</code> partendo dalla sua classe.</p></div>
+    <div class="passo"><div class="espr"><mark class="ok">triangle</mark></div><p class="nota">Questo è il <b>dispatch dinamico</b> (o chiamata virtuale).</p></div>
+  </figure>
+  <div class="box regola" data-tit="In Scala">
+    <p>Come in Java, Python e JavaScript, <b>tutti i metodi d'istanza sono virtuali</b>: vengono scelti in base all'oggetto vero. (In C# e C++ invece no, se non lo dichiari.)</p>
+  </div>
+  <p><b>Cosa stampa?</b> Risposta: <b>square square triangle triangle</b>. Il metodo viene scelto in base alla classe <b>vera</b> dell'oggetto, decisa con <code>new</code>, non in base al tipo della variabile o al cast. Il cast <code>(Printable) x</code> cambia solo cosa il compilatore ti lascia chiamare, non l'oggetto.</p>
+  <figure class="scena" data-scena="dispatchjava" data-titolo="Quattro chiamate, decide l’oggetto vero"></figure>
+</section>
+
+<section>
+  <h2>Metodi e funzioni-valore: <code>DynamicDispatch.scala</code></h2>
+  <p>Il file della settimana 3 confronta un metodo <code>def f()</code> con un campo <code>val g</code> che contiene una funzione.</p>
+  <figure class="scena" data-scena="dispatch" data-titolo="Tipo statico e oggetto vero"></figure>
+  <figure class="codice" data-titolo="03-option/DynamicDispatch.scala (accorciato)">
+<pre data-lang="scala">class A:
+  def f() = println("A")
+  val g = () => println("A")
+
+class B extends A:
+  override def f() = println("B")
+  override val g = () => println("B")
+
+val b1 = B()
+val a2: A = b1
+a2.f()
+a2.g()</pre>
+    <ol class="spiega">
+      <li data-righe="2-3" data-segna="def f()@ora|val g@due"><p>In <code>A</code>: un metodo <code>f</code> e un <b>campo</b> <code>g</code> il cui valore è una funzione.</p></li>
+      <li data-righe="6-7" data-segna="override def f()@ora|override val g@due"><p><code>B</code> ridefinisce entrambi. <code>override</code> è obbligatorio quando ridefinisci qualcosa che esiste già.</p></li>
+      <li data-righe="10" data-segna="a2: A@dato"><p><code>a2</code> ha tipo <code>A</code> ma l'oggetto è un <code>B</code> (upcast).</p></li>
+      <li data-righe="11" data-segna="a2.f()@ok"><p>Stampa <b>B</b>: dispatch dinamico sul metodo.</p></li>
+      <li data-righe="12" data-segna="a2.g()@ok"><p>Stampa anch'esso <b>B</b> (verificato con Scala 3.8). Leggere un <code>val</code> passa da un metodo nascosto che restituisce il campo, e anche quello è virtuale. Il commento nel file del corso parla di "nascondere": nella pratica il risultato è lo stesso di <code>f</code>.</p></li>
+    </ol>
+  </figure>
+</section>
+
+</main>
+</body>
+</html>

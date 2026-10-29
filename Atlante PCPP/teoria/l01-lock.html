@@ -1,0 +1,348 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sezione critica e lock</title>
+<link rel="stylesheet" href="../assets/atlas.css">
+<link rel="stylesheet" href="../assets/tema.css">
+<link rel="stylesheet" href="../assets/pcpp.css">
+<script src="../assets/sito.js"></script>
+<script src="../assets/atlas.js" defer></script>
+<script src="../assets/pcpp.js" defer></script>
+<script>
+window.PROGRAMMI = window.PROGRAMMI || {};
+PROGRAMMI.senzalock = {
+  memoria: { counter: 0 },
+  thread: ['t1', 't2'],
+  locali: { temp: 0 },
+  passi: [
+    { n: 1, codice: '// (niente lock)' },
+    { n: 2, codice: 'int temp = counter;', fai: (m, l) => { l.temp = m.counter; } },
+    { n: 3, codice: 'counter = temp + 1;', fai: (m, l) => { m.counter = l.temp + 1; } },
+    { n: 4, codice: '// (niente unlock)' }
+  ],
+  esito: m => 'counter = ' + m.counter,
+  giusto: m => m.counter === 2
+};
+PROGRAMMI.conlock = {
+  memoria: { counter: 0 },
+  thread: ['t1', 't2'],
+  locali: { temp: 0 },
+  passi: [
+    { n: 1, codice: 'l.lock();', lock: 'l' },
+    { n: 2, codice: 'int temp = counter;', fai: (m, l) => { l.temp = m.counter; } },
+    { n: 3, codice: 'counter = temp + 1;', fai: (m, l) => { m.counter = l.temp + 1; } },
+    { n: 4, codice: 'l.unlock();', unlock: 'l' }
+  ],
+  esito: m => 'counter = ' + m.counter,
+  giusto: m => m.counter === 2
+};
+</script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  const T = (id, x, y, t, extra) => Object.assign({ id, tipo: 'testo', x, y, t, size: 13 }, extra || {});
+  const R = (id, x, y, w, h, t, extra) => Object.assign({ id, tipo: 'rett', x, y, w, h, t }, extra || {});
+  const N = (id, x, y, t, tono, extra) => Object.assign({ id, tipo: 'nodo', x, y, t, tono, r: 20 }, extra || {});
+
+  // 1. sezione critica
+  SCENE.stanza = {
+    w: 600, h: 240, lato: true,
+    legenda: 'dato:t1,due:t2,ora:dentro la sezione critica,no:sezione troppo grande',
+    oggetti: [
+      R('sc', 230, 60, 150, 110, 'sezione critica', { tono: 'spento' }),
+      T('dentro', 305, 150, 'temp = counter; counter = temp + 1', { size: 10 }),
+      N('t1', 120, 90, 't1', 'dato'), N('t2', 120, 150, 't2', 'due'),
+      T('c', 300, 210, '', { bold: true })
+    ],
+    passi: [
+      { nota: "La <b>sezione critica</b> è il pezzo di codice che usa la memoria condivisa: qui le due righe che leggono e scrivono counter. È come una stanza in cui può stare <b>una sola</b> persona alla volta." },
+      { nota: "t1 entra: esegue lettura e scrittura senza che nessuno si infili a metà.", set: { t1: { x: 305, y: 100, tono: 'ora' }, c: { t: 't1 dentro, t2 fuori ad aspettare' } } },
+      { nota: "t1 esce; ora può entrare t2, che legge il valore già aggiornato da t1. L'aggiornamento perso diventa impossibile.", set: { t1: { x: 480, y: 90, tono: 'dato' }, t2: { x: 305, y: 100, tono: 'ora' }, c: { t: 't2 dentro, legge il valore nuovo' } } },
+      { nota: "Quanto grande farla? Il più piccola possibile, solo gli accessi alla memoria condivisa. Se contenesse tutto il <code>for</code>, un thread farebbe tutti i suoi giri mentre l'altro aspetta: il programma diventerebbe <b>sequenziale</b>, e i thread non servirebbero a niente (esercizio 1.1.5).", set: { t2: { x: 480, y: 150, tono: 'due' }, sc: { w: 330, x: 140, tono: 'no', t: 'tutto il for: troppo grande' }, dentro: { t: '' }, c: { t: 'sezione critica minima', tono: 'ok' } } }
+    ]
+  };
+
+  // 2. le tre proprietà
+  SCENE.dijkstra = {
+    w: 600, h: 250, lato: true,
+    legenda: 'ok:proprietà rispettata,no:proprietà violata,dato:t1,due:t2',
+    oggetti: [
+      R('sc', 240, 70, 130, 90, 'sezione critica', { tono: 'spento' }),
+      N('t1', 120, 90, 't1', 'dato'), N('t2', 120, 150, 't2', 'due'),
+      T('p', 300, 30, '', { bold: true }), T('c', 300, 210, '', { size: 12 })
+    ],
+    passi: [
+      { nota: "Le tre proprietà di una buona soluzione al problema della mutua esclusione (Dijkstra, slide 54). Una alla volta, vedendo cosa vuol dire violarle." },
+      { nota: "<b>Mutual exclusion</b>: al più un thread alla volta nella sezione critica. Violata se ci sono t1 e t2 dentro insieme.", set: { t1: { x: 285, y: 100 }, t2: { x: 325, y: 130 }, sc: { tono: 'no' }, p: { t: 'mutua esclusione violata', tono: 'no' }, c: { t: 'due thread dentro insieme' } } },
+      { nota: "<b>Absence of deadlock</b>: i thread prima o poi escono e lasciano entrare gli altri. Violata se tutti restano bloccati per sempre, per esempio perché chi ha il lock non lo rilascia mai.", set: { t1: { x: 270, y: 145 }, t2: { x: 120, y: 150 }, sc: { tono: 'no', t: 'lock mai rilasciato' }, p: { t: 'deadlock', tono: 'no' }, c: { t: 't2 aspetta per sempre' } } },
+      { nota: "<b>Absence of starvation</b>: chi è pronto a entrare prima o poi entra. Violata se t2 viene sempre scavalcato: t1 esce e rientra, esce e rientra, e t2 non passa mai. In pratica non sempre si riesce a garantirla (fairness, lezione 2).", set: { sc: { tono: 'spento', t: 'sezione critica' }, p: { t: 'starvation', tono: 'no' }, c: { t: 't1 rientra sempre prima di t2' } } },
+      { nota: "Una soluzione corretta rispetta tutte e tre: un thread alla volta, nessuno bloccato per sempre, nessuno scavalcato all'infinito. I lock di Java garantiscono la prima; la seconda dipende dall'usarli bene (try/finally).", set: { t1: { x: 120, y: 90 }, sc: { tono: 'ok' }, p: { t: 'le tre proprietà', tono: 'ok' }, c: { t: '' } } }
+    ]
+  };
+
+  // 3. dimostrazione per contraddizione
+  const pos = { a: 60, b: 180, c: 300, d: 420, e: 540 };
+  SCENE.contraddizione = {
+    w: 600, h: 250, lato: true,
+    legenda: 'dato:passi di t1,due:passi di t2,ora:vincolo,no:contraddizione',
+    oggetti: [
+      N('t12', 60, 60, 't1(2)', 'dato', { r: 24 }), N('t22', 200, 60, 't2(2)', 'due', { r: 24 }), N('t13', 340, 60, 't1(3)', 'dato', { r: 24 }), N('t23', 480, 60, 't2(3)', 'due', { r: 24 }),
+      { id: 'o1', tipo: 'arco', da: 't12', a: 't22', dir: true, t: '' }, { id: 'o2', tipo: 'arco', da: 't22', a: 't13', dir: true, t: 'assunto', tono: 'no' }, { id: 'o3', tipo: 'arco', da: 't13', a: 't23', dir: true, t: '' },
+      N('t21', 200, 170, 't2(1)', 'due', { r: 24, nascosto: true }), N('t14', 340, 170, 't1(4)', 'dato', { r: 24, nascosto: true }),
+      { id: 'v1', tipo: 'arco', da: 't21', a: 't22', dir: true, t: 'lock prima', tono: 'ora', nascosto: true },
+      { id: 'v2', tipo: 'arco', da: 't14', a: 't21', dir: true, t: 'unlock prima', tono: 'ora', nascosto: true },
+      { id: 'v3', tipo: 'arco', da: 't13', a: 't14', dir: true, t: 'program order', tono: 'ora', nascosto: true },
+      T('c', 300, 236, '', { bold: true })
+    ],
+    passi: [
+      { nota: "Con il lock, l'interleaving …, t1(2), …, t2(2), …, t1(3), …, t2(3), … (quello del lost update) è possibile? Si <b>assume</b> che lo sia, e si cerca una contraddizione. Le frecce dicono \"viene prima\"." },
+      { nota: "t2(2) è dentro la sezione critica: t2 deve aver preso il lock prima, quindi <b>t2(1) prima di t2(2)</b>.", set: { t21: { nascosto: false }, v1: { nascosto: false } } },
+      { nota: "t2 può prendere il lock solo dopo che t1 l'ha rilasciato (t1 è dentro, a t1(2)): <b>t1(4) prima di t2(1)</b>.", set: { t14: { nascosto: false }, v2: { nascosto: false } } },
+      { nota: "Per il program order di t1: <b>t1(3) prima di t1(4)</b>.", set: { v3: { nascosto: false } } },
+      { nota: "Seguendo le frecce: t1(3) → t1(4) → t2(1) → t2(2) → t1(3). t1(3) dovrebbe venire <b>prima di sé stesso</b>: un ciclo. <b>Contraddizione</b>: l'interleaving è impossibile (slide 59–60).", set: { o2: { tono: 'no' }, v1: { tono: 'no' }, v2: { tono: 'no' }, v3: { tono: 'no' }, c: { t: 'ciclo di "prima di": impossibile', tono: 'no' } } }
+    ]
+  };
+
+  // 4. try/finally
+  SCENE.trylock = {
+    w: 600, h: 240, lato: true,
+    legenda: 'dato:t1,due:t2,no:lock mai rilasciato,ok:rilasciato in finally',
+    oggetti: [
+      R('lk', 250, 20, 110, 36, 'lock libero', { tono: 'ok' }),
+      N('t1', 100, 110, 't1', 'dato'), N('t2', 100, 190, 't2', 'due'),
+      T('a', 300, 110, '', { size: 12 }), T('b', 300, 190, '', { size: 12 }), T('c', 470, 150, '', { bold: true, size: 12 })
+    ],
+    passi: [
+      { nota: "t1 prende il lock e comincia la sezione critica.", set: { lk: { t: 'lock di t1', tono: 'dato' }, a: { t: 't1: lock(); temp = counter;' } } },
+      { nota: "A metà viene lanciata un'<b>eccezione</b>. Senza try/finally il metodo esce subito, e la riga con <code>unlock()</code> non viene mai eseguita.", set: { a: { t: 't1: throw → esce, unlock() saltato', tono: 'no' }, t1: { tono: 'no' } } },
+      { nota: "Il lock resta \"di t1\" per sempre. t2 chiama <code>lock()</code> e si blocca: <b>deadlock</b>, anche se t1 non esiste più.", set: { lk: { tono: 'no', t: 'lock mai rilasciato' }, b: { t: 't2: lock() → bloccato per sempre', tono: 'no' } } },
+      { nota: "Con l'idioma <code>lock(); try { … } finally { unlock(); }</code> il blocco <code>finally</code> viene eseguito <b>comunque</b>, anche con l'eccezione: il lock si libera e t2 entra. Le slide: le soluzioni senza questo idioma \"cannot be deemed as free from deadlocks\".", set: { lk: { tono: 'ok', t: 'rilasciato in finally' }, t1: { tono: 'dato' }, a: { t: 't1: throw → finally: unlock()', tono: 'ok' }, b: { t: 't2: lock() → entra', tono: 'ok' }, c: { t: 'sempre try/finally' } } }
+    ]
+  };
+
+  // 5. check-then-act
+  SCENE.covid = {
+    w: 600, h: 250, lato: true,
+    legenda: 'dato:t1,due:t2,no:regola violata,ok:regola rispettata',
+    oggetti: [
+      R('cnt', 230, 20, 150, 40, 'counter = 14 999', { tono: 'spento' }),
+      T('l1', 60, 100, 't1', { bold: true }), T('l2', 60, 160, 't2', { bold: true }),
+      T('a1', 300, 100, '', { size: 12 }), T('a2', 300, 160, '', { size: 12 }), T('c', 300, 220, '', { bold: true })
+    ],
+    passi: [
+      { nota: "Tornello Covid: al massimo 15 000 persone. Versione sbagliata: il <b>controllo</b> è fuori dal lock, solo l'incremento è dentro. counter vale 14 999." },
+      { nota: "t1 controlla: 14 999 &lt; 15 000, può entrare.", set: { a1: { t: 'if (counter < MAX) → vero', tono: 'dato' } } },
+      { nota: "Prima che t1 incrementi, anche t2 controlla: vede ancora 14 999, può entrare anche lui.", set: { a2: { t: 'if (counter < MAX) → vero', tono: 'due' } } },
+      { nota: "Tutti e due incrementano (ognuno nel lock, ma non importa): <b>15 001</b>. Il limite è violato. È una race condition di tipo <b>check-then-act</b>: la decisione si basa su un valore che nel frattempo cambia.", set: { a1: { t: 'lock; counter++ → 15 000' }, a2: { t: 'lock; counter++ → 15 001', tono: 'no' }, cnt: { t: 'counter = 15 001', tono: 'no' }, c: { t: 'limite superato', tono: 'no' } } },
+      { nota: "Rimedio: controllo e incremento <b>nella stessa</b> sezione critica. Allora t2 può controllare solo dopo che t1 ha finito, vede 15 000 e non entra. Controllo e azione vanno fatti insieme, sotto lo stesso lock (esercizio 1.3).", set: { cnt: { t: 'counter = 15 000', tono: 'ok' }, a1: { t: 'lock; if (<) counter++ → 15 000; unlock', tono: 'dato' }, a2: { t: 'lock; if (15 000 < 15 000) no; unlock', tono: 'ok' }, c: { t: 'check e act nello stesso lock', tono: 'ok' } } }
+    ]
+  };
+
+  // 6. schema della risposta
+  const passi4 = ['1. il problema', '2. la sezione critica', '3. perché funziona', '4. l’unico output'];
+  const og6 = [];
+  passi4.forEach((t, i) => og6.push(R('s' + i, 20 + (i % 2) * 290, 30 + Math.floor(i / 2) * 60, 270, 44, t, { nascosto: true })));
+  og6.push(T('c1', 300, 170, '', { size: 12 }), T('c2', 300, 196, '', { size: 12 }), T('c3', 300, 224, '', { bold: true }));
+  const accendi = k => Object.fromEntries(passi4.map((_, i) => ['s' + i, { nascosto: i > k, tono: i === k ? 'ora' : (i < k ? 'ok' : null) }]));
+  SCENE.schema = {
+    w: 600, h: 240, lato: true,
+    legenda: 'ora:il pezzo di adesso,ok:già detto',
+    oggetti: og6,
+    passi: [
+      { nota: "<b>Il problema</b>, con le parole del corso: count = count + 1 non è atomico, esistono interleaving con un valore vecchio (stale) e un incremento perso: race condition.", set: Object.assign(accendi(0), { c1: { t: 'non atomico → lost update' } }) },
+      { nota: "<b>La sezione critica</b>: lettura e scrittura di count, protette da lock()/unlock() sullo <b>stesso</b> ReentrantLock, con try/finally.", set: Object.assign(accendi(1), { c1: { t: 'cosa è protetto, e con che cosa' } }) },
+      { nota: "<b>Perché funziona</b>: per la mutua esclusione i passi della sezione critica di un thread non si mescolano con quelli dell'altro. Nel costruttore con 4 passi per thread, gli interleaving passano da 70 a 2, e nei 2 rimasti ogni incremento legge il valore scritto dal precedente.", set: Object.assign(accendi(2), { c1: { t: 'interleaving: da 70 a 2' }, c2: { t: 'restano solo quelli senza lost update' } }) },
+      { nota: "<b>L'unico output</b>: ognuno dei 2 × 10 000 000 incrementi aggiunge esattamente 1, quindi il risultato è sempre 20 000 000. È lo schema dell'esercizio 1.1.4, e di quasi ogni risposta all'orale.", set: Object.assign(accendi(3), { c3: { t: 'sempre 20 000 000', tono: 'ok' } }) }
+    ]
+  };
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Sezione critica e lock</h1>
+  <p class="lede">Per togliere la race condition basta impedire che due thread eseguano <b>insieme</b> la parte che tocca la memoria condivisa. Quella parte è la <b>sezione critica</b>; lo strumento per proteggerla è il <b>lock</b>.</p>
+</header>
+
+<section>
+  <h2>La sezione critica</h2>
+  <div class="box regola" data-tit="Definizione">
+    <p>Una <b>sezione critica</b> è una parte del programma concorrente in cui l'accesso concorrente deve essere limitato. Deve coprire le parti di codice che usano la memoria condivisa.</p>
+  </div>
+  <figure class="codice" data-titolo="Dove inizia e dove finisce">
+<pre data-lang="java">public class Turnstile extends Thread {
+    public void run() {
+        for (int i = 0; i &lt; PEOPLE; i++) {
+            // inizio sezione critica
+            int temp = counter;
+            counter = temp + 1;
+            // fine sezione critica
+        }
+    }
+}</pre>
+    <ol class="spiega">
+      <li data-righe="5-6" data-segna="counter*@ora"><p>Solo queste due righe toccano <code>counter</code>, la variabile condivisa: sono la sezione critica.</p></li>
+      <li data-righe="3" data-segna="int i = 0@dato|i++@dato"><p><code>i</code> è una variabile <b>locale</b>: ogni thread ha la sua. Non serve proteggerla.</p></li>
+    </ol>
+  </figure>
+  <div class="box domanda-tua" data-tit="Domanda della slide: la sezione critica non dovrebbe iniziare prima del for?">
+    <p>No. Funzionerebbe, ma allora un thread farebbe <b>tutti</b> i suoi giri mentre l'altro aspetta: il programma diventerebbe sequenziale e perderesti tutto il vantaggio dei thread. La sezione critica va tenuta <b>il più piccola possibile</b>: solo gli accessi alla memoria condivisa (esercizio 1.1.5).</p>
+  </div>
+  <figure class="scena" data-scena="stanza" data-titolo="Una stanza per un thread alla volta"></figure>
+</section>
+
+<section>
+  <h2>Mutua esclusione: le tre proprietà (Dijkstra)</h2>
+  <p>Il problema della mutua esclusione (<i>mutual exclusion problem</i>) è: come coordinare più thread in modo che una sezione critica sia eseguita da uno alla volta? Dijkstra ha fissato le tre proprietà che una soluzione ideale deve avere. Servono per giudicare qualunque soluzione, anche quelle scritte da te negli esercizi.</p>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Proprietà</th><th>Cosa garantisce</th></tr></thead>
+    <tbody>
+      <tr><td><b>Mutual exclusion</b></td><td>al più un thread alla volta esegue la sezione critica</td></tr>
+      <tr><td><b>Absence of deadlock</b></td><td>i thread prima o poi escono dalla sezione critica, lasciando entrare gli altri</td></tr>
+      <tr><td><b>Absence of starvation</b></td><td>se un thread è pronto a entrare, prima o poi entra (in pratica non sempre si riesce a garantirla)</td></tr>
+    </tbody>
+  </table></div>
+  <figure class="scena" data-scena="dijkstra" data-titolo="Le tre proprietà, e come si violano"></figure>
+</section>
+
+<section>
+  <h2>I lock di Java</h2>
+  <div class="colonne">
+    <div class="carta">
+      <h4><code>lock()</code></h4>
+      <p>Prende il lock se è libero. Se è di un altro thread, il chiamante <b>si blocca</b> finché non si libera. È bloccante.</p>
+    </div>
+    <div class="carta">
+      <h4><code>unlock()</code></h4>
+      <p>Se ci sono thread in attesa ne sveglia uno, altrimenti libera il lock. In ogni caso chi lo chiama <b>continua</b>. Non è bloccante.</p>
+    </div>
+  </div>
+  <p>Sono <b>operazioni di sincronizzazione</b>: stabiliscono un ordine tra operazioni di thread diversi. <code>Lock</code> è un'interfaccia; nel corso si usa l'implementazione <code>ReentrantLock</code>.</p>
+  <h3>Senza lock</h3>
+  <figure class="interleaving" data-prog="senzalock" data-titolo="4 passi per thread, nessuna protezione"></figure>
+  <h3>Con lock</h3>
+  <figure class="interleaving" data-prog="conlock" data-titolo="Gli stessi passi, con lock() e unlock()"></figure>
+  <figure class="passi" data-titolo="Cosa cambia (apri “Tutti gli interleaving” nei due costruttori)">
+    <div class="passo"><div class="espr">senza lock:  <mark class="no">70</mark> interleaving  =  8! / (4! · 4!)</div><p class="nota">Tutti i modi di mescolare 4 passi di t1 con 4 passi di t2. Molti perdono un aggiornamento.</p></div>
+    <div class="passo"><div class="espr">con lock:  <mark class="ok">2</mark> interleaving</div><p class="nota">Appena un thread fa <code>lock()</code>, i passi dell'altro restano bloccati fino a <code>unlock()</code>.</p></div>
+    <div class="passo"><div class="espr">t1(1), t1(2), t1(3), t1(4), t2(1), t2(2), t2(3), t2(4)
+t2(1), t2(2), t2(3), t2(4), t1(1), t1(2), t1(3), t1(4)</div><p class="nota">Restano solo questi due. Entrambi danno <code>counter = 2</code>.</p></div>
+    <div class="passo"><div class="espr"><mark class="ok">La sezione critica è diventata indivisibile.</mark></div><p class="nota">Il lock non rende <code>counter++</code> atomico per l'hardware: impedisce che un altro thread esegua la <b>sua</b> sezione critica in mezzo.</p></div>
+  </figure>
+</section>
+
+<section>
+  <h2>Questo interleaving è possibile? (slide 59–60)</h2>
+  <p>Domanda tipica: dimostrare che un interleaving non può esistere. Si ragiona <b>per contraddizione</b>, senza eseguire niente.</p>
+  <pre class="cod" data-lang="java">public void run() {
+    l.lock();             // (1)
+    int temp = counter;   // (2)
+    counter = temp + 1;   // (3)
+    l.unlock();           // (4)
+}</pre>
+  <figure class="passi" data-titolo="…, t1(2), …, t2(2), …, t1(3), …, t2(3), …">
+    <div class="passo"><div class="espr">…, <mark class="dato">t1(2)</mark>, …, <mark class="due">t2(2)</mark>, …, <mark class="dato">t1(3)</mark>, …, <mark class="due">t2(3)</mark>, …</div><p class="nota"><b>Assumo</b> che l'interleaving esista (è quello che darebbe il lost update).</p></div>
+    <div class="passo"><div class="espr">…, t1(2), …, t1(4), …, <mark class="ora">t2(1)</mark>, …, t2(2), t1(3), t2(3), …</div><p class="nota">t2(2) richiede che t2 abbia preso il lock: <b>t2(1) prima di t2(2)</b>. E t2 può prendere il lock solo se t1 l'ha rilasciato: <b>t1(4) prima di t2(1)</b>.</p></div>
+    <div class="passo"><div class="espr">…, t1(2), …, <mark class="ora">t1(3)</mark>, …, t1(4), …, t2(1), …, t2(2), <mark class="no">t1(3)</mark>, t2(3), …</div><p class="nota">Ma per il program order di t1, <b>t1(3) viene prima di t1(4)</b>. Quindi t1(3) dovrebbe stare sia prima sia dopo t2(2).</p></div>
+    <div class="passo"><div class="espr"><mark class="no">Contraddizione</mark>  →  l'interleaving è impossibile.</div><p class="nota">Nel costruttore qui sopra puoi verificarlo con "Prova una sequenza".</p></div>
+  </figure>
+  <figure class="scena" data-scena="contraddizione" data-titolo="Un ciclo di vincoli: impossibile"></figure>
+</section>
+
+<section>
+  <h2>Deadlock e l'idioma try/finally</h2>
+  <div class="colonne">
+    <div class="carta cattiva">
+      <h4>Lock preso due volte</h4>
+      <pre class="cod" data-lang="java">l.lock();
+int temp = counter;
+counter = temp + 1;
+l.lock();   // blocca per sempre</pre>
+      <p>Con un lock non rientrante il thread aspetta se stesso. Bug veri di questo tipo esistono nel kernel Linux.</p>
+    </div>
+    <div class="carta cattiva">
+      <h4>Eccezione con il lock in mano</h4>
+      <pre class="cod" data-lang="java">l.lock();
+int temp = counter;
+throw new Exception();
+// unlock() mai eseguito</pre>
+      <p>Il thread esce senza liberare il lock: tutti gli altri restano bloccati per sempre.</p>
+    </div>
+  </div>
+  <figure class="codice" data-titolo="L'idioma da usare sempre">
+<pre data-lang="java">Lock l = new ReentrantLock();
+
+l.lock();
+try {
+    // sezione critica
+    counter++;
+} finally {
+    l.unlock();
+}</pre>
+    <ol class="spiega">
+      <li data-righe="3" data-segna="l.lock();@ora"><p><code>lock()</code> <b>prima</b> del <code>try</code>: se fallisse, non devi fare unlock di un lock mai preso.</p></li>
+      <li data-righe="4-6" data-segna="try@dato"><p>La sezione critica sta nel <code>try</code>.</p></li>
+      <li data-righe="7-9" data-segna="finally@ok|l.unlock();@ok"><p><code>finally</code> viene eseguito <b>sempre</b>, anche se nel try parte un'eccezione: il lock viene sempre liberato.</p></li>
+    </ol>
+  </figure>
+  <div class="box esame" data-tit="Per gli assignment">
+    <p>Le slide: le soluzioni che non usano questo idioma "cannot be deemed as free from deadlocks (note for assignments)". Usalo ogni volta.</p>
+  </div>
+  <figure class="passi" data-titolo="ReentrantLock: riprendere il lock che hai già">
+    <div class="passo"><div class="espr">l.lock();     <span class="mano">// preso (contatore 1)</span></div><p class="nota">Il thread prende il lock.</p></div>
+    <div class="passo"><div class="espr">l.lock();     <span class="mano">// <mark class="ok">non si blocca</mark> (contatore 2)</span></div><p class="nota">Stesso thread: un lock <b>rientrante</b> lo lascia passare e conta quante volte l'ha preso.</p></div>
+    <div class="passo"><div class="espr">l.unlock();   <span class="mano">// ancora suo (contatore 1)</span></div><p class="nota">Un unlock non basta.</p></div>
+    <div class="passo"><div class="espr">l.unlock();   <span class="mano">// <mark class="ok">libero</mark> (contatore 0)</span></div><p class="nota">Servono tanti unlock quanti lock.</p></div>
+  </figure>
+  <figure class="scena" data-scena="trylock" data-titolo="Eccezione con il lock in mano"></figure>
+</section>
+
+<section>
+  <h2>Controlla-poi-agisci: il tornello Covid (esercizio 1.3)</h2>
+  <p>Al massimo 15 000 persone. Il controllo e l'incremento devono stare <b>nella stessa</b> sezione critica.</p>
+  <div class="colonne">
+    <div class="carta cattiva">
+      <h4>Sbagliato</h4>
+      <pre class="cod" data-lang="java">if (counter &lt; MAX_PEOPLE_COVID) {
+    lock.lock();
+    try { counter++; }
+    finally { lock.unlock(); }
+}</pre>
+      <p>Due thread possono leggere entrambi 14 999, superare il controllo ed entrare tutti e due: 15 001.</p>
+    </div>
+    <div class="carta buona">
+      <h4>Giusto</h4>
+      <pre class="cod" data-lang="java">lock.lock();
+try {
+    if (counter &lt; MAX_PEOPLE_COVID)
+        counter++;
+} finally {
+    lock.unlock();
+}</pre>
+      <p>Tra il controllo e l'incremento nessun altro thread può cambiare <code>counter</code>.</p>
+    </div>
+  </div>
+  <figure class="scena" data-scena="covid" data-titolo="14 999 visto due volte"></figure>
+</section>
+
+<section>
+  <h2>Come spiegare che la soluzione è corretta (esercizio 1.1.4)</h2>
+  <figure class="passi" data-titolo="Lo schema della risposta">
+    <div class="passo"><div class="espr testo"><mark class="dato">1. Il problema</mark>: <code>count = count + 1</code> non è atomico; esistono interleaving in cui un thread legge un valore vecchio e un incremento si perde (race condition).</div><p class="nota">Nomina il problema con il vocabolario del corso.</p></div>
+    <div class="passo"><div class="espr testo"><mark class="ora">2. La sezione critica</mark>: lettura e scrittura di <code>count</code>, protette da <code>lock()</code> / <code>unlock()</code> sullo <b>stesso</b> ReentrantLock, con try/finally.</div><p class="nota">Di' cosa hai protetto e con che cosa.</p></div>
+    <div class="passo"><div class="espr testo"><mark class="due">3. Perché funziona</mark>: per la mutua esclusione i passi della sezione critica di un thread non possono mescolarsi con quelli dell'altro; restano solo interleaving in cui ogni incremento legge il valore scritto dal precedente.</div><p class="nota">Il cuore: quali interleaving sono stati eliminati.</p></div>
+    <div class="passo"><div class="espr testo"><mark class="ok">4. Perché nessun altro output</mark>: ognuno dei 2 × 10 000 000 incrementi aggiunge esattamente 1, quindi il risultato è sempre 20 000 000.</div><p class="nota">Chiudi con il risultato e il motivo per cui è l'unico.</p></div>
+  </figure>
+  <div class="box inglese" data-tit="Risposta modello">
+    <p>"The increment <code>count = count + 1</code> is not atomic: it is a read followed by a write, so without synchronization some interleavings let a thread read a stale value and lose an update (a race condition). We made the read and the write a critical section protected by the same ReentrantLock, using the lock/try/finally idiom. Mutual exclusion guarantees that the operations of one thread's critical section cannot be interleaved with the other thread's, so every increment reads the value written by the previous one. Hence each of the 20 million increments adds exactly one, and the only possible output is 20,000,000."</p>
+  </div>
+  <figure class="scena" data-scena="schema" data-titolo="La risposta in quattro pezzi"></figure>
+</section>
+
+</main>
+</body>
+</html>

@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Weighted interval scheduling: DP sugli intervalli</title>
+<link rel="stylesheet" href="../assets/atlas.css">
+<link rel="stylesheet" href="../assets/tema.css">
+<script src="../assets/sito.js"></script>
+<script src="../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+const J = [[1,3,2],[2,5,4],[4,7,4],[6,9,7],[8,10,2]];
+const X = t => 40 + t * 44; const og = [];
+for (let t = 0; t <= 10; t++) og.push({id:'tk'+t,tipo:'testo',x:X(t),y:262,t:String(t),size:11});
+og.push({id:'asse',tipo:'linea',x1:X(0),y1:250,x2:X(10),y2:250});
+J.forEach(([s,f,v],i) => og.push({id:'j'+i,tipo:'rett',x:X(s),y:20+i*40,w:(f-s)*44,h:26,t:'v='+v}));
+og.push({id:'c',tipo:'testo',x:40,y:292,t:'',size:12,bold:true,anchor:'start'});
+const passi = [{nota:'Job con inizio, fine e <b>valore</b>. Ora i valori sono diversi: il greedy per fine non basta. Serve la DP.', set:{}}];
+passi.push({nota:'Ordino per fine: j1(1–3, v2), j2(2–5, v4), j3(4–7, v4), j4(6–9, v7), j5(8–10, v2). Per ogni job <b>p(j)</b> = ultimo job compatibile con j.', set:{c:{t:'p(1)=0, p(2)=0, p(3)=1, p(4)=2, p(5)=3'}}});
+passi.push({nota:'<code>OPT(j) = max( v_j + OPT(p(j)) , OPT(j−1) )</code>: prendo j e il meglio dei compatibili prima, oppure lo salto. OPT(1) = 2, OPT(2) = 4.', set:{j0:{tono:'ok'},c:{t:'OPT(1)=2, OPT(2)=4'}}});
+passi.push({nota:'OPT(3) = max( 4 + OPT(1), OPT(2) ) = max(6, 4) = 6. OPT(4) = max( 7 + OPT(2), OPT(3) ) = max(11, 6) = 11.', set:{j2:{tono:'ok'},j3:{tono:'ok'},c:{t:'OPT(3)=6, OPT(4)=11'}}});
+passi.push({nota:'OPT(5) = max( 2 + OPT(3), OPT(4) ) = max(8, 11) = 11. Risposta: <b>11</b>, con j2, j4 (4 + 7).', set:{j4:{tono:'no'},c:{t:'OPT(5) = 11: scelgo j2 e j4',tono:'ok'}}});
+SCENE.wis = {w:540,h:300,lato:true,legenda:'ok:preso,no:saltato,ora:job in esame',oggetti:og,passi};
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Weighted interval scheduling: DP sugli intervalli</h1>
+  <p class="lede">Quando i job hanno valori diversi, il greedy per fine non basta. Si usa la DP sugli intervalli ordinati per fine: per ogni job, il meglio tra prenderlo e saltarlo.</p>
+</header>
+
+<section>
+  <h2>La ricorrenza</h2>
+<p>Ordina i job per fine. Per ogni job <code>j</code>, <code>p(j)</code> è l'ultimo job, nell'ordine, compatibile con <code>j</code> (finisce prima del suo inizio).
+La ricorrenza: <code>OPT(j) = max( v_j + OPT(p(j)), OPT(j − 1) )</code>, con <code>OPT(0) = 0</code>.</p>
+  <figure class="scena" data-scena="wis" data-titolo="Prendere o saltare, job per job"></figure>
+</section>
+<section>
+  <h2>Costo e ricostruzione</h2>
+<p>Ordinare costa <code>O(n log n)</code>, <code>p(j)</code> si trova con una ricerca binaria, poi ogni <code>OPT(j)</code> è un confronto: totale <code>O(n log n)</code>.
+Per la soluzione, risali: se <code>v_j + OPT(p(j)) ≥ OPT(j − 1)</code> il job <code>j</code> è preso, e passi a <code>p(j)</code>; altrimenti a <code>j − 1</code>.</p>
+</section>
+<section>
+  <h2>Il codice, affiancato</h2>
+  <p>Questa pagina spiega il concetto. Il codice Java che lo implementa, con una spiegazione riga per riga e le note di sintassi che servono, è nella pagina affiancata.</p>
+  <p><a href="../codice/weighted-interval.html"><b>→ Codice Java di questo argomento</b></a></p>
+</section>
+<section>
+  <h2>All’esame</h2>
+<div class="box esame" data-tit="All’esame">
+<p>Job con valori → DP sulla fine, non greedy. Frase: <i>"Sort by finish time. Let p(j) be the last job compatible with j. OPT(j) = max(v_j + OPT(p(j)), OPT(j−1)). Time O(n log n)."</i></p>
+</div>
+</section>
+<section>
+  <h2>Formulario rapido</h2>
+<div class="tab-wrap"><table class="tab"><thead><tr><th>caso</th><th>metodo</th><th>nota</th></tr></thead><tbody><tr><td>senza pesi</td><td>earliest finish</td><td>greedy</td></tr><tr><td>con pesi</td><td>OPT(j) = max(…)</td><td>DP</td></tr></tbody></table></div>
+</section>
+
+</main>
+</body>
+</html>

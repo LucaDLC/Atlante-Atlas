@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>filter, flatMap, zipWith</title>
+<link rel="stylesheet" href="../assets/atlas.css">
+<link rel="stylesheet" href="../assets/tema.css">
+<script src="../assets/sito.js"></script>
+<script src="../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+SCENE.flatmap = {
+  w: 560, h: 260, lato: false,
+  legenda: 'dato:lista di partenza,ora:risultato di f per un elemento,ok:risultato finale',
+  oggetti: [
+    { id: 'L', tipo: 'celle', x: 40, y: 30, cw: 54, ch: 40, valori: ['1', '2', '3'] },
+    { id: 'g0', tipo: 'celle', x: 40, y: 110, cw: 40, ch: 36, valori: ['1', '1'], indici: false, nascosto: true },
+    { id: 'g1', tipo: 'celle', x: 150, y: 110, cw: 40, ch: 36, valori: ['2', '2'], indici: false, nascosto: true },
+    { id: 'g2', tipo: 'celle', x: 260, y: 110, cw: 40, ch: 36, valori: ['3', '3'], indici: false, nascosto: true },
+    { id: 'R', tipo: 'celle', x: 40, y: 190, cw: 40, ch: 36, valori: ['', '', '', '', '', ''], indici: false },
+    { id: 'n', tipo: 'testo', x: 440, y: 50, t: 'f = i => List(i, i)', size: 13, bold: true }
+  ],
+  passi: [
+    { nota: '<code>flatMap(List(1, 2, 3), i =&gt; List(i, i))</code>: f trasforma ogni elemento in una <b>lista</b>.' },
+    { nota: 'f(1) = List(1, 1).', set: { L: { toni: { 0: 'ora' } }, g0: { nascosto: false, toni: { 0: 'ora', 1: 'ora' } } } },
+    { nota: 'f(2) = List(2, 2), f(3) = List(3, 3). Con map mi fermerei qui: una lista di liste.', set: { L: { toni: { 1: 'ora', 2: 'ora' } }, g0: { toni: {} }, g1: { nascosto: false }, g2: { nascosto: false } } },
+    { nota: 'flatMap le <b>concatena</b>: List(1, 1, 2, 2, 3, 3). "Map, poi appiattisci".', set: { L: { toni: {} }, R: { valori: ['1', '1', '2', '2', '3', '3'], toni: { 0: 'ok', 1: 'ok', 2: 'ok', 3: 'ok', 4: 'ok', 5: 'ok' } }, n: { t: 'List(1, 1, 2, 2, 3, 3)', tono: 'ok' } } }
+  ]
+};
+SCENE.zipwith = {
+  w: 520, h: 230, lato: false,
+  legenda: 'dato:prima lista,due:seconda lista,ok:f(h1, h2)',
+  oggetti: [
+    { id: 'A', tipo: 'celle', x: 60, y: 30, cw: 60, ch: 40, valori: ['1', '2', '3'] },
+    { id: 'B', tipo: 'celle', x: 60, y: 100, cw: 60, ch: 40, valori: ['10', '20'] },
+    { id: 'R', tipo: 'celle', x: 60, y: 170, cw: 60, ch: 40, valori: ['', ''], indici: false },
+    { id: 'n', tipo: 'testo', x: 380, y: 120, t: 'f = _ + _', size: 14, bold: true }
+  ],
+  passi: [
+    { nota: '<code>zipWith(List(1, 2, 3), List(10, 20), _ + _)</code>: due liste, una funzione a due argomenti.' },
+    { nota: 'Le due teste: 1 + 10 = <b>11</b>.', set: { A: { toni: { 0: 'dato' } }, B: { toni: { 0: 'due' } }, R: { valori: ['11', ''], toni: { 0: 'ok' } } } },
+    { nota: 'Le due teste delle code: 2 + 20 = <b>22</b>.', set: { A: { toni: { 1: 'dato' } }, B: { toni: { 1: 'due' } }, R: { valori: ['11', '22'], toni: { 1: 'ok' } } } },
+    { nota: 'La seconda lista è finita: caso <code>(_, Nil) =&gt; Nil</code>. Il 3 non ha compagno e resta fuori: il risultato è lungo come la lista più corta, <b>List(11, 22)</b>.', set: { A: { toni: { 2: 'no' } }, n: { t: 'List(11, 22)', tono: 'ok' } } }
+  ]
+};
+</script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  const T = (id, x, y, t, extra) => Object.assign({ id, tipo: 'testo', x, y, t, size: 13 }, extra || {});
+  const R = (id, x, y, w, h, t, extra) => Object.assign({ id, tipo: 'rett', x, y, w, h, t }, extra || {});
+  const N = (id, x, y, t, tono, extra) => Object.assign({ id, tipo: 'nodo', x, y, t, tono, r: 20 }, extra || {});
+  const F = (id, x1, y1, x2, y2, t, extra) => Object.assign({ id, tipo: 'vett', x1, y1, x2, y2, t }, extra || {});
+  const C = (id, x, y, valori, extra) => Object.assign({ id, tipo: 'celle', x, y, cw: 52, ch: 40, valori, indici: false }, extra || {});
+
+    const bar = (id, y, t) => [T(id + 't', 150, y + 18, t, { anchor: 'end', size: 12 }), R(id + 'r', 160, y, 0, 24, '', { tono: 'ok' }), R(id + 'l', 160, y + 26, 0, 24, '', { tono: 'no' }), T(id + 'v', 170, y + 18, '', { size: 11, anchor: 'start' }), T(id + 'w', 170, y + 44, '', { size: 11, anchor: 'start' })];
+    SCENE.concatcosto = {
+      w: 600, h: 250, lato: true,
+      legenda: 'ok:foldRight (elementi ricopiati),no:foldLeft (elementi ricopiati)',
+      oggetti: [].concat(bar('a', 20, '4 liste da 2'), bar('b', 90, '10 liste da 2'), bar('c', 160, '20 liste da 2'), [T('n', 300, 240, '', { size: 12 })]),
+      passi: [
+        { nota: "<code>concat = foldRight(l, Nil, append)</code>. append(l1, l2) <b>ricopia l1</b>: costa |l1|. Contiamo quante celle vengono ricopiate con k liste da 2 elementi." },
+        { nota: "<b>foldRight</b>: append(L1, append(L2, append(L3, …))). Ogni lista originale è il primo argomento <b>una volta sola</b>: 2k copie. Con 4 liste: 8.", set: { ar: { w: 8 * 4 }, av: { t: '8', x: 170 + 32 } } },
+        { nota: "<b>foldLeft</b>: append(append(append(Nil, L1), L2), L3)… L'accumulatore, che cresce, sta a sinistra e viene ricopiato a ogni passo: 0 + 2 + 4 + 6 = 12.", set: { al: { w: 12 * 4 }, aw: { t: '12', x: 170 + 48 } } },
+        { nota: "Con 10 liste: 20 contro 0 + 2 + … + 18 = 90.", set: { br: { w: 20 * 4 }, bv: { t: '20', x: 170 + 80 }, bl: { w: 90 * 4 }, bw: { t: '90', x: 170 + 360 } } },
+        { nota: "Con 20 liste: 40 contro 380 (fuori scala: la barra è tagliata). foldRight è <b>lineare</b>, foldLeft <b>quadratico</b>: k(k − 1) copie.", set: { cr: { w: 40 * 4 }, cv: { t: '40', x: 170 + 160 }, cl: { w: 380 }, cw: { t: '380', x: 548 }, n: { t: 'foldRight: 2k · foldLeft: k(k − 1)' } } }
+      ]
+    };
+
+    SCENE.filtro = {
+      w: 560, h: 140,
+      codice: { lang: 'scala', testo: `def filter[A](l: List[A], p: A => Boolean): List[A] =
+  foldRight[A, List[A]](l, Nil, (a, z) => if p(a) then Cons(a, z) else z)` },
+      legenda: 'ora:elemento a,ok:tenuto,no:scartato,dato:z (resto già filtrato)',
+      oggetti: [C('l', 20, 40, ['1', '2', '3', '4']), R('z', 280, 40, 200, 40, 'z = Nil', { tono: 'dato' }), T('c', 280, 110, 'filter(List(1, 2, 3, 4), _ % 2 == 0)', { size: 12, bold: true })],
+      passi: [
+        { nota: "foldRight parte dall'<b>ultimo</b> elemento. z è il risultato già filtrato di tutto quello che viene dopo; all'inizio è Nil.", righe: [2] },
+        { nota: "a = 4, pari: <b>tenuto</b>, Cons(4, Nil).", righe: [2], set: { l: { toni: { 3: 'ok' } }, z: { t: 'z = List(4)' } } },
+        { nota: "a = 3, dispari: restituisco z così com'è. Scartare = non aggiungere niente.", righe: [2], set: { l: { toni: { 2: 'no', 3: 'ok' } } } },
+        { nota: "a = 2: tenuto, davanti al resto: List(2, 4).", righe: [2], set: { l: { toni: { 1: 'ok', 2: 'no', 3: 'ok' } }, z: { t: 'z = List(2, 4)' } } },
+        { nota: "a = 1: scartato. Risultato <b>List(2, 4)</b>, nell'ordine originale: è il vantaggio di foldRight.", righe: [2], set: { l: { toni: { 0: 'no', 1: 'ok', 2: 'no', 3: 'ok' } }, z: { t: 'List(2, 4)', tono: 'ok' } } }
+      ]
+    };
+
+    SCENE.zip = {
+      w: 560, h: 170,
+      codice: { lang: 'scala', testo: `def zipWith[A, B, C](l: List[A], r: List[B], f: (A, B) => C): List[C] = (l, r) match
+  case (Nil, _) => Nil
+  case (_, Nil) => Nil
+  case (Cons(h1, t1), Cons(h2, t2)) => Cons(f(h1, h2), zipWith(t1, t2, f))` },
+      legenda: 'ora:le due teste,ok:risultato,no:resta fuori',
+      oggetti: [C('l', 60, 20, ['1', '2', '3']), C('r', 60, 70, ['4', '5', '6', '7']), C('o', 60, 120, ['', '', ''], { toni: { 0: 'spento', 1: 'spento', 2: 'spento' } }), T('ll', 30, 45, 'l', { bold: true }), T('lr', 30, 95, 'r', { bold: true }), T('lo', 30, 145, '=', { bold: true }), T('c', 420, 90, '', { size: 12 })],
+      passi: [
+        { nota: "<code>zipWith(List(1, 2, 3), List(4, 5, 6, 7), _ + _)</code>: due liste in parallelo, posizione per posizione.", righe: [1] },
+        { nota: "Tutte e due non vuote: combino le due teste, 1 + 4 = 5, e continuo con le code.", righe: [4], set: { l: { toni: { 0: 'ora' } }, r: { toni: { 0: 'ora' } }, o: { valori: ['5', '', ''], toni: { 0: 'ok', 1: 'spento', 2: 'spento' } } } },
+        { nota: "2 + 5 = 7.", righe: [4], set: { l: { toni: { 0: null, 1: 'ora' } }, r: { toni: { 0: null, 1: 'ora' } }, o: { valori: ['5', '7', ''], toni: { 0: 'ok', 1: 'ok', 2: 'spento' } } } },
+        { nota: "3 + 6 = 9.", righe: [4], set: { l: { toni: { 1: null, 2: 'ora' } }, r: { toni: { 1: null, 2: 'ora' } }, o: { valori: ['5', '7', '9'], toni: { 0: 'ok', 1: 'ok', 2: 'ok' } } } },
+        { nota: "l è finita: <code>case (Nil, _) =&gt; Nil</code>. Il 7 resta fuori: il risultato è lungo come la lista più corta, l'unica scelta che non inventa valori.", righe: [2], set: { l: { toni: { 2: null } }, r: { toni: { 2: null, 3: 'no' } }, c: { t: 'List(5, 7, 9)', tono: 'ok' } } }
+      ]
+    };
+  
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>filter, flatMap, zipWith</h1>
+  <p class="lede">Esercizi 12–18: le funzioni che userai più spesso, costruite con fold e con quelle già scritte. Il foglio esercizi insiste su una: <b>flatMap</b>, che "sarà la chiave per il resto del corso".</p>
+</header>
+
+<section>
+  <h2><code>concat</code>: appiattire una lista di liste</h2>
+  <pre class="cod" data-lang="scala">def concat[A](l: List[List[A]]): List[A] =
+  foldRight[List[A], List[A]](l, Nil, append)</pre>
+  <p>Due scelte da capire:</p>
+  <ul>
+    <li><b>z = Nil</b>: appiattire zero liste dà la lista vuota.</li>
+    <li><b>f = append</b>: già una funzione di tipo <code>(List[A], List[A]) => List[A]</code>, la passo così com'è.</li>
+  </ul>
+  <figure class="passi" data-titolo="Perché foldRight e non foldLeft: il costo">
+    <div class="passo">
+      <div class="espr">append(<mark class="ora">l1</mark>, l2)   costa   |<mark class="ora">l1</mark>|</div>
+      <p class="nota">Ricorda: <code>append</code> ricopia solo la <b>prima</b> lista.</p>
+    </div>
+    <div class="passo">
+      <div class="espr">foldRight:  append(<mark class="dato">L1</mark>, append(<mark class="dato">L2</mark>, append(<mark class="dato">L3</mark>, Nil)))</div>
+      <p class="nota">Ogni lista originale è il primo argomento <b>una volta sola</b>: costo totale = numero di elementi. Lineare.</p>
+    </div>
+    <div class="passo">
+      <div class="espr">foldLeft:   append(append(append(Nil, L1), L2), L3)
+                        <mark class="no">└ L1 ─┘</mark>
+                 <mark class="no">└──── L1 + L2 ───┘</mark></div>
+      <p class="nota">L'accumulatore, che cresce, sta sempre a sinistra e viene ricopiato a ogni passo: gli stessi elementi ricopiati più volte. Costo quadratico.</p>
+    </div>
+  </figure>
+  <figure class="scena" data-scena="concatcosto" data-titolo="Copie con foldRight e con foldLeft"></figure>
+</section>
+
+<section>
+  <h2><code>filter</code> con foldRight</h2>
+  <figure class="codice" data-titolo="Esercizio 13">
+<pre data-lang="scala">def filter[A](l: List[A], p: A => Boolean): List[A] =
+  foldRight[A, List[A]](l, Nil, (a, z) => if p(a) then Cons(a, z) else z)</pre>
+    <ol class="spiega">
+      <li data-righe="2" data-segna="Nil@dato"><p>Filtrare la lista vuota dà la lista vuota.</p></li>
+      <li data-righe="2" data-segna="(a, z) =>@ora"><p><code>a</code> è l'elemento, <code>z</code> è il risultato già filtrato di tutto quello che viene <b>dopo</b>.</p></li>
+      <li data-righe="2" data-segna="Cons(a, z)@ok"><p>Se lo tengo, lo rimetto davanti al resto filtrato.</p></li>
+      <li data-righe="2" data-segna="else z@no"><p>Se lo scarto, restituisco il resto così com'è. Scartare = non aggiungere niente.</p></li>
+    </ol>
+  </figure>
+  <figure class="passi" data-titolo="filter(List(1, 2, 3, 4), _ % 2 == 0)">
+    <div class="passo"><div class="espr">f(1, f(2, f(3, f(4, <mark class="dato">Nil</mark>))))</div><p class="nota">foldRight: si parte dall'ultimo elemento.</p></div>
+    <div class="passo"><div class="espr">f(<mark class="ora">4</mark>, Nil) = Cons(4, Nil)</div><p class="nota">4 è pari: tenuto.</p></div>
+    <div class="passo"><div class="espr">f(<mark class="no">3</mark>, List(4)) = List(4)</div><p class="nota">3 dispari: il resto passa invariato.</p></div>
+    <div class="passo"><div class="espr">f(<mark class="ora">2</mark>, List(4)) = Cons(2, List(4))</div><p class="nota">2 tenuto.</p></div>
+    <div class="passo"><div class="espr">f(<mark class="no">1</mark>, List(2, 4)) = <mark class="ok">List(2, 4)</mark></div><p class="nota">1 scartato. L'ordine è quello originale: è il vantaggio di foldRight.</p></div>
+  </figure>
+  <figure class="scena" data-scena="filtro" data-titolo="Dall’ultimo elemento al primo"></figure>
+</section>
+
+<section>
+  <h2><code>flatMap</code>: map, poi appiattisci</h2>
+  <p><code>map</code> trasforma ogni elemento in <b>un</b> elemento. <code>flatMap</code> lo trasforma in una <b>lista</b> (con zero, uno o molti elementi) e poi unisce tutte le liste.</p>
+  <pre class="cod" data-lang="scala">def flatMap[A, B](l: List[A], f: A => List[B]): List[B] =
+  concat(map(l, f))</pre>
+  <figure class="passi" data-titolo="flatMap(List(1, 2, 3), i => List(i, i))">
+    <div class="passo"><div class="espr">List(<mark class="dato">1</mark>, <mark class="due">2</mark>, <mark class="ora">3</mark>)</div><p class="nota">La lista di partenza.</p></div>
+    <div class="passo"><div class="espr">map →  List(List(<mark class="dato">1</mark>, <mark class="dato">1</mark>), List(<mark class="due">2</mark>, <mark class="due">2</mark>), List(<mark class="ora">3</mark>, <mark class="ora">3</mark>))</div><p class="nota">Ogni elemento diventa una lista: ottengo una lista di liste.</p></div>
+    <div class="passo"><div class="espr">concat → <mark class="ok">List(1, 1, 2, 2, 3, 3)</mark></div><p class="nota">Unisco. Risultato verificato.</p></div>
+  </figure>
+  <figure class="scena" data-scena="flatmap" data-titolo="flatMap: map, poi appiattisci"></figure>
+  <div class="colonne">
+    <div class="carta"><h4>f dà sempre 1 elemento</h4><p><code>flatMap(l, a => List(g(a)))</code> è <code>map</code>.</p></div>
+    <div class="carta"><h4>f dà 0 o 1 elementi</h4><p><code>flatMap(l, a => if p(a) then List(a) else Nil)</code> è <code>filter</code> (esercizio 15).</p></div>
+    <div class="carta"><h4>f dà molti elementi</h4><p>Moltiplica la lista, come nell'esempio sopra.</p></div>
+  </div>
+  <div class="box idea" data-tit="Perché conta">
+    <p><code>flatMap</code> contiene sia <code>map</code> sia <code>filter</code>. Nella settimana 3 la stessa operazione, su <code>Option</code>, serve a concatenare calcoli che possono fallire: è il cuore delle <b>monadi</b>.</p>
+  </div>
+</section>
+
+<section>
+  <h2><code>zipWith</code>: due liste in parallelo</h2>
+  <p>Esercizio 16 somma due liste posizione per posizione. Esercizio 17 generalizza: non solo interi, non solo somma.</p>
+  <figure class="codice" data-titolo="Da addPairwise a zipWith">
+<pre data-lang="scala">def zipWith[A, B, C](l: List[A], r: List[B], f: (A, B) => C): List[C] = (l, r) match
+  case (Nil, _) => Nil
+  case (_, Nil) => Nil
+  case (Cons(h1, t1), Cons(h2, t2)) => Cons(f(h1, h2), zipWith(t1, t2, f))</pre>
+    <ol class="spiega">
+      <li data-righe="1" data-segna="[A, B, C]@due|f: (A, B) => C@ora"><p>Tre tipi: elementi della prima lista, della seconda, del risultato. <code>f</code> dice come combinarli.</p></li>
+      <li data-righe="2-3" data-segna="Nil@no|Nil#3@no"><p>Appena una lista finisce, ci si ferma: il risultato è lungo come la più corta. È l'unica scelta che non inventa valori mancanti.</p></li>
+      <li data-righe="4" data-segna="f(h1, h2)@ok|zipWith(t1, t2, f)@ora"><p>Combino le due teste e continuo con le due code.</p></li>
+    </ol>
+  </figure>
+  <pre class="cod" data-lang="scala">zipWith(List(1, 2, 3), List(4, 5, 6, 7), _ + _)   // List(5, 7, 9) — il 7 resta fuori
+addPairwise(l, r) == zipWith(l, r, _ + _)          // la vecchia funzione non serve più</pre>
+  <figure class="scena" data-scena="zip" data-titolo="Due liste in parallelo, fino alla più corta"></figure>
+</section>
+
+<section>
+  <h2><code>hasSubsequence</code>: cercare un blocco dentro una lista</h2>
+  <p>Esercizio 18. Qui "sottosequenza" vuol dire elementi <b>consecutivi</b>: <code>List(2, 3)</code> sta in <code>List(1, 2, 3, 4)</code>, <code>List(1, 4)</code> no.</p>
+  <figure class="scena" data-scena="zipwith" data-titolo="zipWith si ferma alla lista più corta"></figure>
+  <figure class="codice" data-titolo="La tua soluzione: prefisso, altrimenti riprova dalla coda">
+<pre data-lang="scala">def hasSubsequence[A](sup: List[A], sub: List[A]): Boolean =
+  @annotation.tailrec
+  def startsWith(l: List[A], prefix: List[A]): Boolean = (l, prefix) match
+    case (_, Nil) => true
+    case (Cons(h1, t1), Cons(h2, t2)) => if h1 == h2 then startsWith(t1, t2) else false
+    case _ => false
+  sup match
+    case Nil => sub == Nil
+    case Cons(_, t) => startsWith(sup, sub) || hasSubsequence(t, sub)</pre>
+    <ol class="spiega">
+      <li data-righe="3" data-segna="startsWith@ora"><p>Spezzo il problema. Domanda 1: <code>sub</code> è l'<b>inizio</b> di <code>sup</code>?</p></li>
+      <li data-righe="4" data-segna="(_, Nil)@ok"><p>Un prefisso vuoto sta all'inizio di qualsiasi lista.</p></li>
+      <li data-righe="5" data-segna="h1 == h2@ora"><p>Teste uguali: controllo che anche il resto combaci.</p></li>
+      <li data-righe="6" data-segna="case _ => false@no"><p>Teste diverse, o <code>l</code> finita prima di <code>prefix</code>: non è un prefisso.</p></li>
+      <li data-righe="9" data-segna="hasSubsequence(t, sub)@due"><p>Domanda 2: se non è all'inizio, potrebbe iniziare <b>dalla posizione dopo</b>. Riprovo con la coda di <code>sup</code> e con <code>sub</code> <b>intero</b>. <code>||</code> si ferma al primo vero.</p></li>
+      <li data-righe="8" data-segna="sub == Nil@dato"><p>Se <code>sup</code> è vuota, solo la lista vuota ci sta dentro.</p></li>
+    </ol>
+  </figure>
+  <figure class="passi" data-titolo="hasSubsequence(List(1, 2, 1, 2, 3), List(1, 2, 3))">
+    <div class="passo"><div class="espr"><mark class="ok">1</mark> <mark class="ok">2</mark> <mark class="no">1</mark> 2 3
+<mark class="ok">1</mark> <mark class="ok">2</mark> <mark class="no">3</mark></div><p class="nota">Dalla posizione 0: 1 e 2 combaciano, poi 1 ≠ 3. Non è un prefisso.</p></div>
+    <div class="passo"><div class="espr"><span class="barra">1</span> <mark class="no">2</mark> 1 2 3
+  <mark class="no">1</mark> 2 3</div><p class="nota">Riprovo dalla posizione 1: 2 ≠ 1.</p></div>
+    <div class="passo"><div class="espr"><span class="barra">1 2</span> <mark class="ok">1</mark> <mark class="ok">2</mark> <mark class="ok">3</mark>
+    <mark class="ok">1</mark> <mark class="ok">2</mark> <mark class="ok">3</mark></div><p class="nota">Dalla posizione 2: combacia tutto.</p></div>
+    <div class="passo"><div class="espr"><mark class="ok">true</mark></div><p class="nota">Il punto delicato era il primo tentativo fallito: non bisogna concludere <code>false</code>, ma ripartire con <code>sub</code> intero (verificato).</p></div>
+  </figure>
+</section>
+
+</main>
+</body>
+</html>

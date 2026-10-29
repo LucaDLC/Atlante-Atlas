@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cache e coerenza: il protocollo MESI</title>
+<link rel="stylesheet" href="../assets/atlas.css">
+<link rel="stylesheet" href="../assets/tema.css">
+<script src="../assets/sito.js"></script>
+<script src="../assets/atlas.js" defer></script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <div class="occhiello"><span>Settimana 9 · Performance</span></div>
+  <h1>Cache e coerenza: il protocollo MESI</h1>
+  <p class="lede">La CPU è più veloce della RAM, e la cache colma il divario. Con più core ogni cache ha una copia dei dati, e le copie devono restare d’accordo: è il lavoro del protocollo MESI.</p>
+</header>
+
+<section>
+  <h2>Il ponte tra CPU e RAM</h2>
+  <p>La CPU lavora molto più in fretta della RAM. La <b>cache</b> è una memoria piccola e veloce, vicina alla CPU, che tiene le copie dei dati usati di recente. Funziona bene per la <b>località di accesso</b>: se un dato serve ora, probabilmente servirà ancora, e i dati vicini in memoria servono spesso insieme.</p>
+  <figure class="passi" data-titolo="Una lettura da memoria" data-legenda="dato:indirizzo richiesto,ora:passo in corso,ok:veloce,no:lento">
+    <div class="passo"><div class="espr">La CPU chiede un <mark class="dato">indirizzo</mark></div><p class="nota">Il primo passo è sempre cercarlo in cache.</p></div>
+    <div class="passo"><div class="espr">Se è in cache: <mark class="ok">lettura veloce</mark></div><p class="nota">È il caso buono: il dato è già lì, e la RAM non viene toccata.</p></div>
+    <div class="passo"><div class="espr">Se non è in cache: <mark class="no">lettura lenta</mark> dalla RAM, e la <mark class="ora">linea</mark> viene copiata in cache</div><p class="nota">La cache copia un blocco intero, non un solo byte: così i dati vicini sono già pronti.</p></div>
+  </figure>
+</section>
+
+<section>
+  <h2>Più core, più cache</h2>
+  <p>Ogni core ha le sue cache. Lo stesso indirizzo di memoria può quindi essere in più cache contemporaneamente. Il blocco di memoria che la cache copia si chiama <b>linea di cache</b>: di solito 64 byte. Le cache devono concordare il valore di ogni linea: il meccanismo si chiama <b>protocollo di coerenza</b>, e nelle slide è il <b>MESI</b>, dal nome dei suoi quattro stati.</p>
+</section>
+
+<section>
+  <h2>Gli stati MESI</h2>
+  <p>Ogni linea di cache, in ogni core, è in uno di quattro stati:</p>
+  <div class="tab-wrap"><table class="tab"><thead><tr><th>stato</th><th>significato</th><th>la RAM è aggiornata?</th></tr></thead><tbody>
+    <tr><td><b>M</b> Modified</td><td>copia modificata, presente solo in questa cache</td><td>no: la RAM ha il valore vecchio</td></tr>
+    <tr><td><b>E</b> Exclusive</td><td>copia non modificata, presente solo qui</td><td>sì</td></tr>
+    <tr><td><b>S</b> Shared</td><td>copia non modificata, presente in più cache</td><td>sì</td></tr>
+    <tr><td><b>I</b> Invalid</td><td>la linea non è valida: va riletta</td><td>–</td></tr>
+  </tbody></table></div>
+  <p>Per scrivere su una linea in stato S, il core deve prima mandare un messaggio <b>invalidate</b> alle altre cache, e aspettare la loro conferma (<i>ack</i>). Solo allora la linea diventa M.</p>
+</section>
+
+<section>
+  <h2>Veloce o lento</h2>
+  <p>La velocità dipende da cosa il core vuole fare e dallo stato della linea nella sua cache. Le righe più importanti della slide:</p>
+  <div class="tab-wrap"><table class="tab"><thead><tr><th>stato attuale</th><th>il core vuole</th><th>velocità</th></tr></thead><tbody>
+    <tr><td>M o E</td><td>leggere o scrivere</td><td>veloce: il dato è già suo</td></tr>
+    <tr><td>S</td><td>leggere</td><td>veloce: la copia è valida</td></tr>
+    <tr><td>I</td><td>leggere</td><td>lenta: va presa da un’altra cache o dalla RAM</td></tr>
+    <tr><td>S</td><td>scrivere</td><td>molto lenta: invalidate a tutte le altre copie</td></tr>
+    <tr><td>I</td><td>scrivere</td><td>molto lenta: prima leggere, poi invalidare</td></tr>
+  </tbody></table></div>
+  <figure class="passi" data-titolo="Due core sulla stessa linea" data-legenda="dato:valore,ora:cosa cambia,ok:stato stabile,no:costo alto">
+    <div class="passo"><div class="espr">Core 0 <mark class="ora">legge</mark> la linea: stato <mark class="dato">E</mark></div><p class="nota">Nessun altro la ha: la copia è sua e la RAM è aggiornata.</p></div>
+    <div class="passo"><div class="espr">Core 1 <mark class="ora">legge</mark> la stessa linea: entrambi in <mark class="ok">S</mark></div><p class="nota">Due copie identiche e pulite: letture veloci per tutti e due.</p></div>
+    <div class="passo"><div class="espr">Core 0 <mark class="no">scrive</mark>: invalida la copia di core 1 (I), lui passa a <mark class="ora">M</mark></div><p class="nota">Scrivere su S costa: il messaggio invalidate deve arrivare all’altro core.</p></div>
+    <div class="passo"><div class="espr">Core 1 <mark class="no">rilegge</mark>: la sua copia è I, la prende da core 0 e tutti e due tornano in S</div><p class="nota">Ogni scambio di scrittura e lettura tra due core costa un giro sul bus: il ping-pong della pagina successiva.</p></div>
+  </figure>
+</section>
+
+<section>
+  <h2>Cosa ne segue per il codice</h2>
+  <div class="box idea" data-tit="L’idea">Il costo non è nel calcolo, è nel movimento delle linee tra cache. Un dato scritto solo da un thread resta in M nella sua cache: veloce. Un dato scritto da più thread va avanti e indietro: lento.</div>
+  <div class="box basi" data-tit="Se vieni da…">Se hai usato solo thread senza pensare alla memoria, questa è la parte che ti manca: non esiste un unico "valore" in memoria, esistono copie in più cache che devono restare d’accordo.</div>
+</section>
+
+</main>
+</body>
+</html>

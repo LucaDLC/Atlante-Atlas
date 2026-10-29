@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Thread di piattaforma e thread virtuali</title>
+<link rel="stylesheet" href="../assets/atlas.css">
+<link rel="stylesheet" href="../assets/tema.css">
+<script src="../assets/sito.js"></script>
+<script src="../assets/atlas.js" defer></script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <div class="occhiello"><span>Settimana 9 · Performance</span></div>
+  <h1>Thread di piattaforma e thread virtuali</h1>
+  <p class="lede">La lezione del 26 ottobre parte da qui: quale thread usare, e perché. Un thread virtuale che aspetta non occupa un thread del sistema; un thread di piattaforma sì. Il codice dell’esempio è compilato ed eseguito.</p>
+</header>
+
+<section>
+  <h2>Due tipi di thread</h2>
+  <p>Un <b>thread di piattaforma</b> è un thread del sistema operativo: pesante, e il sistema ne ha un numero limitato. Un <b>thread virtuale</b> è un thread gestito da Java: molti possono esistere insieme. Java li fa girare su un piccolo gruppo di thread di piattaforma (i <i>carrier</i>) solo mentre lavorano. Quando un thread virtuale si blocca (rete, file, <code>sleep</code>), viene staccato e il carrier serve un altro.</p>
+  <p>Si creano così: <code>Thread.ofVirtual().start(task)</code> e <code>Thread.ofPlatform().start(task)</code>. <code>Thread.ofVirtual()</code> restituisce un <b>Thread.Builder</b>, cioè l’oggetto che sa costruire thread di quel tipo.</p>
+  <figure class="passi" data-titolo="Platform o virtuali: cosa succede quando un thread aspetta" data-legenda="dato:thread,ora:cosa cambia,ok:conseguenza">
+    <div class="passo"><div class="espr"><mark class="dato">Thread di piattaforma</mark>: uno per ogni thread del sistema</div><p class="nota">Costoso: crearne migliaia rallenta il sistema, e ogni thread occupa un posto nello scheduler.</p></div>
+    <div class="passo"><div class="espr"><mark class="ora">Thread virtuale</mark>: tanti possono esistere insieme</div><p class="nota">Java li tiene in memoria e li monta su un carrier solo quando girano.</p></div>
+    <div class="passo"><div class="espr">Il thread virtuale fa una richiesta e <mark class="ora">si blocca</mark></div><p class="nota">Viene staccato dal carrier, che passa a un altro thread virtuale.</p></div>
+    <div class="passo"><div class="espr"><mark class="ok">Attesa senza costo</mark>: l’operazione bloccante non occupa un thread del sistema</div><p class="nota">Per questo i thread virtuali sono adatti a lavori che passano tempo ad aspettare.</p></div>
+  </figure>
+</section>
+
+<section>
+  <h2>Quando usare cosa</h2>
+  <p>Le indicazioni della lezione, in ordine di priorità:</p>
+  <div class="tab-wrap"><table class="tab"><thead><tr><th>situazione</th><th>scelta</th></tr></thead><tbody>
+    <tr><td>vuoi molti thread di piattaforma</td><td>no: non crearne molti</td></tr>
+    <tr><td>operazioni che aspettano (I/O, database, rete)</td><td>thread virtuali</td></tr>
+    <tr><td>lavoro che usa la CPU, e la prestazione conta</td><td>task dell’executor (pagina successiva)</td></tr>
+    <tr><td>tutto il resto, per semplicità</td><td>thread virtuali per ogni cosa</td></tr>
+  </tbody></table></div>
+  <div class="box attenzione" data-tit="Attenzione">Il thread virtuale non rende più veloce un calcolo puro. Nella lezione, fino a 64 thread, thread di piattaforma e virtuali hanno lo stesso tempo sul conteggio dei primi; la differenza si vede con 2048 thread, dove i thread di piattaforma sono molto più lenti.</div>
+</section>
+
+<section>
+  <h2>Esempio: scaricare pagine in parallelo</h2>
+  <p>Il codice della lezione: una richiesta per URL, ogni richiesta in un thread virtuale, poi l’attesa di tutti. Qui la richiesta è simulata da un <code>sleep</code> di 100 ms, così l’esempio gira senza rete.</p>
+  <figure class="codice" data-titolo="Virtuali.java">
+<pre data-lang="java">import java.util.ArrayList;
+import java.util.List;
+
+public class Virtuali {
+    // simula una richiesta web: il thread aspetta, non lavora
+    static void scarica(String url) {
+        try {
+            Thread.sleep(100);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+    }
+
+    public static void main(String[] args) throws InterruptedException {
+        List&lt;String&gt; urls = List.of("a.it", "b.it", "c.it", "d.it");
+        List&lt;Thread&gt; threads = new ArrayList&lt;&gt;();
+        long inizio = System.nanoTime();
+        for (String url : urls) {
+            final String mioUrl = url;          // copia locale: ogni thread usa il suo url
+            threads.add(Thread.ofVirtual().start(() -&gt; scarica(mioUrl)));
+        }
+        for (Thread t : threads)
+            t.join();                           // aspetta la fine di ognuno
+        long ms = (System.nanoTime() - inizio) / 1_000_000;
+        System.out.println("pagine: " + urls.size() + ", tempo sotto 300 ms: " + (ms &lt; 300));
+    }
+}</pre>
+    <ol class="spiega">
+      <li data-righe="8" data-segna="Thread.sleep(100)@ora"><p><code>scarica</code> simula una richiesta web. <code>Thread.sleep(100)</code> ferma il thread per 100 ms. Il thread non lavora: aspetta. È il caso per cui servono i thread virtuali.</p></li>
+      <li data-righe="15" data-segna="List.of@ora"><p>Quattro URL in una lista immutabile. <code>List.of</code> la crea già piena: non si può modificare.</p></li>
+      <li data-righe="16" data-segna="threads@due"><p>La lista dei thread avviati, per poterli aspettare dopo.</p></li>
+      <li data-righe="17" data-segna="inizio@ora"><p>Il tempo di partenza, con <code>System.nanoTime()</code>: misura in nanosecondi.</p></li>
+      <li data-righe="18" data-segna="for (String url : urls)@ora"><p>Un giro per URL. <code>url</code> è la variabile del ciclo: in un for-each è già costante dentro il giro.</p></li>
+      <li data-righe="19" data-segna="final String mioUrl = url;@due"><p>Copia locale: ogni thread riceve il suo URL in una variabile dichiarata <code>final</code>. Le lambda catturano solo variabili che non cambiano; la copia rende esplicito che ogni thread ha il proprio valore.</p></li>
+      <li data-righe="20" data-segna="Thread.ofVirtual().start@ora"><p>Avvia un thread virtuale con la lambda <code>() -&gt; scarica(mioUrl)</code>. <code>start</code> restituisce subito: il thread lavora in parallelo.</p></li>
+      <li data-righe="22-23" data-segna="t.join()@ora"><p><code>join</code> aspetta la fine di ogni thread. Senza join il programma potrebbe stampare il tempo prima che le richieste finiscano.</p></li>
+      <li data-righe="24-25" data-segna="System.out.println@ok"><p>Il tempo in millisecondi. Con 4 richieste da 100 ms in parallelo il totale è vicino a 100 ms, non a 400: il controllo <code>ms &lt; 300</code> stampa <code>true</code>.</p></li>
+    </ol>
+  </figure>
+</section>
+
+<section>
+  <h2>Il tempo in parallelo</h2>
+    <figure class="passi" data-titolo="Quattro pagine da 100 ms ciascuna" data-legenda="dato:tempo di una richiesta,ora:quando parte,ok:fine">
+    <div class="passo"><div class="espr">Una alla volta: <mark class="dato">100 + 100 + 100 + 100 = 400 ms</mark></div><p class="nota">Il ciclo classico, senza thread: ogni richiesta aspetta la precedente.</p></div>
+    <div class="passo"><div class="espr"><mark class="ora">Quattro thread virtuali</mark> partono insieme</div><p class="nota">Ognuno si blocca per 100 ms. Nessuno occupa un thread del sistema mentre aspetta.</p></div>
+    <div class="passo"><div class="espr">Tutte finiscono intorno a <mark class="ok">100 ms</mark></div><p class="nota">Il tempo totale è quello della richiesta più lenta, non la somma di tutte.</p></div>
+  </figure>
+</section>
+
+<section>
+  <h2>Regole pratiche</h2>
+  <div class="box regola" data-tit="Regola">Per operazioni che aspettano, un thread virtuale per ogni operazione. Per calcoli pesanti, usa l’executor con un numero fisso di thread (pagina successiva).</div>
+  <div class="box inglese" data-tit="Frase per l’orale">Virtual threads are cheap to create and block without holding an OS thread, so they suit I/O-bound work; platform threads are costly and should not be created in large numbers.</div>
+</section>
+
+</main>
+</body>
+</html>

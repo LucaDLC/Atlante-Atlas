@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Interval scheduling</title>
+<link rel="stylesheet" href="../assets/atlas.css">
+<link rel="stylesheet" href="../assets/tema.css">
+<script src="../assets/sito.js"></script>
+<script src="../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  // esempio delle slide, già ordinato per tempo di fine
+  const J = [['b', 1, 4], ['c', 3, 5], ['a', 0, 6], ['e', 4, 7], ['d', 3, 8], ['f', 5, 9], ['g', 6, 10], ['h', 8, 11]];
+  const X = t => 40 + t * 48, ogg = [];
+  for (let t = 0; t <= 11; t++) ogg.push({ id: 'tk' + t, tipo: 'testo', x: X(t), y: 292, t: String(t), size: 11 });
+  ogg.push({ id: 'asse', tipo: 'linea', x1: X(0), y1: 278, x2: X(11), y2: 278 });
+  J.forEach(([n, s, f], i) => {
+    ogg.push({ id: n, tipo: 'rett', x: X(s), y: 20 + i * 32, w: X(f) - X(s), h: 22, t: n });
+  });
+  ogg.push({ id: 'fine', tipo: 'linea', x1: X(0), y1: 12, x2: X(0), y2: 282, tratt: true, tono: 'due' });
+  ogg.push({ id: 'cod', tipo: 'testo', x: 330, y: 312, t: 'ordinati per tempo di fine', size: 12.5 });
+  const passi = [
+    { nota: 'Otto lavori, ognuno con inizio e fine. Due lavori sono <b>compatibili</b> se non si sovrappongono. Vogliamo il <b>massimo numero</b> di lavori compatibili tra loro. Li ho già messi in ordine di <b>tempo di fine</b>.', righe: [1] }
+  ];
+  let ultimo = 0; const scelti = [];
+  J.forEach(([n, s, f]) => {
+    if (s >= ultimo) {
+      scelti.push(n); ultimo = f;
+      passi.push({ nota: `<b>${n}</b> inizia a ${s}, dopo la fine dell'ultimo scelto (${scelti.length > 1 ? 'linea tratteggiata' : 'nessuno ancora'}): è compatibile, <b>lo prendo</b>. Ora l'ultimo scelto finisce a ${f}.`, righe: [3, 4, 5, 6], set: { [n]: { tono: 'ok' }, fine: { x1: X(f), x2: X(f) }, cod: { t: `presi: ${scelti.join(', ')}` } } });
+    } else {
+      passi.push({ nota: `<b>${n}</b> inizia a ${s}, prima di ${ultimo}: si sovrappone all'ultimo scelto. <b>Scartato</b>.`, righe: [3, 4], set: { [n]: { tono: 'no' } } });
+    }
+  });
+  passi.push({ nota: `Fine: <b>${scelti.join(', ')}</b>, ${scelti.length} lavori. Il ciclo guarda ogni lavoro una volta sola: dopo l'ordinamento è <i>O(n)</i>.`, set: { cod: { t: `risultato: ${scelti.join(', ')}`, tono: 'ok' } } });
+  SCENE.eft = {
+    w: 620, h: 325, lato: true,
+    legenda: 'ok:preso,no:scartato,due:fine dell\'ultimo preso',
+    codice: { lang: 'java', testo: `sort jobs by finish time
+last = 0
+for each job j (in that order):
+    if (s[j] >= last):
+        take j
+        last = f[j]` },
+    oggetti: ogg, passi
+  };
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Interval scheduling</h1>
+  <p class="lede">Un algoritmo <b>greedy</b> costruisce la soluzione un pezzo alla volta, scegliendo sempre la cosa che <i>adesso</i> sembra migliore, e non torna mai indietro. È semplice da scrivere; la parte difficile è <b>dimostrare</b> che la scelta miope dà l'ottimo. Primo esempio: K&amp;T 4.1.</p>
+</header>
+
+<section>
+  <h2>Il problema</h2>
+  <ul>
+    <li>Lavori 1, …, n: il lavoro <i>j</i> inizia a <span class="m">s<sub>j</sub></span> e finisce a <span class="m">f<sub>j</sub></span>.</li>
+    <li>Due lavori sono <b>compatibili</b> se non si sovrappongono.</li>
+    <li>Obiettivo: il sottoinsieme di lavori mutuamente compatibili più <b>grande</b> (più lavori possibile, non più tempo).</li>
+  </ul>
+  <p>Lo schema greedy: considera i lavori in un certo ordine e prendi ogni lavoro compatibile con quelli già presi. Tutto sta nella scelta dell'<b>ordine</b>.</p>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Ordine</th><th>Funziona?</th><th>Controesempio</th></tr></thead>
+    <tbody>
+      <tr><td>inizio più presto</td><td>no</td><td>un lavoro lunghissimo che inizia per primo copre tanti lavori brevi</td></tr>
+      <tr><td>durata più breve</td><td>no</td><td>un lavoro breve a cavallo di due lunghi compatibili tra loro: prendo 1 invece di 2</td></tr>
+      <tr><td>meno conflitti</td><td>no</td><td>c'è un controesempio (nelle slide) in cui il lavoro con meno conflitti non sta in nessuna soluzione ottima</td></tr>
+      <tr><td><b>fine più presto</b></td><td><b>sì</b></td><td>— (dimostrazione qui sotto)</td></tr>
+    </tbody>
+  </table></div>
+  <div class="box idea" data-tit="L'intuizione">
+    <p>Prendere il lavoro che finisce <b>prima</b> lascia la macchina libera il prima possibile: rimane più tempo per tutto il resto.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Earliest finish time first</h2>
+  <figure class="scena" data-scena="eft" data-titolo="L'esempio delle slide: il risultato è b, e, h"></figure>
+</section>
+
+<section>
+  <h2>Perché dà l'ottimo</h2>
+  <p>La dimostrazione delle slide, per assurdo con uno <b>scambio</b>.</p>
+  <figure class="passi" data-titolo="Greedy è ottimo">
+    <div class="passo"><div class="espr">greedy: <mark class="dato">i₁, i₂, …, i<sub>k</sub></mark>      ottimo: <mark class="due">j₁, j₂, …, j<sub>m</sub></mark></div><p class="nota">Entrambi in ordine di tempo. Supponiamo per assurdo che greedy non sia ottimo: <span class="m">m &gt; k</span>.</p></div>
+    <div class="passo"><div class="espr">scelgo l'ottimo che coincide con greedy <mark class="ora">il più a lungo possibile</mark>: i₁ = j₁, …, i<sub>r</sub> = j<sub>r</sub>, con r massimo</div><p class="nota">Tra tutte le soluzioni ottime prendo quella con r più grande.</p></div>
+    <div class="passo"><div class="espr">i<sub>r+1</sub> esiste e <mark class="ok">f(i<sub>r+1</sub>) ≤ f(j<sub>r+1</sub>)</mark></div><p class="nota">j<sub>r+1</sub> è compatibile con i₁ … i<sub>r</sub>, quindi greedy aveva un candidato; ha scelto quello che finisce prima.</p></div>
+    <div class="passo"><div class="espr">ottimo': j₁, …, j<sub>r</sub>, <mark class="ok">i<sub>r+1</sub></mark>, j<sub>r+2</sub>, …, j<sub>m</sub></div><p class="nota">Sostituisco j<sub>r+1</sub> con i<sub>r+1</sub>. Resta compatibile: i<sub>r+1</sub> finisce non dopo j<sub>r+1</sub>, quindi non tocca j<sub>r+2</sub>. Ha ancora m lavori: è ottimo.</p></div>
+    <div class="passo"><div class="espr">ma ottimo' coincide con greedy per <mark class="no">r + 1</mark> lavori</div><p class="nota">Contraddice la scelta di r come massimo. Quindi greedy è ottimo.</p></div>
+  </figure>
+  <div class="box regola" data-tit="Due modi di dimostrare un greedy">
+    <p><b>Greedy stays ahead</b> (il libro): passo dopo passo greedy è "almeno avanti" come qualsiasi soluzione, qui <span class="m">f(i<sub>r</sub>) ≤ f(j<sub>r</sub>)</span> per ogni r. <b>Exchange argument</b> (le slide): trasformo una soluzione ottima in quella di greedy con scambi che non la peggiorano. Il secondo lo ritrovi in <a href="l03-partitioning-lateness.html">minimizzare il ritardo</a>.</p>
+  </div>
+  <figure class="passi" data-titolo="Tempo">
+    <div class="passo"><div class="espr">ordinare per fine: <mark class="dato">O(n log n)</mark></div><p class="nota">Il passo più costoso.</p></div>
+    <div class="passo"><div class="espr">compatibilità in O(1): <mark class="ora">s<sub>j</sub> ≥ f<sub>j*</sub></mark>, dove j* è l'ultimo preso</div><p class="nota">Basta ricordare la fine dell'ultimo lavoro preso: i lavori presi finiscono tutti prima.</p></div>
+    <div class="passo"><div class="espr">totale: <mark class="ok">O(n log n)</mark></div><p class="nota">Una passata lineare dopo l'ordinamento.</p></div>
+  </figure>
+</section>
+
+<section>
+  <h2>La tua soluzione Kattis</h2>
+  <figure class="codice" data-titolo="Greedy.java (il tuo codice; sull'esempio delle slide stampa 3)">
+<pre data-lang="java">int numTaskMaxed=0;
+int nTask = s.nextInt();
+int[][] tuple = new int[nTask][2];
+s.nextLine();
+for (int i=0;i&lt;nTask;i++){
+    int tempS=s.nextInt();
+    int tempF=s.nextInt();
+    tuple[i][0]=tempS;
+    tuple[i][1]=tempF;
+    s.nextLine();
+}
+
+Arrays.sort(tuple, (a, b) -> Integer.compare(a[1], b[1]));
+
+int maxInterval=0;
+for(int k=0;k&lt;tuple.length;k++){
+    if (tuple[k][0] &gt;= maxInterval){
+        maxInterval=tuple[k][1];
+        numTaskMaxed++;
+    }
+}
+
+System.out.println(numTaskMaxed);</pre>
+    <ol class="spiega">
+      <li data-righe="1-3" data-segna="int[][] tuple@dato"><p>Un array di coppie: <code>tuple[i][0]</code> è l'inizio, <code>tuple[i][1]</code> la fine del lavoro i.</p></li>
+      <li data-righe="5-10" data-segna="s.nextInt()*@ora"><p>Legge inizio e fine di ogni lavoro. <code>nextLine()</code> consuma il resto della riga: non serve per <code>nextInt()</code>, che salta da solo gli a capo.</p></li>
+      <li data-righe="13" data-segna="Integer.compare(a[1], b[1])@ok"><p><b>Il cuore dell'algoritmo</b>: ordina per tempo di <b>fine</b> (<code>a[1]</code>). Hai usato <code>Integer.compare</code> e non <code>a[1] - b[1]</code>: niente overflow. <i>O(n log n)</i>.</p></li>
+      <li data-righe="15" data-segna="maxInterval=0@due"><p><code>maxInterval</code> è la fine dell'ultimo lavoro preso (la linea tratteggiata della scena). Parte da 0: presuppone tempi non negativi.</p></li>
+      <li data-righe="16-17" data-segna="tuple[k][0] &gt;= maxInterval@ora"><p>Il lavoro è compatibile se inizia <b>non prima</b> della fine dell'ultimo preso. Con <code>&gt;=</code> un lavoro che inizia esattamente quando l'altro finisce è compatibile: controlla che il testo del problema lo voglia così.</p></li>
+      <li data-righe="18-19" data-segna="maxInterval=tuple[k][1]@ok|numTaskMaxed++@ok"><p>Lo prendo: aggiorno la fine e il conteggio.</p></li>
+    </ol>
+  </figure>
+  <div class="box domanda-tua" data-tit="Se Kattis dà Time Limit Exceeded">
+    <p>L'algoritmo è già il migliore possibile. Con molti lavori il collo di bottiglia è <code>Scanner</code>: leggere un milione di righe costa circa 4 volte di più che con <code>BufferedReader</code> (misurato). Lo scheletro è in <a href="basi-java-kattis.html">Java per Kattis</a>.</p>
+  </div>
+</section>
+
+</main>
+</body>
+</html>

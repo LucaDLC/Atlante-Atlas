@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Esempi: Nil, None, null in Scala</title>
+<link rel="stylesheet" href="../assets/atlas.css">
+<link rel="stylesheet" href="../assets/tema.css">
+<script src="../assets/sito.js"></script>
+<script src="../assets/atlas.js" defer></script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <div class="occhiello"><span>Esempi · liste e Option</span></div>
+  <h1>Esempi: Nil, None, null in Scala</h1>
+  <p class="lede">Il codice della <a href="../teoria/s03-vuoti.html">pagina di teoria</a>: un file che si compila e si esegue. Verificato con Scala 3.8.4 e le opzioni del corso (<code>-Werror</code>, <code>-source:future</code>).</p>
+</header>
+
+<section>
+  <h2>Il file intero</h2>
+  <p>Eseguilo con <code>scala-cli run NilNone.scala</code>.</p>
+  <figure class="codice" data-titolo="NilNone.scala">
+<pre data-lang="scala">//&gt; using scala 3.8.4
+//&gt; using options -Werror -deprecation -feature -source:future
+
+val lista: List[Int] = 1 :: 2 :: Nil
+val vuota: List[Int] = Nil
+
+val trovato: Option[Int] = Some(3)
+val niente: Option[Int] = None
+
+def primoOpzione(xs: List[Int]): Option[Int] = xs match
+  case Nil =&gt; None
+  case h :: _ =&gt; Some(h)
+
+@main def esempiNilNone(): Unit =
+  println(lista)
+  println(vuota.isEmpty)
+  println(Nil == List())
+  println(primoOpzione(lista))
+  println(primoOpzione(vuota))
+  println(trovato.getOrElse(0))
+  println(niente.getOrElse(0))
+  println(Option(null: String))
+  println(Option("ciao"))
+  println(None == null)
+  val testo: String = null
+  println(testo == null)
+  try
+    println(testo.length)
+  catch
+    case e: NullPointerException =&gt; println("NPE su null")</pre>
+    <ol class="spiega">
+      <li data-righe="1-2"><p>Direttive per <code>scala-cli</code>: versione di Scala e controlli. <code>-Werror</code> trasforma gli avvisi in errori.</p></li>
+      <li data-righe="4" data-segna="1 :: 2 :: Nil@ora"><p>Lista costruita con <code>::</code> (aggiunge davanti) e chiusa da <code>Nil</code>, la lista vuota. Il risultato stampato è <code>List(1, 2)</code>.</p></li>
+      <li data-righe="5" data-segna="val vuota: List[Int] = Nil@ora"><p>Lista senza elementi: <code>Nil</code> è una lista valida, e <code>isEmpty</code> dice <code>true</code>.</p></li>
+      <li data-righe="7-8" data-segna="None@ora"><p>Due <code>Option</code>: <code>Some(3)</code> ha un valore, <code>None</code> dice che non c'è niente.</p></li>
+      <li data-righe="10-12" data-segna="case Nil =&gt; None@ora"><p>Funzione che può non avere risultato. Il pattern <code>Nil</code> riconosce la lista vuota e restituisce <code>None</code>, invece di un valore inventato.</p></li>
+      <li data-righe="14-16" data-segna="vuota.isEmpty@ora"><p><code>Nil</code> è una lista: <code>isEmpty</code> e <code>==</code> funzionano come per qualunque lista.</p></li>
+      <li data-righe="18-19" data-segna="primoOpzione(vuota)@ora"><p>Con la lista non vuota dà <code>Some(1)</code>, con <code>Nil</code> dà <code>None</code>: il chiamante deve gestire entrambi i casi.</p></li>
+      <li data-righe="20-21" data-segna="getOrElse(0)@ora"><p><code>getOrElse</code> dà il valore dentro <code>Some</code>, oppure il ripiego se è <code>None</code>.</p></li>
+      <li data-righe="22" data-segna="Option(null: String)@ora"><p><code>Option(x)</code> converte <code>null</code> in <code>None</code>: il modo sicuro di portare dentro Scala un valore Java.</p></li>
+      <li data-righe="23" data-segna="Option(&quot;ciao&quot;)@ora"><p>Un valore non nullo diventa <code>Some(ciao)</code>.</p></li>
+      <li data-righe="24" data-segna="None == null@no"><p>Sono valori diversi: il confronto dà <code>false</code>. Non confondere i due modi di dire niente.</p></li>
+      <li data-righe="25-26" data-segna="val testo: String = null@no"><p>Il compilatore accetta <code>null</code> come <code>String</code>. Il rischio è usarlo: il confronto con <code>null</code> dà <code>true</code>.</p></li>
+      <li data-righe="27-30" data-segna="testo.length@no"><p>Chiedere <code>.length</code> a un <code>null</code> lancia <code>NullPointerException</code>: è il motivo per cui si converte subito in <code>Option</code>.</p></li>
+    </ol>
+  </figure>
+</section>
+
+<section>
+  <h2>L'output</h2>
+  <figure class="codice" data-titolo="Output dell'esecuzione">
+<pre data-lang="text">1
+List(1, 2)
+true
+true
+Some(1)
+None
+3
+0
+None
+Some(ciao)
+false
+true
+NPE su null</pre>
+    <ol class="spiega">
+      <li data-righe="1"><p>La lista costruita con <code>::</code> e chiusa da <code>Nil</code>.</p></li>
+      <li data-righe="2-3"><p><code>Nil</code> è vuota e uguale a <code>List()</code>.</p></li>
+      <li data-righe="4-5"><p>La funzione con <code>Nil</code> in ingresso dà <code>None</code>.</p></li>
+      <li data-righe="6-7"><p><code>getOrElse</code> sceglie il valore o il ripiego: <code>3</code> e <code>0</code>.</p></li>
+      <li data-righe="8-9"><p><code>Option(null)</code> dà <code>None</code>, <code>Option("ciao")</code> dà <code>Some(ciao)</code>.</p></li>
+      <li data-righe="10"><p>Il confronto tra <code>None</code> e <code>null</code> dà <code>false</code>.</p></li>
+      <li data-righe="11-12"><p><code>testo == null</code> dà <code>true</code>; la <code>NullPointerException</code> viene catturata dal <code>try</code>.</p></li>
+    </ol>
+  </figure>
+</section>
+
+</main>
+</body>
+</html>

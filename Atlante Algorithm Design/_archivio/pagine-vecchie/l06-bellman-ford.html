@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Bellman-Ford</title>
+<link rel="stylesheet" href="../assets/atlas.css">
+<link rel="stylesheet" href="../assets/tema.css">
+<script src="../assets/sito.js"></script>
+<script src="../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  const righe = [['0', '∞', '∞', '∞'], ['0', '3', '5', '∞'], ['0', '3', '0', '7'], ['0', '3', '0', '2']];
+  const fino = k => righe.map((r, i) => i <= k ? r : ['', '', '', '']);
+  SCENE.bf = {
+    w: 560, h: 290, lato: true,
+    legenda: 'ora:valore appena migliorato,no:arco negativo,ok:cammino minimo da s',
+    codice: { lang: 'pseudo', testo: `M[0][t] ← 0; M[0][v] ← ∞ for v ≠ t
+for i = 1 .. n−1:
+  for each node v:
+    M[i][v] ← min( M[i−1][v],
+        min over edges (v,w) of c(v,w) + M[i−1][w] )` },
+    oggetti: [
+      { id: 's', tipo: 'nodo', x: 50, y: 110, t: 's' },
+      { id: 'a', tipo: 'nodo', x: 200, y: 40, t: 'a' },
+      { id: 'b', tipo: 'nodo', x: 200, y: 180, t: 'b' },
+      { id: 't', tipo: 'nodo', x: 350, y: 110, t: 't' },
+      { id: 'sa', tipo: 'arco', da: 's', a: 'a', dir: true, t: '4' },
+      { id: 'sb', tipo: 'arco', da: 's', a: 'b', dir: true, t: '2' },
+      { id: 'ba', tipo: 'arco', da: 'b', a: 'a', dir: true, t: '−3', tono: 'no' },
+      { id: 'at', tipo: 'arco', da: 'a', a: 't', dir: true, t: '3' },
+      { id: 'bt', tipo: 'arco', da: 'b', a: 't', dir: true, t: '5' },
+      { id: 'g', tipo: 'griglia', x: 380, y: 20, cw: 34, ch: 30, cwR: 38, intC: ['t', 'a', 'b', 's'], intR: ['i=0', 'i=1', 'i=2', 'i=3'], valori: fino(-1) }
+    ],
+    passi: [
+      { nota: 'Grafo con un arco <b>negativo</b> (b→a, −3) e nessun ciclo negativo. Cerchiamo per ogni nodo il cammino più corto <b>verso t</b>. La tabella: riga i = migliori cammini con <b>al massimo i archi</b>.' },
+      { nota: 'i = 0: con zero archi si arriva a t solo da t (costo 0). Gli altri: ∞.', righe: [1], set: { g: { valori: fino(0), toni: { '0,0': 'ok' } } } },
+      { nota: 'i = 1: un arco. a→t costa 3, b→t costa 5. s non ha archi verso t: resta ∞.', righe: [3, 4, 5], set: { g: { valori: fino(1), toni: { '1,1': 'ora', '1,2': 'ora' } }, at: { tono: 'ora' }, bt: { tono: 'ora' } } },
+      { nota: 'i = 2: per b conviene b→a→t = −3 + 3 = <b>0</b> &lt; 5. Per s: s→a→t = 7 oppure s→b→t = 7.', righe: [3, 4, 5], set: { g: { valori: fino(2), toni: { '2,2': 'ora', '2,3': 'ora' } }, at: { tono: null }, bt: { tono: 'spento' }, ba: { tono: 'ora' } } },
+      { nota: 'i = 3 = n − 1: s→b costa 2 + M[2][b] = 2 + 0 = <b>2</b> &lt; 7. Nessun cammino semplice ha più di n − 1 archi, quindi abbiamo finito: da s a t il minimo è <b>2</b>, lungo s→b→a→t. Verificato in Java.', righe: [2], set: { g: { valori: fino(3), toni: { '3,3': 'ok' } }, sb: { tono: 'ok' }, ba: { tono: 'ok' }, at: { tono: 'ok' }, sa: { tono: 'spento' } } }
+    ]
+  };
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Bellman-Ford</h1>
+  <p class="lede">Cammini minimi quando alcuni archi hanno costo <b>negativo</b> (K&amp;T 6.8). Dijkstra non funziona più; la programmazione dinamica sì, con un sottoproblema furbo: "il cammino migliore che usa al massimo i archi".</p>
+</header>
+
+<section>
+  <h2>Perché servono i costi negativi, e cosa si rompe</h2>
+  <ul>
+    <li>Costi negativi modellano guadagni: transazioni finanziarie, energia recuperata in discesa.</li>
+    <li><b>Dijkstra</b> rende definitivo un nodo troppo presto: un cammino più lungo con un arco negativo può arrivare dopo e costare meno (<a href="l03-dijkstra.html">esempio</a>).</li>
+    <li>Sommare una costante a tutti i costi per renderli positivi <b>non</b> funziona: penalizza di più i cammini con più archi, e il minimo cambia.</li>
+    <li>Con un <b>ciclo negativo</b> raggiungibile il "cammino minimo" non esiste: girando nel ciclo il costo scende all'infinito. Si assume che non ci siano.</li>
+  </ul>
+</section>
+
+<section>
+  <h2>La ricorrenza</h2>
+  <figure class="passi" data-titolo="OPT(i, v) = costo minimo di un cammino da v a t con al massimo i archi">
+    <div class="passo"><div class="espr">senza cicli negativi c'è un cammino minimo <mark class="dato">semplice</mark> ⇒ con al massimo <mark class="dato">n − 1</mark> archi</div><p class="nota">Un ciclo non negativo si può togliere senza peggiorare. Risposta: OPT(n − 1, s).</p></div>
+    <div class="passo"><div class="espr">caso 1: il cammino migliore usa <mark class="due">al massimo i − 1</mark> archi ⇒ OPT(i − 1, v)</div><p class="nota">Il limite in più non serve.</p></div>
+    <div class="passo"><div class="espr">caso 2: il primo arco è (v, w) ⇒ <mark class="ora">c<sub>vw</sub> + OPT(i − 1, w)</mark></div><p class="nota">Dopo il primo arco restano al massimo i − 1 archi da w a t. Provo ogni w.</p></div>
+    <div class="passo"><div class="espr">OPT(i, v) = <mark class="ok">min( OPT(i−1, v),  min<sub>(v,w) ∈ E</sub> [ c<sub>vw</sub> + OPT(i−1, w) ] )</mark></div><p class="nota">Casi base: OPT(0, t) = 0, OPT(0, v) = ∞ per v ≠ t.</p></div>
+  </figure>
+  <figure class="scena" data-scena="bf" data-titolo="La tabella riga per riga"></figure>
+</section>
+
+<section>
+  <h2>Tempo, spazio, cicli negativi</h2>
+  <figure class="passi" data-titolo="Conto">
+    <div class="passo"><div class="espr">n − 1 righe; ogni riga guarda ogni arco una volta ⇒ <mark class="ok">O(nm)</mark></div><p class="nota">Più lento di Dijkstra (<i>O(m log n)</i>), ma accetta costi negativi.</p></div>
+    <div class="passo"><div class="espr">spazio: una riga dipende solo dalla precedente ⇒ <mark class="ok">O(n)</mark></div><p class="nota">Il libro va oltre: si può aggiornare un solo array M[v] sul posto, e fermarsi quando un giro intero non cambia niente.</p></div>
+    <div class="passo"><div class="espr">un giro in più (il giro n) cambia ancora qualcosa ⇒ <mark class="no">ciclo negativo</mark></div><p class="nota">Senza cicli negativi i valori sono già definitivi dopo n − 1 giri (K&amp;T 6.10).</p></div>
+  </figure>
+  <figure class="codice" data-titolo="In Java, due righe alla volta (verificato: s = 2 sull'esempio)">
+<pre data-lang="java">final long INF = Long.MAX_VALUE / 4;
+long[] M = new long[n];
+Arrays.fill(M, INF);
+M[t] = 0;
+for (int i = 1; i &lt;= n - 1; i++) {
+    long[] nuovo = M.clone();
+    for (int[] e : archi) {
+        int v = e[0], w = e[1], c = e[2];
+        if (M[w] &lt; INF &amp;&amp; c + M[w] &lt; nuovo[v]) nuovo[v] = c + M[w];
+    }
+    M = nuovo;
+}</pre>
+    <ol class="spiega">
+      <li data-righe="1-4" data-segna="Long.MAX_VALUE / 4@dato|M[t] = 0@ok"><p>"Infinito" non è <code>Long.MAX_VALUE</code>: sommandoci un costo andrebbe in overflow e diventerebbe negativo. Diviso 4 lascia margine. È la riga i = 0.</p></li>
+      <li data-righe="6" data-segna="M.clone()@due"><p><code>nuovo</code> parte come copia della riga precedente: è il caso 1, "non uso archi in più".</p></li>
+      <li data-righe="7-9" data-segna="M[w] &lt; INF@no|c + M[w] &lt; nuovo[v]@ora"><p>Per ogni arco (v, w): se da w si arriva a t, provo "prima (v, w), poi il migliore da w". Controllo <code>M[w] &lt; INF</code> per non sommare all'infinito.</p></li>
+      <li data-righe="11" data-segna="M = nuovo@ok"><p>La nuova riga diventa la precedente del giro dopo.</p></li>
+    </ol>
+  </figure>
+  <div class="box idea" data-tit="Il rovescio: il cammino più lungo">
+    <p>Con il <b>massimo</b> al posto del minimo la stessa tabella trova il cammino <b>più lungo</b> — ma solo se il grafo non ha cicli: in un grafo qualsiasi è NP-hard. È l'esercizio Kattis <a href="l06-ski-route.html">Coolest Ski Route</a>, con la tua soluzione spiegata riga per riga.</p>
+  </div>
+</section>
+
+</main>
+</body>
+</html>

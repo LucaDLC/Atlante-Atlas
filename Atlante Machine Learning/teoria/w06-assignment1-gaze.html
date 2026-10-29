@@ -1,0 +1,307 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Assignment 1: stimare lo sguardo</title>
+<link rel="stylesheet" href="../assets/atlas.css">
+<link rel="stylesheet" href="../assets/tema.css">
+<script src="../assets/sito.js"></script>
+<script src="../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  const N = [
+    ['fr', 70, 70, 'frame', 'immagine'], ['so', 190, 70, 'soglia', 'threshold'], ['bo', 310, 70, 'bordi', 'Canny'],
+    ['co', 430, 70, 'contorni', 'findContours'], ['el', 550, 70, 'ellisse', 'fitEllipse'],
+    ['ce', 550, 215, 'centro', '(px, py)'], ['me', 430, 215, 'media', '9 × 2'], ['fw', 310, 215, 'f_w', 'lstsq'],
+    ['sg', 190, 215, 'sguardo', "(x', y')"], ['er', 70, 215, 'errori', 'MAE, RMSE']
+  ];
+  const ogg = N.map(([id, x, y, t, s]) => ({ id, tipo: 'nodo', forma: 'quadrato', r: 34, x, y, t, sotto: s }));
+  for (let i = 0; i + 1 < N.length; i++) ogg.push({ id: 'a' + i, tipo: 'arco', da: N[i][0], a: N[i + 1][0], dir: true });
+  ogg.push({ id: 'f1', tipo: 'testo', x: 310, y: 14, t: 'estrarre la feature (preprocessing)', size: 13, bold: true });
+  ogg.push({ id: 'f2', tipo: 'testo', x: 310, y: 290, t: 'imparare e valutare il modello', size: 13, bold: true });
+  const ids = N.map(n => n[0]);
+  const fino = k => Object.fromEntries(ids.map((id, i) => [id, { tono: i < k ? 'ok' : i === k ? 'ora' : null }]));
+  const note = [
+    'Ogni <b>frame</b> del video è un\'immagine in scala di grigi. Si ritaglia un riquadro attorno all\'occhio (<code>x_top, y_top, x_bottom, y_bottom</code>): la testa era ferma, quindi lo stesso riquadro vale per tutti i frame.',
+    '<b>Soglia</b> (threshold): i pixel più chiari di <code>threshold_value</code> diventano bianchi, gli altri neri. La pupilla è la zona più scura. Il valore va regolato per ogni dataset: luce e occhi cambiano.',
+    '<b>Canny</b> trova i bordi: i punti dove l\'intensità cambia di colpo. Sono derivate dell\'immagine, le vedrai come filtri nelle settimane 7–8.',
+    '<b>findContours</b> unisce i punti di bordo in curve. I contorni con meno di 50 punti si scartano.',
+    '<b>fitEllipse</b> adatta un\'ellisse ai contorni, dal più lungo; si tiene la prima che passa il controllo sul rapporto tra gli assi.',
+    'Il <b>centro</b> dell\'ellisse, riportato nelle coordinate dell\'immagine intera, è la <b>feature</b>: due numeri (px, py) per frame, salvati in <code>pupil_coordinates.csv</code>.',
+    'Per ogni target sullo schermo si prende il centro pupilla <b>medio</b> dei suoi frame. Griglia: 9 target ⇒ una matrice <b>9 × 2</b>. Sono gli input del training.',
+    'Il modello <b>f<sub>w</sub></b> impara la funzione pupilla → schermo dalle 9 coppie (pupilla, target), con i minimi quadrati.',
+    'Per un frame nuovo: centro pupilla → f<sub>w</sub> → punto stimato sullo schermo <b>(x\', y\')</b>.',
+    'Si confronta la stima con il target vero, in pixel: <b>MAE</b>, <b>RMSE</b>, distanza media. È la valutazione del Task 4.'
+  ];
+  SCENE.pipeline = {
+    w: 620, h: 300, lato: false,
+    legenda: 'ora:passo attuale,ok:già fatto',
+    oggetti: ogg,
+    passi: [{ nota: 'Dalla foto dell\'occhio a un punto sullo schermo. Prima si <b>estrae una feature</b> (il centro della pupilla), poi si <b>impara una funzione</b> che la porta sullo schermo.' }]
+      .concat(note.map((n, k) => ({ nota: n, set: fino(k) })))
+  };
+})();
+</script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  const D = {"x": [0.0, 0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0, 2.25, 2.5, 2.75, 3.0, 3.25, 3.5, 3.75, 4.0, 4.25, 4.5, 4.75, 5.0, 5.25, 5.5, 5.75, 6.0], "f": [0.0, 0.247, 0.479, 0.682, 0.841, 0.949, 0.997, 0.984, 0.909, 0.778, 0.598, 0.382, 0.141, -0.108, -0.351, -0.572, -0.757, -0.895, -0.978, -0.999, -0.959, -0.859, -0.706, -0.508, -0.279], "casuale": [0.0, 0.322, 0.411, 0.459, 0.728, 0.701, 1.013, 1.319, 0.786, 0.623, 0.721, 0.471, 0.167, -0.341, -0.358, -0.398, -1.093, -1.009, -1.453, -1.322, -1.419, -0.918, -1.022, -0.44, -0.24], "sistematico": [0.6, 0.847, 1.079, 1.282, 1.441, 1.549, 1.597, 1.584, 1.509, 1.378, 1.198, 0.982, 0.741, 0.492, 0.249, 0.028, -0.157, -0.295, -0.378, -0.399, -0.359, -0.259, -0.106, 0.092, 0.321], "saleppepe": [0.0, 0.247, 0.479, 0.682, 1.8, 0.949, 0.997, 0.984, 0.909, 0.778, 0.598, -1.8, 0.141, -0.108, -0.351, -0.572, -0.757, -0.895, -0.978, 1.8, -0.959, -0.859, -0.706, -0.508, -0.279], "slope_y": 2.003590857441914, "slope_x": 1.0000154927382434, "py": [[0.18, 1.57], [0.31, -0.45], [-1.07, -1.41], [0.03, 0.85], [-0.97, -1.22], [-0.2, -0.1], [0.85, 2.01], [0.61, 1.73], [0.83, 1.42], [0.55, -0.28], [1.91, 4.39], [0.53, -0.54], [-1.15, -2.1], [-0.1, 0.8], [-0.26, -0.15], [-0.92, -0.3], [-0.23, -0.3], [-0.44, -0.27], [1.25, 2.45], [-2.42, -5.1], [-0.99, -2.32], [0.57, 2.14], [-0.34, -1.94], [0.82, 1.62], [0.81, -0.74], [-2.1, -4.21], [0.62, 1.64], [-0.58, -0.56], [-0.03, -0.51], [1.45, 4.61]], "px": [[1.0, 0.35], [1.62, 0.62], [-1.03, -2.14], [-0.12, 0.05], [-0.37, -1.94], [-0.3, -0.4], [0.82, 1.7], [0.85, 1.21], [0.24, 1.66], [-0.23, 1.09], [-0.27, 3.81], [1.6, 1.05], [-2.15, -2.3], [0.86, -0.2], [0.23, -0.52], [-0.64, -1.84], [-0.71, -0.46], [0.1, -0.87], [4.77, 2.49], [-3.97, -4.84], [-0.3, -1.98], [1.44, 1.15], [-0.63, -0.67], [-0.59, 1.65], [1.23, 1.63], [-2.97, -4.2], [1.94, 1.23], [-1.24, -1.16], [-0.44, -0.07], [-0.26, 2.9]], "std_1": 0.998, "std_10": 0.316, "std_100": 0.1, "desc": [22.4, 3.0, 1505.8399999999997, 38.8051542968199], "desc2": [3.0, 3.0], "tr": [[0.0, 1.79], [1.0, 1.87], [2.0, 1.52], [3.0, 2.39], [4.0, 2.86], [5.0, 4.68], [6.0, 3.53], [7.0, 5.19]], "te": [[0.5, 1.31], [2.5, 2.76], [4.5, 3.25], [6.5, 4.45]], "p7": [0.008353231129090179, -0.1980650691616189, 1.8578432126329238, -8.766511389141694, 21.743927592070747, -26.340541270786048, 11.779314815024934, 1.7873205715809741], "p1": [0.5006, 1.2257], "mse7": [0.0, 3.196], "mse1": [0.338, 0.04], "c7": [[0.0, 1.787], [0.1, 2.723], [0.2, 3.25], [0.3, 3.471], [0.4, 3.47], [0.5, 3.317], [0.6, 3.068], [0.7, 2.769], [0.8, 2.454], [0.9, 2.148], [1.0, 1.872], [1.1, 1.636], [1.2, 1.449], [1.3, 1.313], [1.4, 1.227], [1.5, 1.19], [1.6, 1.196], [1.7, 1.238], [1.8, 1.31], [1.9, 1.405], [2.0, 1.515], [2.1, 1.634], [2.2, 1.756], [2.3, 1.874], [2.4, 1.986], [2.5, 2.087], [2.6, 2.175], [2.7, 2.25], [2.8, 2.31], [2.9, 2.358], [3.0, 2.394], [3.1, 2.421], [3.2, 2.443], [3.3, 2.463], [3.4, 2.484], [3.5, 2.512], [3.6, 2.548], [3.7, 2.599], [3.8, 2.665], [3.9, 2.751], [4.0, 2.857], [4.1, 2.984], [4.2, 3.133], [4.3, 3.302], [4.4, 3.488], [4.5, 3.688], [4.6, 3.897], [4.7, 4.108], [4.8, 4.315], [4.9, 4.509], [5.0, 4.681], [5.1, 4.823], [5.2, 4.925], [5.3, 4.978], [5.4, 4.973], [5.5, 4.904], [5.6, 4.766], [5.7, 4.556], [5.8, 4.275], [5.9, 3.929], [6.0, 3.528], [6.1, 3.09], [6.2, 2.639], [6.3, 2.208], [6.4, 1.843], [6.5, 1.597], [6.6, 1.542], [6.7, 1.762], [6.8, 2.358], [6.9, 3.453], [7.0, 5.188]], "rank": 2, "xA": [1.6667, 0.6667], "xB": [3.5, -0.5], "T": [[1.5, 1.5], [-0.5, 0.5]]};
+  const T = (id, x, y, t, extra) => Object.assign({ id, tipo: 'testo', x, y, t, size: 13 }, extra || {});
+  const R = (id, x, y, w, h, t, extra) => Object.assign({ id, tipo: 'rett', x, y, w, h, t }, extra || {});
+  const V = (id, x1, y1, x2, y2, t, extra) => Object.assign({ id, tipo: 'vett', in: 'ax', x1, y1, x2, y2, t }, extra || {});
+  const P = (id, x, y, t, extra) => Object.assign({ id, tipo: 'punto', in: 'ax', x, y, t }, extra || {});
+  const L = (id, x1, y1, x2, y2, extra) => Object.assign({ id, tipo: 'linea', in: 'ax', x1, y1, x2, y2 }, extra || {});
+  const pl = p => p.concat(p.slice().reverse());
+
+    SCENE.affine = {
+      w: 560, h: 260, lato: true,
+      legenda: 'dato:pupilla (immagine della telecamera),due:schermo,ora:un punto,ok:mappa affine',
+      oggetti: [R('cam', 20, 60, 140, 110, '', { tono: 'spento' }), T('camt', 90, 50, 'pupilla (≈ 33 px)', { size: 12 }), R('scr', 300, 30, 240, 160, '', { tono: 'spento' }), T('scrt', 420, 22, 'schermo (1720 px fra i target)', { size: 12 }),
+        { id: 'pp', tipo: 'nodo', x: 120, y: 100, t: '', r: 6, tono: 'dato' }, { id: 'sp', tipo: 'nodo', x: 340, y: 70, t: '', r: 8, tono: 'due', nascosto: true },
+        { id: 'fr', tipo: 'vett', x1: 165, y1: 110, x2: 295, y2: 110, t: '', nascosto: true },
+        T('e1', 280, 215, '', { size: 12, bold: true }), T('e2', 280, 240, '', { size: 12 })],
+      passi: [
+        { nota: "Il problema: dalla posizione della pupilla nell'immagine (x, y) stimare il punto guardato sullo schermo (x', y')." },
+        { nota: "Modello affine: <code>x' = a·x + b·y + c</code> e <code>y' = d·x + e·y + f</code>. Tutte e due le coordinate della pupilla servono per tutte e due quelle dello schermo: 6 parametri.", set: { fr: { nascosto: false }, sp: { nascosto: false }, e1: { t: "x' = a·x + b·y + c,   y' = d·x + e·y + f" } } },
+        { nota: "Due modelli separati con lo <b>stesso input</b>: w₁ = [a, b, c] per x', w₂ = [d, e, f] per y'. Ogni punto dà la riga [xᵢ, yᵢ, 1]; l'1 moltiplica c, la traslazione (per questo \"affine\").", set: { e2: { t: 'riga i: [xᵢ, yᵢ, 1] · w₁ = x\'ᵢ' } } },
+        { nota: "Con i 9 punti della griglia: A (9 × 3) · w₁ = b (9). Sovradeterminato: minimi quadrati con <code>np.linalg.lstsq</code>. Pesi trovati: a ≈ −49.3. Il segno meno: l'occhio è <b>specchiato</b> nell'immagine; la grandezza: 1 px di pupilla ≈ 49 px di schermo.", set: { pp: { x: 60 }, sp: { x: 500 }, e1: { t: 'a ≈ −49: pupilla a destra ⇒ sguardo a sinistra' }, e2: { t: '1 px di errore sulla pupilla ≈ 50 px sullo schermo' } } },
+        { nota: "Servono almeno 3 punti <b>non allineati</b>: con 3 punti su una retta le righe [x, y, 1] sono dipendenti e A ha rango 2 (verificato). E il modello amplifica ogni imprecisione del preprocessing: l'assignment avvisa di errori di ±200 px." }
+      ]
+    };
+
+    const cell = (id, x, y, t, tono) => R(id, x, y, 50, 22, t, { tono });
+    const og = [T('hp', 70, 24, 'pupils (N × 2)', { size: 12, bold: true }), T('ha', 260, 24, 'A = np.c_[x, y, 1]', { size: 12, bold: true }), T('hw', 440, 24, 'pesi', { size: 12, bold: true })];
+    for (let i = 0; i < 5; i++) {
+      og.push(cell('px' + i, 20, 36 + i * 26, 'x' + (i + 1), 'dato'), cell('py' + i, 72, 36 + i * 26, 'y' + (i + 1), 'dato'));
+      og.push(cell('ax' + i, 180, 36 + i * 26, 'x' + (i + 1), 'spento'), cell('ay' + i, 232, 36 + i * 26, 'y' + (i + 1), 'spento'), cell('a1' + i, 284, 36 + i * 26, '1', 'spento'));
+    }
+    og.push(R('wx', 400, 50, 140, 30, 'wx = [a, b, c]', { tono: 'spento', nascosto: true }), R('wy', 400, 90, 140, 30, 'wy = [d, e, f]', { tono: 'spento', nascosto: true }), R('pr', 400, 140, 140, 30, 'pred: N × 2', { tono: 'ok', nascosto: true }), T('c', 280, 200, '', { size: 12 }), T('c2', 280, 226, '', { size: 12 }));
+    const tutte = (pref, tono) => Object.fromEntries([0, 1, 2, 3, 4].map(i => [pref + i, { tono }]));
+    SCENE.codicegaze = {
+      w: 560, h: 240, lato: true,
+      legenda: 'dato:dati della pupilla,ora:colonna aggiunta,due:pesi,ok:previsioni',
+      oggetti: og,
+      passi: [
+        { nota: "<code>get_design_matrix(pupils)</code>: da N × 2 (x e y della pupilla) a N × 3. Una riga per punto (qui 5 righe per esempio; la griglia ne ha 9)." },
+        { nota: "<code>np.c_[pupils[:, 0], pupils[:, 1], np.ones(len(pupils))]</code> affianca tre colonne: tutte le x, tutte le y, una colonna di 1.", set: Object.assign(tutte('ax', 'dato'), tutte('ay', 'dato'), tutte('a1', 'ora')) },
+        { nota: "Due sistemi con la <b>stessa</b> A e due vettori b diversi (le x' e le y' dei target). <code>lstsq</code> restituisce 4 cose; <code>[0]</code> prende i pesi.", set: { wx: { nascosto: false, tono: 'due' }, wy: { nascosto: false, tono: 'due' }, c: { t: 'wx = lstsq(A, screen[:, 0])[0]' } } },
+        { nota: "Per prevedere: la design matrix dei punti nuovi con la stessa funzione, poi <code>B @ wx</code> e <code>B @ wy</code>: (N × 3)(3) → N previsioni per coordinata, affiancate in N × 2.", set: { pr: { nascosto: false }, c2: { t: 'pred = np.c_[B @ wx, B @ wy]', tono: 'ok' } } }
+      ]
+    };
+
+    const E = [[10, 0], [0, 10], [-10, 0], [30, 40]];
+    const ogv = [{ id: 'ax', tipo: 'assi', box: [40, 20, 260, 200], dom: [-15, 45, -15, 45], tacche: 10, etX: 'errore x', etY: 'errore y' }];
+    E.forEach(([x, y], i) => ogv.push(V('e' + i, 0, 0, x, y, '', { tono: i === 3 ? 'no' : 'dato' })));
+    ogv.push(T('c', 440, 50, '', { size: 12 }), T('c2', 440, 80, '', { size: 12 }), T('c3', 440, 110, '', { size: 12 }), T('c4', 440, 150, '', { size: 12, bold: true }), T('c5', 280, 266, '', { size: 12 }));
+    SCENE.valutagaze = {
+      w: 560, h: 280, lato: true,
+      legenda: 'dato:errori piccoli,no:un errore grande',
+      oggetti: ogv,
+      passi: [
+        { nota: "Quattro previsioni, con gli errori (stima − target) disegnati come vettori: (10, 0), (0, 10), (−10, 0), (30, 40)." },
+        { nota: "<b>MAE per coordinata</b>: la media dei valori assoluti, colonna per colonna. x: (10 + 0 + 10 + 30)/4 = 12.5; y: (0 + 10 + 0 + 40)/4 = 12.5.", set: { c: { t: 'MAE = [12.5, 12.5]' } } },
+        { nota: "<b>Distanza</b> di ogni punto (norma della riga): 10, 10, 10, 50. La media: <b>20</b> px, \"di quanti pixel sbaglio in media\".", set: { c2: { t: 'distanze: 10, 10, 10, 50' }, c3: { t: 'distanza media = 20' } } },
+        { nota: "<b>RMSE</b> = √(media dei quadrati) = √((100 + 100 + 100 + 2500)/4) = √700 ≈ <b>26.5</b>. I quadrati pesano di più l'errore grande: RMSE ≥ distanza media, sempre.", set: { c4: { t: 'RMSE ≈ 26.5 ≥ 20', tono: 'no' } } },
+        { nota: "I risultati veri dell'assignment (modello affine, distanza media): grid 62 (ma è il training!), circle 124, line 362, random 411. Su line l'errore medio con segno è x −338: tutte le stime spostate dalla stessa parte. Errore <b>sistematico</b>: la testa si è mossa tra calibrazione e test.", set: { c5: { t: 'grid 62 · circle 124 · line 362 · random 411' } } }
+      ]
+    };
+
+    const cols = ['x²', 'y²', 'xy', 'x', 'y', '1'], ord = ['1', 'x', 'y', 'xy', 'x²', 'y²'];
+    const ogq = [T('ha', 280, 24, 'design matrix del Task 20: colonne', { size: 12, bold: true }), T('hb', 280, 104, 'quad() usa i pesi nell’ordine', { size: 12, bold: true, nascosto: true })];
+    cols.forEach((c, i) => ogq.push(R('c' + i, 40 + i * 82, 36, 74, 34, c, { tono: 'dato' }), R('w' + i, 40 + i * 82, 116, 74, 34, ord[i], { tono: 'spento', nascosto: true })));
+    ogq.push(T('e', 280, 190, '', { size: 12, bold: true }), T('e2', 280, 220, '', { size: 12 }));
+    SCENE.quadratico = {
+      w: 560, h: 240, lato: true,
+      legenda: 'dato:colonna (cosa moltiplica il peso),no:peso sulla colonna sbagliata,ok:ordine giusto',
+      oggetti: ogq,
+      passi: [
+        { nota: "Modello quadratico: <code>f(x, y) = ax² + by² + cxy + dx + ey + f</code>. Curvo in x e y, ma ancora <b>lineare nei pesi</b>: stessi minimi quadrati, con una riga [xᵢ², yᵢ², xᵢyᵢ, xᵢ, yᵢ, 1]." },
+        { nota: "6 parametri per coordinata ⇒ almeno 6 punti; la griglia ne ha 9. Restano solo 3 equazioni \"in più\" per mediare il rumore: il modello segue anche il rumore (grid 62 → 26, ma circle 124 → 150: overfitting).", set: { e: { t: '6 pesi, 9 punti: poco margine' } } },
+        { nota: "Errore vero trovato nel notebook: la funzione <code>quad</code> usa i pesi nell'ordine [1, x, y, xy, x², y²], la design matrix nell'ordine [x², y², xy, x, y, 1]. Ogni peso finisce sulla colonna sbagliata.", set: Object.assign({ hb: { nascosto: false } }, Object.fromEntries(ord.map((_, i) => ['w' + i, { nascosto: false, tono: 'no' }]))) },
+        { nota: "Nessun errore di Python, ma la stima per il primo punto della griglia è <b>2.5 · 10⁹ px</b> (vero: 100 px; verificato). Regola: l'ordine delle colonne della design matrix deve essere lo stesso dei pesi in ogni funzione che li usa.", set: { e: { t: 'stima: 2.5 · 10⁹ px invece di 100', tono: 'no' }, e2: { t: 'stesso ordine di colonne ovunque' } } }
+      ]
+    };
+
+    SCENE.normalizza = {
+      w: 560, h: 250, lato: true,
+      legenda: 'dato:valori originali,ok:normalizzati in [0, 1],no:data leakage',
+      oggetti: [T('a', 140, 30, 'colonne di A', { bold: true, size: 12 }), R('r1', 20, 44, 240, 30, 'pupilla x ≈ 280–330', { tono: 'dato' }), R('r2', 20, 80, 240, 30, 'x² ≈ 100 000', { tono: 'dato' }), R('r3', 20, 116, 240, 30, '1', { tono: 'dato' }),
+        T('c', 410, 40, '', { size: 12 }), T('c2', 410, 70, '', { size: 12 }), T('c3', 410, 110, '', { size: 12 }), T('c4', 280, 190, '', { size: 12, bold: true }), T('c5', 280, 220, '', { size: 12 })],
+      passi: [
+        { nota: "Colonne di grandezze molto diverse (pupilla ≈ 300, x² ≈ 100 000, la colonna di 1): la matrice è <b>mal condizionata</b>, i conti perdono cifre." },
+        { nota: "Normalizzazione min-max: x̃ = (x − min) / (max − min), tutto tra 0 e 1. Numero di condizionamento di A: affine 1.4 · 10⁴ → 4.2; quadratico 1.9 · 10⁸ → 22.8. Conti più stabili.", set: { r1: { t: 'x̃ in [0, 1]', tono: 'ok' }, r2: { t: 'x̃² in [0, 1]', tono: 'ok' }, c: { t: 'cond(A): 1.4·10⁴ → 4.2' }, c2: { t: 'quadratico: 1.9·10⁸ → 22.8' } } },
+        { nota: "Le previsioni restano <b>identiche</b> (scarto 10⁻¹¹ px): normalizzare è un cambio di variabile affine, e un modello affine (o quadratico) nelle variabili nuove lo è anche in quelle vecchie.", set: { c3: { t: 'previsioni identiche', tono: 'ok' } } },
+        { nota: "Trappola: rifare lo scaler sui dati di <b>test</b> sembra migliorare (line 362 → 303, random 411 → 141), ma usa il minimo e il massimo dei punti di test, che nella realtà non avresti. È <b>data leakage</b>. Lo scaler si fitta solo sul training; le previsioni si riportano in pixel (inverse_transform) prima di confrontarle.", set: { c4: { t: 'scaler fittato sul test = data leakage', tono: 'no' }, c5: { t: 'fit sul training, transform su tutto' } } }
+      ]
+    };
+  
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Assignment 1: stimare lo sguardo</h1>
+  <p class="lede">Il primo assignment obbligatorio (settimana 6, lavoro principale in settimana 42). Dalle immagini dell'occhio si stima <b>dove guarda la persona sullo schermo</b> (gaze), con un modello affine e poi quadratico imparato con i minimi quadrati. È la domanda d'esame <b>Q4</b>.</p>
+</header>
+
+<section>
+  <h2>Il problema</h2>
+  <ul>
+    <li><b>Input</b>: il centro della pupilla nell'immagine della telecamera, (x, y).</li>
+    <li><b>Output</b>: il punto guardato sullo schermo, (x', y'), in pixel (i target della griglia vanno da 100 a 1820 in x e da 100 a 980 in y).</li>
+    <li><b>Perché serve imparare</b>: la fovea (il punto della retina con cui si guarda) non sta sull'asse della pupilla, ma a un angolo diverso per ogni persona (±5°). Quindi il modello va <b>calibrato</b> su ogni persona: la persona guarda 9 punti noti (la griglia) e da quelle coppie si impara f<sub>w</sub>.</li>
+  </ul>
+  <figure class="scena" data-scena="pipeline" data-titolo="La pipeline completa"></figure>
+  <div class="box esame" data-tit="Q4 (a): preprocessing e feature extraction">
+    <p>Da saper raccontare: perché si riduce un'immagine a <b>due numeri</b> (feature), cosa fa ogni passo, quali parametri vanno regolati a mano (soglia, riquadro) e quali errori ne nascono (riflessi, ciglia, palpebra, sfocatura, frame senza pupilla trovata).</p>
+  </div>
+  <div class="box idea" data-tit="Quale notebook, quali task">
+    <p>La settimana 6 ha tre notebook. Ogni volta che si cita un task, va detto in quale notebook si trova, perché i numeri si ripetono.</p>
+    <ul>
+      <li><code>01-data-preprocessing.ipynb</code>: Task 1–10, dai frame ai due csv (il Task 9 si fa a mano). Nessun task obbligatorio, ma senza di lui non avete i vostri dati per i Task 14–16 del notebook 02.</li>
+      <li><code>02-gaze.ipynb</code>: Task 1–21, il modello di gaze. Obbligatori i Task 1–16 (icona rossa), facoltativi i 17–21.</li>
+      <li><code>03-penpaper.ipynb</code>: esercizi su carta e penna, non fanno parte del notebook da consegnare.</li>
+    </ul>
+  </div>
+  <div class="box idea" data-tit="L'esercizio «Data preprocessing»: dai frame ai due csv">
+    <p>È il notebook <code>01-data-preprocessing.ipynb</code> (settimana 6), prerequisito dell'assignment. Esempio vero, test_subject_1, pattern grid:</p>
+    <ol>
+      <li><b>384 frame</b> dell'occhio (<code>frames/*.jpg</code>, dalla raccolta dati della settimana 2).</li>
+      <li><code>pupil_detection</code> su ogni frame (Task 5) → <code>pupil_coordinates.csv</code>: 384 righe <code>image, px, py</code>.</li>
+      <li>Scatter dei 384 centri (Task 7): formano 9 gruppi, uno per target, circa 43 frame ciascuno.</li>
+      <li><b>A mano</b> (Task 9) si legge il centro di ogni gruppo e lo si scrive nel dizionario <code>D</code>, nello stesso ordine dei target nel dizionario <code>S</code>.</li>
+      <li><code>save_coordinates_to_csv</code> scrive <code>mean_pupil_coordinates.csv</code> (9 × 2, gli input) e <code>screen_coordinates.csv</code> (9 × 2, le etichette) in <code>W02/sessions/&lt;soggetto&gt;/&lt;trial&gt;/&lt;pattern&gt;/</code>. Prima riga: pupilla (321.5, 214.0) ↔ schermo (100, 100).</li>
+    </ol>
+    <p>Per test_subject_0 e test_subject_1 il lavoro è già fatto (csv forniti): il Task 1 chiede solo di copiare <code>test_subject_0</code> da <code>Data/test_subjects/</code> del repo in <code>W02/sessions</code>. I parametri scelti (soglia, riquadro, <code>max_axis_ratio</code>) vanno riportati nel Task 14 del gaze.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Il modello affine</h2>
+  <figure class="passi" data-titolo="Da due equazioni a due sistemi lineari">
+    <div class="passo"><div class="espr">x' = <mark class="ora">a</mark>·<mark class="dato">x</mark> + <mark class="ora">b</mark>·<mark class="dato">y</mark> + <mark class="ora">c</mark>      y' = <mark class="ora">d</mark>·<mark class="dato">x</mark> + <mark class="ora">e</mark>·<mark class="dato">y</mark> + <mark class="ora">f</mark></div><p class="nota">Tutte e due le coordinate della pupilla servono per tutte e due le coordinate dello schermo. 6 parametri in tutto.</p></div>
+    <div class="passo"><div class="espr">due modelli separati:  w₁ = [<mark class="ora">a, b, c</mark>] per x',   w₂ = [<mark class="ora">d, e, f</mark>] per y'</div><p class="nota">Più semplice che uno solo: ognuno ha 3 parametri e lo stesso input.</p></div>
+    <div class="passo"><div class="espr">punto i  →  riga [<mark class="dato">xᵢ, yᵢ, 1</mark>]    con   [xᵢ, yᵢ, 1] · w₁ = <mark class="ok">x'ᵢ</mark></div><p class="nota">Ogni coppia (pupilla, target) dà un'equazione lineare nei pesi. L'1 moltiplica c: è la traslazione (<a href="w05-affine-omogenee.html">affine</a>).</p></div>
+    <div class="passo"><div class="espr"><mark class="dato">A</mark> (9 × 3) · <mark class="ora">w₁</mark> (3) = <mark class="ok">b</mark> (9)</div><p class="nota">9 equazioni, 3 incognite: sistema <b>sovradeterminato</b>, si risolve con i <a href="w05-minimi-quadrati.html">minimi quadrati</a> (<code>np.linalg.lstsq</code>, consigliato dall'assignment per la stabilità numerica). La stessa A serve anche per y'.</p></div>
+  </figure>
+  <div class="box regola" data-tit="Task 2: quanti punti servono? Conta quali?">
+    <p><b>Almeno 3</b>, perché ogni modello ha 3 parametri e ogni punto dà una equazione per modello. E <b>non allineati</b>: con 3 punti su una retta le righe [x, y, 1] sono dipendenti e A ha rango 2 invece di 3 (verificato), quindi infinite soluzioni. Anche con 3 punti validi conta quali: punti vicini tra loro rendono la soluzione molto sensibile al rumore; punti agli angoli della griglia la stabilizzano.</p>
+  </div>
+  <figure class="scena" data-scena="affine" data-titolo="Dalla pupilla allo schermo, 6 parametri"></figure>
+</section>
+
+<section>
+  <h2>Il codice, pezzo per pezzo</h2>
+  <figure class="codice" data-titolo="Design matrix, calibrazione e previsione (provato con i dati di test_subject_1)">
+<pre data-lang="python">def get_design_matrix(pupils):             # pupils: N × 2
+    return np.c_[pupils[:, 0], pupils[:, 1], np.ones(len(pupils))]
+
+A = get_design_matrix(pupils_train)        # 9 × 3
+wx = np.linalg.lstsq(A, screen_train[:, 0], rcond=None)[0]   # [a, b, c]
+wy = np.linalg.lstsq(A, screen_train[:, 1], rcond=None)[0]   # [d, e, f]
+
+B = get_design_matrix(pupils_test)         # N × 3
+pred = np.c_[B @ wx, B @ wy]               # N × 2</pre>
+    <ol class="spiega">
+      <li data-righe="1-2" data-segna="pupils[:, 0]@dato|pupils[:, 1]@dato|np.ones(len(pupils))@ora"><p>Tre colonne: tutte le x, tutte le y, una colonna di 1. <code>np.c_</code> le affianca (vedi <a href="nozioni-numpy.html">NumPy</a>). Una riga per punto.</p></li>
+      <li data-righe="4-6" data-segna="screen_train[:, 0]@ok|screen_train[:, 1]@ok|[0]#2@ora"><p>Due sistemi con la <b>stessa</b> A e due vettori b diversi: le x' e le y' dei target. <code>lstsq</code> restituisce 4 cose; <code>[0]</code> prende i pesi.</p></li>
+      <li data-righe="8-9" data-segna="B @ wx@ok|B @ wy@ok"><p>Per prevedere si costruisce la design matrix dei punti nuovi con <b>la stessa funzione</b>, e si moltiplica: (N × 3)(3) → N previsioni per coordinata.</p></li>
+    </ol>
+  </figure>
+  <figure class="passi" data-titolo="Cosa dicono i pesi (test_subject_1, calibrazione sulla griglia)">
+    <div class="passo"><div class="espr">w₁ ≈ [<mark class="ora">−49.3</mark>, −2.5, 16410.8]    w₂ ≈ [2.2, <mark class="ora">44.2</mark>, −10070.7]</div><p class="nota">Pesi calcolati con i 9 centri pupilla medi di test_subject_1 riportati nell'esercizio di preprocessing.</p></div>
+    <div class="passo"><div class="espr">a ≈ −49:  pupilla <mark class="dato">+1 px</mark> a destra  ⇒  sguardo <mark class="no">≈ 49 px</mark> a sinistra</div><p class="nota">Il segno meno: nell'immagine della telecamera l'occhio è specchiato. La grandezza: tutto lo schermo (1720 px tra i target) corrisponde a circa 33 px di movimento della pupilla.</p></div>
+    <div class="passo"><div class="espr">errore di <mark class="dato">1 px</mark> sul centro pupilla  ⇒  <mark class="no">~50 px</mark> sullo schermo</div><p class="nota">Il modello <b>amplifica</b> ogni imprecisione del preprocessing. Per questo l'assignment avvisa di aspettarsi errori di ±200 px.</p></div>
+  </figure>
+  <figure class="scena" data-scena="codicegaze" data-titolo="Design matrix, lstsq, previsioni"></figure>
+</section>
+
+<section>
+  <h2>Valutare il modello</h2>
+  <figure class="codice" data-titolo="Le metriche del Task 4">
+<pre data-lang="python">err = np.abs(pred - truth)                  # N × 2
+mae = err.mean(axis=0)                      # [MAE_x, MAE_y]
+d = np.linalg.norm(pred - truth, axis=1)    # distanza di ogni punto
+dist = d.mean()
+rmse = np.sqrt(np.mean(d ** 2))</pre>
+    <ol class="spiega">
+      <li data-righe="1-2" data-segna="np.abs@ora|axis=0@ora"><p>Errore assoluto per coordinata, poi la media <b>per colonna</b>: si vede separatamente quanto si sbaglia in x e in y.</p></li>
+      <li data-righe="3-4" data-segna="axis=1@due"><p>Per ogni punto la <a href="w02-norme-distanze.html">distanza</a> euclidea tra stima e target (norma di ogni riga), poi la media: "di quanti pixel sbaglio in media".</p></li>
+      <li data-righe="5" data-segna="d ** 2@no|np.sqrt@ok"><p><b>RMSE</b>: radice della media dei quadrati. I quadrati pesano di più gli errori grandi, quindi RMSE ≥ distanza media sempre; la differenza cresce quando ci sono pochi errori molto grandi.</p></li>
+    </ol>
+  </figure>
+  <p class="piccolo">Nei docstring non è precisato se l'RMSE va calcolato sulle distanze o su tutte le coordinate insieme: scegline uno e scrivi quale. Qui è quello sulle distanze.</p>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Test su (test_subject_1)</th><th>affine: distanza</th><th>affine: RMSE</th><th>quadratico: distanza</th><th>quadratico: RMSE</th></tr></thead>
+    <tbody>
+      <tr><td>grid (è il training)</td><td>62.4</td><td>68.1</td><td><b>25.8</b></td><td><b>29.1</b></td></tr>
+      <tr><td>circle</td><td><b>123.6</b></td><td><b>136.7</b></td><td>149.6</td><td>165.0</td></tr>
+      <tr><td>line</td><td>362.4</td><td>381.3</td><td>384.7</td><td>392.0</td></tr>
+      <tr><td>random</td><td>410.9</td><td>461.6</td><td>409.2</td><td>433.3</td></tr>
+    </tbody>
+  </table></div>
+  <p class="piccolo">Pixel. Modelli calibrati sui 9 punti della griglia; calcolato con i centri pupilla medi e le coordinate dello schermo scritti nel testo degli esercizi. Con i tuoi dati i numeri saranno diversi, la lettura no.</p>
+  <div class="box attenzione" data-tit="Perché l'errore cresce pattern dopo pattern: il tempo">
+    <p>Ogni pattern è registrato dopo il precedente. Rispetto alla fine della griglia, circle parte a circa +25 s e dura 27 s; line parte a +52 s; random parte a +79 s. L'errore cresce nello stesso ordine: 124, 362, 411 px. Lo stesso bersaglio, (100, 540) sullo schermo, ha la pupilla a x = 318 nella griglia e x = 329 nella linea: 11 px di differenza, che il modello (circa 50 px sullo schermo per ogni pixel) trasforma in centinaia di pixel. È un'ipotesi da verificare sui frame (testa, posizione dell'occhio), non una conclusione.</p>
+  </div>
+  <figure class="passi" data-titolo="Come si leggono">
+    <div class="passo"><div class="espr">grid: errore più basso, ma è <mark class="no">training</mark></div><p class="nota">Si valuta sugli stessi punti usati per imparare: non dice niente su dati nuovi.</p></div>
+    <div class="passo"><div class="espr">quadratico: grid 62 → <mark class="ok">26</mark>,  circle 124 → <mark class="no">150</mark></div><p class="nota">Con 6 parametri su 9 punti il modello segue meglio i punti di training, anche il loro rumore, e su un pattern nuovo peggiora. È l'<b>overfitting</b> (settimana 7).</p></div>
+    <div class="passo"><div class="espr">line: target (100, 540) → pupilla x = 318.1 nella griglia, <mark class="no">329.4</mark> nella registrazione line</div><p class="nota">Stesso punto guardato, pupilla spostata di 11 px: tra una registrazione e l'altra la testa o la telecamera si è mossa. 11 px × ~50 = centinaia di pixel sullo schermo.</p></div>
+    <div class="passo"><div class="espr">errore medio con segno su line:  x <mark class="no">−338</mark>, y +123</div><p class="nota">Le stime sono spostate <b>tutte dalla stessa parte</b>: è un errore <b>sistematico</b>, non rumore casuale. Nessun modello calibrato sulla griglia lo può correggere.</p></div>
+  </figure>
+  <div class="box esame" data-tit="Q4 (c) e Task 6: fonti di errore del modello affine">
+    <p>(1) <b>Il modello è troppo semplice</b>: l'occhio ruota su una sfera, quindi la relazione pupilla → schermo non è lineare. (2) <b>Rumore nella feature</b>: soglia, riflessi e palpebre spostano il centro di qualche pixel, amplificato ~50 volte. (3) <b>Movimenti della testa</b> tra calibrazione e test: errore sistematico. (4) <b>Pochi punti</b> di calibrazione (9), e il target sullo schermo non sempre guardato con precisione. <b>MAE vs RMSE</b>: il MAE dà l'errore tipico per asse, l'RMSE punisce di più i punti molto sbagliati.</p>
+  </div>
+  <div class="box regola" data-tit="Come capire da dove viene l'errore: tre controlli">
+    <p><b>1. Errore sui punti di calibrazione.</b> Calcolate la distanza anche sui 9 punti usati per allenare. Se è già alta, il problema è il <b>modello</b> (troppo semplice), non il rumore sul test. Su <code>test_subject_0</code>, sessione 0: <b>84 px</b> sui punti di allenamento, 166 px sul test.</p>
+    <p><b>2. Errore con segno, la media.</b> Sommate gli errori senza togliere il segno. Se la media è lontana da 0, le stime sono spostate tutte nella stessa direzione: errore <b>sistematico</b> (testa, deriva). Sulla stessa sessione: <b>+142 px</b> in x.</p>
+    <p><b>3. Forma della distribuzione.</b> Molti errori piccoli e pochi enormi: l'RMSE si allontana dal MAE. Il grafico con le frecce mostra lo stesso: frecce tutte uguali = bias; frecce a caso = rumore; poche frecce lunghissime = punti fuori dalla zona calibrata.</p>
+  </div>
+  <div class="box attenzione" data-tit="Generalizzare: da una persona a un'altra">
+    <p>Calibrazione su <code>test_subject_0</code> (9 punti, pupille grezze), test su <code>test_subject_1</code> (4 pattern). Distanza media: <b>84 px</b> sui punti di allenamento della stessa persona, <b>96–166 px</b> sul test della stessa persona, <b>398–415 px</b> su un'altra persona. Errore con segno in y: <b>+263 … +384 px</b> per tutti e 4 i pattern, quindi uno spostamento fisso, non rumore.</p>
+    <p><b>Attenzione:</b> il Task 8 scritto nel notebook usa <code>pupils_n_train</code> (coordinate normalizzate, circa 84–113) con <code>pupils_test</code> di <code>test_subject_1</code> (grezze, circa 284–321). Sono scale diverse: l'errore esce circa <b>16 000 px</b>. Non è un risultato sulla generalizzazione: è il valore sbagliato da segnalare al TA.</p>
+  </div>
+  <figure class="scena" data-scena="valutagaze" data-titolo="MAE, distanza media, RMSE"></figure>
+</section>
+
+<section>
+  <h2>Il modello quadratico (Task 20)</h2>
+  <figure class="passi" data-titolo="Più feature, stesso metodo">
+    <div class="passo"><div class="espr">f(x, y) = <mark class="ora">a</mark>x² + <mark class="ora">b</mark>y² + <mark class="ora">c</mark>xy + <mark class="ora">d</mark>x + <mark class="ora">e</mark>y + <mark class="ora">f</mark></div><p class="nota">Curvo in x e y, ma ancora <b>lineare nei pesi</b> (<a href="w04-polinomi.html">polinomi</a>): si impara con gli stessi minimi quadrati.</p></div>
+    <div class="passo"><div class="espr">riga i = [<mark class="dato">xᵢ², yᵢ², xᵢyᵢ, xᵢ, yᵢ, 1</mark>]</div><p class="nota">Il perché della design matrix del Task 20: ogni colonna è ciò che moltiplica un peso.</p></div>
+    <div class="passo"><div class="espr">6 parametri per coordinata  ⇒  almeno <mark class="ok">6 punti</mark>;  la griglia ne ha 9</div><p class="nota">Rimangono solo 3 equazioni "in più" per mediare il rumore: poche.</p></div>
+  </figure>
+  <div class="errori">
+    <div class="errore">
+<pre data-lang="python">A = get_design_matrix_quad(pupils)     # colonne [x², y², xy, x, y, 1]
+w = np.linalg.lstsq(A, targets, rcond=None)[0]
+quad(w, pupil)   # param[0] + param[1]*x + param[2]*y + param[3]*x*y + ...</pre>
+<pre class="msg">stima per il primo punto della griglia: 2.5e9 px   (vero: 100 px)</pre>
+      <div class="fix"><p>Nessun errore di Python, ma un risultato assurdo (verificato). La funzione <code>quad</code> del notebook usa i pesi nell'ordine [1, x, y, xy, x², y²], la design matrix del Task 20 nell'ordine [x², y², xy, x, y, 1]: ogni peso finisce sulla colonna sbagliata. Regola: <b>l'ordine delle colonne deve essere lo stesso nel training e nella previsione</b>. Il modo più sicuro: prevedere con <code>get_design_matrix_quad(pupils) @ w</code>, la stessa funzione usata per il training. (Lo stesso vale per <code>linear</code>, che mette la costante per prima.)</p></div>
+    </div>
+  </div>
+  <figure class="scena" data-scena="quadratico" data-titolo="6 colonne, e l’ordine dei pesi"></figure>
+</section>
+
+<section>
+  <h2>Normalizzare i dati (Task 18–19)</h2>
+  <figure class="passi" data-titolo="Cosa cambia davvero con MinMaxScaler">
+    <div class="passo"><div class="espr">pupille ≈ 280–330,  schermo 100–1820,  x² ≈ 100 000</div><p class="nota">Colonne di grandezze molto diverse: la matrice è "mal condizionata", i conti perdono cifre.</p></div>
+    <div class="passo"><div class="espr">condizionamento di A:  affine 1.4·10⁴ → <mark class="ok">4.2</mark>,  quadratico 1.9·10⁸ → <mark class="ok">22.8</mark></div><p class="nota">Dopo aver portato tutto tra 0 e 1. Numeri più stabili.</p></div>
+    <div class="passo"><div class="espr">previsioni (scaler fittato sul training):  <mark class="dato">identiche</mark>  (scarto 10⁻¹¹ px)</div><p class="nota">Normalizzare è un cambio di variabile affine: un modello affine o quadratico nelle variabili normalizzate è ancora affine o quadratico in quelle vere. I minimi quadrati trovano la stessa funzione.</p></div>
+    <div class="passo"><div class="espr">scaler rifatto sui dati di test:  line 362 → 303,  random 411 → <mark class="no">141</mark></div><p class="nota">Sembra un miglioramento, ma lo scaler ha usato il minimo e il massimo dei punti di test: informazioni che nella realtà non avresti. È <b>data leakage</b>. Lo scaler si fitta <b>solo</b> sul training e poi si applica al test.</p></div>
+  </figure>
+  <div class="box attenzione" data-tit="Task 19: le trappole della normalizzazione">
+    <p>Fit dello scaler sul test (leakage). Min e max decisi da un solo outlier, che schiaccia tutti gli altri punti. Previsioni ed errori vanno <b>riportati in pixel</b> (<code>inverse_transform</code>) prima di confrontarli con i risultati non normalizzati.</p>
+  </div>
+  <figure class="scena" data-scena="normalizza" data-titolo="Condizionamento e data leakage"></figure>
+</section>
+
+</main>
+</body>
+</html>

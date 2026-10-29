@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Verifica formale e JavaPathFinder</title>
+<link rel="stylesheet" href="../assets/atlas.css">
+<link rel="stylesheet" href="../assets/tema.css">
+<script src="../assets/sito.js"></script>
+<script src="../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  // albero di tutti gli interleaving: t1 e t2 fanno una volta R (temp = counter) e W (counter = temp + 1)
+  const N = [
+    ['r', 310, 40, 'via', 0, null],
+    ['a', 135, 100, 'R1', 1, 'r'], ['b', 485, 100, 'R2', 1, 'r'],
+    ['aA', 60, 160, 'W1', 2, 'a'], ['ab', 210, 160, 'R2', 2, 'a'], ['ba', 410, 160, 'R1', 2, 'b'], ['bB', 560, 160, 'W2', 2, 'b'],
+    ['aAb', 60, 220, 'R2', 3, 'aA'], ['abA', 160, 220, 'W1', 3, 'ab'], ['abB', 260, 220, 'W2', 3, 'ab'],
+    ['baA', 360, 220, 'W1', 3, 'ba'], ['baB', 460, 220, 'W2', 3, 'ba'], ['bBa', 560, 220, 'R1', 3, 'bB'],
+    ['L1', 60, 280, '2', 4, 'aAb'], ['L2', 160, 280, '1', 4, 'abA'], ['L3', 260, 280, '1', 4, 'abB'],
+    ['L4', 360, 280, '1', 4, 'baA'], ['L5', 460, 280, '1', 4, 'baB'], ['L6', 560, 280, '2', 4, 'bBa']
+  ];
+  const seq = { L1: 'R1 W1 R2 W2', L2: 'R1 R2 W1 W2', L3: 'R1 R2 W2 W1', L4: 'R2 R1 W1 W2', L5: 'R2 R1 W2 W1', L6: 'R2 W2 R1 W1' };
+  const ogg = [];
+  N.forEach(([id, x, y, t, liv, pad]) => {
+    ogg.push({ id, tipo: 'nodo', r: liv === 4 ? 18 : 17, x, y, t, sotto: liv === 4 ? seq[id] : undefined, nascosto: liv > 0 });
+    if (pad) ogg.push({ id: 'e' + id, tipo: 'arco', da: pad, a: id, dir: true, nascosto: true });
+  });
+  const mostra = liv => Object.fromEntries(N.filter(n => n[4] === liv).flatMap(n => [[n[0], { nascosto: false }], ['e' + n[0], { nascosto: false }]]));
+  const foglie = { L1: { tono: 'ok' }, L2: { tono: 'no' }, L3: { tono: 'no' }, L4: { tono: 'no' }, L5: { tono: 'no' }, L6: { tono: 'ok' } };
+  SCENE.albero = {
+    w: 620, h: 330, lato: false,
+    legenda: 'ok:counter = 2 (giusto),no:counter = 1 (incremento perso),ora:il controesempio trovato',
+    oggetti: ogg,
+    passi: [
+      { nota: 'Due thread fanno <code>counter++</code> una volta ciascuno. Ogni incremento è una lettura (<b>R</b>: temp = counter) e una scrittura (<b>W</b>: counter = temp + 1). Un model checker parte dallo stato iniziale…' },
+      { nota: '…e prova <b>tutte</b> le scelte dello scheduler: al primo passo può partire t1 (R1) o t2 (R2).', set: mostra(1) },
+      { nota: 'Secondo passo: per ogni ramo, di nuovo tutte le possibilità.', set: mostra(2) },
+      { nota: 'Terzo passo.', set: mostra(3) },
+      { nota: 'Quarto passo: 6 interleaving in tutto. Solo i 2 sequenziali (ai lati) danno counter = <b>2</b>; negli altri 4 tutti e due leggono 0 prima di scrivere, e counter vale <b>1</b>.', set: Object.assign(mostra(4), foglie) },
+      { nota: 'Il controesempio alla proprietà "alla fine counter = 2": <b>R1, R2, W1, W2</b>. Un test lo trova solo se capita; il model checker lo trova sempre, perché li visita tutti.', set: { r: { tono: 'ora' }, a: { tono: 'ora' }, ab: { tono: 'ora' }, abA: { tono: 'ora' }, L2: { tono: 'ora' }, ea: { tono: 'ora' }, eab: { tono: 'ora' }, eabA: { tono: 'ora' }, eL2: { tono: 'ora' } } }
+    ]
+  };
+})();
+</script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  const T = (id, x, y, t, extra) => Object.assign({ id, tipo: 'testo', x, y, t, size: 13 }, extra || {});
+  const R = (id, x, y, w, h, t, extra) => Object.assign({ id, tipo: 'rett', x, y, w, h, t }, extra || {});
+  const N = (id, x, y, t, tono, extra) => Object.assign({ id, tipo: 'nodo', x, y, t, tono, r: 18 }, extra || {});
+
+    const coda = (id, i) => R(id, 30 + i * 80, 150, 72, 34, '', { tono: 'spento', nascosto: true });
+    SCENE.jpfdead = {
+      w: 600, h: 250, lato: true,
+      legenda: 'dato:produttore,due:consumatore,no:deadlock,ok:risolto',
+      oggetti: [
+        R('buf', 200, 30, 200, 40, 'buffer (1 posto): vuoto', { tono: 'spento' }),
+        T('wt', 60, 135, 'in attesa (un solo wait set):', { size: 12, anchor: 'start' }),
+        coda('w0', 0), coda('w1', 1), coda('w2', 2), coda('w3', 3), coda('w4', 4), coda('w5', 5),
+        T('op', 300, 100, '', { size: 12 }), T('c', 300, 218, '', { size: 12, bold: true })
+      ],
+      passi: [
+        { nota: "Il BoundedBuffer di JPF: <b>un solo</b> monitor (synchronized, wait) e <code>notify()</code>, che sveglia <b>uno qualsiasi</b> dei thread in attesa. Produttori e consumatori aspettano nello stesso insieme. Buffer da 1 posto, produttori P1, P2, consumatori C1, C2." },
+        { nota: "C1 e C2 chiedono un elemento: buffer vuoto, tutti e due in wait.", set: { w0: { nascosto: false, t: 'C1', tono: 'due' }, w1: { nascosto: false, t: 'C2', tono: 'due' }, op: { t: 'C1 get, C2 get: vuoto → wait' } } },
+        { nota: "P1 mette un elemento (count = 1) e fa notify: sveglia C1. Poi P1 prova a mettere ancora: pieno, wait. P2: pieno, wait.", set: { buf: { t: 'buffer: pieno' }, w0: { t: 'C2' }, w1: { t: 'P1', tono: 'dato' }, w2: { nascosto: false, t: 'P2', tono: 'dato' }, op: { t: 'P1 put → notify C1; P1, P2: pieno → wait' } } },
+        { nota: "C1 prende l'elemento (count = 0) e fa notify. Sveglia il <b>waiter sbagliato</b>: C2, un altro consumatore, invece di un produttore.", set: { buf: { t: 'buffer: vuoto' }, w0: { t: 'P1', tono: 'dato' }, w1: { t: 'P2', tono: 'dato' }, w2: { nascosto: true }, op: { t: 'C1 get → notify sveglia C2' } } },
+        { nota: "C1 riprova: vuoto, wait. C2 si sveglia: vuoto, wait. Ora <b>tutti</b> aspettano e nessuno può più notificare nessuno: <b>deadlock</b>.", set: { w2: { nascosto: false, t: 'C1', tono: 'due' }, w3: { nascosto: false, t: 'C2', tono: 'due' }, op: { t: 'C1, C2: vuoto → wait' }, c: { t: 'tutti in wait: deadlock', tono: 'no' } } },
+        { nota: "Con <code>notifyAll()</code> si svegliano tutti, e ognuno ricontrolla la sua condizione nel while: un produttore trova spazio e sblocca. Con i test uno scenario così capita di rado; <b>JPF</b> lo trova esplorando gli stati (target.args = 2,4,1).", set: { c: { t: 'notifyAll: un produttore riparte, niente deadlock', tono: 'ok' } } }
+      ]
+    };
+
+    // esplosione degli stati: barre in scala logaritmica
+    const D = [['2 thread × 3 passi', 20, 1.3], ['2 × 10', 184756, 5.27], ['3 × 10', 5550996791340, 12.74], ['4 × 10', 4.7e21, 21.67]];
+    const og = [T('h', 300, 24, 'Numero di interleaving (scala logaritmica)', { bold: true, size: 12 })];
+    D.forEach(([t], i) => og.push(T('e' + i, 150, 64 + i * 44, t, { size: 12, anchor: 'end' }), R('b' + i, 160, 48 + i * 44, 0, 28, '', { tono: 'dato' }), T('v' + i, 170, 67 + i * 44, '', { size: 12, anchor: 'start' })));
+    og.push(T('c', 300, 238, '', { size: 12, bold: true }));
+    const fmt = ['20', '184 756', '5,5 · 10¹²', '4,7 · 10²¹'];
+    const bar = i => ({ ['b' + i]: { w: D[i][2] * 16 }, ['v' + i]: { t: fmt[i], x: 170 + D[i][2] * 16 } });
+    SCENE.esplosione = {
+      w: 600, h: 250, lato: true,
+      legenda: 'dato:interleaving da esplorare,no:troppi da visitare',
+      oggetti: og,
+      passi: [
+        { nota: "La verifica formale esplora <b>tutti</b> gli interleaving. Quanti sono? Con n thread di k passi ciascuno: (n·k)! / (k!)ⁿ. Le barre sono in scala logaritmica: ogni tacca in più moltiplica, non somma." },
+        { nota: "2 thread di 3 passi: <b>20</b> interleaving. Si esplorano a mano.", set: bar(0) },
+        { nota: "2 thread di 10 passi: <b>184 756</b>. Per un computer ancora poco.", set: bar(1) },
+        { nota: "3 thread di 10 passi: circa <b>5,5 · 10¹²</b>. Un thread in più ha moltiplicato per 30 milioni.", set: Object.assign(bar(2), { b2: { w: D[2][2] * 16, tono: 'no' } }) },
+        { nota: "4 thread di 10 passi: circa <b>4,7 · 10²¹</b>. È l'<b>esplosione degli stati</b>: anche programmi piccoli hanno più stati di quanti se ne possano visitare. Si riduce con astrazioni, approssimazioni, problemi più piccoli. Per questo nella pratica si usano anche i test, che trovano controesempi ma non dimostrano l'assenza di errori.", set: Object.assign(bar(3), { b3: { w: D[3][2] * 16, tono: 'no' }, c: { t: 'test: trovano errori · verifica: tutti gli interleaving, a caro prezzo' } }) }
+      ]
+    };
+  })();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Verifica formale e JavaPathFinder</h1>
+  <p class="lede">Lezione 5, ultima parte. I test eseguono il programma e vedono solo gli interleaving che capitano. La <b>verifica formale</b> tratta programma e proprietà come oggetti matematici e controlla <b>tutti</b> gli interleaving. JavaPathFinder (NASA) lo fa per programmi Java con il <b>model checking</b>.</p>
+</header>
+
+<section>
+  <h2>Esplorare tutti gli interleaving</h2>
+  <figure class="scena" data-scena="albero" data-titolo="L'albero di due counter++"></figure>
+  <p class="piccolo">Albero costruito a mano; i risultati (2 finali giusti su 6) sono confermati da un'esplorazione esaustiva in Python.</p>
+  <figure class="passi" data-titolo="Il programma delle slide: CounterAct.java, N = 10 incrementi per thread">
+    <div class="passo"><div class="espr">valori finali possibili di counter:  da <mark class="no">2</mark> a 20</div><p class="nota">La domanda "HARDer" delle slide: il minimo è <b>2</b>, non 10. L'interleaving: t1 legge 0; t2 fa tutti i suoi giri tranne l'ultimo; t1 scrive 1; t2 legge 1; t1 finisce i suoi giri; t2 scrive 2. Costruiscilo tu nella pagina <a href="l01-interleaving.html">Interleaving</a>.</p></div>
+    <div class="passo"><div class="espr">interleaving diversi:  C(40, 20) = <mark class="no">137 846 528 820</mark></div><p class="nota">Provarli uno a uno è impossibile: è l'<b>esplosione degli stati</b> (state explosion).</p></div>
+    <div class="passo"><div class="espr">stati diversi raggiungibili:  <mark class="ok">45 525</mark></div><p class="nota">Tanti interleaving portano allo stesso stato (stessi valori di counter, temp e punto del codice): un model checker come JPF li riconosce e non li riesplora (state matching). Per questo il problema diventa trattabile.</p></div>
+    <div class="passo"><div class="espr">assert (counter &gt; 1)   →   <mark class="ok">vera in tutte le esecuzioni</mark></div><p class="nota">Con il minimo a 2, l'asserzione di <code>CounterAct</code> non si viola mai: JPF la <b>dimostra</b> vera. Con <code>counter &gt; 2</code> JPF stamperebbe il controesempio che arriva a 2.</p></div>
+  </figure>
+  <p class="piccolo">Numeri calcolati con un piccolo esploratore di stati in Python, che fa per questo programma la stessa cosa di un model checker.</p>
+</section>
+
+<section>
+  <h2>Deadlock nel bounded buffer di JPF</h2>
+  <p>L'esempio <code>jpf_examples/deadlock/BoundedBuffer.java</code> usa un solo monitor (<code>synchronized</code>, <code>wait()</code>) con <code>notify()</code> invece di <code>notifyAll()</code>. Produttori e consumatori aspettano nello stesso insieme di attesa, e <code>notify()</code> ne sveglia <b>uno qualsiasi</b>. Uno scenario con buffer da 1, produttori P1, P2 e consumatori C1, C2:</p>
+  <figure class="passi" data-titolo="Tutti fermi (scenario rieseguito passo per passo)">
+    <div class="passo"><div class="espr">C1 get: vuoto → wait.   C2 get: vuoto → wait.          in attesa: [C1, C2]</div><p class="nota">I consumatori arrivano prima.</p></div>
+    <div class="passo"><div class="espr">P1 put: count = 1, <mark class="dato">notify → C1</mark>.   P1 put: pieno → wait.   P2 put: pieno → wait.</div><p class="nota">In attesa: [C2, P1, P2].</p></div>
+    <div class="passo"><div class="espr">C1 get: count = 0, <mark class="no">notify → C2</mark></div><p class="nota">Il "waiter sbagliato": sveglia un altro consumatore invece di un produttore. In attesa: [P1, P2].</p></div>
+    <div class="passo"><div class="espr">C1 get: vuoto → wait.   C2 si sveglia: vuoto → wait.</div><p class="nota">In attesa: <b>[P1, P2, C1, C2]</b>. Nessuno può più notificare nessuno: <mark class="no">deadlock</mark>.</p></div>
+    <div class="passo"><div class="espr">con <mark class="ok">notifyAll()</mark> si svegliano tutti e ognuno ricontrolla la sua condizione nel while</div><p class="nota">Un produttore sveglio trova spazio e sblocca la situazione. Con i test uno scenario così capita di rado; JPF lo trova esplorando gli stati (configurazione <code>target.args = 2,4,1</code> nel file .jpf).</p></div>
+  </figure>
+  <figure class="scena" data-scena="jpfdead" data-titolo="notify() sveglia il waiter sbagliato"></figure>
+</section>
+
+<section>
+  <h2>Perché non si usa sempre</h2>
+  <ul>
+    <li><b>Esplosione degli stati</b>: anche programmi piccoli possono avere più stati di quanti se ne possano visitare. Si riduce con astrazioni, approssimazioni, e restringendo il problema.</li>
+    <li>Strumenti: dimostratori interattivi (Rocq, Isabelle, Lean), model checker, SAT/SMT solver, analisi statica. Esempio della ricerca del docente: trovare data race in grandi basi di codice Java con CodeQL (200 000 righe in meno di 2 minuti).</li>
+    <li>Nell'industria si usa sempre di più (Intel per l'hardware; la NASA ha usato JPF per parte del rover Curiosity).</li>
+  </ul>
+  <div class="box esame" data-tit="All'esame">
+    <p>Test = generatori di interleaving: trovano controesempi ma non dimostrano l'assenza di errori. Verifica formale = tutti gli interleaving, con il costo dell'esplosione degli stati. Sapere dire che tipo di proprietà si sta controllando (<a href="l05-proprieta.html">safety o liveness</a>) e come appare il suo controesempio.</p>
+  </div>
+  <figure class="scena" data-scena="esplosione" data-titolo="Esplosione degli stati"></figure>
+</section>
+
+</main>
+</body>
+</html>

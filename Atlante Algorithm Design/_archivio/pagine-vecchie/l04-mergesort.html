@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mergesort e ricorrenze</title>
+<link rel="stylesheet" href="../assets/atlas.css">
+<link rel="stylesheet" href="../assets/tema.css">
+<script src="../assets/sito.js"></script>
+<script src="../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  const A = [2, 5, 8, 9], B = [1, 3, 6, 10];
+  const passi = [{ nota: 'Due liste <b>già ordinate</b> A e B. Il <b>merge</b> le fonde in una lista ordinata C, guardando ogni volta solo i due elementi in testa.', righe: [1] }];
+  let i = 0, j = 0; const C = [];
+  const stato = () => ({
+    A: { valori: A.map(String), toni: Object.fromEntries(A.map((_, k) => [k, k < i ? 'spento' : k === i ? 'ora' : null]).filter(e => e[1])) },
+    B: { valori: B.map(String), toni: Object.fromEntries(B.map((_, k) => [k, k < j ? 'spento' : k === j ? 'due' : null]).filter(e => e[1])) },
+    C: { valori: C.map(String).concat(Array(8 - C.length).fill('')), toni: Object.fromEntries(C.map((_, k) => [k, k === C.length - 1 ? 'ok' : 'dato'])) }
+  });
+  while (i < A.length || j < B.length) {
+    let nota;
+    if (j >= B.length || (i < A.length && A[i] <= B[j])) { nota = j >= B.length ? `B è finita: copio ${A[i]} da A.` : `${A[i]} ≤ ${B[j]}: prendo <b>${A[i]}</b> da A.`; C.push(A[i]); i++; }
+    else { nota = i >= A.length ? `A è finita: copio ${B[j]} da B.` : `${B[j]} &lt; ${A[i]}: prendo <b>${B[j]}</b> da B.`; C.push(B[j]); j++; }
+    passi.push({ nota, righe: [2, 3, 4], set: stato() });
+  }
+  passi.push({ nota: 'Fatto: ogni confronto mette un elemento in C, quindi al massimo <b>n</b> passi per n elementi in tutto. Il merge è <i>O(n)</i>.', set: { C: { valori: C.map(String), toni: Object.fromEntries(C.map((_, k) => [k, 'ok'])) } } });
+  SCENE.merge = {
+    w: 520, h: 230, lato: true, legenda: 'ora:testa di A,due:testa di B,ok:appena copiato',
+    codice: { lang: 'pseudo', testo: `i ← 1; j ← 1
+while both lists have elements:
+  append the smaller of A[i], B[j] to C
+  advance in that list
+append what is left` },
+    oggetti: [
+      { id: 'tA', tipo: 'testo', x: 30, y: 45, t: 'A', size: 15, bold: true },
+      { id: 'A', tipo: 'celle', x: 55, y: 25, cw: 44, ch: 38, valori: A.map(String), indici: false },
+      { id: 'tB', tipo: 'testo', x: 290, y: 45, t: 'B', size: 15, bold: true },
+      { id: 'B', tipo: 'celle', x: 315, y: 25, cw: 44, ch: 38, valori: B.map(String), indici: false },
+      { id: 'tC', tipo: 'testo', x: 30, y: 150, t: 'C', size: 15, bold: true },
+      { id: 'C', tipo: 'celle', x: 55, y: 130, cw: 52, ch: 38, valori: Array(8).fill(''), indici: false }
+    ],
+    passi
+  };
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Mergesort e ricorrenze</h1>
+  <p class="lede"><b>Divide et impera</b>: spezza il problema in parti più piccole, risolvi le parti ricorsivamente, combina le risposte. Il tempo si scrive come una <b>ricorrenza</b>, e bisogna saperla risolvere (K&amp;T 5.1–5.2).</p>
+</header>
+
+<section>
+  <h2>Lo schema</h2>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Fase</th><th>Mergesort</th></tr></thead>
+    <tbody>
+      <tr><td><b>Dividi</b> il problema in parti</td><td>spezza la lista a metà: <i>O(1)</i></td></tr>
+      <tr><td><b>Risolvi</b> le parti ricorsivamente</td><td>ordina le due metà</td></tr>
+      <tr><td><b>Combina</b> le soluzioni</td><td>fondi le due metà ordinate: <i>O(n)</i></td></tr>
+    </tbody>
+  </table></div>
+  <p>Il caso base (lista di 1 o 2 elementi) si risolve direttamente. Di solito l'idea furba sta tutta nel <b>combina</b>.</p>
+  <figure class="scena" data-scena="merge" data-titolo="Il merge di due liste ordinate"></figure>
+</section>
+
+<section>
+  <h2>Il tempo come ricorrenza</h2>
+  <p>Sia <i>T(n)</i> il tempo di mergesort su n elementi. Due chiamate su n/2 elementi più il merge:</p>
+  <p class="m" style="text-align:center">T(n) ≤ 2 T(n/2) + cn  per n &gt; 2,   T(2) ≤ c</p>
+  <figure class="passi" data-titolo="Risolverla srotolando l'albero delle chiamate">
+    <div class="passo"><div class="espr">livello 0: <mark class="dato">1</mark> problema di dimensione n → lavoro <mark class="ora">cn</mark></div><p class="nota">Il merge in cima.</p></div>
+    <div class="passo"><div class="espr">livello 1: <mark class="dato">2</mark> problemi di dimensione n/2 → 2 · c(n/2) = <mark class="ora">cn</mark></div><p class="nota">Due merge, ognuno su metà degli elementi.</p></div>
+    <div class="passo"><div class="espr">livello j: <mark class="dato">2ʲ</mark> problemi di dimensione n/2ʲ → 2ʲ · c(n/2ʲ) = <mark class="ora">cn</mark></div><p class="nota">Il numero di problemi raddoppia, la dimensione dimezza: il lavoro per livello resta <b>cn</b>.</p></div>
+    <div class="passo"><div class="espr">livelli: n/2ʲ = 1 quando j = <mark class="due">log₂ n</mark></div><p class="nota">Si dimezza finché si arriva a 1.</p></div>
+    <div class="passo"><div class="espr">T(n) ≤ <mark class="ora">cn</mark> · <mark class="due">log₂ n</mark> = <mark class="ok">O(n log n)</mark></div><p class="nota">Lavoro per livello × numero di livelli.</p></div>
+  </figure>
+  <div class="box regola" data-tit="Altro modo: indovina e verifica per induzione">
+    <p>Ipotesi: <span class="m">T(n) ≤ cn log₂ n</span>. Passo: <span class="m">T(n) ≤ 2·c(n/2)log₂(n/2) + cn = cn(log₂ n − 1) + cn = cn log₂ n</span>. ✓</p>
+  </div>
+</section>
+
+<section>
+  <h2>Più in generale: q sottoproblemi da n/2</h2>
+  <p>K&amp;T 5.2 risolve <span class="m">T(n) ≤ q T(n/2) + cn</span>. Con lo stesso srotolamento, al livello j ci sono qʲ problemi di dimensione n/2ʲ: lavoro <span class="m">(q/2)ʲ · cn</span>.</p>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>q</th><th>il lavoro per livello…</th><th>T(n)</th><th>esempio</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>dimezza: domina il primo livello</td><td><span class="m">O(n)</span></td><td>trovare la mediana (13.5, in media)</td></tr>
+      <tr><td>2</td><td>resta uguale: log n livelli uguali</td><td><span class="m">O(n log n)</span></td><td>mergesort, closest pair</td></tr>
+      <tr><td>q &gt; 2</td><td>cresce: domina l'ultimo livello</td><td><span class="m">O(n<sup>log₂ q</sup>)</span></td><td>Karatsuba, q = 3: <span class="m">O(n<sup>1.59</sup>)</span></td></tr>
+    </tbody>
+  </table></div>
+  <p>E con lavoro costante per chiamata: <span class="m">T(n) = T(n/2) + O(1)</span> dà <span class="m">O(log n)</span> (ricerca binaria).</p>
+</section>
+
+<section>
+  <h2>Gli esercizi della settimana</h2>
+  <h3>Calcolare aⁿ con meno di n − 1 moltiplicazioni</h3>
+  <figure class="passi" data-titolo="Elevamento al quadrato ripetuto">
+    <div class="passo"><div class="espr">aⁿ = <mark class="dato">(a<sup>n/2</sup>)²</mark>  se n è pari</div><p class="nota">Una sola chiamata ricorsiva, poi una moltiplicazione.</p></div>
+    <div class="passo"><div class="espr">aⁿ = <mark class="due">a · (a<sup>(n−1)/2</sup>)²</mark>  se n è dispari</div><p class="nota">Due moltiplicazioni.</p></div>
+    <div class="passo"><div class="espr">T(n) = T(n/2) + O(1) = <mark class="ok">O(log n)</mark> moltiplicazioni</div><p class="nota">Per esempio a¹⁶ = (((a²)²)²)²: 4 moltiplicazioni invece di 15.</p></div>
+  </figure>
+  <h3>Il massimo di un array bitonico</h3>
+  <p>Un array che prima cresce strettamente e poi decresce strettamente, per esempio 2, 5, 8, 7.</p>
+  <figure class="passi" data-titolo="Guarda la pendenza a metà">
+    <div class="passo"><div class="espr">prendo m a metà e confronto <mark class="ora">A[m]</mark> con <mark class="dato">A[m+1]</mark></div><p class="nota">Dice se in m l'array sta salendo o scendendo.</p></div>
+    <div class="passo"><div class="espr">A[m] &lt; A[m+1] ⇒ sto salendo ⇒ il massimo è <mark class="ok">a destra di m</mark></div><p class="nota">Scarto la metà sinistra, compreso m.</p></div>
+    <div class="passo"><div class="espr">A[m] &gt; A[m+1] ⇒ sto scendendo ⇒ il massimo è <mark class="ok">in m o a sinistra</mark></div><p class="nota">Scarto la metà destra.</p></div>
+    <div class="passo"><div class="espr">T(n) = T(n/2) + O(1) = <mark class="ok">O(log n)</mark></div><p class="nota">È una ricerca binaria sulla pendenza. Gli elementi distinti garantiscono che A[m] ≠ A[m+1].</p></div>
+  </figure>
+</section>
+
+</main>
+</body>
+</html>

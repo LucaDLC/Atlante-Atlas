@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Ordinamento topologico</title>
+<link rel="stylesheet" href="../assets/atlas.css">
+<link rel="stylesheet" href="../assets/tema.css">
+<script src="../assets/sito.js"></script>
+<script src="../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+const N = (id,x,y,t,sotto) => ({id,tipo:'nodo',x,y,t,r:20,sotto});
+const A = (id,da,a) => ({id,tipo:'arco',da,a,dir:true});
+SCENE.topo = {
+  w: 520, h: 250, lato: true,
+  legenda: 'ora:nodo scritto adesso,dato:in lista (grado 0),no:grado ancora > 0,ok:già scritto',
+  oggetti: [
+    N('a',50,60,'a','in 0'), N('b',50,190,'b','in 0'), N('c',200,120,'c','in 2'), N('e',340,60,'e','in 1'), N('d',340,190,'d','in 2'),
+    A('ac','a','c'), A('bc','b','c'), A('ae','a','e'), A('cd','c','d'), A('ed','e','d'),
+    {id:'ord',tipo:'testo',x:260,y:240,t:'ordine: ',size:13,bold:true}
+  ],
+  passi: [
+    { nota: 'DAG: ogni freccia va "avanti". Chiedo un ordine di tutti i nodi in cui ogni freccia va da sinistra a destra. Conto gli <b>archi entranti</b> (in) di ogni nodo.', set: {} },
+    { nota: 'Grado entrante 0: <b>a</b> e <b>b</b>. Nessuna freccia entra in loro: possono andare per primi. Li metto nella lista.', set: { a:{tono:'dato'}, b:{tono:'dato'} } },
+    { nota: 'Scrivo <b>a</b> e lo tolgo dal grafo. Le sue frecce uscenti (verso c ed e) spariscono: c scende a 1, e scende a 0.', set: { a:{tono:'ok'}, c:{tono:null,sotto:'in 1'}, e:{tono:'dato',sotto:'in 0'}, ord:{t:'ordine: a'} } },
+    { nota: 'Scrivo <b>b</b>. Ora c scende a 0. La lista contiene e e c, entrambi con grado 0.', set: { b:{tono:'ok'}, c:{tono:'dato',sotto:'in 0'}, ord:{t:'ordine: a, b'} } },
+    { nota: 'Scrivo <b>e</b>: d scende a 1. Scrivo <b>c</b>: d scende a 0.', set: { e:{tono:'ok'}, c:{tono:'dato',sotto:'in 0'}, d:{tono:'dato',sotto:'in 0'}, ord:{t:'ordine: a, b, e, c'} } },
+    { nota: 'Scrivo <b>d</b>. Ordine finale: a, b, e, c, d. Ogni arco va da sinistra a destra: per questo esiste. Se a un certo punto la lista fosse vuota con nodi ancora rimasti, c\'è un ciclo e un ordine non esiste.', set: { d:{tono:'ok'}, ord:{t:'ordine: a, b, e, c, d',tono:'ok'} } }
+  ]
+};
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Ordinamento topologico</h1>
+  <p class="lede">Un ordinamento topologico (topological sort) mette i nodi di un DAG in una riga, in modo che ogni arco vada da sinistra a destra. Serve ogni volta che ci sono dipendenze: prerequisiti, ordini di calcolo, catene di decisioni.</p>
+</header>
+
+<section>
+  <h2>Il problema e il DAG</h2>
+<p>Un <b>DAG</b> (directed acyclic graph) è un grafo diretto senza cicli. Un ordinamento topologico è una sequenza di tutti i nodi
+tale che ogni arco <code>u → v</code> ha <code>u</code> prima di <code>v</code>. Esiste <b>se e solo se</b> il grafo è un DAG.</p>
+<p>Esempio: i corsi con i loro prerequisiti. Un corso può essere seguito solo dopo i suoi prerequisiti, quindi la sequenza
+legale è un ordinamento topologico.</p>
+</section>
+<section>
+  <h2>Il metodo con i gradi entranti</h2>
+<p>Il grado entrante (in-degree) di un nodo è il numero di archi che entrano in lui. Il metodo di Kahn:</p>
+<ol>
+  <li>Calcola il grado entrante di ogni nodo.</li>
+  <li>Metti in una lista i nodi con grado 0 (le <b>sorgenti</b>).</li>
+  <li>Togline uno, scrivilo nell'ordine, e diminuisci di 1 il grado dei suoi successori. Chi arriva a 0 entra in lista.</li>
+  <li>Ripeti finché la lista è vuota.</li>
+</ol>
+<p>Perché funziona: in un DAG c'è sempre almeno una sorgente, e togliendola resta un DAG. Costo <code>O(n + m)</code>.</p>
+  <figure class="scena" data-scena="topo" data-titolo="Il metodo di Kahn: prima le sorgenti"></figure>
+</section>
+<section>
+  <h2>Il metodo con la DFS</h2>
+<p>Alternativa: fai una DFS su tutto il grafo, e scrivi ogni nodo quando <b>finisce</b> (quando tutti i suoi vicini sono stati visitati).
+Poi leggi la lista di fine <b>al contrario</b>: è un ordinamento topologico. Se la DFS trova un back edge, il grafo ha un ciclo.</p>
+<div class="box regola" data-tit="Fine al contrario"><p>Il nodo che finisce per ultimo, in un DAG, è una sorgente: nessun arco entra in lui
+dal resto del grafo che non sia già finito. Per questo va per primo nell'ordine rovesciato.</p></div>
+</section>
+<section>
+  <h2>Quando esiste</h2>
+<p>Un ordinamento topologico esiste solo in un DAG. Se il grafo ha un ciclo, nessun ordine può far andare tutte le frecce
+da sinistra a destra: i nodi del ciclo si rincorrerebbero. Il metodo di Kahn se ne accorge: alla fine restano nodi non scritti.</p>
+</section>
+<section>
+  <h2>Il codice, affiancato</h2>
+  <p>Questa pagina spiega il concetto. Il codice Java che lo implementa, con una spiegazione riga per riga e le note di sintassi che servono, è nella pagina affiancata.</p>
+  <p><a href="../codice/topological-sort.html"><b>→ Codice Java di questo argomento</b></a></p>
+</section>
+<section>
+  <h2>All’esame</h2>
+<div class="box esame" data-tit="All’esame">
+<p>Quando la domanda parla di <b>ordine di dipendenze</b>, <b>prerequisiti</b> o <b>ordine di calcolo</b> di una DP su un DAG,
+usa il topological sort. Scrivi l'ordine esplicito e il verso: <i>"in topological order: each arc goes from an earlier to a later vertex."</i></p>
+</div>
+</section>
+<section>
+  <h2>Formulario rapido</h2>
+<div class="tab-wrap"><table class="tab"><thead><tr><th>voce</th><th>significato</th><th>nota</th></tr></thead><tbody><tr><td>DAG</td><td>grafo diretto senza cicli</td><td>unico caso con ordine</td></tr><tr><td>grado entrante</td><td>archi che entrano in un nodo</td><td>0 = sorgente</td></tr><tr><td>tempo</td><td>O(n + m)</td><td>Kahn o DFS</td></tr><tr><td>uso tipico</td><td>prerequisiti, DP su DAG</td><td>vedi la pagina della DP</td></tr></tbody></table></div>
+</section>
+
+</main>
+</body>
+</html>

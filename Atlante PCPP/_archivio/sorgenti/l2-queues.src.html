@@ -1,0 +1,350 @@
+<title>Code, Signal e Semantica Mesa</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/*BASE*/
+:root{--accent:#1F7A4D}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--accent:#3FBF7F}}
+:root[data-theme="dark"]{--accent:#3FBF7F}
+
+.twocol{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start}
+@media(max-width:860px){.twocol{grid-template-columns:1fr}}
+.sim{display:grid;grid-template-columns:minmax(0,1fr) minmax(275px,.68fr);gap:20px;align-items:start}
+@media(max-width:940px){.sim{grid-template-columns:1fr}}
+
+.arena{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+@media(max-width:720px){.arena{grid-template-columns:1fr}}
+.zone{background:var(--surface-2);border:1px solid var(--line);border-radius:9px;padding:13px;
+  display:flex;flex-direction:column;gap:9px;min-height:150px}
+.zone > .h{font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:600;letter-spacing:.07em;
+  text-transform:uppercase;color:var(--ink-3);display:flex;justify-content:space-between;align-items:center;gap:8px}
+.zone .sub{font-size:10px;color:var(--ink-3);text-transform:none;letter-spacing:0;font-family:"IBM Plex Sans",sans-serif}
+.zone .empty{font-size:12.5px;color:var(--ink-3);font-style:italic;margin:auto 0}
+.zone.lockz{border-color:var(--accent);background:var(--ok-soft)}
+
+.th{font-family:"IBM Plex Mono",monospace;font-size:13px;font-weight:600;padding:10px 12px;border-radius:6px;
+  border:1px solid var(--line);background:var(--surface);color:var(--ink);text-align:left;
+  display:flex;justify-content:space-between;align-items:center;gap:8px}
+.th button{all:unset;cursor:pointer}
+.th.pick{cursor:pointer;transition:border-color .15s,transform .12s}
+.th.pick:hover{border-color:var(--accent);transform:translateX(2px)}
+.th.pick:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.th .flag{font-size:9.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;
+  padding:2px 6px;border-radius:3px;background:var(--path-soft);color:var(--path)}
+
+.acts{display:flex;gap:9px;flex-wrap:wrap}
+.acts .btn{font-size:12.4px;padding:9px 13px}
+.acts .btn.aw{border-color:var(--path);color:var(--path)}
+.acts .btn.sg{border-color:var(--accent);color:var(--accent)}
+
+.log{font-family:"IBM Plex Mono",monospace;font-size:12px;line-height:1.85;max-height:260px;overflow-y:auto;
+  padding:12px 14px;background:var(--surface-2);border:1px solid var(--line);border-radius:8px}
+.log .n{color:var(--ink-3);margin-right:8px}
+.log .t{color:var(--accent);font-weight:600}
+.log .ph{color:var(--ink-3);font-family:"IBM Plex Sans",sans-serif;font-style:italic;font-size:13px}
+
+.iface{display:flex;flex-direction:column;gap:0}
+.iface .r{display:grid;grid-template-columns:auto 1fr;gap:15px;padding:12px 0;border-bottom:1px solid var(--line-soft);align-items:baseline}
+.iface .r:last-child{border-bottom:none}
+.iface .c{font-family:"IBM Plex Mono",monospace;font-size:12.6px;font-weight:600;color:var(--ink);white-space:nowrap}
+.iface p{margin:0;font-size:13.3px;color:var(--ink-2);line-height:1.5}
+
+pre.code.sm{font-size:11.9px;line-height:1.68;padding:15px 16px}
+.hl{background:var(--path-soft);border-radius:3px;padding:0 3px;color:var(--path);font-weight:600}
+.bad-hl{background:var(--bad-soft);border-radius:3px;padding:0 3px;color:var(--bad);font-weight:600}
+
+.warn{background:var(--bad-soft);border:1px solid var(--bad);border-radius:8px;padding:13px 16px;font-size:13.3px;color:var(--ink-2);line-height:1.55}
+.warn b{color:var(--bad)}
+.good{background:var(--ok-soft);border:1px solid var(--ok);border-radius:8px;padding:13px 16px;font-size:13.3px;color:var(--ink-2);line-height:1.55}
+.good b{color:var(--ok)}
+
+.qz{display:flex;flex-direction:column;gap:12px}
+.qc{border:1px solid var(--line);border-radius:9px;background:var(--surface-2);overflow:hidden}
+.qc .top{padding:15px 17px 0}
+.qc .q{font-size:13.8px;color:var(--ink);font-weight:500;margin:0 0 12px}
+.qc pre{margin:0 0 12px;font-family:"IBM Plex Mono",monospace;font-size:11.8px;line-height:1.6;
+  background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:12px 14px;overflow-x:auto}
+.qc .ans{display:flex;gap:9px;flex-wrap:wrap;padding:0 17px 15px}
+.qc .ans button{font-family:"IBM Plex Mono",monospace;font-size:12px;font-weight:500;padding:7px 13px;
+  border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink-2);cursor:pointer}
+.qc .ans button:hover{border-color:var(--ink-3);color:var(--ink)}
+.qc .ans button:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.qc .ans button.right{background:var(--ok-soft);border-color:var(--ok);color:var(--ok);font-weight:600}
+.qc .ans button.wrong{background:var(--bad-soft);border-color:var(--bad);color:var(--bad);font-weight:600}
+.qc .why{padding:0 17px 16px;font-size:13.3px;color:var(--ink-2);line-height:1.55}
+.qc .why b{color:var(--ink)}
+</style>
+
+<div class="wrap">
+<header>
+  <div class="crumb"><a href="https://claude.ai/code/artifact/28d55e87-8c70-4b36-8dac-532818fc0088">Atlante PCPP</a><span>&middot;</span><span class="acc">Lezione 2</span><span>·</span><span>Shared Memory I</span></div>
+  <h1>Code, Signal e Semantica Mesa</h1>
+  <p class="lede">Un monitor ha <b>due</b> code, non una. Capire quale thread finisce dove — e cosa succede esattamente quando qualcuno chiama <span class="mono">signal()</span> — è ciò che rende prevedibile un monitor. E spiega perché la guardia è sempre un <span class="mono">while</span>.</p>
+</header>
+
+<section>
+  <h2>L&rsquo;interfaccia delle condition variable</h2>
+  <div class="twocol">
+    <div class="panel pad">
+      <div class="iface">
+        <div class="r"><span class="c">await()</span><p><b>Rilascia il lock</b> e blocca il thread mettendolo nella condition queue. Le due cose insieme, atomicamente.</p></div>
+        <div class="r"><span class="c">signal()</span><p>Sveglia <b>un</b> thread bloccato sulla coda, se ce n&rsquo;è. Quale, non è deciso.</p></div>
+        <div class="r"><span class="c">signalAll()</span><p>Sveglia <b>tutti</b> i thread bloccati sulla coda, se ce ne sono.</p></div>
+      </div>
+      <p class="note" style="margin-top:15px">Quando un thread si sveglia deve <b>riacquisire il lock</b> prima di eseguire qualunque altra cosa. Non riprende dove aveva lasciato: torna a competere.</p>
+    </div>
+    <div class="panel pad">
+      <h3>Le due code</h3>
+      <p style="margin:0 0 11px;font-size:13.5px;color:var(--ink-2)"><b class="mono">lock queue</b> (o <em>entry queue</em>) — thread che vogliono entrare nel monitor e aspettano il lock.</p>
+      <p style="margin:0 0 11px;font-size:13.5px;color:var(--ink-2)"><b class="mono">condition queue</b> — thread che sono <em>già stati dentro</em>, hanno trovato la guardia falsa e hanno chiamato <span class="mono">await()</span>.</p>
+      <p class="note" style="margin:0">Le chiamiamo &ldquo;code&rdquo; per ragioni storiche, ma <b>non si comportano come code</b> in Java: sono più simili a insiemi. Nessuna garanzia di ordine FIFO — ed è esattamente da qui che nasce la starvation.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Il simulatore</h2>
+  <div class="bar">
+    <label class="toggle"><input type="checkbox" id="hoare"><span class="switch"></span><span>semantica Hoare</span></label>
+    <div class="sep"></div>
+    <button class="btn" id="addT">+ thread</button>
+    <button class="btn" id="reset">reset</button>
+    <span class="hint">clicca un thread nella entry queue per dargli il lock</span>
+  </div>
+
+  <div class="sim">
+    <div style="display:flex;flex-direction:column;gap:15px">
+      <div class="arena">
+        <div class="zone"><div class="h"><span>entry queue</span><span class="sub">aspettano il lock</span></div><div id="z-entry"></div></div>
+        <div class="zone lockz"><div class="h"><span>tiene il lock</span><span class="sub">dentro il monitor</span></div><div id="z-lock"></div></div>
+        <div class="zone"><div class="h"><span>condition queue</span><span class="sub">hanno fatto await()</span></div><div id="z-cond"></div></div>
+      </div>
+      <div class="acts" id="acts"></div>
+      <div id="hint2"></div>
+    </div>
+    <div class="panel pad">
+      <h3 style="margin-bottom:11px">Log</h3>
+      <div class="log" id="log"></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Mesa contro Hoare</h2>
+  <div class="twocol">
+    <div class="panel pad">
+      <h3 style="color:var(--accent)">Mesa — quella di Java</h3>
+      <p style="margin:0 0 10px;font-size:13.5px;color:var(--ink-2)">I thread svegliati da <span class="mono">signal()</span> tornano nella <b>entry queue</b> e competono di nuovo, insieme a chi era già lì.</p>
+      <p style="margin:0;font-size:13.5px;color:var(--ink-2)">Conseguenza: fra il momento in cui vieni svegliato e il momento in cui riesegui, <b>un altro thread può essere entrato e aver cambiato lo stato</b>. La condizione che ti aveva svegliato potrebbe non valere più.</p>
+    </div>
+    <div class="panel pad">
+      <h3>Hoare</h3>
+      <p style="margin:0 0 10px;font-size:13.5px;color:var(--ink-2)">I thread in attesa su una condition variable hanno <b>priorità</b> su quelli nella entry queue.</p>
+      <p style="margin:0;font-size:13.5px;color:var(--ink-2)">Il thread svegliato riprende garantito, quindi la condizione che ha causato il <span class="mono">signal()</span> vale ancora. Più semplice da ragionare, più costoso da implementare.</p>
+    </div>
+  </div>
+  <p class="note">Java è <b>Mesa</b>. Ogni volta che scrivi un monitor in Java devi assumere che fra <span class="mono">signal()</span> e la tua ripresa possa essere successo di tutto. Attiva il toggle <em>semantica Hoare</em> nel simulatore per vedere la differenza sulle scelte dello scheduler.</p>
+</section>
+
+<section>
+  <h2>Perché <span class="mono" style="text-transform:none">while</span> e non <span class="mono" style="text-transform:none">if</span></h2>
+  <div class="twocol">
+    <div class="panel">
+<pre class="code sm"><span class="cm">// SBAGLIATO</span>
+lock.lock();
+<span class="kw">try</span> {
+    <span class="bad-hl">if</span> (writer)
+        condition.await();
+    readers++;   <span class="cm">// eseguito appena svegliato</span>
+}
+<span class="kw">finally</span> { lock.unlock(); }</pre>
+    </div>
+    <div class="panel">
+<pre class="code sm"><span class="cm">// CORRETTO</span>
+lock.lock();
+<span class="kw">try</span> {
+    <span class="hl">while</span> (writer)
+        condition.await();
+    readers++;   <span class="cm">// la guardia è stata riverificata</span>
+}
+<span class="kw">finally</span> { lock.unlock(); }</pre>
+    </div>
+  </div>
+  <div class="warn" style="margin-top:16px"><b>Due motivi indipendenti, entrambi sufficienti.</b><br>
+  <b style="color:var(--ink)">1. Semantica Mesa.</b> Vieni svegliato, torni in entry queue, ma un altro thread entra prima di te e rialza <span class="mono">writer</span>. Con <span class="mono">if</span> prosegui comunque e leggi mentre qualcuno scrive.<br>
+  <b style="color:var(--ink)">2. Spurious wakeup.</b> Un thread può uscire da <span class="mono">await()</span> <em>senza che nessuno abbia chiamato</em> <span class="mono">signal()</span>. La JVM lo permette esplicitamente. Con <span class="mono">if</span> il tuo programma è rotto anche senza concorrenza avversa.</div>
+  <div class="good" style="margin-top:12px"><b>Regola pratica:</b> <span class="mono">await()</span> non promette che la condizione sia vera al risveglio. Promette solo che sei tornato in esecuzione. La verifica è sempre tua — e va fatta in un ciclo.</div>
+</section>
+
+<section>
+  <h2>Lock intrinseci: <span class="mono" style="text-transform:none">synchronized</span></h2>
+  <p class="lede" style="margin:0 0 16px;font-size:14.5px">In Java <b>ogni oggetto</b> ha un lock intrinseco con associata una condition variable. Nella Java Language Specification si chiamano <em>monitor</em>, ed è il nome più corretto.</p>
+  <div class="twocol">
+    <div class="panel">
+<pre class="code sm">Lock l = <span class="kw">new</span> ReentrantLock();
+Condition c = l.newCondition();
+l.lock();
+<span class="kw">try</span> {
+    <span class="kw">while</span> (property)
+        c.await();
+    …
+    c.signalAll();
+} <span class="kw">finally</span> {
+    l.unlock();
+}</pre>
+    </div>
+    <div class="panel">
+<pre class="code sm">Object o = <span class="kw">new</span> Object();
+
+<span class="kw">synchronized</span> (o) {
+    <span class="kw">while</span> (property)
+        o.wait();
+    …
+    o.notifyAll();
+}
+<span class="cm">// unlock implicito all'uscita del blocco</span></pre>
+    </div>
+  </div>
+  <p class="note">Corrispondenza esatta: <span class="mono">await()</span> → <span class="mono">wait()</span>, <span class="mono">signal()</span> → <span class="mono">notify()</span>, <span class="mono">signalAll()</span> → <span class="mono">notifyAll()</span>. Dentro un metodo <span class="mono">synchronized</span> si usa <span class="mono">this.wait()</span>, <span class="mono">this.notify()</span> e così via.</p>
+</section>
+
+<section>
+  <h2>Quale lock viene usato?</h2>
+  <p class="lede" style="margin:0 0 16px;font-size:14.5px">La domanda che fa cadere più gente. <span class="mono">synchronized</span> non dice <em>quale</em> lock: dipende da dove lo scrivi.</p>
+  <div class="qz" id="qz"></div>
+</section>
+
+<footer>
+  Un thread svegliato torna sempre nella entry queue prima di eseguire — mai direttamente in esecuzione. È lo stesso principio della macchina a stati della Lezione 1: da <span class="mono">blocked</span> non si passa mai direttamente a <span class="mono">running</span>.
+</footer>
+</div>
+
+<script>
+const el = id => document.getElementById(id);
+let n = 0, ths = [], owner = null, log = [], hoare = false;
+
+function addT(){ n++; ths.push({id:'T'+n, zone:'entry', prio:false}); note('T'+n + ' entra nella entry queue'); render(); }
+function note(m){ log.push(m); }
+const get = id => ths.find(t=>t.id===id);
+
+function grab(id){
+  if(owner) return;
+  const t = get(id); if(!t || t.zone!=='entry') return;
+  if(hoare && ths.some(x=>x.zone==='entry' && x.prio) && !t.prio){
+    note('lo scheduler non può scegliere ' + id + ': in semantica Hoare i thread svegliati hanno priorità');
+    render(); return;
+  }
+  t.zone='lock'; t.prio=false; owner=id;
+  note(id + ' acquisisce il lock ed entra nel monitor');
+  render();
+}
+function act(a){
+  const t = get(owner); if(!t) return;
+  if(a==='await'){ t.zone='cond'; owner=null; note(t.id + ' chiama await(): rilascia il lock e va in condition queue'); }
+  if(a==='signal'){
+    const w = ths.filter(x=>x.zone==='cond');
+    if(!w.length){ note(t.id + ' chiama signal(): nessuno in attesa, non succede nulla'); }
+    else { const p = w[Math.floor(Math.random()*w.length)]; p.zone='entry'; p.prio = hoare;
+      note(t.id + ' chiama signal(): ' + p.id + ' torna nella entry queue' + (hoare ? ' con priorità' : '')); }
+  }
+  if(a==='signalAll'){
+    const w = ths.filter(x=>x.zone==='cond');
+    if(!w.length){ note(t.id + ' chiama signalAll(): nessuno in attesa'); }
+    else { w.forEach(p=>{ p.zone='entry'; p.prio = hoare; });
+      note(t.id + ' chiama signalAll(): ' + w.map(p=>p.id).join(', ') + ' tornano nella entry queue' + (hoare ? ' con priorità' : '')); }
+  }
+  if(a==='exit'){ t.zone='done'; owner=null; note(t.id + ' rilascia il lock ed esce dal monitor'); }
+  render();
+}
+
+function render(){
+  const box = (z, pick) => {
+    const list = ths.filter(t=>t.zone===z);
+    return list.length
+      ? list.map(t=>'<div class="th' + (pick?' pick':'') + '" ' + (pick?'role="button" tabindex="0" ':'') +
+          'data-id="'+t.id+'"><span>'+t.id+'</span>' +
+          (t.prio ? '<span class="flag">priorità</span>' : '') + '</div>').join('')
+      : '<div class="empty">vuota</div>';
+  };
+  el('z-entry').innerHTML = box('entry', !owner);
+  el('z-lock').innerHTML  = box('lock', false);
+  el('z-cond').innerHTML  = box('cond', false);
+
+  el('acts').innerHTML = owner
+    ? '<button class="btn aw" data-a="await">' + owner + ' → await()</button>' +
+      '<button class="btn sg" data-a="signal">' + owner + ' → signal()</button>' +
+      '<button class="btn sg" data-a="signalAll">' + owner + ' → signalAll()</button>' +
+      '<button class="btn" data-a="exit">' + owner + ' → unlock() ed esci</button>'
+    : '<span style="font-size:13px;color:var(--ink-3);font-style:italic">nessun thread tiene il lock — sceglierne uno dalla entry queue</span>';
+
+  el('hint2').innerHTML = (!owner && ths.filter(t=>t.zone==='entry').length>1)
+    ? '<p class="note" style="margin:0">' + (hoare
+        ? 'Semantica <b>Hoare</b>: se qualcuno è stato appena svegliato, lo scheduler <b>deve</b> scegliere lui.'
+        : 'Semantica <b>Mesa</b>: lo scheduler può scegliere <b>chiunque</b>, anche un thread che non è mai stato in condition queue. Chi è stato svegliato non ha alcun vantaggio.') + '</p>'
+    : '';
+
+  el('log').innerHTML = log.length
+    ? log.slice(-30).map((l,i)=>'<div><span class="n">'+String(i+1).padStart(2,'0')+'</span>' +
+        l.replace(/\b(T\d+)\b/g, '<span class="t">$1</span>') + '</div>').join('')
+    : '<span class="ph">aggiungi qualche thread per iniziare</span>';
+  el('log').scrollTop = el('log').scrollHeight;
+}
+
+document.querySelector('.arena').addEventListener('click', e=>{
+  const d = e.target.closest('.th.pick'); if(d) grab(d.dataset.id);
+});
+document.querySelector('.arena').addEventListener('keydown', e=>{
+  if(e.key!=='Enter' && e.key!==' ') return;
+  const d = e.target.closest('.th.pick'); if(d){ e.preventDefault(); grab(d.dataset.id); }
+});
+el('acts').addEventListener('click', e=>{
+  const b = e.target.closest('button[data-a]'); if(b) act(b.dataset.a);
+});
+el('addT').addEventListener('click', addT);
+el('reset').addEventListener('click', ()=>{ n=0; ths=[]; owner=null; log=[]; addT(); addT(); addT(); });
+el('hoare').addEventListener('change', e=>{ hoare = e.target.checked; ths.forEach(t=>t.prio=false);
+  note('semantica cambiata in ' + (hoare?'Hoare':'Mesa')); render(); });
+
+/* quiz */
+const QZ = [
+  {
+    q: 'Due thread chiamano <span class="mono">m()</span> su <b>istanze diverse</b> di C. Si escludono a vicenda?',
+    code: 'class C {\n    public synchronized T m() { … }\n}\n\nnew Thread(() -> { C c1 = new C(); c1.m(); }).start();\nnew Thread(() -> { C c2 = new C(); c2.m(); }).start();',
+    opts: ['sì', 'no'], correct: 1,
+    why: '<b>No.</b> Un metodo <span class="mono">synchronized</span> di istanza usa il lock intrinseco <b>dell&rsquo;oggetto</b> — equivale a <span class="mono">synchronized(this)</span>. Due istanze diverse sono due lock diversi, quindi nessuna mutua esclusione. Se <span class="mono">m()</span> tocca stato condiviso <em>statico</em>, hai una race.'
+  },
+  {
+    q: 'Stesso codice ma il metodo è <b>static</b>. Ora si escludono?',
+    code: 'class C {\n    public synchronized static T m() { … }\n}\n\nnew Thread(() -> { C.m(); }).start();\nnew Thread(() -> { C.m(); }).start();',
+    opts: ['sì', 'no'], correct: 0,
+    why: '<b>Sì.</b> Un metodo statico <span class="mono">synchronized</span> usa il lock dell&rsquo;<b>oggetto runtime della classe</b> — equivale a <span class="mono">synchronized(C.class)</span>. Quel lock è unico per tutta la classe, quindi vale per ogni chiamante.'
+  },
+  {
+    q: 'Un thread è dentro <span class="mono">a()</span> sull&rsquo;oggetto <span class="mono">x</span>. Un altro thread può entrare in <span class="mono">b()</span> sullo stesso <span class="mono">x</span>?',
+    code: 'class C {\n    public synchronized void a() { … }\n    public synchronized void b() { … }\n}\n\nC x = new C();   // condiviso fra i due thread',
+    opts: ['sì', 'no'], correct: 1,
+    why: '<b>No.</b> Entrambi i metodi usano lo stesso lock: quello dell&rsquo;istanza <span class="mono">x</span>. Tutti i metodi <span class="mono">synchronized</span> di un oggetto sono mutuamente esclusivi <b>fra loro</b>, non solo con se stessi. È esattamente la definizione di monitor.'
+  },
+  {
+    q: 'Chiamare <span class="mono">o.wait()</span> senza tenere il lock di <span class="mono">o</span>: cosa succede?',
+    code: 'Object o = new Object();\n\nnew Thread(() -> {\n    o.wait();   // fuori da synchronized(o)\n}).start();',
+    opts: ['aspetta', 'lancia eccezione'], correct: 1,
+    why: '<b>Lancia <span class="mono">IllegalMonitorStateException</span>.</b> <span class="mono">wait()</span> deve <em>rilasciare</em> il lock — non può farlo se non lo possiede. Stessa cosa per <span class="mono">notify()</span> e <span class="mono">notifyAll()</span>, e per <span class="mono">await()</span> su una <span class="mono">Condition</span> il cui lock non è tenuto.'
+  }
+];
+
+el('qz').innerHTML = QZ.map((q,i)=>
+  '<div class="qc" data-q="'+i+'"><div class="top"><p class="q">'+q.q+'</p><pre>'+q.code+'</pre></div>' +
+  '<div class="ans">' + q.opts.map((o,j)=>'<button data-a="'+j+'">'+o+'</button>').join('') + '</div>' +
+  '<div class="why" hidden></div></div>').join('');
+
+el('qz').addEventListener('click', e=>{
+  const b = e.target.closest('.ans button'); if(!b) return;
+  const card = b.closest('.qc'); const q = QZ[+card.dataset.q];
+  card.querySelectorAll('.ans button').forEach(x=>x.classList.remove('right','wrong'));
+  b.classList.add(+b.dataset.a === q.correct ? 'right' : 'wrong');
+  const w = card.querySelector('.why'); w.hidden = false; w.innerHTML = q.why;
+});
+
+addT(); addT(); addT();
+</script>

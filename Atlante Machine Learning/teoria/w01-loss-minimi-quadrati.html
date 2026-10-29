@@ -1,0 +1,264 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Loss dei minimi quadrati</title>
+<link rel="stylesheet" href="../assets/atlas.css">
+<link rel="stylesheet" href="../assets/tema.css">
+<script src="../assets/sito.js"></script>
+<script src="../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  // 1. la formula, colonna per colonna
+  const vuota = [['1', '3', '', '', ''], ['2', '4', '', '', ''], ['3', '8', '', '', '']];
+  const col = (c, tono) => ({ ['0,' + c]: tono, ['1,' + c]: tono, ['2,' + c]: tono });
+  const tab = (vals, toni) => ({ tb: { valori: vals, toni } });
+  const v1 = [['1', '3', '3', '', ''], ['2', '4', '5', '', ''], ['3', '8', '7', '', '']];
+  const v2 = [['1', '3', '3', '0', ''], ['2', '4', '5', '−1', ''], ['3', '8', '7', '1', '']];
+  const v3 = [['1', '3', '3', '0', '0'], ['2', '4', '5', '−1', '1'], ['3', '8', '7', '1', '1']];
+  SCENE.simboli = {
+    w: 600, h: 262, lato: true,
+    legenda: 'dato:i dati (xᵢ, yᵢ),due:le previsioni f(xᵢ),ora:la mossa di adesso,ok:la loss',
+    oggetti: [
+      { id: 'fo', tipo: 'testo', x: 300, y: 24, t: 'L = (1/N) · Σᵢ (yᵢ − f(xᵢ))²', size: 18, bold: true },
+      { id: 'mo', tipo: 'testo', x: 300, y: 54, t: 'modello: f(x) = 1 + 2·x', size: 13 },
+      { id: 'tb', tipo: 'griglia', x: 40, y: 70, cw: 80, ch: 30, cwR: 40, intR: ['i = 1', 'i = 2', 'i = 3'], intC: ['xᵢ', 'yᵢ', 'f(xᵢ)', 'yᵢ − f(xᵢ)', '(…)²'], valori: vuota },
+      { id: 's1', tipo: 'testo', x: 300, y: 212, t: '', size: 14, bold: true },
+      { id: 's2', tipo: 'testo', x: 300, y: 240, t: '', size: 14, bold: true }
+    ],
+    passi: [
+      { nota: "La formula, e un dataset di N = 3 punti. Ogni riga della tabella è un punto; il pedice <b>i</b> dice quale.", set: tab(vuota, Object.assign(col(0, 'dato'), col(1, 'dato'))) },
+      { nota: "<b>xᵢ</b> è l'ingresso del punto i, <b>yᵢ</b> la risposta vera (la <i>label</i>). Nel punto 2: x₂ = 2, y₂ = 4.", set: tab(vuota, { '1,0': 'dato', '1,1': 'dato' }) },
+      { nota: "<b>f(xᵢ)</b>: si mette ogni xᵢ nel modello. f(1) = 1 + 2·1 = 3, f(2) = 5, f(3) = 7: sono le previsioni.", set: tab(v1, col(2, 'due')) },
+      { nota: "<b>yᵢ − f(xᵢ)</b>: verità meno previsione. È l'<b>errore</b> del punto i, detto <b>residuo</b> (<i>residual</i>). Può essere negativo: nel punto 2 il modello prevede troppo.", set: tab(v2, col(3, 'ora')) },
+      { nota: "<b>( … )²</b>: ogni errore al quadrato, <b>uno per uno</b>. Così diventano tutti positivi.", set: tab(v3, col(4, 'ora')) },
+      { nota: "<b>Σᵢ</b> (sigma maiuscola): somma su tutti i punti, da i = 1 a N. 0 + 1 + 1 = 2.", set: Object.assign(tab(v3, col(4, 'ok')), { s1: { t: 'Σ = 0 + 1 + 1 = 2', tono: 'ora' } }) },
+      { nota: "<b>1/N</b>: si divide per il numero di <b>punti</b>. L = 2 / 3 ≈ <b>0.667</b>. È la media degli errori al quadrato, detta anche MSE (<i>mean squared error</i>). È l'esercizio 4 del test.", set: { s2: { t: 'L = 2 / 3 ≈ 0.667', tono: 'ok' } } }
+    ]
+  };
+
+  // 2. prima il quadrato: errori che si cancellano
+  const X0 = 250, U = 30;
+  const px = v => X0 + v * U;
+  SCENE.ordine = {
+    w: 600, h: 280, lato: true,
+    legenda: 'dato:gli errori,no:somma prima (sbagliato),ok:quadrato prima (giusto)',
+    oggetti: [
+      { id: 'asse', tipo: 'linea', x1: px(-4), y1: 110, x2: px(4), y2: 110, tono: 'spento' },
+      { id: 'zero', tipo: 'linea', x1: px(0), y1: 20, x2: px(0), y2: 116, tratt: true, tono: 'spento' },
+      { id: 't0', tipo: 'testo', x: px(0), y: 126, t: '0', size: 12 },
+      { id: 'e1', tipo: 'vett', x1: px(0), y1: 30, x2: px(3), y2: 30, t: '+3', tono: 'dato' },
+      { id: 'e2', tipo: 'vett', x1: px(0), y1: 60, x2: px(-1), y2: 60, t: '−1', tono: 'dato', tx: -26 },
+      { id: 'e3', tipo: 'vett', x1: px(0), y1: 90, x2: px(-2), y2: 90, t: '−2', tono: 'dato', tx: -26 },
+      { id: 'sm', tipo: 'testo', x: 470, y: 60, t: '', size: 14, bold: true },
+      { id: 'q1', tipo: 'rett', x: 60, y: 150, w: 90, h: 90, t: '9', tono: 'ok', nascosto: true },
+      { id: 'q2', tipo: 'rett', x: 170, y: 210, w: 30, h: 30, t: '1', tono: 'ok', nascosto: true },
+      { id: 'q3', tipo: 'rett', x: 220, y: 180, w: 60, h: 60, t: '4', tono: 'ok', nascosto: true },
+      { id: 'sq', tipo: 'testo', x: 440, y: 190, t: '', size: 14, bold: true },
+      { id: 'sq2', tipo: 'testo', x: 440, y: 218, t: '', size: 14, bold: true }
+    ],
+    passi: [
+      { nota: "Tre errori: +3, −1, −2. Il modello sbaglia su <b>tutti e tre</b> i punti." },
+      { nota: "Se si sommasse <b>prima</b>: +3 − 1 − 2 = 0, e 0² = 0. La loss direbbe \"modello perfetto\": gli errori positivi e negativi si sono <b>cancellati</b>.", set: { sm: { t: '(3 − 1 − 2)² = 0²  = 0', tono: 'no' } } },
+      { nota: "La formula invece ha il quadrato <b>dentro</b> la somma, attaccato a ogni errore. Il quadrato di un numero è l'area del quadrato con quel lato: 3² = 9.", set: { q1: { nascosto: false } } },
+      { nota: "(−1)² = 1 e (−2)² = 4: anche gli errori negativi diventano aree positive.", set: { q2: { nascosto: false }, q3: { nascosto: false } } },
+      { nota: "Solo adesso la somma: 9 + 1 + 4 = 14, e la media 14/3 ≈ 4.67. Nessuna cancellazione: ogni errore conta. Ordine giusto: <b>parentesi → quadrato → somma → divisione per N</b>.", set: { sq: { t: '3² + (−1)² + (−2)² = 14', tono: 'ok' }, sq2: { t: 'L = 14 / 3 ≈ 4.67', tono: 'ok' } } }
+    ]
+  };
+
+  // 3. esempio svolto: la parabola sbagliata (scena originale)
+  const f = x => 3 * x * x - 2 * x + 1;
+  const P = [[2, 5], [3, 7], [4, 9]];
+  const ogg = [{ id: 'ax', tipo: 'assi', box: [45, 15, 330, 240], dom: [1.5, 4.5, 0, 45], tacche: 5, etX: 'x', etY: 'y' }];
+  for (let k = 0; k < 24; k++) { const a = 1.5 + k * 0.125, b = a + 0.125; if (f(b) <= 45) ogg.push({ id: 'c' + k, tipo: 'linea', in: 'ax', x1: a, y1: f(a), x2: b, y2: f(b), tono: 'due', nascosto: true }); }
+  P.forEach(([x, y], i) => {
+    ogg.push({ id: 'p' + i, tipo: 'punto', in: 'ax', x, y, r: 5, tono: 'dato' });
+    ogg.push({ id: 'r' + i, tipo: 'linea', in: 'ax', x1: x, y1: y, x2: x, y2: f(x), tono: 'no', nascosto: true });
+  });
+  ogg.push({ id: 'vera', tipo: 'linea', in: 'ax', x1: 1.5, y1: 4, x2: 4.5, y2: 10, tratt: true, tono: 'ok', nascosto: true });
+  ogg.push({ id: 'n', tipo: 'testo', x: 210, y: 292, t: '', size: 13, bold: true });
+  const passo = (i, err, q, somma) => ({ nota: `Punto (${P[i][0]}, ${P[i][1]}): il modello prevede f1(${P[i][0]}) = ${f(P[i][0])}. Errore ${P[i][1]} − ${f(P[i][0])} = <b>${err}</b>, al quadrato <b>${q}</b>.`, set: { ['r' + i]: { nascosto: false }, n: { t: 'somma dei quadrati: ' + somma, tono: 'no' } } });
+  SCENE.residui = {
+    w: 420, h: 300, lato: true,
+    legenda: 'dato:i 3 dati,due:f1(x) = 3x² − 2x + 1,no:errori (residui),ok:la retta che li attraversa tutti',
+    oggetti: ogg,
+    passi: [
+      { nota: 'I tre dati (2, 5), (3, 7), (4, 9).' },
+      { nota: 'Il modello f1(x) = 3x² − 2x + 1: una parabola.', set: Object.fromEntries(ogg.filter(o => /^c\d+$/.test(o.id)).map(o => [o.id, { nascosto: false }])) },
+      passo(0, -4, 16, '16'), passo(1, -15, 225, '16 + 225'), passo(2, -32, 1024, '16 + 225 + 1024 = 1265'),
+      { nota: 'Loss = somma dei quadrati diviso N = 1265 / 3 ≈ <b>421.7</b>. Ogni segmento rosso è un errore: il quadrato fa pesare molto quelli lunghi.', set: { n: { t: 'L = 1265 / 3 ≈ 421.7', tono: 'no' } } },
+      { nota: 'I dati stanno esattamente sulla retta y = 2x + 1: con quel modello gli errori sarebbero tutti 0, e la loss 0. La parabola ha la forma sbagliata.', set: { vera: { nascosto: false }, n: { t: 'y = 2x + 1: L = 0', tono: 'ok' } } }
+    ]
+  };
+
+  // 4. quadrato contro valore assoluto
+  const par = [], vv = [];
+  for (let e = -3; e <= 3.001; e += 0.1) { par.push([e, e * e]); vv.push([e, Math.abs(e)]); }
+  const pl = p => p.concat(p.slice().reverse());
+  SCENE.assoluto = {
+    w: 600, h: 272, lato: true,
+    legenda: 'due:|e| valore assoluto,ok:e² quadrato,ora:un errore da confrontare',
+    oggetti: [
+      { id: 'ax', tipo: 'assi', box: [50, 20, 300, 220], dom: [-3, 3, 0, 9], tacche: 1, etX: 'e', etY: 'costo' },
+      { id: 'ab', tipo: 'poli', in: 'ax', punti: pl(vv), tono: 'due', nascosto: true },
+      { id: 'qu', tipo: 'poli', in: 'ax', punti: pl(par), tono: 'ok', nascosto: true },
+      { id: 'm1', tipo: 'punto', in: 'ax', x: 0.5, y: 0.5, t: '', tono: 'due', nascosto: true },
+      { id: 'm2', tipo: 'punto', in: 'ax', x: 0.5, y: 0.25, t: '', tono: 'ok', nascosto: true },
+      { id: 'g1', tipo: 'punto', in: 'ax', x: 3, y: 3, t: '', tono: 'due', nascosto: true },
+      { id: 'g2', tipo: 'punto', in: 'ax', x: 3, y: 9, t: '', tono: 'ok', nascosto: true },
+      { id: 'c1', tipo: 'testo', x: 470, y: 60, t: '', size: 14, bold: true },
+      { id: 'c2', tipo: 'testo', x: 470, y: 88, t: '', size: 14, bold: true },
+      { id: 'c3', tipo: 'testo', x: 470, y: 130, t: '', size: 13 }
+    ],
+    passi: [
+      { nota: "Per non far cancellare gli errori basta renderli positivi. Si potrebbe usare il <b>valore assoluto</b> |e| (il numero senza segno): costo = distanza dallo 0.", set: { ab: { nascosto: false } } },
+      { nota: "I minimi quadrati usano invece il <b>quadrato</b> e². Anche lui è sempre ≥ 0.", set: { qu: { nascosto: false } } },
+      { nota: "Errore piccolo, e = 0.5: |e| = 0.5 ma e² = 0.25. Il quadrato <b>perdona</b> gli errori piccoli.", set: { m1: { nascosto: false }, m2: { nascosto: false }, c1: { t: 'e = 0.5:  |e| = 0.5   e² = 0.25', tono: 'ora' } } },
+      { nota: "Errore grande, e = 3: |e| = 3 ma e² = 9. Il quadrato <b>punisce molto</b> gli errori grandi: un solo punto molto sbagliato pesa come tanti punti un po' sbagliati. È anche il suo difetto: è sensibile ai valori anomali (<i>outlier</i>, settimana 9).", set: { g1: { nascosto: false }, g2: { nascosto: false }, c2: { t: 'e = 3:  |e| = 3   e² = 9', tono: 'ora' } } },
+      { nota: "Il vantaggio decisivo: la parabola è <b>liscia</b>, senza la punta che |e| ha in 0. Per questo la loss dei minimi quadrati si minimizza con una formula esatta (settimana 5) e con le derivate (settimana 14). La media di |e| esiste comunque come metrica, la MAE (settimana 11).", set: { c3: { t: 'e² è liscia: niente punta in 0' } } }
+    ]
+  };
+
+  // 5. la loss come funzione dei parametri
+  const Lw = w => (89 - 70 * w + 14 * w * w) / 3;
+  const curvaL = []; for (let w = 0.5; w <= 4.501; w += 0.1) curvaL.push([w, Lw(w)]);
+  const prova = (w, tono) => ({ li: { y2: 4 * w, tono }, pw: { x: w, y: Lw(w), t: 'L = ' + (Math.round(Lw(w) * 100) / 100), tono }, tw: { t: 'w₁ = ' + w, tono } });
+  const o5 = [
+    { id: 'axd', tipo: 'assi', box: [40, 40, 220, 190], dom: [0, 4, 0, 12], tacche: 1, etX: 'x', etY: 'y' },
+    { id: 'axl', tipo: 'assi', box: [340, 40, 230, 190], dom: [0, 5, 0, 20], tacche: 1, numeri: false, etX: 'w₁', etY: 'L(w₁)' },
+    { id: 'td', tipo: 'testo', x: 150, y: 14, t: 'dati e retta y = w₁·x', size: 12, bold: true },
+    { id: 'tl', tipo: 'testo', x: 455, y: 14, t: 'la loss al variare di w₁', size: 12, bold: true },
+    { id: 'cl', tipo: 'poli', in: 'axl', punti: pl(curvaL), tono: 'spento', nascosto: true },
+    { id: 'li', tipo: 'linea', in: 'axd', x1: 0, y1: 0, x2: 4, y2: 4, tono: 'ora' },
+    { id: 'pw', tipo: 'punto', in: 'axl', x: 1, y: 11, t: 'L = 11', tono: 'ora' },
+    { id: 'tw', tipo: 'testo', x: 150, y: 262, t: 'w₁ = 1', size: 14, bold: true }
+  ];
+  [[1, 3], [2, 4], [3, 8]].forEach(([x, y], i) => o5.push({ id: 'd' + i, tipo: 'punto', in: 'axd', x, y, t: '', tono: 'dato' }));
+  SCENE.lossw = {
+    w: 600, h: 280, lato: true,
+    legenda: 'dato:i dati,ora:parametro in prova,ok:il minimo',
+    oggetti: o5,
+    passi: [
+      { nota: "Stessi dati (1, 3), (2, 4), (3, 8). Per semplicità fisso w₀ = 0 e lascio libero solo w₁: il modello è y = w₁·x. Con w₁ = 1 la loss è 11." },
+      { nota: "w₁ = 2: la retta si avvicina ai punti, L ≈ 1.67.", set: prova(2, 'ora') },
+      { nota: "w₁ = 3: troppo ripida, L ≈ 1.67 di nuovo.", set: prova(3, 'ora') },
+      { nota: "w₁ = 4: molto peggio, L = 11.", set: prova(4, 'ora') },
+      { nota: "Provando tutti i valori di w₁ la loss disegna una <b>parabola</b>: L(w₁) = (89 − 70·w₁ + 14·w₁²)/3. La loss è una <b>funzione dei parametri</b>, non dei dati: i dati sono fissi, sono i parametri a cambiare.", set: { cl: { nascosto: false } } },
+      { nota: "Il fondo della parabola è in w₁ = 2.5, con L = 0.5: è la retta migliore (verificato con NumPy). \"Minimizzare i minimi quadrati\" (slide 36) vuol dire trovare questo fondo. Una parabola ha un solo fondo, e il quadrato garantisce proprio questa forma.", set: prova(2.5, 'ok') }
+    ]
+  };
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Loss dei minimi quadrati</h1>
+  <p class="lede">Un numero che dice quanto un modello sbaglia sui dati. Si calcola errore per errore: prima il quadrato, poi la somma, poi la media. Qui la formula simbolo per simbolo, l'ordine delle operazioni, un esempio svolto, perché proprio il quadrato, e la loss vista come funzione dei parametri. Esercizio 3 della settimana 1 (Evaluating Models, Grasple).</p>
+</header>
+
+<section>
+  <h2>La formula e i suoi simboli</h2>
+  <p>La <b>loss</b> (in italiano "perdita", o funzione di costo) è un unico numero che riassume quanto il modello sbaglia su <b>tutti</b> i dati. Più è piccola, meglio il modello si adatta. Quella dei minimi quadrati (<i>least squares loss</i>) è:</p>
+  <div class="mblock"><span class="m">L<sub>f</sub> = <span class="frac"><span>1</span><span>N</span></span> &sum;<sub>i=1</sub><sup>N</sup> (y<sub>i</sub> &minus; f(x<sub>i</sub>))<sup>2</sup></span></div>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Simbolo</th><th>Significato</th></tr></thead>
+    <tbody>
+      <tr><td><span class="m">x<sub>i</sub></span></td><td>l'<b>input</b> del punto <span class="m">i</span>: entra nella funzione</td></tr>
+      <tr><td><span class="m">y<sub>i</sub></span></td><td>la <b>label</b> del punto <span class="m">i</span>: la risposta vera</td></tr>
+      <tr><td><span class="m">f(x<sub>i</sub>)</span></td><td>la <b>predizione</b> del modello</td></tr>
+      <tr><td><span class="m">y<sub>i</sub> &minus; f(x<sub>i</sub>)</span></td><td>l'<b>errore</b> (residuo) sul punto <span class="m">i</span></td></tr>
+      <tr><td><span class="m">N</span></td><td>il numero di <b>punti</b> nel dataset, non di modelli</td></tr>
+      <tr><td><span class="m">&sum;<sub>i=1</sub><sup>N</sup></span></td><td>somma per <span class="m">i</span> da 1 a <span class="m">N</span>: scorre i punti</td></tr>
+    </tbody>
+  </table></div>
+  <p>Si legge da dentro a fuori. Per ogni punto: metti x<sub>i</sub> nel modello, confronta con la verità y<sub>i</sub>, eleva l'errore al quadrato. Poi somma tutti i quadrati e dividi per quanti sono. Il risultato è la <b>media degli errori al quadrato</b>, che nelle metriche della settimana 11 si chiama MSE (<i>mean squared error</i>).</p>
+  <p>La loss non dice <b>dove</b> il modello sbaglia, solo <b>quanto</b> in totale. Serve a confrontare modelli: con due modelli si calcolano due loss, e vince la più bassa.</p>
+  <div class="box attenzione" data-tit="N conta i punti (dubbio chiesto in chat)">
+    <p>L'indice della somma &egrave; <span class="m">i</span>, lo stesso di <span class="m">x<sub>i</sub></span> e <span class="m">y<sub>i</sub></span>: quindi <span class="m">N</span> conta i punti, non le variabili né le funzioni. Con due modelli la formula si applica <b>due volte, separatamente</b>, e ottieni due loss da confrontare.</p>
+  </div>
+  <figure class="scena" data-scena="simboli" data-titolo="La formula riempita colonna per colonna (esercizio 4 del test)"></figure>
+</section>
+
+<section>
+  <h2>Prima la potenza o prima la somma?</h2>
+  <p>Il dubbio più comune sulla formula (chiesto anche in chat): il <sup>2</sup> si applica prima o dopo la Σ? La risposta sta nelle parentesi. Il <sup>2</sup> è attaccato alla parentesi (y<sub>i</sub> − f(x<sub>i</sub>)), che sta <b>dentro</b> la sommatoria: fa parte di ogni singolo termine. Quindi prima il quadrato di ogni errore, poi la somma.</p>
+  <div class="box regola" data-tit="Prima la potenza">
+    <p>Si legge dall'interno verso l'esterno: parentesi &rarr; quadrato &rarr; somma &rarr; divisione per <span class="m">N</span>.</p>
+  </div>
+  <div class="colonne">
+    <div class="carta buona">
+      <h4>Quadrato prima (giusto)</h4>
+      <p><span class="m">(&minus;4)<sup>2</sup> + (&minus;15)<sup>2</sup> + (&minus;32)<sup>2</sup></span></p>
+      <p><span class="m">= 16 + 225 + 1024 = 1265</span></p>
+    </div>
+    <div class="carta cattiva">
+      <h4>Somma prima (sbagliato)</h4>
+      <p><span class="m">(&minus;4 &minus; 15 &minus; 32)<sup>2</sup></span></p>
+      <p><span class="m">= (&minus;51)<sup>2</sup> = 2601</span></p>
+    </div>
+  </div>
+  <p>L'ordine non è una convenzione: cambia il significato. Sommando prima, gli errori positivi e negativi si <b>cancellano</b>, e un modello che sbaglia ovunque può ottenere 0, cioè "perfetto". Il quadrato su ogni errore li rende tutti positivi prima di sommarli.</p>
+  <p class="piccolo">Se vedi <span class="m">(&sum; &hellip;)<sup>2</sup></span>, con la parentesi che racchiude la somma, allora s&igrave; si somma prima. Nella loss non c'&egrave;.</p>
+  <figure class="scena" data-scena="ordine" data-titolo="Errori che si cancellano, e quadrati che no"></figure>
+</section>
+
+<section>
+  <h2>Esempio svolto</h2>
+  <p>Dati <span class="m">(2, 5), (3, 7), (4, 9)</span>: il primo numero &egrave; l'input, il secondo la label. Modello <span class="m">f<sub>1</sub>(x) = 3x<sup>2</sup> &minus; 2x + 1</span>. Si applica la formula punto per punto, esattamente nell'ordine della sezione sopra.</p>
+  <figure class="passi" data-titolo="Loss di f1" data-legenda="dato:dati,ora:la mossa di adesso,ok:risultato">
+    <div class="passo">
+      <div class="espr">f1(2) = 9    f1(3) = 22    f1(4) = 41</div>
+      <p class="nota">Valuta il modello su <b>ogni</b> input: tre punti, tre predizioni.</p>
+    </div>
+    <div class="passo">
+      <div class="espr"><mark class="dato">5</mark>&minus;9 = <mark class="ora">&minus;4</mark>    <mark class="dato">7</mark>&minus;22 = <mark class="ora">&minus;15</mark>    <mark class="dato">9</mark>&minus;41 = <mark class="ora">&minus;32</mark></div>
+      <p class="nota">Errore di ogni punto: label vera meno predizione.</p>
+    </div>
+    <div class="passo">
+      <div class="espr"><mark class="ora">16    225    1024</mark></div>
+      <p class="nota">Quadrato di ogni errore, uno per uno.</p>
+    </div>
+    <div class="passo">
+      <div class="espr">16 + 225 + 1024 = <mark class="ora">1265</mark></div>
+      <p class="nota">Solo ora la somma.</p>
+    </div>
+    <div class="passo">
+      <div class="espr"><mark class="ok">L = 1265 / 3 &asymp; 421,7</mark></div>
+      <p class="nota">Media: dividi per <span class="m">N = 3</span>, il numero di punti.</p>
+    </div>
+  </figure>
+  <details class="soluzione"><summary>Mostra la loss di f2(x) = 2x&sup2; + 4x + 3</summary><div>
+    <p>Predizioni <span class="m">19, 33, 51</span>. Errori <span class="m">&minus;14, &minus;26, &minus;42</span>. Quadrati <span class="m">196, 676, 1764</span>. Somma <span class="m">2636</span>. <span class="m">L &asymp; 878,7</span>. Quindi <span class="m">f<sub>1</sub></span> &egrave; migliore.</p>
+  </div></details>
+  <div class="box idea" data-tit="Loss alta non vuol dire conti sbagliati">
+    <p>I dati stanno esattamente sulla retta <span class="m">y = 2x + 1</span>, che avrebbe loss 0. Entrambi i modelli sono quadratici, quindi hanno la <b>forma sbagliata</b>. Gli errori di <span class="m">f<sub>1</sub></span> crescono in modo sistematico (&minus;4, &minus;15, &minus;32): &egrave; il segno di un problema del modello, non di rumore. Si chiamer&agrave; <b>bias</b> nella settimana 6.</p>
+  </div>
+  <p class="piccolo">Tutti i numeri verificati con NumPy.</p>
+  <figure class="scena" data-scena="residui" data-titolo="Gli errori, disegnati"></figure>
+</section>
+
+<section>
+  <h2>Perché il quadrato e non il valore assoluto</h2>
+  <p>Per impedire che gli errori si cancellino basterebbe togliere il segno, cioè usare il <b>valore assoluto</b> |yᵢ − f(xᵢ)|. Allora perché proprio il quadrato? Tre motivi.</p>
+  <p><b>1. Pesa di più gli errori grandi.</b> Un errore di 0.5 costa 0.25, uno di 3 costa 9. Il modello viene spinto soprattutto a evitare gli sbagli grossi. Il rovescio della medaglia: un solo dato anomalo (<i>outlier</i>) può spostare molto il risultato.</p>
+  <p><b>2. È liscio.</b> Il grafico di e² è una curva senza spigoli, quello di |e| ha una punta in 0. Le curve lisce si possono minimizzare con le derivate e, nel caso dei modelli lineari, con una formula esatta (le equazioni normali della settimana 5).</p>
+  <p><b>3. Ha un solo minimo.</b> Per i modelli lineari nei parametri la loss al quadrato è una "ciotola" con un unico fondo, come mostra la sezione successiva: non ci sono trappole.</p>
+  <p>La media del valore assoluto non sparisce: si chiama MAE (<i>mean absolute error</i>) e si usa come metrica di valutazione nella settimana 11.</p>
+  <figure class="scena" data-scena="assoluto" data-titolo="Due modi di togliere il segno"></figure>
+</section>
+
+<section>
+  <h2>La loss dipende dai parametri</h2>
+  <p>Fin qui il modello era fisso e si calcolava la sua loss. Adesso il punto di vista si rovescia: i <b>dati sono fissi</b> e sono i <b>parametri</b> a cambiare. Per ogni scelta dei parametri si ottiene una loss diversa, quindi la loss è una <b>funzione dei parametri</b>: si scrive L(w).</p>
+  <p>Imparare vuol dire trovare i parametri dove L(w) è minima: è il significato di "minimizing the least squares" (slide 36). Con un solo parametro libero si vede tutto in un grafico: la loss disegna una <b>parabola</b>, perché è una somma di termini al quadrato nel parametro, e il minimo è il suo fondo.</p>
+  <p>Con due parametri (w₀ e w₁) la parabola diventa una "ciotola" in 3D, con tanti parametri una ciotola in molte dimensioni. Il fondo si trova con l'algebra lineare (<a href="w05-minimi-quadrati.html">minimi quadrati</a>) oppure scendendo passo passo lungo la pendenza (<a href="w14-reti-neurali.html">discesa del gradiente</a>).</p>
+  <figure class="scena" data-scena="lossw" data-titolo="Ogni retta ha la sua loss: la parabola L(w₁)"></figure>
+</section>
+
+</main>
+</body>
+</html>

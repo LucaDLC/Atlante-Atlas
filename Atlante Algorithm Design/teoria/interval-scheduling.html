@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Interval scheduling: il primo che finisce</title>
+<link rel="stylesheet" href="../assets/atlas.css">
+<link rel="stylesheet" href="../assets/tema.css">
+<script src="../assets/sito.js"></script>
+<script src="../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+const J = [['A',0,3],['B',2,5],['C',4,7],['D',1,8],['E',6,9],['F',8,10]];
+const X = t => 40 + t * 40; const ogg = [];
+for (let t = 0; t <= 10; t++) ogg.push({id:'tk'+t,tipo:'testo',x:X(t),y:262,t:String(t),size:11});
+ogg.push({id:'asse',tipo:'linea',x1:X(0),y1:250,x2:X(10),y2:250});
+J.forEach(([n,s,f],i) => ogg.push({id:n,tipo:'rett',x:X(s),y:24+i*34,w:(f-s)*40,h:24,t:n}));
+ogg.push({id:'ul',tipo:'linea',x1:X(0),y1:14,x2:X(0),y2:250,tratt:true,tono:'due',nascosto:true});
+ogg.push({id:'c',tipo:'testo',x:40,y:302,t:'',size:12,bold:true,anchor:'start'});
+const passi = [{nota:'Sei intervalli, <b>A</b> … <b>F</b>. Due intervalli sono compatibili se non si sovrappongono. Voglio il <b>massimo numero</b> di intervalli compatibili.', set:{}}];
+passi.push({nota:'Ordino per <b>tempo di fine</b> crescente: A(3), B(5), C(7), D(8), E(9), F(10). È l\'ordine in cui il greedy guarda gli intervalli.', set:{c:{t:'ordine per fine: A B C D E F'}}});
+let ultimo = 0; const scelti = [];
+J.forEach(([n,s,f]) => {
+  if (s >= ultimo) { scelti.push(n); ultimo = f;
+    passi.push({nota:`<b>${n}</b> inizia a ${s}, non prima della fine dell'ultimo preso: è compatibile. <b>Lo prendo</b>. Ora l'ultimo finisce a ${f}.`, set:{[n]:{tono:'ok'}, ul:{nascosto:false}, c:{t:'preso: '+scelti.join(', ')}}});
+  } else {
+    passi.push({nota:`<b>${n}</b> inizia a ${s}, prima della fine di ${ultimo}: si sovrappone all'ultimo preso. <b>Scartato</b>.`, set:{[n]:{tono:'no'}}});
+  }
+});
+passi.push({nota:`Risultato: <b>${scelti.join(', ')}</b>, ${scelti.length} intervalli. Il ciclo guarda ogni intervallo una volta: dopo l'ordinamento costa O(n).`, set:{c:{t:'risultato: '+scelti.join(', '),tono:'ok'}}});
+SCENE.int = {
+  w: 540, h: 320, lato: true,
+  legenda: 'ok:preso,no:scartato,due:fine dell\'ultimo preso',
+  oggetti: ogg, passi
+};
+})();
+</script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+const J = [['A',0,3],['B',1,4],['C',2,6],['D',5,8],['E',6,9]];
+const X = t => 40 + t * 40; const ogg = [];
+for (let t = 0; t <= 9; t++) ogg.push({id:'tk'+t,tipo:'testo',x:X(t),y:262,t:String(t),size:11});
+ogg.push({id:'asse',tipo:'linea',x1:X(0),y1:250,x2:X(9),y2:250});
+J.forEach(([n,s,f],i) => ogg.push({id:n,tipo:'rett',x:X(s),y:24+i*34,w:(f-s)*40,h:24,t:n,nascosto:true}));
+ogg.push({id:'c',tipo:'testo',x:40,y:302,t:'',size:12,bold:true,anchor:'start'});
+const passi = [{nota:'Interval partitioning: assegno tutti gli intervalli ad <b>aule</b>, senza sovrapposizioni in una stessa aula. Quante aule servono al minimo?', set:{}}];
+const mostra = [];
+passi.push({nota:'Ordino per <b>inizio</b> crescente. Ecco tutti gli intervalli: A(0–3), B(1–4), C(2–6), D(5–8), E(6–9).', set:Object.fromEntries(J.map(([n])=>[n,{nascosto:false}]))});
+passi.push({nota:'Aula 1: prendo A. B inizia a 1, A non è finito: serve un\'aula nuova. Aula 2: B. C inizia a 2: sia aula 1 che aula 2 sono occupate, apro l\'aula 3: C.', set:{A:{tono:'ok'},B:{tono:'due'},C:{tono:'ora'},c:{t:'aule aperte: 3'}}});
+passi.push({nota:'D inizia a 5: l\'aula 1 è libera (A finì a 3). D va nell\'aula 1.', set:{D:{tono:'ok'},A:{tono:'dato'},c:{t:'D nell\'aula 1'}}});
+passi.push({nota:'E inizia a 6: l\'aula 2 è libera (B finì a 4). E va nell\'aula 2. Totale: <b>3 aule</b>. Il minimo è la <b>profondità</b>: il massimo numero di intervalli che si sovrappongono nello stesso istante, cioè 3 (a t = 2: A, B, C).', set:{E:{tono:'ok'},c:{t:'aule = profondità = 3',tono:'ok'}}});
+SCENE.part = {w:540,h:320,lato:true,legenda:'ok:assegnato,due:occupato in questo istante,ora:aula nuova',oggetti:ogg,passi};
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Interval scheduling: il primo che finisce</h1>
+  <p class="lede">Dato un insieme di intervalli, scegli il numero massimo di intervalli che non si sovrappongono. La regola greedy è semplice: prendi sempre quello che finisce prima. Dimostrarla è l'esercizio classico dell'exchange argument.</p>
+</header>
+
+<section>
+  <h2>Il problema e la regola</h2>
+<p>Ogni intervallo ha un inizio <code>s</code> e una fine <code>f</code>. Due intervalli sono <b>compatibili</b> se non si sovrappongono:
+il secondo inizia non prima che il primo finisca. Vuoi il massimo numero di intervalli compatibili.</p>
+<p>La regola greedy: <b>ordina per fine crescente</b> e prendi un intervallo se è compatibile con l'ultimo preso. L'intuizione:
+un intervallo che finisce presto lascia libero più tempo per gli altri.</p>
+  <figure class="scena" data-scena="int" data-titolo="Ordine per fine e scelta compatibile"></figure>
+</section>
+<section>
+  <h2>Perché è ottimo</h2>
+<p>Dimostrazione <b>greedy stays ahead</b>: dopo <code>k</code> scelte, il greedy ha il primo intervallo che finisce non più tardi di
+qualunque altra soluzione con <code>k</code> intervalli. Quindi ha sempre spazio almeno quanto un'altra soluzione per la scelta successiva.</p>
+<p>Oppure l'<b>exchange argument</b>: se un'ottima sceglie un intervallo che finisce più tardi di quello del greedy, lo sostituisci
+con quello del greedy senza creare sovrapposizioni (il greedy finisce prima). Il numero resta lo stesso.</p>
+</section>
+<section>
+  <h2>Il costo</h2>
+<p>Ordinare costa <code>O(n log n)</code>. Poi una sola scansione, <code>O(n)</code>, con una sola variabile: la fine dell'ultimo intervallo preso.
+Totale <code>O(n log n)</code>. Se gli intervalli sono già ordinati, la scansione basta: <code>O(n)</code>.</p>
+<div class="box attenzione" data-tit="Non per fine e non per inizio"><p>Ordinare per <i>durata</i> sbaglia: un intervallo corto può sovrapporsi
+a due lunghi che insieme sono compatibili. Ordinare per <i>inizio</i> sbaglia: un intervallo che inizia presto può essere molto lungo.</p></div>
+</section>
+<section>
+  <h2>Interval partitioning: quante aule</h2>
+<p>Variante diversa: tutti gli intervalli devono essere assegnati, usando il <b>minimo numero di aule</b>. Un'aula contiene intervalli non sovrapposti.</p>
+<p>Il greedy: ordina per <b>inizio</b> crescente. Per ogni intervallo, usa un'aula libera se c'è, altrimenti apri un'aula nuova.
+Il numero di aule è la <b>profondità</b> degli intervalli, cioè il massimo numero che si sovrappongono nello stesso istante. Quindi è ottimo:
+nessuna soluzione può usare meno aule della profondità.</p>
+  <figure class="scena" data-scena="part" data-titolo="Aule: il massimo di intervalli sovrapposti"></figure>
+</section>
+<section>
+  <h2>Il codice, affiancato</h2>
+  <p>Questa pagina spiega il concetto. Il codice Java che lo implementa, con una spiegazione riga per riga e le note di sintassi che servono, è nella pagina affiancata.</p>
+  <p><a href="../codice/interval-scheduling.html"><b>→ Codice Java di questo argomento</b></a></p>
+</section>
+<section>
+  <h2>Scheduling con ritardo minimo (EDF)</h2>
+  <p>Una sola macchina, più lavori. Ogni lavoro <i>j</i> ha una <b>durata</b> <code>tⱼ</code> e una <b>scadenza</b> (deadline) <code>dⱼ</code>: il momento entro cui dovrebbe essere finito. Se <i>j</i> parte al tempo <code>sⱼ</code>, finisce a <code>fⱼ = sⱼ + tⱼ</code>.</p>
+  <p>Il <b>ritardo</b> (lateness) di un lavoro è <code>ℓⱼ = max(0, fⱼ − dⱼ)</code>. Il <code>max(0, …)</code> prende il più grande tra zero e il numero: un lavoro finito in anticipo ha ritardo 0, mai negativo. L’obiettivo è il <b>ritardo massimo</b> <code>L = maxⱼ ℓⱼ</code>, il più piccolo possibile.</p>
+  <p>Due regole greedy che sembrano ovvie sbagliano:</p>
+  <div class="tab-wrap"><table class="tab"><thead><tr><th>regola</th><th>controesempio</th></tr></thead><tbody>
+    <tr><td>durata più breve prima</td><td>durate (1, 10), scadenze (100, 10): il lavoro corto va prima, il secondo finisce a 11 con ritardo 1. Al contrario il ritardo è 0.</td></tr>
+    <tr><td>margine <code>dⱼ − tⱼ</code> più piccolo prima</td><td>durate (1, 10), scadenze (2, 10): margini 1 e 0. Il secondo prima fa sforare il primo di 9; il contrario dà ritardo 1.</td></tr>
+  </tbody></table></div>
+  <p>La regola che funziona è <b>EDF</b> (<i>earliest deadline first</i>, scadenza più vicina prima): ordina per <code>dⱼ</code> crescente e fai lavorare la macchina senza pause. Lasciarla ferma non aiuta mai, e nemmeno EDF ne ha bisogno.</p>
+  <figure class="scena" data-scena="lat" data-titolo="EDF su due lavori: l’ordine per scadenza"></figure>
+  <div class="box idea" data-tit="Perché EDF è ottimo (argomento di scambio)">
+    <ol>
+      <li>Un’<b>inversione</b> è una coppia di lavori <i>i</i>, <i>j</i> con <i>i</i> prima di <i>j</i> ma <code>dᵢ &gt; dⱼ</code>: il lavoro con la scadenza più lontana passa davanti.</li>
+      <li>Un ordine senza inversioni è EDF (le scadenze uguali si possono scambiare senza danno).</li>
+      <li>Se c’è un’inversione, ce n’è una tra due lavori <b>consecutivi</b>: se tutti i vicini sono in ordine, lo è tutta la fila.</li>
+      <li>Scambio i due lavori consecutivi. <i>j</i> ora parte prima e finisce prima di <code>fⱼ</code>, quindi il suo ritardo non cresce. <i>i</i> finisce al vecchio <code>fⱼ</code>, e il suo ritardo <code>fⱼ − dᵢ</code> è minore di <code>fⱼ − dⱼ</code>, che è al più il ritardo massimo <code>L</code>. Quindi il massimo non cresce.</li>
+      <li>Ogni scambio toglie un’inversione e non ne crea di nuove. Dopo al massimo <code>n(n−1)/2</code> scambi non ce ne sono più. Partendo da un ottimo si arriva a EDF senza peggiorare il ritardo massimo: EDF è ottimo.</li>
+    </ol>
+  </div>
+</section>
+<section>
+  <h2>All’esame</h2>
+<div class="box esame" data-tit="All’esame">
+<p>Interval scheduling (massimo numero di attività compatibili) → earliest finish time.
+Interval partitioning (minimo numero di aule) → earliest start time, numero di aule = profondità.
+Frase: <i>"Sort the jobs in increasing order of finish time. Take a job if it starts no earlier than the finish of the last job taken. Time O(n log n)."</i></p>
+<p>Con pesi diversi sui job non è più greedy: è weighted interval scheduling (DP).</p>
+</div>
+</section>
+<section>
+  <h2>Formulario rapido</h2>
+<div class="tab-wrap"><table class="tab"><thead><tr><th>variante</th><th>regola</th><th>nota</th></tr></thead><tbody><tr><td>earliest finish</td><td>ordina per fine, prendi se compatibile</td><td>massimo numero, O(n log n)</td></tr><tr><td>earliest start</td><td>ordina per inizio, aula libera o nuova</td><td>minimo numero di aule = profondità</td></tr><tr><td>con pesi</td><td>non greedy</td><td>weighted interval scheduling, DP</td></tr></tbody></table></div>
+</section>
+
+</main>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+const X = t => 40 + t * 60;
+const ogg = [];
+for (let t = 0; t <= 6; t++) ogg.push({id:'tk'+t, tipo:'testo', x:X(t), y:252, t:String(t), size:11});
+ogg.push({id:'asse', tipo:'linea', x1:X(0), y1:242, x2:X(6), y2:242});
+ogg.push({id:'lab1', tipo:'testo', x:40, y:24, t:"Ordine EDF: prima A, poi B", size:12, bold:true, anchor:'start'});
+ogg.push({id:'lab2', tipo:'testo', x:40, y:112, t:"Ordine inverso: prima B, poi A", size:12, bold:true, anchor:'start'});
+ogg.push({id:'a1', tipo:'rett', x:X(0), y:36, w:120, h:30, t:'A (d 3)', nascosto:true});
+ogg.push({id:'b1', tipo:'rett', x:X(2), y:36, w:180, h:30, t:'B (d 4)', nascosto:true});
+ogg.push({id:'r1', tipo:'rett', x:X(4), y:36, w:60, h:30, t:'', tono:'no', nascosto:true});
+ogg.push({id:'b2', tipo:'rett', x:X(0), y:126, w:180, h:30, t:'B (d 4)', nascosto:true});
+ogg.push({id:'a2', tipo:'rett', x:X(3), y:126, w:120, h:30, t:'A (d 3)', tono:'no', nascosto:true});
+ogg.push({id:'c', tipo:'testo', x:40, y:296, t:'', size:12, bold:true, anchor:'start'});
+const passi = [
+  {nota:"Due lavori su una macchina. <b>A</b>: durata 2, scadenza 3. <b>B</b>: durata 3, scadenza 4. L’asse orizzontale è il tempo: ogni barra occupa la macchina per la durata del lavoro.", set:{c:{t:'A: durata 2, scadenza 3 · B: durata 3, scadenza 4'}}},
+  {nota:"Provo l’ordine <b>EDF</b>: prima <b>A</b>, perché la sua scadenza è più vicina. A parte a 0 e finisce a 2, prima della scadenza 3: <b>in orario</b>, ritardo 0.", set:{a1:{nascosto:false, tono:'ok'}, c:{t:'EDF, passo 1: A finisce a 2, ritardo 0'}}},
+  {nota:"Poi <b>B</b>: parte a 2 e finisce a 5. La scadenza è 4, quindi sfora di <b>5 − 4 = 1</b>: è il tratto rosso. Con EDF il ritardo massimo è L = 1.", set:{b1:{nascosto:false, tono:'ora'}, r1:{nascosto:false}, c:{t:'EDF: ritardo massimo L = 1'}}},
+  {nota:"Provo l’altro ordine: <b>B prima</b>. B finisce a 3, in orario (3 ≤ 4). Poi A parte a 3 e finisce a 5: scade a 3, quindi ritardo 2.", set:{a1:{tono:'spento'}, b1:{tono:'spento'}, r1:{nascosto:true}, b2:{nascosto:false, tono:'ok'}, a2:{nascosto:false}, c:{t:'B prima: A finisce a 5, ritardo 2'}}},
+  {nota:"Ritardo massimo: 1 con EDF, 2 con B prima. EDF è il migliore, e l’argomento di scambio dice che lo è sempre.", set:{a1:{tono:'ok'}, b1:{nascosto:false, tono:'dato'}, r1:{nascosto:false}, b2:{tono:'spento'}, a2:{tono:'spento'}, c:{t:'EDF: L = 1 · inverso: L = 2', tono:'ok'}}}
+];
+SCENE.lat = {
+  w: 540, h: 310, lato: true,
+  legenda: 'ok:in orario,no:in ritardo,ora:appena cambiato,dato:lavoro B,spento:ordine non scelto',
+  oggetti: ogg, passi
+};
+})();
+</script>
+</body>
+</html>

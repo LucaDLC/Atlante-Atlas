@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Gale-Shapley passo per passo</title>
+<link rel="stylesheet" href="../assets/atlas.css">
+<link rel="stylesheet" href="../assets/tema.css">
+<script src="../assets/sito.js"></script>
+<script src="../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  const P = ['A', 'B', 'C'], R = ['X', 'Y', 'Z'];
+  const ogg = [];
+  P.forEach((p, i) => ogg.push({ id: p, tipo: 'nodo', x: 170, y: 60 + i * 85, t: p }));
+  R.forEach((x, i) => ogg.push({ id: x, tipo: 'nodo', x: 420, y: 60 + i * 85, t: x }));
+  const liste = { A: 'X > Y > Z', B: 'X > Z > Y', C: 'Y > X > Z', X: 'B > A > C', Y: 'A > C > B', Z: 'A > B > C' };
+  P.forEach((p, i) => ogg.push({ id: 'l' + p, tipo: 'testo', x: 135, y: 60 + i * 85, t: liste[p], anchor: 'end', size: 13 }));
+  R.forEach((x, i) => ogg.push({ id: 'l' + x, tipo: 'testo', x: 455, y: 60 + i * 85, t: liste[x], anchor: 'start', size: 13 }));
+  P.forEach(p => R.forEach(x => ogg.push({ id: p + x, tipo: 'arco', da: p, a: x, dir: true, nascosto: true })));
+  ogg.push({ id: 'q', tipo: 'testo', x: 295, y: 290, t: 'liberi: [A, B, C]', size: 13, bold: true });
+  ogg.push({ id: 'tp', tipo: 'testo', x: 170, y: 16, t: 'proponenti', size: 12, bold: true });
+  ogg.push({ id: 'tr', tipo: 'testo', x: 420, y: 16, t: 'ricevono', size: 12, bold: true });
+  SCENE.gs = {
+    w: 600, h: 305, lato: true,
+    legenda: 'ora:proposta,ok:fidanzati,no:rifiutata / lasciata',
+    codice: { lang: 'pseudo', testo: `while some proposer a is free
+      and hasn't asked everyone:
+  x ← first on a's list not yet asked
+  if x is free:
+    (a, x) engaged
+  else if x prefers a to partner a':
+    (a, x) engaged; a' becomes free
+  else:
+    x rejects a` },
+    oggetti: ogg,
+    passi: [
+      { nota: 'Tre proponenti e tre che ricevono, ognuno con la sua classifica. Tutti liberi.' },
+      { nota: '<b>A</b> chiede al primo della sua lista, <b>X</b>. X è libero: si fidanzano.', righe: [3, 4, 5], set: { AX: { nascosto: false, tono: 'ok' }, A: { tono: 'ok' }, X: { tono: 'ok' }, q: { t: 'liberi: [B, C]' } } },
+      { nota: '<b>B</b> chiede a <b>X</b>. X è già con A, ma nella lista di X <b>B</b> viene prima di A: X lascia A e sta con B. A torna libero.', righe: [6, 7], set: { AX: { tono: 'no' }, BX: { nascosto: false, tono: 'ok' }, B: { tono: 'ok' }, A: { tono: null }, lX: { tono: 'ora' }, q: { t: 'liberi: [C, A]' } } },
+      { nota: '<b>C</b> chiede a <b>Y</b>, il suo primo. Y è libero: accetta.', righe: [3, 4, 5], set: { AX: { nascosto: true }, lX: { tono: null }, CY: { nascosto: false, tono: 'ok' }, C: { tono: 'ok' }, Y: { tono: 'ok' }, q: { t: 'liberi: [A]' } } },
+      { nota: '<b>A</b> non richiede mai a X: passa al secondo, <b>Y</b>. Y è con C, ma preferisce <b>A</b>: lascia C.', righe: [6, 7], set: { AY: { nascosto: false, tono: 'ok' }, CY: { tono: 'no' }, A: { tono: 'ok' }, C: { tono: null }, lY: { tono: 'ora' }, q: { t: 'liberi: [C]' } } },
+      { nota: '<b>C</b> chiede al secondo, <b>X</b>. X è con B e preferisce <b>B</b> a C: rifiuta.', righe: [8, 9], set: { CY: { nascosto: true }, lY: { tono: null }, CX: { nascosto: false, tono: 'no' }, lX: { tono: 'ora' }, q: { t: 'liberi: [C]' } } },
+      { nota: '<b>C</b> chiede al terzo, <b>Z</b>. Z è libero: accetta.', righe: [3, 4, 5], set: { CX: { nascosto: true }, lX: { tono: null }, CZ: { nascosto: false, tono: 'ok' }, C: { tono: 'ok' }, Z: { tono: 'ok' }, q: { t: 'liberi: [ ]' } } },
+      { nota: 'Nessuno è libero: fine. <b>A–Y, B–X, C–Z</b>. Controllo: A preferirebbe X, ma X preferisce il suo B ad A. C preferirebbe Y o X, ma entrambi hanno qualcuno che preferiscono a C. Nessuna coppia instabile: il matching è <b>stabile</b>. 6 proposte in tutto, meno di n² = 9.', set: { q: { t: 'A–Y · B–X · C–Z', tono: 'ok' } } }
+    ]
+  };
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Gale-Shapley passo per passo</h1>
+  <p class="lede">Il primo problema del libro (K&amp;T 1.1): formare coppie in modo che nessuno abbia motivo di "scappare". L'algoritmo di Gale e Shapley lo risolve in <i>O(n²)</i>, e le sue idee (una proposta alla volta, un invariante che migliora sempre) tornano in tutto il corso.</p>
+</header>
+
+<section>
+  <h2>Il problema</h2>
+  <ul>
+    <li>Due gruppi di <i>n</i> persone: chi <b>propone</b> (nel libro "men", nelle slide gli ospedali) e chi <b>riceve</b> ("women", gli studenti).</li>
+    <li>Ognuno ordina <b>tutti</b> quelli dell'altro gruppo dal preferito al meno preferito.</li>
+    <li>Un <b>matching</b> è un insieme di coppie in cui ognuno compare al massimo una volta; è <b>perfetto</b> se tutti sono in coppia.</li>
+  </ul>
+  <div class="box regola" data-tit="Coppia instabile e matching stabile">
+    <p>Nel matching S, <b>a–x</b> è una <b>coppia instabile</b> se <i>a</i> e <i>x</i> non sono in coppia tra loro, ma <i>a</i> preferisce <i>x</i> al suo partner <b>e</b> <i>x</i> preferisce <i>a</i> al suo partner. Entrambi avrebbero interesse a lasciare il partner per mettersi insieme.</p>
+    <p>Un matching perfetto senza coppie instabili è <b>stabile</b>.</p>
+  </div>
+  <p>Domande: esiste sempre un matching stabile? Come lo trovo in fretta? Provare tutti gli <i>n!</i> matching perfetti è la ricerca esaustiva, troppo lenta.</p>
+</section>
+
+<section>
+  <h2>L'algoritmo</h2>
+  <figure class="scena" data-scena="gs" data-titolo="Gale-Shapley su 3 + 3 persone"></figure>
+  <p class="piccolo">Esempio verificato con un'implementazione Java: risultato A–Y, B–X, C–Z, stabile. La stessa implementazione su 2000 istanze casuali (fino a 30 + 30 persone) ha dato sempre un matching stabile.</p>
+</section>
+
+<section>
+  <h2>Perché funziona</h2>
+  <figure class="passi" data-titolo="Due osservazioni">
+    <div class="passo"><div class="espr">(1.1) chi riceve: da quando riceve la prima proposta <mark class="ok">resta fidanzato</mark>, e il partner <mark class="ok">può solo migliorare</mark></div><p class="nota">Lascia qualcuno solo per uno che preferisce.</p></div>
+    <div class="passo"><div class="espr">(1.2) chi propone: chiede in ordine di lista, quindi i suoi partner <mark class="no">possono solo peggiorare</mark></div><p class="nota">Non torna mai a chiedere a chi ha già chiesto.</p></div>
+  </figure>
+  <figure class="passi" data-titolo="Termina dopo al massimo n² proposte">
+    <div class="passo"><div class="espr">ogni proposta è una coppia <mark class="dato">(a, x)</mark> mai usata prima</div><p class="nota">Per (1.2) nessuno chiede due volte alla stessa persona.</p></div>
+    <div class="passo"><div class="espr">coppie possibili = n · n = <mark class="ok">n²</mark></div><p class="nota">Ogni giro del ciclo fa una proposta: al massimo n² giri.</p></div>
+  </figure>
+  <figure class="passi" data-titolo="Il matching finale è perfetto (per assurdo)">
+    <div class="passo"><div class="espr">supponi che alla fine <mark class="no">a sia libero</mark></div><p class="nota">Il ciclo finisce solo se a ha chiesto a tutti.</p></div>
+    <div class="passo"><div class="espr">a ha chiesto a <mark class="dato">tutti gli n</mark> che ricevono</div><p class="nota">Quindi ognuno di loro ha ricevuto almeno una proposta.</p></div>
+    <div class="passo"><div class="espr">per (1.1) <mark class="ok">tutti gli n sono fidanzati</mark></div><p class="nota">Chi riceve una proposta non torna mai libero.</p></div>
+    <div class="passo"><div class="espr">n fidanzati da una parte ⇒ n dall'altra ⇒ <mark class="no">a non può essere libero</mark></div><p class="nota">Le coppie sono uno a uno. Contraddizione.</p></div>
+  </figure>
+  <figure class="passi" data-titolo="Il matching finale è stabile (per assurdo)">
+    <div class="passo"><div class="espr">supponi <mark class="no">a–y instabile</mark>: a sta con x', y sta con b'</div><p class="nota">a preferisce y a x', e y preferisce a a b'.</p></div>
+    <div class="passo"><div class="espr">caso 1: a <mark class="dato">non ha mai chiesto</mark> a y</div><p class="nota">a chiede in ordine di lista: se è arrivato a x' senza passare da y, preferisce x' a y. Contraddizione.</p></div>
+    <div class="passo"><div class="espr">caso 2: a <mark class="dato">ha chiesto</mark> a y</div><p class="nota">Ora non stanno insieme, quindi y lo ha rifiutato o lasciato per qualcuno che preferiva.</p></div>
+    <div class="passo"><div class="espr">per (1.1) il partner di y è solo migliorato ⇒ y preferisce b' ad a</div><p class="nota">Contraddizione con l'ipotesi.</p></div>
+    <div class="passo"><div class="espr"><mark class="ok">nessuna coppia instabile ⇒ matching stabile</mark></div><p class="nota">E dato che l'algoritmo termina sempre, <b>un matching stabile esiste sempre</b>.</p></div>
+  </figure>
+  <div class="box regola" data-tit="Chi ci guadagna">
+    <p>Qualunque ordine di proposte si scelga, Gale-Shapley dà sempre lo stesso matching: quello in cui ogni proponente ha il <b>miglior partner possibile</b> tra tutti i matching stabili (<i>proposer-optimal</i>), e ogni ricevente il <b>peggiore</b> possibile (K&amp;T 1.1). Proporre conviene.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Con un gruppo solo non funziona</h2>
+  <p>Se tutti possono accoppiarsi con tutti (compagni di stanza, "stable roommates"), un matching stabile <b>può non esistere</b>. L'esempio delle slide:</p>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th></th><th>1°</th><th>2°</th><th>3°</th></tr></thead>
+    <tbody>
+      <tr><td>A</td><td>B</td><td>C</td><td>D</td></tr>
+      <tr><td>B</td><td>C</td><td>A</td><td>D</td></tr>
+      <tr><td>C</td><td>A</td><td>B</td><td>D</td></tr>
+      <tr><td>D</td><td>A</td><td>B</td><td>C</td></tr>
+    </tbody>
+  </table></div>
+  <p>D è l'ultimo per tutti. Chiunque stia con D forma una coppia instabile con chi lo mette al primo posto tra i restanti: A–B–C si "rubano" a vicenda in cerchio. Nessuno dei 3 matching possibili è stabile.</p>
+</section>
+
+</main>
+</body>
+</html>

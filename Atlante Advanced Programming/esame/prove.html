@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Vecchie prove e allenamento</title>
+<link rel="stylesheet" href="../assets/atlas.css">
+<link rel="stylesheet" href="../assets/tema.css">
+<script src="../assets/sito.js"></script>
+<script src="../assets/atlas.js" defer></script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <div class="occhiello"><span>Esame</span><span>allenamento</span></div>
+  <h1>Vecchie prove e allenamento</h1>
+  <p class="lede">Le prove degli anni passati <b>non sono ancora pubblicate</b>: le slide della settimana 1 dicono che lo saranno. Nel frattempo qui trovi domande nello stile degli esercizi del corso, sugli argomenti delle settimane 1–4, con soluzioni compilate e verificate.</p>
+</header>
+
+<section>
+  <h2>Stato delle prove ufficiali</h2>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Cosa</th><th>Stato al 15 settembre 2026</th></tr></thead>
+    <tbody>
+      <tr><td>Vecchi esami ADPRO</td><td>annunciati ("old exams will be published"), non ancora nel repo né su LearnIT</td></tr>
+      <tr><td>Examination Syllabus</td><td>esce su LearnIT entro l'ultima lezione</td></tr>
+      <tr><td>Lezione sull'esame</td><td>settimana 13, martedì 24 novembre</td></tr>
+    </tbody>
+  </table></div>
+  <div class="box domanda-tua" data-tit="Quando arrivano">
+    <p>Appena le vecchie prove sono disponibili, questa pagina diventa l'analisi di com'è fatto l'esame: tipi di domande, argomenti più frequenti, soluzioni passo passo.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Come allenarsi adesso</h2>
+  <ol>
+    <li>Rifai gli esercizi degli homework <b>senza guardare</b> la tua soluzione, con i test aperti (<code>scala-cli test . -w</code>).</li>
+    <li>Rispetta i vincoli di stile: niente <code>var</code>, <code>return</code>, eccezioni se non richieste.</li>
+    <li>Allena le domande aperte: spiega <b>in inglese</b>, in 3–4 frasi, perché una soluzione funziona.</li>
+  </ol>
+</section>
+
+<section>
+  <h2>Domande in stile esame</h2>
+  <p class="piccolo">Scritte per l'atlante sul modello degli esercizi del corso: non sono prove ufficiali. Ogni soluzione è stata compilata con Scala 3.8.4.</p>
+
+  <h3>1 · Contare con un fold</h3>
+  <p>Implementa, senza ricorsione esplicita, una funzione che conta gli elementi di una lista che soddisfano <code>p</code>.</p>
+  <pre class="cod" data-lang="scala">def count[A](l: List[A])(p: A => Boolean): Int = ???</pre>
+  <details class="soluzione"><summary>Mostra la soluzione</summary><div>
+    <pre class="cod" data-lang="scala">def count[A](l: List[A])(p: A => Boolean): Int =
+  l.foldLeft(0)((acc, a) => if p(a) then acc + 1 else acc)</pre>
+    <p><code>z = 0</code> (lista vuota: zero elementi). Il passo aggiunge 1 solo se <code>p(a)</code>. <code>count(List(1,2,3,4,5))(_ % 2 == 1)</code> dà 3.</p>
+  </div></details>
+
+  <h3>2 · L'ultimo elemento, forse</h3>
+  <p>Implementa <code>lastOption</code> con un fold, senza pattern matching.</p>
+  <pre class="cod" data-lang="scala">def lastOption[A](l: List[A]): Option[A] = ???</pre>
+  <details class="soluzione"><summary>Mostra la soluzione</summary><div>
+    <pre class="cod" data-lang="scala">def lastOption[A](l: List[A]): Option[A] =
+  l.foldLeft[Option[A]](None)((_, a) => Some(a))</pre>
+    <p>Ogni passo butta l'accumulatore e tiene l'elemento attuale: alla fine resta l'ultimo. Il tipo <code>[Option[A]]</code> serve perché <code>None</code> da solo avrebbe tipo <code>None.type</code>. Risultati: <code>Some(9)</code> per <code>List(7, 8, 9)</code>, <code>None</code> per la lista vuota.</p>
+  </div></details>
+
+  <h3>3 · Filtrare e trasformare insieme</h3>
+  <p>Data una funzione che può fallire, tieni solo i risultati riusciti.</p>
+  <pre class="cod" data-lang="scala">def filterMap[A, B](l: List[A])(f: A => Option[B]): List[B] = ???
+// filterMap(List("1", "x", "3"))(_.toIntOption) == List(1, 3)</pre>
+  <details class="soluzione"><summary>Mostra la soluzione</summary><div>
+    <pre class="cod" data-lang="scala">def filterMap[A, B](l: List[A])(f: A => Option[B]): List[B] =
+  l.foldRight(List.empty[B])((a, acc) => f(a).map(_ :: acc).getOrElse(acc))</pre>
+    <p><code>foldRight</code> mantiene l'ordine. Se <code>f(a)</code> è <code>Some(b)</code>, <code>map</code> lo mette davanti al resto; se è <code>None</code>, <code>getOrElse</code> restituisce il resto invariato.</p>
+  </div></details>
+
+  <h3>4 · Profondità di un albero</h3>
+  <p>Usando <code>fold</code> sugli alberi della settimana 3, calcola la profondità: una foglia ha profondità 0, un ramo 1 + la profondità del figlio più profondo.</p>
+  <details class="soluzione"><summary>Mostra la soluzione</summary><div>
+    <pre class="cod" data-lang="scala">def depth[A](t: Tree[A]): Int =
+  fold[A, Int](t)((l, r) => 1 + (l max r))(_ => 0)</pre>
+    <p><code>g</code> per le foglie: 0, ignorando il valore. <code>f</code> per i rami: 1 più il massimo dei due. <code>depth(Branch(Branch(Leaf(1), Leaf(5)), Leaf(3)))</code> dà 2.</p>
+  </div></details>
+
+  <h3>5 · forAll su Option senza pattern matching</h3>
+  <p>Implementa <code>forAll</code> (vero se l'Option è vuoto o se il valore soddisfa <code>p</code>) usando solo <code>map</code> e <code>getOrElse</code>.</p>
+  <details class="soluzione"><summary>Mostra la soluzione</summary><div>
+    <pre class="cod" data-lang="scala">def forAll[A](o: Option[A])(p: A => Boolean): Boolean =
+  o.map(p).getOrElse(true)</pre>
+    <p><code>map(p)</code> trasforma <code>Some(a)</code> in <code>Some(p(a))</code>. Su <code>None</code>, "per tutti gli elementi" è vero a vuoto: default <code>true</code>.</p>
+  </div></details>
+
+  <h3>6 · Cosa stampa?</h3>
+  <pre class="cod" data-lang="scala">def twice(x: => Int): Int = x + x
+def twiceLazy(x: => Int): Int =
+  lazy val y = x
+  y + y
+
+println(twice({ println("hi"); 1 }))
+println(twiceLazy({ println("hi"); 1 }))</pre>
+  <details class="soluzione"><summary>Mostra la soluzione</summary><div>
+    <pre class="cod">hi
+hi
+2
+hi
+2</pre>
+    <p><code>twice</code>: <code>x</code> è by-name e compare due volte, quindi il blocco viene eseguito due volte. <code>twiceLazy</code>: la <code>lazy val</code> lo calcola una volta e poi lo ricorda.</p>
+  </div></details>
+
+  <h3>7 · Una lista infinita con unfold</h3>
+  <p>Implementa <code>iterate</code>: la LazyList <code>a, f(a), f(f(a)), …</code>, usando <code>unfold</code>.</p>
+  <details class="soluzione"><summary>Mostra la soluzione</summary><div>
+    <pre class="cod" data-lang="scala">def iterate[A](a: A)(f: A => A): LazyList[A] =
+  unfold(a)(x => Some((x, f(x))))</pre>
+    <p>Lo stato è il valore attuale: lo emetto e il nuovo stato è <code>f(x)</code>. Mai <code>None</code>: la lista è infinita. <code>iterate(1)(_ * 3).take(4).toList</code> dà <code>List(1, 3, 9, 27)</code>.</p>
+  </div></details>
+
+  <h3>8 · Varianza</h3>
+  <p>Con <code>class Cat extends Animal</code>: compila <code>val o: Option[Animal] = Some(Cat())</code>? E <code>val a: Array[Animal] = cats</code> se <code>cats: Array[Cat]</code>? Perché?</p>
+  <details class="soluzione"><summary>Mostra la soluzione</summary><div>
+    <p>La prima <b>sì</b>: <code>Option[+A]</code> è covariante, quindi <code>Option[Cat] &lt;: Option[Animal]</code>. La seconda <b>no</b>: gli array sono mutabili e in Scala invarianti (<i>Found: Array[Cat], Required: Array[Animal]</i>). Se lo fossero, potresti scrivere un Dog in un array di Cat.</p>
+  </div></details>
+
+  <h3>9 · Domanda aperta, in inglese</h3>
+  <p>Why is <code>foldLeft</code> on a strict <code>List</code> tail-recursive while <code>foldRight</code> is not? When would you still prefer <code>foldRight</code>?</p>
+  <details class="soluzione"><summary>Mostra una risposta modello</summary><div>
+    <div class="box inglese" data-tit="Risposta modello">
+      <p>"In foldLeft the combining function is applied before the recursive call, so the call is the last thing the function does and the compiler can turn it into a loop with constant stack space. foldRight must first compute the result for the tail and only then apply f to the head, so each element leaves a pending call on the stack. I would still use foldRight when the result must preserve the order of the list, for example when building a list with Cons, and on lazy lists, where f may return without forcing the rest and the fold can stop early."</p>
+    </div>
+  </div></details>
+</section>
+
+</main>
+</body>
+</html>

@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Riduzioni polinomiali</title>
+<link rel="stylesheet" href="../assets/atlas.css">
+<link rel="stylesheet" href="../assets/tema.css">
+<script src="../assets/sito.js"></script>
+<script src="../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+SCENE.schema = {
+  w: 620, h: 220, lato: false,
+  legenda: 'dato:problema noto X,due:problema nuovo Y,ora:la trasformazione (la parte che scrivi tu)',
+  oggetti: [
+    { id: 'b1', tipo: 'rett', x: 10, y: 70, w: 120, h: 60, t: 'istanza x di X' },
+    { id: 'b2', tipo: 'rett', x: 170, y: 70, w: 130, h: 60, t: 'trasformo x' },
+    { id: 'b3', tipo: 'rett', x: 340, y: 70, w: 120, h: 60, t: 'istanza y di Y' },
+    { id: 'b4', tipo: 'rett', x: 500, y: 70, w: 110, h: 60, t: 'risolutore Y' },
+    { id: 'f1', tipo: 'vett', x1: 130, y1: 100, x2: 170, y2: 100 },
+    { id: 'f2', tipo: 'vett', x1: 300, y1: 100, x2: 340, y2: 100 },
+    { id: 'f3', tipo: 'vett', x1: 460, y1: 100, x2: 500, y2: 100 },
+    { id: 'f4', tipo: 'vett', x1: 555, y1: 130, x2: 555, y2: 175, t: 'sì / no', tx: 8, ty: 0 },
+    { id: 'n', tipo: 'testo', x: 310, y: 30, t: '', size: 14, bold: true },
+    { id: 'n2', tipo: 'testo', x: 310, y: 205, t: '', size: 12.5 }
+  ],
+  passi: [
+    { nota: 'Voglio mostrare che il problema nuovo <b>Y</b> è difficile. Parto da un problema <b>X</b> che so già difficile.', set: { b1: { tono: 'dato' }, b3: { tono: 'due' }, b4: { tono: 'due' } } },
+    { nota: 'Prendo una <b>qualsiasi</b> istanza x di X e la <b>trasformo</b>, in tempo polinomiale, in un\'istanza y di Y.', set: { b2: { tono: 'ora' }, f1: { tono: 'ora' }, f2: { tono: 'ora' } } },
+    { nota: 'La trasformazione deve conservare la risposta: <b>x è "sì" per X ⇔ y è "sì" per Y</b>. Allora un risolutore di Y risolve anche X.', set: { f3: { tono: 'ok' }, f4: { tono: 'ok' }, n2: { t: 'x ha risposta sì  ⇔  y ha risposta sì' } } },
+    { nota: 'Si scrive <b>X ≤<sub>p</sub> Y</b>: "X si riduce a Y", "Y è almeno difficile quanto X". Se Y fosse facile, lo sarebbe anche X. Ma X è difficile: quindi <b>Y è difficile</b>.', set: { n: { t: 'X ≤p Y   ⇒   Y è almeno difficile quanto X', tono: 'ok' } } },
+    { nota: 'La freccia va <b>dal problema noto al nuovo</b>: "reduce <b>from</b> Vertex Cover". Al contrario (dal nuovo al noto) si dimostra solo che il nuovo è facile <i>se</i> lo è quello noto: non serve a niente. È l\'errore che all\'esame vale 0 punti.', set: { n: { t: 'reduce FROM the known problem TO the new one', tono: 'no' } } }
+  ]
+};
+(function () {
+  const C = [['x1', 'x2', '¬x3'], ['¬x1', 'x2', 'x3'], ['¬x1', '¬x2', 'x3']];
+  const cx = [110, 310, 510], ogg = [], pos = [[0, 60], [-50, 150], [50, 150]];
+  C.forEach((cl, i) => cl.forEach((l, j) => ogg.push({ id: `n${i}${j}`, tipo: 'nodo', x: cx[i] + pos[j][0], y: pos[j][1], r: 22, t: l })));
+  C.forEach((cl, i) => { for (let j = 0; j < 3; j++) for (let k = j + 1; k < 3; k++) ogg.push({ id: `t${i}${j}${k}`, tipo: 'arco', da: `n${i}${j}`, a: `n${i}${k}`, nascosto: true }); });
+  const conf = [];
+  for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) for (let a = i + 1; a < 3; a++) for (let b = 0; b < 3; b++) {
+    const p = C[i][j], q = C[a][b];
+    if (p === '¬' + q || q === '¬' + p) { const id = `c${i}${j}${a}${b}`; conf.push(id); ogg.push({ id, tipo: 'arco', da: `n${i}${j}`, a: `n${a}${b}`, curva: a - i === 2 ? 40 : 0, nascosto: true }); }
+  }
+  ['C1', 'C2', 'C3'].forEach((n, i) => ogg.push({ id: 'l' + n, tipo: 'testo', x: cx[i], y: 205, t: n, size: 12, bold: true }));
+  ogg.push({ id: 'f', tipo: 'testo', x: 310, y: 20, t: '(x1 ∨ x2 ∨ ¬x3) ∧ (¬x1 ∨ x2 ∨ x3) ∧ (¬x1 ∨ ¬x2 ∨ x3)', size: 13, bold: true });
+  ogg.push({ id: 'k', tipo: 'testo', x: 310, y: 240, t: '', size: 13, bold: true });
+  const tri = {}; C.forEach((cl, i) => { for (let j = 0; j < 3; j++) for (let k = j + 1; k < 3; k++) tri[`t${i}${j}${k}`] = { nascosto: false }; });
+  const cf = {}; conf.forEach(id => cf[id] = { nascosto: false, tono: 'no' });
+  SCENE.gadget = {
+    w: 620, h: 255, lato: false,
+    legenda: 'no:arco tra un letterale e la sua negazione,ok:scelto nell\'independent set',
+    oggetti: ogg,
+    passi: [
+      { nota: 'Una formula 3-SAT con 3 clausole. Un nodo per ogni <b>letterale di ogni clausola</b>: 9 nodi.' },
+      { nota: '<b>Gadget</b> per le clausole: i 3 nodi di una clausola formano un triangolo. Un independent set ne prende <b>al massimo uno</b> per clausola.', set: tri },
+      { nota: 'Archi di <b>conflitto</b>: ogni letterale è collegato a ogni sua negazione in altre clausole (x1 con ¬x1, …). Un independent set non può prendere x e ¬x insieme. In tutto 15 archi.', set: cf },
+      { nota: 'Chiedo un independent set di dimensione <b>k = numero di clausole = 3</b>: uno per triangolo.', set: { k: { t: 'k = 3 (una per clausola)' } } },
+      { nota: '<b>Formula soddisfacibile ⇒ independent set di 3</b>. Con x1 = x2 = x3 = vero, in ogni clausola scelgo un letterale vero: x1 in C1, x2 in C2, x3 in C3. Mai x e ¬x insieme, perché sono tutti veri nello stesso assegnamento.', set: { n00: { tono: 'ok' }, n11: { tono: 'ok' }, n22: { tono: 'ok' }, k: { t: 'x1, x2, x3 = vero  →  {x1, x2, x3} indipendente', tono: 'ok' } } },
+      { nota: '<b>Independent set di 3 ⇒ formula soddisfacibile</b>. Un nodo per triangolo e nessuna coppia x, ¬x: metto a vero quei letterali (le variabili non toccate come capita). Ogni clausola ha un letterale vero. Verificato a forza bruta: l\'independent set massimo è 3 e la formula è soddisfacibile.' }
+    ]
+  };
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Riduzioni polinomiali</h1>
+  <p class="lede">Finora: trovare algoritmi veloci. Da qui: dimostrare che per certi problemi un algoritmo veloce <b>probabilmente non esiste</b> (K&amp;T 8.1–8.2). Lo strumento è la <b>riduzione</b>: se sapessi risolvere Y, saprei risolvere X.</p>
+</header>
+
+<section>
+  <h2>Decisione, ricerca, ottimizzazione</h2>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Versione</th><th>Vertex cover</th></tr></thead>
+    <tbody>
+      <tr><td><b>decisione</b> (risposta sì/no)</td><td>esiste un vertex cover di dimensione ≤ k?</td></tr>
+      <tr><td><b>ricerca</b></td><td>trovane uno di dimensione ≤ k</td></tr>
+      <tr><td><b>ottimizzazione</b></td><td>trova il vertex cover più piccolo</td></tr>
+    </tbody>
+  </table></div>
+  <p>La teoria parla di problemi di <b>decisione</b>, ma per questi problemi le tre versioni sono equivalenti a meno di un fattore polinomiale: dall'ottimo si decide subito; con la decisione si trova il k minimo per ricerca binaria, e poi la soluzione togliendo un nodo alla volta (le slide lo fanno per vertex cover).</p>
+</section>
+
+<section>
+  <h2>La riduzione</h2>
+  <div class="box regola" data-tit="Definizione">
+    <p><span class="m">X ≤<sub>p</sub> Y</span> ("X si riduce polinomialmente a Y") se ogni istanza di X si può risolvere con un numero polinomiale di passi più un numero polinomiale di chiamate a un risolutore di Y. Di solito una sola chiamata: trasformo l'istanza e chiedo a Y.</p>
+  </div>
+  <figure class="scena" data-scena="schema" data-titolo="Da dove a dove va la freccia"></figure>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Se X ≤<sub>p</sub> Y e…</th><th>allora…</th></tr></thead>
+    <tbody>
+      <tr><td>Y si risolve in tempo polinomiale</td><td>anche X</td></tr>
+      <tr><td>X <b>non</b> si risolve in tempo polinomiale</td><td>nemmeno Y: <b>questo</b> è l'uso per dimostrare la difficoltà</td></tr>
+      <tr><td>X ≤<sub>p</sub> Y e Y ≤<sub>p</sub> Z</td><td>X ≤<sub>p</sub> Z (transitività)</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section>
+  <h2>Tre strategie di riduzione (le slide)</h2>
+  <h3>1. Equivalenza semplice: Independent Set ≡ Vertex Cover</h3>
+  <p><b>Independent set</b>: nodi senza archi tra loro. <b>Vertex cover</b>: nodi che toccano ogni arco.</p>
+  <figure class="passi" data-titolo="S è independent set ⇔ V − S è vertex cover">
+    <div class="passo"><div class="espr">S indipendente, prendo un arco (u, v)</div><p class="nota">u e v non possono stare entrambi in S.</p></div>
+    <div class="passo"><div class="espr">⇒ almeno uno tra u e v è in <mark class="ok">V − S</mark> ⇒ V − S copre (u, v)</div><p class="nota">Vale per ogni arco: V − S è un vertex cover.</p></div>
+    <div class="passo"><div class="espr">viceversa: V − S copre tutto, u e v in S ⇒ (u, v) non coperto ⇒ <mark class="no">non è un arco</mark></div><p class="nota">Quindi S è indipendente.</p></div>
+    <div class="passo"><div class="espr">independent set di dim. ≥ k  ⇔  vertex cover di dim. ≤ <mark class="ok">n − k</mark></div><p class="nota">La riduzione: stesso grafo, k' = n − k. Vale nei due sensi.</p></div>
+  </figure>
+  <h3>2. Caso particolare → caso generale: Vertex Cover ≤<sub>p</sub> Set Cover</h3>
+  <p>Ogni arco diventa un elemento dell'universo U; ogni nodo v diventa l'insieme degli archi che tocca. Scegliere k nodi che toccano tutti gli archi = scegliere k insiemi che coprono U. Vertex cover è un caso speciale di set cover. La prova completa, nel formato del corso, è in <a href="l10-come-dimostrare.html">scrivere una prova</a>.</p>
+  <h3>3. Gadget: 3-SAT ≤<sub>p</sub> Independent Set</h3>
+  <p><b>3-SAT</b>: una formula in cui ogni clausola è un "or" di 3 letterali (variabili o negazioni), e tutte le clausole devono essere vere. Si costruisce un grafo con un pezzo (gadget) per ogni clausola.</p>
+  <figure class="scena" data-scena="gadget" data-titolo="Da formula a grafo"></figure>
+  <p>Da qui, per transitività: <span class="m">3-SAT ≤<sub>p</sub> Independent Set ≤<sub>p</sub> Vertex Cover ≤<sub>p</sub> Set Cover</span>.</p>
+</section>
+
+</main>
+</body>
+</html>

@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Union-find: insiemi disgiunti</title>
+<link rel="stylesheet" href="../assets/atlas.css">
+<link rel="stylesheet" href="../assets/tema.css">
+<script src="../assets/sito.js"></script>
+<script src="../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+const N = (id,x,y,t) => ({id,tipo:'nodo',x,y,t,r:20});
+const A = (id,da,a) => ({id,tipo:'arco',da,a,dir:true});
+SCENE.uf = {
+  w: 520, h: 250, lato: true,
+  legenda: 'ora:operazione in corso,dato:radice (rappresentante),ok:risultato',
+  oggetti: [
+    N('a',60,60,'a'), N('b',170,60,'b'), N('c',280,60,'c'), N('d',390,60,'d'), N('e',470,160,'e'),
+    {id:'c1',tipo:'testo',x:20,y:225,t:'',size:12,bold:true,anchor:'start'}
+  ],
+  passi: [
+    { nota: 'Ogni nodo è un insieme a sé. Ogni insieme è un albero, e la <b>radice</b> è il suo rappresentante. Qui: 5 radici.', set:{a:{tono:'dato'},b:{tono:'dato'},c:{tono:'dato'},d:{tono:'dato'},e:{tono:'dato'},c1:{t:'5 insiemi: {a} {b} {c} {d} {e}'}} },
+    { nota: '<code>union(a, b)</code>: trovo le radici (a e b), e appendo l\'albero più piccolo sotto l\'altro. Entrambi hanno dimensione 1: appendo b sotto a.', set:{b:{tono:'ora',sotto:'figlio di a'}, a:{tono:'dato'}, ab:{tono:'ok'}, c1:{t:'{a, b} con radice a'}} },
+    { nota: '<code>union(c, d)</code>: stessa cosa. d sotto c.', set:{d:{tono:'ora',sotto:'figlio di c'}, c:{tono:'dato'}, cd:{tono:'ok'}, c1:{t:'{a, b} · {c, d} · {e}'}} },
+    { nota: '<code>union(a, c)</code>: radici a e c, dimensioni uguali: c sotto a. Ora {a, b, c, d} ha radice a.', set:{c:{tono:'ora',sotto:'figlio di a'}, d:{tono:'dato',sotto:'figlio di c'}, ac:{tono:'ok'}, c1:{t:'un solo insieme: {a, b, c, d} con radice a'}} },
+    { nota: '<code>find(d)</code>: risalgo d → c → a. Con <b>path compression</b> collego d direttamente ad a: la prossima ricerca costa un passo solo.', set:{d:{tono:'ok',sotto:'figlio di a'},c:{tono:'dato'},da:{tono:'ok'},c1:{t:'find(d) = a, e d ora punta direttamente ad a',tono:'ok'}} }
+  ]
+};
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Union-find: insiemi disgiunti</h1>
+  <p class="lede">La union-find (insiemi disgiunti) tiene gruppi che si fondono, e risponde in quasi tempo costante alla domanda: x e y sono nello stesso gruppo? È la struttura dietro Kruskal.</p>
+</header>
+
+<section>
+  <h2>Le tre operazioni</h2>
+<ul>
+  <li><b>make-set(x)</b>: crea il gruppo <code>{x}</code>, con <code>x</code> radice di sé stesso.</li>
+  <li><b>find(x)</b>: risali i padri fino alla radice. La radice è il <b>rappresentante</b> del gruppo.</li>
+  <li><b>union(x, y)</b>: trova le due radici e collega la più piccola sotto la più grande.</li>
+</ul>
+<p>Due elementi sono nello stesso gruppo se e solo se <code>find</code> dà la stessa radice.</p>
+  <figure class="scena" data-scena="uf" data-titolo="make-set, union, find con path compression"></figure>
+</section>
+<section>
+  <h2>Perché tiene gli alberi bassi</h2>
+<p>Senza accorgimenti un albero può diventare una catena lunga, e <code>find</code> costerebbe <code>O(n)</code>.
+Due regole lo evitano:</p>
+<ul>
+  <li><b>link by size / rank</b>: sotto la radice più grande va la più piccola. L'altezza cresce solo quando due alberi della stessa altezza si uniscono, quindi resta <code>≤ log n</code>.</li>
+  <li><b>path compression</b>: durante un <code>find</code>, ogni nodo incontrato viene collegato direttamente alla radice.</li>
+</ul>
+</section>
+<section>
+  <h2>Il costo</h2>
+<p>Con <b>link by size</b> e <b>path compression</b> insieme, <code>m</code> operazioni costano <code>O(m · α(m, n))</code> in totale, dove
+<code>α</code> è l'inversa di Ackermann: cresce così lentamente che in pratica è una costante (≤ 4 per ogni input reale).
+Senza path compression ma con link by size: <code>O(log n)</code> per operazione.</p>
+</section>
+<section>
+  <h2>Il codice, affiancato</h2>
+  <p>Questa pagina spiega il concetto. Il codice Java che lo implementa, con una spiegazione riga per riga e le note di sintassi che servono, è nella pagina affiancata.</p>
+  <p><a href="../codice/union-find.html"><b>→ Codice Java di questo argomento</b></a></p>
+</section>
+<section>
+  <h2>All’esame</h2>
+<div class="box esame" data-tit="All’esame">
+<p>Connettività che cresce nel tempo, o Kruskal: scrivi <i>"We maintain disjoint sets with union-find, using union by size and path compression; m operations cost O(m α(m, n))."</i></p>
+<p>Se la domanda chiede di controllare se due nodi sono connessi <b>una sola volta</b>, una BFS basta; se gli archi arrivano <b>uno alla volta</b> e serve la risposta dopo ogni arco, union-find.</p>
+</div>
+</section>
+<section>
+  <h2>Formulario rapido</h2>
+<div class="tab-wrap"><table class="tab"><thead><tr><th>operazione</th><th>effetto</th><th>costo</th></tr></thead><tbody><tr><td>make-set</td><td>gruppo nuovo</td><td>O(1)</td></tr><tr><td>find</td><td>radice del gruppo</td><td>quasi costante</td></tr><tr><td>union</td><td>fonde due gruppi</td><td>quasi costante</td></tr><tr><td>costo</td><td>O(m α(m, n))</td><td>con union by size + path compression</td></tr></tbody></table></div>
+</section>
+
+</main>
+</body>
+</html>

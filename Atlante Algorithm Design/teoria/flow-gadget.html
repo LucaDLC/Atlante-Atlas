@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Ridurre a un flusso: ricetta e gadget</title>
+<link rel="stylesheet" href="../assets/atlas.css">
+<link rel="stylesheet" href="../assets/tema.css">
+<script src="../assets/sito.js"></script>
+<script src="../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+const N = (id,x,y,t) => ({id,tipo:'nodo',x,y,t,r:18});
+const A = (id,da,a,t,extra) => Object.assign({id,tipo:'arco',da,a,dir:true,t},extra||{});
+SCENE.gad = {
+  w: 540, h: 240, lato: true,
+  legenda: 'dato:altri nodi,ora:v spezzato,no:passaggio che il gadget impedisce',
+  oggetti: [
+    N('u',60,60,'u'), N('w',60,180,'w'), N('v',260,120,'v'), N('x',470,60,'x'), N('y',470,180,'y'),
+    A('uv','u','v','',{tono:'dato'}), A('wv','w','v','',{tono:'dato'}), A('vx','v','x','',{tono:'dato'}), A('vy','v','y','',{tono:'dato'}),
+    {id:'c1',tipo:'testo',x:20,y:225,t:'',size:12,bold:true,anchor:'start'}
+  ],
+  passi: [
+    { nota: 'Voglio che il nodo <b>v</b> sia usato da <b>al più un cammino</b>. Il flusso mette capacità sugli <b>archi</b>, non sui nodi.', set:{} },
+    { nota: 'Spezzo v in due nodi: <b>v_in</b> riceve gli archi entranti, <b>v_out</b> emette quelli uscenti, e l\'arco <b>v_in → v_out</b> ha la capacità del nodo: 1.', set:{v:{tono:'ora',t:'v_in'}, c1:{t:'v_in → v_out con capacità 1'}} },
+    { nota: 'Ora tutto il flusso che passa per v deve attraversare l\'arco di capacità 1: non può superare 1. Il vincolo sul nodo è diventato un vincolo sull\'arco, e il max flow sa risolverlo.', set:{c1:{t:'capacità del nodo = capacità dell\'arco',tono:'ok'}} }
+  ]
+};
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Ridurre a un flusso: ricetta e gadget</h1>
+  <p class="lede">Il flusso mette capacità sugli archi, ma i vincoli di solito riguardano i nodi: un nodo usato al più una volta, o un vertice da togliere. Il gadget di split trasforma un vincolo di nodo in un vincolo di arco.</p>
+</header>
+
+<section>
+  <h2>Lo split del nodo</h2>
+<p>Sostituisci il nodo <code>v</code> con due nodi <code>v_in</code> e <code>v_out</code>, collegati da <code>v_in → v_out</code> con capacità <code>c(v)</code>.
+Gli archi che entravano in <code>v</code> ora entrano in <code>v_in</code>; quelli che uscivano escono da <code>v_out</code>.</p>
+<p>Ogni flusso che passa per <code>v</code> deve attraversare quell'arco: quindi non può superare <code>c(v)</code>. Il costo raddoppia i nodi e aggiunge <code>n</code> archi: stesso ordine di grandezza.</p>
+  <figure class="scena" data-scena="gad" data-titolo="Il nodo v diventa due nodi con un arco di capacità 1"></figure>
+</section>
+<section>
+  <h2>Dove si usa</h2>
+<p>Cammini <b>disgiunti nei nodi</b> (ogni nodo usato da un solo cammino), <b>minimo numero di nodi</b> da togliere per separare s da t (taglio di nodi),
+e nodi "speciali" che non si possono togliere (capacità infinita).</p>
+</section>
+<section>
+  <h2>La ricetta: ridurre a un flusso</h2>
+  <p>Per ogni problema che vuoi risolvere con il flusso, rispondi nell’ordine a cinque domande. È la stessa ricetta per matching, coppie e cammini disgiunti:</p>
+  <ol>
+    <li><b>I nodi</b>: quali e quanti, in funzione dei parametri del problema. Di solito: <code>s</code>, <code>t</code>, un nodo per ogni oggetto di tipo A, uno per ogni oggetto di tipo B.</li>
+    <li><b>Gli archi</b>: da dove a dove, orientati, e quanti in tutto.</li>
+    <li><b>Le capacità</b>: ognuna con il suo significato. Capacità 1 vuol dire “al massimo una volta”. Capacità <code>∞</code> vuol dire “nessun limite, ma l’arco non si può tagliare”.</li>
+    <li><b>Il significato del flusso</b>: cosa vuol dire un flusso massimo nel problema originale, e quanto vale. Va dimostrato nelle due direzioni: da una soluzione nasce un flusso, e da un flusso intero nasce una soluzione.</li>
+    <li><b>Il tempo</b>: quale algoritmo di flusso e con quali parametri. Ford-Fulkerson costa O(m·C), dove <code>m</code> sono gli archi e <code>C</code> il valore massimo del flusso.</li>
+  </ol>
+  <p>Ordine di lavoro: prima disegna il grafo dell’esempio, con precisione su nodi, archi e quanti sono. Poi scrivi la regola generale. Chi salta il disegno sbaglia quasi sempre una capacità.</p>
+</section>
+<section>
+  <h2>All’esame</h2>
+<div class="box esame" data-tit="All’esame">
+<p>Vincolo "un nodo al più una volta" → split del nodo con capacità 1. Frase: <i>"Split each node v into v_in and v_out joined by an arc of capacity 1; arcs into v enter v_in, arcs out of v leave v_out."</i></p>
+</div>
+</section>
+<section>
+  <h2>Formulario rapido</h2>
+<div class="tab-wrap"><table class="tab"><thead><tr><th>elemento</th><th>capacità</th><th>nota</th></tr></thead><tbody><tr><td>v_in → v_out</td><td>capacità c(v)</td><td>il vincolo del nodo</td></tr><tr><td>n archi in più</td><td>stesso ordine</td><td>costo accettabile</td></tr></tbody></table></div>
+</section>
+
+</main>
+</body>
+</html>

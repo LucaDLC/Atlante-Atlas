@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sequence alignment: edit distance</title>
+<link rel="stylesheet" href="../assets/atlas.css">
+<link rel="stylesheet" href="../assets/tema.css">
+<script src="../assets/sito.js"></script>
+<script src="../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+const A = 'ALTO', B = 'ALTRO';
+const D = [[0,1,2,3,4,5],[1,0,1,2,3,4],[2,1,0,1,2,3],[3,2,1,0,1,2],[4,3,2,1,1,1]];
+const vuota = D.map((r,i) => r.map((v,j) => (i===0||j===0) ? String(v) : ''));
+SCENE.seq = {
+  w: 560, h: 280, lato: true,
+  legenda: 'ora:cella che calcolo,ok:risposta,dato:casi base,due:da dove viene il minimo',
+  oggetti: [
+    {id:'g',tipo:'griglia',x:90,y:50,cw:50,ch:34,valori:vuota,intR:['', 'A','L','T','O'].slice(0,5),intC:['','A','L','T','R','O'].slice(0,6)},
+    {id:'t',tipo:'testo',x:20,y:270,t:'',size:12,bold:true,anchor:'start'}
+  ],
+  passi: [
+    { nota: 'Edit distance tra <b>ALTO</b> e <b>ALTRO</b>: il minimo di inserimenti, cancellazioni e sostituzioni. <code>OPT(i, j)</code> = distanza tra i primi i caratteri di A e i primi j di B.', set:{} },
+    { nota: 'Casi base: <code>OPT(i, 0) = i</code> e <code>OPT(0, j) = j</code>: prima riga e prima colonna. Già riempite.', set:{g:{valori:vuota,toni:{}}} },
+    { nota: '<code>OPT(i, j) = min( OPT(i−1, j) + 1, OPT(i, j−1) + 1, OPT(i−1, j−1) + [caratteri diversi] )</code>. Cella (1,1): A[1]=A=B[1]: 0.', set:{g:{valori:D.map((r,i)=>r.map((v,j)=> (i<=1&&j<=1)||(i===0||j===0)?String(v):'')),toni:{'1,1':'ora'}}} },
+    { nota: 'Cella (4,4): ALTO contro ALTR: la diagonale dà 1, il vicino sopra 1+1, quello a sinistra 1+1. Il minimo è 1: la riga della O è <b>1 1</b>.', set:{g:{valori:D.map((r,i)=>r.map((v,j)=> (i===4&&j>=4)||(i<=3)?String(v):'')),toni:{'4,4':'ora','4,5':'ok'}}} },
+    { nota: 'Risposta: <b>OPT(4, 5) = 1</b>: l\'unica differenza è l\'<b>R</b> da inserire. Il costo è <code>O(n·m)</code>: una tabella di (n+1)(m+1) celle, ognuna O(1).', set:{g:{valori:D.map(r=>r.map(v=>String(v))),toni:{'4,5':'ok'}}, t:{t:'distanza = 1',tono:'ok'}} }
+  ]
+};
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Sequence alignment: edit distance</h1>
+  <p class="lede">La distanza di modifica (edit distance) tra due stringhe conta il minimo numero di inserimenti, cancellazioni e sostituzioni. È la DP su prefissi: una tabella di celle che dipendono da tre vicini.</p>
+</header>
+
+<section>
+  <h2>Il problema e la ricorrenza</h2>
+<p><code>OPT(i, j)</code> è la distanza tra i primi <code>i</code> caratteri di <code>A</code> e i primi <code>j</code> di <code>B</code>.
+Il caso base è la riga e la colonna zero: <code>OPT(i, 0) = i</code>, <code>OPT(0, j) = j</code>. Poi:</p>
+<p><code>OPT(i, j) = min( OPT(i−1, j) + 1, OPT(i, j−1) + 1, OPT(i−1, j−1) + [A_i ≠ B_j] )</code></p>
+<p>I tre termini sono: cancella <code>A_i</code>, inserisci <code>B_j</code>, allinea i due caratteri (con sostituzione se diversi).</p>
+  <figure class="scena" data-scena="seq" data-titolo="La tabella si riempie da sinistra e dall'alto"></figure>
+</section>
+<section>
+  <h2>Il costo</h2>
+<p>Tabella di <code>(n + 1)(m + 1)</code> celle, ognuna in <code>O(1)</code>: tempo e spazio <code>O(nm)</code>. Ricostruire l'allineamento si fa risalendo
+dalla cella finale verso quella che ha dato il minimo.</p>
+</section>
+<section>
+  <h2>Il codice, affiancato</h2>
+  <p>Questa pagina spiega il concetto. Il codice Java che lo implementa, con una spiegazione riga per riga e le note di sintassi che servono, è nella pagina affiancata.</p>
+  <p><a href="../codice/sequence-alignment.html"><b>→ Codice Java di questo argomento</b></a></p>
+</section>
+<section>
+  <h2>All’esame</h2>
+<div class="box esame" data-tit="All’esame">
+<p>Confronto di stringhe, parole, palindromi → DP sui prefissi, O(nm). Frase: <i>"Let OPT(i,j) be the minimum cost of aligning the first i characters of A with the first j of B. Base cases OPT(i,0)=i, OPT(0,j)=j. Time and space O(mn)."</i></p>
+</div>
+</section>
+<section>
+  <h2>Formulario rapido</h2>
+<div class="tab-wrap"><table class="tab"><thead><tr><th>voce</th><th>significato</th><th>nota</th></tr></thead><tbody><tr><td>OPT(i, j)</td><td>distanza sui prefissi</td><td>DP 2D</td></tr><tr><td>caso base</td><td>riga e colonna zero</td><td>non dimenticarle</td></tr><tr><td>tempo</td><td>O(nm)</td><td>tabella</td></tr></tbody></table></div>
+</section>
+
+</main>
+</body>
+</html>

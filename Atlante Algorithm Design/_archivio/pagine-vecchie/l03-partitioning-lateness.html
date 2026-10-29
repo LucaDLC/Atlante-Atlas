@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Interval partitioning e ritardo minimo</title>
+<link rel="stylesheet" href="../assets/atlas.css">
+<link rel="stylesheet" href="../assets/tema.css">
+<script src="../assets/sito.js"></script>
+<script src="../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  const L = [['a', 0, 3, 1], ['b', 1, 5, 2], ['c', 2, 4, 3], ['d', 4, 7, 1], ['e', 5, 8, 3], ['f', 6, 9, 2], ['g', 7, 10, 1]];
+  const X = t => 90 + t * 48, Y = r => 20 + (r - 1) * 60, ogg = [];
+  for (let r = 1; r <= 3; r++) ogg.push({ id: 'aula' + r, tipo: 'testo', x: 40, y: Y(r) + 16, t: 'aula ' + r, size: 12, bold: true });
+  for (let t = 0; t <= 10; t++) ogg.push({ id: 'tk' + t, tipo: 'testo', x: X(t), y: 212, t: String(t), size: 11 });
+  ogg.push({ id: 'asse', tipo: 'linea', x1: X(0), y1: 198, x2: X(10), y2: 198 });
+  L.forEach(([n, s, f, r]) => ogg.push({ id: n, tipo: 'rett', x: X(s), y: Y(r), w: X(f) - X(s), h: 32, t: `${n} [${s},${f}]`, nascosto: true }));
+  ogg.push({ id: 'pq', tipo: 'testo', x: 330, y: 245, t: 'aule aperte: nessuna', size: 12.5, bold: true });
+  const fine = {}; const passi = [{ nota: 'Sette lezioni. Vogliamo assegnarle a delle aule in modo che due lezioni nella stessa aula non si sovrappongano, usando <b>meno aule possibile</b>. Le considero in ordine di <b>inizio</b>.' }];
+  L.forEach(([n, s, f, r], i) => {
+    const nuova = !(r in fine);
+    const libere = Object.entries(fine).filter(([, v]) => v <= s).map(([k]) => 'aula ' + k);
+    const set = { [n]: { nascosto: false, tono: 'ora' } };
+    if (i > 0) set[L[i - 1][0]] = { tono: 'ok' };
+    fine[r] = f;
+    set.pq = { t: 'fine delle aule: ' + Object.entries(fine).map(([k, v]) => `aula ${k} → ${v}`).join(', ') };
+    passi.push({ nota: nuova ? `<b>${n}</b> inizia a ${s}. ${Object.keys(fine).length > 1 ? 'Nessuna aula aperta è libera a quell\'ora' : 'Non ci sono aule'}: apro l'<b>aula ${r}</b>.` : `<b>${n}</b> inizia a ${s}. Libere a quell'ora: ${libere.join(', ')}. Prendo quella che si è liberata per prima, l'<b>aula ${r}</b>.`, set });
+  });
+  passi.push({ nota: 'Tre aule. Tra 2 e 3 sono in corso <b>a, b, c</b> insieme: la <b>profondità</b> è 3, quindi meno di 3 aule sono impossibili. Greedy ne usa esattamente 3: è ottimo.', set: { g: { tono: 'ok' }, a: { tono: 'due' }, b: { tono: 'due' }, c: { tono: 'due' } } });
+  SCENE.aule = { w: 620, h: 260, lato: false, legenda: 'ora:assegnata adesso,ok:già assegnata,due:in corso insieme', oggetti: ogg, passi };
+
+  // ritardo: esempio delle slide
+  const J = [[1, 3, 6], [2, 2, 8], [3, 1, 9], [4, 4, 9], [5, 3, 14], [6, 2, 15]];
+  const Z = t => 30 + t * 37, og2 = [], p2 = [{ nota: 'Sei lavori su <b>una</b> macchina: il lavoro j dura t<sub>j</sub> e ha scadenza d<sub>j</sub>. Il <b>ritardo</b> è quanto finisce dopo la scadenza (0 se in tempo). Vogliamo il <b>ritardo massimo</b> più piccolo. Ordine: <b>scadenza più vicina</b>.' }];
+  for (let t = 0; t <= 15; t++) og2.push({ id: 'k' + t, tipo: 'testo', x: Z(t), y: 150, t: String(t), size: 11 });
+  og2.push({ id: 'asse', tipo: 'linea', x1: Z(0), y1: 136, x2: Z(15), y2: 136 });
+  let ora = 0;
+  J.forEach(([j, t, d]) => {
+    og2.push({ id: 'j' + j, tipo: 'rett', x: Z(ora), y: 70, w: t * 37, h: 40, t: `${j}`, nascosto: true });
+    og2.push({ id: 'd' + j, tipo: 'linea', x1: Z(d), y1: 40 + j * 4, x2: Z(d), y2: 132, tratt: true, nascosto: true });
+    og2.push({ id: 'l' + j, tipo: 'testo', x: Z(ora) + t * 18.5, y: 60, t: `t=${t}, d=${d}`, size: 10.5, nascosto: true });
+    const f = ora + t, rit = Math.max(0, f - d);
+    p2.push({ nota: `Lavoro <b>${j}</b> (t=${t}, d=${d}): da ${ora} a ${f}. ${rit ? `Finisce <b>${rit}</b> dopo la scadenza: ritardo ${rit}.` : 'In tempo: ritardo 0.'}`, set: { ['j' + j]: { nascosto: false, tono: rit ? 'no' : 'ok' }, ['d' + j]: { nascosto: false, tono: rit ? 'no' : 'spento' }, ['l' + j]: { nascosto: false } } });
+    ora = f;
+  });
+  og2.push({ id: 'ris', tipo: 'testo', x: 310, y: 185, t: '', size: 13, bold: true });
+  p2.push({ nota: 'Ritardo massimo <b>1</b> (il lavoro 4). Nessun ordine fa meglio: lo dimostra l\'argomento di scambio qui sotto.', set: { ris: { t: 'ritardo massimo = 1', tono: 'ok' } } });
+  SCENE.edf = { w: 620, h: 200, lato: false, legenda: 'ok:in tempo,no:in ritardo', oggetti: og2, passi: p2 };
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Interval partitioning e ritardo minimo</h1>
+  <p class="lede">Altri due problemi di scheduling risolti con un greedy (K&amp;T 4.1 e 4.2). Il primo introduce un <b>limite inferiore strutturale</b> (la profondità), il secondo la tecnica dell'<b>argomento di scambio</b>.</p>
+</header>
+
+<section>
+  <h2>Interval partitioning</h2>
+  <p>Lezioni con inizio e fine; ogni lezione va in un'aula; due lezioni nella stessa aula non possono sovrapporsi. Obiettivo: il <b>numero minimo di aule</b>.</p>
+  <figure class="scena" data-scena="aule" data-titolo="Earliest start time first: 7 lezioni, 3 aule"></figure>
+  <figure class="passi" data-titolo="Perché è ottimo">
+    <div class="passo"><div class="espr"><mark class="dato">profondità d</mark> = massimo numero di lezioni in corso nello stesso istante</div><p class="nota">Nell'esempio d = 3 (a, b, c tra 2 e 3).</p></div>
+    <div class="passo"><div class="espr">ogni soluzione usa <mark class="ok">≥ d</mark> aule</div><p class="nota">Le d lezioni sovrapposte devono stare in d aule diverse. È un limite che vale per <b>qualsiasi</b> algoritmo.</p></div>
+    <div class="passo"><div class="espr">greedy apre l'aula d+1? solo se la lezione j <mark class="no">si sovrappone</mark> a una lezione in ognuna delle d aule</div><p class="nota">Apre un'aula nuova solo quando nessuna aula aperta è libera all'ora s<sub>j</sub>.</p></div>
+    <div class="passo"><div class="espr">quelle d lezioni sono iniziate <mark class="dato">prima di s<sub>j</sub></mark> e finiscono dopo s<sub>j</sub></div><p class="nota">Ordine per inizio: sono state considerate prima di j. Si sovrappongono a j, quindi sono in corso all'istante s<sub>j</sub>.</p></div>
+    <div class="passo"><div class="espr">all'istante s<sub>j</sub> + ε ci sono d + 1 lezioni ⇒ profondità ≥ d + 1</div><p class="nota">Quindi greedy usa esattamente <b>profondità</b> aule: <mark class="ok">ottimo</mark>.</p></div>
+  </figure>
+  <div class="box regola" data-tit="Implementazione in O(n log n)">
+    <p>Ordina per inizio. Tieni le aule in una <code>PriorityQueue</code> con chiave "ora in cui l'aula si libera". Per ogni lezione guarda il minimo (<code>peek</code>): se si libera entro s<sub>j</sub>, riusa quell'aula (<code>poll</code> e reinserisci con la nuova fine); altrimenti apri un'aula nuova. Ogni operazione <i>O(log n)</i>.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Scheduling con ritardo minimo</h2>
+  <ul>
+    <li>Una sola macchina, lavori con durata <span class="m">t<sub>j</sub></span> e scadenza <span class="m">d<sub>j</sub></span>.</li>
+    <li>Se il lavoro j inizia a <span class="m">s<sub>j</sub></span>, finisce a <span class="m">f<sub>j</sub> = s<sub>j</sub> + t<sub>j</sub></span>; il <b>ritardo</b> è <span class="m">ℓ<sub>j</sub> = max(0, f<sub>j</sub> − d<sub>j</sub>)</span>.</li>
+    <li>Obiettivo: minimizzare il <b>ritardo massimo</b> <span class="m">L = max<sub>j</sub> ℓ<sub>j</sub></span>.</li>
+  </ul>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Ordine</th><th>Controesempio</th></tr></thead>
+    <tbody>
+      <tr><td>durata più breve</td><td>t = (1, 10), d = (100, 10): prima il lavoro corto ⇒ il secondo finisce a 11, ritardo 1. Al contrario ritardo 0.</td></tr>
+      <tr><td>margine d − t più piccolo</td><td>t = (1, 10), d = (2, 10): margini 1 e 0, prima il secondo ⇒ il primo finisce a 11, ritardo 9. Al contrario ritardo 1.</td></tr>
+      <tr><td><b>scadenza più vicina</b> (EDF)</td><td>ottimo</td></tr>
+    </tbody>
+  </table></div>
+  <figure class="scena" data-scena="edf" data-titolo="Earliest deadline first sull'esempio delle slide"></figure>
+  <figure class="passi" data-titolo="Perché EDF è ottimo: argomento di scambio">
+    <div class="passo"><div class="espr">esiste un ottimo <mark class="dato">senza tempi morti</mark></div><p class="nota">Lasciare la macchina ferma non aiuta mai. Anche EDF non ne ha.</p></div>
+    <div class="passo"><div class="espr"><mark class="no">inversione</mark>: i prima di j ma d<sub>j</sub> &lt; d<sub>i</sub></div><p class="nota">EDF non ha inversioni. Tutti gli ordini senza inversioni e senza tempi morti hanno lo stesso ritardo massimo: differiscono solo tra lavori con la stessa scadenza.</p></div>
+    <div class="passo"><div class="espr">se c'è un'inversione, ce n'è una tra lavori <mark class="ora">consecutivi</mark></div><p class="nota">Scorrendo l'ordine, da qualche parte le scadenze devono scendere tra due vicini.</p></div>
+    <div class="passo"><div class="espr">scambio i e j consecutivi:  j finisce <mark class="ok">prima</mark>;  i finisce dove finiva j: ℓ'<sub>i</sub> = f<sub>j</sub> − d<sub>i</sub> <mark class="ok">&lt;</mark> f<sub>j</sub> − d<sub>j</sub> = ℓ<sub>j</sub></div><p class="nota">Gli altri lavori non si muovono. Il ritardo di i dopo lo scambio è minore del ritardo che aveva j prima: il massimo <b>non cresce</b>.</p></div>
+    <div class="passo"><div class="espr">ogni scambio toglie un'inversione ⇒ dopo al massimo n² scambi <mark class="ok">nessuna inversione</mark></div><p class="nota">Partendo da un ottimo arrivo a un ordine senza inversioni, ancora ottimo: ha lo stesso ritardo massimo di EDF. Quindi EDF è ottimo.</p></div>
+  </figure>
+</section>
+
+</main>
+</body>
+</html>

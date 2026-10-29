@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Regole e divieti</title>
+<link rel="stylesheet" href="../assets/atlas.css">
+<link rel="stylesheet" href="../assets/tema.css">
+<script src="../assets/sito.js"></script>
+<script src="../assets/atlas.js" defer></script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <div class="occhiello"><span>Esame</span></div>
+  <h1>Regole e divieti</h1>
+  <p class="lede">Ogni foglio esercizi inizia con la stessa frase: <i>"Do not use variables, side effects, exceptions or return statements (unless explicitly asked for)."</i> Il compilatore <b>non</b> te lo impedisce: <code>var</code> e <code>return</code> compilano. Il voto sì.</p>
+</header>
+
+<section>
+  <h2>Cosa è vietato</h2>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Vietato</th><th>Esempio</th><th>Al suo posto</th><th>Pagina</th></tr></thead>
+    <tbody>
+      <tr><td><b>Variabili</b></td><td><code>var i = 0</code></td><td><code>val</code>, parametri, accumulatori</td><td><a href="../teoria/s01-ricorsione.html">Ricorsione</a></td></tr>
+      <tr><td><b>Assegnamenti</b></td><td><code>i = i + 1</code></td><td>passare il nuovo valore a una chiamata</td><td><a href="../teoria/s01-ricorsione.html">Ricorsione</a></td></tr>
+      <tr><td><b>Cicli</b></td><td><code>for i &lt;- 0 until n do …</code>, <code>while</code></td><td>ricorsione, fold, funzioni come <code>map</code></td><td><a href="../teoria/s02-fold.html">Fold</a></td></tr>
+      <tr><td><b>return</b></td><td><code>return x</code></td><td>il valore dell'ultima espressione</td><td><a href="../teoria/s01-scala-base.html">Scala base</a></td></tr>
+      <tr><td><b>Eccezioni</b></td><td><code>throw …</code></td><td><code>Option</code> o <code>Either</code></td><td><a href="../teoria/s03-option.html">Option</a></td></tr>
+      <tr><td><b>Effetti collaterali</b></td><td><code>println</code>, modificare strutture</td><td>funzioni pure che restituiscono valori</td><td><a href="../teoria/s01-purezza.html">Purezza</a></td></tr>
+      <tr><td><b>Tipi Any / Object</b></td><td><code>def f(x: Any): Any</code></td><td>polimorfismo: <code>def f[A](x: A): A</code></td><td><a href="../teoria/s02-polimorfismo.html">Polimorfismo</a></td></tr>
+    </tbody>
+  </table></div>
+  <div class="box attenzione" data-tit="Eccezioni richieste">
+    <p>"Unless explicitly asked for": in alcuni esercizi il testo chiede proprio un'eccezione. Esempio: <code>tail</code>, <code>drop</code> e <code>init</code> della settimana 2 devono lanciare <code>NoSuchElementException</code>. Lì va fatto.</p>
+  </div>
+</section>
+
+<section>
+  <h2>La scala di stile (slide 11, settimana 2)</h2>
+  <p>È la griglia con cui il corso giudica il codice. Ogni riga va da sinistra (peggio) a destra (meglio). <i>"Always choose the best possible style for an exercise and your abilities."</i></p>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th><span class="t-no">Condannato</span> (bocciato)</th><th><span class="t-ora">Perdonabile</span> (voto medio)</th><th><span class="t-ok">Illuminato</span> (voto alto)</th></tr></thead>
+    <tbody>
+      <tr><td>variabili</td><td></td><td>valori</td></tr>
+      <tr><td>assegnamenti</td><td></td><td>binding di valori (<code>val</code>)</td></tr>
+      <tr><td><code>return</code></td><td></td><td>valore dell'espressione</td></tr>
+      <tr><td>tipo <code>Any</code> / <code>Object</code></td><td></td><td>polimorfismo parametrico</td></tr>
+      <tr><td>cicli</td><td>ricorsione in coda &lt; ricorsione semplice &lt; fold</td><td>comporre funzioni di ordine superiore dedicate</td></tr>
+      <tr><td></td><td>condizioni <code>if</code> &lt; pattern matching</td><td>usare l'API dedicata</td></tr>
+      <tr><td>eccezioni</td><td></td><td>monade Option o Either</td></tr>
+    </tbody>
+  </table></div>
+  <p class="piccolo">Nota a piè di slide: la regola vale "unless asked for explicitly, or really important for memory use". Per esempio la ricorsione in coda si usa se serve davvero a non esaurire la pila.</p>
+
+  <figure class="passi" data-titolo="La stessa funzione, risalendo la scala: somma di una lista" data-modo="sostituisci">
+    <div class="passo">
+      <div class="espr">def somma(xs: List[Int]): Int =
+  <mark class="no">var</mark> tot = 0
+  <mark class="no">for</mark> x &lt;- xs do
+    <mark class="no">tot = tot + x</mark>
+  <mark class="no">return</mark> tot</div>
+      <p class="nota"><span class="t-no">Condannato.</span> Variabile, ciclo, assegnamento, return: quattro divieti in cinque righe. Compila e funziona, ma è bocciato.</p>
+    </div>
+    <div class="passo">
+      <div class="espr">def somma(xs: List[Int]): Int =
+  @annotation.tailrec
+  def go(xs: List[Int], <mark class="ora">tot: Int</mark>): Int = xs match
+    case Nil => tot
+    case h :: t => go(t, tot + h)
+  go(xs, 0)</div>
+      <p class="nota"><span class="t-ora">Perdonabile, basso.</span> Ricorsione in coda con accumulatore: niente variabili, ma molto codice per una cosa standard.</p>
+    </div>
+    <div class="passo">
+      <div class="espr">def somma(xs: List[Int]): Int = xs match
+  case Nil => 0
+  case h :: t => <mark class="ora">h + somma(t)</mark></div>
+      <p class="nota"><span class="t-ora">Perdonabile.</span> Ricorsione semplice con pattern matching: più leggibile, ma riscrive a mano uno schema che esiste già.</p>
+    </div>
+    <div class="passo">
+      <div class="espr">def somma(xs: List[Int]): Int =
+  xs.<mark class="ok">foldLeft(0)(_ + _)</mark></div>
+      <p class="nota"><span class="t-ora">Perdonabile, alto.</span> Il fold nomina lo schema: resta solo ciò che è specifico, lo 0 e il +.</p>
+    </div>
+    <div class="passo">
+      <div class="espr">def somma(xs: List[Int]): Int =
+  xs.<mark class="ok">sum</mark></div>
+      <p class="nota"><span class="t-ok">Illuminato.</span> Esiste un'API dedicata: usala. (Negli esercizi, solo se è tra le funzioni permesse.)</p>
+    </div>
+  </figure>
+
+  <figure class="passi" data-titolo="Un errore, risalendo la scala: media di una lista" data-modo="sostituisci">
+    <div class="passo">
+      <div class="espr">def mean(xs: List[Double]): Double =
+  if xs.isEmpty then <mark class="no">throw new ArithmeticException("empty")</mark>
+  else xs.sum / xs.length</div>
+      <p class="nota"><span class="t-no">Condannato.</span> Eccezione: il tipo non dice che può fallire.</p>
+    </div>
+    <div class="passo">
+      <div class="espr">def mean(xs: List[Double]): <mark class="ok">Option[Double]</mark> =
+  if xs.isEmpty then None
+  else Some(xs.sum / xs.length)</div>
+      <p class="nota"><span class="t-ok">Illuminato.</span> Il fallimento è un valore. Chi usa <code>mean</code> lo concatena con <code>map</code>/<code>flatMap</code>.</p>
+    </div>
+  </figure>
+</section>
+
+<section>
+  <h2>Dalla settimana 2: la ricorsione esplicita "puzza"</h2>
+  <div class="box regola" data-tit="Dal foglio esercizi della settimana 2">
+    <p>"From now on, the use of explicit recursion is bad-smell for us. Only use explicit recursion when dealing with a non-standard iteration. Otherwise, you should use a suitable HOF. Similarly, you should only use fold if any of the other simpler HOFs cannot."</p>
+  </div>
+  <p>Ordine di scelta: <b>API dedicata</b> (<code>map</code>, <code>filter</code>, <code>exists</code>…) → <b>fold</b> → <b>ricorsione</b> solo se l'iterazione è insolita.</p>
+</section>
+
+<section>
+  <h2>Vincoli dei singoli esercizi</h2>
+  <p>Molti esercizi aggiungono un divieto specifico. All'esame aspettati domande con istruzioni simili: leggile prima di scrivere.</p>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Esercizio</th><th>Vincolo</th><th>Perché</th></tr></thead>
+    <tbody>
+      <tr><td>S1 · isSorted</td><td>niente pattern matching, ricorsione in coda con <code>@tailrec</code></td><td>imitare un <code>for</code> sugli indici</td></tr>
+      <tr><td>S1 · compose</td><td>niente <code>Function1.compose</code> / <code>andThen</code></td><td>scriverla da te</td></tr>
+      <tr><td>S2 · tutti</td><td>solo le funzioni in cima a <code>Exercises.scala</code> e quelle degli esercizi precedenti</td><td>la lista del corso non è quella della libreria</td></tr>
+      <tr><td>S2 · foldLeft con foldRight</td><td>niente <code>reverse</code></td><td>reverse è un caso di foldLeft</td></tr>
+      <tr><td>S3 · map, flatMap… su Option</td><td><b>con</b> pattern matching, come metodi</td><td>per poterlo evitare dopo</td></tr>
+      <tr><td>S3 · headGrade, map2, sequence</td><td>niente pattern matching</td><td>usare map, flatMap, for</td></tr>
+      <tr><td>S3 · variance</td><td>niente pattern matching, niente <code>map</code> su Option, evitare <code>isEmpty</code></td><td>usare flatMap</td></tr>
+      <tr><td>S4 · toList, take, drop, takeWhile, forAll</td><td><b>con</b> pattern matching</td><td></td></tr>
+      <tr><td>S4 · map, filter, append, flatMap</td><td>con <code>foldRight</code>, niente ricorsione</td><td></td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section>
+  <h2>Quando il compilatore ti boccia da solo</h2>
+  <p>Il <code>project.scala</code> del corso compila con <code>-Werror</code>: <b>ogni avviso diventa un errore</b>. Quindi il file non compila, e un homework che non compila non passa.</p>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Avviso</th><th>Causa tipica</th></tr></thead>
+    <tbody>
+      <tr><td><code>match may not be exhaustive</code></td><td>manca un caso, o i casi hanno tutti una guardia <code>if</code></td></tr>
+      <tr><td><code>Unreachable case</code></td><td>un caso generale prima di uno specifico</td></tr>
+      <tr><td><code>Unreachable case except for null</code></td><td>un <code>case _</code> dopo casi che coprono già tutto</td></tr>
+    </tbody>
+  </table></div>
+  <p>Messaggi completi e soluzioni: <a href="errori.html">Errori del compilatore</a>.</p>
+</section>
+
+<section>
+  <h2>Onestà accademica</h2>
+  <ul>
+    <li>Durante il corso <b>puoi</b> discutere le soluzioni, consultare IA, incollare pezzi di codice sul Discord.</li>
+    <li><b>Non puoi</b> consegnare soluzioni scritte da altri, IA comprese, né copiare parti sostanziali. "You must type your hand-in yourself."</li>
+    <li><b>All'esame</b>: niente consulti con altre persone, niente IA di nessun tipo.</li>
+  </ul>
+</section>
+
+</main>
+</body>
+</html>

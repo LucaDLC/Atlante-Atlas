@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Codice: ordinamento topologico in Java</title>
+<link rel="stylesheet" href="../assets/atlas.css">
+<link rel="stylesheet" href="../assets/tema.css">
+<script src="../assets/sito.js"></script>
+<script src="../assets/atlas.js" defer></script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Codice: ordinamento topologico in Java</h1>
+  <p class="lede">Il metodo di Kahn: gradi entranti, una coda di sorgenti, e il rilevamento del ciclo quando non si scrivono tutti i nodi.</p>
+</header>
+
+<section>
+  <h2>Gradi entranti e coda</h2>
+  <p>Gli archi sono diretti: <code>adj.get(u)</code> contiene i successori di <code>u</code>, e <code>entrante[v]</code> conta quanti archi entrano in <code>v</code>.</p>
+  <figure class="codice" data-titolo="Gradi entranti e coda">
+<pre data-lang="java">import java.io.*;
+import java.util.*;
+
+public class Main {
+    public static void main(String[] args) throws IOException {
+        BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
+        StringTokenizer st = new StringTokenizer(in.readLine());
+        int n = Integer.parseInt(st.nextToken());
+        int m = Integer.parseInt(st.nextToken());
+
+        // Archi DIRETTI: adj.get(u) contiene i successori di u. entrante[v] conta gli archi che entrano in v.
+        List&lt;List&lt;Integer&gt;&gt; adj = new ArrayList&lt;&gt;();
+        for (int i = 0; i &lt; n; i++) {
+            adj.add(new ArrayList&lt;&gt;());
+        }
+        int[] entrante = new int[n];
+        for (int i = 0; i &lt; m; i++) {
+            st = new StringTokenizer(in.readLine());
+            int u = Integer.parseInt(st.nextToken());
+            int v = Integer.parseInt(st.nextToken());
+            adj.get(u).add(v);
+            entrante[v]++;
+        }
+
+        // Lista delle sorgenti: nodi con grado entrante 0.
+        Deque&lt;Integer&gt; pronti = new ArrayDeque&lt;&gt;();
+        for (int i = 0; i &lt; n; i++) {
+            if (entrante[i] == 0) {
+                pronti.add(i);
+            }
+        }
+
+        List&lt;Integer&gt; ordine = new ArrayList&lt;&gt;();
+        while (!pronti.isEmpty()) {
+            int u = pronti.poll();   // scrivo u nell'ordine e lo "tolgo" dal grafo
+            ordine.add(u);
+            for (int v : adj.get(u)) {
+                entrante[v]--;       // l'arco u -&gt; v non c'è più
+                if (entrante[v] == 0) {
+                    pronti.add(v);   // v non ha più prerequisiti
+                }
+            }
+        }
+
+        // Se non ho scritto tutti i nodi, nel grafo c'è un ciclo: nessun ordine esiste.
+        if (ordine.size() &lt; n) {
+            System.out.println("ciclo: nessun ordinamento");
+        } else {
+            StringBuilder out = new StringBuilder();
+            for (int i = 0; i &lt; n; i++) {
+                out.append(ordine.get(i)).append(i + 1 &lt; n ? " " : "\n");
+            }
+            System.out.print(out);
+        }
+    }
+}</pre>
+    <ol class="spiega">
+    <li data-righe="16"><p>Un array di interi: Java lo inizializza tutto a 0. È il grado entrante di ogni nodo.</p></li>
+    <li data-righe="22"><p>Ogni arco <code>u → v</code> aumenta di 1 il grado entrante di <code>v</code>.</p></li>
+    <li data-righe="28"><p>Le sorgenti, cioè i nodi senza archi entranti, entrano subito in coda.</p></li>
+    </ol>
+  </figure>
+  <div class="box basi" data-tit="Note di sintassi"><ul><li><code>int[]</code> ha lunghezza fissa e valori di default 0 (per <code>boolean</code> sarebbe <code>false</code>).</li><li><code>==</code> confronta i valori dei primitivi; <code>.equals</code> si usa per gli oggetti come <code>String</code>.</li></ul></div>
+</section>
+<section>
+  <h2>Togliere i nodi</h2>
+  <p>Ogni nodo estratto viene scritto nell'ordine, e i suoi archi uscenti si cancellano abbassando il grado dei successori.</p>
+  <figure class="codice" data-titolo="Togliere i nodi">
+<pre data-lang="java">import java.io.*;
+import java.util.*;
+
+public class Main {
+    public static void main(String[] args) throws IOException {
+        BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
+        StringTokenizer st = new StringTokenizer(in.readLine());
+        int n = Integer.parseInt(st.nextToken());
+        int m = Integer.parseInt(st.nextToken());
+
+        // Archi DIRETTI: adj.get(u) contiene i successori di u. entrante[v] conta gli archi che entrano in v.
+        List&lt;List&lt;Integer&gt;&gt; adj = new ArrayList&lt;&gt;();
+        for (int i = 0; i &lt; n; i++) {
+            adj.add(new ArrayList&lt;&gt;());
+        }
+        int[] entrante = new int[n];
+        for (int i = 0; i &lt; m; i++) {
+            st = new StringTokenizer(in.readLine());
+            int u = Integer.parseInt(st.nextToken());
+            int v = Integer.parseInt(st.nextToken());
+            adj.get(u).add(v);
+            entrante[v]++;
+        }
+
+        // Lista delle sorgenti: nodi con grado entrante 0.
+        Deque&lt;Integer&gt; pronti = new ArrayDeque&lt;&gt;();
+        for (int i = 0; i &lt; n; i++) {
+            if (entrante[i] == 0) {
+                pronti.add(i);
+            }
+        }
+
+        List&lt;Integer&gt; ordine = new ArrayList&lt;&gt;();
+        while (!pronti.isEmpty()) {
+            int u = pronti.poll();   // scrivo u nell'ordine e lo "tolgo" dal grafo
+            ordine.add(u);
+            for (int v : adj.get(u)) {
+                entrante[v]--;       // l'arco u -&gt; v non c'è più
+                if (entrante[v] == 0) {
+                    pronti.add(v);   // v non ha più prerequisiti
+                }
+            }
+        }
+
+        // Se non ho scritto tutti i nodi, nel grafo c'è un ciclo: nessun ordine esiste.
+        if (ordine.size() &lt; n) {
+            System.out.println("ciclo: nessun ordinamento");
+        } else {
+            StringBuilder out = new StringBuilder();
+            for (int i = 0; i &lt; n; i++) {
+                out.append(ordine.get(i)).append(i + 1 &lt; n ? " " : "\n");
+            }
+            System.out.print(out);
+        }
+    }
+}</pre>
+    <ol class="spiega">
+    <li data-righe="35"><p>Estraggo una sorgente: la scrivo nell'ordine.</p></li>
+    <li data-righe="38"><p><code>--</code> decrementa: l'arco <code>u → v</code> è stato tolto.</p></li>
+    <li data-righe="39"><p>Se <code>v</code> non ha più archi entranti, è pronto.</p></li>
+    </ol>
+  </figure>
+  <div class="box basi" data-tit="Note di sintassi"><ul><li><code>List&lt;Integer&gt; ordine = new ArrayList&lt;&gt;()</code>: <code>ordine.get(i)</code> legge un elemento, <code>.size()</code> conta.</li></ul></div>
+</section>
+<section>
+  <h2>Rilevare il ciclo</h2>
+  <p>Se il grafo ha un ciclo, i nodi del ciclo non arrivano mai a grado 0: restano non scritti. Quindi basta contare.</p>
+  <figure class="codice" data-titolo="Rilevare il ciclo">
+<pre data-lang="java">import java.io.*;
+import java.util.*;
+
+public class Main {
+    public static void main(String[] args) throws IOException {
+        BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
+        StringTokenizer st = new StringTokenizer(in.readLine());
+        int n = Integer.parseInt(st.nextToken());
+        int m = Integer.parseInt(st.nextToken());
+
+        // Archi DIRETTI: adj.get(u) contiene i successori di u. entrante[v] conta gli archi che entrano in v.
+        List&lt;List&lt;Integer&gt;&gt; adj = new ArrayList&lt;&gt;();
+        for (int i = 0; i &lt; n; i++) {
+            adj.add(new ArrayList&lt;&gt;());
+        }
+        int[] entrante = new int[n];
+        for (int i = 0; i &lt; m; i++) {
+            st = new StringTokenizer(in.readLine());
+            int u = Integer.parseInt(st.nextToken());
+            int v = Integer.parseInt(st.nextToken());
+            adj.get(u).add(v);
+            entrante[v]++;
+        }
+
+        // Lista delle sorgenti: nodi con grado entrante 0.
+        Deque&lt;Integer&gt; pronti = new ArrayDeque&lt;&gt;();
+        for (int i = 0; i &lt; n; i++) {
+            if (entrante[i] == 0) {
+                pronti.add(i);
+            }
+        }
+
+        List&lt;Integer&gt; ordine = new ArrayList&lt;&gt;();
+        while (!pronti.isEmpty()) {
+            int u = pronti.poll();   // scrivo u nell'ordine e lo "tolgo" dal grafo
+            ordine.add(u);
+            for (int v : adj.get(u)) {
+                entrante[v]--;       // l'arco u -&gt; v non c'è più
+                if (entrante[v] == 0) {
+                    pronti.add(v);   // v non ha più prerequisiti
+                }
+            }
+        }
+
+        // Se non ho scritto tutti i nodi, nel grafo c'è un ciclo: nessun ordine esiste.
+        if (ordine.size() &lt; n) {
+            System.out.println("ciclo: nessun ordinamento");
+        } else {
+            StringBuilder out = new StringBuilder();
+            for (int i = 0; i &lt; n; i++) {
+                out.append(ordine.get(i)).append(i + 1 &lt; n ? " " : "\n");
+            }
+            System.out.print(out);
+        }
+    }
+}</pre>
+    <ol class="spiega">
+    <li data-righe="46"><p>Meno nodi scritti che nodi totali: il grafo ha un ciclo e un ordine non esiste.</p></li>
+    </ol>
+  </figure>
+  <div class="box basi" data-tit="Note di sintassi"><ul><li><code>println</code> va a capo; <code>print</code> no. Qui uso <code>print</code> sull'output costruito.</li></ul></div>
+</section>
+<section>
+  <h2>Eseguirlo</h2>
+  <p>Esempio di input e di output (compilato e lanciato davvero).</p>
+  <pre class="cod">5 5
+0 2
+1 2
+0 4
+2 3
+4 3
+
+(output)
+0 1 4 2 3
+
+Con il ciclo 0→1→2→0:
+ciclo: nessun ordinamento</pre>
+</section>
+<section>
+  <h2>La teoria, affiancata</h2>
+  <p><a href="../teoria/topological-sort.html"><b>← Torna alla teoria di questo argomento</b></a></p>
+</section>
+
+</main>
+</body>
+</html>

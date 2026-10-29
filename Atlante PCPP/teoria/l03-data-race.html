@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Data race e correttezza</title>
+<link rel="stylesheet" href="../assets/atlas.css">
+<link rel="stylesheet" href="../assets/tema.css">
+<script src="../assets/sito.js"></script>
+<script src="../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+SCENE.hb = {
+  w: 600, h: 290, lato: false,
+  legenda: 'dato:azioni,ora:archi di happens-before,ok:coppia ordinata,no:coppia in conflitto non ordinata',
+  oggetti: [
+    { id: 'I', tipo: 'nodo', r: 22, x: 60, y: 140, t: 'init', sotto: 'm' },
+    { id: 'S1', tipo: 'nodo', r: 20, x: 150, y: 70, t: 'st1', sotto: 'm' },
+    { id: 'S2', tipo: 'nodo', r: 20, x: 150, y: 210, t: 'st2', sotto: 'm' },
+    { id: 'A1', tipo: 'nodo', r: 20, x: 270, y: 70, t: '1', sopra: 't1: a = 1' },
+    { id: 'A2', tipo: 'nodo', r: 20, x: 390, y: 70, t: '2', sopra: 't1: x = b' },
+    { id: 'B3', tipo: 'nodo', r: 20, x: 270, y: 210, t: '3', sotto: 't2: b = 1' },
+    { id: 'B4', tipo: 'nodo', r: 20, x: 390, y: 210, t: '4', sotto: 't2: y = a' },
+    { id: 'P', tipo: 'nodo', r: 22, x: 520, y: 140, t: '5', sotto: 'm: print x, y' },
+    { id: 'e1', tipo: 'arco', da: 'I', a: 'S1', dir: true }, { id: 'e2', tipo: 'arco', da: 'S1', a: 'S2', dir: true },
+    { id: 'e3', tipo: 'arco', da: 'S1', a: 'A1', dir: true, nascosto: true }, { id: 'e4', tipo: 'arco', da: 'S2', a: 'B3', dir: true, nascosto: true },
+    { id: 'e5', tipo: 'arco', da: 'A1', a: 'A2', dir: true }, { id: 'e6', tipo: 'arco', da: 'B3', a: 'B4', dir: true },
+    { id: 'e7', tipo: 'arco', da: 'A2', a: 'P', dir: true, nascosto: true }, { id: 'e8', tipo: 'arco', da: 'B4', a: 'P', dir: true, nascosto: true },
+    { id: 'race', tipo: 'linea', x1: 270, y1: 92, x2: 390, y2: 188, tratt: true, tono: 'no', nascosto: true },
+    { id: 'n', tipo: 'testo', x: 300, y: 280, t: '', size: 13, bold: true }
+  ],
+  passi: [
+    { nota: 'PossibleReordering come grafo: un nodo per azione. Gli archi già disegnati sono il <b>program order</b> dentro ogni thread.' },
+    { nota: '<b>Start rule</b>: start(t) viene prima della prima azione di t.', set: { e3: { nascosto: false, tono: 'ora' }, e4: { nascosto: false, tono: 'ora' } } },
+    { nota: '<b>Termination rule</b>: l\'ultima azione di un thread viene prima del join, e quindi della stampa (qui il join è riassunto nella freccia verso 5).', set: { e3: { tono: null }, e4: { tono: null }, e7: { nascosto: false, tono: 'ora' }, e8: { nascosto: false, tono: 'ora' } } },
+    { nota: 'Accessi a x: init scrive, t1(2) scrive, m(5) legge. Sono in conflitto ma <b>ordinati</b>: init → st1 → 1 → 2 → 5. Nessuna data race su x.', set: { e7: { tono: null }, e8: { tono: null }, I: { tono: 'ok' }, A2: { tono: 'ok' }, P: { tono: 'ok' }, n: { t: 'x: coppie in conflitto, ma ordinate', tono: 'ok' } } },
+    { nota: 'Accessi ad a: t1(1) scrive, t2(4) legge. Nessun cammino di frecce va da 1 a 4 o da 4 a 1: in conflitto e <b>non ordinati</b>. È una <b>data race</b>, e ne basta una.', set: { I: { tono: null }, A2: { tono: null }, P: { tono: null }, A1: { tono: 'no' }, B4: { tono: 'no' }, race: { nascosto: false }, n: { t: 'a: t1(1) e t2(4) non ordinati → data race', tono: 'no' } } }
+  ]
+};
+</script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  const T = (id, x, y, t, extra) => Object.assign({ id, tipo: 'testo', x, y, t, size: 13 }, extra || {});
+  const R = (id, x, y, w, h, t, extra) => Object.assign({ id, tipo: 'rett', x, y, w, h, t }, extra || {});
+  const N = (id, x, y, t, tono, extra) => Object.assign({ id, tipo: 'nodo', x, y, t, tono, r: 17 }, extra || {});
+  const A = (id, da, a, extra) => Object.assign({ id, tipo: 'arco', da, a, dir: true, nascosto: true }, extra || {});
+  const vedi = (ids, v) => Object.fromEntries(ids.map(k => [k, Object.assign({ nascosto: false }, v || {})]));
+  const nasc = ids => Object.fromEntries(ids.map(k => [k, { nascosto: true }]));
+
+  // 1. synchronization order
+  const slot = (id, i, t) => R(id, 20 + i * 96, 150, 88, 36, t, { nascosto: true });
+  SCENE.syncorder = {
+    w: 600, h: 250, lato: true,
+    legenda: 'dato:main,ora:t1,due:t2,no:viola la mutua esclusione,ok:ben formato',
+    oggetti: [
+      T('h', 300, 28, 'Azioni di sincronizzazione, messe in fila', { bold: true }),
+      T('lx', 300, 60, '', { size: 12 }),
+      slot('s0', 0, ''), slot('s1', 1, ''), slot('s2', 2, ''), slot('s3', 3, ''), slot('s4', 4, ''), slot('s5', 5, ''),
+      T('c', 300, 225, '', { size: 12, bold: true })
+    ],
+    passi: [
+      { nota: "Il <b>synchronization order</b> di un'esecuzione è l'ordine <b>totale</b> in cui avvengono le sue azioni di <b>sincronizzazione</b> (start, join, lock, unlock, accessi volatile). Le altre azioni non ci entrano." },
+      { nota: "In PossibleReordering le uniche azioni di sincronizzazione sono del main: start(t1), start(t2), join(t1), join(t2). Il program order del main le mette già in fila: c'è <b>un solo</b> synchronization order possibile.", set: Object.assign(vedi(['s0', 's1', 's2', 's3'], { tono: 'dato' }), { s0: { nascosto: false, t: 'st1', tono: 'dato' }, s1: { nascosto: false, t: 'st2', tono: 'dato' }, s2: { nascosto: false, t: 'j1', tono: 'dato' }, s3: { nascosto: false, t: 'j2', tono: 'dato' }, lx: { t: 'PossibleReordering: 4 azioni, 1 ordine' }, c: { t: '(st1, st2, j1, j2)' } }) },
+      { nota: "Con il lock (esercizio della slide) ci sono 4 azioni in più: t1(1) lock, t1(4) unlock, t2(5) lock, t2(8) unlock. Adesso gli ordini possibili sono <b>più d'uno</b>. Eccone uno: t1 prende il lock per primo.", set: { s0: { t: 'st1' }, s1: { t: 't1(1) lock', tono: 'ora' }, s2: { t: 't1(4) unl', tono: 'ora' }, s3: { t: 'st2', tono: 'dato' }, s4: { nascosto: false, t: 't2(5) lock', tono: 'due' }, s5: { nascosto: false, t: 't2(8) unl', tono: 'due' }, lx: { t: 'con il lock: 4 azioni in più (i join, sempre in fondo, omessi)' }, c: { t: 'un synchronization order possibile', tono: 'ok' } } },
+      { nota: "Questo invece <b>non</b> è possibile: t2 prende il lock (t2(5)) mentre t1 lo tiene ancora (t1(4) viene dopo). Un synchronization order deve rispettare la <b>mutua esclusione</b>: lock e unlock correttamente annidati.", set: { s1: { t: 'st2', tono: 'dato' }, s2: { t: 't1(1) lock', tono: 'ora' }, s3: { t: 't2(5) lock', tono: 'no' }, s4: { t: 't1(4) unl', tono: 'ora' }, s5: { t: 't2(8) unl', tono: 'due' }, c: { t: 'lock dentro il lock di un altro: vietato', tono: 'no' } } },
+      { nota: "Un'esecuzione è <b>ben formata</b> se è coerente con program order, happens-before e synchronization order. La JVM produce <b>solo</b> esecuzioni ben formate: quindi, per ragionare su un programma, basta considerare gli ordini validi come quello del passo 3.", set: { s1: { t: 'st2', tono: 'dato' }, s2: { t: 't2(5) lock', tono: 'due' }, s3: { t: 't2(8) unl', tono: 'due' }, s4: { t: 't1(1) lock', tono: 'ora' }, s5: { t: 't1(4) unl', tono: 'ora' }, c: { t: 'anche t2 per primo va bene: ben formato', tono: 'ok' } } }
+    ]
+  };
+
+  // 2. il lock toglie la data race: HB1 e HB2
+  const X1 = [70, 150, 230, 310], X2 = [370, 450, 530, 610];
+  const og = [T('l1', 22, 70, 't1', { bold: true }), T('l2', 22, 180, 't2', { bold: true })];
+  const et1 = ['1', '2', '3', '4'], et2 = ['5', '6', '7', '8'];
+  const so1 = ['lock', 'a=1', 'x=b', 'unl'], so2 = ['lock', 'b=1', 'y=a', 'unl'];
+  et1.forEach((t, i) => og.push(N('a' + i, X1[i], 70, t, 'ora', { sopra: so1[i] })));
+  et2.forEach((t, i) => og.push(N('b' + i, X2[i], 180, t, 'due', { sotto: so2[i] })));
+  for (let i = 0; i < 3; i++) og.push(A('pa' + i, 'a' + i, 'a' + (i + 1), { nascosto: false }), A('pb' + i, 'b' + i, 'b' + (i + 1), { nascosto: false }));
+  og.push(A('m1', 'a3', 'b0', { tono: 'ok', t: 'monitor' }), A('m2', 'b3', 'a0', { tono: 'ok', t: 'monitor' }));
+  og.push(T('c', 330, 240, '', { size: 12, bold: true }));
+  const pos = (xa, xb) => Object.assign(Object.fromEntries(xa.map((x, i) => ['a' + i, { x }])), Object.fromEntries(xb.map((x, i) => ['b' + i, { x }])));
+  SCENE.lockfix = {
+    w: 640, h: 256, lato: true,
+    legenda: 'ora:t1,due:t2,ok:regola del monitor,no:accessi in conflitto',
+    oggetti: og,
+    passi: [
+      { nota: "PossibleReordering con un lock l: ogni thread fa lock, due accessi, unlock. I numeri sono quelli della slide. Gli accessi in conflitto su a: t1(2) scrive, t2(7) legge." , set: { a1: { tono: 'no' }, b2: { tono: 'no' } } },
+      { nota: "Primo caso, <b>HB1</b>: t1 prende il lock per primo. La regola del <b>monitor</b> aggiunge la coppia t1(4) → t2(5): l'unlock di t1 viene prima del lock di t2.", set: Object.assign(vedi(['m1']), { c: { t: 'HB1 = HB ∪ { t1(4) → t2(5) }' } }) },
+      { nota: "In HB1 c'è un percorso t1(2) → t1(3) → t1(4) → t2(5) → t2(6) → t2(7): la scrittura di a happens-before la lettura. Le due azioni sono <b>ordinate</b>.", set: { a1: { tono: 'ok' }, b2: { tono: 'ok' }, c: { t: 'HB1: t1(2) → … → t2(7)', tono: 'ok' } } },
+      { nota: "Secondo caso, <b>HB2</b>: t2 prende il lock per primo. Ora la coppia nuova è t2(8) → t1(1).", set: Object.assign(pos(X2, X1), nasc(['m1']), vedi(['m2']), { a1: { tono: 'no' }, b2: { tono: 'no' }, c: { t: 'HB2 = HB ∪ { t2(8) → t1(1) }', tono: null } }) },
+      { nota: "In HB2 il percorso va al contrario: t2(7) → t2(8) → t1(1) → t1(2). Ordine opposto, ma <b>ordinate</b> lo sono comunque.", set: { a1: { tono: 'ok' }, b2: { tono: 'ok' }, c: { t: 'HB2: t2(7) → … → t1(2)', tono: 'ok' } } },
+      { nota: "Ogni synchronization order ricade in HB1 o in HB2, e in entrambi le azioni in conflitto sono ordinate. Stesso ragionamento per b, x, y: <b>nessuna data race</b> in nessuna esecuzione, il programma è <b>correttamente sincronizzato</b>.", set: { c: { t: 'nessuna data race: correttamente sincronizzato', tono: 'ok' } } }
+    ]
+  };
+
+  // 3. prevedere i valori
+  const og3 = [T('l1', 22, 70, 't1', { bold: true }), T('l2', 22, 180, 't2', { bold: true }), T('lm', 22, 240, 'm', { bold: true })];
+  et1.forEach((t, i) => og3.push(N('a' + i, X2[i], 70, t, 'ora', { sopra: so1[i] })));
+  et2.forEach((t, i) => og3.push(N('b' + i, X1[i], 180, t, 'due', { sopra: so2[i] })));
+  for (let i = 0; i < 3; i++) og3.push(A('pa' + i, 'a' + i, 'a' + (i + 1), { nascosto: false }), A('pb' + i, 'b' + i, 'b' + (i + 1), { nascosto: false }));
+  og3.push(N('ib', 180, 240, 'ib', 'dato', { r: 15 }), N('st', 300, 240, 'st2', 'dato', { r: 15 }));
+  og3.push(A('e1', 'ib', 'st', { nascosto: false }), A('e2', 'st', 'b0', { tono: 'ok' }), A('m2', 'b3', 'a0', { tono: 'ok' }), A('m1', 'a3', 'b0', { tono: 'ok' }));
+  og3.push(T('v', 560, 240, '', { size: 12, bold: true }));
+  SCENE.visibile = {
+    w: 640, h: 262, lato: true,
+    legenda: 'dato:main,ora:t1,due:t2,ok:percorso happens-before,no:scrittura non visibile',
+    oggetti: og3,
+    passi: [
+      { nota: "Domanda: quanto vale x alla fine? x = b in t1(3) legge b. Le scritture di b sono due: init(b) = 0 nel main e b = 1 in t2(6). Se a → b, l'effetto di a è <b>visibile</b> a b: cerchiamo i percorsi." },
+      { nota: "Tratto valido in <b>tutte</b> le esecuzioni: init(b) → start(t2) → t2(5) → t2(6). Program order del main, poi start rule.", set: vedi(['e2'], { tono: 'ok' }) },
+      { nota: "Tratto valido <b>solo in HB2</b> (t2 prende il lock per primo): t2(6) → t2(8) → t1(1) → t1(3), grazie alla regola del monitor. Allora la scrittura b = 1 happens-before x = b, ed è l'ultima scrittura di b prima di essa.", set: Object.assign(vedi(['m2']), { b1: { tono: 'ok' }, a2: { tono: 'ok' }, v: { t: 'HB2: x = b legge 1', tono: 'ok' } }) },
+      { nota: "In <b>HB1</b> (t1 per primo) le posizioni si scambiano: t1(3) → t1(4) → t2(5) → t2(6). x = b avviene <b>prima</b> di b = 1, quindi legge ancora il valore di init(b): 0.", set: Object.assign(pos(X1, X2), nasc(['m2']), vedi(['m1']), { b1: { tono: 'no' }, st: { x: 420 }, ib: { x: 300 }, v: { t: 'HB1: x = b legge 0', tono: 'no' } }) },
+      { nota: "Conclusione dimostrata: <b>x == 1 esattamente nelle esecuzioni in cui t2 prende il lock per primo</b>. Con lo stesso metodo si prevede y. Senza happens-before (programma con data race) non si potrebbe dire niente.", set: { v: { t: 'x == 1 ⇔ t2 per primo', tono: null, x: 540 } } }
+    ]
+  };
+
+  // 4. la regola volatile
+  const pos4 = (id, i, t, tono) => R(id, 30 + i * 140, 120, 120, 40, t, { tono, nascosto: true });
+  SCENE.volatileregola = {
+    w: 600, h: 250, lato: true,
+    legenda: 'ora:t1,due:t2,ok:lettura che vede 1',
+    oggetti: [
+      T('h', 300, 30, 'volatile int a, b:  t1: a=1; x=b    t2: b=1; y=a', { bold: true, size: 12 }),
+      T('lx', 300, 80, '', { size: 12 }),
+      pos4('p0', 0, '', 'ora'), pos4('p1', 1, '', 'ora'), pos4('p2', 2, '', 'due'), pos4('p3', 3, '', 'due'),
+      T('c', 300, 200, '', { size: 12, bold: true }), T('c2', 300, 228, '', { size: 12 })
+    ],
+    passi: [
+      { nota: "<b>Regola volatile</b>: una scrittura di una variabile volatile happens-before ogni lettura <b>successiva</b> della stessa variabile. Inoltre gli accessi volatile sono azioni di <b>sincronizzazione</b>: stanno nel synchronization order, che è <b>totale</b>." },
+      { nota: "Rendiamo volatile a e b in PossibleReordering. I 4 accessi t1(1) a=1, t1(2) x=b, t2(3) b=1, t2(4) y=a stanno in un ordine totale che rispetta il program order. Per definizione gli accessi volatile <b>non sono in conflitto</b>: niente data race, il programma è correttamente sincronizzato.", set: { lx: { t: 'accessi volatile: mai in conflitto → nessuna data race' } } },
+      { nota: "Qualche lettura deve venire <b>per ultima</b> nell'ordine. Caso 1: l'ultima è t1(2), x = b. Allora b = 1 viene prima, e la regola volatile dà b=1 → x=b: <b>x = 1</b>. Qui y = a arriva prima di a = 1 e legge 0: output (1,0).", set: Object.assign(vedi(['p0', 'p1', 'p2', 'p3']), { p0: { nascosto: false, t: 'b = 1', tono: 'due' }, p1: { nascosto: false, t: 'y = a → 0', tono: 'due' }, p2: { nascosto: false, t: 'a = 1', tono: 'ora' }, p3: { nascosto: false, t: 'x = b → 1', tono: 'ok' }, c: { t: 'ultima x = b: vede b = 1, x = 1', tono: 'ok' } }) },
+      { nota: "Caso 2: l'ultima è t2(4), y = a. Allora a = 1 viene prima: <b>y = 1</b> (qui x legge 0: output (0,1)). In ogni caso almeno uno dei due vale 1: (0,0) è <b>impossibile</b>. Possibili: (1,0), (0,1), (1,1), esattamente gli output sequenzialmente consistenti.", set: { p0: { t: 'a = 1', tono: 'ora' }, p1: { t: 'x = b → 0', tono: 'ora' }, p2: { t: 'b = 1', tono: 'due' }, p3: { t: 'y = a → 1', tono: 'ok' }, c: { t: 'ultima y = a: vede a = 1, y = 1' }, c2: { t: '(0,0) non può uscire' } } },
+      { nota: "Attenzione: niente data race non vuol dire niente <b>race condition</b>. Con <code>volatile int count</code> e due <code>count++</code>, tutti e due possono leggere 0 e scrivere 1. volatile dà visibilità e ordine, <b>non</b> mutua esclusione.", set: Object.assign(nasc(['p0', 'p1', 'p2', 'p3']), { lx: { t: 'volatile int count;  t1: count++   t2: count++' }, c: { t: 'nessuna data race, ma count può valere 1', tono: 'no' }, c2: { t: 'race condition: serve un lock o AtomicInteger' } }) }
+    ]
+  };
+
+  // 5. la strategia in 6 passi
+  const P = ['1 azioni e tipi', '2 program order', '3 coppie di sincronizzazione', '4 synchronization order', '5 cosa cambia', '6 insiemi HB'];
+  const og5 = P.map((t, i) => R('r' + i, 20, 20 + i * 36, 220, 30, t, { tono: 'spento' }));
+  og5.push(T('o1', 420, 90, '', { size: 12, bold: true }), T('o2', 420, 120, '', { size: 12 }), T('o3', 420, 150, '', { size: 12 }), T('c', 300, 244, '', { size: 12, bold: true }));
+  const acc = (i, a, b, c) => Object.assign(Object.fromEntries(P.map((_, k) => ['r' + k, { tono: k < i ? 'ok' : k === i ? 'ora' : 'spento' }])), { o1: { t: a }, o2: { t: b || '' }, o3: { t: c || '' } });
+  SCENE.strategia = {
+    w: 600, h: 262, lato: true,
+    legenda: 'ora:passo attuale,ok:passo fatto',
+    oggetti: og5,
+    passi: [
+      { nota: "La <b>strategia della slide 48</b>, applicata a PossibleReordering con il lock. Ogni passo produce un pezzo che serve al successivo." },
+      { nota: "<b>Passo 1</b>: elenca le azioni e classificale: accessi a variabili, sincronizzazione, altro.", set: acc(0, 'accessi: t1(2), t1(3), t2(6), t2(7), init…', 'sincr.: lock/unlock, start, join', 'altro: println') },
+      { nota: "<b>Passo 2</b>: scrivi il program order di ogni thread.", set: acc(1, 'POm, PO1 = {1 → 2 → 3 → 4}', 'PO2 = {5 → 6 → 7 → 8}') },
+      { nota: "<b>Passo 3</b>: le coppie dovute alla sincronizzazione che valgono sempre: start, termination (monitor e volatile dipendono dall'ordine).", set: acc(2, 'S = {st1 → t1(1), st2 → t2(5)}', 'T = {t1(4) → j1, t2(8) → j2}') },
+      { nota: "<b>Passo 4</b>: elenca i synchronization order possibili (qui quattro).", set: acc(3, '(st1, 1, 4, st2, 5, 8)', '(st1, st2, 1, 4, 5, 8)', '(st1, st2, 5, 8, 1, 4) …') },
+      { nota: "<b>Passo 5</b>: guarda quali coppie cambiano da un ordine all'altro. Qui solo chi prende il lock per primo.", set: acc(4, 't1 per primo: t1(4) → t2(5)', 't2 per primo: t2(8) → t1(1)') },
+      { nota: "<b>Passo 6</b>: un insieme per ogni differenza. Con HB1 e HB2 si trovano le data race, si dimostra la correttezza o si prevedono i valori.", set: Object.assign(acc(6, 'HB1 = HB ∪ {t1(4) → t2(5)}', 'HB2 = HB ∪ {t2(8) → t1(1)}'), { c: { t: 'data race? correttezza? valori? tutto da HB1 e HB2', tono: 'ok' } }) }
+    ]
+  };
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Data race e correttezza</h1>
+  <p class="lede">Nel JMM un programma è corretto se <b>nessuna esecuzione ha data race</b>. Per dimostrarlo servono ancora due ingredienti: le <b>azioni in conflitto</b> e i <b>synchronization order</b>. Poi si vede come un lock ordina le azioni, e perché <code>volatile</code> cambia le regole.</p>
+</header>
+
+<section>
+  <h2>Synchronization order ed esecuzioni ben formate</h2>
+  <div class="box regola" data-tit="Synchronization order">
+    <p>L'ordine <b>totale</b> in cui avvengono le azioni di sincronizzazione di un'esecuzione. Deve rispettare la mutua esclusione (lock annidati correttamente) e l'happens-before. Un programma può averne più di uno: ogni esecuzione ne ha uno.</p>
+  </div>
+  <div class="box regola" data-tit="Esecuzione ben formata (well-formed)">
+    <p>Un'esecuzione è ben formata se è coerente con program order, happens-before e synchronization order. La JVM produce <b>solo</b> esecuzioni ben formate.</p>
+  </div>
+  <p><code>PossibleReordering</code> ha un solo synchronization order: <code>m(start(t1)), m(start(t2)), m(join(t1)), m(join(t2))</code>. I thread non hanno azioni di sincronizzazione proprie.</p>
+  <figure class="scena" data-scena="syncorder" data-titolo="Ordini di sincronizzazione validi e non validi"></figure>
+</section>
+
+<section>
+  <h2>Azioni in conflitto e data race</h2>
+  <div class="box regola" data-tit="Conflicting actions">
+    <p>Due azioni sono <b>in conflitto</b> se accedono alla stessa variabile <b>non volatile</b> e almeno una è una scrittura.</p>
+  </div>
+  <div class="box regola" data-tit="Data race (JMM)">
+    <p>C'è una data race tra <code>a</code> e <code>b</code> se 1) sono in conflitto e 2) <b>non</b> sono ordinate da happens-before.</p>
+  </div>
+  <div class="box regola" data-tit="Correctly synchronized">
+    <p>Un programma è <b>correttamente sincronizzato</b> se nessuna delle sue esecuzioni contiene data race. La JVM garantisce che tutte le sue esecuzioni sono <b>sequenzialmente consistenti</b>: niente più comportamenti paradossali.</p>
+  </div>
+  <figure class="passi" data-titolo="Conflitti in PossibleReordering (slide 25)">
+    <div class="passo"><div class="espr">accessi a <mark class="dato">x</mark>:  m(init(x)) scrive · t1(2) scrive · m(5) legge</div><p class="nota">Elenco chi tocca x e come.</p></div>
+    <div class="passo"><div class="espr">(m(init(x)), t1(2))  (m(init(x)), m(5))  (t1(2), m(5))</div><p class="nota">Tutte le coppie con almeno una scrittura: sono in conflitto.</p></div>
+    <div class="passo"><div class="espr">m(init(x)) → t1(2) <mark class="ok">✓</mark> (start rule)   ·   t1(2) → m(5) <mark class="ok">✓</mark> (termination rule)</div><p class="nota">Ma sono ordinate: nessuna data race su x.</p></div>
+    <div class="passo"><div class="espr">accessi ad <mark class="due">a</mark>:  t1(1) scrive · t2(4) legge   →   <mark class="no">non ordinate</mark></div><p class="nota">Questa coppia è in conflitto <b>e</b> non ordinata: data race. Basta trovarne una in un'esecuzione per dire che il programma <b>non</b> è correttamente sincronizzato.</p></div>
+  </figure>
+  <figure class="scena" data-scena="hb" data-titolo="Cercare un cammino di happens-before"></figure>
+</section>
+
+<section>
+  <h2>Sistemare con un lock, e dimostrarlo</h2>
+  <pre class="cod" data-lang="java">l = new ReentrantLock();   // (init(l))
+x = 0; y = 0; a = 0; b = 0;
+Thread one = new Thread(() -> {
+    l.lock();     // (1)
+    a = 1;        // (2)
+    x = b;        // (3)
+    l.unlock();   // (4)
+});
+Thread other = new Thread(() -> {
+    l.lock();     // (5)
+    b = 1;        // (6)
+    y = a;        // (7)
+    l.unlock();   // (8)
+});
+one.start();   // (start(t1))
+other.start(); // (start(t2))</pre>
+  <figure class="passi" data-titolo="Dal lock alle due famiglie di esecuzioni">
+    <div class="passo"><div class="espr">nuove azioni di sincronizzazione:  <mark class="ora">t1(1), t1(4)</mark>, <mark class="due">t2(5), t2(8)</mark></div><p class="nota">Il lock aggiunge quattro azioni di sincronizzazione.</p></div>
+    <div class="passo"><div class="espr">(m(start(t1)), <mark class="ora">t1(1), t1(4)</mark>, m(start(t2)), <mark class="due">t2(5), t2(8)</mark>)
+(m(start(t1)), <mark class="ora">t1(1)</mark>, m(start(t2)), <mark class="ora">t1(4)</mark>, <mark class="due">t2(5), t2(8)</mark>)
+(m(start(t1)), m(start(t2)), <mark class="ora">t1(1), t1(4)</mark>, <mark class="due">t2(5), t2(8)</mark>)
+(m(start(t1)), m(start(t2)), <mark class="due">t2(5), t2(8)</mark>, <mark class="ora">t1(1), t1(4)</mark>)</div><p class="nota">Ora ci sono più synchronization order. Nota: in nessuno un lock sta in mezzo a un lock/unlock dell'altro thread (mutua esclusione).</p></div>
+    <div class="passo"><div class="espr">HB<sub>1</sub> = HB ∪ { <mark class="ora">t1(4)</mark> → <mark class="due">t2(5)</mark> }     se t1 prende il lock per primo</div><p class="nota">Regola del monitor: l'unlock di t1 viene prima del lock di t2.</p></div>
+    <div class="passo"><div class="espr">HB<sub>2</sub> = HB ∪ { <mark class="due">t2(8)</mark> → <mark class="ora">t1(1)</mark> }     se t2 prende il lock per primo</div><p class="nota">Tutti i synchronization order ricadono in uno di questi due casi.</p></div>
+    <div class="passo"><div class="espr">in HB<sub>1</sub>:  t1(2) <sub>po</sub>→ t1(3) <sub>po</sub>→ t1(4) <sub>sync</sub>→ t2(5) <sub>po</sub>→ t2(6) <sub>po</sub>→ <mark class="ok">t2(7)</mark></div><p class="nota">La scrittura di a (t1(2)) happens-before la lettura (t2(7)).</p></div>
+    <div class="passo"><div class="espr">in HB<sub>2</sub>:  t2(7) <sub>po</sub>→ t2(8) <sub>sync</sub>→ t1(1) <sub>po</sub>→ <mark class="ok">t1(2)</mark></div><p class="nota">Qui l'ordine è al contrario, ma c'è comunque.</p></div>
+    <div class="passo"><div class="espr"><mark class="ok">Nessuna data race</mark> tra t1(2) e t2(7) in nessuna esecuzione</div><p class="nota">Lo stesso ragionamento vale per tutte le altre coppie in conflitto: il programma è <b>correttamente sincronizzato</b>.</p></div>
+  </figure>
+  <figure class="scena" data-scena="lockfix" data-titolo="HB1 e HB2: la scrittura e la lettura di a sono sempre ordinate"></figure>
+</section>
+
+<section>
+  <h2>Prevedere i valori: la visibilità</h2>
+  <p>Se <code>a → b</code>, l'effetto di <code>a</code> è visibile a <code>b</code>. Quindi si può dimostrare quali valori sono possibili.</p>
+  <figure class="passi" data-titolo="Il programma con lock può stampare x == 1? (slide 40)">
+    <div class="passo"><div class="espr">basta che valga:  m(init(x)) → m(init(b)) → <mark class="due">t2(6)</mark> → <mark class="ora">t1(3)</mark></div><p class="nota">Cioè: l'ultima scrittura di b prima di <code>x=b</code> è quella di t2, che scrive 1.</p></div>
+    <div class="passo"><div class="espr">m(init(x)) <sub>po</sub>→ m(init(b)) <sub>po</sub>→ m(start(t2)) <sub>start</sub>→ t2(5) <sub>po</sub>→ <mark class="due">t2(6)</mark></div><p class="nota">Questa parte vale in <b>tutte</b> le esecuzioni: non dipende da chi prende il lock.</p></div>
+    <div class="passo"><div class="espr"><mark class="due">t2(6)</mark> <sub>po</sub>→ t2(8) <sub>sync (HB₂)</sub>→ t1(1) <sub>po</sub>→ <mark class="ora">t1(3)</mark></div><p class="nota">Questa parte vale solo in HB<sub>2</sub>.</p></div>
+    <div class="passo"><div class="espr"><mark class="ok">x == 1</mark>  esattamente nelle esecuzioni in cui <b>t2 prende il lock per primo</b></div><p class="nota">Stesso ragionamento per le altre variabili.</p></div>
+  </figure>
+  <figure class="scena" data-scena="visibile" data-titolo="x vale 1 solo se t2 prende il lock per primo"></figure>
+</section>
+
+<section>
+  <h2>La regola volatile</h2>
+  <div class="box regola" data-tit="Volatile rule">
+    <p>Se <code>a</code> è una scrittura su una variabile volatile e <code>b</code> una lettura <b>successiva</b> della stessa variabile, allora <code>a → b</code>.</p>
+  </div>
+  <ul>
+    <li>Gli accessi a variabili volatile sono azioni di sincronizzazione ma <b>non</b> danno mutua esclusione: aumentano molto i synchronization order possibili.</li>
+    <li>Per definizione gli accessi a variabili volatile <b>non sono mai in conflitto</b>. Quindi non possono dare data race.</li>
+  </ul>
+  <p>Con <code>volatile a, b</code> in <code>PossibleReordering</code> restano in conflitto solo gli accessi a x e y, già ordinati da start e termination rule: il programma è correttamente sincronizzato. Gli output possibili sono (1,0), (0,1), (1,1); (0,0) no.</p>
+  <div class="box attenzione" data-tit="Attenzione: nella tua risposta al 3.1.8 (assignment 2 ancora da consegnare)">
+    <p>Hai scritto che con <code>count</code> volatile c'è una data race tra le due scritture. Per la definizione del corso <b>no</b>: gli accessi a variabili volatile non sono in conflitto, quindi <b>non ci sono data race</b> e il programma è correttamente sincronizzato. Però la <b>race condition</b> resta: entrambi i thread possono leggere 0 e scrivere 1, quindi <code>count</code> può valere 1. È proprio il confronto chiesto dal 3.1.9: la versione con lock stampa sempre 2, quella volatile può stampare 1. Dettagli nell'<a href="l03-esercizio-31.html">esercizio 3.1 svolto</a>.</p>
+  </div>
+  <figure class="scena" data-scena="volatileregola" data-titolo="Con a e b volatile, (0,0) è impossibile"></figure>
+</section>
+
+<section>
+  <h2>La strategia in 6 passi (slide 48)</h2>
+  <p>La strategia è un procedimento meccanico: non serve "intuire" dove sta il problema. Si parte dalle azioni, si aggiungono le coppie che valgono <b>sempre</b> (program order, start, termination), poi si guarda cosa <b>dipende dall'esecuzione</b> (chi prende per primo il lock, quale volatile viene letto dopo). Ogni caso diverso dà un insieme HB diverso; alla fine ogni domanda d'esame (data race? correttamente sincronizzato? che valori può stampare?) si risolve cercando percorsi in quegli insiemi.</p>
+  <ol>
+    <li>Identifica le azioni e classificale (variable access, synchronization, other).</li>
+    <li>Scrivi le coppie del <b>program order</b>.</li>
+    <li>Scrivi le coppie delle azioni di sincronizzazione: <b>start</b>, <b>termination</b>, <b>monitor</b>, <b>volatile</b>.</li>
+    <li>Elenca i possibili <b>synchronization order</b>.</li>
+    <li>Guarda quali coppie di happens-before <b>cambiano</b> tra un synchronization order e l'altro.</li>
+    <li>Per ogni differenza, scrivi l'insieme happens-before corrispondente (come HB<sub>1</sub>, HB<sub>2</sub>).</li>
+  </ol>
+  <p>Con quegli insiemi puoi: <b>trovare</b> data race, <b>dimostrare</b> che non ci sono (correttezza), <b>prevedere</b> i valori delle variabili.</p>
+  <figure class="scena" data-scena="strategia" data-titolo="I sei passi applicati all’esempio con il lock"></figure>
+</section>
+
+</main>
+</body>
+</html>

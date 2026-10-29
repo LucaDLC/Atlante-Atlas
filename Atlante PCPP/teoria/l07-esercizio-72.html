@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Esercizio 7.2: Treiber stack</title>
+<link rel="stylesheet" href="../assets/atlas.css">
+<link rel="stylesheet" href="../assets/tema.css">
+<script src="../assets/sito.js"></script>
+<script src="../assets/atlas.js" defer></script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Esercizio 7.2: Treiber stack</h1>
+  <p class="lede">Lo stack lock-free di Treiber: dove sono i punti di linearizzazione, come si testa <code>push</code>, e quali punti i test raggiungono davvero. Il punto che si sbaglia più spesso è il 7.2.4: due test non bastano.</p>
+</header>
+
+<section>
+  <h2>Lo stack e i suoi punti di linearizzazione (7.2.1)</h2>
+  <p>Un <b>punto di linearizzazione</b> è l'istante in cui una chiamata "ha effetto" per tutti gli altri thread. Nel Treiber stack tutto lo stato è il riferimento <code>top</code>, quindi i punti sono i momenti in cui <code>top</code> cambia, o in cui viene letto per decidere.</p>
+  <figure class="codice" data-titolo="LockFreeStack (codice dell'esercizio)">
+<pre data-lang="java">class LockFreeStack&lt;T&gt; {
+    AtomicReference&lt;Node&lt;T&gt;&gt; top = new AtomicReference&lt;Node&lt;T&gt;&gt;();
+
+    public void push(T value) {
+        Node&lt;T&gt; newHead = new Node&lt;T&gt;(value);
+        Node&lt;T&gt; oldHead;
+        do {
+            oldHead      = top.get();
+            newHead.next = oldHead;
+        } while (!top.compareAndSet(oldHead,newHead));
+    }
+
+    public T pop() {
+        Node&lt;T&gt; newHead;
+        Node&lt;T&gt; oldHead;
+        do {
+            oldHead = top.get();
+            if(oldHead == null) { return null; }
+            newHead = oldHead.next;
+        } while (!top.compareAndSet(oldHead,newHead));
+        return oldHead.value;
+    }
+}</pre>
+    <ol class="spiega">
+      <li data-righe="2" data-segna="top@dato"><p>Lo stato: <code>top</code> punta al nodo in cima, <code>null</code> se lo stack è vuoto.</p></li>
+      <li data-righe="7-10" data-segna="top.compareAndSet(oldHead,newHead)@ok"><p><b>Punto 1, push:</b> il CAS che <b>riesce</b>. In quell'istante il nuovo nodo diventa la cima per tutti. Prima nessuno lo vede, dopo tutti lo vedono.</p></li>
+      <li data-righe="16-20" data-segna="top.compareAndSet(oldHead,newHead)@ok"><p><b>Punto 2, pop su stack non vuoto:</b> il CAS che <b>riesce</b>. In quell'istante la cima viene tolta.</p></li>
+      <li data-righe="17-18" data-segna="oldHead = top.get()@ora|return null;@no"><p><b>Punto 3, pop su stack vuoto:</b> la lettura <code>top.get()</code> che restituisce <code>null</code>. Non c'è nessun CAS: la chiamata "ha effetto" nell'istante in cui vede lo stack vuoto.</p></li>
+    </ol>
+  </figure>
+</section>
+
+<section>
+  <h2>7.2.4 · I test coprono tutti i punti?</h2>
+  <p>"Coprire" un punto di linearizzazione vuol dire che un test lo fa eseguire <b>in concorrenza</b>, con altri thread che possono scontrarsi lì. Un punto eseguito da un thread solo non mette alla prova niente di concorrente.</p>
+  <figure class="passi" data-titolo="Punto per punto" data-legenda="ok:coperto,no:non coperto">
+    <div class="passo"><div class="espr">Punto 1 (CAS di push)       →  test 7.2.2: n thread fanno push insieme   <mark class="ok">coperto</mark></div><p class="nota">I CAS dei push si scontrano su <code>top</code>; uno vince, gli altri riprovano.</p></div>
+    <div class="passo"><div class="espr">Punto 2 (CAS di pop)        →  test 7.2.3: n thread fanno pop insieme    <mark class="ok">coperto</mark></div><p class="nota">Lo stack ha n elementi e ci sono n pop: i CAS dei pop si scontrano.</p></div>
+    <div class="passo"><div class="espr">Punto 3 (pop su vuoto)      →  nessun test concorrente                  <mark class="no">non coperto</mark></div><p class="nota">Nel 7.2.3 ci sono <b>esattamente</b> n elementi per n pop: in un'esecuzione giusta nessun pop trova lo stack vuoto. Nel 7.2.2 lo stack si svuota alla fine, ma con <b>un thread solo</b>.</p></div>
+    <div class="passo"><div class="espr">push e pop insieme          →  mai                                      <mark class="no">non coperto</mark></div><p class="nota">Nei due test i push e i pop non si sovrappongono mai: prima tutti i push, poi tutti i pop. Lo scontro tra un CAS di push e uno di pop non viene mai provato.</p></div>
+  </figure>
+  <div class="box domanda-tua" data-tit="&quot;Il push avviene sempre prima del pop, quindi è tutto coperto&quot;?">
+    <p>È proprio il motivo per cui <b>non</b> è tutto coperto. Se i push vengono sempre prima dei pop, i due tipi di chiamata non si scontrano mai, e il pop non trova mai lo stack vuoto mentre altri lavorano. La risposta al 7.2.4 è <b>no</b>.</p>
+  </div>
+  <div class="box idea" data-tit="Il test da aggiungere">
+    <p><b>Pop su stack quasi vuoto:</b> metti m elementi, poi fai partire n &gt; m thread che fanno <code>pop</code> insieme. Alla fine: esattamente m pop hanno restituito un elemento (con somma uguale a quella messa dentro) e n − m hanno restituito <code>null</code>. Così il punto 3 avviene in concorrenza, mentre altri thread fanno ancora CAS.</p>
+    <p><b>Facoltativo, push e pop insieme:</b> metà thread fanno push, metà pop, tutti insieme. Alla fine somma rimasta nello stack + somma dei valori usciti = somma dei valori entrati.</p>
+    <p>Una variante più semplice: ogni thread fa <code>push(x)</code> e subito <code>pop()</code>. Ogni thread ha sempre fatto un push in più dei suoi pop, quindi lo stack non è mai vuoto quando qualcuno fa pop: alla fine la somma dei valori usciti è uguale a quella dei valori entrati, e lo stack è vuoto. Attenzione: questo copre lo scontro push/pop, ma <b>non</b> il pop su stack vuoto.</p>
+  </div>
+  <div class="box attenzione" data-tit="Un giro solo per thread scopre poco">
+    <p>Misurato con 16 thread, barriera, 1000 ripetizioni. Con <b>un solo</b> push+pop per thread, un <code>push</code> sbagliato apposta (<code>get</code> e poi <code>set</code>) non viene scoperto <b>mai</b>, un <code>pop</code> sbagliato 1 volta su 1000. Con <b>1000 giri</b> di push+pop per thread: push sbagliato scoperto 999 volte su 1000, pop sbagliato 1000 su 1000; lo stack giusto passa 1000 su 1000. Quando il testo non impone "una operazione per thread", conviene far lavorare ogni thread in un ciclo.</p>
+  </div>
+  <div class="box inglese" data-tit="Risposta pronta 7.2.4">
+    <p>No. The push test exercises the linearization point of push (the successful CAS) concurrently, and the pop test exercises the linearization point of a successful pop (the successful CAS). But the linearization point of a pop on an empty stack (the <code>top.get()</code> that returns null) is never reached concurrently: in the pop test there are exactly n elements for n pops, so in a correct execution no pop finds the stack empty, and in the push test the stack is emptied by a single thread. Moreover, pushes and pops never run at the same time. We therefore add a test where n threads pop concurrently from a stack with m &lt; n elements, and check that exactly m pops return elements whose sum equals the sum pushed and n − m pops return null.</p>
+  </div>
+</section>
+
+</main>
+</body>
+</html>

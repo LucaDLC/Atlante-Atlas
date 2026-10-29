@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tutte le operazioni su LazyList</title>
+<link rel="stylesheet" href="../assets/atlas.css">
+<link rel="stylesheet" href="../assets/tema.css">
+<script src="../assets/sito.js"></script>
+<script src="../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  SCENE.tirare = {
+    w: 600, h: 262, lato: true,
+    legenda: 'ora:calcolato adesso,no:scartato da filter,ok:passa il filtro,spento:mai toccato',
+    codice: { lang: 'scala', testo: `val l = LazyList(1, 2, 3, 4, 5)
+val m = l.map { x => println(s"map $x"); x * 10 }
+val f = m.filter { y => println(s"filter $y"); y > 15 }
+f.headOption` },
+    oggetti: [
+      { id: 'nl', tipo: 'testo', x: 44, y: 47, t: 'l', size: 15, bold: true },
+      { id: 'cl', tipo: 'celle', x: 80, y: 30, cw: 44, valori: [1, 2, 3, 4, 5], indici: false },
+      { id: 'nm', tipo: 'testo', x: 44, y: 117, t: 'm', size: 15, bold: true, nascosto: true },
+      { id: 'cm', tipo: 'celle', x: 80, y: 100, cw: 44, valori: ['?'], indici: false, nascosto: true },
+      { id: 'dm', tipo: 'testo', x: 182, y: 117, t: '…', size: 15, nascosto: true },
+      { id: 'nf', tipo: 'testo', x: 44, y: 187, t: 'f', size: 15, bold: true, nascosto: true },
+      { id: 'cf', tipo: 'celle', x: 80, y: 170, cw: 44, valori: ['20'], indici: false, nascosto: true },
+      { id: 'df', tipo: 'testo', x: 138, y: 187, t: '…', size: 15, nascosto: true },
+      { id: 'v0', tipo: 'vett', x1: 102, y1: 66, x2: 102, y2: 98, t: '×10', nascosto: true },
+      { id: 'v1', tipo: 'vett', x1: 146, y1: 66, x2: 146, y2: 98, t: '×10', nascosto: true },
+      { id: 'vf', tipo: 'vett', x1: 146, y1: 136, x2: 106, y2: 168, nascosto: true },
+      { id: 'ts', tipo: 'testo', x: 400, y: 36, t: 'stampe', size: 12, bold: true, anchor: 'start' },
+      { id: 's1', tipo: 'testo', x: 400, y: 62, t: 'map 1', anchor: 'start', nascosto: true },
+      { id: 's2', tipo: 'testo', x: 400, y: 86, t: 'filter 10', anchor: 'start', nascosto: true },
+      { id: 's3', tipo: 'testo', x: 400, y: 110, t: 'map 2', anchor: 'start', nascosto: true },
+      { id: 's4', tipo: 'testo', x: 400, y: 134, t: 'filter 20', anchor: 'start', nascosto: true },
+      { id: 'ris', tipo: 'testo', x: 300, y: 240, t: '', size: 14, bold: true }
+    ],
+    passi: [
+      { nota: "<code>l</code> ha 5 elementi. Le funzioni date a <code>map</code> e <code>filter</code> stampano quando lavorano: così si vede <b>quando</b> avviene ogni calcolo.", righe: [1] },
+      { nota: "<code>map</code> chiama <code>foldRight</code>, che restituisce subito <code>cons(f(1), acc)</code>: una cella con due <b>ricette</b>, testa e coda. Nessuna stampa: nessun calcolo.", righe: [2], set: { nm: { nascosto: false }, cm: { nascosto: false }, dm: { nascosto: false } } },
+      { nota: "<code>filter</code> chiama <code>foldRight</code> su m, e foldRight deve guardare subito la <b>testa</b> di m: la ricetta scatta e map lavora su 1.", righe: [3], set: { cl: { toni: { 0: 'ora' } }, cm: { valori: ['10'], toni: { 0: 'ora' } }, v0: { nascosto: false }, s1: { nascosto: false, tono: 'ora' } } },
+      { nota: "p(10): 10 &gt; 15 è falso. filter scarta 10 e valuta <code>acc</code>, cioè il resto della lista.", righe: [3], set: { cl: { toni: {} }, cm: { toni: { 0: 'no' } }, s1: { tono: null }, s2: { nascosto: false, tono: 'ora' } } },
+      { nota: "Il resto di m è ancora una ricetta: scatta, e map lavora su 2.", righe: [3], set: { cl: { toni: { 1: 'ora' } }, cm: { valori: ['10', '20'], toni: { 0: 'no', 1: 'ora' } }, v1: { nascosto: false }, s2: { tono: null }, s3: { nascosto: false, tono: 'ora' } } },
+      { nota: "p(20): vero. filter restituisce <code>cons(20, acc)</code> e <b>si ferma</b>: il resto resta una ricetta.", righe: [3], set: { cl: { toni: {} }, cm: { toni: { 0: 'no', 1: 'ok' } }, nf: { nascosto: false }, cf: { nascosto: false, toni: { 0: 'ok' } }, df: { nascosto: false }, vf: { nascosto: false }, s3: { tono: null }, s4: { nascosto: false, tono: 'ora' } } },
+      { nota: "<code>headOption</code> legge una testa già calcolata: <b>nessuna</b> nuova stampa.", righe: [4], set: { s4: { tono: null }, ris: { t: 'f.headOption = Some(20)', tono: 'ok' } } },
+      { nota: "3, 4 e 5 non sono mai stati toccati. E il lavoro l'ha fatto <code>filter</code> nel momento in cui l'hai chiamata, non <code>headOption</code>: con <code>foldRight</code>, filter cerca subito il primo elemento che passa. Ordine delle stampe verificato eseguendo il tuo <code>map</code> e il tuo <code>filter</code> in Scala 3.8.", set: { cl: { toni: { 2: 'spento', 3: 'spento', 4: 'spento' } } } }
+    ]
+  };
+})();
+</script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  const T = (id, x, y, t, extra) => Object.assign({ id, tipo: 'testo', x, y, t, size: 13 }, extra || {});
+  const R = (id, x, y, w, h, t, extra) => Object.assign({ id, tipo: 'rett', x, y, w, h, t }, extra || {});
+  const N = (id, x, y, t, tono, extra) => Object.assign({ id, tipo: 'nodo', x, y, t, tono, r: 20 }, extra || {});
+  const F = (id, x1, y1, x2, y2, t, extra) => Object.assign({ id, tipo: 'vett', x1, y1, x2, y2, t }, extra || {});
+  const C = (id, x, y, valori, extra) => Object.assign({ id, tipo: 'celle', x, y, cw: 52, ch: 40, valori, indici: false }, extra || {});
+  const vuote = n => Array(n).fill('');
+  const toni = (n, tono) => Object.fromEntries(Array.from({ length: n }, (_, i) => [i, tono]));
+
+    SCENE.chiscrive = {
+      w: 600, h: 240, lato: true,
+      legenda: 'dato:scritto dal docente,ora:scritto da te,spento:libreria standard (non usata)',
+      oggetti: [
+        R('d1', 20, 30, 270, 64, '', { tono: 'dato' }), T('d1t', 155, 48, 'enum LazyList (docente)', { bold: true, size: 12 }), T('d1v', 155, 68, 'Empty, Cons, headOption, tail', { size: 11 }), T('d1w', 155, 86, 'foldRight, foldLeft, find', { size: 11 }),
+        R('d2', 20, 100, 270, 50, '', { tono: 'dato', nascosto: true }), T('d2t', 155, 130, 'companion: empty, cons, apply', { size: 12, nascosto: true }),
+        R('t1', 310, 30, 270, 120, '', { tono: 'ora', nascosto: true }), T('t1t', 445, 52, 'scritte da te', { bold: true, size: 12, nascosto: true }),
+        T('t1a', 445, 78, 'toList, take, drop, takeWhile, forAll, exists', { size: 10, nascosto: true }), T('t1b', 445, 100, 'map, filter, append, flatMap, from, to, naturals', { size: 10, nascosto: true }), T('t1c', 445, 122, 'fibs, unfold, …Unfold, zipWith', { size: 10, nascosto: true }),
+        T('c', 300, 190, '', { size: 12 }), T('c2', 300, 220, '', { size: 12 })
+      ],
+      passi: [
+        { nota: "Il file della settimana 4 mescola codice del docente e tuo. Nell'<b>enum</b> il docente ha già scritto le due forme e alcuni metodi." },
+        { nota: "Nel <b>companion object</b>: empty, cons (il costruttore comodo) e apply, che usi scrivendo LazyList(1, 2, 3).", set: { d2: { nascosto: false }, d2t: { nascosto: false } } },
+        { nota: "Tutto il resto l'hai scritto tu, esercizio per esercizio.", set: { t1: { nascosto: false }, t1t: { nascosto: false }, t1a: { nascosto: false }, t1b: { nascosto: false }, t1c: { nascosto: false } } },
+        { nota: "In cima al file: \"we are using our own lazy lists, not the standard library\". Option, List, Nil vengono dalla libreria; la LazyList è quella del corso. La LazyList della libreria esiste, ma ha metodi diversi.", set: { c: { t: 'Option, List: libreria · LazyList: quella del corso' }, c2: { t: 'non cercare la documentazione della LazyList standard', tono: 'no' } } }
+      ]
+    };
+
+    const K = [['ones = cons(1, ones)', ['1', '1', '1', '1'], 'infinita, punta a se stessa'], ['from(3)', ['3', '4', '5', '6'], 'sale di 1'], ['to(3)', ['3', '2', '1', '0'], 'scende di 1'], ['naturals = from(1)', ['1', '2', '3', '4'], 'i naturali, da 1'], ['fibs', ['0', '1', '1', '2', '3', '5', '8', '13'], 'Fibonacci'], ['unfold(1)(n => if n > 4 then None else Some((n, n * 2)))', ['1', '2', '4'], 'da uno stato: None = fine']];
+    SCENE.costruire = {
+      w: 600, h: 180, lato: true,
+      legenda: 'ok:elementi prodotti da .take(…).toList',
+      oggetti: [T('e', 300, 30, '', { bold: true, size: 13 }), C('l', 30, 60, vuote(8), { cw: 66, toni: {} }), T('c', 300, 150, '', { size: 12 })],
+      passi: [{ nota: "I modi di costruire una LazyList, ognuno con i primi elementi (verificati con <code>.take(…).toList</code>)." }].concat(K.map(([e, v, c]) => ({
+        nota: '<code>' + e + '</code>: ' + c + '.',
+        set: { e: { t: e }, l: { valori: v.concat(vuote(8)).slice(0, 8), toni: toni(v.length, 'ok') }, c: { t: c } }
+      })))
+    };
+
+    const L = [['headOption', 1, 'Some(1)'], ['toList', 5, 'List(1, 2, 3, 4, 5)'], ['take(2)', 2, 'List(1, 2)'], ['drop(2)', 5, 'List(3, 4, 5)'], ['takeWhile(_ < 3)', 3, 'List(1, 2)'], ['forAll(_ > 0)', 5, 'true'], ['exists(_ > 4)', 5, 'true'], ['find(_ > 2)', 3, 'Some(3)']];
+    SCENE.leggere = {
+      w: 580, h: 180, lato: true,
+      legenda: 'ora:elemento guardato,ok:risultato',
+      oggetti: [T('e', 290, 30, '', { bold: true }), C('l', 60, 50, ['1', '2', '3', '4', '5'], { cw: 70 }), T('r', 290, 130, '', { bold: true, size: 15 }), T('c', 290, 165, '', { size: 12 })],
+      passi: [{ nota: "Su l = LazyList(1, 2, 3, 4, 5): quanti elementi guarda ogni funzione, e cosa restituisce (verificato)." }].concat(L.map(([e, k, r], i) => ({
+        nota: '<code>l.' + e + '</code>: ' + ['solo la testa, dentro un Option.', 'forza tutto: su una lista infinita <b>non termina</b>. Si usa dopo un take.', 'i primi n.', 'salta i primi n, tiene il resto.', 'guarda fino al primo che non va (il 3), poi si ferma.', 'deve controllarli tutti: nessuno è falso.', 'si ferma al primo vero: qui il 5, l\'ultimo.', 'il primo che soddisfa p: si ferma al 3.'][i],
+        set: { e: { t: 'l.' + e }, l: { toni: toni(k, 'ora') }, r: { t: r, tono: 'ok' }, c: { t: 'elementi guardati: ' + k } }
+      })))
+    };
+
+    SCENE.versioni = {
+      w: 580, h: 200, lato: true,
+      legenda: 'dato:originale (ricorsione a mano),ora:con foldRight,due:con unfold,ok:stesso risultato',
+      oggetti: [R('o', 20, 40, 170, 40, 'takeWhile', { tono: 'dato' }), R('f', 205, 40, 170, 40, 'takeWhile1', { tono: 'ora', nascosto: true }), R('u', 390, 40, 170, 40, 'takeWhileUnfold', { tono: 'due', nascosto: true }), T('r', 290, 120, '', { bold: true }), T('c', 290, 170, '', { size: 12 })],
+      passi: [
+        { nota: "Alcune funzioni esistono in più versioni: stesso risultato, scritte in modo diverso. Per esempio takeWhile, scritta con la ricorsione a mano (esercizio 4)." },
+        { nota: "<b>…1</b>: la stessa, con <b>foldRight</b> (esercizi 6–7: takeWhile1, headOption1).", set: { f: { nascosto: false } } },
+        { nota: "<b>…Unfold</b>: la stessa, con <b>unfold</b> (esercizi 12–13: mapUnfold, takeUnfold, takeWhileUnfold, fibsUnfold).", set: { u: { nascosto: false } } },
+        { nota: "Tutte e tre su naturals con _ &lt; 4: List(1, 2, 3). Gli esercizi servono a mostrare che foldRight e unfold bastano a scrivere quasi tutto senza ricorsione esplicita.", set: { o: { tono: 'ok' }, f: { tono: 'ok' }, u: { tono: 'ok' }, r: { t: 'naturals.takeWhile…(_ < 4).toList = List(1, 2, 3)', tono: 'ok' }, c: { t: 'ricorsione a mano → foldRight / unfold: stesso risultato' } } }
+      ]
+    };
+  
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Tutte le operazioni su LazyList</h1>
+  <p class="lede">Ogni operazione della settimana 4, con cosa fa in una riga e il risultato vero su <code>l = LazyList(1, 2, 3, 4, 5)</code>. Accanto c'è chi l'ha scritta: il docente nel file, oppure tu in un esercizio.</p>
+</header>
+
+<section>
+  <h2>Chi ha scritto cosa</h2>
+  <div class="colonne">
+    <div class="carta buona"><h4>Già nel file (docente)</h4>
+      <p>Nell'<code>enum LazyList</code>: <code>Empty</code>, <code>Cons</code>, <code>headOption</code>, <code>tail</code>, <code>foldRight</code>, <code>foldLeft</code>, <code>find</code>.</p>
+      <p>Nel companion <code>object LazyList</code>: <code>empty</code>, <code>cons</code>, <code>apply</code> (è quello che usi scrivendo <code>LazyList(1, 2, 3)</code>).</p></div>
+    <div class="carta media"><h4>Scritte da te</h4>
+      <p><code>toList</code>, <code>take</code>, <code>drop</code>, <code>takeWhile</code>, <code>forAll</code>, <code>exists</code>, <code>takeWhile1</code>, <code>headOption1</code>, <code>map</code>, <code>filter</code>, <code>append</code>, <code>flatMap</code>, <code>from</code>, <code>to</code>, <code>naturals</code>, <code>fibs</code>, <code>unfold</code>, <code>fibsUnfold</code>, <code>mapUnfold</code>, <code>takeUnfold</code>, <code>takeWhileUnfold</code>, <code>zipWith</code>.</p></div>
+  </div>
+  <div class="box attenzione" data-tit="Non è la LazyList di Scala">
+    <p>In cima al file: <i>"we are using our own lazy lists, not the standard library"</i>. <code>None</code>, <code>Some</code>, <code>Option</code>, <code>List</code>, <code>Nil</code> vengono dalla libreria standard; la <code>LazyList</code> invece è quella del corso. La libreria standard ha una sua <code>scala.collection.immutable.LazyList</code> (con <code>#::</code> al posto di <code>cons</code>, e anche <code>from</code> e <code>unfold</code>), ma negli esercizi non si usa.</p>
+  </div>
+  <figure class="scena" data-scena="chiscrive" data-titolo="Docente, tu, libreria standard"></figure>
+</section>
+
+<section>
+  <h2>Costruire una lista</h2>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Scrivi</th><th>Cosa fa</th><th>Risultato (verificato)</th><th>Chi</th></tr></thead>
+    <tbody>
+      <tr><td><code>cons(1, resto)</code></td><td>un nodo: testa 1, coda <code>resto</code> non calcolata</td><td>—</td><td>docente · slide 13</td></tr>
+      <tr><td><code>empty</code></td><td>la LazyList vuota</td><td>—</td><td>docente</td></tr>
+      <tr><td><code>LazyList(1, 2, 3)</code></td><td>lista finita dai valori elencati</td><td><code>List(1, 2, 3)</code></td><td>docente</td></tr>
+      <tr><td><code>ones = cons(1, ones)</code></td><td>1, 1, 1, … infinita</td><td><code>.take(4)</code> → <code>List(1, 1, 1, 1)</code></td><td>slide 14</td></tr>
+      <tr><td><code>from(3)</code></td><td>3, 4, 5, … sale</td><td><code>.take(4)</code> → <code>List(3, 4, 5, 6)</code></td><td>tu · es 1</td></tr>
+      <tr><td><code>to(3)</code></td><td>3, 2, 1, … scende</td><td><code>.take(4)</code> → <code>List(3, 2, 1, 0)</code></td><td>tu · es 1</td></tr>
+      <tr><td><code>naturals</code></td><td><code>from(1)</code>: 1, 2, 3, …</td><td><code>.take(4)</code> → <code>List(1, 2, 3, 4)</code></td><td>tu · es 1</td></tr>
+      <tr><td><code>fibs</code></td><td>0, 1, 1, 2, 3, 5, …</td><td><code>.take(8)</code> → <code>List(0, 1, 1, 2, 3, 5, 8, 13)</code></td><td>tu · es 10</td></tr>
+      <tr><td><code>unfold(z)(f)</code></td><td>da uno stato: <code>f</code> dice <code>None</code> = fine, <code>Some((valore, nuovoStato))</code> = continua</td><td><code>unfold(1)(n => if n &gt; 4 then None else Some((n, n * 2)))</code> → <code>List(1, 2, 4)</code></td><td>tu · es 11</td></tr>
+    </tbody>
+  </table></div>
+  <figure class="scena" data-scena="costruire" data-titolo="ones, from, to, naturals, fibs, unfold"></figure>
+</section>
+
+<section>
+  <h2>Leggere, tagliare, controllare</h2>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Scrivi</th><th>Cosa fa</th><th>Su <code>l</code> (verificato)</th><th>Chi</th></tr></thead>
+    <tbody>
+      <tr><td><code>l.headOption</code></td><td>la testa, dentro un Option</td><td><code>Some(1)</code> · su <code>empty</code>: <code>None</code></td><td>docente</td></tr>
+      <tr><td><code>l.toList</code></td><td>in <code>List</code> normale; forza <b>tutto</b></td><td><code>List(1, 2, 3, 4, 5)</code></td><td>tu · es 2</td></tr>
+      <tr><td><code>l.take(2)</code></td><td>i primi n</td><td><code>List(1, 2)</code></td><td>tu · es 3</td></tr>
+      <tr><td><code>l.drop(2)</code></td><td>salta i primi n, tiene il resto</td><td><code>List(3, 4, 5)</code></td><td>tu · es 3</td></tr>
+      <tr><td><code>l.takeWhile(_ &lt; 3)</code></td><td>prende finché <code>p</code> è vero, poi si <b>ferma</b></td><td><code>List(1, 2)</code></td><td>tu · es 4</td></tr>
+      <tr><td><code>l.forAll(_ &gt; 0)</code></td><td>tutti soddisfano <code>p</code>? Si ferma al primo falso</td><td><code>true</code></td><td>tu · es 5</td></tr>
+      <tr><td><code>l.exists(_ &gt; 4)</code></td><td>almeno uno? Si ferma al primo vero</td><td><code>true</code></td><td>tu · es 5</td></tr>
+      <tr><td><code>l.find(_ &gt; 2)</code></td><td>il <b>primo</b> che soddisfa <code>p</code>, dentro un Option</td><td><code>Some(3)</code></td><td>docente · es 9</td></tr>
+    </tbody>
+  </table></div>
+  <div class="box attenzione" data-tit="toList su una lista infinita">
+    <p>Non termina mai: cerca <code>Empty</code> per fermarsi. Si usa sempre dopo un <code>take</code>: <code>naturals.take(4).toList</code>.</p>
+  </div>
+  <figure class="scena" data-scena="leggere" data-titolo="Quanti elementi guarda ogni funzione"></figure>
+</section>
+
+<section>
+  <h2>Trasformare e combinare</h2>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Scrivi</th><th>Cosa fa</th><th>Su <code>l</code> (verificato)</th><th>Chi</th></tr></thead>
+    <tbody>
+      <tr><td><code>l.map(_ * 10)</code></td><td>cambia ogni valore, stesso numero di elementi</td><td><code>List(10, 20, 30, 40, 50)</code></td><td>tu · es 8</td></tr>
+      <tr><td><code>l.filter(_ % 2 == 0)</code></td><td>tiene quelli che soddisfano <code>p</code>, <b>salta</b> gli altri</td><td><code>List(2, 4)</code></td><td>tu · es 8</td></tr>
+      <tr><td><code>l.flatMap(x => LazyList(x, x))</code></td><td>ogni elemento diventa una lista, poi le attacca</td><td><code>List(1, 1, 2, 2, 3, 3, 4, 4, 5, 5)</code></td><td>tu · es 8</td></tr>
+      <tr><td><code>l.append(LazyList(8, 9))</code></td><td>attacca la seconda <b>in fondo</b> alla prima</td><td><code>List(1, 2, 3, 4, 5, 8, 9)</code></td><td>tu · es 8</td></tr>
+      <tr><td><code>l.zipWith[Int, Int](_ * _)(l)</code></td><td>accoppia elemento per elemento; si ferma quando la più corta finisce</td><td><code>List(1, 4, 9, 16, 25)</code></td><td>tu · es 13</td></tr>
+      <tr><td><code>l.foldRight(0)((a, acc) => a + acc)</code></td><td>riduce a un valore, combinando dal fondo; può fermarsi presto</td><td><code>15</code></td><td>docente</td></tr>
+      <tr><td><code>l.foldLeft(0)(…)</code></td><td>riduce a un valore, dall'inizio; arriva <b>sempre</b> in fondo</td><td>—</td><td>docente</td></tr>
+    </tbody>
+  </table></div>
+  <div class="box regola" data-tit="takeWhile o filter?">
+    <p>Su <code>LazyList(1, 2, 3, 4)</code> con "è pari": <code>takeWhile</code> dà <code>List()</code> (si ferma subito sull'1), <code>filter</code> dà <code>List(2, 4)</code> (salta e prosegue). Nella versione con <code>foldRight</code> la differenza è una parola: <code>else empty</code> contro <code>else acc</code>.</p>
+  </div>
+  <div class="box regola" data-tit="map o flatMap?">
+    <p>Guarda cosa restituisce <code>f</code>. Un valore (<code>A => B</code>) → <code>map</code>. Una lista (<code>A => LazyList[B]</code>) → <code>flatMap</code>. Con <code>map</code> e una <code>f</code> che dà liste otterresti una lista di liste.</p>
+  </div>
+  <figure class="scena" data-scena="tirare" data-titolo="map, filter, headOption: chi calcola cosa, e quando"></figure>
+</section>
+
+<section>
+  <h2>Le versioni <code>…Unfold</code> e <code>…1</code></h2>
+  <p>Danno <b>gli stessi risultati</b> delle originali, scritte in un altro modo: <code>takeWhile1</code> e <code>headOption1</code> con <code>foldRight</code> (es 6–7), <code>mapUnfold</code>, <code>takeUnfold</code>, <code>takeWhileUnfold</code>, <code>fibsUnfold</code> con <code>unfold</code> (es 12–13). Il codice è nelle pagine <a href="s04-foldright-pigro.html">foldRight pigro</a> e <a href="s04-infinite-unfold.html">Liste infinite e unfold</a>.</p>
+  <figure class="scena" data-scena="versioni" data-titolo="Originale, …1 con foldRight, …Unfold"></figure>
+</section>
+
+</main>
+</body>
+</html>

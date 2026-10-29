@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Karatsuba e quicksort</title>
+<link rel="stylesheet" href="../assets/atlas.css">
+<link rel="stylesheet" href="../assets/tema.css">
+<script src="../assets/sito.js"></script>
+<script src="../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+SCENE.partiziona = {
+  w: 520, h: 250, lato: false,
+  legenda: 'ora:pivot,dato:minori del pivot,due:maggiori del pivot,ok:al posto giusto',
+  oggetti: [
+    { id: 'a', tipo: 'celle', x: 84, y: 20, cw: 44, ch: 40, valori: ['7', '2', '9', '4', '3', '8', '1', '6'], indici: false },
+    { id: 'sx', tipo: 'celle', x: 20, y: 120, cw: 44, ch: 40, valori: ['', '', ''], indici: false, nascosto: true },
+    { id: 'pv', tipo: 'celle', x: 238, y: 120, cw: 44, ch: 40, valori: ['4'], indici: false, nascosto: true },
+    { id: 'dx', tipo: 'celle', x: 325, y: 120, cw: 44, ch: 40, valori: ['', '', '', ''], indici: false, nascosto: true },
+    { id: 'n', tipo: 'testo', x: 260, y: 215, t: '', size: 13, bold: true }
+  ],
+  passi: [
+    { nota: 'Otto numeri da ordinare. Quicksort sceglie un <b>pivot a caso</b>: qui esce il 4.', set: { a: { toni: { 3: 'ora' } } } },
+    { nota: 'Confronto ogni altro elemento con il pivot: n − 1 confronti. I minori vanno a sinistra, i maggiori a destra.', set: { a: { toni: { 0: 'due', 1: 'dato', 2: 'due', 3: 'ora', 4: 'dato', 5: 'due', 6: 'dato', 7: 'due' } } } },
+    { nota: 'Dopo la partizione il pivot è <b>già al suo posto definitivo</b>: tutto a sinistra è minore, tutto a destra maggiore.', set: { sx: { nascosto: false, valori: ['2', '3', '1'], toni: { 0: 'dato', 1: 'dato', 2: 'dato' } }, pv: { nascosto: false, toni: { 0: 'ok' } }, dx: { nascosto: false, valori: ['7', '9', '8', '6'], toni: { 0: 'due', 1: 'due', 2: 'due', 3: 'due' } }, a: { toni: { 0: 'spento', 1: 'spento', 2: 'spento', 3: 'spento', 4: 'spento', 5: 'spento', 6: 'spento', 7: 'spento' } } } },
+    { nota: 'Ricorsione sulle due parti. Il pivot ha diviso <b>bene</b> (3 e 4): se succede spesso, la profondità è <i>O(log n)</i> e il totale <i>O(n log n)</i>.', set: { sx: { valori: ['1', '2', '3'], toni: { 0: 'ok', 1: 'ok', 2: 'ok' } }, dx: { valori: ['6', '7', '8', '9'], toni: { 0: 'ok', 1: 'ok', 2: 'ok', 3: 'ok' } }, n: { t: '1 2 3 | 4 | 6 7 8 9', tono: 'ok' } } },
+    { nota: 'Il caso peggiore: il pivot è ogni volta il minimo o il massimo. Una parte è vuota, l\'altra ha n − 1 elementi: <i>O(n²)</i>. Scegliere il pivot <b>a caso</b> rende questo caso molto improbabile, per qualsiasi input.', set: { n: { t: 'pivot sempre estremo ⇒ n + (n−1) + … = O(n²)', tono: 'no' } } }
+  ]
+};
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Karatsuba e quicksort</h1>
+  <p class="lede">Due usi diversi del divide et impera. <b>Karatsuba</b> (K&amp;T 5.5) moltiplica numeri enormi con 3 moltiplicazioni a metà invece di 4. <b>Quicksort e selezione casuali</b> (K&amp;T 13.5) dividono con un pivot scelto a caso e vanno veloci <b>in media</b>.</p>
+</header>
+
+<section>
+  <h2>Moltiplicare numeri di n cifre</h2>
+  <p>A scuola si moltiplicano due numeri di n cifre con <i>O(n²)</i> operazioni su cifre singole. Con divide et impera: spezzo ogni numero in una metà alta e una bassa.</p>
+  <p class="m" style="text-align:center">x = x₁ · 10<sup>n/2</sup> + x₀     y = y₁ · 10<sup>n/2</sup> + y₀</p>
+  <p class="m" style="text-align:center">xy = x₁y₁ · 10ⁿ + (x₁y₀ + x₀y₁) · 10<sup>n/2</sup> + x₀y₀</p>
+  <p>Quattro moltiplicazioni di numeri di n/2 cifre: <span class="m">T(n) = 4T(n/2) + O(n) = O(n²)</span>. Nessun guadagno. Il trucco di Karatsuba ne risparmia una.</p>
+  <figure class="passi" data-titolo="1234 × 5678 con tre moltiplicazioni">
+    <div class="passo"><div class="espr">x₁ = 12, x₀ = 34,   y₁ = 56, y₀ = 78</div><p class="nota">Spezzo a metà (base 10², n = 4).</p></div>
+    <div class="passo"><div class="espr"><mark class="dato">A = x₁y₁</mark> = 12 · 56 = 672      <mark class="due">B = x₀y₀</mark> = 34 · 78 = 2652</div><p class="nota">Prima e seconda moltiplicazione.</p></div>
+    <div class="passo"><div class="espr"><mark class="ora">C = (x₁ + x₀)(y₁ + y₀)</mark> = 46 · 134 = 6164</div><p class="nota">Terza moltiplicazione. Espandendo: C = x₁y₁ + x₁y₀ + x₀y₁ + x₀y₀.</p></div>
+    <div class="passo"><div class="espr">x₁y₀ + x₀y₁ = <mark class="ora">C</mark> − <mark class="dato">A</mark> − <mark class="due">B</mark> = 6164 − 672 − 2652 = 2840</div><p class="nota">Il termine di mezzo senza moltiplicarlo: solo sottrazioni, <i>O(n)</i>.</p></div>
+    <div class="passo"><div class="espr">xy = <mark class="dato">672</mark> · 10⁴ + 2840 · 10² + <mark class="due">2652</mark> = <mark class="ok">7 006 652</mark></div><p class="nota">Controllo: 1234 × 5678 = 7 006 652. ✓</p></div>
+    <div class="passo"><div class="espr">T(n) = <mark class="ok">3</mark>T(n/2) + O(n) = O(n<sup>log₂ 3</sup>) ≈ <mark class="ok">O(n<sup>1.59</sup>)</mark></div><p class="nota">q = 3 &gt; 2 nella <a href="l04-mergesort.html">tabella delle ricorrenze</a>.</p></div>
+  </figure>
+</section>
+
+<section>
+  <h2>Quicksort casuale</h2>
+  <figure class="scena" data-scena="partiziona" data-titolo="Una partizione e le sue conseguenze"></figure>
+  <figure class="passi" data-titolo="Perché in media fa O(n log n) confronti">
+    <div class="passo"><div class="espr">rinomino gli elementi in ordine: <mark class="dato">a₁ &lt; a₂ &lt; … &lt; aₙ</mark></div><p class="nota">Conto quante coppie vengono confrontate.</p></div>
+    <div class="passo"><div class="espr">aᵢ e aⱼ (i &lt; j) sono confrontati ⇔ il primo pivot scelto tra <mark class="ora">aᵢ, …, aⱼ</mark> è aᵢ o aⱼ</div><p class="nota">Se viene scelto prima un elemento in mezzo, aᵢ e aⱼ finiscono in parti diverse e non si incontrano più. Si confronta solo con il pivot.</p></div>
+    <div class="passo"><div class="espr">Pr[aᵢ e aⱼ confrontati] = <mark class="ok">2 / (j − i + 1)</mark></div><p class="nota">Ognuno dei j − i + 1 elementi ha la stessa probabilità di essere il primo pivot: 2 casi buoni.</p></div>
+    <div class="passo"><div class="espr">E[confronti] = Σ<sub>i&lt;j</sub> 2/(j − i + 1) ≤ 2n · (1 + 1/2 + … + 1/n) = <mark class="ok">O(n log n)</mark></div><p class="nota">La somma armonica vale circa ln n. Il risultato preciso delle slide: circa 2n ln n confronti.</p></div>
+  </figure>
+</section>
+
+<section>
+  <h2>Trovare la mediana (selezione) in O(n)</h2>
+  <p>Problema: il k-esimo elemento più piccolo (la mediana è k = n/2). Ordinare costa <i>O(n log n)</i>; si può fare meglio.</p>
+  <figure class="passi" data-titolo="Select(S, k)">
+    <div class="passo"><div class="espr">pivot <mark class="ora">p</mark> a caso; S⁻ = minori, S⁺ = maggiori</div><p class="nota">Partizione in <i>O(n)</i>, come in quicksort.</p></div>
+    <div class="passo"><div class="espr">|S⁻| = k − 1 ⇒ <mark class="ok">p è la risposta</mark>;  |S⁻| ≥ k ⇒ cerco in S⁻;  altrimenti cerco il (k − |S⁻| − 1)-esimo in S⁺</div><p class="nota"><b>Una sola</b> chiamata ricorsiva, non due: l'altra parte si butta.</p></div>
+    <div class="passo"><div class="espr">con probabilità ½ il pivot sta nella <mark class="dato">metà centrale</mark> ⇒ il problema scende almeno a ¾ n</div><p class="nota">In media bastano 2 tentativi per ogni riduzione a ¾.</p></div>
+    <div class="passo"><div class="espr">E[T(n)] ≤ 2cn + 2c(¾)n + 2c(¾)²n + … = <mark class="ok">O(n)</mark></div><p class="nota">Serie geometrica: è il caso q = 1 delle ricorrenze.</p></div>
+  </figure>
+</section>
+
+</main>
+</body>
+</html>

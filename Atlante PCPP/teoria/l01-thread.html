@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Thread, stati, scheduler</title>
+<link rel="stylesheet" href="../assets/atlas.css">
+<link rel="stylesheet" href="../assets/tema.css">
+<script src="../assets/sito.js"></script>
+<script src="../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+SCENE.stati = {
+  w: 560, h: 300,
+  legenda: 'ora:stato attuale,dato:transizione appena fatta',
+  oggetti: [
+    { id: 'nuovo', tipo: 'nodo', forma: 'quadrato', r: 26, x: 60, y: 70, t: 'new' },
+    { id: 'en', tipo: 'nodo', r: 42, x: 200, y: 70, t: 'enabled' },
+    { id: 'ru', tipo: 'nodo', r: 42, x: 430, y: 70, t: 'running' },
+    { id: 'bl', tipo: 'nodo', r: 42, x: 315, y: 235, t: 'blocked' },
+    { id: 'fine', tipo: 'nodo', forma: 'quadrato', r: 26, x: 520, y: 235, t: 'fine' },
+    { id: 'aS', tipo: 'arco', da: 'nuovo', a: 'en', dir: true, t: 'start()' },
+    { id: 'aR', tipo: 'arco', da: 'en', a: 'ru', dir: true, t: 'schedule', curva: -30 },
+    { id: 'aP', tipo: 'arco', da: 'ru', a: 'en', dir: true, t: 'suspend', curva: -30 },
+    { id: 'aW', tipo: 'arco', da: 'ru', a: 'bl', dir: true, t: 'wait' },
+    { id: 'aE', tipo: 'arco', da: 'bl', a: 'en', dir: true, t: 'event' },
+    { id: 'aF', tipo: 'arco', da: 'ru', a: 'fine', dir: true, t: 'run() finisce' }
+  ],
+  passi: [
+    { nota: '<p><code>new Turnstile()</code>: l\'oggetto esiste, ma il thread non è ancora partito.</p>', set: { nuovo: { tono: 'ora' } } },
+    { nota: '<p><code>start()</code>: il thread diventa <b>enabled</b>, cioè pronto. Non sta ancora eseguendo istruzioni.</p>', set: { nuovo: { tono: null }, aS: { tono: 'dato' }, en: { tono: 'ora' } } },
+    { nota: '<p>Lo <b>scheduler</b> lo sceglie: ora è <b>running</b> ed esegue istruzioni. Quando succede non lo decide il programma.</p>', set: { aS: { tono: null }, en: { tono: null }, aR: { tono: 'dato' }, ru: { tono: 'ora' } } },
+    { nota: '<p>Lo scheduler lo <b>sospende</b> in qualsiasi momento, anche a metà di <code>counter++</code>, e fa lavorare un altro thread. Torna enabled.</p>', set: { aR: { tono: null }, ru: { tono: null }, aP: { tono: 'dato' }, en: { tono: 'ora' } } },
+    { nota: '<p>Riscelto: di nuovo running.</p>', set: { aP: { tono: null }, en: { tono: null }, aR: { tono: 'dato' }, ru: { tono: 'ora' } } },
+    { nota: '<p>Il thread esegue una chiamata <b>bloccante</b> (<code>join()</code>, <code>lock()</code> con il lock occupato, <code>await()</code>…): passa a <b>blocked</b>. Qui la transizione la causa il codice del thread.</p>', set: { aR: { tono: null }, ru: { tono: null }, aW: { tono: 'dato' }, bl: { tono: 'ora' } } },
+    { nota: '<p>Succede l\'evento atteso (l\'altro thread termina, il lock si libera…). Il thread torna <b>enabled</b>, non running: deve aspettare di nuovo lo scheduler.</p>', set: { aW: { tono: null }, bl: { tono: null }, aE: { tono: 'dato' }, en: { tono: 'ora' } } },
+    { nota: '<p>Scelto di nuovo, esegue fino alla fine di <code>run()</code>.</p>', set: { aE: { tono: null }, en: { tono: null }, aR: { tono: 'dato' }, ru: { tono: 'ora' } } },
+    { nota: '<p><code>run()</code> è finito: il thread termina. Chi aveva fatto <code>join()</code> su di lui può ripartire.</p>', set: { aR: { tono: null }, ru: { tono: null }, aF: { tono: 'dato' }, fine: { tono: 'ok' } } }
+  ]
+};
+</script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  const T = (id, x, y, t, extra) => Object.assign({ id, tipo: 'testo', x, y, t, size: 13 }, extra || {});
+  const R = (id, x, y, w, h, t, extra) => Object.assign({ id, tipo: 'rett', x, y, w, h, t }, extra || {});
+  const L = (id, x1, y1, x2, y2, extra) => Object.assign({ id, tipo: 'linea', x1, y1, x2, y2 }, extra || {});
+  SCENE.tornello = {
+    w: 600, h: 240, lato: true,
+    legenda: 'dato:thread main,due:thread tornello,ora:in esecuzione,ok:risultato',
+    oggetti: [
+      T('m', 50, 60, 'main', { bold: true }), T('t', 50, 150, 'tornello', { bold: true }),
+      L('lm', 90, 60, 570, 60, { tono: 'spento', tratt: true }), L('lt', 90, 150, 570, 150, { tono: 'spento', tratt: true, nascosto: true }),
+      R('crea', 95, 45, 90, 30, 'new, start()', { tono: 'dato', nascosto: true }),
+      R('join', 195, 45, 250, 30, 'join(): aspetta', { nascosto: true }),
+      R('run', 195, 135, 250, 30, 'counter++ × 10 000', { tono: 'due', nascosto: true }),
+      { id: 'fj', tipo: 'vett', x1: 447, y1: 135, x2: 460, y2: 77, t: '', nascosto: true },
+      R('pr', 455, 45, 115, 30, 'println', { tono: 'ok', nascosto: true }),
+      T('c', 320, 210, 'counter = 0', { bold: true, size: 15 })
+    ],
+    passi: [
+      { nota: "All'inizio esiste solo il thread <b>main</b>, che esegue il programma. <code>counter</code> è un campo condiviso, vale 0." },
+      { nota: "<code>new Turnstile()</code> crea l'oggetto thread, <code>start()</code> lo fa partire: da qui ci sono <b>due</b> flussi di istruzioni.", set: { crea: { nascosto: false, tono: 'ora' }, lt: { nascosto: false } } },
+      { nota: "Il tornello esegue <code>run()</code>: 10 000 volte <code>counter++</code>. Intanto il main chiama <code>join()</code> e resta <b>bloccato</b> finché il tornello non ha finito.", set: { crea: { tono: 'dato' }, join: { nascosto: false }, run: { nascosto: false, tono: 'ora' }, c: { t: 'counter sale: 1, 2, …' } } },
+      { nota: "Il tornello termina, <code>join()</code> ritorna, il main stampa. Con <b>un solo</b> tornello il risultato è sempre 10 000: nessun altro thread tocca counter mentre lui lavora.", set: { run: { tono: 'due' }, fj: { nascosto: false }, pr: { nascosto: false }, c: { t: '10000 people entered', tono: 'ok' } } }
+    ]
+  };
+
+  const seg = (id, lane, a, b, tono) => R(id, 120 + a * 40, lane === 1 ? 50 : 100, (b - a) * 40, 24, '', { tono, nascosto: true });
+  const vedi = (pref, n, extra) => Object.assign(Object.fromEntries([...Array(n).keys()].map(i => [pref + i, { nascosto: false }])), extra || {});
+  const nascondi = (pref, n) => Object.fromEntries([...Array(n).keys()].map(i => [pref + i, { nascosto: true }]));
+  SCENE.scheduler = {
+    w: 600, h: 230, lato: true,
+    legenda: 'dato:t1 running,due:t2 running',
+    oggetti: [
+      T('l1', 60, 62, 't1', { bold: true }), T('l2', 60, 112, 't2', { bold: true }),
+      L('a1', 115, 62, 560, 62, { tono: 'spento', tratt: true }), L('a2', 115, 112, 560, 112, { tono: 'spento', tratt: true }),
+      seg('x0', 1, 0, 4, 'dato'), seg('x1', 1, 5, 10, 'dato'),
+      seg('y0', 2, 0, 3, 'due'), seg('y1', 2, 4, 10, 'due'),
+      seg('z0', 1, 0, 2, 'dato'), seg('z1', 2, 2, 5, 'due'), seg('z2', 1, 5, 7, 'dato'), seg('z3', 2, 7, 8, 'due'), seg('z4', 1, 8, 10, 'dato'),
+      T('c', 330, 170, '', { bold: true }), T('c2', 330, 200, '', { size: 12 })
+    ],
+    passi: [
+      { nota: "Due thread <b>t1</b> e <b>t2</b>, entrambi pronti a eseguire (<i>enabled</i>). Chi va in esecuzione (<i>running</i>) lo decide lo <b>scheduler</b> del sistema operativo." },
+      { nota: "Un'esecuzione possibile: lo scheduler fa andare t1, lo sospende per un attimo, lo riprende. t2 non esegue mai in questo tratto.", set: vedi('x', 2, { c: { t: 'esecuzione 1: solo t1' } }) },
+      { nota: "Un'altra: solo t2.", set: Object.assign(nascondi('x', 2), vedi('y', 2, { c: { t: 'esecuzione 2: solo t2' } })) },
+      { nota: "Un'altra ancora: t1 e t2 si alternano a pezzi di lunghezza arbitraria. E così via: le esecuzioni possibili sono <b>infinite</b>, e lo scheduler non è controllabile né prevedibile.", set: Object.assign(nascondi('y', 2), vedi('z', 5, { c: { t: 'esecuzione 3: si alternano' } })) },
+      { nota: "Conseguenza: <b>nessuna assunzione</b> è lecita su chi esegue dopo. Un test che passa ha visto una esecuzione fra infinite: la correttezza si argomenta con i vincoli (mutua esclusione, happens-before), non con le prove.", set: { c2: { t: 'un test vede una sola esecuzione', tono: 'no' } } }
+    ]
+  };
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Thread, stati, scheduler</h1>
+  <p class="lede">Un thread non è sempre in esecuzione: passa tra alcuni stati, e chi decide quando è il <b>scheduler</b>, in modo non deterministico. Da questa libertà nascono gli interleaving e quindi tutti i problemi del corso.</p>
+</header>
+
+<section>
+  <h2>Il tornello di Tivoli</h2>
+  <p>Un <b>thread</b> è un flusso di istruzioni che avanza per conto suo: "an independent sequence of program statements". Ogni programma Java parte con un thread, il <code>main</code>; altri si creano con <code>new Thread(…)</code> e partono con <code>start()</code>. Tutti i thread di un programma vedono gli stessi campi degli oggetti: è la <b>memoria condivisa</b>, il modo in cui comunicano, e la fonte dei problemi del corso. <code>join()</code> fa aspettare un thread finché un altro non è finito.</p>
+  <p>L'esempio della lezione: un thread simula 10 000 persone che entrano da un tornello e incrementano un contatore condiviso.</p>
+  <figure class="codice" data-titolo="CounterThreads.java (semplificato)">
+<pre data-lang="java">class CounterThreads {
+    long counter = 0;
+    final long PEOPLE = 10_000;
+
+    Turnstile turnstile = new Turnstile();
+    turnstile.start();
+    turnstile.join();
+    System.out.println(counter + " people entered");
+
+    public class Turnstile extends Thread {
+        public void run() {
+            for (int i = 0; i &lt; PEOPLE; i++) {
+                counter++;
+            }
+        }
+    }
+}</pre>
+    <ol class="spiega">
+      <li data-righe="2-3" data-segna="long counter = 0;@dato"><p><b>Memoria condivisa</b>: <code>counter</code> è un campo, visibile al thread principale e al tornello. <code>final</code> su <code>PEOPLE</code> dice che non cambierà mai.</p></li>
+      <li data-righe="5-6" data-segna="new Turnstile()@due|start()@ora"><p>Il thread principale crea il tornello e lo avvia.</p></li>
+      <li data-righe="7" data-segna="join()@due"><p>Aspetta che finisca.</p></li>
+      <li data-righe="10-16" data-segna="counter++@ora"><p>Il comportamento del tornello: 10 000 incrementi.</p></li>
+      <li data-righe="8" data-segna="counter@ok"><p>Con <b>un solo</b> tornello stampa sempre <code>10000 people entered</code>: nessun altro thread tocca <code>counter</code> mentre lavora. Con due tornelli le cose cambiano: <a href="l01-interleaving.html">pagina successiva</a>.</p></li>
+    </ol>
+  </figure>
+  <figure class="scena" data-scena="tornello" data-titolo="main e tornello sulla linea del tempo"></figure>
+</section>
+
+<section>
+  <h2>Gli stati di un thread</h2>
+  <p>La slide 43 usa un modello semplificato con tre stati. La macchina a stati qui sotto segue la vita di un thread.</p>
+  <figure class="scena" data-scena="stati" data-titolo="La vita di un thread"></figure>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Transizione</th><th>Chi la causa</th></tr></thead>
+    <tbody>
+      <tr><td><code>start</code></td><td>il programma, chiamando <code>start()</code></td></tr>
+      <tr><td><code>schedule</code> / <code>suspend</code></td><td>lo scheduler del sistema: non controllabile, non prevedibile</td></tr>
+      <tr><td><code>wait</code></td><td>il thread stesso, con una chiamata bloccante</td></tr>
+      <tr><td><code>event</code></td><td>altre entità: altri thread, eccezioni, interruzioni hardware</td></tr>
+    </tbody>
+  </table></div>
+  <div class="box regola" data-tit="Da ricordare all'orale">
+    <p>Da <b>blocked</b> non si torna mai direttamente a <b>running</b>: si passa sempre da <b>enabled</b>. Ritroverai la stessa idea nei monitor: un thread svegliato da <code>signal()</code> deve ricompetere per il lock.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Non determinismo</h2>
+  <p>Due thread <code>t1</code> e <code>t2</code>, entrambi enabled. Lo scheduler può produrre, per esempio:</p>
+  <pre class="cod">1. t1(running) → t1(enabled) → t1(running) → t1(enabled) → …
+2. t2(running) → t2(enabled) → t2(running) → t2(enabled) → …
+3. t1(running) → t1(enabled) → t2(running) → t2(enabled) → …
+4. … infinite esecuzioni diverse</pre>
+  <div class="box attenzione" data-tit="Conseguenza pratica">
+    <p><b>Nessuna assunzione</b> è lecita su quale thread esegue dopo. Per questo un test che passa non dimostra che un programma concorrente è corretto: hai visto una esecuzione tra infinite. La correttezza si argomenta sui <b>vincoli</b> (mutua esclusione, happens-before), non sulle esecuzioni osservate.</p>
+  </div>
+  <figure class="scena" data-scena="scheduler" data-titolo="Tre esecuzioni diverse degli stessi due thread"></figure>
+</section>
+
+</main>
+</body>
+</html>

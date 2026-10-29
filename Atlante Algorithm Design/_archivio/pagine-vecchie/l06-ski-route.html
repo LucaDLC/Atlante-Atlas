@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Coolest Ski Route</title>
+<link rel="stylesheet" href="../assets/atlas.css">
+<link rel="stylesheet" href="../assets/tema.css">
+<script src="../assets/sito.js"></script>
+<script src="../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  const righe = [
+    ['0', '0', '0', '0', '0'],
+    ['0', '15', '12', '17', '0'],
+    ['0', '28', '27', '17', '0'],
+    ['0', '28', '40', '17', '0'],
+    ['0', '28', '40', '17', '0']
+  ];
+  const fino = k => righe.map((r, i) => i <= k ? r : ['', '', '', '', '']);
+  SCENE.ski = {
+    w: 600, h: 300, lato: true,
+    legenda: 'dato:riga 0 (elicottero),ora:valore appena scritto,no:proposta scartata,ok:percorso migliore',
+    codice: { lang: 'pseudo', testo: `theMatrix ← tutta a 0
+for i = 1 .. n−1:
+  for ogni pista (from, to, cost):
+    candidate ← theMatrix[i−1][from] + cost
+    if candidate > theMatrix[i][to]:
+      theMatrix[i][to] ← candidate
+risposta ← massimo dell'ultima riga` },
+    oggetti: [
+      { id: 'n1', tipo: 'nodo', x: 50, y: 60, t: '1' },
+      { id: 'n2', tipo: 'nodo', x: 170, y: 60, t: '2' },
+      { id: 'n3', tipo: 'nodo', x: 275, y: 60, t: '3' },
+      { id: 'n4', tipo: 'nodo', x: 110, y: 170, t: '4' },
+      { id: 'n5', tipo: 'nodo', x: 50, y: 260, t: '5' },
+      { id: 'e12', tipo: 'arco', da: 'n1', a: 'n2', dir: true, t: '15' },
+      { id: 'e23', tipo: 'arco', da: 'n2', a: 'n3', dir: true, t: '12' },
+      { id: 'e14', tipo: 'arco', da: 'n1', a: 'n4', dir: true, t: '17' },
+      { id: 'e42', tipo: 'arco', da: 'n4', a: 'n2', dir: true, t: '11' },
+      { id: 'e54', tipo: 'arco', da: 'n5', a: 'n4', dir: true, t: '9' },
+      { id: 'g', tipo: 'griglia', x: 330, y: 30, cw: 44, ch: 34, cwR: 44, intC: ['p1', 'p2', 'p3', 'p4', 'p5'], intR: ['i=0', 'i=1', 'i=2', 'i=3', 'i=4'], valori: fino(-1) }
+    ],
+    passi: [
+      { nota: 'Il sample 1: 5 punti, 5 piste, tutte in discesa. A destra la tabella: <b>riga i</b> = al massimo i piste, <b>colonna</b> = il punto d\'arrivo, <b>cella</b> = quanto vale il percorso migliore che arriva lì.' },
+      { nota: 'Riga 0: zero piste. L\'elicottero ti lascia dove vuoi, e lì il percorso vale 0. Vale per <b>ogni</b> punto. Java azzera già la matrice: non c\'è niente da scrivere.', righe: [1], set: { g: { valori: fino(0), toni: { '0,0': 'dato', '0,1': 'dato', '0,2': 'dato', '0,3': 'dato', '0,4': 'dato' } } } },
+      { nota: 'Riga 1: ogni pista parte da una cella della riga 0 (tutte 0) e ci somma il suo voto: <b>15</b> in p2, <b>12</b> in p3, <b>17</b> in p4. La pista 4→2 propone 0 + 11 = 11, ma in p2 c\'è già 15: l\'<code>if</code> dice no. Lo stesso per 5→4 (9 &lt; 17).', righe: [3, 4, 5, 6], set: { g: { valori: fino(1), toni: { '1,1': 'ora', '1,2': 'ora', '1,3': 'ora' } }, e12: { tono: 'ora' }, e23: { tono: 'ora' }, e14: { tono: 'ora' }, e42: { tono: 'no' }, e54: { tono: 'no' } } },
+      { nota: 'Riga 2: la pista 4→2 ora parte da theMatrix[1][4] = 17 e propone 17 + 11 = <b>28</b> &gt; 15. La tabella <b>cambia idea</b> sul punto 2: il giro 1→4→2 batte la pista diretta. Nota il 27 in p3: 2→3 legge il <b>15 della riga sopra</b>, non il 28 appena scritto.', righe: [4, 5, 6], set: { g: { valori: fino(2), toni: { '2,1': 'ora', '2,2': 'ora' } }, e12: { tono: 'spento' }, e23: { tono: 'ora' }, e14: { tono: null }, e42: { tono: 'ora' }, e54: { tono: null } } },
+      { nota: 'Riga 3: 2→3 parte da theMatrix[2][2] = 28 e propone 28 + 12 = <b>40</b>. Ogni riga legge quello che ha scritto la riga sopra e ci somma il voto di una pista.', righe: [4, 5, 6], set: { g: { valori: fino(3), toni: { '3,2': 'ora' } }, e23: { tono: 'ora' }, e42: { tono: null } } },
+      { nota: 'Riga 4 = n − 1: non cambia niente, nessun percorso senza cicli ha più di 4 piste. Il massimo dell\'ultima riga è <b>40</b>: 1→4→2→3 = 17 + 11 + 12. Valori presi eseguendo il tuo <code>Ski.java</code>.', righe: [7], set: { g: { valori: fino(4), toni: { '4,2': 'ok' } }, n1: { tono: 'ok' }, n4: { tono: 'ok' }, n2: { tono: 'ok' }, n3: { tono: 'ok' }, e14: { tono: 'ok' }, e42: { tono: 'ok' }, e23: { tono: 'ok' }, e12: { tono: 'spento' }, e54: { tono: 'spento' } } }
+    ]
+  };
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Coolest Ski Route</h1>
+  <p class="lede">L'esercizio Kattis della settimana: il percorso che vale <b>di più</b> in un grafo di piste in discesa. È Bellman-Ford rovesciato — il cammino più lungo invece del più corto — e si risolve con la stessa tabella del knapsack. Qui c'è la <b>tua</b> soluzione, spiegata riga per riga.</p>
+</header>
+
+<section>
+  <h2>Cosa chiede</h2>
+  <p>Ci sono dei <b>punti</b> sulla montagna e delle <b>piste</b> che li collegano. Ogni pista va da un punto a un altro, sempre in discesa, e ha un <b>voto</b> da 1 a 100. Parti da un punto qualsiasi, scendi pista dopo pista, ti fermi dove vuoi. Il percorso vale la <b>somma dei voti</b>. Trova il percorso che vale di più.</p>
+  <figure class="passi" data-titolo="Il sample 1 (atteso 40)" data-inizio="tutti">
+    <div class="passo"><div class="espr">5 5   ·   1→2 (15)   2→3 (12)   1→4 (17)   4→2 (11)   5→4 (9)</div><p class="nota">5 punti, 5 piste. Ogni riga dell'input è <code>da a voto</code>.</p></div>
+    <div class="passo"><div class="espr">1 → 2 → 3 = 15 + 12 = 27</div><p class="nota">La strada "ovvia", con la pista diretta 1→2.</p></div>
+    <div class="passo"><div class="espr"><mark class="ok">1 → 4 → 2 → 3 = 17 + 11 + 12 = 40</mark></div><p class="nota">Il giro lungo: per arrivare a 2 passa da 4, e vale 28 invece di 15.</p></div>
+    <div class="passo"><div class="espr">5 → 4 → 2 → 3 = 9 + 11 + 12 = 32</div><p class="nota">Partendo dall'altra cima.</p></div>
+  </figure>
+  <p>Le tre frasi del testo che decidono tutto:</p>
+  <ul>
+    <li><b>«start and end their tour at any point»</b> — nessuna partenza fissa: ogni punto può essere l'inizio, con valore 0.</li>
+    <li><b>«maximum sum»</b> — il percorso più <b>lungo</b>, non il più corto.</li>
+    <li><b>«All slopes go downhill, so … they cannot reach the same point again»</b> — non ci sono <b>cicli</b>. Il grafo è un DAG (<i>directed acyclic graph</i>).</li>
+  </ul>
+  <div class="box regola" data-tit="Perché l'ultima frase è quella che conta">
+    <p>Il cammino più lungo in un grafo <b>qualsiasi</b> è NP-hard: lo vedrai nel capitolo 8, con il cammino hamiltoniano. Senza cicli invece diventa programmazione dinamica in tempo polinomiale. Tutta la difficoltà sparisce grazie a "in discesa".</p>
+  </div>
+</section>
+
+<section>
+  <h2>La tabella: la stessa del knapsack</h2>
+  <div class="box domanda-tua" data-tit="Si può risolvere con la tabella del knapsack?">
+    <p>Sì. La struttura è identica: ogni riga si calcola guardando solo la riga sopra, con un'opzione "non aggiungo niente" e una "aggiungo un pezzo". Cambia cosa stanno su righe e colonne.</p>
+  </div>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th></th><th>knapsack (Walrus)</th><th>Coolest Ski Route</th></tr></thead>
+    <tbody>
+      <tr><td><b>riga i</b></td><td>ho i primi i dischi</td><td>al massimo i piste</td></tr>
+      <tr><td><b>colonna</b></td><td>la somma</td><td>il punto d'arrivo</td></tr>
+      <tr><td><b>cella</b></td><td>posso fare questa somma? (<code>boolean</code>)</td><td>quanto vale il percorso migliore che arriva qui (<code>int</code>)</td></tr>
+      <tr><td><b>prendo</b></td><td><code>dp[i−1][s − peso]</code></td><td><code>theMatrix[i−1][from] + voto</code></td></tr>
+      <tr><td><b>riga 0</b></td><td>vera solo <code>[0][0]</code></td><td>tutta 0: si parte da qualunque punto</td></tr>
+      <tr><td><b>risposta</b></td><td>ultima riga, la più vicina a 1000</td><td>ultima riga, il massimo</td></tr>
+    </tbody>
+  </table></div>
+  <figure class="passi" data-titolo="OPT(i, v) = il valore massimo di un percorso che finisce nel punto v usando al massimo i piste">
+    <div class="passo"><div class="espr">senza cicli ogni punto si tocca al massimo una volta ⇒ al massimo <mark class="dato">n − 1</mark> piste</div><p class="nota">Con 5 punti il percorso più lungo li tocca tutti e usa 4 piste. Righe da 0 a n − 1.</p></div>
+    <div class="passo"><div class="espr">OPT(0, v) = <mark class="dato">0</mark> per ogni v</div><p class="nota">Zero piste: l'elicottero ti ha lasciato in v. Il testo dice che può atterrare ovunque.</p></div>
+    <div class="passo"><div class="espr">per ogni pista (u, v, c): <mark class="ora">OPT(i − 1, u) + c</mark></div><p class="nota">Il meglio per arrivare a u con una pista in meno, più questa pista. È un modo nuovo di arrivare a v.</p></div>
+    <div class="passo"><div class="espr">OPT(i, v) = <mark class="ok">max( OPT(i−1, v),  max<sub>(u, v, c)</sub> [ OPT(i−1, u) + c ] )</mark></div><p class="nota">Risposta: il massimo su v di OPT(n − 1, v). Tempo O(n · m), spazio O(n²).</p></div>
+  </figure>
+  <figure class="scena" data-scena="ski" data-titolo="La tabella del sample 1, riga per riga"></figure>
+</section>
+
+<section>
+  <h2>Il tuo codice</h2>
+  <figure class="codice" data-titolo="Ski.java, il corpo del main (verificato: 40 e 7 sui sample, 600 grafi casuali contro la forza bruta, caso peggiore n = 1000, m = 5000 in 222 ms)">
+<pre data-lang="java">int nPoints = s.nextInt();
+int nSlopes = s.nextInt();
+int[] from = new int[nSlopes];
+int[] to = new int[nSlopes];
+int[] cost = new int[nSlopes];
+for (int i = 0; i &lt; nSlopes; i++) {
+    s.nextLine();
+    from[i] = s.nextInt();
+    to[i] = s.nextInt();
+    cost[i] = s.nextInt();
+}
+
+int[][] theMatrix = new int[nPoints][nPoints + 1];
+for(int i=1; i&lt;nPoints; i++){
+    for(int j=0;j&lt;nSlopes;j++){
+        int candidate = theMatrix[i - 1][from[j]] + cost[j];
+        if (candidate &gt; theMatrix[i][to[j]]) {
+            theMatrix[i][to[j]] = candidate;
+        }
+    }
+}
+
+int best = 0;
+for (int v=1; v&lt;=nPoints; v++) {
+    best = Math.max(best, theMatrix[nPoints - 1][v]);
+}
+System.out.println(best);</pre>
+    <ol class="spiega">
+      <li data-righe="1-5" data-segna="int[] from@dato|int[] to@dato|int[] cost@due"><p>Tre array paralleli: la pista <code>i</code> va da <code>from[i]</code> a <code>to[i]</code> con voto <code>cost[i]</code>. È una <b>lista</b> di piste, non una matrice: così due piste fra gli stessi punti restano entrambe (vedi la trappola del sample 2 più sotto).</p></li>
+      <li data-righe="6-11" data-segna="s.nextLine();@no"><p>Lettura delle piste. <code>s.nextLine()</code> non serve — <code>nextInt()</code> salta già gli a capo — ma non fa danni: con la riga lasciata i test passano.</p></li>
+      <li data-righe="13" data-segna="[nPoints]@dato|[nPoints + 1]@due"><p>La tabella. <b>Righe</b> = <code>nPoints</code>: da 0 a n − 1 piste. <b>Colonne</b> = <code>nPoints + 1</code>: i punti vanno da 1 a n, la colonna 0 resta inutilizzata. <code>int</code> e non <code>boolean</code>: la cella contiene <b>quanto vale</b>, non sì/no. La riga 0 è tutta 0, ed è giusta così: Java la azzera da solo.</p></li>
+      <li data-righe="14" data-segna="i=1@ora"><p>Riga <code>i</code> = al massimo <code>i</code> piste. Parte da 1 perché la riga 0 è già pronta.</p></li>
+      <li data-righe="15-16" data-segna="theMatrix[i - 1][from[j]]@dato|cost[j]@due"><p>Per ogni pista: il meglio per arrivare al punto di partenza <b>con una pista in meno</b> (la riga sopra), più il voto di questa pista. Il primo pezzo viene dalla matrice, il secondo dall'input.</p></li>
+      <li data-righe="17-18" data-segna="candidate &gt; theMatrix[i][to[j]]@due|theMatrix[i][to[j]] = candidate@ok"><p>Lo stesso pezzo <code>theMatrix[i][to[j]]</code> compare due volte. Nell'<code>if</code> lo <b>legge</b>: c'è già qualcosa di meglio? A sinistra di <code>=</code> lo <b>scrive</b>. Se più piste arrivano allo stesso punto, l'<code>if</code> le confronta tutte e resta la migliore.</p></li>
+      <li data-righe="23-26" data-segna="theMatrix[nPoints - 1][v]@ok"><p>L'ultima riga, con tutte le piste possibili. Il massimo fra le colonne è la risposta.</p></li>
+    </ol>
+  </figure>
+</section>
+
+<section>
+  <h2>I tuoi dubbi</h2>
+
+  <div class="box domanda-tua" data-tit="Perché nPoints + 1 solo sulle colonne?">
+    <p>La regola è una sola: <b>dimensione = indice più grande che userai + 1</b>, perché gli indici partono da 0.</p>
+    <p><b>Colonne</b>: i punti sono numerati da 1 a n. L'indice più grande è <code>n</code> ⇒ dimensione <code>n + 1</code>. Senza il +1, al punto 5 del sample 1 Java si ferma: <code>ArrayIndexOutOfBoundsException: Index 5 out of bounds for length 5</code>.</p>
+    <p><b>Righe</b>: un percorso fa al massimo n − 1 piste. L'indice più grande è <code>n − 1</code> ⇒ dimensione <code>(n − 1) + 1 = n</code>. Il +1 c'è anche qui, ma si cancella col −1.</p>
+    <p>Nel knapsack il +1 era su entrambe perché righe e colonne arrivavano al massimo <b>compreso</b>: tutti i dischi, la somma massima.</p>
+  </div>
+
+  <div class="box domanda-tua" data-tit="Il ciclo che copia la riga sopra non mette niente nella matrice?">
+    <p>Alla riga 1 copia zeri su zeri: hai ragione, non cambia niente. Ma c'è di più: in questo esercizio quel ciclo è <b>inutile del tutto</b>. Verificato: senza, stessi risultati su sample e 600 grafi casuali. È la versione che hai consegnato.</p>
+    <p>Il motivo: ogni riga riguarda <b>tutte</b> le piste. Il punto 4 vale 17 in ogni riga perché la pista 1→4 lo ricalcola ogni volta: <code>theMatrix[i−1][1] + 17 = 0 + 17</code>.</p>
+    <p>Nel <a href="l06-knapsack.html">knapsack</a> invece è <b>indispensabile</b>: ogni riga porta <b>un solo</b> disco nuovo, e senza il "lascio" quel disco diventa obbligatorio. Sul sample 1 di Walrus la risposta passa da 1002 a <b>1902</b> — la somma di tutti e quattro i dischi, l'unica rimasta.</p>
+    <div class="tab-wrap"><table class="tab">
+      <thead><tr><th>la riga i aggiunge…</th><th>il "lascio" serve?</th></tr></thead>
+      <tbody>
+        <tr><td>una scelta nuova (il disco i: prendilo o no)</td><td><b>sì</b>, altrimenti la scelta diventa un obbligo</td></tr>
+        <tr><td>una possibilità in più su scelte che ripassi tutte (una pista in più)</td><td>no, rifare le stesse scelte ridà il vecchio valore</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+
+  <div class="box domanda-tua" data-tit="Dove entrano i valori? La matrice è tutta 0, non resta 0?">
+    <figure class="passi" data-titolo="Il viaggio del 15" data-inizio="tutti">
+      <div class="passo"><div class="espr"><mark class="dato">theMatrix[0][1]</mark> = 0</div><p class="nota">Dalla matrice: la riga 0 è tutta zero.</p></div>
+      <div class="passo"><div class="espr"><mark class="due">cost[0]</mark> = 15</div><p class="nota">Dall'input: <code>cost</code> è un array separato, e il testo garantisce voti da 1 a 100. Mai zero.</p></div>
+      <div class="passo"><div class="espr">candidate = <mark class="dato">0</mark> + <mark class="due">15</mark> = <mark class="ora">15</mark></div><p class="nota">Una variabile normale: il numero ci si appoggia un attimo.</p></div>
+      <div class="passo"><div class="espr"><mark class="ok">theMatrix[1][2] = candidate</mark></div><p class="nota">L'unica riga che scrive. Ora la matrice non è più tutta zero.</p></div>
+      <div class="passo"><div class="espr">17 → 17 + 11 = 28 → 28 + 12 = <mark class="ok">40</mark></div><p class="nota">Dalla riga dopo la cella letta non è più zero: ogni riga legge quello che ha scritto la precedente e ci somma un voto.</p></div>
+    </figure>
+    <p>Senza quel <code>+ cost[j]</code> avresti ragione: copieresti zeri da una cella all'altra e la risposta sarebbe 0.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Gli errori che ti ha dato il compilatore</h2>
+  <p>Cinque messaggi, tre cause, tutte <code>cannot find symbol</code>: un nome che Java non conosce. La freccia <code>^</code> punta al colpevole, <code>symbol:</code> dice quale nome.</p>
+  <div class="errori">
+    <div class="errore">
+<pre data-lang="java">int nSlopes = s.nextInt();
+for (int j = 0; j &lt; slopes; j++) {</pre>
+<pre class="msg">Ski.java:11: error: cannot find symbol
+            for (int j = 0; j &lt; slopes; j++) {
+                                ^
+  symbol:   variable slopes</pre>
+      <div class="fix">La variabile si chiama <code>nSlopes</code>. <code>slopes</code> per Java è un nome mai visto.</div>
+    </div>
+    <div class="errore">
+<pre data-lang="java">for (int j = 0; j &lt; nSlopes; j++) {
+    from[i] = s.nextInt();</pre>
+<pre class="msg">Ski.java:13: error: cannot find symbol
+                from[i] = s.nextInt();
+                     ^
+  symbol:   variable i</pre>
+      <div class="fix">Il ciclo dichiara <code>j</code>, non <code>i</code>. La <code>i</code> la dichiari più sotto, nel <code>for</code> della tabella, e una variabile dichiarata nell'intestazione di un <code>for</code> <b>esiste solo dentro quel for</b> (lo <i>scope</i>). Usa lo stesso nome del ciclo: nella versione finale hai chiamato <code>i</code> il contatore della lettura, ed è giusto anche così.</div>
+    </div>
+    <div class="errore">
+<pre data-lang="java">for(int j=0;j&lt;nSlopes;J++){</pre>
+<pre class="msg">Ski.java:20: error: cannot find symbol
+                for(int j=0;j&lt;nSlopes;J++){
+                                      ^
+  symbol:   variable J</pre>
+      <div class="fix">Java distingue maiuscole e minuscole: <code>j</code> e <code>J</code> sono due nomi diversi.</div>
+    </div>
+  </div>
+  <div class="box idea" data-tit="Con cannot find symbol la domanda è sempre la stessa">
+    <p>L'ho dichiarato? Con questo nome esatto, maiuscole comprese? In questo punto esiste ancora?</p>
+  </div>
+</section>
+
+<section>
+  <h2>La trappola del sample 2</h2>
+  <figure class="passi" data-titolo="Sample 2 (atteso 7)" data-inizio="tutti">
+    <div class="passo"><div class="espr">1→2 (2)   4→5 (2)   2→3 (3)   1→3 (2)   5→6 (2)   <mark class="no">1→2 (4)</mark></div><p class="nota">Due piste fra gli stessi punti 1 e 2, con voti diversi.</p></div>
+    <div class="passo"><div class="espr"><mark class="ok">1 → 2 → 3 = 4 + 3 = 7</mark></div><p class="nota">Devi poter usare la pista da 4.</p></div>
+  </figure>
+  <div class="box attenzione" data-tit="Non usare una matrice cost[s][t]">
+    <p>Se salvi le piste in una matrice, la seconda <b>sovrascrive</b> la prima: ti tieni l'ultima letta, non la migliore. Qui il 4 arriva per ultimo e per fortuna andrebbe, ma basta invertire le due righe dell'input per prendere WA. Con la lista <code>from/to/cost</code> le piste restano tutte e l'<code>if</code> sceglie la migliore.</p>
+  </div>
+</section>
+
+<section>
+  <h2>All'esame</h2>
+  <div class="box esame" data-tit="La domanda sulla programmazione dinamica">
+    <p>È Bellman-Ford (K&amp;T 6.8) col <b>massimo</b> al posto del minimo, possibile solo perché non ci sono cicli. Scrivi la ricorrenza completa, con il termine <code>OPT(i−1, v)</code>: è la forma del libro, ed è corretta anche se qui è ridondante. Dichiara parametri e range, casi base, quale valore risponde, tempo e spazio.</p>
+  </div>
+  <div class="box inglese" data-tit="Frase pronta">
+    <p><i>OPT(i, v) is the maximum total condition of a route that ends at point v and uses at most i slopes, where i ∈ {0, …, n−1} and v ∈ {1, …, n}. OPT(0, v) = 0 for every v. The answer is the maximum over v of OPT(n−1, v). Time O(nm), space O(n²).</i></p>
+  </div>
+</section>
+
+<section>
+  <h2>Verifica</h2>
+  <div class="quiz">
+    <div class="domanda">
+      <p class="q">Perché questo problema si risolve con la programmazione dinamica?</p>
+      <div class="opzioni"><button>perché n è al massimo 1000</button><button>perché i voti sono positivi</button><button data-giusta>perché il grafo non ha cicli</button></div>
+      <div class="perche"><p>Il cammino più lungo in un grafo qualsiasi è NP-hard. Senza cicli un percorso tocca ogni punto al massimo una volta, quindi ha al massimo n − 1 piste: la tabella ha n righe e si riempie in tempo polinomiale.</p></div>
+    </div>
+    <div class="domanda">
+      <p class="q">Perché la tabella ha <code>nPoints</code> righe e non <code>nPoints + 1</code>?</p>
+      <div class="opzioni"><button data-giusta>perché un percorso fa al massimo n − 1 piste</button><button>perché la riga 0 non serve</button><button>per risparmiare memoria</button></div>
+      <div class="perche"><p>Righe da 0 a n − 1: l'indice più grande è n − 1, quindi la dimensione è n. La riga 0 serve eccome: è l'elicottero.</p></div>
+    </div>
+    <div class="domanda">
+      <p class="q">Nella riga 2 del sample 1, perché in p3 c'è 27 e non 40?</p>
+      <div class="opzioni"><button>perché la pista 2→3 vale 27</button><button data-giusta>perché 2→3 legge il 15 della riga 1, non il 28 della riga 2</button><button>perché 40 arriva solo con l'ultima pista</button></div>
+      <div class="perche"><p><code>candidate</code> legge sempre <code>theMatrix[i − 1]</code>: 15 + 12 = 27. Il 28 appena scritto in riga 2 lo vedrà la riga 3: 28 + 12 = 40. È questo che fa significare alla riga i "al massimo i piste".</p></div>
+    </div>
+  </div>
+</section>
+
+</main>
+</body>
+</html>

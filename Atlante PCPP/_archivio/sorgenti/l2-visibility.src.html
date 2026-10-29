@@ -1,0 +1,377 @@
+<title>Visibility, Reordering e volatile</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/*BASE*/
+:root{--accent:#1F7A4D}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--accent:#3FBF7F}}
+:root[data-theme="dark"]{--accent:#3FBF7F}
+
+.twocol{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start}
+@media(max-width:860px){.twocol{grid-template-columns:1fr}}
+.cachegrid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(290px,1fr);gap:20px;align-items:start}
+@media(max-width:900px){.cachegrid{grid-template-columns:1fr}}
+
+svg.d{display:block;width:100%;min-width:460px;height:auto}
+.svgbox{padding:10px;overflow-x:auto}
+.bx{fill:var(--surface-2);stroke:var(--line);stroke-width:1.2}
+.bx.outer{fill:none;stroke-dasharray:4 3;stroke:var(--ink-3)}
+.bx.mem{fill:var(--lane);stroke:var(--line)}
+.lb{font-family:"IBM Plex Mono",monospace;font-size:10.5px;fill:var(--ink-3);text-anchor:middle}
+.lb.big{font-size:12px;font-weight:600;fill:var(--ink-2)}
+.val{font-family:"IBM Plex Mono",monospace;font-size:13px;font-weight:600;text-anchor:middle;fill:var(--ink)}
+.val.t{fill:var(--ok)} .val.f{fill:var(--bad)}
+.holder rect{transition:fill .4s,stroke .4s}
+.holder.stale rect{fill:var(--bad-soft);stroke:var(--bad)}
+.holder.fresh rect{fill:var(--ok-soft);stroke:var(--ok)}
+.flow{stroke:var(--accent);stroke-width:2.2;fill:none;marker-end:url(#fa);opacity:0;transition:opacity .4s}
+.flow.on{opacity:1}
+
+.stepper{display:flex;gap:9px;flex-wrap:wrap;align-items:center}
+.stepdot{width:9px;height:9px;border-radius:50%;background:var(--line)}
+.stepdot.on{background:var(--accent)}
+
+.statebox{padding:14px 16px;border-radius:8px;border:1px solid var(--line);background:var(--surface-2);
+  font-size:13.4px;color:var(--ink-2);line-height:1.55}
+.statebox b{color:var(--ink)}
+.statebox.bad{border-color:var(--bad);background:var(--bad-soft)}
+.statebox.bad b{color:var(--bad)}
+.statebox.ok{border-color:var(--ok);background:var(--ok-soft)}
+.statebox.ok b{color:var(--ok)}
+
+pre.code.sm{font-size:11.9px;line-height:1.68;padding:15px 16px}
+.hl{background:var(--path-soft);border-radius:3px;padding:0 3px;color:var(--path);font-weight:600}
+
+.variants{display:flex;gap:9px;flex-wrap:wrap;margin-bottom:16px}
+.vbtn{font-family:"IBM Plex Mono",monospace;font-size:12.4px;font-weight:600;padding:10px 15px;border-radius:7px;
+  border:1.5px solid var(--line);background:var(--surface-2);color:var(--ink-2);cursor:pointer;
+  transition:border-color .15s,background .15s,color .15s}
+.vbtn:hover{border-color:var(--ink-3);color:var(--ink)}
+.vbtn:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.vbtn.on{background:var(--accent);border-color:var(--accent);color:var(--surface)}
+
+.vgrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(280px,.9fr);gap:20px;align-items:start}
+@media(max-width:900px){.vgrid{grid-template-columns:1fr}}
+.outs{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.out{border:1px solid var(--line);background:var(--surface-2);border-radius:8px;padding:13px 15px;
+  display:flex;flex-direction:column;gap:4px;transition:opacity .3s,border-color .3s,background .3s}
+.out .v{font-family:"IBM Plex Mono",monospace;font-size:19px;font-weight:600}
+.out .s{font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-3)}
+.out.yes{border-color:var(--ok);background:var(--ok-soft)}
+.out.yes .s{color:var(--ok)}
+.out.no{opacity:.5}
+.out.no .v{text-decoration:line-through;text-decoration-thickness:1.6px}
+
+.matrix{width:100%;border-collapse:collapse;font-size:13px}
+.matrix th{text-align:center;font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:600;
+  letter-spacing:.06em;color:var(--ink-3);padding:0 10px 10px;border-bottom:1px solid var(--line)}
+.matrix th:first-child{text-align:left}
+.matrix td{padding:11px 10px;border-bottom:1px solid var(--line-soft);text-align:center;
+  font-family:"IBM Plex Mono",monospace;font-size:13px}
+.matrix td:first-child{text-align:left;color:var(--ink);font-weight:600}
+.matrix tr:last-child td{border-bottom:none}
+.matrix .y{color:var(--ok);font-weight:600}
+.matrix .n{color:var(--bad)}
+
+.cmp{width:100%;border-collapse:collapse;font-size:13.5px}
+.cmp th{text-align:left;font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:600;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--ink-3);padding:0 14px 10px 0;border-bottom:1px solid var(--line)}
+.cmp td{padding:12px 14px 12px 0;border-bottom:1px solid var(--line-soft);color:var(--ink-2)}
+.cmp tr:last-child td{border-bottom:none}
+.cmp td:first-child{color:var(--ink);font-weight:500}
+.cmp .y{color:var(--ok);font-weight:600;font-family:"IBM Plex Mono",monospace}
+.cmp .n{color:var(--bad);font-weight:600;font-family:"IBM Plex Mono",monospace}
+
+.props{display:flex;flex-direction:column;gap:0}
+.props .p{display:grid;grid-template-columns:auto 1fr;gap:13px;padding:11px 0;border-bottom:1px solid var(--line-soft);align-items:baseline}
+.props .p:last-child{border-bottom:none}
+.props .m{color:var(--accent);font-family:"IBM Plex Mono",monospace;font-size:13px;font-weight:600}
+.props p{margin:0;font-size:13.3px;color:var(--ink-2);line-height:1.5}
+</style>
+
+<div class="wrap">
+<header>
+  <div class="crumb"><a href="https://claude.ai/code/artifact/28d55e87-8c70-4b36-8dac-532818fc0088">Atlante PCPP</a><span>&middot;</span><span class="acc">Lezione 2</span><span>·</span><span>Shared Memory I</span></div>
+  <h1>Visibility, Reordering e volatile</h1>
+  <p class="lede">Due modi diversi in cui l&rsquo;hardware tradisce l&rsquo;intuizione: una scrittura che <b>non arriva mai</b>, e due istruzioni che <b>arrivano al contrario</b>. Confronta le tre varianti dello stesso programma e vedi quali output sopravvivono.</p>
+</header>
+
+<section>
+  <h2>Visibility · la scrittura che non arriva</h2>
+  <div class="cachegrid">
+    <div class="panel svgbox">
+      <svg class="d" viewBox="0 0 560 330" role="img" aria-label="Diagramma di cache e memoria condivisa">
+        <defs><marker id="fa" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M0,1 L9,5 L0,9 z" fill="var(--accent)"/></marker></defs>
+
+        <rect class="bx outer" x="18" y="14" width="240" height="196" rx="10"/>
+        <text class="lb big" x="138" y="34">CPU 1 · thread t1</text>
+        <rect class="bx outer" x="302" y="14" width="240" height="196" rx="10"/>
+        <text class="lb big" x="422" y="34">CPU 2 · main thread</text>
+
+        <g class="holder" id="h-r1"><rect class="bx" x="42" y="46" width="192" height="44" rx="7"/></g>
+        <text class="lb" x="138" y="63">registers</text>
+        <text class="val" id="v-r1" x="138" y="82">running = true</text>
+
+        <g class="holder" id="h-c1"><rect class="bx" x="42" y="100" width="192" height="40" rx="7"/></g>
+        <text class="lb" x="138" y="116">L1 cache</text>
+        <text class="val" id="v-c1" x="138" y="133" style="font-size:11.5px">true</text>
+
+        <rect class="bx" x="42" y="150" width="192" height="40" rx="7"/>
+        <text class="lb" x="138" y="166">L2 cache</text>
+        <text class="lb" x="138" y="182" style="font-size:11px">non condivisa</text>
+
+        <g class="holder" id="h-r2"><rect class="bx" x="326" y="46" width="192" height="44" rx="7"/></g>
+        <text class="lb" x="422" y="63">registers</text>
+        <text class="val" id="v-r2" x="422" y="82">running = true</text>
+
+        <g class="holder" id="h-c2"><rect class="bx" x="326" y="100" width="192" height="40" rx="7"/></g>
+        <text class="lb" x="422" y="116">L1 cache</text>
+        <text class="val" id="v-c2" x="422" y="133" style="font-size:11.5px">true</text>
+
+        <rect class="bx" x="326" y="150" width="192" height="40" rx="7"/>
+        <text class="lb" x="422" y="166">L2 cache</text>
+        <text class="lb" x="422" y="182" style="font-size:11px">non condivisa</text>
+
+        <path class="flow" id="f-down" d="M422,196 L422,252"/>
+        <path class="flow" id="f-up" d="M138,252 L138,196"/>
+
+        <g class="holder" id="h-mem"><rect class="bx mem" x="90" y="258" width="380" height="56" rx="9"/></g>
+        <text class="lb big" x="280" y="280">memoria condivisa</text>
+        <text class="val" id="v-mem" x="280" y="301">running = true</text>
+      </svg>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div class="bar" style="margin:0">
+        <label class="toggle"><input type="checkbox" id="sync"><span class="switch"></span><span>synchronized</span></label>
+        <div class="sep"></div>
+        <button class="btn" id="next">passo →</button>
+        <button class="btn" id="rst">reset</button>
+      </div>
+      <div class="stepper" id="stepper"></div>
+      <div class="statebox" id="cachemsg"></div>
+    </div>
+  </div>
+
+  <div class="twocol" style="margin-top:18px">
+    <div class="panel">
+<pre class="code sm"><span class="cm">// SeeNoVisibility1.java · non termina mai</span>
+<span class="kw">boolean</span> running = <span class="kw">true</span>;
+
+Thread t1 = <span class="kw">new</span> Thread(() -> {
+    <span class="kw">while</span> (running) { <span class="cm">/* niente */</span> }
+    System.out.println(<span class="cm">"t1 finito"</span>);
+});
+t1.start();
+Thread.sleep(500);
+running = <span class="kw">false</span>;</pre>
+    </div>
+    <div class="panel">
+<pre class="code sm"><span class="cm">// NoVisibility1Synchronized.java · termina</span>
+<span class="kw">boolean</span> running = <span class="kw">true</span>;
+Object o = <span class="kw">new</span> Object();
+
+Thread t1 = <span class="kw">new</span> Thread(() -> {
+    <span class="kw">while</span> (running) { <span class="hl">synchronized(o){}</span> }
+    System.out.println(<span class="cm">"t1 finito"</span>);
+});
+t1.start();
+Thread.sleep(500);
+<span class="hl">synchronized(o){</span> running = <span class="kw">false</span>; <span class="hl">}</span></pre>
+    </div>
+  </div>
+  <p class="note">In assenza di operazioni di sincronizzazione la CPU è <b>autorizzata</b> a tenere <span class="mono">running</span> nei propri registri o nella cache bassa senza scriverlo in memoria condivisa. Quando invece si esegue <span class="mono">unlock()</span>, registri e cache basse vengono <b>svuotati interamente</b> verso i livelli di memoria condivisi da tutte le CPU.</p>
+</section>
+
+<section>
+  <h2>Reordering · le istruzioni che si scambiano</h2>
+  <div class="twocol">
+    <div class="panel">
+<pre class="code sm">Thread one = <span class="kw">new</span> Thread(() -> {
+    a = 1;   <span class="cm">// scritto così</span>
+    x = b;
+});
+Thread other = <span class="kw">new</span> Thread(() -> {
+    b = 1;
+    y = a;
+});</pre>
+    </div>
+    <div class="panel">
+<pre class="code sm">Thread one = <span class="kw">new</span> Thread(() -> {
+    <span class="hl">x = b;</span>   <span class="cm">// eseguito così</span>
+    <span class="hl">a = 1;</span>
+});
+Thread other = <span class="kw">new</span> Thread(() -> {
+    <span class="hl">y = a;</span>
+    <span class="hl">b = 1;</span>
+});</pre>
+    </div>
+  </div>
+  <p class="note">Fra <span class="mono">a=1</span> e <span class="mono">x=b</span> non c&rsquo;è <b>nessuna dipendenza di dati</b> e nessuna operazione di sincronizzazione. Compilatore JIT e CPU sono liberi di invertirle. Il vincolo che rispettano è preciso: il riordino <b>non deve alterare il comportamento intra-thread</b> — cioè il comportamento del thread eseguito da solo. Fra thread diversi, nessuna promessa.</p>
+</section>
+
+<section>
+  <h2>Le tre varianti a confronto</h2>
+  <div class="variants" id="variants"></div>
+  <div class="vgrid">
+    <div class="panel"><pre class="code sm" id="vcode"></pre></div>
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div>
+        <h3 style="margin-bottom:10px">Output possibili</h3>
+        <div class="outs" id="vouts"></div>
+      </div>
+      <div class="statebox" id="vwhy"></div>
+    </div>
+  </div>
+
+  <div class="panel tablewrap" style="margin-top:18px">
+    <table class="matrix">
+      <thead><tr><th>variante</th><th>(0,0)</th><th>(0,1)</th><th>(1,0)</th><th>(1,1)</th></tr></thead>
+      <tbody>
+        <tr><td>nessuna sincronizzazione</td><td class="y">sì</td><td class="y">sì</td><td class="y">sì</td><td class="y">sì</td></tr>
+        <tr><td>synchronized</td><td class="n">no</td><td class="y">sì</td><td class="y">sì</td><td class="n">no</td></tr>
+        <tr><td>volatile a, b</td><td class="n">no</td><td class="y">sì</td><td class="y">sì</td><td class="y">sì</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="note">La riga che sorprende è la seconda: <span class="mono">synchronized</span> elimina anche <b>(1,1)</b>. Non perché impedisca il riordino, ma perché la mutua esclusione fa eseguire i due corpi <b>uno dopo l&rsquo;altro</b> — e in quel caso il primo thread legge sempre lo 0 iniziale dell&rsquo;altro. Con <span class="mono">volatile</span> i corpi restano intrecciati, quindi (1,1) sopravvive.</p>
+</section>
+
+<section>
+  <h2>Cosa fa esattamente <span class="mono" style="text-transform:none">volatile</span></h2>
+  <div class="twocol">
+    <div class="panel pad">
+      <div class="props">
+        <div class="p"><span class="m">→</span><p>Le variabili volatile <b>non</b> vengono tenute nei registri della CPU né nei livelli bassi di cache nascosti alle altre CPU.</p></div>
+        <div class="p"><span class="m">→</span><p>Ogni <b>write</b> su una volatile svuota registri e cache bassa verso la memoria condivisa.</p></div>
+        <div class="p"><span class="m">→</span><p>Le variabili volatile <b>non possono essere riordinate</b>.</p></div>
+        <div class="p"><span class="m">→</span><p>Né la read né la write sono operazioni <b>bloccanti</b>.</p></div>
+        <div class="p"><span class="m">×</span><p><b>Non possono garantire mutua esclusione.</b> È la limitazione che conta.</p></div>
+      </div>
+    </div>
+    <div class="panel pad">
+      <h3 style="margin-bottom:12px">volatile contro lock</h3>
+      <table class="cmp">
+        <thead><tr><th></th><th style="text-align:center">volatile</th><th style="text-align:center">lock</th></tr></thead>
+        <tbody>
+          <tr><td>garantisce visibility</td><td style="text-align:center" class="y">sì</td><td style="text-align:center" class="y">sì</td></tr>
+          <tr><td>impedisce il reordering</td><td style="text-align:center" class="y">sì</td><td style="text-align:center" class="y">sì</td></tr>
+          <tr><td>garantisce mutua esclusione</td><td style="text-align:center" class="n">no</td><td style="text-align:center" class="y">sì</td></tr>
+          <tr><td>è bloccante</td><td style="text-align:center" class="y">no</td><td style="text-align:center" class="n">sì</td></tr>
+        </tbody>
+      </table>
+      <p class="note" style="margin-top:14px"><span class="mono">volatile</span> è una forma <b>debole</b> di sincronizzazione: paghi meno e ottieni meno. Per <span class="mono">counter++</span> non basta — servono lettura e scrittura indivisibili, e volatile non te le dà.</p>
+    </div>
+  </div>
+</section>
+
+<footer>
+  Visibility e reordering esistono in <b>tutti</b> i linguaggi. Ogni linguaggio li affronta a modo suo: comportamento diverso delle variabili volatile, primitive di sincronizzazione diverse, strategie di compilazione diverse. Il modo formale di descrivere quali esecuzioni sono valide si chiama <b>memory model</b> — ed è la Lezione 3.
+</footer>
+</div>
+
+<script>
+const el = id => document.getElementById(id);
+
+/* ---- modulo cache ---- */
+let step = 0, synced = false;
+const STEPS = [
+  {msg:'Stato iniziale. <b>running = true</b> ovunque: memoria condivisa, cache e registri di entrambe le CPU sono allineati.',
+   mem:'true', r1:'true', c1:'true', r2:'true', c2:'true', cls:''},
+  {msg:'Il <b>main thread</b> esegue <span class="mono">running = false</span>. La scrittura arriva ai suoi registri e alla sua L1, ma <b>non oltre</b>: nessuna operazione di sincronizzazione la obbliga a scendere.',
+   mem:'true', r1:'true', c1:'true', r2:'false', c2:'false', cls:'w2'},
+  {msg:'', mem:'', r1:'', c1:'', r2:'false', c2:'false', cls:''}
+];
+
+function renderCache(){
+  const s = STEPS[Math.min(step,2)];
+  const isLast = step === 2;
+  let mem = s.mem, r1 = s.r1, c1 = s.c1;
+  let msg = s.msg, box = '';
+
+  if(isLast){
+    if(synced){
+      mem = 'false'; r1 = 'false'; c1 = 'false';
+      msg = '<b>unlock() svuota registri e cache bassa</b> verso la memoria condivisa. Il valore <span class="mono">false</span> scende, e t1 — che entra anch&rsquo;esso in <span class="mono">synchronized(o)</span> a ogni giro — è costretto a rileggerlo. Il ciclo termina.';
+      box = 'ok';
+    } else {
+      mem = 'true'; r1 = 'true'; c1 = 'true';
+      msg = '<b>Nessuna sincronizzazione, nessun flush.</b> La CPU 1 continua a leggere <span class="mono">running</span> dal proprio registro, dove vale ancora <span class="mono">true</span>. Il ciclo <span class="mono">while(running)</span> non termina mai.';
+      box = 'bad';
+    }
+  }
+
+  el('v-mem').textContent = 'running = ' + mem;
+  el('v-r1').textContent  = 'running = ' + r1;
+  el('v-r2').textContent  = 'running = ' + r2str();
+  el('v-c1').textContent  = c1;
+  el('v-c2').textContent  = step === 0 ? 'true' : 'false';
+  function r2str(){ return step === 0 ? 'true' : 'false'; }
+
+  ['v-mem','v-r1','v-r2'].forEach(id=>{
+    const t = el(id).textContent.endsWith('true');
+    el(id).className = 'val ' + (t ? 't' : 'f');
+  });
+
+  ['h-r1','h-c1','h-r2','h-c2','h-mem'].forEach(h=>el(h).className='holder');
+  if(step >= 1){ el('h-r2').classList.add('fresh'); el('h-c2').classList.add('fresh'); }
+  if(step === 1){ el('h-mem').classList.add('stale'); el('h-r1').classList.add('stale'); }
+  if(isLast){
+    if(synced){ ['h-mem','h-r1','h-c1'].forEach(h=>el(h).classList.add('fresh')); }
+    else { ['h-mem','h-r1','h-c1'].forEach(h=>el(h).classList.add('stale')); }
+  }
+  el('f-down').classList.toggle('on', isLast && synced);
+  el('f-up').classList.toggle('on', isLast && synced);
+
+  el('stepper').innerHTML = [0,1,2].map(i=>
+    '<span class="stepdot'+(i<=step?' on':'')+'"></span>').join('') +
+    '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:11.5px;color:var(--ink-3);margin-left:6px">passo '+(step+1)+' di 3</span>';
+  el('cachemsg').className = 'statebox' + (box ? ' ' + box : '');
+  el('cachemsg').innerHTML = msg;
+  el('next').disabled = step >= 2;
+}
+el('next').addEventListener('click', ()=>{ if(step<2){ step++; renderCache(); } });
+el('rst').addEventListener('click', ()=>{ step=0; renderCache(); });
+el('sync').addEventListener('change', e=>{ synced = e.target.checked; renderCache(); });
+
+/* ---- comparatore varianti ---- */
+const VAR = [
+  {
+    id:'base', name:'nessuna sincronizzazione',
+    code:'<span class="cm">// PossibleReordering.java</span>\n<span class="kw">int</span> x=0, y=0, a=0, b=0;\n\nThread one = <span class="kw">new</span> Thread(() -> {\n    a = 1;\n    x = b;\n});\nThread other = <span class="kw">new</span> Thread(() -> {\n    b = 1;\n    y = a;\n});',
+    outs:{'(0,0)':1,'(0,1)':1,'(1,0)':1,'(1,1)':1},
+    why:'Tutto è possibile, <b>(0,0) compreso</b>. Nessun vincolo ordina le operazioni dei due thread, e il riordino è libero perché non ci sono dipendenze di dati. È il caso patologico di partenza.'
+  },
+  {
+    id:'sync', name:'synchronized',
+    code:'<span class="cm">// PossibleReorderingSynchronized.java</span>\n<span class="kw">int</span> x=0, y=0, a=0, b=0;\nObject o = <span class="kw">new</span> Object();\n\nThread one = <span class="kw">new</span> Thread(() -> {\n    <span class="hl">synchronized (o) {</span>\n        a = 1;\n        x = b;\n    <span class="hl">}</span>\n});\nThread other = <span class="kw">new</span> Thread(() -> {\n    <span class="hl">synchronized (o) {</span>\n        b = 1;\n        y = a;\n    <span class="hl">}</span>\n});',
+    outs:{'(0,0)':0,'(0,1)':1,'(1,0)':1,'(1,1)':0},
+    why:'La mutua esclusione fa eseguire i due corpi <b>interamente uno dopo l&rsquo;altro</b>. Chi va per primo legge lo 0 iniziale dell&rsquo;altro, chi va per secondo legge l&rsquo;1: restano solo <b>(0,1)</b> e <b>(1,0)</b>. Attenzione: il riordino <em>dentro</em> ogni sezione critica avviene comunque — semplicemente non è più osservabile.'
+  },
+  {
+    id:'vol', name:'volatile',
+    code:'<span class="cm">// PossibleReorderingVolatile.java</span>\n<span class="kw">int</span> x=0, y=0;\n<span class="hl">volatile</span> <span class="kw">int</span> a=0, b=0;\n\nThread one = <span class="kw">new</span> Thread(() -> {\n    a = 1;\n    x = b;\n});\nThread other = <span class="kw">new</span> Thread(() -> {\n    b = 1;\n    y = a;\n});',
+    outs:{'(0,0)':0,'(0,1)':1,'(1,0)':1,'(1,1)':1},
+    why:'<b>(0,0) sparisce</b> perché le volatile non possono essere riordinate: ogni thread scrive prima di leggere. Ma i due thread restano <b>intrecciati</b> — nessuna mutua esclusione — quindi possono benissimo scrivere entrambi prima di leggere entrambi: <b>(1,1)</b> resta possibile.'
+  }
+];
+let cur = 0;
+function renderVar(){
+  el('variants').innerHTML = VAR.map((v,i)=>
+    '<button class="vbtn'+(i===cur?' on':'')+'" data-i="'+i+'">'+v.name+'</button>').join('');
+  const v = VAR[cur];
+  el('vcode').innerHTML = v.code;
+  el('vouts').innerHTML = Object.entries(v.outs).map(([k,ok])=>
+    '<div class="out '+(ok?'yes':'no')+'"><span class="v">'+k+'</span>' +
+    '<span class="s">'+(ok?'possibile':'impossibile')+'</span></div>').join('');
+  el('vwhy').className = 'statebox';
+  el('vwhy').innerHTML = v.why;
+}
+el('variants').addEventListener('click', e=>{
+  const b = e.target.closest('.vbtn'); if(!b) return;
+  cur = +b.dataset.i; renderVar();
+});
+
+renderCache(); renderVar();
+</script>

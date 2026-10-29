@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Minimum spanning tree</title>
+<link rel="stylesheet" href="../assets/atlas.css">
+<link rel="stylesheet" href="../assets/tema.css">
+<script src="../assets/sito.js"></script>
+<script src="../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  const pos = { A: [70, 130], B: [210, 45], C: [210, 215], D: [370, 45], E: [370, 215], F: [510, 130] };
+  const archi = [['A', 'C', 1], ['B', 'C', 2], ['D', 'E', 2], ['E', 'F', 3], ['A', 'B', 4], ['B', 'D', 5], ['D', 'F', 6], ['C', 'D', 8], ['C', 'E', 10]];
+  const ogg = Object.entries(pos).map(([k, [x, y]]) => ({ id: k, tipo: 'nodo', x, y, t: k }));
+  archi.forEach(([u, v, w]) => ogg.push({ id: u + v, tipo: 'arco', da: u, a: v, t: String(w) }));
+  ogg.push({ id: 'lista', tipo: 'celle', x: 38, y: 262, cw: 56, ch: 30, valori: archi.map(([u, v, w]) => `${u}${v} ${w}`), indici: false });
+  const passi = [{ nota: 'Grafo non orientato con costi sugli archi. Un <b>albero ricoprente</b> collega tutti i nodi senza cicli (n − 1 archi). Kruskal: ordino gli archi per costo crescente (in basso) e li considero uno alla volta.', righe: [1] }];
+  // union-find in chiaro per generare i passi
+  const padre = {}; Object.keys(pos).forEach(k => padre[k] = k);
+  const trova = x => padre[x] === x ? x : (padre[x] = trova(padre[x]));
+  const toni = {}; let tot = 0;
+  archi.forEach(([u, v, w], i) => {
+    const ok = trova(u) !== trova(v);
+    toni[i] = ok ? 'ok' : 'no';
+    if (ok) { padre[trova(u)] = trova(v); tot += w; }
+    passi.push({
+      nota: ok ? `<b>${u}${v}</b> (${w}): ${u} e ${v} sono in componenti diverse, l'arco non crea cicli. <b>Lo prendo</b>. Costo finora ${tot}.`
+               : `<b>${u}${v}</b> (${w}): ${u} e ${v} sono <b>già collegati</b> da archi presi: creerebbe un ciclo. <b>Scartato</b>.`,
+      righe: ok ? [3, 4, 5] : [3, 4],
+      set: { [u + v]: { tono: ok ? 'ok' : 'no' }, lista: { toni: Object.assign({}, toni, { [i]: ok ? 'ok' : 'no' }) } }
+    });
+  });
+  const fineSet = { lista: { toni } };
+  archi.forEach(([u, v], i) => { if (toni[i] === 'no') fineSet[u + v] = { tono: 'spento' }; });
+  passi.push({ nota: `Presi 5 archi = n − 1: l'albero è completo. <b>Costo 13</b>, minimo possibile. Verificato con il codice Java (union-find).`, set: fineSet });
+  SCENE.kruskal = {
+    w: 580, h: 300, lato: true, legenda: 'ok:nell\'albero,no:crea un ciclo',
+    codice: { lang: 'pseudo', testo: `sort edges by cost
+T ← {}
+for each edge (u, v) in that order:
+  if u and v in different components:
+    T ← T ∪ {(u, v)}; union(u, v)` },
+    oggetti: ogg, passi
+  };
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Minimum spanning tree</h1>
+  <p class="lede">Collegare tutti i nodi di una rete spendendo il meno possibile (K&amp;T 4.5–4.6). Tre algoritmi greedy diversi funzionano tutti, per la stessa ragione: la <b>proprietà del taglio</b>.</p>
+</header>
+
+<section>
+  <h2>Il problema</h2>
+  <ul>
+    <li>Grafo <b>non orientato</b> e connesso, ogni arco <i>e</i> ha un costo <span class="m">c<sub>e</sub></span>.</li>
+    <li>Un <b>albero ricoprente</b> (spanning tree) è un sottoinsieme di archi che collega tutti i nodi senza cicli: ha sempre <span class="m">n − 1</span> archi.</li>
+    <li>Il <b>minimum spanning tree</b> (MST) è quello di costo totale minimo.</li>
+  </ul>
+  <figure class="scena" data-scena="kruskal" data-titolo="Kruskal"></figure>
+</section>
+
+<section>
+  <h2>Le due proprietà che dimostrano tutto</h2>
+  <p>Supponiamo i costi tutti diversi (con costi uguali basta un criterio fisso per rompere le parità).</p>
+  <figure class="passi" data-titolo="Proprietà del taglio: l'arco più economico che attraversa un taglio sta nell'MST">
+    <div class="passo"><div class="espr">un <mark class="dato">taglio</mark>: dividi i nodi in S e V − S</div><p class="nota">Qualsiasi divisione in due gruppi non vuoti.</p></div>
+    <div class="passo"><div class="espr"><mark class="ok">e</mark> = l'arco più economico con un estremo in S e uno fuori</div><p class="nota">Vogliamo mostrare che ogni MST contiene e.</p></div>
+    <div class="passo"><div class="espr">per assurdo: MST T* <mark class="no">senza e</mark>. Aggiungo e a T*: si forma un <b>ciclo</b></div><p class="nota">In un albero, un arco in più crea esattamente un ciclo.</p></div>
+    <div class="passo"><div class="espr">il ciclo attraversa il taglio con e, quindi lo riattraversa con un altro arco <mark class="due">f</mark></div><p class="nota">Un ciclo che esce da S deve rientrarci.</p></div>
+    <div class="passo"><div class="espr">T* ∪ {e} − {f} è un albero di costo <mark class="ok">c(T*) + c<sub>e</sub> − c<sub>f</sub> &lt; c(T*)</mark></div><p class="nota">c<sub>e</sub> &lt; c<sub>f</sub> perché e è il più economico del taglio. Contraddice che T* sia minimo.</p></div>
+  </figure>
+  <div class="box regola" data-tit="Proprietà del ciclo">
+    <p>L'arco <b>più costoso</b> di un ciclo non sta in nessun MST. (Stesso scambio, al contrario: se ci fosse, lo si toglie e si ricollega con un arco più economico dello stesso ciclo.)</p>
+  </div>
+</section>
+
+<section>
+  <h2>Tre algoritmi, una ragione</h2>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Algoritmo</th><th>Come sceglie</th><th>Perché è corretto</th><th>Tempo</th></tr></thead>
+    <tbody>
+      <tr><td><b>Kruskal</b></td><td>archi in ordine di costo; prende l'arco se non crea cicli</td><td>un arco preso è il più economico del taglio "componente di u / resto" → taglio. Uno scartato è il più costoso del ciclo che chiude → ciclo.</td><td><span class="m">O(m log n)</span> con union-find</td></tr>
+      <tr><td><b>Prim</b></td><td>parte da un nodo e aggiunge sempre l'arco più economico che esce dall'albero</td><td>è il più economico del taglio "albero / resto" → taglio</td><td><span class="m">O(m log n)</span> con coda di priorità, come Dijkstra</td></tr>
+      <tr><td><b>Reverse-delete</b></td><td>archi in ordine decrescente; toglie l'arco se il grafo resta connesso</td><td>l'arco tolto è il più costoso di un ciclo → ciclo</td><td>—</td></tr>
+    </tbody>
+  </table></div>
+  <div class="box idea" data-tit="Union-find in due righe">
+    <p>Kruskal deve chiedere "u e v sono già nella stessa componente?". Ogni componente ha un rappresentante: <code>find(x)</code> risale i puntatori <code>padre</code> fino alla radice, <code>union</code> attacca una radice all'altra. Con le ottimizzazioni (path compression, union by rank) ogni operazione costa quasi <i>O(1)</i>: il tempo di Kruskal è dominato dall'ordinamento, <span class="m">O(m log m) = O(m log n)</span>.</p>
+  </div>
+  <figure class="codice" data-titolo="Kruskal in Java (verificato: costo 13 sull'esempio, stessi archi della scena)">
+<pre data-lang="java">static int[] padre;
+static int trova(int x) {
+    while (padre[x] != x) { padre[x] = padre[padre[x]]; x = padre[x]; }
+    return x;
+}
+
+// ed[i] = { u, v, costo }
+Integer[] ord = new Integer[ed.length];
+for (int i = 0; i &lt; ed.length; i++) ord[i] = i;
+Arrays.sort(ord, (x, y) -> Integer.compare(ed[x][2], ed[y][2]));
+padre = new int[n];
+for (int i = 0; i &lt; n; i++) padre[i] = i;
+int tot = 0;
+for (int i : ord) {
+    int ra = trova(ed[i][0]), rb = trova(ed[i][1]);
+    if (ra != rb) { padre[ra] = rb; tot += ed[i][2]; }
+}</pre>
+    <ol class="spiega">
+      <li data-righe="1-4" data-segna="padre[x] = padre[padre[x]]@due"><p><code>trova</code> risale alla radice. <code>padre[x] = padre[padre[x]]</code> accorcia la strada mentre sale (path halving): le ricerche successive saranno più brevi.</p></li>
+      <li data-righe="8-10" data-segna="Integer.compare(ed[x][2], ed[y][2])@ora"><p>Ordino gli indici degli archi per costo crescente.</p></li>
+      <li data-righe="11-12" data-segna="padre[i] = i@dato"><p>All'inizio ogni nodo è una componente da solo: è la radice di sé stesso.</p></li>
+      <li data-righe="15-16" data-segna="ra != rb@ok|padre[ra] = rb@ok"><p>Radici diverse = componenti diverse: prendo l'arco e unisco le componenti. Radici uguali: l'arco chiuderebbe un ciclo, lo salto.</p></li>
+    </ol>
+  </figure>
+</section>
+
+</main>
+</body>
+</html>

@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Ford-Fulkerson</title>
+<link rel="stylesheet" href="../assets/atlas.css">
+<link rel="stylesheet" href="../assets/tema.css">
+<script src="../assets/sito.js"></script>
+<script src="../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+SCENE.ff = {
+  w: 520, h: 300, lato: true,
+  legenda: 'ora:cammino aumentante,due:arco all\'indietro del residuo,ok:flusso finale,spento:arco pieno',
+  codice: { lang: 'pseudo', testo: `f(e) ← 0 for every edge e
+while there is an s-t path P
+      in the residual graph G_f:
+  b ← bottleneck(P)
+  for each edge e on P:
+    forward:  f(e) ← f(e) + b
+    backward: f(e) ← f(e) − b
+return f` },
+  oggetti: [
+    { id: 's', tipo: 'nodo', x: 60, y: 140, t: 's' },
+    { id: 'a', tipo: 'nodo', x: 250, y: 50, t: 'a' },
+    { id: 'b', tipo: 'nodo', x: 250, y: 230, t: 'b' },
+    { id: 't', tipo: 'nodo', x: 440, y: 140, t: 't' },
+    { id: 'sa', tipo: 'arco', da: 's', a: 'a', dir: true, t: '0/1' },
+    { id: 'sb', tipo: 'arco', da: 's', a: 'b', dir: true, t: '0/1' },
+    { id: 'ab', tipo: 'arco', da: 'a', a: 'b', dir: true, t: '0/1' },
+    { id: 'at', tipo: 'arco', da: 'a', a: 't', dir: true, t: '0/1' },
+    { id: 'bt', tipo: 'arco', da: 'b', a: 't', dir: true, t: '0/1' },
+    { id: 'ba', tipo: 'arco', da: 'b', a: 'a', dir: true, curva: 120, t: 'indietro 1', nascosto: true },
+    { id: 'v', tipo: 'testo', x: 250, y: 290, t: 'valore del flusso = 0', size: 13, bold: true }
+  ],
+  passi: [
+    { nota: 'Una rete: sorgente <b>s</b>, pozzo <b>t</b>, capacità 1 su ogni arco. Sugli archi "flusso/capacità". Vogliamo mandare più flusso possibile da s a t.', righe: [1] },
+    { nota: 'Idea greedy: trovo un cammino da s a t con capacità libera su ogni arco, s→a→b→t, e ci mando 1.', righe: [2, 4, 5, 6], set: { sa: { tono: 'ora', t: '1/1' }, ab: { tono: 'ora', t: '1/1' }, bt: { tono: 'ora', t: '1/1' }, v: { t: 'valore del flusso = 1' } } },
+    { nota: 'Ora s→a e b→t sono pieni: ogni cammino da s a t ne usa almeno uno. Il greedy si <b>blocca a 1</b>. Ma il massimo è 2 (s→a→t e s→b→t). L\'errore è stato usare a→b.', set: { sa: { tono: 'spento' }, ab: { tono: 'spento' }, bt: { tono: 'spento' }, v: { t: 'greedy bloccato a 1', tono: 'no' } } },
+    { nota: 'Il <b>grafo residuo</b> permette di rimediare: dove passa flusso f, aggiungo un arco <b>all\'indietro</b> di capacità f. Mandare flusso su b→a vuol dire "togliere" flusso da a→b.', righe: [2, 3], set: { ba: { nascosto: false, tono: 'due' }, v: { t: 'valore del flusso = 1', tono: null } } },
+    { nota: 'Nel residuo esiste un cammino da s a t: <b>s→b</b> (libero), <b>b→a</b> (all\'indietro), <b>a→t</b> (libero). È un <b>cammino aumentante</b>, collo di bottiglia 1.', righe: [2, 3, 4], set: { sb: { tono: 'ora' }, ba: { tono: 'ora' }, at: { tono: 'ora' } } },
+    { nota: 'Aumento di 1: +1 su s→b e a→t, −1 su a→b (l\'arco all\'indietro annulla). Risultato: s→a→t e s→b→t, <b>valore 2</b>.', righe: [5, 6, 7], set: { ba: { nascosto: true }, ab: { t: '0/1', tono: null }, sa: { tono: 'ok' }, at: { tono: 'ok', t: '1/1' }, sb: { tono: 'ok', t: '1/1' }, bt: { tono: 'ok' }, v: { t: 'valore del flusso = 2', tono: 'ok' } } },
+    { nota: 'Nel nuovo residuo s non raggiunge più t: l\'algoritmo termina. Da s escono archi di capacità totale 1 + 1 = 2: nessun flusso può fare di più, quindi 2 è il <b>massimo</b>. Verificato con il codice Java qui sotto.', righe: [8] }
+  ]
+};
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Ford-Fulkerson</h1>
+  <p class="lede">Una rete di tubi con capacità: quanta acqua passa al massimo da s a t? Il problema del <b>flusso massimo</b> (K&amp;T 7.1) sembra di nicchia, ma moltissimi problemi (matching, assegnamenti, cammini disgiunti) si <b>riducono</b> a lui. All'esame c'è sempre una domanda "flow".</p>
+</header>
+
+<section>
+  <h2>Reti e flussi</h2>
+  <ul>
+    <li>Una <b>rete di flusso</b>: grafo orientato, una <b>sorgente</b> s, un <b>pozzo</b> t, e una <b>capacità</b> intera <span class="m">c<sub>e</sub> ≥ 0</span> su ogni arco.</li>
+    <li>Un <b>flusso</b> assegna a ogni arco un valore <span class="m">f(e)</span> con due vincoli:</li>
+  </ul>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Vincolo</th><th>Formula</th><th>In parole</th></tr></thead>
+    <tbody>
+      <tr><td><b>capacità</b></td><td><span class="m">0 ≤ f(e) ≤ c<sub>e</sub></span></td><td>in un tubo non passa più della sua portata</td></tr>
+      <tr><td><b>conservazione</b></td><td><span class="m">Σ<sub>entranti</sub> f = Σ<sub>uscenti</sub> f</span> in ogni nodo tranne s e t</td><td>quello che entra in un nodo esce</td></tr>
+    </tbody>
+  </table></div>
+  <p>Il <b>valore</b> del flusso <span class="m">v(f)</span> è quanto esce da s. Obiettivo: il flusso di valore massimo.</p>
+</section>
+
+<section>
+  <h2>Grafo residuo e cammini aumentanti</h2>
+  <figure class="scena" data-scena="ff" data-titolo="Perché servono gli archi all'indietro"></figure>
+  <div class="box regola" data-tit="Il grafo residuo G_f">
+    <p>Per ogni arco e = (u, v) con flusso f(e) e capacità c<sub>e</sub>:</p>
+    <ul>
+      <li>arco <b>in avanti</b> (u, v) con capacità residua <span class="m">c<sub>e</sub> − f(e)</span>, se positiva: quanto posso ancora aggiungere;</li>
+      <li>arco <b>all'indietro</b> (v, u) con capacità <span class="m">f(e)</span>, se positiva: quanto posso ancora togliere.</li>
+    </ul>
+    <p>Un <b>cammino aumentante</b> è un cammino semplice da s a t in G<sub>f</sub>. Il suo <b>collo di bottiglia</b> è la capacità residua più piccola lungo il cammino.</p>
+  </div>
+  <figure class="passi" data-titolo="Aumentare lungo un cammino mantiene un flusso valido">
+    <div class="passo"><div class="espr">b = collo di bottiglia di P</div><p class="nota">Nessun arco di P ha capacità residua minore di b.</p></div>
+    <div class="passo"><div class="espr">arco in avanti: f(e) + b <mark class="ok">≤ c<sub>e</sub></mark>;  arco all'indietro: f(e) − b <mark class="ok">≥ 0</mark></div><p class="nota">Vincolo di capacità rispettato.</p></div>
+    <div class="passo"><div class="espr">in ogni nodo interno di P il flusso netto <mark class="ok">non cambia</mark></div><p class="nota">Entra b da un arco del cammino ed esce b dall'altro (contando come negativi gli archi all'indietro): conservazione rispettata.</p></div>
+    <div class="passo"><div class="espr">v(f) aumenta di <mark class="ok">b ≥ 1</mark></div><p class="nota">Il primo arco di P esce da s. Con capacità intere b è un intero ≥ 1.</p></div>
+  </figure>
+</section>
+
+<section>
+  <h2>Tempo</h2>
+  <figure class="passi" data-titolo="Quanto costa Ford-Fulkerson">
+    <div class="passo"><div class="espr">capacità intere ⇒ ogni aumento fa crescere v(f) di <mark class="dato">almeno 1</mark></div><p class="nota">E tutti i flussi restano interi.</p></div>
+    <div class="passo"><div class="espr">v(f) ≤ <mark class="dato">C</mark> = somma delle capacità degli archi che escono da s ⇒ al massimo C aumenti</div><p class="nota">Quindi l'algoritmo <b>termina</b>.</p></div>
+    <div class="passo"><div class="espr">ogni aumento: costruire G<sub>f</sub> e cercare un cammino con BFS o DFS = <mark class="ora">O(m)</mark></div><p class="nota">(Con m ≥ n/2, assumendo nessun nodo isolato.)</p></div>
+    <div class="passo"><div class="espr"><mark class="ok">O(mC)</mark></div><p class="nota">Pseudo-polinomiale: dipende dal valore delle capacità, come knapsack.</p></div>
+  </figure>
+  <div class="box idea" data-tit="Scegliere bene il cammino (K&amp;T 7.3)">
+    <p>Con capacità enormi O(mC) è troppo. <b>Capacity scaling</b>: cerca prima cammini con collo di bottiglia ≥ Δ (grande), poi dimezza Δ: <span class="m">O(m² log C)</span>. <b>Edmonds-Karp</b>: prendi sempre il cammino aumentante con <b>meno archi</b> (BFS): <span class="m">O(nm²)</span>, indipendente dalle capacità. Il codice sotto fa così.</p>
+  </div>
+  <div class="box esame" data-tit="All'esame">
+    <p>"This part merely has to be correct. There is no requirement about choosing the cleverest flow algorithm." Scrivi quale algoritmo usi con il riferimento al libro e il tempo in funzione dei parametri del problema, per esempio "Ford-Fulkerson [KT 7.1], O(mC) where C = …".</p>
+  </div>
+</section>
+
+<section>
+  <h2>In Java: Edmonds-Karp</h2>
+  <figure class="codice" data-titolo="Flusso massimo con BFS sul residuo (verificato: 2 sul diamante; su 300 reti casuali uguale al taglio minimo trovato a forza bruta)">
+<pre data-lang="java">void aggiungi(int u, int v, int cap) {
+    adj.get(u).add(archi.size()); archi.add(new int[] { v, cap });
+    adj.get(v).add(archi.size()); archi.add(new int[] { u, 0 });
+}
+
+long flusso(int s, int t) {
+    long totale = 0;
+    while (true) {
+        int[] prima = new int[n];
+        Arrays.fill(prima, -1);
+        Deque&lt;Integer&gt; coda = new ArrayDeque&lt;&gt;();
+        coda.add(s);
+        prima[s] = -2;
+        while (!coda.isEmpty() &amp;&amp; prima[t] == -1) {
+            int u = coda.poll();
+            for (int id : adj.get(u)) {
+                int v = archi.get(id)[0];
+                if (prima[v] == -1 &amp;&amp; archi.get(id)[1] &gt; 0) { prima[v] = id; coda.add(v); }
+            }
+        }
+        if (prima[t] == -1) return totale;
+        int collo = Integer.MAX_VALUE;
+        for (int v = t; v != s; v = archi.get(prima[v] ^ 1)[0]) collo = Math.min(collo, archi.get(prima[v])[1]);
+        for (int v = t; v != s; v = archi.get(prima[v] ^ 1)[0]) {
+            archi.get(prima[v])[1] -= collo;
+            archi.get(prima[v] ^ 1)[1] += collo;
+        }
+        totale += collo;
+    }
+}</pre>
+    <ol class="spiega">
+      <li data-righe="1-4" data-segna="{ v, cap }@ok|{ u, 0 }@due"><p>Ogni arco entra nella lista insieme al suo <b>gemello all'indietro</b>, con capacità residua 0. Sono in posizioni consecutive: l'arco <code>i</code> e l'arco <code>i ^ 1</code> (xor con 1: 4↔5, 6↔7) sono una coppia. Le capacità memorizzate sono direttamente quelle <b>residue</b>.</p></li>
+      <li data-righe="9-13" data-segna="prima@dato"><p><code>prima[v]</code> = l'arco con cui la BFS ha raggiunto v (−1 = non raggiunto). Serve a ricostruire il cammino.</p></li>
+      <li data-righe="14-20" data-segna="archi.get(id)[1] &gt; 0@ora"><p>BFS che usa solo archi con capacità residua positiva: in avanti non pieni, oppure all'indietro con flusso da annullare. Si ferma appena raggiunge t.</p></li>
+      <li data-righe="21" data-segna="return totale@ok"><p>t non raggiungibile nel residuo: nessun cammino aumentante, il flusso è massimo.</p></li>
+      <li data-righe="22-23" data-segna="Math.min(collo, archi.get(prima[v])[1])@ora"><p>Risalgo da t a s e trovo il collo di bottiglia. <code>archi.get(prima[v] ^ 1)[0]</code> è il nodo da cui si arrivava.</p></li>
+      <li data-righe="24-27" data-segna="-= collo@ora|+= collo@due"><p>Aumento: tolgo capacità residua sul cammino e la aggiungo al gemello. Un solo codice per archi in avanti e all'indietro.</p></li>
+    </ol>
+  </figure>
+</section>
+
+</main>
+</body>
+</html>

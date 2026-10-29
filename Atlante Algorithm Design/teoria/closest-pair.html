@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Coppia di punti più vicina</title>
+<link rel="stylesheet" href="../assets/atlas.css">
+<link rel="stylesheet" href="../assets/tema.css">
+<script src="../assets/sito.js"></script>
+<script src="../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+const P = [['A',0.5,1.0],['B',1.5,3.0],['C',2.5,1.2],['D',3.5,3.5],['E',4.2,1.4],['F',5.5,2.5]];
+const SX = x => 40 + x * 75, SY = y => 230 - y * 55;
+const og = P.map(([n,x,y],i) => ({id:n,tipo:'punto',x:SX(x),y:SY(y),r:6,t:n,tx:8,ty:-8}));
+og.push({id:'mid',tipo:'linea',x1:SX(3),y1:20,x2:SX(3),y2:235,tratt:true,tono:'due',nascosto:true});
+og.push({id:'band',tipo:'rett',x:SX(2.5),y:20,w:SX(3.5)-SX(2.5),h:215,t:'',nascosto:true,tono:'spento'});
+og.push({id:'c',tipo:'testo',x:20,y:262,t:'',size:12,bold:true,anchor:'start'});
+og.push({id:'pair',tipo:'linea',x1:SX(P[0][1]),y1:SY(P[0][2]),x2:SX(P[0][1]),y2:SY(P[0][2]),nascosto:true,tono:'ok'});
+SCENE.cp = {
+  w: 540, h: 290, lato: true,
+  legenda: 'dato:punti,due:linea di divisione,ok:coppia più vicina,spento:striscia di controllo',
+  oggetti: og,
+  passi: [
+    { nota: 'Sei punti nel piano. Trovo la coppia più vicina: confrontare tutte le coppie costa O(n²).', set:{} },
+    { nota: '<b>Divido</b> con una retta verticale: metà punti a sinistra (A, B, C), metà a destra (D, E, F).', set:{mid:{nascosto:false}} },
+    { nota: 'Ricorro a sinistra e a destra: la coppia più vicina è la migliore delle due metà, con distanza <code>δ</code>.', set:{mid:{nascosto:false},c:{t:'δ = min(sinistra, destra)'}} },
+    { nota: 'Resta la coppia che <b>attraversa</b> la retta. Basta controllare una striscia larga 2δ attorno alla retta: fuori, la distanza è già ≥ δ.', set:{band:{nascosto:false}} },
+    { nota: 'Risultato: la coppia più vicina è <b>E–F</b>, distanza 1.70. Costo <code>O(n log n)</code> con l\'ordinamento per x.', set:{c:{t:'coppia più vicina: E–F',tono:'ok'}} }
+  ]
+};
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Coppia di punti più vicina</h1>
+  <p class="lede">Dati n punti nel piano, trovare la coppia con distanza minima. Il divide et impera lo risolve in O(n log n) invece di O(n²).</p>
+</header>
+
+<section>
+  <h2>L'idea: dividere con una retta</h2>
+<p>Ordina i punti per <code>x</code> e dividili con una retta verticale in due metà uguali. La coppia più vicina sta a sinistra, a destra,
+o <b>attraversa</b> la retta. Le prime due si risolvono ricorsivamente: sia <code>δ</code> la distanza minima trovata.</p>
+  <figure class="scena" data-scena="cp" data-titolo="Il caso che attraversa la retta"></figure>
+</section>
+<section>
+  <h2>La striscia</h2>
+<p>Per la coppia che attraversa la retta basta guardare una <b>striscia</b> larga <code>2δ</code> attorno alla retta: un punto fuori dalla striscia
+è già più lontano di <code>δ</code> da qualunque punto dell'altra metà. Dentro la striscia, ordinando per <code>y</code>, ogni punto va confrontato
+solo con pochi vicini (al massimo una manciata): il lavoro è lineare.</p>
+</section>
+<section>
+  <h2>Il costo</h2>
+<p>Ricorrenza: <code>T(n) = 2T(n/2) + O(n)</code>, quindi <code>O(n log n)</code>. L'ordinamento per <code>x</code> si fa una volta sola, all'inizio.</p>
+</section>
+<section>
+  <h2>All’esame</h2>
+<div class="box esame" data-tit="All’esame">
+<p>Coppia più vicina → divide et impera con striscia: O(n log n). Frase: <i>"Sort by x; split with a vertical line; recurse on both halves getting δ; check the strip of width 2δ, sorted by y. T(n) = 2T(n/2) + O(n)."</i></p>
+</div>
+</section>
+<section>
+  <h2>Formulario rapido</h2>
+<div class="tab-wrap"><table class="tab"><thead><tr><th>fase</th><th>idea</th><th>costo</th></tr></thead><tbody><tr><td>divisione</td><td>retta verticale</td><td>per x</td></tr><tr><td>striscia</td><td>larghezza 2δ</td><td>controllo lineare</td></tr><tr><td>tempo</td><td>O(n log n)</td><td>ricorrenza 2T(n/2) + n</td></tr></tbody></table></div>
+</section>
+
+</main>
+</body>
+</html>

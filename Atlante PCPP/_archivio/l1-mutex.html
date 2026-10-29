@@ -1,0 +1,487 @@
+<title>Mutua Esclusione e Lock</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+:root{
+  --ground:#EAEDF3; --surface:#FFFFFF; --surface-2:#F4F6FA; --lane:#F0F2F7;
+  --ink:#11141F; --ink-2:#4E5769; --ink-3:#828C9F;
+  --line:#D4DAE4; --line-soft:#E5E9F0;
+  --po:#7A879E; --sync:#0C737C; --sync-soft:#DDEFF0;
+  --path:#A96A00; --path-soft:#F7EAD1;
+  --bad:#B23A30; --bad-soft:#F8E2DF;
+  --ok:#1C7048; --ok-soft:#DDEFE4;
+  --sel:#11141F; --node-fill:#FFFFFF; --focus:#0C737C;
+  --shadow:0 1px 2px rgba(17,20,31,.06),0 8px 24px -12px rgba(17,20,31,.18);
+  --accent:#0C737C;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --ground:#0F1119; --surface:#171A24; --surface-2:#1D212D; --lane:#141822;
+  --ink:#E7EAF1; --ink-2:#A0A9BB; --ink-3:#7B8497;
+  --line:#2C3242; --line-soft:#242938;
+  --po:#6C778D; --sync:#2FB4BC; --sync-soft:#123134;
+  --path:#E0A63F; --path-soft:#3A2E15;
+  --bad:#E4695E; --bad-soft:#3B1F1C;
+  --ok:#4FBF88; --ok-soft:#152E22;
+  --sel:#E7EAF1; --node-fill:#1B1F2B; --focus:#2FB4BC;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px -12px rgba(0,0,0,.7);
+  --accent:#2FB4BC;
+}}
+:root[data-theme="dark"]{
+  --ground:#0F1119; --surface:#171A24; --surface-2:#1D212D; --lane:#141822;
+  --ink:#E7EAF1; --ink-2:#A0A9BB; --ink-3:#7B8497;
+  --line:#2C3242; --line-soft:#242938;
+  --po:#6C778D; --sync:#2FB4BC; --sync-soft:#123134;
+  --path:#E0A63F; --path-soft:#3A2E15;
+  --bad:#E4695E; --bad-soft:#3B1F1C;
+  --ok:#4FBF88; --ok-soft:#152E22;
+  --sel:#E7EAF1; --node-fill:#1B1F2B; --focus:#2FB4BC;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px -12px rgba(0,0,0,.7);
+  --accent:#2FB4BC;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--ground);color:var(--ink);
+  font-family:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1180px;margin:0 auto;padding:36px 24px 72px;display:flex;flex-direction:column;gap:32px}
+a{color:var(--accent)}
+.crumb{display:flex;gap:8px;align-items:center;font-family:"IBM Plex Mono",monospace;
+  font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);flex-wrap:wrap}
+.crumb a{color:var(--ink-3);text-decoration:none;border-bottom:1px solid var(--line)}
+.crumb a:hover{color:var(--accent);border-color:var(--accent)}
+.crumb .acc{color:var(--accent)}
+h1{font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:clamp(27px,4vw,40px);
+  line-height:1.1;letter-spacing:-.02em;margin:12px 0 0;text-wrap:balance}
+.lede{margin:14px 0 0;max-width:64ch;color:var(--ink-2);font-size:16px}
+.lede b{color:var(--ink);font-weight:600}
+h2{font-family:"IBM Plex Mono",monospace;font-size:13px;font-weight:600;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--ink-2);margin:0 0 14px}
+h3{font-family:"IBM Plex Mono",monospace;font-size:13.5px;font-weight:600;margin:0 0 8px}
+section{display:flex;flex-direction:column}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow)}
+.pad{padding:18px 20px}
+.mono{font-family:"IBM Plex Mono",monospace}
+pre.code{margin:0;padding:18px 20px;overflow-x:auto;font-family:"IBM Plex Mono",monospace;
+  font-size:12.6px;line-height:1.72}
+.kw{color:var(--ink-2);font-weight:600}
+.cm{color:var(--ink-3)}
+.btn{font-family:"IBM Plex Mono",monospace;font-size:12px;font-weight:500;padding:7px 11px;
+  border-radius:6px;border:1px solid var(--line);background:var(--surface-2);color:var(--ink-2);
+  cursor:pointer;transition:background .15s,color .15s,border-color .15s}
+.btn:hover:not(:disabled){border-color:var(--ink-3);color:var(--ink)}
+.btn:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.btn:disabled{opacity:.34;cursor:not-allowed}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--surface)}
+.bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding:12px 14px;background:var(--surface);
+  border:1px solid var(--line);border-radius:10px;margin-bottom:16px;box-shadow:var(--shadow)}
+.bar .sep{width:1px;align-self:stretch;background:var(--line);margin:0 4px}
+.bar .hint{font-size:12.5px;color:var(--ink-3);margin-left:auto}
+.toggle{display:flex;align-items:center;gap:9px;cursor:pointer;user-select:none;
+  font-family:"IBM Plex Mono",monospace;font-size:12.5px;font-weight:500;color:var(--ink);padding:5px 4px;border-radius:6px}
+.toggle:focus-within{outline:2px solid var(--focus);outline-offset:2px}
+.switch{width:38px;height:21px;border-radius:11px;background:var(--line);position:relative;transition:background .2s;flex:none}
+.switch::after{content:"";position:absolute;top:2px;left:2px;width:17px;height:17px;border-radius:50%;
+  background:var(--surface);box-shadow:0 1px 3px rgba(0,0,0,.28);transition:transform .2s}
+.toggle input{position:absolute;opacity:0;pointer-events:none}
+.toggle input:checked + .switch{background:var(--accent)}
+.toggle input:checked + .switch::after{transform:translateX(17px)}
+.badge{display:inline-flex;align-items:center;gap:7px;font-family:"IBM Plex Mono",monospace;
+  font-size:11.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:6px 11px;border-radius:5px}
+.b-ok{background:var(--ok-soft);color:var(--ok)}
+.b-bad{background:var(--bad-soft);color:var(--bad)}
+.b-neu{background:var(--surface-2);color:var(--ink-2);border:1px solid var(--line)}
+.b-acc{background:var(--sync-soft);color:var(--sync)}
+table.t{width:100%;border-collapse:collapse;font-size:13.5px}
+table.t th{text-align:left;font-family:"IBM Plex Mono",monospace;font-size:10.5px;font-weight:600;
+  letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);padding:0 12px 9px 0;border-bottom:1px solid var(--line)}
+table.t td{padding:10px 12px 10px 0;border-bottom:1px solid var(--line-soft);vertical-align:top;color:var(--ink-2)}
+table.t tr:last-child td{border-bottom:none}
+table.t td.m{font-family:"IBM Plex Mono",monospace;font-size:12.4px;color:var(--ink)}
+.tablewrap{overflow-x:auto;padding:18px 20px}
+.note{font-size:13px;color:var(--ink-2);border-left:2px solid var(--accent);padding:2px 0 2px 14px;
+  margin:16px 0 0;max-width:72ch;line-height:1.6}
+.note b{color:var(--ink)}
+footer{font-size:12.5px;color:var(--ink-3);border-top:1px solid var(--line);padding-top:18px;max-width:72ch}
+footer a{color:var(--ink-3)}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+:root{--accent:#3F51A8}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--accent:#8093E8}}
+:root[data-theme="dark"]{--accent:#8093E8}
+
+.sim{display:grid;grid-template-columns:minmax(0,1fr) minmax(290px,.8fr);gap:20px;align-items:start}
+@media(max-width:900px){.sim{grid-template-columns:1fr}}
+.twocol{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start}
+@media(max-width:820px){.twocol{grid-template-columns:1fr}}
+
+.thcols{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.thcol{background:var(--surface-2);border:1px solid var(--line);border-radius:9px;padding:12px;
+  display:flex;flex-direction:column;gap:8px}
+.thcol > .h{font-family:"IBM Plex Mono",monospace;font-size:12px;font-weight:600;display:flex;
+  justify-content:space-between;align-items:center;gap:8px}
+.thcol[data-th="t1"] > .h{color:var(--sync)}
+.thcol[data-th="t2"] > .h{color:var(--path)}
+.thcol .st{font-size:10px;letter-spacing:.08em;text-transform:uppercase;font-weight:600;
+  padding:3px 7px;border-radius:4px;background:var(--surface);color:var(--ink-3);border:1px solid var(--line)}
+.thcol .st.hold{background:var(--sync-soft);color:var(--sync);border-color:var(--sync)}
+.thcol .st.done{background:var(--ok-soft);color:var(--ok);border-color:var(--ok)}
+
+.stepbtn{font-family:"IBM Plex Mono",monospace;font-size:12.4px;font-weight:500;padding:9px 11px;
+  border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);
+  cursor:pointer;text-align:left;display:flex;flex-direction:column;gap:2px;
+  transition:border-color .15s,background .15s,opacity .15s}
+.stepbtn small{font-size:10.5px;font-weight:400;color:var(--ink-3)}
+.stepbtn:hover:not(:disabled){border-color:var(--ink-3)}
+.stepbtn:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.stepbtn:disabled{opacity:.44;cursor:not-allowed}
+.stepbtn.blocked{border-color:var(--bad);border-style:dashed;opacity:.72}
+.stepbtn.blocked small{color:var(--bad)}
+.stepbtn.done{background:var(--ok-soft);border-color:var(--ok);opacity:1}
+
+.seq{font-family:"IBM Plex Mono",monospace;font-size:14.5px;font-weight:600;padding:14px 16px;
+  background:var(--surface-2);border:1px solid var(--line);border-radius:8px;min-height:52px;
+  display:flex;align-items:center;flex-wrap:wrap}
+.seq .ph{color:var(--ink-3);font-weight:400;font-size:13px;font-family:"IBM Plex Sans",sans-serif;font-style:italic}
+.seq .s1{color:var(--sync)}
+.seq .s2{color:var(--path)}
+
+.lockview{display:flex;gap:12px;align-items:center;padding:13px 15px;background:var(--surface-2);
+  border:1px solid var(--line);border-radius:8px;flex-wrap:wrap}
+.lockview .icon{font-family:"IBM Plex Mono",monospace;font-size:20px;line-height:1}
+.lockview .txt{font-family:"IBM Plex Mono",monospace;font-size:12.5px;color:var(--ink-2)}
+.lockview .txt b{color:var(--ink)}
+.lockview.held{border-color:var(--sync);background:var(--sync-soft)}
+.lockview .cnt{margin-left:auto;font-family:"IBM Plex Mono",monospace;font-size:12.5px;color:var(--ink-2)}
+.lockview .cnt b{font-size:17px;color:var(--ink);font-variant-numeric:tabular-nums}
+
+.trace{width:100%;border-collapse:collapse;font-family:"IBM Plex Mono",monospace;font-size:12.2px}
+.trace th{text-align:left;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);
+  font-weight:600;padding:0 10px 8px 0;border-bottom:1px solid var(--line);white-space:nowrap}
+.trace td{padding:7px 10px 7px 0;border-bottom:1px solid var(--line-soft);font-variant-numeric:tabular-nums}
+.trace tr:last-child td{border-bottom:none}
+.trace .t1{color:var(--sync);font-weight:600}
+.trace .t2{color:var(--path);font-weight:600}
+.trace td.eff{color:var(--ink-3);font-size:11.4px}
+.trace .empty{color:var(--ink-3);font-family:"IBM Plex Sans",sans-serif;font-style:italic;font-size:13px}
+
+.stats{display:flex;gap:12px;flex-wrap:wrap;margin-top:14px}
+.stat{background:var(--surface-2);border:1px solid var(--line);border-radius:8px;padding:13px 16px;flex:1 1 150px}
+.stat .n{font-family:"IBM Plex Mono",monospace;font-size:28px;font-weight:600;line-height:1;font-variant-numeric:tabular-nums}
+.stat .l{font-size:12px;color:var(--ink-2);margin-top:5px}
+.stat.b .n{color:var(--bad)}
+.stat.g .n{color:var(--ok)}
+
+.quiz{display:flex;flex-direction:column;gap:12px}
+.qcard{border:1px solid var(--line);border-radius:9px;padding:15px 17px;background:var(--surface-2)}
+.qcard .pat{font-family:"IBM Plex Mono",monospace;font-size:13.5px;font-weight:600;
+  overflow-x:auto;white-space:nowrap;padding-bottom:4px}
+.qcard .ans{display:flex;gap:9px;margin-top:12px;flex-wrap:wrap}
+.qcard .ans button{font-family:"IBM Plex Mono",monospace;font-size:12px;font-weight:500;padding:7px 13px;
+  border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink-2);cursor:pointer}
+.qcard .ans button:hover{border-color:var(--ink-3);color:var(--ink)}
+.qcard .ans button:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.qcard .ans button.right{background:var(--ok-soft);border-color:var(--ok);color:var(--ok);font-weight:600}
+.qcard .ans button.wrong{background:var(--bad-soft);border-color:var(--bad);color:var(--bad);font-weight:600}
+.qcard .why{margin-top:14px;border-top:1px solid var(--line);padding-top:13px}
+.derive{display:flex;flex-direction:column;gap:0;font-family:"IBM Plex Mono",monospace;font-size:12.2px}
+.derive .row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:14px;padding:7px 0;
+  border-bottom:1px dashed var(--line-soft);align-items:baseline}
+.derive .row:last-child{border-bottom:none}
+.derive .row .just{color:var(--ink-3);font-size:11px;white-space:nowrap}
+.derive .row.final{color:var(--bad);font-weight:600}
+.derive .row.final .just{color:var(--bad)}
+
+.props{display:flex;flex-direction:column;gap:0}
+.props .p{display:grid;grid-template-columns:auto 1fr;gap:14px;padding:14px 0;border-bottom:1px solid var(--line-soft);align-items:start}
+.props .p:last-child{border-bottom:none}
+.props .num{font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:600;color:var(--accent);
+  letter-spacing:.06em;padding-top:3px}
+.props h3{margin:0 0 3px}
+.props p{margin:0;font-size:13.5px;color:var(--ink-2);line-height:1.55}
+</style>
+
+<div class="wrap">
+<header>
+  <div class="crumb"><a href="https://claude.ai/code/artifact/28d55e87-8c70-4b36-8dac-532818fc0088">Atlante PCPP</a><span>&middot;</span><span class="acc">Lezione 1</span><span>·</span><span>Intro to Concurrency &amp; Mutual Exclusion</span></div>
+  <h1>Mutua Esclusione e Lock</h1>
+  <p class="lede">Senza lock i quattro passi si mescolano in <b>70</b> modi. Con <span class="mono">lock()</span> / <span class="mono">unlock()</span> ne restano <b>2</b>, ed entrambi danno il risultato giusto. Costruisci le sequenze e guarda i passi bloccarsi.</p>
+</header>
+
+<section>
+  <h2>La sezione critica protetta</h2>
+  <div class="twocol">
+    <div class="panel">
+<pre class="code">Lock l = <span class="kw">new</span> ReentrantLock();
+<span class="kw">long</span> counter = 0;
+
+<span class="kw">public void</span> run() {
+    l.lock();            <span class="cm">// (1)</span>
+    <span class="kw">int</span> temp = counter;  <span class="cm">// (2)</span>
+    counter = temp + 1;  <span class="cm">// (3)</span>
+    l.unlock();          <span class="cm">// (4)</span>
+}</pre>
+    </div>
+    <div class="panel pad">
+      <h3>Le due operazioni</h3>
+      <p style="margin:0 0 11px;font-size:13.5px;color:var(--ink-2)"><b class="mono">lock()</b> — acquisisce il lock se libero, altrimenti <b>blocca</b> il thread. È bloccante.</p>
+      <p style="margin:0 0 11px;font-size:13.5px;color:var(--ink-2)"><b class="mono">unlock()</b> — se ci sono thread in attesa ne sveglia uno, altrimenti rilascia il lock. In ogni caso il thread <b>prosegue</b>. Non è bloccante.</p>
+      <p class="note" style="margin:0">Sono <b>synchronization operations</b>: stabiliscono un ordine di esecuzione fra operazioni di thread diversi. È esattamente questa proprietà che il memory model formalizzerà nella Lezione 3.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Costruisci un interleaving</h2>
+  <div class="bar">
+    <label class="toggle"><input type="checkbox" id="lockon" checked><span class="switch"></span><span>lock attivo</span></label>
+    <div class="sep"></div>
+    <button class="btn" id="undo">← indietro</button>
+    <button class="btn" id="reset">reset</button>
+    <span class="hint">i passi non eseguibili restano disabilitati, con il motivo</span>
+  </div>
+
+  <div class="sim">
+    <div style="display:flex;flex-direction:column;gap:15px">
+      <div class="thcols" id="thcols"></div>
+      <div class="lockview" id="lockview"></div>
+      <div class="seq" id="seq"></div>
+      <div id="verdict"></div>
+    </div>
+    <div class="panel pad">
+      <h3 style="margin-bottom:12px">Traccia</h3>
+      <div style="overflow-x:auto">
+        <table class="trace">
+          <thead><tr><th>#</th><th>azione</th><th>effetto</th><th>counter</th></tr></thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="stats">
+    <div class="stat b"><div class="n">70</div><div class="l">interleaving <b>senza</b> lock — <span class="mono">8! / (4!·4!)</span></div></div>
+    <div class="stat g"><div class="n" id="withlock">2</div><div class="l"><b>con</b> lock: i due thread non si sovrappongono mai</div></div>
+    <div class="stat"><div class="n">1</div><div class="l">risultato possibile: <span class="mono">counter == 2</span>, sempre</div></div>
+  </div>
+  <p class="note">Il lock non rende <span class="mono">counter++</span> atomico a livello hardware. Rende <b>indivisibile la sezione critica</b>: nessun altro thread può eseguire la propria fra <span class="mono">(1)</span> e <span class="mono">(4)</span>.</p>
+</section>
+
+<section>
+  <h2>Questo interleaving è possibile?</h2>
+  <p class="lede" style="margin:0 0 18px;font-size:14.5px">Domanda tipica da orale. Si risponde <b>senza eseguire nulla</b>: si assume la sequenza, si aggiungono i vincoli, e si cerca una contraddizione.</p>
+  <div class="quiz" id="quiz"></div>
+</section>
+
+<section>
+  <h2>Le tre proprietà di una buona soluzione</h2>
+  <div class="panel pad">
+    <div class="props">
+      <div class="p"><div class="num">01</div><div>
+        <h3>Mutua esclusione</h3>
+        <p>Al più un thread esegue la sezione critica alla volta. È la proprietà che il lock garantisce direttamente.</p></div></div>
+      <div class="p"><div class="num">02</div><div>
+        <h3>Assenza di deadlock</h3>
+        <p>I thread escono prima o poi dalla sezione critica, permettendo agli altri di entrare. Si rompe, per esempio, dimenticando <span class="mono">unlock()</span> su un percorso di eccezione — motivo per cui va in <span class="mono">finally</span>.</p></div></div>
+      <div class="p"><div class="num">03</div><div>
+        <h3>Assenza di starvation</h3>
+        <p>Se un thread è pronto a entrare nella sezione critica, deve <b>prima o poi</b> riuscirci. È la più fragile: un lock può garantire mutua esclusione e lasciare comunque un thread fuori per sempre.</p></div></div>
+    </div>
+  </div>
+  <p class="note">Formulate da <b>Edsger W. Dijkstra</b>, che per primo definì il problema della mutua esclusione e ne diede un protocollo di soluzione. La terza proprietà è quella che ritorna nella Lezione 2 con i monitor: il <span class="mono">ReadWriteMonitor</span> garantisce mutua esclusione ma <b>affama gli scrittori</b>.</p>
+</section>
+
+<footer>
+  Ogni sezione critica ha un lock associato, ma più sezioni critiche possono usare lo stesso lock. Due thread che usano lock <em>diversi</em> non si escludono a vicenda — un errore facile con <span class="mono">synchronized</span> su metodi di istanza, come vedrai nella Lezione 2.
+</footer>
+</div>
+
+<script>
+const el = id => document.getElementById(id);
+const CODE = {1:'l.lock()', 2:'int temp = counter', 3:'counter = temp + 1', 4:'l.unlock()'};
+const THREADS = ['t1','t2'];
+let useLock = true, seq = [];
+
+function simulate(sq, withLock){
+  const st = {counter:0, temp:{t1:0,t2:0}, pc:{t1:0,t2:0}, owner:null, rows:[]};
+  for(const s of sq){
+    let eff = '';
+    if(s.k===1){ if(withLock) st.owner = s.t; eff = withLock ? 'lock acquisito da '+s.t : 'no-op'; }
+    else if(s.k===2){ st.temp[s.t] = st.counter; eff = 'temp '+s.t+' ← '+st.counter; }
+    else if(s.k===3){ st.counter = st.temp[s.t]+1; eff = 'counter ← '+st.counter; }
+    else { if(withLock) st.owner = null; eff = withLock ? 'lock rilasciato' : 'no-op'; }
+    st.pc[s.t] = s.k;
+    st.rows.push({s, eff, counter:st.counter});
+  }
+  return st;
+}
+// perché un passo non è eseguibile
+function reason(st, t, k){
+  if(st.pc[t] >= k) return {ok:false, done:true, msg:'già eseguito'};
+  if(st.pc[t] !== k-1) return {ok:false, msg:'program order: prima '+t+'('+(st.pc[t]+1)+')'};
+  if(useLock && k===1 && st.owner !== null) return {ok:false, blocked:true, msg:'bloccato — lock tenuto da '+st.owner};
+  return {ok:true};
+}
+function allSeqs(withLock){
+  const out = [];
+  (function rec(cur){
+    const st = simulate(cur, withLock);
+    if(cur.length===8){ out.push(cur.slice()); return; }
+    for(const t of THREADS) for(let k=1;k<=4;k++){
+      if(st.pc[t] !== k-1) continue;
+      if(withLock && k===1 && st.owner !== null) continue;
+      rec(cur.concat([{t,k}]));
+    }
+  })([]);
+  return out;
+}
+
+function render(){
+  const st = simulate(seq, useLock);
+
+  el('thcols').innerHTML = THREADS.map(t=>{
+    const done = st.pc[t]===4;
+    const holds = useLock && st.owner===t;
+    const status = done ? '<span class="st done">finito</span>'
+      : holds ? '<span class="st hold">tiene il lock</span>'
+      : '<span class="st">passo '+(st.pc[t]+1)+'</span>';
+    const btns = [1,2,3,4].map(k=>{
+      const r = reason(st, t, k);
+      const cls = r.done ? 'stepbtn done' : (r.blocked ? 'stepbtn blocked' : 'stepbtn');
+      const sub = r.ok ? CODE[k] : r.msg;
+      return '<button class="'+cls+'" data-t="'+t+'" data-k="'+k+'" '+(r.ok?'':'disabled')+'>' +
+        '<span>'+t+'('+k+')</span><small>'+sub+'</small></button>';
+    }).join('');
+    return '<div class="thcol" data-th="'+t+'"><div class="h"><span>'+t+'</span>'+status+'</div>'+btns+'</div>';
+  }).join('');
+
+  const held = useLock && st.owner;
+  el('lockview').className = 'lockview' + (held ? ' held' : '');
+  el('lockview').innerHTML = !useLock
+    ? '<span class="icon">○</span><span class="txt">lock <b>disattivato</b> — i thread si sovrappongono liberamente</span>' +
+      '<span class="cnt">counter <b>'+st.counter+'</b></span>'
+    : '<span class="icon">'+(held?'●':'○')+'</span><span class="txt">lock ' +
+      (held ? 'tenuto da <b>'+st.owner+'</b>' : '<b>libero</b>') + '</span>' +
+      '<span class="cnt">counter <b>'+st.counter+'</b></span>';
+
+  el('seq').innerHTML = seq.length
+    ? seq.map(s=>'<span class="s'+(s.t==='t1'?1:2)+'">'+s.t+'('+s.k+')</span>').join('<span style="color:var(--ink-3)">,&nbsp;</span>')
+    : '<span class="ph">clicca i passi per costruire la sequenza</span>';
+
+  el('tbody').innerHTML = st.rows.length
+    ? st.rows.map((r,i)=>'<tr><td style="color:var(--ink-3)">'+(i+1)+'</td>' +
+        '<td class="'+r.s.t+'">'+r.s.t+'('+r.s.k+')</td>' +
+        '<td class="eff">'+r.eff+'</td><td><b>'+r.counter+'</b></td></tr>').join('')
+    : '<tr><td colspan="4" class="empty" style="padding-top:12px">nessun passo eseguito</td></tr>';
+
+  if(seq.length===8){
+    const good = st.counter===2;
+    el('verdict').innerHTML = good
+      ? '<span class="badge b-ok">counter == 2 &middot; corretto</span>' +
+        '<p class="note" style="border-color:var(--ok)">Le sezioni critiche non si sono sovrapposte: ogni <span class="mono">temp = counter</span> ha letto un valore già aggiornato.</p>'
+      : '<span class="badge b-bad">counter == 1 &middot; lost update</span>' +
+        '<p class="note" style="border-color:var(--bad)">Senza lock i due thread hanno letto <span class="mono">counter</span> nella stessa finestra. Riattiva il lock: questa sequenza <b>non sarà più costruibile</b>.</p>';
+  } else {
+    el('verdict').innerHTML = '<span class="badge b-neu">'+seq.length+' / 8 passi</span>';
+  }
+}
+
+el('thcols').addEventListener('click', e=>{
+  const b = e.target.closest('.stepbtn'); if(!b || b.disabled) return;
+  seq.push({t:b.dataset.t, k:+b.dataset.k}); render();
+});
+el('undo').addEventListener('click', ()=>{ seq.pop(); render(); });
+el('reset').addEventListener('click', ()=>{ seq=[]; render(); });
+el('lockon').addEventListener('change', e=>{
+  useLock = e.target.checked;
+  // taglia la sequenza al primo passo che diventa illegale
+  const kept = [];
+  for(const s of seq){
+    const st = simulate(kept, useLock);
+    if(reason(st, s.t, s.k).ok) kept.push(s); else break;
+  }
+  seq = kept;
+  el('withlock').textContent = useLock ? '2' : '70';
+  render();
+});
+
+/* ---------- quiz ---------- */
+const QUIZ = [
+  {
+    pat: '…, t1(2), …, t2(2), …, t1(3), …, t2(3), …',
+    possible: false,
+    tag: 'la sequenza della lezione',
+    derive: [
+      ['t1(2) &lt; t2(2) &lt; t1(3) &lt; t2(3)', 'assunzione'],
+      ['t2(1) &lt; t2(2)', 'program order di t2'],
+      ['t1(4) &lt; t2(1)', 'mutua esclusione: t1 tiene il lock'],
+      ['t1(3) &lt; t1(4)', 'program order di t1'],
+      ['quindi t1(3) &lt; t2(2), ma per assunzione t2(2) &lt; t1(3)', 'contraddizione']
+    ],
+    note: 'Se <span class="mono">t1(2)</span> è stata eseguita, allora <span class="mono">t1(1)</span> lo è stata prima e t1 <b>tiene il lock</b>. Perché <span class="mono">t2(1)</span> possa completare, t1 deve prima rilasciarlo con <span class="mono">t1(4)</span>. Ma <span class="mono">t1(4)</span> viene dopo <span class="mono">t1(3)</span>, che per assunzione viene dopo <span class="mono">t2(2)</span>. Il cerchio non si chiude.'
+  },
+  {
+    pat: 't1(1), t1(2), t1(3), t1(4), t2(1), t2(2), t2(3), t2(4)',
+    possible: true,
+    tag: 'sequenziale',
+    derive: [
+      ['t1 esegue tutta la sezione critica', 'lock libero al passo t1(1)'],
+      ['t1(4) rilascia il lock prima di t2(1)', 'nessun conflitto'],
+      ['t2(2) legge counter == 1', 'valore già aggiornato']
+    ],
+    note: 'Uno dei <b>due soli</b> interleaving completi possibili con il lock. Risultato: <span class="mono">counter == 2</span>.'
+  },
+  {
+    pat: 't1(1), t2(1), …',
+    possible: false,
+    tag: 'due lock consecutivi',
+    derive: [
+      ['t1(1) acquisisce il lock', 'lock libero'],
+      ['t2(1) richiede il lock', 'ma è tenuto da t1'],
+      ['t2 si blocca: t2(1) non completa', 'contraddizione']
+    ],
+    note: 'Un passo compare nell&rsquo;interleaving solo se è stato <b>eseguito</b>. <span class="mono">lock()</span> su un lock occupato blocca il thread, quindi <span class="mono">t2(1)</span> non può apparire finché <span class="mono">t1(4)</span> non è avvenuta.'
+  },
+  {
+    pat: 't2(1), t2(2), t1(1), …',
+    possible: false,
+    tag: 'ruoli invertiti, stesso errore',
+    derive: [
+      ['t2(1) acquisisce il lock', 'lock libero'],
+      ['t2(2) esegue: t2 tiene ancora il lock', 't2(4) non è avvenuta'],
+      ['t1(1) richiede il lock occupato', 'contraddizione']
+    ],
+    note: 'Simmetrico al precedente. Il nome dei thread non conta: conta <b>chi tiene il lock</b> in quel punto della sequenza.'
+  }
+];
+
+el('quiz').innerHTML = QUIZ.map((q,i)=>
+  '<div class="qcard" data-q="'+i+'">' +
+    '<span class="badge b-neu" style="margin-bottom:11px">'+q.tag+'</span>' +
+    '<div class="pat">'+q.pat+'</div>' +
+    '<div class="ans">' +
+      '<button data-a="1">possibile</button>' +
+      '<button data-a="0">impossibile</button>' +
+    '</div>' +
+    '<div class="why" hidden></div>' +
+  '</div>').join('');
+
+el('quiz').addEventListener('click', e=>{
+  const b = e.target.closest('.ans button'); if(!b) return;
+  const card = b.closest('.qcard');
+  const q = QUIZ[+card.dataset.q];
+  const chose = b.dataset.a === '1';
+  card.querySelectorAll('.ans button').forEach(x=>x.classList.remove('right','wrong'));
+  b.classList.add(chose === q.possible ? 'right' : 'wrong');
+  const why = card.querySelector('.why');
+  why.hidden = false;
+  why.innerHTML =
+    '<span class="badge '+(q.possible?'b-ok':'b-bad')+'" style="margin-bottom:12px">' +
+      (q.possible ? 'possibile' : 'impossibile') + '</span>' +
+    '<div class="derive">' + q.derive.map((d,j)=>
+      '<div class="row'+(j===q.derive.length-1 && !q.possible ? ' final':'')+'">' +
+      '<span>'+d[0]+'</span><span class="just">['+d[1]+']</span></div>').join('') + '</div>' +
+    '<p class="note" style="margin-top:13px">'+q.note+'</p>';
+});
+
+render();
+</script>

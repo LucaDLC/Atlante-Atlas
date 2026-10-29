@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Numeri casuali senza effetti</title>
+<link rel="stylesheet" href="../assets/atlas.css">
+<link rel="stylesheet" href="../assets/tema.css">
+<script src="../assets/sito.js"></script>
+<script src="../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+SCENE.catena = {
+  w: 560, h: 250, lato: false,
+  legenda: 'dato:stato (seed),ora:chiamata in corso,ok:numero prodotto,no:stato rileggibile',
+  codice: { lang: 'scala', testo: `val r0 = SimpleRNG(42)
+val (n1, r1) = r0.nextInt   // 16159453
+val (n2, r2) = r1.nextInt   // -1281479697
+r0.nextInt                  // di nuovo (16159453, r1)` },
+  oggetti: [
+    { id: 'r0', tipo: 'nodo', forma: 'quadrato', r: 40, x: 80, y: 110, t: 'r0', sotto: 'seed 42', tono: 'dato' },
+    { id: 'r1', tipo: 'nodo', forma: 'quadrato', r: 40, x: 280, y: 110, t: 'r1', sotto: 'seed 1059025964525', nascosto: true },
+    { id: 'r2', tipo: 'nodo', forma: 'quadrato', r: 40, x: 480, y: 110, t: 'r2', sotto: 'seed 197491923327988', nascosto: true },
+    { id: 'a1', tipo: 'arco', da: 'r0', a: 'r1', dir: true, t: 'nextInt', nascosto: true },
+    { id: 'a2', tipo: 'arco', da: 'r1', a: 'r2', dir: true, t: 'nextInt', nascosto: true },
+    { id: 'o1', tipo: 'testo', x: 180, y: 36, t: '', size: 14, bold: true },
+    { id: 'o2', tipo: 'testo', x: 380, y: 36, t: '', size: 14, bold: true },
+    { id: 'n', tipo: 'testo', x: 280, y: 222, t: '', size: 13, bold: true }
+  ],
+  passi: [
+    { nota: 'Un generatore <b>puro</b>: uno stato immutabile, <code>SimpleRNG(42)</code>. 42 è il seed, il "seme" iniziale.', righe: [1] },
+    { nota: '<code>r0.nextInt</code> non modifica niente: <b>restituisce</b> una coppia, il numero <b>16159453</b> e un nuovo stato <code>r1</code>.', righe: [2], set: { r0: { tono: 'ora' }, a1: { nascosto: false, tono: 'ora' }, r1: { nascosto: false, tono: 'dato' }, o1: { t: '16159453', tono: 'ok' } } },
+    { nota: 'Per il numero successivo si chiama <code>nextInt</code> sul <b>nuovo</b> stato <code>r1</code>: esce <b>−1281479697</b> e lo stato <code>r2</code>. Lo stato va passato a mano da una chiamata all\'altra.', righe: [3], set: { r0: { tono: 'dato' }, a1: { tono: null }, r1: { tono: 'ora' }, a2: { nascosto: false, tono: 'ora' }, r2: { nascosto: false, tono: 'dato' }, o2: { t: '−1281479697', tono: 'ok' } } },
+    { nota: 'E se si richiama <code>r0.nextInt</code>? Esce di nuovo <b>16159453</b> e di nuovo <code>r1</code>. Stesso input, stesso output: la funzione è <b>referenzialmente trasparente</b>. Con <code>scala.util.Random</code> invece due chiamate uguali danno numeri diversi.', righe: [4], set: { r1: { tono: 'dato' }, a2: { tono: null }, r0: { tono: 'no' }, a1: { tono: 'no' }, o1: { t: '16159453 (di nuovo)', tono: 'no' }, n: { t: 'r0.nextInt == r0.nextInt', tono: 'no' } } }
+  ]
+};
+</script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  const T = (id, x, y, t, extra) => Object.assign({ id, tipo: 'testo', x, y, t, size: 13 }, extra || {});
+  const R = (id, x, y, w, h, t, extra) => Object.assign({ id, tipo: 'rett', x, y, w, h, t }, extra || {});
+  const F = (id, x1, y1, x2, y2, t, extra) => Object.assign({ id, tipo: 'vett', x1, y1, x2, y2, t }, extra || {});
+  const C = (id, x, y, valori, extra) => Object.assign({ id, tipo: 'celle', x, y, cw: 52, ch: 40, valori, indici: false }, extra || {});
+
+    SCENE.statonascosto = {
+      w: 580, h: 220, lato: true,
+      legenda: 'no:stato nascosto che cambia,dato:stato esplicito,ok:stesso input = stesso output',
+      oggetti: [R('v', 20, 40, 200, 40, 'var rng (nascosto)', { tono: 'no' }), T('e1', 400, 50, '', { size: 12 }), T('e2', 400, 80, '', { size: 12 }),
+        R('s0', 20, 130, 90, 40, 'G0', { tono: 'dato', nascosto: true }), R('fn', 150, 125, 140, 50, 'nextInt', { tono: 'ora', nascosto: true }), R('o', 330, 130, 150, 40, '(n, G1)', { tono: 'ok', nascosto: true }),
+        F('a', 112, 150, 146, 150, '', { nascosto: true }), F('b', 292, 150, 326, 150, '', { nascosto: true }), T('c', 290, 205, '', { size: 12 })],
+      passi: [
+        { nota: "<code>def rollDie: Int = rng.nextInt(6)</code> con <code>var rng</code> esterno." },
+        { nota: "Stessa espressione, risultati diversi: rollDie = 5, poi rollDie = 0. Dipende da uno stato esterno che cambia a ogni chiamata, e che chiunque può cambiare.", set: { e1: { t: 'rollDie → 5', tono: 'no' }, e2: { t: 'rollDie → 0', tono: 'no' } } },
+        { nota: "Quindi <code>rollDie + rollDie ≠ 2 * rollDie</code>: niente trasparenza referenziale. Test e ragionamento diventano difficili.", set: { c: { t: 'rollDie + rollDie ≠ 2 * rollDie', tono: 'no' } } },
+        { nota: "Soluzione: rendere lo stato <b>esplicito</b>. <code>nextInt: RNG =&gt; (Int, RNG)</code> non cambia niente: restituisce anche lo stato successivo, e chi la usa lo passa alla chiamata dopo. Stesso G0, stesso risultato, sempre.", set: { v: { tono: 'spento' }, s0: { nascosto: false }, fn: { nascosto: false }, o: { nascosto: false }, a: { nascosto: false }, b: { nascosto: false }, c: { t: 'stato → (valore, nuovo stato)', tono: 'ok' } } }
+      ]
+    };
+
+    SCENE.testimone = {
+      w: 580, h: 220, lato: true,
+      legenda: 'dato:stato,ora:generatore,ok:risultato',
+      oggetti: [R('r0', 20, 40, 80, 40, 'rng', { tono: 'dato' }), R('g1', 130, 40, 140, 40, 'nonNegativeInt', { tono: 'ora' }), R('r1', 300, 40, 70, 40, 'r1', { tono: 'dato', nascosto: true }), R('g2', 400, 40, 90, 40, 'double', { tono: 'ora', nascosto: true }), R('r2', 510, 40, 60, 40, 'r2', { tono: 'dato', nascosto: true }),
+        T('v', 290, 120, '', { bold: true }), T('c', 290, 160, '', { size: 12 }), T('c2', 290, 195, '', { size: 12 })],
+      passi: [
+        { nota: "Esercizio 3, <code>intDouble</code>: un intero e un double, indipendenti. Lo stato passa come un <b>testimone</b> in una staffetta." },
+        { nota: "nonNegativeInt riceve rng e restituisce (i, r1).", set: { r1: { nascosto: false } } },
+        { nota: "double riceve <b>r1</b> (non rng!) e restituisce (d, r2). Risultato ((i, d), r2): r2 per chi viene dopo.", set: { g2: { nascosto: false }, r2: { nascosto: false }, v: { t: '((i, d), r2)', tono: 'ok' } } },
+        { nota: "Usare due volte rng darebbe numeri <b>non indipendenti</b>. In <code>ints(3)</code> la ricorsione fa lo stesso: G0 → G1 → G2 → G3, e lo stato che risale è l'ultimo, G3. Restituire r1 farebbe riuscire di nuovo il secondo numero.", set: { c: { t: 'ints(3)(SimpleRNG(42)) = List(16159453, −1281479697, −340305902)' }, c2: { t: 'lo stato restituito è sempre quello dopo l’ultimo numero' } } }
+      ]
+    };
+
+    const E = [['else i', 'Not found: i', 'else num'], ['val (numDouble, …) due volte', 'numDouble is already defined', 'numInt per il secondo'], ['((numDouble, numDouble), rand2)', 'Found: Double  Required: Int', '((numDouble, numInt), rand2)'], ['flatMap con foldRight(empty)…', 'Not found: foldRight', 'rng => val (a, r1) = f(rng); g(a)(r1)']];
+    SCENE.erroriutente = {
+      w: 600, h: 210, lato: true,
+      legenda: 'no:errore,ok:correzione',
+      oggetti: [T('n', 300, 24, '', { bold: true }), R('s', 20, 40, 270, 40, '', { tono: 'no' }), R('g', 310, 40, 270, 40, '', { tono: 'ok' }), T('m', 300, 120, '', { size: 12, bold: true }), T('c', 300, 175, '', { size: 12 })],
+      passi: [{ nota: "I 4 errori con cui Scala 3.8.4 fermava il tuo Exercises.scala della settimana 5 (letto e compilato su una copia, il repo non è stato toccato)." }].concat(E.map(([s, m, g], i) => ({
+        nota: ['In nonNegativeInt la variabile si chiama num, non i.', 'Nello stesso blocco un nome si dichiara <b>una volta</b>. Il secondo valore è un intero: chiamalo numInt.', 'Conseguenza del primo: la coppia conteneva due Double, ma il tipo di ritorno vuole (Double, Int).', 'Era il flatMap della LazyList: su Rand non c\'è niente da \"foldare\", c\'è una funzione da far girare e poi il secondo generatore.'][i],
+        set: { n: { t: 'errore ' + (i + 1) + ' di 4' }, s: { t: s }, g: { t: g }, m: { t: m, tono: 'no' } }
+      })))
+    };
+  
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Numeri casuali senza effetti</h1>
+  <p class="lede">Settimana 5, esercizi 1–4 (capitolo 6 del libro). Un generatore di numeri casuali "normale" ha uno stato nascosto che cambia a ogni chiamata: non è puro. La soluzione funzionale è rendere lo stato <b>esplicito</b>: ogni chiamata riceve lo stato e ne restituisce uno nuovo. È il primo passo verso la <a href="s05-state.html">State monad</a>.</p>
+</header>
+
+<section>
+  <h2>Il problema: uno stato nascosto</h2>
+  <pre class="cod" data-lang="scala" data-segna="var rng@no|rng.nextInt(6)@no">var rng = new scala.util.Random
+def rollDie: Int = rng.nextInt(6)</pre>
+  <figure class="passi" data-titolo="Perché rollDie non è una funzione pura">
+    <div class="passo"><div class="espr">rollDie = <mark class="ok">5</mark>,  poi rollDie = <mark class="ok">0</mark></div><p class="nota">Stessa espressione, risultati diversi: dipende da <code>rng</code>, uno stato esterno che cambia a ogni chiamata (e che chiunque può cambiare).</p></div>
+    <div class="passo"><div class="espr">rollDie + rollDie  ≠  2 * rollDie</div><p class="nota">Non posso sostituire un'espressione con il suo valore: manca la <b>trasparenza referenziale</b> (settimana 1). Test e ragionamento diventano difficili.</p></div>
+    <div class="passo"><div class="espr">rendere lo stato <mark class="ora">esplicito</mark>:  stato → (valore, <mark class="dato">nuovo stato</mark>)</div><p class="nota">La funzione non cambia niente: restituisce anche lo stato successivo, e chi la usa lo passa alla chiamata dopo.</p></div>
+  </figure>
+  <figure class="scena" data-scena="statonascosto" data-titolo="var nascosto contro stato esplicito"></figure>
+</section>
+
+<section>
+  <h2>RNG e SimpleRNG</h2>
+  <figure class="codice" data-titolo="Dal file dell'esercizio">
+<pre data-lang="scala">trait RNG:
+  def nextInt: (Int, RNG)
+
+case class SimpleRNG(seed: Long) extends RNG:
+  def nextInt: (Int, RNG) =
+    val newSeed = (seed * 0x5DEECE66DL + 0xBL) &amp; 0xFFFFFFFFFFFFL
+    val nextRNG = SimpleRNG(newSeed)
+    val n = (newSeed &gt;&gt;&gt; 16).toInt
+    (n, nextRNG)</pre>
+    <ol class="spiega">
+      <li data-righe="1-2" data-segna="(Int, RNG)@ok"><p>Un <code>trait</code> (un'interfaccia) con un solo metodo. Il tipo di ritorno è una <b>coppia</b>: il numero e il generatore da usare la prossima volta.</p></li>
+      <li data-righe="4" data-segna="seed: Long@dato"><p>La <code>case class</code> è immutabile: il seed non si cambia, si crea un nuovo <code>SimpleRNG</code>.</p></li>
+      <li data-righe="6" data-segna="0x5DEECE66DL@due|&amp;@due"><p>Un generatore lineare congruenziale (lo stesso di <code>java.util.Random</code>): moltiplica, somma, e con <code>&amp;</code> (AND bit a bit) tiene solo 48 bit. <code>L</code> vuol dire Long.</p></li>
+      <li data-righe="7-9" data-segna="&gt;&gt;&gt; 16@ora|(n, nextRNG)@ok"><p><code>&gt;&gt;&gt;</code> sposta i bit a destra riempiendo di zeri; <code>.toInt</code> tiene 32 bit, quindi il numero può essere negativo. Si restituisce il numero con il nuovo stato.</p></li>
+    </ol>
+  </figure>
+  <figure class="scena" data-scena="catena" data-titolo="Passare lo stato a mano"></figure>
+  <p class="piccolo">Tutti i numeri sono stati ottenuti eseguendo il codice (Scala 3.8.4).</p>
+</section>
+
+<section>
+  <h2>Esercizi 1–4: generatori a mano</h2>
+  <figure class="codice" data-titolo="Soluzioni (i 27 test RNG del corso passano)">
+<pre data-lang="scala">def nonNegativeInt(rng: RNG): (Int, RNG) =
+  val (i, r) = rng.nextInt
+  (if i &lt; 0 then -(i + 1) else i, r)
+
+def double(rng: RNG): (Double, RNG) =
+  val (i, r) = nonNegativeInt(rng)
+  (i / (Int.MaxValue.toDouble + 1), r)
+
+def intDouble(rng: RNG): ((Int, Double), RNG) =
+  val (i, r1) = nonNegativeInt(rng)
+  val (d, r2) = double(r1)
+  ((i, d), r2)
+
+def doubleInt(rng: RNG): ((Double, Int), RNG) =
+  val ((i, d), r) = intDouble(rng)
+  ((d, i), r)
+
+def ints(size: Int)(rng: RNG): (List[Int], RNG) =
+  if size &lt;= 0 then (Nil, rng)
+  else
+    val (i, r1) = rng.nextInt
+    val (is, r2) = ints(size - 1)(r1)
+    (i :: is, r2)</pre>
+    <ol class="spiega">
+      <li data-righe="1-3" data-segna="-(i + 1)@ora"><p>Es. 1. Il caso scomodo: <code>Int.MinValue</code> = −2147483648 non ha un opposto tra gli Int (il massimo è 2147483647). Con <code>-(i + 1)</code> ogni negativo va in un non negativo: −1 → 0, MinValue → 2147483647. Con <code>r1</code> dell'esempio: −1281479697 → 1281479696.</p></li>
+      <li data-righe="5-7" data-segna="Int.MaxValue.toDouble + 1@due"><p>Es. 2. Si divide per MaxValue + 1, non per MaxValue: così 1.0 non esce mai (l'esercizio chiede [0, 1)). Da <code>SimpleRNG(42)</code>: 0.0075…</p></li>
+      <li data-righe="9-12" data-segna="r1@dato|r2@dato"><p>Es. 3. Lo stato passa come un testimone: <code>rng</code> al primo generatore, <code>r1</code> al secondo, <code>r2</code> a chi viene dopo. Usare due volte <code>rng</code> darebbe numeri non indipendenti.</p></li>
+      <li data-righe="14-16" data-segna="intDouble(rng)@ok"><p>Riuso: un solo generatore, poi scambio l'ordine della coppia.</p></li>
+      <li data-righe="18-23" data-segna="ints(size - 1)(r1)@ora|(i :: is, r2)@ok"><p>Es. 4. Ricorsione: un numero con lo stato attuale, gli altri <code>size − 1</code> con lo stato nuovo. <code>ints(3)(SimpleRNG(42))</code> = List(16159453, −1281479697, −340305902).</p></li>
+    </ol>
+  </figure>
+  <div class="box domanda-tua" data-tit="Dubbio: Int.MaxValue.toDouble + 1 va in overflow?">
+    <p>No. Il punto <code>.toDouble</code> viene eseguito <b>prima</b> del <code>+</code>: il +1 lo fa un Double, che arriva fino a circa 1.8 × 10³⁰⁸. Va in overflow solo se il +1 lo fa un Int, cioè se sposti la parentesi: <code>(Int.MaxValue + 1).toDouble</code>.</p>
+  </div>
+  <figure class="passi" data-titolo="Dove sta la parentesi decide chi fa il +1" data-legenda="dato:Int,ora:conversione,ok:giusto,no:overflow">
+    <div class="passo"><div class="espr"><mark class="dato">Int.MaxValue</mark> = 2147483647</div><p class="nota">Il più grande Int: 2³¹ − 1.</p></div>
+    <div class="passo"><div class="espr"><mark class="ora">Int.MaxValue.toDouble</mark> = 2.147483647E9</div><p class="nota">Prima si converte: da qui in poi è un Double.</p></div>
+    <div class="passo"><div class="espr">Int.MaxValue.toDouble <mark class="ok">+ 1</mark> = 2.147483648E9</div><p class="nota">Il +1 tra Double: nessun problema. È il divisore di <code>double</code>.</p></div>
+    <div class="passo"><div class="espr"><mark class="no">Int.MaxValue + 1</mark> = −2147483648</div><p class="nota">Senza conversione il +1 lo fa un Int: supera il massimo e ricomincia dal minimo (overflow).</p></div>
+    <div class="passo"><div class="espr">(<mark class="no">Int.MaxValue + 1</mark>).toDouble = −2.147483648E9</div><p class="nota">Convertire dopo non salva: il danno è già fatto. Con questo divisore <code>double</code> darebbe numeri negativi (2147483647 / −2147483648.0 = −0.99999…).</p></div>
+  </figure>
+  <div class="box domanda-tua" data-tit="Dubbio: lo stato finale di ints è lo stesso della prima ricorsione?">
+    <p>Ogni chiamata ha le <b>sue</b> variabili <code>r1</code> e <code>r2</code> — nomi uguali, caselle diverse — ma il valore che esce è lo stesso in tutti i livelli: lo stato nato dopo l'<b>ultimo</b> numero estratto, che risale.</p>
+    <pre class="cod" data-lang="pseudo" data-segna="G3*@ok">ints(3)(G0):   r1 = G1  →  chiama ints(2)(G1)
+  ints(2)(G1):   r1 = G2  →  chiama ints(1)(G2)
+    ints(1)(G2):   r1 = G3  →  chiama ints(0)(G3)
+      ints(0)(G3):            →  (Nil, G3)
+    ints(1):  r2 = G3       →  (i1 :: Nil, G3)
+  ints(2):    r2 = G3       →  (i2 :: …,  G3)
+ints(3):      r2 = G3       →  (i3 :: …,  G3)</pre>
+    <p>Deve essere l'ultimo: chi chiama <code>ints(3)</code> e poi vuole altri numeri deve ripartire da dopo i tre già usati. Restituire <code>r1</code> farebbe riuscire di nuovo il secondo numero.</p>
+  </div>
+  <div class="box idea" data-tit="Lo schema che si ripete">
+    <p>Tutte queste funzioni hanno la forma <span class="m">RNG =&gt; (A, RNG)</span>, e tutte hanno la stessa noia: prendere lo stato, chiamare, estrarre la coppia, passare lo stato nuovo. La pagina successiva dà un nome a questa forma, <code>Rand[A]</code>, e la nasconde: <a href="s05-rand.html">Rand[A]: generatori componibili</a>.</p>
+  </div>
+  <figure class="scena" data-scena="testimone" data-titolo="Lo stato come testimone di una staffetta"></figure>
+</section>
+
+<section>
+  <h2>Gli errori nel tuo file</h2>
+  <p>Il tuo <code>Exercises.scala</code> della settimana 5, com'è adesso nel repo (l'ho solo letto e compilato su una copia): Scala 3.8.4 si ferma con 4 errori.</p>
+  <div class="errori">
+    <div class="errore">
+<pre data-lang="scala">val (num,rand) = rng.nextInt
+(if num&lt;0 then -(num+1) else i, rand)</pre>
+<pre class="msg">-- [E006] Not Found Error: Exercises.scala:33:33
+    (if num&lt;0 then -(num+1) else i, rand)
+                                 ^
+                                 Not found: i</pre>
+      <div class="fix"><p>La variabile si chiama <code>num</code>, non <code>i</code>: <code>else num</code>.</p></div>
+    </div>
+    <div class="errore">
+<pre data-lang="scala">val (numDouble, rand1) = double(rng)
+val (numDouble, rand2) = nonNegativeInt(rand1)
+((numDouble, numDouble), rand2)</pre>
+<pre class="msg">-- [E161] Naming Error: Exercises.scala:52:9
+numDouble is already defined as value numDouble
+-- [E007] Type Mismatch Error: Exercises.scala:53:17
+                 Found:    (numDouble : Double)
+                 Required: Int</pre>
+      <div class="fix"><p>Nello stesso blocco un nome si dichiara una volta sola. Il secondo valore è un intero: chiamalo <code>numInt</code> e restituisci <code>((numDouble, numInt), rand2)</code>. Il secondo errore viene dal primo: la coppia conteneva due Double, il tipo di ritorno voleva (Double, Int).</p></div>
+    </div>
+    <div class="errore">
+<pre data-lang="scala">def flatMap[A,B](f: Rand[A])(g: A =&gt; Rand[B]): Rand[B] =
+  foldRight(empty)((a,acc) =&gt; f(a).append(acc))</pre>
+<pre class="msg">-- [E006] Not Found Error: Exercises.scala:109:4
+    foldRight(empty)((a,acc) =&gt; f(a).append(acc))
+    ^^^^^^^^^
+    Not found: foldRight</pre>
+      <div class="fix"><p>È il <code>flatMap</code> della LazyList della settimana 4, ma qui <code>f</code> è un generatore, non una lista: non c'è niente da "foldare". La soluzione è nella <a href="s05-rand.html">pagina su Rand</a>.</p></div>
+    </div>
+  </div>
+  <figure class="scena" data-scena="erroriutente" data-titolo="I quattro errori e la correzione"></figure>
+</section>
+
+</main>
+</body>
+</html>

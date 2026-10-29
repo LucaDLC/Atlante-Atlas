@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Bellman-Ford: cammini minimi con pesi negativi</title>
+<link rel="stylesheet" href="../assets/atlas.css">
+<link rel="stylesheet" href="../assets/tema.css">
+<script src="../assets/sito.js"></script>
+<script src="../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+const N = (id,x,y,t) => ({id,tipo:'nodo',x,y,t,r:20});
+const A = (id,da,a,t,extra) => Object.assign({id,tipo:'arco',da,a,dir:true,t},extra||{});
+SCENE.bf = {
+  w: 520, h: 250, lato: true,
+  legenda: 'ora:distanza aggiornata in questo giro,dato:distanza,no:peso negativo',
+  oggetti: [
+    N('s',60,120,'s'), N('a',230,50,'a'), N('b',230,190,'b'), N('c',400,120,'c'),
+    A('sa','s','a','4'), A('sb','s','b','5'), A('ab','a','b','−3',{tono:'no'}), A('ac','a','c','2'), A('bc','b','c','6'),
+    {id:'c1',tipo:'testo',x:20,y:240,t:'',size:12,bold:true,anchor:'start'}
+  ],
+  passi: [
+    { nota: 'Bellman-Ford: cammini minimi anche con pesi <b>negativi</b> (non ci sono cicli negativi). Distanze: <code>d(s) = 0</code>, altre ∞.', set:{s:{tono:'dato',sotto:'0'},a:{sotto:'∞'},b:{sotto:'∞'},c:{sotto:'∞'}} },
+    { nota: 'Giro 1: rilasso tutti gli archi. s→a: d(a) = 4. s→b: d(b) = 5. a→b con peso −3: 4 − 3 = 1 &lt; 5, quindi d(b) = 1. Un peso negativo può migliorare una distanza già fissata.', set:{a:{tono:'ora',sotto:'4'},b:{tono:'ora',sotto:'1'},c1:{t:'giro 1: a=4, b=1'}} },
+    { nota: 'Giro 2 e successivi: gli archi ridiscussi non migliorano più nulla. Con n nodi bastano <b>n − 1 giri</b>: ogni cammino semplice ha al più n − 1 archi.', set:{c:{tono:'ok',sotto:'6'},a:{tono:'dato',sotto:'4'},b:{tono:'dato',sotto:'1'},ac:{tono:'ok'},bc:{tono:'ok'},c1:{t:'d: s 0 · a 4 · b 1 · c 6',tono:'ok'}} },
+    { nota: 'Il costo è <code>O(n·m)</code> (n − 1 giri su m archi). Un ciclo negativo raggiungibile si rileva con un giro in più: se una distanza migliora ancora, il cammino minimo non esiste.', set:{c1:{t:'O(n·m); un giro in più scopre i cicli negativi'}} }
+  ]
+};
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Bellman-Ford: cammini minimi con pesi negativi</h1>
+  <p class="lede">Bellman-Ford trova il costo minimo da una sorgente anche con archi di peso negativo. È la stessa DP dei cammini in un DAG, con un contatore di archi.</p>
+</header>
+
+<section>
+  <h2>L'idea: rilassare tutti gli archi, n − 1 volte</h2>
+<p>Un cammino minimo semplice ha al più <code>n − 1</code> archi. Quindi basta ripetere <code>n − 1</code> volte: rilassa <i>tutti</i> gli archi.
+Ogni giro fissa cammini più lunghi di un arco in più. Equivalente DP: <code>OPT(i, v)</code> = costo minimo da <code>s</code> a <code>v</code> con al più <code>i</code> archi.</p>
+  <figure class="scena" data-scena="bf" data-titolo="Un arco negativo migliora una distanza già fissata"></figure>
+</section>
+<section>
+  <h2>Cicli negativi</h2>
+<p>Se un ciclo raggiungibile ha costo totale negativo, il cammino minimo non esiste: ogni giro lo abbassa ancora. Bellman-Ford lo rileva con
+un giro in più: se una distanza migliora ancora, c'è un ciclo negativo.</p>
+</section>
+<section>
+  <h2>Il costo</h2>
+<p><code>O(n·m)</code> tempo, <code>O(n)</code> spazio. Più lento di Dijkstra, ma funziona con pesi negativi, che Dijkstra non gestisce.</p>
+</section>
+<section>
+  <h2>Il codice, affiancato</h2>
+  <p>Questa pagina spiega il concetto. Il codice Java che lo implementa, con una spiegazione riga per riga e le note di sintassi che servono, è nella pagina affiancata.</p>
+  <p><a href="../codice/bellman-ford.html"><b>→ Codice Java di questo argomento</b></a></p>
+</section>
+<section>
+  <h2>All’esame</h2>
+<div class="box esame" data-tit="All’esame">
+<p>Pesi negativi → Bellman-Ford; cicli negativi → rilevarli con un giro in più. Frase: <i>"Relax all edges n−1 times; then one more pass detects a negative cycle. Time O(mn)."</i></p>
+</div>
+</section>
+<section>
+  <h2>Formulario rapido</h2>
+<div class="tab-wrap"><table class="tab"><thead><tr><th>algoritmo</th><th>pesi</th><th>tempo</th></tr></thead><tbody><tr><td>Dijkstra</td><td>pesi ≥ 0</td><td>O(m log n)</td></tr><tr><td>Bellman-Ford</td><td>pesi anche negativi</td><td>O(mn)</td></tr><tr><td>ciclo negativo</td><td>un giro in più migliora</td><td>il minimo non esiste</td></tr></tbody></table></div>
+</section>
+
+</main>
+</body>
+</html>

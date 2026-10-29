@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Scrivere una prova di NP-hardness</title>
+<link rel="stylesheet" href="../assets/atlas.css">
+<link rel="stylesheet" href="../assets/tema.css">
+<script src="../assets/sito.js"></script>
+<script src="../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  const V = { 1: [60, 60], 2: [200, 40], 3: [200, 150], 4: [60, 230], 5: [340, 230], 6: [340, 90] };
+  const E = [[5, 6], [2, 6], [1, 3], [2, 3], [3, 4], [3, 6], [1, 6]];
+  const S = { 1: '{3, 7}', 2: '{2, 4}', 3: '{3, 4, 5, 6}', 4: '{5}', 5: '{1}', 6: '{1, 2, 6, 7}' };
+  const ogg = Object.entries(V).map(([k, [x, y]]) => ({ id: 'v' + k, tipo: 'nodo', x, y, t: 'v' + k }));
+  E.forEach(([a, b], i) => ogg.push({ id: 'e' + (i + 1), tipo: 'arco', da: 'v' + a, a: 'v' + b, t: String(i + 1) }));
+  Object.keys(S).forEach((k, i) => ogg.push({ id: 's' + k, tipo: 'testo', x: 430, y: 35 + i * 34, t: `S${k} = ${S[k]}`, size: 13, anchor: 'start', nascosto: true }));
+  ogg.push({ id: 'u', tipo: 'testo', x: 430, y: 250, t: 'U = {1, …, 7},  k\' = k', size: 13, bold: true, anchor: 'start', nascosto: true });
+  const tuttiS = {}; Object.keys(S).forEach(k => tuttiS['s' + k] = { nascosto: false });
+  SCENE.vcsc = {
+    w: 640, h: 275, lato: false,
+    legenda: 'ok:vertex cover {v3, v6} = set cover {S3, S6},ora:insieme di un nodo',
+    oggetti: ogg,
+    passi: [
+      { nota: '<b>Given an instance G, k of Vertex Cover</b>: 6 nodi, 7 archi numerati da 1 a 7 (l\'esempio delle note di Husfeldt).' },
+      { nota: '<b>Construct an instance of Set Cover</b>: l\'universo U sono i numeri degli archi, {1, …, 7}.', set: { u: { nascosto: false } } },
+      { nota: 'Per ogni nodo v<sub>i</sub>, l\'insieme S<sub>i</sub> = gli archi che tocca. Per esempio v3 tocca gli archi 3, 4, 5, 6: S3 = {3, 4, 5, 6}. Stesso k.', set: Object.assign({}, tuttiS, { v3: { tono: 'ora' }, e3: { tono: 'ora' }, e4: { tono: 'ora' }, e5: { tono: 'ora' }, e6: { tono: 'ora' }, s3: { nascosto: false, tono: 'ora' } }) },
+      { nota: '<b>Correttezza</b>: {v3, v6} tocca tutti e 7 gli archi (vertex cover di 2 nodi). E S3 ∪ S6 = {3,4,5,6} ∪ {1,2,6,7} = U: set cover di 2 insiemi. Nei due sensi: nodi che toccano tutti gli archi ⇔ insiemi che coprono tutti i numeri. Verificato a forza bruta: 2 è il minimo per entrambi.', set: { v3: { tono: 'ok' }, v6: { tono: 'ok' }, e1: { tono: 'ok' }, e2: { tono: 'ok' }, e3: { tono: 'ok' }, e4: { tono: 'ok' }, e5: { tono: 'ok' }, e6: { tono: 'ok' }, e7: { tono: 'ok' }, s3: { tono: 'ok' }, s6: { tono: 'ok' } } },
+      { nota: '<b>Dimensione</b>: |U| = m, n insiemi, in tutto 2m numeri. Polinomiale (anzi lineare) nella dimensione di G.' }
+    ]
+  };
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Scrivere una prova di NP-hardness</h1>
+  <p class="lede">All'esame la domanda 6 vale 5 punti in quattro parti: quale problema, da quale problema noto, e la riduzione. Il docente ha scritto un <b>modello</b> da seguire ("How to NP-Hardness", ottobre 2025): usarlo evita l'errore più grave, la freccia al contrario.</p>
+</header>
+
+<section>
+  <h2>Il modello del corso</h2>
+  <div class="box inglese" data-tit="Template (Husfeldt)">
+    <p><b>Claim:</b> Some Problem is NP-hard.</p>
+    <p><b>Proof.</b> We will reduce from Other Problem, which is known to be NP-hard.</p>
+    <p>Let … be an instance of Other Problem. Construct an instance … of Some Problem as follows. (…)</p>
+    <p>For example, if … is an instance to Other Problem then the resulting instance to Some Problem is ….</p>
+    <p>(Note that the size of … is polynomial in the size of ….)</p>
+    <p>Now let … be a solution to Some Problem for the instance …. [then it gives a solution to Other Problem]. Conversely, if … is a solution to Other Problem, then ….</p>
+  </div>
+  <figure class="passi" data-titolo="I pezzi da non dimenticare">
+    <div class="passo"><div class="espr">1. "We will reduce <mark class="ok">from</mark> <mark class="dato">[noto]</mark>"</div><p class="nota">La direzione è tutto. Nelle note: con "to" al posto di "from" si prendono probabilmente 0 punti, perché l'argomento è sbagliato alla base.</p></div>
+    <div class="passo"><div class="espr">2. "Given an instance of <mark class="dato">[noto]</mark>, we construct an instance of <mark class="due">[nuovo]</mark>"</div><p class="nota">Il testo d'esame: "For the love of all that is Good and Holy, please start your reduction with words like…". Si parte da un'istanza <b>qualsiasi</b> del problema noto.</p></div>
+    <div class="passo"><div class="espr">3. la costruzione <mark class="ora">precisa</mark>, con i parametri</div><p class="nota">Quanti nodi, archi, insiemi, colori… in funzione di quelli dell'istanza di partenza.</p></div>
+    <div class="passo"><div class="espr">4. un <mark class="ora">esempio piccolo ma completo</mark></div><p class="nota">Richiesto esplicitamente: "both in general and for a small but complete example".</p></div>
+    <div class="passo"><div class="espr">5. dimensione <mark class="ok">polinomiale</mark></div><p class="nota">Una frase: "the constructed instance has size O(n + m)".</p></div>
+    <div class="passo"><div class="espr">6. correttezza nei <mark class="ok">due sensi</mark></div><p class="nota">Una soluzione del nuovo dà una soluzione del noto, e viceversa (per le versioni di decisione: sì ⇔ sì).</p></div>
+  </figure>
+</section>
+
+<section>
+  <h2>Esempio del corso: Vertex Cover ≤<sub>p</sub> Set Cover</h2>
+  <figure class="scena" data-scena="vcsc" data-titolo="La costruzione sull'esempio delle note"></figure>
+  <div class="box inglese" data-tit="La prova, nel formato">
+    <p><b>Claim:</b> Set Cover is NP-hard. <b>Proof.</b> We will reduce from Vertex Cover, which is known to be NP-hard. Let G, k be an instance of Vertex Cover, with vertices v₁, …, vₙ and edges e₁, …, eₘ. Construct an instance U, F, k' of Set Cover as follows: U = {1, …, m}, F = {S₁, …, Sₙ} where Sᵢ contains the indices of the edges incident on vᵢ, and k' = k. The resulting instance has size O(m + n). If a subfamily of k' sets covers U, the corresponding vertices touch every edge, so they form a vertex cover of size k. Conversely, a vertex cover C of size k gives the k sets Sᵢ for vᵢ ∈ C, which cover every edge index.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Svolto: esame 21 dicembre 2023, domanda 6</h2>
+  <p>I cinque problemi sono Bit Shelter, Cluster, Decrease, Expensive Ones, To Xor Or Not To Xor. Cluster è graph traversal (<a href="basi-grafi.html">BFS</a>), Decrease è DP (longest path in un DAG), Expensive Ones è greedy, To Xor è flusso (<a href="l08-riduzioni-flusso.html">svolto</a>). Resta:</p>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Domanda</th><th>Risposta</th></tr></thead>
+    <tbody>
+      <tr><td>(a) Which problem is NP-hard? (P1)</td><td><b>Bit Shelter</b>: scegliere il minimo numero di bitstring il cui or dà tutti 1</td></tr>
+      <tr><td>(b) Which well-known NP-hard problem? (P2)</td><td><b>Set Cover</b>: ogni bitstring è l'insieme delle posizioni in cui ha 1</td></tr>
+      <tr><td>(c) P1 ≤<sub>p</sub> P2 or P2 ≤<sub>p</sub> P1?</td><td><b>P2 ≤<sub>p</sub> P1</b>: Set Cover ≤<sub>p</sub> Bit Shelter</td></tr>
+    </tbody>
+  </table></div>
+  <figure class="passi" data-titolo="(d) La riduzione sull'esempio">
+    <div class="passo"><div class="espr">Set Cover: U = {1, 2, 3, 4},  S1 = {1, 2}, S2 = {2, 3}, S3 = {3, 4}, S4 = {4}</div><p class="nota">Un'istanza piccola ma completa.</p></div>
+    <div class="passo"><div class="espr">K = |U| = 4,  N = |F| = 4;  Sᵢ → bitstring con 1 in posizione j ⇔ j ∈ Sᵢ</div><p class="nota">1100, 0110, 0011, 0001.</p></div>
+    <div class="passo"><div class="espr"><mark class="ok">1100 ∨ 0011 = 1111</mark>  ⇔  <mark class="ok">S1 ∪ S3 = U</mark></div><p class="nota">L'or dei bitstring scelti ha tutti 1 esattamente quando gli insiemi scelti coprono U. Minimo 2 in entrambi (verificato a forza bruta).</p></div>
+  </figure>
+  <div class="box inglese" data-tit="Risposta modello (d)">
+    <p>"Given an instance U = {1, …, K}, F = {S₁, …, S_N} of Set Cover, we construct an instance of Bit Shelter with N bitstrings of length K: bitstring i has a 1 in position j if and only if j ∈ Sᵢ. [Example above.] The construction takes O(NK) time. A set of bitstrings has bitwise-or 1…1 exactly when the corresponding sets cover every element of U, so a minimum solution of Bit Shelter gives a minimum set cover, and conversely.</p>
+    <p>Two details: Bit Shelter guarantees that the or of all strings is 1…1 and that the strings are distinct. So we first check in polynomial time whether the union of F is U (if not, the Set Cover answer is simply 'no'), and we remove duplicate sets, which does not change the optimum."</p>
+  </div>
+  <div class="box attenzione" data-tit="Perché i due dettagli contano">
+    <p>La riduzione deve funzionare per <b>ogni</b> istanza del problema noto. Se l'istanza di Set Cover non soddisfa le garanzie dell'input di Bit Shelter (unione non completa, insiemi ripetuti), la trasformazione non produrrebbe un input valido. Notarlo e sistemarlo è il tipo di precisione che il docente chiede.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Dagli esami passati (soluzioni dei TA)</h2>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Esame</th><th>Problema nuovo</th><th>Ridurre da</th><th>L'idea</th></tr></thead>
+    <tbody>
+      <tr><td>gen 2019</td><td>Antipathy</td><td>Longest Path</td><td>stessi nodi, archi del grafo <b>complementare</b></td></tr>
+      <tr><td>21 dic 2021</td><td>Big Cycle</td><td>Hamiltonian Cycle</td><td>stesso grafo, r = n: un ciclo lungo almeno n è hamiltoniano</td></tr>
+      <tr><td>9 gen 2023</td><td>Sale (domino)</td><td>Vertex Cover</td><td>ogni arco diventa una tessera con i due nodi come numeri; comprare numeri = scegliere nodi</td></tr>
+      <tr><td>note del corso</td><td>Russian Hacking</td><td>Vertex Cover</td><td>nodi → router, archi → fili, "just remember to monitor every wire"</td></tr>
+      <tr><td>21 dic 2023</td><td>Bit Shelter</td><td>Set Cover</td><td>insiemi → bitstring</td></tr>
+    </tbody>
+  </table></div>
+  <div class="box idea" data-tit="Quasi sempre è 'lo stesso problema con un altro nome'">
+    <p>In tutti questi esami la riduzione è quasi l'identità: si traduce ogni pezzo dell'istanza nota in un pezzo del problema nuovo. Non servono gadget complicati come quelli di 3-SAT. Il lavoro è riconoscere <b>quale</b> problema noto si nasconde, e scrivere la traduzione con precisione.</p>
+  </div>
+</section>
+
+</main>
+</body>
+</html>

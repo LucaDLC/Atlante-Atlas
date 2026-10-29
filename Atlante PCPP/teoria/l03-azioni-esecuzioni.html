@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Azioni ed esecuzioni</title>
+<link rel="stylesheet" href="../assets/atlas.css">
+<link rel="stylesheet" href="../assets/tema.css">
+<script src="../assets/sito.js"></script>
+<script src="../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  const Y = { m: 60, t1: 130, t2: 200 };
+  const ogg = [
+    { id: 'lm', tipo: 'testo', x: 24, y: Y.m, t: 'm', size: 15, bold: true },
+    { id: 'l1', tipo: 'testo', x: 24, y: Y.t1, t: 't1', size: 15, bold: true },
+    { id: 'l2', tipo: 'testo', x: 24, y: Y.t2, t: 't2', size: 15, bold: true }
+  ];
+  const az = [['in', 'm', 'init', 'x, y, a, b = 0'], ['s1', 'm', 'st1', ''], ['s2', 'm', 'st2', ''], ['a1', 't1', '1', 'a = 1'], ['b3', 't2', '3', 'b = 1'],
+              ['a2', 't1', '2', 'x = b'], ['b4', 't2', '4', 'y = a'], ['j1', 'm', 'j1', ''], ['j2', 'm', 'j2', ''], ['p5', 'm', '5', 'print']];
+  az.forEach(([id, th, t, s], k) => ogg.push({ id, tipo: 'nodo', r: 15, x: 70 + k * 52, y: Y[th], t, sotto: s, nascosto: true }));
+  ogg.push({ id: 'mem', tipo: 'testo', x: 330, y: 250, t: 'a = 0   b = 0   x = 0   y = 0', size: 13, bold: true });
+  const vedi = (ids, tono) => Object.fromEntries(ids.map(i => [i, { nascosto: false, tono }]));
+  SCENE.esecuzione = {
+    w: 620, h: 265, lato: false,
+    legenda: 'dato:azione del main,ora:azione appena eseguita,ok:già eseguita',
+    oggetti: ogg,
+    passi: [
+      { nota: 'Tre thread: il main m, t1 e t2. Un\'esecuzione è una sequenza di azioni, una per colonna, da sinistra a destra.' },
+      { nota: 'Il main inizializza le variabili (le quattro init, qui riunite) e avvia i due thread.', set: vedi(['in', 's1', 's2'], 'dato') },
+      { nota: 't1(1): a = 1.', set: Object.assign(vedi(['a1'], 'ora'), { mem: { t: 'a = 1   b = 0   x = 0   y = 0' } }) },
+      { nota: 't2(3): b = 1. I passi dei due thread si mescolano: è uno degli interleaving possibili.', set: Object.assign(vedi(['b3'], 'ora'), { a1: { tono: 'ok' }, mem: { t: 'a = 1   b = 1   x = 0   y = 0' } }) },
+      { nota: 't1(2): x = b, e b vale già 1.', set: Object.assign(vedi(['a2'], 'ora'), { b3: { tono: 'ok' }, mem: { t: 'a = 1   b = 1   x = 1   y = 0' } }) },
+      { nota: 't2(4): y = a = 1.', set: Object.assign(vedi(['b4'], 'ora'), { a2: { tono: 'ok' }, mem: { t: 'a = 1   b = 1   x = 1   y = 1' } }) },
+      { nota: 'Il main aspetta i due thread (join) e stampa: questa esecuzione stampa <b>(1,1)</b>. Con un altro ordine delle quattro azioni centrali uscirebbe (0,1) o (1,0).', set: Object.assign(vedi(['j1', 'j2', 'p5'], 'dato'), { b4: { tono: 'ok' }, p5: { nascosto: false, tono: 'ok', sotto: 'print (1,1)' } }) }
+    ]
+  };
+})();
+</script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  const T = (id, x, y, t, extra) => Object.assign({ id, tipo: 'testo', x, y, t, size: 13 }, extra || {});
+  const R = (id, x, y, w, h, t, extra) => Object.assign({ id, tipo: 'rett', x, y, w, h, t }, extra || {});
+  const N = (id, x, y, t, tono, extra) => Object.assign({ id, tipo: 'nodo', x, y, t, tono, r: 22 }, extra || {});
+
+  // 1. sequential consistency
+  const out = (id, x, t) => R(id, x, 90, 100, 44, t, { nascosto: true });
+  SCENE.seqcons = {
+    w: 600, h: 240, lato: true,
+    legenda: 'ok:sequenzialmente consistente,no:non SC (riordino)',
+    oggetti: [
+      T('h', 300, 30, 'PossibleReordering: che cosa può stampare?', { bold: true, size: 13 }),
+      out('o1', 30, '(0,1)'), out('o2', 170, '(1,0)'), out('o3', 310, '(1,1)'), out('o4', 450, '(0,0)'),
+      T('c', 300, 180, '', { size: 12 }), T('c2', 300, 210, '', { size: 12, bold: true })
+    ],
+    passi: [
+      { nota: "<b>Sequential consistency</b> (Lamport): il comportamento \"normale\". Ogni thread esegue le sue istruzioni in ordine, e le operazioni sembrano avvenire una alla volta, in un istante, mescolate in qualche interleaving." },
+      { nota: "Con PossibleReordering, i 6 interleaving dei 4 passi danno solo (0,1), (1,0) e (1,1). Sono gli output <b>sequenzialmente consistenti</b>.", set: { o1: { nascosto: false, tono: 'ok' }, o2: { nascosto: false, tono: 'ok' }, o3: { nascosto: false, tono: 'ok' }, c: { t: '6 interleaving → 3 output possibili' } } },
+      { nota: "Eppure, eseguendo il programma, a volte esce <b>(0,0)</b>: compilatore e CPU hanno scambiato due istruzioni indipendenti. Nessun interleaving lo spiega: non è sequenzialmente consistente, è un comportamento \"paradossale\".", set: { o4: { nascosto: false, tono: 'no' }, c: { t: '(0,0): serve un riordino' } } },
+      { nota: "Garantire la SC sempre costerebbe tutte le ottimizzazioni. Il <b>Java Memory Model</b> fa un patto: se il programma è <b>correctly synchronized</b> (nessuna data race), ogni esecuzione è sequenzialmente consistente. Le regole del JMM servono proprio a decidere se un programma lo è.", set: { c2: { t: 'niente data race ⇒ sequential consistency', tono: 'ok' } } }
+    ]
+  };
+
+  // 2. azioni per tipo
+  const A = [['m(init(x))', 'v'], ['m(init(b))', 'v'], ['m(start(t1))', 's'], ['t1(1): a=1', 'v'], ['t1(2): x=b', 'v'], ['m(join(t1))', 's'], ['m(5): println', 'o']];
+  const og2 = [];
+  A.forEach(([t], i) => og2.push(R('a' + i, 20 + (i % 4) * 142, 40 + Math.floor(i / 4) * 70, 132, 40, t)));
+  og2.push(T('c', 300, 200, '', { bold: true, size: 12 }), T('c2', 300, 226, '', { size: 12 }));
+  const colora = (tipo, tono) => Object.fromEntries(A.map(([, k], i) => ['a' + i, { tono: k === tipo ? tono : null }]));
+  SCENE.azioni = {
+    w: 600, h: 240, lato: true,
+    legenda: 'dato:accesso a variabile,ora:sincronizzazione,due:altro',
+    oggetti: og2,
+    passi: [
+      { nota: "Il JMM ragiona su <b>azioni</b>: coppie t(o), \"il thread t esegue l'operazione o\". Qui alcune azioni di PossibleReordering, con i nomi della slide 13. Ce ne sono di tre tipi." },
+      { nota: "<b>Accessi a variabili</b> (<i>variable access</i>): letture e scritture di variabili condivise. <code>x=b</code> è sia una lettura (di b) sia una scrittura (di x).", set: Object.assign(colora('v', 'dato'), { c: { t: 'letture e scritture di variabili' } }) },
+      { nota: "<b>Sincronizzazione</b> (<i>synchronization</i>): start, join, lock, unlock, letture e scritture di volatile. Sono le azioni che creano ordini <b>tra</b> thread diversi.", set: Object.assign(colora('s', 'ora'), { c: { t: 'start, join, lock, unlock, volatile' } }) },
+      { nota: "<b>Altro</b> (<i>other</i>): tutto il resto, per esempio stampare. Per trovare data race contano soprattutto i primi due tipi.", set: Object.assign(colora('o', 'due'), { c: { t: 'println, new, …' }, c2: { t: 'data race: contano accessi e sincronizzazione' } }) }
+    ]
+  };
+
+  // 3. program order
+  SCENE.programorder = {
+    w: 600, h: 262, lato: true,
+    legenda: 'dato:program order del main,ora:di t1,due:di t2,no:nessun ordine',
+    oggetti: [
+      T('lm', 30, 50, 'm', { bold: true }), T('l1', 30, 140, 't1', { bold: true }), T('l2', 30, 220, 't2', { bold: true }),
+      N('m1', 90, 50, 'init', 'dato', { r: 20 }), N('m2', 190, 50, 'st1', 'dato', { r: 20 }), N('m3', 290, 50, 'st2', 'dato', { r: 20 }), N('m4', 390, 50, 'j1', 'dato', { r: 20 }), N('m5', 490, 50, 'j2', 'dato', { r: 20 }), N('m6', 570, 50, '5', 'dato', { r: 18 }),
+      N('a1', 240, 140, '1', 'ora'), N('a2', 340, 140, '2', 'ora'),
+      N('b1', 240, 220, '3', 'due'), N('b2', 340, 220, '4', 'due'),
+      { id: 'pm1', tipo: 'arco', da: 'm1', a: 'm2', dir: true, nascosto: true }, { id: 'pm2', tipo: 'arco', da: 'm2', a: 'm3', dir: true, nascosto: true }, { id: 'pm3', tipo: 'arco', da: 'm3', a: 'm4', dir: true, nascosto: true }, { id: 'pm4', tipo: 'arco', da: 'm4', a: 'm5', dir: true, nascosto: true }, { id: 'pm5', tipo: 'arco', da: 'm5', a: 'm6', dir: true, nascosto: true },
+      { id: 'pa', tipo: 'arco', da: 'a1', a: 'a2', dir: true, nascosto: true }, { id: 'pb', tipo: 'arco', da: 'b1', a: 'b2', dir: true, nascosto: true },
+      { id: 'q', tipo: 'arco', da: 'a1', a: 'b1', t: '?', tono: 'no', nascosto: true },
+      T('c', 480, 180, '', { size: 12 })
+    ],
+    passi: [
+      { nota: "Il <b>program order</b>: dentro <b>un</b> thread, a viene prima di b se, eseguendo quel thread da solo, a verrebbe eseguita prima di b. È definito sul <b>codice</b>: i riordini di compilatore e CPU non contano." },
+      { nota: "Per il main: init → start(t1) → start(t2) → join(t1) → join(t2) → (5). Una catena: ogni coppia di azioni del main è ordinata (ordine totale).", set: { pm1: { nascosto: false }, pm2: { nascosto: false }, pm3: { nascosto: false }, pm4: { nascosto: false }, pm5: { nascosto: false } } },
+      { nota: "Per t1: t1(1) → t1(2). Per t2: t2(3) → t2(4).", set: { pa: { nascosto: false }, pb: { nascosto: false } } },
+      { nota: "E fra t1(1) e t2(3)? Sono di thread <b>diversi</b>: il program order non dice niente. Per ordinare azioni di thread diversi servono le regole di sincronizzazione (<a href=\"l03-happens-before.html\">happens-before</a>).", set: { q: { nascosto: false }, c: { t: 'fra thread diversi: nessun ordine' } } }
+    ]
+  };
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Azioni ed esecuzioni</h1>
+  <p class="lede">Visibility e reordering rendono il comportamento reale difficile da prevedere guardando l'hardware. Il <b>Java Memory Model</b> (JMM) dà regole a livello di linguaggio per dire quali esecuzioni sono valide. Si parte da tre parole: <b>azione</b>, <b>esecuzione</b>, <b>program order</b>.</p>
+</header>
+
+<section>
+  <h2>Perché serve un memory model</h2>
+  <ul>
+    <li>L'hardware cambia da un computer all'altro: istruzioni diverse, gestione della memoria diversa.</li>
+    <li>Compilatori, runtime e CPU fanno ottimizzazioni (riordino, riscrittura del codice) che producono risultati "paradossali": il ciclo che non termina, l'output (0,0).</li>
+    <li>Il JMM è un insieme di regole: la JVM genera solo esecuzioni valide per quelle regole, <b>su qualsiasi hardware</b>. Così il programmatore può prevedere cosa succede.</li>
+  </ul>
+  <div class="box regola" data-tit="Sequential consistency (Lamport)">
+    <p>Il comportamento "normale" che ti aspetti. Un'esecuzione concorrente è <b>sequenzialmente consistente</b> se 1) rispetta l'ordine delle istruzioni dentro ogni thread e 2) le operazioni sembrano avvenire in un istante, una alla volta. L'output (0,0) di <code>PossibleReordering</code> <b>non</b> è sequenzialmente consistente.</p>
+  </div>
+  <p>Garantirla per ogni programma costerebbe tutte le ottimizzazioni. Il JMM la garantisce solo per i programmi <b>correctly synchronized</b> (<a href="l03-data-race.html">pagina sui data race</a>).</p>
+  <figure class="scena" data-scena="seqcons" data-titolo="Output sequenzialmente consistenti, e (0,0)"></figure>
+</section>
+
+<section>
+  <h2>Azioni: "chi fa cosa"</h2>
+  <div class="box regola" data-tit="Definizione">
+    <p>Un'<b>azione</b> è una coppia <code>t(o)</code>: <code>t</code> è il thread, <code>o</code> l'operazione. Per esempio <code>t1(1)</code> = il thread t1 esegue l'operazione numerata (1).</p>
+  </div>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Tipo</th><th>Esempi</th></tr></thead>
+    <tbody>
+      <tr><td><b>Variable access</b></td><td>lettura o scrittura di una variabile del programma: <code>a=1</code> (scrittura di a), <code>x=b</code> (lettura di b e scrittura di x)</td></tr>
+      <tr><td><b>Synchronization</b></td><td>primitive di sincronizzazione: <code>lock()</code>, <code>unlock()</code>, <code>start()</code>, <code>join()</code>…</td></tr>
+      <tr><td><b>Other</b></td><td>tutto il resto (creare un oggetto, stampare…)</td></tr>
+    </tbody>
+  </table></div>
+  <figure class="codice" data-titolo="Dare un nome a ogni operazione (slide 13)">
+<pre data-lang="java">// variabili condivise
+x = 0;   // (init(x))
+y = 0;   // (init(y))
+a = 0;   // (init(a))
+b = 0;   // (init(b))
+
+Thread one = new Thread(() -> {
+    a = 1;   // (1)
+    x = b;   // (2)
+});
+Thread other = new Thread(() -> {
+    b = 1;   // (3)
+    y = a;   // (4)
+});
+
+one.start();     // (start(t1))
+other.start();   // (start(t2))
+one.join();      // (join(t1))
+other.join();    // (join(t2))
+System.out.println("(" + x + "," + y + ")");   // (5)</pre>
+    <ol class="spiega">
+      <li data-righe="2-5" data-segna="(init(x))@dato|(init(y))@dato|(init(a))@dato|(init(b))@dato"><p>Il main (thread <code>m</code>) inizializza le variabili: azioni <code>m(init(x))</code>… Sono <b>variable access</b> (scritture).</p></li>
+      <li data-righe="8-9" data-segna="(1)@ora|(2)@ora"><p>Le operazioni di <code>one</code>, che chiamiamo t1: <code>t1(1)</code> scrive <code>a</code>, <code>t1(2)</code> legge <code>b</code> e scrive <code>x</code>.</p></li>
+      <li data-righe="12-13" data-segna="(3)@due|(4)@due"><p>Quelle di <code>other</code> (t2): <code>t2(3)</code>, <code>t2(4)</code>.</p></li>
+      <li data-righe="16-19" data-segna="(start(t1))@ok|(start(t2))@ok|(join(t1))@ok|(join(t2))@ok"><p><b>Synchronization</b>: <code>m(start(t1))</code>, <code>m(start(t2))</code>, <code>m(join(t1))</code>, <code>m(join(t2))</code>.</p></li>
+      <li data-righe="20" data-segna="(5)@dato"><p><code>m(5)</code> legge <code>x</code> e <code>y</code>.</p></li>
+    </ol>
+  </figure>
+  <figure class="scena" data-scena="azioni" data-titolo="Tre tipi di azioni"></figure>
+</section>
+
+<section>
+  <h2>Esecuzioni</h2>
+  <div class="box regola" data-tit="Definizione">
+    <p>Un'<b>esecuzione</b> è una sequenza di azioni <span class="m">σ = α<sub>1</sub>, α<sub>2</sub>, α<sub>3</sub>, …</span></p>
+  </div>
+  <figure class="passi" data-titolo="Domanda della slide: scrivi un'esecuzione possibile">
+    <div class="passo"><div class="espr"><mark class="dato">m(init(x)), m(init(y)), m(init(a)), m(init(b))</mark></div><p class="nota">Il main inizializza.</p></div>
+    <div class="passo"><div class="espr">…, <mark class="ok">m(start(t1))</mark>, <mark class="ok">m(start(t2))</mark></div><p class="nota">Avvia i due thread.</p></div>
+    <div class="passo"><div class="espr">…, <mark class="ora">t1(1)</mark>, <mark class="due">t2(3)</mark>, <mark class="ora">t1(2)</mark>, <mark class="due">t2(4)</mark></div><p class="nota">I passi dei thread, mescolati in uno dei modi possibili.</p></div>
+    <div class="passo"><div class="espr">…, <mark class="ok">m(join(t1))</mark>, <mark class="ok">m(join(t2))</mark>, <mark class="dato">m(5)</mark></div><p class="nota">Il main aspetta e stampa. Questa esecuzione stampa (1,1).</p></div>
+  </figure>
+  <figure class="scena" data-scena="esecuzione" data-titolo="Un'esecuzione, azione per azione"></figure>
+</section>
+
+<section>
+  <h2>Program order</h2>
+  <div class="box regola" data-tit="Definizione">
+    <p>Date due azioni <code>a</code>, <code>b</code> dello <b>stesso</b> thread, <code>a</code> viene prima di <code>b</code> nel <b>program order</b> se, eseguendo quel thread da solo, <code>a</code> verrebbe eseguita prima di <code>b</code>. È definito sul codice: i riordini di compilatore o CPU non contano.</p>
+  </div>
+  <p>Per ogni thread è un <b>ordine totale</b>: presa qualsiasi coppia di sue azioni, una delle due viene prima.</p>
+  <figure class="passi" data-titolo="Scrivere il program order come coppie">
+    <div class="passo">
+      <div class="espr">(<mark class="dato">m(init(x))</mark>, <mark class="dato">m(init(y))</mark>)
+(m(init(y)), m(init(a)))
+(m(init(a)), m(init(b)))
+…
+(m(join(t2)), m(5))</div>
+      <p class="nota">Per il main: ogni azione e quella <b>subito dopo</b>.</p>
+    </div>
+    <div class="passo">
+      <div class="espr">m(init(x)) → m(init(y)) → m(init(a)) → m(init(b)) → m(start(t1)) → m(start(t2)) → m(join(t1)) → m(join(t2)) → m(5)</div>
+      <p class="nota">Si può scrivere come una catena. È una scorciatoia: <code>a → b → c</code> vuol dire le coppie <b>(a,b), (b,c) e anche (a,c)</b>.</p>
+    </div>
+    <div class="passo">
+      <div class="espr"><mark class="ora">t1(1) → t1(2)</mark>
+<mark class="due">t2(3) → t2(4)</mark></div>
+      <p class="nota">Il program order di t1 e di t2.</p>
+    </div>
+    <div class="passo">
+      <div class="espr">(t1(1), t2(3))  ?</div>
+      <p class="nota">Il program order <b>non dice niente</b> su coppie di thread diversi. Per quelle servono le regole di happens-before: <a href="l03-happens-before.html">pagina successiva</a>.</p>
+    </div>
+  </figure>
+  <figure class="scena" data-scena="programorder" data-titolo="Catene dentro ogni thread, niente fra thread"></figure>
+</section>
+
+</main>
+</body>
+</html>

@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sequence alignment</title>
+<link rel="stylesheet" href="../assets/atlas.css">
+<link rel="stylesheet" href="../assets/tema.css">
+<script src="../assets/sito.js"></script>
+<script src="../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  const x = 'ocurrance', y = 'occurrence';
+  const M = [[0,1,2,3,4,5,6,7,8,9,10],[1,0,1,2,3,4,5,6,7,8,9],[2,1,0,1,2,3,4,5,6,7,8],[3,2,1,1,1,2,3,4,5,6,7],[4,3,2,2,2,1,2,3,4,5,6],[5,4,3,3,3,2,1,2,3,4,5],[6,5,4,4,4,3,2,2,3,4,5],[7,6,5,5,5,4,3,3,2,3,4],[8,7,6,5,6,5,4,4,3,2,3],[9,8,7,6,6,6,5,4,4,3,2]];
+  const cammino = [[9,10],[8,9],[7,8],[6,7],[5,6],[4,5],[3,4],[2,3],[1,2],[1,1],[0,0]];
+  const vuota = () => M.map(r => r.map(() => ''));
+  const fino = k => M.map((r, i) => r.map((v, j) => (i === 0 || j === 0 || i <= k) ? String(v) : ''));
+  const passi = [{ nota: 'x = <b>ocurrance</b> (righe), y = <b>occurrence</b> (colonne). Costi: gap = 1, lettere diverse = 1, uguali = 0. La cella (i, j) conterrà il costo minimo per allineare i primi i caratteri di x con i primi j di y.', righe: [] }];
+  passi.push({ nota: 'Casi base: allineare i caratteri con la stringa vuota costa un gap ciascuno. Prima riga 0, 1, …, 10; prima colonna 0, 1, …, 9.', righe: [1, 2], set: { g: { valori: fino(0), toni: {} } } });
+  for (let i = 1; i <= 9; i++) {
+    const toni = {}; for (let j = 0; j <= 10; j++) toni[i + ',' + j] = 'ora';
+    passi.push({ nota: i === 1 ? 'Riga 1 (il carattere <b>o</b>). Ogni cella guarda tre vicine già pronte: <b>diagonale</b> + costo della coppia, <b>sopra</b> + gap, <b>sinistra</b> + gap, e prende il minimo. (1,1): o = o, 0 + 0 = 0.' : `Riga ${i} (<b>${x[i - 1]}</b>): stessa regola, cella per cella da sinistra a destra.`, righe: [3, 4, 5, 6], set: { g: { valori: fino(i), toni } } });
+  }
+  const tc = {}; cammino.forEach(([i, j]) => tc[i + ',' + j] = 'ok');
+  passi.push({ nota: 'In basso a destra: <b>costo 2</b>. Per l\'allineamento torno indietro seguendo da dove arriva ogni minimo. Il passo (1,2)→(1,1) è orizzontale: la seconda <b>c</b> di occurrence resta senza compagna (un gap). Più avanti a/e è l\'unica coppia diversa.', righe: [], set: { g: { valori: fino(9), toni: tc }, al: { t: 'o-currance / occurrence', tono: 'ok' } } });
+  SCENE.allinea = {
+    w: 400, h: 305, lato: true,
+    legenda: 'ora:riga in calcolo,ok:cammino dell\'allineamento ottimo',
+    codice: { lang: 'pseudo', testo: `for i = 0..m: M[i][0] ← iδ
+for j = 0..n: M[0][j] ← jδ
+for i = 1..m, j = 1..n:
+  M[i][j] ← min( α(xᵢ, yⱼ) + M[i−1][j−1],
+                 δ + M[i−1][j],
+                 δ + M[i][j−1] )` },
+    oggetti: [
+      { id: 'g', tipo: 'griglia', x: 10, y: 8, cw: 32, ch: 24, cwR: 30, intC: ['', ...y], intR: ['', ...x], valori: vuota() },
+      { id: 'al', tipo: 'testo', x: 200, y: 296, t: '', size: 13, bold: true }
+    ],
+    passi
+  };
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Sequence alignment</h1>
+  <p class="lede">Quanto si somigliano due stringhe? Il correttore che propone "occurrence" per "ocurrance", il confronto tra sequenze di DNA: si cerca l'<b>allineamento</b> di costo minimo (K&amp;T 6.6). È programmazione dinamica su una tabella <b>a due dimensioni</b>.</p>
+</header>
+
+<section>
+  <h2>Il problema</h2>
+  <ul>
+    <li>Due stringhe <span class="m">x = x₁…x<sub>m</sub></span> e <span class="m">y = y₁…y<sub>n</sub></span>.</li>
+    <li>Un <b>allineamento</b> accoppia caratteri di x con caratteri di y, senza incroci (l'ordine resta). Un carattere senza compagno è un <b>gap</b>.</li>
+    <li>Costi: ogni gap costa <span class="m">δ</span>; accoppiare p con q costa <span class="m">α<sub>pq</sub></span> (0 se uguali).</li>
+    <li>Obiettivo: l'allineamento di costo minimo.</li>
+  </ul>
+  <p>Esempio: <code>o-currance</code> sopra <code>occurrence</code>: un gap e la coppia a/e. Costo <span class="m">δ + α<sub>ae</sub></span>.</p>
+</section>
+
+<section>
+  <h2>La ricorrenza</h2>
+  <figure class="passi" data-titolo="OPT(i, j) = costo minimo per allineare x₁…xᵢ con y₁…yⱼ">
+    <div class="passo"><div class="espr">guardo gli <mark class="dato">ultimi caratteri</mark>: xᵢ e yⱼ</div><p class="nota">Nell'allineamento ottimo succede una di tre cose.</p></div>
+    <div class="passo"><div class="espr">1. xᵢ è accoppiato con yⱼ:  <mark class="ok">α(xᵢ, yⱼ) + OPT(i−1, j−1)</mark></div><p class="nota">Pago la coppia e allineo il resto.</p></div>
+    <div class="passo"><div class="espr">2. xᵢ è un gap:  <mark class="ora">δ + OPT(i−1, j)</mark></div><p class="nota">xᵢ non ha compagno; yⱼ resta da sistemare.</p></div>
+    <div class="passo"><div class="espr">3. yⱼ è un gap:  <mark class="due">δ + OPT(i, j−1)</mark></div><p class="nota">Simmetrico.</p></div>
+    <div class="passo"><div class="espr">OPT(i, j) = <mark class="ok">min</mark> dei tre;   OPT(i, 0) = iδ,   OPT(0, j) = jδ</div><p class="nota">Non possono essere accoppiati entrambi con altri: gli accoppiamenti non si incrociano. Risposta: OPT(m, n).</p></div>
+  </figure>
+  <figure class="scena" data-scena="allinea" data-titolo="La tabella di ocurrance / occurrence"></figure>
+  <p class="piccolo">Tabella e cammino calcolati con uno script Python, stesse regole.</p>
+</section>
+
+<section>
+  <h2>Tempo e spazio</h2>
+  <figure class="passi" data-titolo="Conto">
+    <div class="passo"><div class="espr"><mark class="dato">(m + 1)(n + 1)</mark> celle, ognuna in O(1)</div><p class="nota">Tre letture e un minimo.</p></div>
+    <div class="passo"><div class="espr">tempo <mark class="ok">O(mn)</mark>, spazio <mark class="ok">O(mn)</mark></div><p class="nota">Ricostruzione all'indietro: O(m + n) passi.</p></div>
+    <div class="passo"><div class="espr">solo il <b>valore</b>: bastano <mark class="ora">due righe</mark> ⇒ spazio O(n)</div><p class="nota">La riga i usa solo la riga i − 1.</p></div>
+    <div class="passo"><div class="espr">anche l'<b>allineamento</b> in spazio O(m + n): K&amp;T 6.7</div><p class="nota">Combinando la tabella con divide et impera (algoritmo di Hirschberg), sempre in tempo O(mn).</p></div>
+  </figure>
+  <div class="box idea" data-tit="Allineamento = cammino minimo">
+    <p>La tabella è un grafo a griglia: ogni cella ha archi verso destra (costo δ), in basso (δ) e in diagonale (α). L'allineamento ottimo è il cammino più corto dall'angolo in alto a sinistra a quello in basso a destra.</p>
+  </div>
+</section>
+
+</main>
+</body>
+</html>

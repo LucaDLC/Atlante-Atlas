@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Codice: Bellman-Ford in Java</title>
+<link rel="stylesheet" href="../assets/atlas.css">
+<link rel="stylesheet" href="../assets/tema.css">
+<script src="../assets/sito.js"></script>
+<script src="../assets/atlas.js" defer></script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Codice: Bellman-Ford in Java</h1>
+  <p class="lede">Cammini minimi con pesi negativi: n − 1 giri di rilassamento su tutti gli archi, e il controllo del ciclo negativo con un giro in più.</p>
+</header>
+
+<section>
+  <h2>I giri di rilassamento</h2>
+  <p>Ogni giro scorre tutti gli archi. Dopo n − 1 giri le distanze sono definitive, se non ci sono cicli negativi.</p>
+  <figure class="codice" data-titolo="I giri di rilassamento">
+<pre data-lang="java">import java.io.*;
+import java.util.*;
+
+public class Main {
+    public static void main(String[] args) throws IOException {
+        BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
+        StringTokenizer st = new StringTokenizer(in.readLine());
+        int n = Integer.parseInt(st.nextToken());
+        int m = Integer.parseInt(st.nextToken());
+        int s = Integer.parseInt(st.nextToken());
+
+        // Archi diretti {u, v, peso}: il peso puo essere negativo.
+        int[][] archi = new int[m][3];
+        for (int i = 0; i &lt; m; i++) {
+            st = new StringTokenizer(in.readLine());
+            archi[i][0] = Integer.parseInt(st.nextToken());
+            archi[i][1] = Integer.parseInt(st.nextToken());
+            archi[i][2] = Integer.parseInt(st.nextToken());
+        }
+
+        final long INF = Long.MAX_VALUE / 4;     // infinito che non va in overflow sommando un peso
+        long[] dist = new long[n];
+        Arrays.fill(dist, INF);
+        dist[s] = 0;
+
+        // n-1 giri: ogni giro rilassa tutti gli archi.
+        for (int giro = 1; giro &lt; n; giro++) {
+            for (int[] a : archi) {
+                if (dist[a[0]] != INF &amp;&amp; dist[a[0]] + a[2] &lt; dist[a[1]]) {
+                    dist[a[1]] = dist[a[0]] + a[2];
+                }
+            }
+        }
+        // Un giro in piu: se una distanza migliora ancora, c e un ciclo negativo.
+        for (int[] a : archi) {
+            if (dist[a[0]] != INF &amp;&amp; dist[a[0]] + a[2] &lt; dist[a[1]]) {
+                System.out.println("ciclo negativo raggiungibile");
+                return;
+            }
+        }
+        StringBuilder out = new StringBuilder();
+        for (int v = 0; v &lt; n; v++) {
+            out.append(v).append(' ').append(dist[v] == INF ? "inf" : String.valueOf(dist[v])).append('\n');
+        }
+        System.out.print(out);
+    }
+}</pre>
+    <ol class="spiega">
+    <li data-righe="21"><p>Infinito come <code>long</code> diviso per 4: sommarci un peso negativo non provoca overflow.</p></li>
+    <li data-righe="27"><p>n − 1 giri: un cammino semplice ha al più n − 1 archi.</p></li>
+    <li data-righe="30"><p>Rilassamento di un arco: se passare da u è più economico, aggiorno v.</p></li>
+    </ol>
+  </figure>
+  <div class="box basi" data-tit="Note di sintassi"><ul><li><code>final</code> sulla variabile: il valore non cambia più dopo l'assegnazione.</li><li>I peso negativi non sono un problema per Java: sono interi come gli altri.</li></ul></div>
+</section>
+<section>
+  <h2>Il ciclo negativo</h2>
+  <p>Un giro in più: se una distanza migliora ancora, esiste un ciclo negativo raggiungibile dalla sorgente.</p>
+  <figure class="codice" data-titolo="Il ciclo negativo">
+<pre data-lang="java">import java.io.*;
+import java.util.*;
+
+public class Main {
+    public static void main(String[] args) throws IOException {
+        BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
+        StringTokenizer st = new StringTokenizer(in.readLine());
+        int n = Integer.parseInt(st.nextToken());
+        int m = Integer.parseInt(st.nextToken());
+        int s = Integer.parseInt(st.nextToken());
+
+        // Archi diretti {u, v, peso}: il peso puo essere negativo.
+        int[][] archi = new int[m][3];
+        for (int i = 0; i &lt; m; i++) {
+            st = new StringTokenizer(in.readLine());
+            archi[i][0] = Integer.parseInt(st.nextToken());
+            archi[i][1] = Integer.parseInt(st.nextToken());
+            archi[i][2] = Integer.parseInt(st.nextToken());
+        }
+
+        final long INF = Long.MAX_VALUE / 4;     // infinito che non va in overflow sommando un peso
+        long[] dist = new long[n];
+        Arrays.fill(dist, INF);
+        dist[s] = 0;
+
+        // n-1 giri: ogni giro rilassa tutti gli archi.
+        for (int giro = 1; giro &lt; n; giro++) {
+            for (int[] a : archi) {
+                if (dist[a[0]] != INF &amp;&amp; dist[a[0]] + a[2] &lt; dist[a[1]]) {
+                    dist[a[1]] = dist[a[0]] + a[2];
+                }
+            }
+        }
+        // Un giro in piu: se una distanza migliora ancora, c e un ciclo negativo.
+        for (int[] a : archi) {
+            if (dist[a[0]] != INF &amp;&amp; dist[a[0]] + a[2] &lt; dist[a[1]]) {
+                System.out.println("ciclo negativo raggiungibile");
+                return;
+            }
+        }
+        StringBuilder out = new StringBuilder();
+        for (int v = 0; v &lt; n; v++) {
+            out.append(v).append(' ').append(dist[v] == INF ? "inf" : String.valueOf(dist[v])).append('\n');
+        }
+        System.out.print(out);
+    }
+}</pre>
+    <ol class="spiega">
+    <li data-righe="34"><p>Se un arco migliora anche dopo n − 1 giri, c'è un ciclo negativo: il cammino minimo non esiste.</p></li>
+    </ol>
+  </figure>
+  <div class="box basi" data-tit="Note di sintassi"><ul><li><code>return</code> dentro il <code>main</code> interrompe il programma.</li></ul></div>
+</section>
+<section>
+  <h2>Eseguirlo</h2>
+  <p>Esempio di input e di output (compilato e lanciato davvero).</p>
+  <pre class="cod">4 5 0
+0 1 4
+0 2 5
+1 2 -3
+2 3 2
+1 3 6
+
+(output)
+0 0
+1 4
+2 1
+3 3</pre>
+</section>
+<section>
+  <h2>La teoria, affiancata</h2>
+  <p><a href="../teoria/bellman-ford.html"><b>← Torna alla teoria di questo argomento</b></a></p>
+</section>
+
+</main>
+</body>
+</html>

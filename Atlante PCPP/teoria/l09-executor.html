@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Task, future ed executor</title>
+<link rel="stylesheet" href="../assets/atlas.css">
+<link rel="stylesheet" href="../assets/tema.css">
+<script src="../assets/sito.js"></script>
+<script src="../assets/atlas.js" defer></script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <div class="occhiello"><span>Settimana 9 · Performance</span></div>
+  <h1>Task, future ed executor</h1>
+  <p class="lede">Per il lavoro che usa la CPU, la lezione usa un pool di thread (l’executor) che riceve task e restituisce future. Il pool non crea un thread per task: ne riusa un numero fisso.</p>
+</header>
+
+<section>
+  <h2>L’executor: coda di task e worker</h2>
+  <p>Un <b>task</b> è un pezzo di lavoro da fare (un <code>Runnable</code> o un <code>Callable</code>). Un <b>executor</b> riceve i task e li esegue con un gruppo di thread, il <b>pool</b>. Con <code>Executors.newWorkStealingPool()</code> il pool ha circa un thread per core. Ogni worker ha una sua coda di task: se la sua è vuota, ruba un task dalla coda di un altro (<i>work stealing</i>).</p>
+  <figure class="passi" data-titolo="La dinamica dell’executor" data-legenda="dato:task,ora:passo in corso,ok:risultato">
+    <div class="passo"><div class="espr"><code>executor.submit(task)</code>: il task entra in una <mark class="ora">coda</mark></div><p class="nota">Il chiamante non aspetta: submit restituisce subito.</p></div>
+    <div class="passo"><div class="espr">Un <mark class="ora">worker</mark> prende un task dalla sua coda</div><p class="nota">Se la sua coda è vuota, ne ruba uno da un altro worker.</p></div>
+    <div class="passo"><div class="espr">Il worker <mark class="dato">esegue</mark> il task</div><p class="nota">Il codice del task gira su un thread del pool, non sul thread che ha chiamato submit.</p></div>
+    <div class="passo"><div class="espr">Il <mark class="ok">Future</mark> viene completato con il risultato</div><p class="nota"><code>future.get()</code> legge il risultato, aspettando se il task non è ancora finito.</p></div>
+  </figure>
+</section>
+
+<section>
+  <h2>Future: il risultato che arriverà</h2>
+  <p><code>submit</code> restituisce un <b>Future</b>: un contenitore per un valore che arriverà dopo. <code>future.get()</code> blocca finché il task è finito e restituisce il risultato. Con <code>Future&lt;?&gt;</code> il task non restituisce niente: serve solo per aspettare che finisca.</p>
+  <div class="box attenzione" data-tit="Attenzione">Se il task lancia un’eccezione, <code>get()</code> la rilancia avvolta in <code>ExecutionException</code>. Non ignorare il risultato di <code>get()</code>, altrimenti l’errore sparisce.</div>
+</section>
+
+<section>
+  <h2>Esempio: contare i primi in otto task</h2>
+  <p>Il conteggio dei primi sotto 100 000, diviso in otto pezzi indipendenti. Ogni task conta i primi del suo pezzo e li somma nello stesso <code>LongAdder</code> condiviso (senza lock, vedi la pagina su striping).</p>
+  <figure class="codice" data-titolo="Esecutore.java">
+<pre data-lang="java">import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.atomic.LongAdder;
+
+public class Esecutore {
+    static boolean isPrime(int n) {
+        if (n &lt; 2) return false;
+        for (int d = 2; (long) d * d &lt;= n; d++)
+            if (n % d == 0) return false;
+        return true;
+    }
+
+    public static void main(String[] args) throws Exception {
+        final int range = 100_000, taskCount = 8;
+        final int perTask = range / taskCount;
+        ExecutorService executor = Executors.newWorkStealingPool();
+        LongAdder conteggio = new LongAdder();
+        List&lt;Future&lt;?&gt;&gt; futures = new ArrayList&lt;&gt;();
+        for (int t = 0; t &lt; taskCount; t++) {
+            final int da = perTask * t, a = perTask * (t + 1);
+            futures.add(executor.submit(() -&gt; {
+                for (int i = da; i &lt; a; i++)
+                    if (isPrime(i)) conteggio.increment();
+            }));
+        }
+        for (Future&lt;?&gt; f : futures)
+            f.get();                            // aspetta il risultato di ogni task
+        executor.shutdown();
+        System.out.println("primi sotto 100000: " + conteggio.sum());
+    }
+}</pre>
+    <ol class="spiega">
+      <li data-righe="9-13" data-segna="isPrime(int n)@ora"><p><code>isPrime</code> prova i divisori fino alla radice di n: basta, perché un divisore oltre la radice ha un complementare sotto. Il cast <code>(long)</code> evita un overflow in <code>d * d</code>.</p></li>
+      <li data-righe="18" data-segna="range / taskCount@ora"><p>100 000 numeri divisi per 8 task: 12 500 numeri a testa. I pezzi sono indipendenti, quindi possono girare in parallelo.</p></li>
+      <li data-righe="19" data-segna="Executors.newWorkStealingPool()@ora"><p>Il pool con work stealing. Il numero di worker dipende dai core della macchina, non dal numero di task.</p></li>
+      <li data-righe="20" data-segna="LongAdder conteggio@due"><p>Contatore condiviso senza lock: ogni task fa <code>increment</code> sui primi trovati. È il tema del caso di studio sul LongAdder.</p></li>
+      <li data-righe="22-23" data-segna="for (int t = 0; t &lt; taskCount; t++)@ora"><p>Il ciclo prepara gli otto task. Per ognuno, l’intervallo <code>[da, a)</code> è il suo pezzo di numeri.</p></li>
+      <li data-righe="24-27" data-segna="executor.submit@ora"><p>Il task è la lambda che conta i primi nell’intervallo. <code>submit</code> lo accoda e restituisce il Future, che si mette nella lista.</p></li>
+      <li data-righe="29-30" data-segna="f.get()@ora"><p>Aspetta il risultato di ogni task, uno per uno. Dopo questo ciclo tutti i task sono finiti.</p></li>
+      <li data-righe="31" data-segna="executor.shutdown()@ora"><p>Chiude il pool: non accetta altri task, e i worker si fermano quando finiscono.</p></li>
+      <li data-righe="32" data-segna="conteggio.sum()@ok"><p>Somma dei contributi di tutti i thread: 9 592 primi sotto 100 000. Il risultato è corretto anche se i task girano in parallelo.</p></li>
+    </ol>
+  </figure>
+</section>
+
+<section>
+  <h2>Task o thread virtuali?</h2>
+  <p>La lezione confronta le due strade sullo stesso conteggio dei primi. Con 1–64 thread o task: i task sono un po’ più veloci dei thread, mentre thread di piattaforma e virtuali sono ugualmente veloci. Con 2048: i task restano leggermente più veloci dei thread virtuali, e i thread di piattaforma diventano molto più lenti.</p>
+  <div class="tab-wrap"><table class="tab"><thead><tr><th>lavoro</th><th>strumento consigliato</th></tr></thead><tbody>
+    <tr><td>attesa (I/O, rete, database)</td><td>thread virtuali: un thread per operazione</td></tr>
+    <tr><td>calcolo CPU, prestazione importante</td><td>task su executor: più controllo e un numero fisso di thread</td></tr>
+    <tr><td>semplicità</td><td>thread virtuali: più semplici da scrivere</td></tr>
+  </tbody></table></div>
+  <div class="box regola" data-tit="Regola della lezione">Non creare molti thread di piattaforma. Per l’I/O, thread virtuali; per il CPU-bound, task. Se non sai, scegli i thread virtuali.</div>
+</section>
+
+</main>
+</body>
+</html>

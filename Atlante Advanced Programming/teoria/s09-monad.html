@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Monad: unit e flatMap</title>
+<link rel="stylesheet" href="../assets/atlas.css">
+<link rel="stylesheet" href="../assets/tema.css">
+<script src="../assets/sito.js"></script>
+<script src="../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  const B = (id, x, y, w, t, extra) => Object.assign({ id, tipo: 'rett', x, y, w, h: 44, t }, extra || {});
+  const T = (id, x, y, t, extra) => Object.assign({ id, tipo: 'testo', x, y, t, size: 13, bold: true, anchor: 'start' }, extra || {});
+
+  SCENE.bind = {
+    w: 540, h: 250, lato: true,
+    legenda: 'ora:passo in esecuzione,ok:valore che passa,no:fallimento,spento:passo saltato',
+    oggetti: [
+      B('v0', 40, 40, 110, 'Some(3)', { tono: 'ora' }),
+      B('v1', 200, 40, 110, 'Some(6)', { nascosto: true }),
+      B('v2', 360, 40, 110, 'Some(3)', { nascosto: true }),
+      T('a1', 160, 70, '→', { size: 16 }),
+      T('a2', 320, 70, '→', { size: 16 }),
+      B('w0', 40, 150, 110, 'Some(-3)', { nascosto: true }),
+      B('w1', 200, 150, 110, 'None', { nascosto: true, tono: 'no' }),
+      B('w2', 360, 150, 110, 'None', { nascosto: true, tono: 'spento' }),
+      T('c', 40, 230, '', { size: 12 })
+    ],
+    passi: [
+      { nota: `<b>flatMap</b> concatena calcoli che possono fallire. Parto da <code>Some(3)</code>.`, set: {} },
+      { nota: `<code>flatMap(raddoppiaSePositivo)</code>: 3 è positivo, quindi il risultato è Some(6). Il passo dopo riceve il valore <b>dentro</b> il contenitore.`, set: { v0: { tono: null }, v1: { nascosto: false, tono: 'ok' } } },
+      { nota: `<code>flatMap(dimezza)</code>: 6 è pari, quindi il risultato è Some(3).`, set: { v1: { tono: null }, v2: { nascosto: false, tono: 'ok' }, c: { t: 'Some(3).flatMap(raddoppia).flatMap(dimezza) = Some(3)' } } },
+      { nota: `Con <code>Some(-3)</code>: raddoppiaSePositivo restituisce <b>None</b>. Un flatMap su None è None, quindi il passo successivo non viene eseguito.`, set: { v0: { t: 'Some(-3)', tono: 'spento' }, v1: { nascosto: true }, v2: { nascosto: true }, w0: { nascosto: false, tono: 'dato' }, w1: { nascosto: false, tono: 'no' }, c: { t: 'il passo dimezza viene saltato' } } },
+      { nota: `Il controllo del flusso (se un passo fallisce, fermati) sta dentro <code>flatMap</code>, non nel codice che lo usa. È la forza della monad.`, set: { w2: { nascosto: false, tono: 'spento' }, c: { t: 'il fallimento si propaga da solo', tono: 'ok' } } }
+    ]
+  };
+
+  SCENE.leggi = {
+    w: 540, h: 270, lato: true,
+    legenda: 'dato:input,ora:passo che cambia,ok:uguale',
+    oggetti: [
+      B('l1', 40, 30, 230, 'unit(7).flatMap(f)', { tono: 'dato' }),
+      B('l2', 290, 30, 200, 'f(7)', { tono: 'dato' }),
+      B('r1', 40, 110, 230, 'List(1, 2, 3).flatMap(unit)', { nascosto: true }),
+      B('r2', 290, 110, 200, 'List(1, 2, 3)', { nascosto: true }),
+      B('a1', 40, 190, 230, 'x.flatMap(f).flatMap(g)', { nascosto: true }),
+      B('a2', 290, 190, 200, 'x.flatMap(a => f(a).flatMap(g))', { nascosto: true }),
+      T('c', 40, 255, '', { size: 12 })
+    ],
+    passi: [
+      { nota: `<b>Identità a sinistra</b>: <code>unit(y).flatMap(f) === f(y)</code>. unit mette y dentro il contenitore, e flatMap lo passa a f: è come chiamare f direttamente. Con List e f = raddoppia: List(7).flatMap(f) = List(14) = f(7).`, set: { l1: { tono: 'ora' }, l2: { tono: 'ok' }, c: { t: 'unit(y).flatMap(f) = f(y)' } } },
+      { nota: `<b>Identità a destra</b>: <code>x.flatMap(unit) === x</code>. Passare ogni valore a unit lo rimette dentro lo stesso contenitore: List(1, 2, 3) resta List(1, 2, 3).`, set: { l1: { tono: 'dato' }, l2: { tono: 'dato' }, r1: { nascosto: false, tono: 'ora' }, r2: { nascosto: false, tono: 'ok' }, c: { t: 'x.flatMap(unit) = x' } } },
+      { nota: `<b>Associatività</b>: <code>x.flatMap(f).flatMap(g) === x.flatMap(a => f(a).flatMap(g))</code>. Concatenare due passi a sinistra o annidarli a destra dà lo stesso risultato. È la stessa regola che abbiamo visto con il monoide.`, set: { r1: { tono: 'dato' }, r2: { tono: 'dato' }, a1: { nascosto: false, tono: 'ora' }, a2: { nascosto: false, tono: 'ok' }, c: { t: 'due modi di concatenare: stesso risultato', tono: 'ok' } } }
+    ]
+  };
+
+  SCENE.seq = {
+    w: 540, h: 270, lato: true,
+    legenda: 'dato:input,ora:scelta in corso,ok:risultato',
+    oggetti: [
+      B('L1', 40, 30, 200, 'List(1, 2)', { tono: 'dato' }),
+      B('L2', 290, 30, 200, 'List(3, 4)', { tono: 'dato' }),
+      B('o1', 40, 130, 110, 'List(1, 3)', { nascosto: true, tono: 'ok' }),
+      B('o2', 170, 130, 110, 'List(1, 4)', { nascosto: true, tono: 'ok' }),
+      B('o3', 300, 130, 110, 'List(2, 3)', { nascosto: true, tono: 'ok' }),
+      B('o4', 430, 130, 80, 'List(2, 4)', { nascosto: true, tono: 'ok' }),
+      T('c', 40, 215, '', { size: 12 }),
+      T('d', 40, 245, '', { size: 12 })
+    ],
+    passi: [
+      { nota: `<b>sequence</b> prende una lista di contenitori, List(List(1, 2), List(3, 4)), e restituisce un contenitore di liste. Vuol dire: "da ogni contenitore prendi un valore, in tutti i modi possibili".`, set: {} },
+      { nota: `Prima scelta: 1 dalla prima lista e 3 dalla seconda. Ottengo List(1, 3).`, set: { L1: { tono: 'ora' }, L2: { tono: 'ora' }, o1: { nascosto: false, tono: 'ok' } } },
+      { nota: `Le altre combinazioni: 1 con 4, 2 con 3, 2 con 4. Quattro liste in tutto.`, set: { L1: { tono: 'dato' }, L2: { tono: 'dato' }, o2: { nascosto: false }, o3: { nascosto: false }, o4: { nascosto: false }, c: { t: 'sequence(List(List(1, 2), List(3, 4))) =' }, d: { t: 'List(List(1,3), List(1,4), List(2,3), List(2,4))' } } },
+      { nota: `Stessa idea con Option: <code>sequence(List(Some(1), Some(2)))</code> = Some(List(1, 2)), ma <code>sequence(List(Some(1), None))</code> = None: basta un None per perdere tutto.`, set: { c: { t: 'con Option: un None fa perdere tutto' }, d: { t: 'il tipo passa da List[F[A]] a F[List[A]]', tono: 'ok' } } }
+    ]
+  };
+
+  SCENE.repl = {
+    w: 540, h: 270, lato: true,
+    legenda: 'dato:scelte possibili,ora:scelta in corso,ok:risultato',
+    oggetti: [
+      B('in', 40, 25, 200, 'List(0, 1), n = 2', { tono: 'dato' }),
+      B('p0', 40, 110, 100, 'primo: 0', { nascosto: true, tono: 'ora' }),
+      B('p1', 180, 110, 100, 'primo: 1', { nascosto: true, tono: 'ora' }),
+      B('r00', 40, 190, 100, 'List(0, 0)', { nascosto: true, tono: 'ok' }),
+      B('r01', 150, 190, 100, 'List(0, 1)', { nascosto: true, tono: 'ok' }),
+      B('r10', 270, 190, 100, 'List(1, 0)', { nascosto: true, tono: 'ok' }),
+      B('r11', 380, 190, 100, 'List(1, 1)', { nascosto: true, tono: 'ok' }),
+      T('c', 40, 255, '', { size: 12 })
+    ],
+    passi: [
+      { nota: `<b>replicateM(n, ma)</b> ripete il contenitore <code>ma</code> n volte e raccoglie i risultati in una lista. Con List(0, 1) e n = 2 ogni passo può scegliere 0 o 1.`, set: {} },
+      { nota: `Primo passo: scelgo 0 o 1. Due rami possibili.`, set: { p0: { nascosto: false }, p1: { nascosto: false }, c: { t: 'ogni passo: due scelte' } } },
+      { nota: `Secondo passo: da ciascun ramo, di nuovo 0 o 1. Quattro risultati, tutti i modi possibili.`, set: { p0: { tono: 'dato' }, p1: { tono: 'dato' }, r00: { nascosto: false }, r01: { nascosto: false }, r10: { nascosto: false }, r11: { nascosto: false }, c: { t: 'replicateM(2, List(0, 1)) = 4 liste' } } },
+      { nota: `Con Option: <code>replicateM(2, Some(1))</code> = Some(List(1, 1)); con None il risultato è None. Il significato dipende dal contenitore: in una lista si moltiplicano le scelte, in un Option si ripete lo stesso valore.`, set: { c: { t: 'replicateM si comporta in modo diverso per ogni monad', tono: 'ok' } } }
+    ]
+  };
+
+  SCENE.kl = {
+    w: 540, h: 230, lato: true,
+    legenda: 'dato:funzione di partenza,ora:passo in corso,ok:risultato',
+    oggetti: [
+      B('a', 40, 60, 100, 'a: A', { tono: 'dato' }),
+      B('fa', 190, 60, 150, 'f(a): F[B]', { tono: 'ora', nascosto: true }),
+      B('gb', 390, 60, 120, 'g(b): F[C]', { tono: 'dato', nascosto: true }),
+      B('res', 190, 150, 200, 'compose(f, g)(a): F[C]', { tono: 'ok', nascosto: true }),
+      T('c', 40, 215, '', { size: 12 })
+    ],
+    passi: [
+      { nota: `<b>compose</b> (composizione di Kleisli): f va da A a un contenitore F[B], g va da B a F[C]. Non si possono comporre direttamente, perché g non accetta F[B].`, set: {} },
+      { nota: `Applico f ad <code>a</code>: ottengo un contenitore F[B]. Il valore B sta dentro, e f non si può chiamare su di lui direttamente.`, set: { fa: { nascosto: false } } },
+      { nota: `Con <code>flatMap(g)</code> il valore B viene estratto e passato a g: ottengo F[C]. La composizione è quindi una funzione <b>nuova</b> da A a F[C].`, set: { gb: { nascosto: false }, res: { nascosto: false }, c: { t: 'compose(f, g)(a) = f(a).flatMap(g)' } } }
+    ]
+  };
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <div class="occhiello"><span>Settimana 9</span></div>
+  <h1>Monad: unit e flatMap</h1>
+  <p class="lede">La monad è il concetto più generale della settimana: un tipo con <code>unit</code> (mettere un valore dentro) e <code>flatMap</code> (concatenare calcoli che dipendono dal valore precedente). Option, List, LazyList, Gen, Parser e <a href="s05-state.html">State</a> sono tutti monadi.</p>
+</header>
+
+<section>
+  <h2>Il trait Monad</h2>
+  <p>Nelle slide il trait è questo (semplificato):</p>
+  <p><code>trait Monad[F[_]] extends Functor[F]</code>, con due metodi:</p>
+  <ul>
+    <li><code>unit[A](a: =&gt; A): F[A]</code>: mette un valore dentro il contenitore. Per Option è <code>Some(a)</code>, per List è <code>List(a)</code>. Il tipo <code>=&gt; A</code> significa che l’argomento è passato per nome, cioè valutato solo quando serve.</li>
+    <li><code>flatMap[B](f: A =&gt; F[B]): F[B]</code>: prende il valore dentro il contenitore e passa a <code>f</code>, che sceglie il calcolo successivo in base a quel valore. <code>f</code> restituisce già un contenitore, e <code>flatMap</code> lo appiattisce in uno solo.</li>
+  </ul>
+  <p>Da questi due si ricava <code>map</code>: <code>fa.flatMap(a =&gt; unit(f(a)))</code>. Per questo una monad è anche un functor: il trait la estende.</p>
+  <figure class="scena" data-scena="bind" data-titolo="flatMap concatena passi che possono fallire"></figure>
+  <div class="box idea" data-tit="L’idea">Le slide notano che il nome potrebbe essere <i>FlatMappable</i>: un contenitore sul quale puoi concatenare calcoli, dove ogni passo dipende dal valore del passo prima.</div>
+</section>
+
+<section>
+  <h2>Le leggi</h2>
+  <p>Le leggi (dalle slide e dal libro) riguardano <code>unit</code> e <code>flatMap</code>:</p>
+  <ul>
+    <li><b>Identità a sinistra</b>: <code>unit(y).flatMap(f) === f(y)</code>;</li>
+    <li><b>Identità a destra</b>: <code>x.flatMap(unit) === x</code>;</li>
+    <li><b>Associatività</b>: <code>x.flatMap(f).flatMap(g) === x.flatMap(a =&gt; f(a).flatMap(g))</code>.</li>
+  </ul>
+  <p>Le leggi si leggono così: <code>unit</code> è l’elemento neutro della concatenazione (come lo 0 del monoide), e <code>flatMap</code> è associativo. Nelle slide sono scritte come proprietà ScalaCheck, come per il monoide.</p>
+  <figure class="scena" data-scena="leggi" data-titolo="Le tre leggi con List"></figure>
+</section>
+
+<section>
+  <h2>sequence: lo zip generalizzato</h2>
+  <p><code>sequence(lfa: List[F[A]]): F[List[A]]</code> prende una lista di contenitori e restituisce un contenitore di liste. Per la List monad significa tutte le scelte possibili; per Option significa “tutti presenti o niente”. Nelle slide il risultato è descritto come una <i>n-ary zip</i> generalizzata: un zip di n contenitori invece di due.</p>
+  <p>Il codice di <code>sequence</code> è l’esercizio 17 del corso: qui vedi solo il comportamento.</p>
+  <figure class="scena" data-scena="seq" data-titolo="sequence: da una lista di liste alle sue combinazioni"></figure>
+</section>
+
+<section>
+  <h2>replicateM e compose</h2>
+  <p><code>replicateM(n, ma)</code> ripete il contenitore <code>n</code> volte e raccoglie i valori in una lista dentro il contenitore: <code>F[List[A]]</code>. Il significato cambia con la monad, come mostra la scena.</p>
+  <figure class="scena" data-scena="repl" data-titolo="replicateM con List: quattro risultati"></figure>
+  <p><b>compose</b> (composizione di Kleisli) combina due funzioni che restituiscono un contenitore: <code>f: A =&gt; F[B]</code> e <code>g: B =&gt; F[C]</code> danno una nuova funzione <code>A =&gt; F[C]</code>. Si ottiene con <code>flatMap</code>: applichi f, poi passi il valore dentro a g. L’implementazione è l’esercizio 19.</p>
+  <figure class="scena" data-scena="kl" data-titolo="Composizione: f poi g, con flatMap in mezzo"></figure>
+</section>
+
+<section>
+  <h2>Dove si usa</h2>
+  <p>Il codice di <code>unit</code>, <code>flatMap</code> e degli esempi con Option e List è nella <a href="../esempi/s09-monad.html">pagina di esempi affiancata</a>. State, già visto nella <a href="s05-state.html">settimana 5</a>, è un’altra monad: <code>flatMap</code> su State concatena automi.</p>
+  <div class="box esame" data-tit="All’esame">Se un esercizio chiede di "sequenziare" contenitori, pensa a <code>flatMap</code> e alle leggi: scrivi quale monad stai usando e quale comportamento ti aspetti (tutti presenti, tutte le combinazioni, il primo che fallisce).</div>
+</section>
+
+</main>
+</body>
+</html>

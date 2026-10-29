@@ -1,0 +1,341 @@
+<title>Azioni e Sequential Consistency</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/*BASE*/
+:root{--accent:#0C737C}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--accent:#2FB4BC}}
+:root[data-theme="dark"]{--accent:#2FB4BC}
+
+.twocol{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start}
+@media(max-width:860px){.twocol{grid-template-columns:1fr}}
+.sim{display:grid;grid-template-columns:minmax(0,1fr) minmax(290px,.85fr);gap:20px;align-items:start}
+@media(max-width:920px){.sim{grid-template-columns:1fr}}
+
+.steps{display:flex;flex-wrap:wrap;gap:9px}
+.stepbtn{font-family:"IBM Plex Mono",monospace;font-size:12.6px;font-weight:600;padding:10px 13px;
+  border-radius:7px;border:1.5px solid var(--line);background:var(--surface-2);color:var(--ink);
+  cursor:pointer;display:flex;flex-direction:column;gap:2px;align-items:flex-start;min-width:118px;
+  transition:border-color .15s,background .15s,opacity .15s}
+.stepbtn small{font-size:10.5px;font-weight:400;color:var(--ink-3)}
+.stepbtn[data-th="t1"]{border-left-width:4px;border-left-color:var(--sync)}
+.stepbtn[data-th="t2"]{border-left-width:4px;border-left-color:var(--path)}
+.stepbtn:hover:not(:disabled){background:var(--surface);border-color:var(--ink-3)}
+.stepbtn:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.stepbtn:disabled{opacity:.3;cursor:not-allowed}
+
+.seq{font-family:"IBM Plex Mono",monospace;font-size:15px;font-weight:600;padding:14px 16px;
+  background:var(--surface-2);border:1px solid var(--line);border-radius:8px;min-height:52px;
+  display:flex;align-items:center;flex-wrap:wrap}
+.seq .ph{color:var(--ink-3);font-weight:400;font-size:13px;font-family:"IBM Plex Sans",sans-serif;font-style:italic}
+.seq .s1{color:var(--sync)}
+.seq .s2{color:var(--path)}
+
+.mem{display:flex;gap:9px;flex-wrap:wrap}
+.cell{flex:1 1 72px;background:var(--surface-2);border:1px solid var(--line);border-radius:8px;padding:10px 12px;
+  transition:background .3s,border-color .3s}
+.cell .k{font-family:"IBM Plex Mono",monospace;font-size:10.5px;letter-spacing:.06em;color:var(--ink-3);text-transform:uppercase}
+.cell .v{font-family:"IBM Plex Mono",monospace;font-size:20px;font-weight:600;font-variant-numeric:tabular-nums;margin-top:1px}
+.cell.hit{background:var(--path-soft);border-color:var(--path)}
+.cell.hit .v{color:var(--path)}
+
+.ilist{width:100%;border-collapse:collapse}
+.ilist td{padding:0;border-bottom:1px solid var(--line-soft)}
+.ilist tr:last-child td{border-bottom:none}
+.ilist button{width:100%;text-align:left;background:none;border:none;cursor:pointer;padding:9px 12px 9px 0;
+  font-family:"IBM Plex Mono",monospace;font-size:12.6px;color:var(--ink);display:flex;
+  justify-content:space-between;gap:14px;align-items:center;border-radius:4px}
+.ilist button:hover{background:var(--surface-2)}
+.ilist button:focus-visible{outline:2px solid var(--focus);outline-offset:-2px}
+.res{font-weight:600;font-size:12px;padding:3px 9px;border-radius:4px;background:var(--sync-soft);color:var(--sync)}
+
+.outs{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+.out{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:13px 17px;
+  display:flex;flex-direction:column;gap:3px;min-width:118px;box-shadow:var(--shadow)}
+.out .v{font-family:"IBM Plex Mono",monospace;font-size:19px;font-weight:600}
+.out .s{font-size:10.5px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-3)}
+.out.no{border-color:var(--bad);background:var(--bad-soft)}
+.out.no .v{color:var(--bad)}
+.out.no .s{color:var(--bad)}
+
+.cyc{display:flex;flex-direction:column;gap:0;font-family:"IBM Plex Mono",monospace;font-size:12.6px}
+.cyc .r{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:16px;padding:9px 0;
+  border-bottom:1px dashed var(--line-soft);align-items:baseline}
+.cyc .r:last-child{border-bottom:none}
+.cyc .just{color:var(--ink-3);font-size:11px;white-space:nowrap}
+.cyc .r.fin{color:var(--bad);font-weight:600}
+.cyc .r.fin .just{color:var(--bad)}
+
+.types{display:flex;flex-direction:column;gap:0}
+.types .t{display:grid;grid-template-columns:auto 1fr;gap:14px;padding:13px 0;border-bottom:1px solid var(--line-soft);align-items:start}
+.types .t:last-child{border-bottom:none}
+.types .dot{width:9px;height:9px;border-radius:2px;margin-top:6px}
+.types h3{margin:0 0 3px}
+.types p{margin:0;font-size:13.3px;color:var(--ink-2);line-height:1.5}
+
+.cls{display:flex;flex-direction:column;gap:9px}
+.crow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:14px;align-items:center;
+  padding:11px 14px;background:var(--surface-2);border:1px solid var(--line);border-radius:8px}
+.crow .op{font-family:"IBM Plex Mono",monospace;font-size:12.8px;font-weight:600;color:var(--ink)}
+.crow .picks{display:flex;gap:7px;flex-wrap:wrap}
+.crow .picks button{font-family:"IBM Plex Mono",monospace;font-size:11.4px;font-weight:500;padding:6px 11px;
+  border-radius:5px;border:1px solid var(--line);background:var(--surface);color:var(--ink-2);cursor:pointer;white-space:nowrap}
+.crow .picks button:hover{border-color:var(--ink-3);color:var(--ink)}
+.crow .picks button:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.crow .picks button.right{background:var(--ok-soft);border-color:var(--ok);color:var(--ok);font-weight:600}
+.crow .picks button.wrong{background:var(--bad-soft);border-color:var(--bad);color:var(--bad);font-weight:600}
+.crow .fb{grid-column:1/-1;font-size:12.8px;color:var(--ink-2);line-height:1.5;
+  border-top:1px solid var(--line);padding-top:10px;margin-top:2px}
+.crow .fb b{color:var(--ink)}
+
+pre.code.sm{font-size:11.9px;line-height:1.68;padding:15px 16px}
+.hl{background:var(--path-soft);border-radius:3px;padding:0 3px;color:var(--path);font-weight:600}
+.reasons{display:flex;flex-direction:column;gap:0}
+.reasons .r{display:grid;grid-template-columns:auto 1fr;gap:14px;padding:12px 0;border-bottom:1px solid var(--line-soft);align-items:baseline}
+.reasons .r:last-child{border-bottom:none}
+.reasons .n{font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:600;color:var(--accent);letter-spacing:.06em}
+.reasons p{margin:0;font-size:13.3px;color:var(--ink-2);line-height:1.5}
+.reasons p b{color:var(--ink)}
+.cta{display:flex;align-items:center;gap:14px;padding:16px 19px;background:var(--sync-soft);
+  border:1px solid var(--accent);border-radius:9px;flex-wrap:wrap;font-size:13.6px;color:var(--ink-2);line-height:1.5}
+.cta b{color:var(--ink)}
+</style>
+
+<div class="wrap">
+<header>
+  <div class="crumb"><a href="https://claude.ai/code/artifact/28d55e87-8c70-4b36-8dac-532818fc0088">Atlante PCPP</a><span>&middot;</span><span class="acc">Lezione 3</span><span>·</span><span>Java Memory Model</span></div>
+  <h1>Azioni e Sequential Consistency</h1>
+  <p class="lede">Prima di poter dire <em>perché</em> <span class="mono">(0,0)</span> è patologico, serve dire cosa sarebbe stato <b>normale</b>. Costruisci tutti gli interleaving sequenzialmente consistenti e osserva che <span class="mono">(0,0)</span> non compare mai — poi guarda perché la JVM può produrlo lo stesso.</p>
+</header>
+
+<section>
+  <h2>Perché serve un memory model</h2>
+  <div class="twocol">
+    <div class="panel pad">
+      <h3 style="margin-bottom:12px">Ragionare a livello hardware non basta</h3>
+      <div class="reasons">
+        <div class="r"><span class="n">01</span><p>L&rsquo;hardware <b>cambia da computer a computer</b>.</p></div>
+        <div class="r"><span class="n">02</span><p>Architetture diverse hanno <b>set di istruzioni diversi</b>.</p></div>
+        <div class="r"><span class="n">03</span><p>Architetture diverse trattano la <b>consistenza della memoria</b> in modo diverso.</p></div>
+        <div class="r"><span class="n">04</span><p>Compilatore, runtime e hardware applicano <b>ottimizzazioni</b> — riordino, riscrittura del codice, eliminazione di branch — che producono risultati paradossali.</p></div>
+      </div>
+    </div>
+    <div class="panel pad">
+      <h3 style="margin-bottom:12px">Il memory model</h3>
+      <p style="margin:0 0 11px;font-size:13.5px;color:var(--ink-2)">Un insieme di regole <b>a livello di linguaggio</b> che determinano quali esecuzioni di un programma sono <b>valide</b>.</p>
+      <p style="margin:0 0 11px;font-size:13.5px;color:var(--ink-2)">La JVM è progettata per generare solo bytecode le cui esecuzioni sono valide nel modello. Questo vale <b>su ogni hardware e ogni runtime</b>.</p>
+      <p class="note" style="margin:0">Risultato: il programmatore può <b>predire</b> il comportamento dei programmi concorrenti. Java è stato il <b>primo linguaggio</b> a definire formalmente il proprio memory model — oggi ce l&rsquo;hanno C++, C#, Rust, Go, e il ragionamento si trasferisce identico.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Sequential consistency</h2>
+  <div class="panel pad" style="margin-bottom:18px">
+    <p style="margin:0 0 12px;font-size:14.5px;color:var(--ink-2)">Introdotta da <b>Leslie Lamport</b> alla fine degli anni Settanta, definisce ciò che il programmatore considera comportamento normale. Un&rsquo;esecuzione concorrente è sequenzialmente consistente <b>se e solo se</b>:</p>
+    <div class="reasons">
+      <div class="r"><span class="n">1</span><p>preserva il <b>program order</b> intra-thread — le operazioni di un singolo thread appaiono nel loro ordine sorgente;</p></div>
+      <div class="r"><span class="n">2</span><p>le operazioni <b>appaiono avvenire istantaneamente</b> — atomicamente, in un unico ordine totale visto da tutti.</p></div>
+    </div>
+  </div>
+
+  <div class="bar">
+    <button class="btn" id="undo">← indietro</button>
+    <button class="btn" id="reset">reset</button>
+    <button class="btn" id="rand">casuale</button>
+    <span class="hint">costruisci un interleaving rispettando il program order di ogni thread</span>
+  </div>
+
+  <div class="sim">
+    <div style="display:flex;flex-direction:column;gap:15px">
+      <div class="steps" id="steps"></div>
+      <div class="seq" id="seq"></div>
+      <div class="mem" id="mem"></div>
+      <div id="verdict"></div>
+    </div>
+    <div class="panel pad">
+      <h3 style="margin-bottom:11px">I 6 interleaving</h3>
+      <table class="ilist"><tbody id="ilist"></tbody></table>
+    </div>
+  </div>
+
+  <h3 style="margin:24px 0 0">Output raggiungibili in modo sequenzialmente consistente</h3>
+  <div class="outs" id="outs"></div>
+  <p class="note">Nessuna delle sei esecuzioni produce <span class="mono">(0,0)</span>. Non è una questione di probabilità: <b>non esiste</b> un ordine totale che lo generi. Eppure <span class="mono">PossibleReordering.java</span> lo stampa. Quell&rsquo;esecuzione <b>non è sequenzialmente consistente</b>.</p>
+</section>
+
+<section>
+  <h2>Perché (0,0) richiede un ciclo</h2>
+  <div class="panel pad">
+    <div class="cyc">
+      <div class="r"><span>per avere <b>x == 0</b> serve che <span class="mono">x=b</span> preceda <span class="mono">b=1</span></span><span class="just">[lettura del vecchio valore]</span></div>
+      <div class="r"><span>per avere <b>y == 0</b> serve che <span class="mono">y=a</span> preceda <span class="mono">a=1</span></span><span class="just">[lettura del vecchio valore]</span></div>
+      <div class="r"><span><span class="mono">a=1</span> precede <span class="mono">x=b</span></span><span class="just">[program order di t1]</span></div>
+      <div class="r"><span><span class="mono">b=1</span> precede <span class="mono">y=a</span></span><span class="just">[program order di t2]</span></div>
+      <div class="r fin"><span>a=1 → x=b → b=1 → y=a → a=1</span><span class="just">[ciclo — nessun ordine totale lo ammette]</span></div>
+    </div>
+  </div>
+  <p class="note">Garantire sequential consistency per <em>ogni</em> programma richiederebbe di disattivare proprio quelle ottimizzazioni che danno performance. Java non la garantisce sempre. Invece: <b>il memory model definisce per quali programmi è possibile garantirla</b> — e la risposta, in una riga, è: quelli senza data race.</p>
+</section>
+
+<section>
+  <h2>Azioni</h2>
+  <div class="twocol">
+    <div class="panel pad">
+      <p style="margin:0 0 14px;font-size:14px;color:var(--ink-2)">Un&rsquo;azione è una coppia <span class="mono" style="font-size:14px;font-weight:600;color:var(--ink)">t(o)</span> dove <span class="mono">t</span> è l&rsquo;identificatore del thread e <span class="mono">o</span> l&rsquo;operazione. Ce ne sono di tre tipi:</p>
+      <div class="types">
+        <div class="t"><div class="dot" style="background:var(--po)"></div><div>
+          <h3>Variable access</h3><p>Read e write sulle variabili del programma.</p></div></div>
+        <div class="t"><div class="dot" style="background:var(--sync)"></div><div>
+          <h3>Synchronization action</h3><p>Primitive di sincronizzazione: acquisire e rilasciare un lock o un monitor, avviare un thread, attendere che un thread termini, accessi <span class="mono">volatile</span>.</p></div></div>
+        <div class="t"><div class="dot" style="background:var(--ink-3)"></div><div>
+          <h3>Other</h3><p>Qualunque azione non rientri nelle due categorie precedenti.</p></div></div>
+      </div>
+    </div>
+    <div class="panel">
+<pre class="code sm">x=0; <span class="cm">// (init(x))</span>
+y=0; <span class="cm">// (init(y))</span>
+a=0; <span class="cm">// (init(a))</span>
+b=0; <span class="cm">// (init(b))</span>
+
+Thread one = <span class="kw">new</span> Thread(() -> {
+    a=1; <span class="cm">// (1)</span>
+    x=b; <span class="cm">// (2)</span>
+});
+Thread other = <span class="kw">new</span> Thread(() -> {
+    b=1; <span class="cm">// (3)</span>
+    y=a; <span class="cm">// (4)</span>
+});
+
+one.start();   <span class="cm">// (start(t1))</span>
+other.start(); <span class="cm">// (start(t2))</span>
+one.join();    <span class="cm">// (join(t1))</span>
+other.join();  <span class="cm">// (join(t2))</span>
+System.out.println(…); <span class="cm">// (5)</span></pre>
+    </div>
+  </div>
+  <p class="note">Le etichette non cambiano il programma — sono <b>notazione</b>. Servono per poter scrivere <span class="mono">t1(2)</span> invece di &ldquo;la seconda istruzione del lambda eseguito da <span class="mono">one</span>&rdquo;. Convenzione della lezione: <span class="mono">t1</span> = <span class="mono">one</span>, <span class="mono">t2</span> = <span class="mono">other</span>, <span class="mono">m</span> = main thread.</p>
+</section>
+
+<section>
+  <h2>Classifica le azioni</h2>
+  <p class="lede" style="margin:0 0 16px;font-size:14.5px">La distinzione che conta: le <b>synchronization action</b> sono le uniche che possono creare ordine fra thread diversi.</p>
+  <div class="cls" id="cls"></div>
+</section>
+
+<section>
+  <div class="cta">
+    <div style="flex:1 1 320px">Il passo successivo è la relazione <b>happens-before</b>: come si costruisce a partire dalle azioni, e come si legge un data race direttamente dal grafo.</div>
+    <a class="btn" style="text-decoration:none" href="https://claude.ai/code/artifact/fe6f94fc-b52c-4e3f-aeea-bc56ce185028">Grafo Happens-Before →</a>
+  </div>
+</section>
+
+<footer>
+  Un&rsquo;azione è un <b>evento di esecuzione</b>, non una riga di codice. La stessa operazione nel sorgente, eseguita da tre thread, dà tre azioni distinte — ed è per questo che il modello parla di coppie e non di sole operazioni.
+</footer>
+</div>
+
+<script>
+const el = id => document.getElementById(id);
+const OPS = [
+  {t:'t1', k:1, code:'a = 1'},
+  {t:'t1', k:2, code:'x = b'},
+  {t:'t2', k:3, code:'b = 1'},
+  {t:'t2', k:4, code:'y = a'}
+];
+function run(sq){
+  const m = {a:0,b:0,x:0,y:0}; let hit = null;
+  for(const s of sq){
+    if(s.k===1){ m.a=1; hit='a'; }
+    else if(s.k===2){ m.x=m.b; hit='x'; }
+    else if(s.k===3){ m.b=1; hit='b'; }
+    else { m.y=m.a; hit='y'; }
+  }
+  return {m, hit};
+}
+const legal = (sq,s) => sq.filter(x=>x.t===s.t).length === (s.t==='t1' ? s.k-1 : s.k-3);
+function allSeqs(){
+  const out=[];
+  (function rec(cur){
+    if(cur.length===4){ out.push(cur.slice()); return; }
+    for(const s of OPS) if(legal(cur,s)) rec(cur.concat([s]));
+  })([]);
+  return out;
+}
+const ALL = allSeqs();
+let seq = [];
+
+function render(){
+  el('steps').innerHTML = OPS.map((s,i)=>{
+    const ok = legal(seq,s) && seq.length<4;
+    return '<button class="stepbtn" data-th="'+s.t+'" data-i="'+i+'" '+(ok?'':'disabled')+'>' +
+      '<span>'+s.t+'('+s.k+')</span><small>'+s.code+'</small></button>';
+  }).join('');
+
+  el('seq').innerHTML = seq.length
+    ? seq.map(s=>'<span class="s'+(s.t==='t1'?1:2)+'">'+s.t+'('+s.k+')</span>')
+         .join('<span style="color:var(--ink-3)">,&nbsp;</span>')
+    : '<span class="ph">la sequenza appare qui mentre clicchi</span>';
+
+  const {m, hit} = run(seq);
+  el('mem').innerHTML = ['a','b','x','y'].map(k=>
+    '<div class="cell'+(seq.length && hit===k ? ' hit':'')+'"><div class="k">'+k+'</div><div class="v">'+m[k]+'</div></div>'
+  ).join('');
+
+  el('verdict').innerHTML = seq.length===4
+    ? '<span class="badge b-acc">output ('+m.x+','+m.y+')</span>' +
+      '<p class="note" style="margin-top:12px">Esecuzione <b>sequenzialmente consistente</b>: rispetta il program order di entrambi i thread e ogni operazione è avvenuta atomicamente. Come ogni altra delle sei, non produce <span class="mono">(0,0)</span>.</p>'
+    : '<span class="badge b-neu">'+seq.length+' / 4 passi</span>';
+}
+
+el('steps').addEventListener('click', e=>{
+  const b = e.target.closest('.stepbtn'); if(!b || b.disabled) return;
+  seq.push(OPS[+b.dataset.i]); render();
+});
+el('undo').addEventListener('click', ()=>{ seq.pop(); render(); });
+el('reset').addEventListener('click', ()=>{ seq=[]; render(); });
+el('rand').addEventListener('click', ()=>{ seq = ALL[Math.floor(Math.random()*ALL.length)].slice(); render(); });
+
+el('ilist').innerHTML = ALL.map((sq,i)=>{
+  const {m} = run(sq);
+  return '<tr><td><button data-seq="'+i+'"><span>' + sq.map(s=>s.t+'('+s.k+')').join(', ') +
+    '</span><span class="res">('+m.x+','+m.y+')</span></button></td></tr>';
+}).join('');
+el('ilist').addEventListener('click', e=>{
+  const b = e.target.closest('button'); if(!b) return;
+  seq = ALL[+b.dataset.seq].slice(); render();
+  el('seq').scrollIntoView({behavior:'smooth', block:'center'});
+});
+
+// output raggiungibili
+const reach = new Set(ALL.map(sq=>{ const {m}=run(sq); return m.x+','+m.y; }));
+el('outs').innerHTML = ['0,0','0,1','1,0','1,1'].map(k=>{
+  const ok = reach.has(k);
+  return '<div class="out'+(ok?'':' no')+'"><span class="v">('+k+')</span>' +
+    '<span class="s">'+(ok ? 'prodotto da un interleaving' : 'mai prodotto')+'</span></div>';
+}).join('');
+
+/* classificatore */
+const CLS = [
+  {op:'x = b', a:0, why:'<b>Variable access.</b> Una read di <span class="mono">b</span> e una write di <span class="mono">x</span>. Non crea nessun ordine fra thread.'},
+  {op:'one.start()', a:1, why:'<b>Synchronization action.</b> Avviare un thread è una primitiva di sincronizzazione: crea un arco verso la prima azione del thread avviato.'},
+  {op:'lock.unlock()', a:1, why:'<b>Synchronization action.</b> Rilasciare un lock crea un arco verso ogni successiva acquisizione dello <em>stesso</em> lock.'},
+  {op:'temp + 1', a:2, why:'<b>Other.</b> Aritmetica su valori locali: nessun accesso a memoria condivisa, nessuna sincronizzazione. Irrilevante per il memory model.'},
+  {op:'other.join()', a:1, why:'<b>Synchronization action.</b> Attendere la terminazione di un thread crea un arco dall&rsquo;ultima azione di quel thread al ritorno della join.'},
+  {op:'write su volatile a', a:1, why:'<b>Synchronization action.</b> È proprio questo che rende <span class="mono">volatile</span> utile: gli accessi entrano in un ordine totale, cosa che le variable access normali non fanno.'}
+];
+const LAB = ['variable access','synchronization','other'];
+el('cls').innerHTML = CLS.map((c,i)=>
+  '<div class="crow" data-c="'+i+'"><span class="op">'+c.op+'</span>' +
+  '<span class="picks">' + LAB.map((l,j)=>'<button data-a="'+j+'">'+l+'</button>').join('') + '</span>' +
+  '<span class="fb" hidden></span></div>').join('');
+el('cls').addEventListener('click', e=>{
+  const b = e.target.closest('.picks button'); if(!b) return;
+  const row = b.closest('.crow'); const c = CLS[+row.dataset.c];
+  row.querySelectorAll('.picks button').forEach(x=>x.classList.remove('right','wrong'));
+  b.classList.add(+b.dataset.a === c.a ? 'right' : 'wrong');
+  const fb = row.querySelector('.fb'); fb.hidden = false; fb.innerHTML = c.why;
+});
+
+render();
+</script>

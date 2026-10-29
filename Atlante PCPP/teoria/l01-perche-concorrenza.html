@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Perché la concorrenza</title>
+<link rel="stylesheet" href="../assets/atlas.css">
+<link rel="stylesheet" href="../assets/tema.css">
+<script src="../assets/sito.js"></script>
+<script src="../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  const X0 = 150, U = 38;
+  const bar = (id, riga, da, a, t, tono) => ({ id, tipo: 'rett', x: X0 + da * U, y: 36 + riga * 62, w: (a - da) * U, h: 30, t, tono, nascosto: true });
+  SCENE.tempo = {
+    w: 620, h: 300, lato: false,
+    oggetti: [
+      { id: 'l0', tipo: 'testo', x: 10, y: 51, t: 'sequenziale · core 1', size: 12, anchor: 'start' },
+      { id: 'l1', tipo: 'testo', x: 10, y: 113, t: 'parallelo · core 1', size: 12, anchor: 'start', nascosto: true },
+      { id: 'l2', tipo: 'testo', x: 10, y: 175, t: 'parallelo · core 2', size: 12, anchor: 'start', nascosto: true },
+      { id: 'l3', tipo: 'testo', x: 10, y: 237, t: 'concorrente · 1 core', size: 12, anchor: 'start', nascosto: true },
+      bar('s1', 0, 0, 5, 'task 1', 'dato'), bar('s2', 0, 5, 10, 'task 2', 'due'),
+      bar('p1', 1, 0, 5, 'task 1', 'dato'), bar('p2', 2, 0, 5, 'task 2', 'due'),
+      bar('c1', 3, 0, 2, 't1', 'dato'), bar('c2', 3, 2, 3, 't2', 'due'), bar('c3', 3, 3, 5, 't1', 'dato'),
+      bar('c4', 3, 5, 7, 't2', 'due'), bar('c5', 3, 7, 8, 't1', 'dato'), bar('c6', 3, 8, 10, 't2', 'due'),
+      { id: 'asse', tipo: 'linea', x1: X0, y1: 285, x2: X0 + 10 * U, y2: 285 },
+      { id: 'tt', tipo: 'testo', x: X0 + 10 * U, y: 275, t: 'tempo →', size: 12, anchor: 'end' }
+    ],
+    passi: [
+      { nota: '<p><b>Sequenziale</b>: un core, un task dopo l\'altro. Il task 2 aspetta che il task 1 sia finito.</p>', set: { s1: { nascosto: false }, s2: { nascosto: false } } },
+      { nota: '<p><b>Parallelo</b>: due core, i due task avanzano <b>nello stesso istante</b>. Tempo totale dimezzato, se i task sono indipendenti.</p>', set: { l1: { nascosto: false }, l2: { nascosto: false }, p1: { nascosto: false }, p2: { nascosto: false } } },
+      { nota: '<p><b>Concorrente</b>: il calcolo è spezzato in blocchi e i blocchi dei due task si <b>alternano</b>, anche su un solo core. Chi decide l\'ordine dei blocchi è lo scheduler. Con più core, alcuni blocchi possono anche andare in parallelo.</p>', set: { l3: { nascosto: false }, c1: { nascosto: false }, c2: { nascosto: false }, c3: { nascosto: false }, c4: { nascosto: false }, c5: { nascosto: false }, c6: { nascosto: false } } }
+    ]
+  };
+})();
+</script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  const T = (id, x, y, t, extra) => Object.assign({ id, tipo: 'testo', x, y, t, size: 13 }, extra || {});
+  const R = (id, x, y, w, h, t, extra) => Object.assign({ id, tipo: 'rett', x, y, w, h, t }, extra || {});
+  const X0 = 190, U = 90; // 90 px = 1 ora
+  SCENE.fosso = {
+    w: 600, h: 262, lato: true,
+    legenda: 'dato:persona 1,due:persona 2,no:attesa o intralcio',
+    oggetti: [
+      { id: 'asse', tipo: 'linea', x1: X0, y1: 228, x2: X0 + 4 * U, y2: 228, tono: 'spento' },
+      T('h0', X0, 244, '0 h', { size: 11 }), T('h1', X0 + U, 244, '1 h', { size: 11 }), T('h2', X0 + 2 * U, 244, '2 h', { size: 11 }), T('h3', X0 + 3 * U, 244, '3 h', { size: 11 }),
+      T('l1', 90, 40, 'una persona', { size: 12 }), R('a1', X0, 28, 2 * U, 24, '4 m di fosso', { tono: 'dato' }),
+      T('l2', 90, 90, 'due, due pale', { size: 12, nascosto: true }), R('b1', X0, 72, U, 20, '2 m', { tono: 'dato', nascosto: true }), R('b2', X0, 96, U, 20, '2 m', { tono: 'due', nascosto: true }),
+      T('l3', 90, 150, 'due, una pala', { size: 12, nascosto: true }),
+      R('c1', X0, 140, 45, 20, '', { tono: 'dato', nascosto: true }), R('c2', X0 + 50, 140, 45, 20, '', { tono: 'due', nascosto: true }), R('c3', X0 + 100, 140, 45, 20, '', { tono: 'dato', nascosto: true }), R('c4', X0 + 150, 140, 45, 20, '', { tono: 'due', nascosto: true }),
+      T('l4', 90, 196, 'una buca', { size: 12, nascosto: true }), R('d1', X0, 186, 2 * U + 30, 20, 'si intralciano', { tono: 'no', nascosto: true }),
+      T('c', 520, 110, '', { size: 12 })
+    ],
+    passi: [
+      { nota: "Una persona scava 4 metri di fosso in 2 ore (slide 15)." },
+      { nota: "Due persone con <b>due pale</b>: ognuna scava metà fosso, 2 metri, nello stesso tempo. Finiscono in 1 ora. Il lavoro si <b>divide</b> e i flussi vanno davvero in parallelo.", set: { l2: { nascosto: false }, b1: { nascosto: false }, b2: { nascosto: false } } },
+      { nota: "Due persone con <b>una sola pala</b>: la pala è una <b>risorsa condivisa</b>. Devono alternarsi, e ogni passaggio costa un po' di tempo. Si arriva oltre le 2 ore: nessun guadagno.", set: { l3: { nascosto: false }, c1: { nascosto: false }, c2: { nascosto: false }, c3: { nascosto: false }, c4: { nascosto: false } } },
+      { nota: "Una <b>buca</b> invece di un fosso: il lavoro non si divide, se scavano nello stesso punto si intralciano. Le stesse due domande valgono per i computer: <b>quali risorse sono condivise</b> e <b>quanto il problema si divide</b>. Di questo parla il corso.", set: { l4: { nascosto: false }, d1: { nascosto: false }, c: { t: 'condiviso? divisibile?' } } }
+    ]
+  };
+
+  const box = (id, x, t, tono) => R(id, x, 40, 170, 50, t, { tono });
+  SCENE.nygaard = {
+    w: 600, h: 250, lato: true,
+    legenda: 'dato:inherent,due:hidden,ora:exploitation,ok:l’esempio',
+    oggetti: [
+      box('in', 15, 'inherent', null), box('hi', 215, 'hidden', null), box('ex', 415, 'exploitation', null),
+      T('d1', 100, 110, '', { size: 11 }), T('d2', 300, 110, '', { size: 11 }), T('d3', 500, 110, '', { size: 11 }),
+      R('web', 180, 170, 240, 44, 'richiedere una pagina web', { nascosto: true }),
+      { id: 'f1', tipo: 'vett', x1: 240, y1: 168, x2: 110, y2: 94, t: '', nascosto: true },
+      { id: 'f2', tipo: 'vett', x1: 300, y1: 168, x2: 300, y2: 94, t: '', nascosto: true },
+      { id: 'f3', tipo: 'vett', x1: 360, y1: 168, x2: 490, y2: 94, t: '', nascosto: true }
+    ],
+    passi: [
+      { nota: "<b>Inherent</b> (intrinseca): il problema è già fatto di flussi indipendenti. Un'interfaccia deve rispondere all'utente mentre aspetta la rete.", set: { in: { tono: 'dato' }, d1: { t: 'il problema ha più flussi' } } },
+      { nota: "<b>Hidden</b> (nascosta): più programmi condividono le stesse risorse, e ognuno si comporta come se le avesse tutte. Il sistema operativo fa girare molti programmi su pochi core.", set: { hi: { tono: 'due' }, d2: { t: 'risorse condivise' } } },
+      { nota: "<b>Exploitation</b> (sfruttamento): l'hardware può eseguire più flussi insieme e lo si vuole usare (più core, GPU, più computer).", set: { ex: { tono: 'ora' }, d3: { t: 'più hardware da usare' } } },
+      { nota: "Richiedere una pagina web (slide 28): il browser resta usabile mentre aspetta (inherent), il server serve migliaia di utenti sugli stessi core (hidden), e usa tutti i core per servirne di più (exploitation). <b>Tutte e tre</b>: le categorie non si escludono, conta il motivo.", set: { web: { nascosto: false, tono: 'ok' }, f1: { nascosto: false }, f2: { nascosto: false }, f3: { nascosto: false } } }
+    ]
+  };
+
+  const cer = (cx, cy, r) => { const p = []; for (let a = 0; a <= 2 * Math.PI + 0.01; a += 0.1) p.push([cx + r * Math.cos(a), cy + r * Math.sin(a)]); return p; };
+  SCENE.goetz = {
+    w: 600, h: 262, lato: true,
+    legenda: 'dato:Goetz,due:Nygaard,ok:un esempio piazzato',
+    oggetti: [
+      { id: 'g', tipo: 'poli', punti: cer(210, 135, 110), tono: 'dato', vuoto: true },
+      { id: 'n', tipo: 'poli', punti: cer(390, 135, 110), tono: 'due', vuoto: true },
+      T('tg', 150, 18, 'Goetz', { bold: true, tono: 'dato' }), T('tn', 450, 18, 'Nygaard', { bold: true, tono: 'due' }),
+      T('e1', 300, 120, '', { size: 11 }), T('e1b', 300, 138, '', { size: 11 }),
+      T('e2', 160, 120, '', { size: 11 }), T('e2b', 160, 138, '', { size: 11 }),
+      T('e3', 445, 120, '', { size: 11 }), T('e3b', 445, 138, '', { size: 11 })
+    ],
+    passi: [
+      { nota: "Due classificazioni dei motivi della concorrenza: Goetz (resource utilization, fairness, convenience) e Nygaard (inherent, exploitation, hidden). L'esercizio 1.4 chiede esempi che stanno in una e non nell'altra." },
+      { nota: "Nell'intersezione: un server che non lascia la CPU ferma mentre aspetta il disco è <i>resource utilization</i> per Goetz ed <i>exploitation/hidden</i> per Nygaard.", set: { e1: { t: 'CPU sfruttata', tono: 'ok' }, e1b: { t: 'durante l’I/O' } } },
+      { nota: "Solo Goetz: una simulazione chiusa, su un solo core e senza I/O, divisa in thread <b>solo perché è più comoda da scrivere</b> (<i>convenience</i>). Nessuna delle categorie di Nygaard.", set: { e2: { t: 'simulazione chiusa', tono: 'ok' }, e2b: { t: 'per comodità' } } },
+      { nota: "Solo Nygaard: un calcolo coordinato fra tanti computer indipendenti via internet (<i>exploitation</i>): i motivi di Goetz sono pensati per programmi che condividono una macchina. Il testo accetta molte risposte: conta <b>argomentare con il motivo</b>.", set: { e3: { t: 'computer via rete', tono: 'ok' }, e3b: { t: 'coordinati' } } }
+    ]
+  };
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Perché la concorrenza</h1>
+  <p class="lede">Concorrenza vuol dire <b>fare più di un calcolo nello stesso periodo di tempo</b>. Oggi quasi ogni sistema la usa: siti web, interfacce, sistemi operativi, streaming, modelli di machine learning. Questa pagina chiarisce le parole e i motivi, compreso il confronto dell'esercizio 1.4.</p>
+</header>
+
+<section>
+  <h2>La domanda del fosso</h2>
+  <p>La lezione 1 si apre con un indovinello (slide 15) che contiene già le due domande di tutto il corso. Più lavoratori fanno prima solo se il lavoro <b>si può dividere</b> e se non devono <b>condividere</b> gli strumenti. Con i computer è uguale: più thread o più core aiutano solo se il problema si spezza in parti indipendenti, e le risorse condivise (una variabile, un file, la memoria) vanno coordinate, con un costo.</p>
+  <figure class="passi" data-titolo="Due persone scavano più in fretta di una? (slide 15)">
+    <div class="passo"><div class="espr testo">Una persona scava 4 metri di fosso in 2 ore. Due persone quanto ci mettono?</div><p class="nota">La risposta istintiva: 1 ora. Il lavoro si divide.</p></div>
+    <div class="passo"><div class="espr testo">…e se hanno <mark class="no">una sola pala</mark>?</div><p class="nota">Una <b>risorsa condivisa</b>: devono alternarsi. Nessun guadagno, anzi si perde tempo a passarsela.</p></div>
+    <div class="passo"><div class="espr testo">…e se devono scavare <mark class="no">una buca</mark> invece di un fosso?</div><p class="nota">Non tutti i lavori si dividono: se lavorano nello stesso punto si intralciano.</p></div>
+    <div class="passo"><div class="espr testo">E 100 persone? E 100 PC che ordinano 4 miliardi di numeri <mark class="due">leggendo dalla stessa memoria</mark>?</div><p class="nota">Stesse domande per i computer: le risorse condivise e il tipo di problema decidono quanto aiuta averne tanti. Di questo parla il corso.</p></div>
+  </figure>
+  <figure class="scena" data-scena="fosso" data-titolo="Una pala o due, un fosso o una buca"></figure>
+</section>
+
+<section>
+  <h2>Sequenziale, parallelo, concorrente</h2>
+  <figure class="scena" data-scena="tempo" data-titolo="Due task sulla linea del tempo"></figure>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th></th><th>Blocchi di calcolo</th><th>Serve più di un core?</th></tr></thead>
+    <tbody>
+      <tr><td><b>Sequenziale</b></td><td>un task intero dopo l'altro</td><td>no</td></tr>
+      <tr><td><b>Parallelo</b></td><td>i task avanzano insieme</td><td>sì</td></tr>
+      <tr><td><b>Concorrente</b></td><td>il calcolo è diviso in blocchi arbitrari che si mescolano</td><td>no (ma con più core alcuni blocchi vanno in parallelo)</td></tr>
+    </tbody>
+  </table></div>
+  <div class="box idea" data-tit="Astratto e concreto">
+    <p>La concorrenza è un concetto <b>astratto</b>: più flussi di istruzioni (<i>streams</i>) più un modo di coordinarli. In pratica la realizzi con strumenti <b>concreti</b>: in Java thread, lock, monitor, semafori; in Erlang processi e messaggi. Il corso insegna i concetti usando Java.</p>
+  </div>
+</section>
+
+<section>
+  <h2>I tre motivi, secondo Nygaard</h2>
+  <p>Le note del corso usano la classificazione del norvegese Kristen Nygaard.</p>
+  <div class="colonne">
+    <div class="carta">
+      <h4>Inherent (intrinseca)</h4>
+      <p>Il problema <b>è già</b> fatto di più flussi indipendenti: interfacce utente, input/output. Un'app deve leggere il GPS mentre scarichi una pagina e tocchi lo schermo.</p>
+    </div>
+    <div class="carta">
+      <h4>Exploitation (sfruttamento)</h4>
+      <p>L'hardware può eseguire più flussi <b>insieme</b> e vuoi sfruttarlo: più core, GPU, computer diversi coordinati via rete.</p>
+    </div>
+    <div class="carta">
+      <h4>Hidden (nascosta, virtuale)</h4>
+      <p>Più programmi <b>condividono</b> le stesse risorse e ognuno si comporta come se le avesse tutte per sé: il sistema operativo che fa girare molti programmi su pochi core.</p>
+    </div>
+  </div>
+  <figure class="passi" data-titolo="Richiedere una pagina web a un server: che tipo di concorrenza è? (slide 28)">
+    <div class="passo"><div class="espr testo">Il tuo browser aspetta la risposta <mark class="dato">mentre</mark> resta usabile.</div><p class="nota"><b>Inherent</b>: input dell'utente e rete sono flussi indipendenti.</p></div>
+    <div class="passo"><div class="espr testo">Il server risponde a migliaia di utenti <mark class="due">sugli stessi core</mark>.</div><p class="nota"><b>Hidden</b>: ogni richiesta si comporta come se il server fosse suo.</p></div>
+    <div class="passo"><div class="espr testo">Il server usa <mark class="ora">tutti i core</mark> per servirne di più al secondo.</div><p class="nota"><b>Exploitation</b>.</p></div>
+    <div class="passo"><div class="espr testo"><mark class="ok">Tutte e tre.</mark></div><p class="nota">Le categorie non si escludono: lo stesso sistema reale spesso ne ha più di una.</p></div>
+  </figure>
+  <figure class="scena" data-scena="nygaard" data-titolo="Inherent, hidden, exploitation"></figure>
+</section>
+
+<section>
+  <h2>Goetz contro Nygaard (esercizio 1.4)</h2>
+  <p>Goetz (cap. 1.1) dà altri tre motivi. Il confronto chiede esempi che stanno in una classificazione e non nell'altra.</p>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Goetz</th><th>Idea</th><th>Vicino a Nygaard…</th></tr></thead>
+    <tbody>
+      <tr><td><b>Resource utilization</b></td><td>non lasciare la CPU ferma mentre un programma aspetta l'I/O</td><td>exploitation / hidden</td></tr>
+      <tr><td><b>Fairness</b></td><td>più utenti o programmi condividono la macchina, ognuno ottiene la sua parte</td><td>hidden</td></tr>
+      <tr><td><b>Convenience</b></td><td>è più comodo scrivere tanti programmi piccoli che si coordinano che uno enorme</td><td><b>nessuna</b> categoria precisa</td></tr>
+    </tbody>
+  </table></div>
+  <div class="box domanda-tua" data-tit="Dubbio: come trovo un esempio che sta solo da una parte?">
+    <p>Guarda <b>il motivo</b> per cui il sistema è concorrente, non il sistema in sé.</p>
+    <ul>
+      <li><b>Solo Goetz</b>: una simulazione chiusa, senza I/O e su un solo core, divisa in thread <b>solo perché è più comodo da scrivere</b> (convenience). Non c'è I/O (niente inherent), non si sfrutta hardware in più (niente exploitation), non condivide risorse con altri programmi (niente hidden).</li>
+      <li><b>Solo Nygaard</b>: un argomento possibile è un calcolo coordinato tra tanti computer indipendenti via internet (exploitation). I tre motivi di Goetz sono pensati per programmi che condividono una macchina; la coordinazione di computer diversi non è tra i suoi esempi.</li>
+    </ul>
+    <p>Il testo stesso dice che le definizioni sono vaghe e che sono accettate molte risposte: conta <b>argomentare</b> con il motivo.</p>
+  </div>
+  <div class="box inglese" data-tit="In inglese">
+    <p>"A closed simulation split into threads only to structure the code is concurrent for convenience, which is one of Goetz's motivations, but it fits none of Nygaard's categories: there is no inherent I/O, no hardware being exploited and no resource sharing with other programs."</p>
+  </div>
+  <figure class="scena" data-scena="goetz" data-titolo="Esempi da una parte sola"></figure>
+</section>
+
+</main>
+</body>
+</html>

@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Classificatore lineare e regressione logistica</title>
+<link rel="stylesheet" href="../assets/atlas.css">
+<link rel="stylesheet" href="../assets/tema.css">
+<script src="../assets/sito.js"></script>
+<script src="../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  const pos = [[1.5, 0.86], [1.65, 2.52], [0.77, 0.77], [2.58, 1.77], [0.53, 1.54], [0.54, 0.53], [1.24, -0.91], [-0.72, 0.44], [-0.01, 1.31], [0.09, -0.41], [2.47, 0.77], [1.07, -0.42], [0.46, 1.11], [-0.15, 1.38], [0.4, 0.71], [0.4, 2.85], [0.99, -0.06], [1.82, -0.22], [1.21, -0.96], [-0.33, 1.2], [1.74, 1.17], [0.88, 0.7], [-0.48, 0.28], [0.54, 2.06], [1.34, -0.76], [1.32, 0.61], [0.32, 1.61], [2.03, 1.93], [0.16, 0.69], [1.33, 1.98], [0.52, 0.81], [-0.11, -0.2], [1.81, 2.36], [0.93, 2.0], [1.36, 0.35], [1.36, 2.54], [0.96, 2.56], [-1.62, 1.82], [1.09, 0.7], [1.09, -0.99]], neg = [[-1.22, -0.64], [0.48, -1.52], [-1.81, -1.5], [-0.08, -0.67], [-1.53, -0.49], [-0.9, -0.03], [-1.7, -1.33], [-1.39, -2.46], [-0.7, -0.74], [-0.99, -1.23], [-2.42, -1.42], [-1.34, -1.8], [-1.16, -0.6], [0.89, -0.83], [-0.74, -1.07], [-2.92, -1.03], [-0.94, 1.46], [-1.19, -0.7], [-1.03, -2.17], [0.14, -0.25], [-0.21, -1.91], [0.4, -2.4], [-0.41, 1.19], [-1.99, -1.57], [-0.9, -1.5], [-2.55, -0.93], [-2.06, -0.53], [-1.92, 0.55], [-1.78, -1.32], [-0.19, -2.23], [-0.77, 0.31], [-2.61, -0.82], [-0.74, -0.22], [-2.24, -2.32], [-0.48, -0.7], [-0.75, -0.65], [-1.68, -0.77], [-0.71, -1.71], [0.87, -0.53], [-2.19, -0.34]];
+  const ogg = [{ id: 'ax', tipo: 'assi', box: [40, 15, 330, 250], dom: [-3.2, 3.2, -3.2, 3.2], tacche: 1, etX: 'x1', etY: 'x2' }];
+  pos.forEach((p, i) => ogg.push({ id: 'P' + i, tipo: 'punto', in: 'ax', x: p[0], y: p[1], r: 2.8, tono: 'dato' }));
+  neg.forEach((p, i) => ogg.push({ id: 'N' + i, tipo: 'punto', in: 'ax', x: p[0], y: p[1], r: 2.8, tono: 'due' }));
+  const retta = (w0, w1, w2, xa, xb) => ({ x1: xa, y1: -w0 / w2 - w1 / w2 * xa, x2: xb, y2: -w0 / w2 - w1 / w2 * xb });
+  ogg.push(Object.assign({ id: 'ls', tipo: 'linea', in: 'ax', tono: 'ora', nascosto: true }, retta(0.052, 0.386, 0.321, -2.5, 2.5)));
+  ogg.push(Object.assign({ id: 'man', tipo: 'linea', in: 'ax', tono: 'ok', nascosto: true }, retta(0.5, 1, 1, -2.7, 2.2)));
+  ogg.push({ id: 'piu', tipo: 'testo', in: 'ax', x: 2.3, y: 2.8, t: '+1', size: 16, bold: true, tono: 'dato', nascosto: true });
+  ogg.push({ id: 'meno', tipo: 'testo', in: 'ax', x: -2.5, y: -2.8, t: '−1', size: 16, bold: true, tono: 'due', nascosto: true });
+  ogg.push({ id: 'n', tipo: 'testo', x: 215, y: 292, t: '', size: 13, bold: true });
+  SCENE.retta = {
+    w: 420, h: 300, lato: true,
+    legenda: 'dato:classe +1,due:classe −1,ora:retta dei minimi quadrati,ok:retta scelta a mano',
+    oggetti: ogg,
+    passi: [
+      { nota: 'I dati del notebook (seed 42): 40 punti della classe +1 attorno a (1, 1) e 40 della classe −1 attorno a (−1, −1). Le nuvole si sovrappongono un po\'.' },
+      { nota: 'Minimi quadrati sulle etichette ±1: w = [0.052, 0.386, 0.321]. Il confine è la retta w₀ + w₁x₁ + w₂x₂ = 0, cioè x₂ = −0.16 − 1.20·x₁. Accuratezza <b>0.8875</b>: 9 punti su 80 dalla parte sbagliata.', set: { ls: { nascosto: false }, n: { t: 'minimi quadrati: 0.8875', tono: 'ora' } } },
+      { nota: 'Da una parte wᵀx &gt; 0 e la classe è <b>+1</b>, dall\'altra −1. Un punto è classificato bene se y · f(x) &gt; 0.', set: { piu: { nascosto: false }, meno: { nascosto: false } } },
+      { nota: 'La retta scelta a mano, w = [0.5, 1, 1] (x₂ = −0.5 − x₁), fa meglio: <b>0.925</b>. I minimi quadrati non contano gli errori: minimizzano la distanza da ±1, anche dei punti già ben classificati.', set: { man: { nascosto: false }, n: { t: 'a mano: 0.925', tono: 'ok' } } }
+    ]
+  };
+  const og2 = [{ id: 'ax', tipo: 'assi', box: [40, 20, 480, 180], dom: [-100, 100, 0, 1], tacche: 50, etX: 'x' }];
+  const curva = (id, b, w, tono, nascosto) => { for (let k = 0; k < 40; k++) { const xa = -100 + k * 5, xb = xa + 5; og2.push({ id: id + k, tipo: 'linea', in: 'ax', x1: xa, y1: 1 / (1 + Math.exp(-(b + w * xa))), x2: xb, y2: 1 / (1 + Math.exp(-(b + w * xb))), tono, nascosto }); } };
+  curva('c', 3, 0.15, 'ok', false); curva('p', 3, 0.05, 'due', true); curva('r', 3, 0.5, 'ora', true); curva('s', -3, 0.15, 'dato', true);
+  og2.push({ id: 'mezzo', tipo: 'linea', in: 'ax', x1: -100, y1: 0.5, x2: 100, y2: 0.5, tratt: true, tono: 'spento' });
+  og2.push({ id: 't05', tipo: 'testo', in: 'ax', x: -93, y: 0.56, t: '0.5', size: 12 });
+  og2.push({ id: 'conf', tipo: 'linea', in: 'ax', x1: -20, y1: 0, x2: -20, y2: 1, tratt: true, tono: 'no' });
+  og2.push({ id: 'n', tipo: 'testo', x: 280, y: 234, t: 'σ(3 + 0.15x): confine x = −20', size: 13, bold: true, tono: 'ok' });
+  const vedi = (pref, v) => Object.fromEntries(og2.filter(o => o.id.startsWith(pref) && /^[cprs]\d+$/.test(o.id)).map(o => [o.id, { nascosto: !v }]));
+  SCENE.sigmoide = {
+    w: 560, h: 246, lato: false,
+    legenda: 'ok:w = 0.15 b = 3 (notebook),due:w = 0.05,ora:w = 0.5,dato:b = −3,no:confine σ = 0.5',
+    oggetti: og2,
+    passi: [
+      { nota: 'I parametri del notebook: σ(3 + 0.15x). La curva passa da 0 a 1; vale 0.5 dove 3 + 0.15x = 0, cioè x = <b>−20</b>: il confine di decisione.' },
+      { nota: '<b>w piccolo</b> (0.05): la curva è quasi piatta, simile a una retta; il confine si sposta a −3/0.05 = −60.', set: Object.assign(vedi('p', true), { conf: { x1: -60, x2: -60 }, n: { t: 'σ(3 + 0.05x): confine x = −60', tono: 'due' } }) },
+      { nota: '<b>w grande</b> (0.5): quasi un gradino, come sign; confine −3/0.5 = −6.', set: Object.assign(vedi('p', false), vedi('r', true), { conf: { x1: -6, x2: -6 }, n: { t: 'σ(3 + 0.5x): confine x = −6', tono: 'ora' } }) },
+      { nota: 'Cambiare il <b>bias</b> (b = −3 invece di 3) sposta la curva senza cambiarne la forma: confine +20.', set: Object.assign(vedi('r', false), vedi('s', true), { conf: { x1: 20, x2: 20 }, n: { t: 'σ(−3 + 0.15x): confine x = +20', tono: 'dato' } }) },
+      { nota: 'Si legge come probabilità: con i parametri del notebook, in x = 0 σ(3) ≈ 0.95, cioè 95 per cento di probabilità di classe 1.', set: Object.assign(vedi('s', false), { conf: { x1: -20, x2: -20 }, n: { t: 'x = 0: σ(3) ≈ 0.95', tono: 'ok' } }) }
+    ]
+  };
+})();
+</script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  const D = {"A": [[1.0, 1.0], [1.5, 2.0], [2.0, 1.2], [0.8, 2.4], [2.5, 2.2]], "B": [[3.5, 3.0], [4.0, 4.0], [3.0, 4.2], [4.5, 2.8], [2.6, 3.4]], "q": [2.6, 2.6], "ord": [4, 9, 5, 1, 2, 7, 3, 8, 6, 0], "dist": [0.41, 0.8, 0.98, 1.25, 1.52, 1.65, 1.81, 1.91, 1.98, 2.26], "lab": [0, 1, 1, 0, 0, 1, 0, 1, 1, 0], "k1": 0, "k3": 1, "k5": 0, "inn": [[-0.59, -0.16], [1.5, 0.59], [-1.48, -0.0], [-0.56, 0.13], [-1.45, 0.22], [0.21, 1.42], [0.28, 0.46], [-1.34, 2.03], [-1.72, 0.99], [-0.3, -0.79], [-0.59, -0.6], [0.34, -0.1], [1.33, -1.65], [-0.0, -0.8], [0.7, -1.91], [-0.31, 0.19], [-1.34, 0.89], [0.16, 0.91], [0.86, -0.88], [-0.72, -0.18], [0.67, 0.77], [-0.64, -0.55], [-0.72, -0.53], [-0.21, -0.12], [1.85, -0.46], [-0.26, 0.41], [-0.86, -0.33], [0.01, 0.7], [-1.18, 1.23], [-0.32, 0.15], [0.76, 0.59], [0.95, 0.16], [-0.02, 0.28], [-0.9, 1.09], [-0.7, -1.13], [1.85, -0.12], [-1.06, 1.67], [-0.3, 0.96], [-0.75, -0.22], [-1.52, -1.72], [-0.88, -0.07], [0.72, 2.18], [-0.93, 0.91], [-0.54, -0.14], [-1.33, -1.33], [-0.7, -1.07], [-0.0, -0.63], [1.13, 0.14], [0.15, 1.02], [0.47, -0.03], [-0.08, -0.11], [0.97, 0.7], [0.33, 0.72], [-0.49, 0.46], [-1.27, 1.21], [0.08, 0.17], [0.54, -0.01], [-0.23, 1.07], [0.1, -0.82], [0.4, -1.53], [1.49, -0.15], [0.04, 2.03], [1.94, 0.1], [0.56, 0.98], [1.51, -0.12], [0.12, 1.1], [0.24, 0.68], [0.55, -1.02], [-0.77, -2.38], [-0.23, 1.2], [-1.0, 1.11], [0.9, -0.05], [-0.01, 0.07], [-0.77, -0.25], [-0.04, 0.55], [0.71, -0.67], [0.74, -0.7], [-0.15, 0.33], [-0.02, -0.11], [0.24, -0.5], [-0.59, -0.18], [0.87, -0.09], [1.71, 0.19], [-2.68, -0.4], [1.5, 0.01], [-0.39, -0.79], [1.19, 0.9], [0.6, 0.39], [1.3, 0.74], [-1.11, 0.69], [0.15, -0.1], [0.69, 0.03], [-2.64, 1.4], [0.93, -0.11], [-0.34, 0.2], [-1.16, 0.28], [-0.21, -0.32], [-0.83, -0.61], [1.0, 1.2], [0.45, -0.04], [-0.79, 0.65], [1.45, -1.45], [1.06, -1.95], [-0.31, 0.35], [-1.23, -1.37], [0.17, 0.79], [-0.43, 1.21], [-0.7, 1.58], [0.11, 0.21], [0.55, 0.29], [1.66, 1.99], [0.49, -0.15], [-1.06, -0.68], [0.01, -0.09], [-0.04, 0.0], [0.45, -1.22], [-0.92, 1.01], [0.75, -0.48], [1.17, -0.61], [-0.23, -1.64], [0.76, -0.01], [0.96, 0.64], [0.09, 0.15], [1.08, -0.14], [-0.13, 0.07], [0.74, 0.84], [1.74, -0.05], [1.16, -0.56], [0.57, 0.14], [1.59, 0.58], [-0.37, 0.56], [0.35, -0.25], [-0.22, -0.81], [2.52, 0.16], [0.92, -1.01], [-0.93, -0.09], [-0.09, 0.77], [-0.86, 0.53], [1.41, -0.78], [0.86, -0.82], [0.36, 0.37], [1.61, -0.58], [0.2, 0.99], [-1.01, 0.04], [-0.74, -0.59], [0.66, 0.68], [2.37, 1.28], [1.21, -0.11], [-0.23, 0.17], [-2.0, 1.53]], "ring": [[-2.31, 0.96], [2.59, 1.28], [-2.84, 1.33], [2.0, -0.27], [-2.76, 1.22], [0.46, -2.6], [2.24, -1.09], [2.4, 0.04], [-0.92, -2.43], [1.65, 2.06], [-3.07, -0.17], [1.47, -1.93], [-2.1, 2.61], [-0.49, -2.56], [-0.72, 3.13], [-2.77, -1.93], [-0.27, -2.43], [-3.26, -0.84], [-1.72, 3.41], [-0.18, -2.77], [2.06, 2.43], [-1.4, 2.55], [0.68, -2.92], [-2.89, -0.02], [2.3, 1.54], [-1.42, -2.93], [2.87, -1.69], [1.41, 2.62], [3.13, -1.75], [3.42, 0.1], [3.13, -0.92], [-2.09, -1.71], [-0.19, 3.74], [1.8, 3.02], [-1.97, 0.82], [-2.32, 1.05], [-2.8, -0.11], [-3.35, -0.36], [2.99, 1.81], [0.03, 2.88], [1.89, 2.45], [1.39, -2.96], [1.45, 2.02], [-1.62, -2.8], [2.44, 1.52], [-1.76, -2.52], [-2.73, 1.19], [-2.53, -0.05], [-0.03, -2.6], [-1.11, 2.8], [-1.02, -2.88], [2.48, -1.49], [-0.29, -3.41], [-2.32, -1.67], [-0.92, -2.34], [2.23, -1.79], [2.89, 0.46], [2.95, -0.1], [-3.39, 0.7], [2.52, -1.98], [3.2, 1.22], [-0.68, 3.18], [-2.74, -1.04], [-3.1, -1.43], [2.69, -1.07], [-1.24, 2.84], [0.19, 2.59], [-2.02, -2.27], [1.5, 2.45], [2.69, -1.64], [0.4, 3.71], [3.95, 0.09], [-2.39, -2.43], [0.43, 2.96], [2.86, -1.71], [2.45, 1.89], [-2.76, -0.02], [-2.41, -1.75], [-2.9, 0.06], [2.56, 1.02], [-3.53, -0.43], [1.91, 2.03], [2.7, 0.76], [2.74, -1.82], [-0.18, 2.72], [2.3, 1.09], [2.66, 0.21], [2.1, -2.41], [1.97, -2.47], [-0.11, -3.12], [0.74, -2.72], [-0.46, 2.6], [-2.92, -1.67], [-0.21, -2.42], [0.01, 2.92], [-0.29, -2.46], [0.83, -2.72], [-2.92, -0.4], [-2.16, -2.75], [1.83, 0.3], [-2.54, 2.48], [-1.16, 2.39], [-1.98, 2.42], [2.97, -1.51], [2.52, -0.97], [2.77, 1.08], [-2.77, -1.62], [0.95, 2.8], [-1.57, -2.22], [3.04, -0.5], [1.9, 2.39], [-1.82, 1.58], [-1.93, 2.98], [-0.78, -3.0], [0.8, -1.88], [2.57, 0.75], [0.98, 3.57], [-2.53, 2.63], [3.03, -0.76], [0.18, -2.33], [-2.04, -2.09], [3.36, -0.72], [-2.51, 1.93], [0.91, -2.73], [0.01, 2.72], [-0.22, 3.34], [2.53, -1.48], [1.31, -2.86], [-2.28, -2.26], [1.98, 3.09], [-1.21, 2.84], [2.78, -1.41], [-2.21, 0.64], [3.33, 0.94], [0.35, 3.35], [-2.55, -1.61], [1.36, -1.61], [-2.68, 0.77], [0.04, 3.05], [1.06, -3.71], [-1.21, 3.02], [-0.37, 3.31], [-2.95, -1.58], [-3.53, -0.36], [1.67, -1.94], [-2.56, 0.78], [-1.55, -2.02], [-2.8, 0.76], [-1.29, -2.57], [2.48, -1.78]], "acc": {"1": [0.737, 0.473, 1.0], "1.8": [0.927, 0.853, 1.0], "3": [0.747, 1.0, 0.493]}, "split2": [[1, -1.39], [1, -1.96], [1, 2.28]], "trees": {"1": [0.67, 2], "2": [0.79, 4], "4": [0.963, 11], "None": [1.0, 26]}};
+  const T = (id, x, y, t, extra) => Object.assign({ id, tipo: 'testo', x, y, t, size: 13 }, extra || {});
+  const P = (id, x, y, t, extra) => Object.assign({ id, tipo: 'punto', in: 'ax', x, y, t }, extra || {});
+  const L = (id, x1, y1, x2, y2, extra) => Object.assign({ id, tipo: 'linea', in: 'ax', x1, y1, x2, y2 }, extra || {});
+  const pl = p => p.concat(p.slice().reverse());
+  const cerchio = (id, r, tono, extra) => Object.assign({ id, tipo: 'poli', in: 'ax', punti: Array.from({ length: 61 }, (_, i) => [r * Math.cos(i * Math.PI / 30), r * Math.sin(i * Math.PI / 30)]), tono, vuoto: true }, extra || {});
+
+    const pos = [[3, 3], [4, 2], [3.5, 4], [4.5, 3.5]], neg = [[1, 1], [0.5, 2], [2, 1], [1.5, 3]];
+    const og = [{ id: 'ax', tipo: 'assi', box: [40, 20, 270, 230], dom: [0, 5, 0, 5], tacche: 1, etX: 'x₁', etY: 'x₂' }]
+      .concat(pos.map(([a, b], i) => P('p' + i, a, b, '', { tono: 'dato', r: 6 })), neg.map(([a, b], i) => P('n' + i, a, b, i === 3 ? '?' : '', { tono: 'due', r: 6 })),
+        [L('conf', 0, 4, 4, 0, { tono: 'ok', nascosto: true }), T('c', 480, 40, '', { size: 12 }), T('c2', 480, 70, '', { size: 12 }), T('c3', 480, 110, '', { size: 12, bold: true }), T('c4', 480, 150, '', { size: 12 }), T('c5', 480, 180, '', { size: 12 }), T('c6', 480, 220, '', { size: 12 })]);
+    SCENE.classifica = {
+      w: 640, h: 270, lato: true,
+      legenda: 'dato:classe +1,due:classe −1,ok:confine wᵀx = 0',
+      oggetti: og,
+      passi: [
+        { nota: "<b>Regressione</b>: l'output è un numero. <b>Classificazione</b>: l'output è una classe. Binaria: etichette y ∈ {−1, +1}. Otto punti con due feature." },
+        { nota: "Si calcola lo stesso prodotto interno della regressione: <b>z = wᵀx = w₀ + w₁x₁ + w₂x₂</b>, con x = [1, x₁, x₂]. Esempio: w = (−4, 1, 1).", set: { c: { t: 'z = −4 + x₁ + x₂' } } },
+        { nota: "L'attivazione <b>sign</b> trasforma il numero in una classe: +1 se z &gt; 0, −1 altrimenti. Il <b>confine di decisione</b> è dove z = 0: qui la retta x₂ = 4 − x₁. In 3D un piano, in n dimensioni un iperpiano.", set: { conf: { nascosto: false }, c2: { t: 'confine: x₁ + x₂ = 4' } } },
+        { nota: "Il punto (3, 3): z = −4 + 6 = 2 &gt; 0, previsione +1, etichetta +1. <b>y · f(x) = 1 · 1 &gt; 0</b>: giusto.", set: { p0: { t: 'z = 2' }, c3: { t: '(3, 3): y·f = +1 · +1 > 0', tono: 'ok' } } },
+        { nota: "Il punto (1.5, 3), etichetta −1: z = −4 + 4.5 = 0.5 &gt; 0, previsione +1. y · f(x) = −1 · 1 = −1 &lt; 0: <b>sbagliato</b>. È il test del Task 2: stesso segno ⇒ giusto.", set: { n3: { t: 'z = 0.5', tono: 'no' }, c4: { t: '(1.5, 3): y·f = −1 · +1 < 0', tono: 'no' } } },
+        { nota: "I pesi decidono il confine: w₁/w₂ la pendenza, w₀ la posizione. Con w₀ il modello è affine, anche se si chiama \"lineare\". Per la regressione l'attivazione è l'identità; qui è sign; nella regressione logistica sarà la sigmoide.", set: { c5: { t: 'w₁/w₂ pendenza, w₀ posizione' }, c6: { t: 'attivazione: sign → sigmoide' } } }
+      ]
+    };
+
+    const all = D.A.map((p, i) => [p, 0, i]).concat(D.B.map((p, i) => [p, 1, i + 5]));
+    const ogk = [{ id: 'ax', tipo: 'assi', box: [40, 20, 270, 230], dom: [0, 5, 0, 5], tacche: 1, etX: 'x₁', etY: 'x₂' }]
+      .concat(all.map(([[a, b], c, i]) => P('k' + i, a, b, '', { tono: c ? 'dato' : 'due', r: 6 })), [P('q', D.q[0], D.q[1], 'nuovo', { tono: 'ora', r: 7 })],
+        D.ord.slice(0, 5).map((j, m) => L('l' + m, D.q[0], D.q[1], all[j][0][0], all[j][0][1], { tono: 'ora', tratt: true, nascosto: true })),
+        [T('c', 480, 50, '', { size: 12 }), T('c2', 480, 90, '', { size: 12 }), T('c3', 480, 130, '', { size: 12 }), T('c4', 480, 180, '', { size: 12 }), T('c5', 480, 210, '', { size: 12 })]);
+    const cl = k => (D['k' + k] === 1 ? 'classe B' : 'classe A');
+    const linee = k => Object.fromEntries([0, 1, 2, 3, 4].map(m => ['l' + m, { nascosto: m >= k }]));
+    SCENE.knn = {
+      w: 640, h: 270, lato: true,
+      legenda: 'dato:classe B,due:classe A,ora:punto nuovo e i suoi vicini',
+      oggetti: ogk,
+      passi: [
+        { nota: "<b>k-nearest neighbour</b>: un punto nuovo prende la classe della maggioranza dei suoi k vicini nel training. Non impara pesi: ricorda tutti i dati e misura distanze (calcolato con sklearn)." },
+        { nota: "<b>k = 1</b>: il più vicino (distanza " + D.dist[0] + ") è di A → " + cl(1) + ".", set: Object.assign(linee(1), { c: { t: 'k = 1 → ' + cl(1) } }) },
+        { nota: "<b>k = 3</b>: i tre più vicini sono 1 di A e 2 di B → " + cl(3) + ". La risposta è cambiata.", set: Object.assign(linee(3), { c2: { t: 'k = 3 → ' + cl(3) } }) },
+        { nota: "<b>k = 5</b>: 3 di A e 2 di B → " + cl(5) + ". k è un iperparametro: piccolo = confine frastagliato (k = 1 dà accuratezza 1.0 sul training: memoria), grande = confine liscio.", set: Object.assign(linee(5), { c3: { t: 'k = 5 → ' + cl(5) } }) },
+        { nota: "Siccome si basa sulle distanze, contano la <b>scelta della distanza</b> e la <b>scala</b> delle feature: una feature in migliaia schiaccia una in unità. E con tante dimensioni le distanze si somigliano tutte (maledizione della dimensionalità, settimana 12).", set: { c4: { t: 'distanze: conta la scala' }, c5: { t: 'k: iperparametro (validation)' } } }
+      ]
+    };
+  
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Classificatore lineare e regressione logistica</h1>
+  <p class="lede">Lezione 9 ed esercizi della settimana 10 (<i>Classification and decision boundaries</i>, <i>Introduction to logistic regression</i>). Dalla regressione alla classificazione: stesso prodotto interno wᵀx, poi una funzione di attivazione che decide la classe. Domanda d'esame <b>Q8 (a) e (b)</b>. DW capitolo 14.</p>
+</header>
+
+<section>
+  <h2>Classificare invece di prevedere un numero</h2>
+  <ul>
+    <li><b>Regressione</b>: l'output è un numero (il prezzo di una casa, la posizione sullo schermo).</li>
+    <li><b>Classificazione</b>: l'output è una <b>classe</b> (gatto / non gatto, spam / non spam). Binaria: due classi, etichette y ∈ {−1, 1} (oppure {0, 1}).</li>
+  </ul>
+  <figure class="passi" data-titolo="Il classificatore lineare (in realtà affine)">
+    <div class="passo"><div class="espr">z = <mark class="ora">w₀</mark> + <mark class="ora">w₁</mark><mark class="dato">x₁</mark> + <mark class="ora">w₂</mark><mark class="dato">x₂</mark> = wᵀx</div><p class="nota">Lo stesso prodotto interno della regressione, con x in coordinate omogenee [1, x₁, x₂]. Con w₀ è affine, anche se si chiama "lineare".</p></div>
+    <div class="passo"><div class="espr">f(x) = <mark class="ok">sign</mark>(z):   +1 se z &gt; 0,  −1 altrimenti</div><p class="nota">La funzione di <b>attivazione</b> sign trasforma il numero in una classe. (Per la regressione l'attivazione è l'identità: z stesso.)</p></div>
+    <div class="passo"><div class="espr">confine di decisione:  w₀ + w₁x₁ + w₂x₂ = <mark class="no">0</mark>  ⇒  x₂ = −w₀/w₂ − (w₁/w₂)·x₁</div><p class="nota">Una retta in 2D, un piano in 3D, un iperpiano in n dimensioni. Da un lato +1, dall'altro −1. I pesi decidono pendenza (w₁/w₂) e posizione (w₀).</p></div>
+    <div class="passo"><div class="espr">predizione giusta  ⇔  <mark class="ok">yᵢ · f(xᵢ) &gt; 0</mark></div><p class="nota">Task 2: se etichetta e previsione hanno lo stesso segno il prodotto è positivo (1·1 o −1·−1); se sono diversi è −1.</p></div>
+  </figure>
+  <figure class="scena" data-scena="classifica" data-titolo="wᵀx, sign e il confine di decisione"></figure>
+</section>
+
+<section>
+  <h2>Imparare w con i minimi quadrati (Task 4)</h2>
+  <figure class="scena" data-scena="retta" data-titolo="Il confine di decisione sui dati del notebook"></figure>
+  <figure class="codice" data-titolo="learn_affine_classifier (verificato con i dati del notebook, seed 42)">
+<pre data-lang="python">X = np.vstack([p_pos, p_neg])                      # 80 × 2
+labels = np.r_[np.ones(40), -np.ones(40)]         # +1 positivi, −1 negativi
+A = np.c_[np.ones(len(X)), X]                      # [1, x1, x2]
+w = np.linalg.lstsq(A, labels, rcond=None)[0]      # [0.052, 0.386, 0.321]
+pred = np.where(A @ w > 0, 1, -1)
+(pred == labels).mean()                            # 0.8875</pre>
+    <ol class="spiega">
+      <li data-righe="1-2" data-segna="np.ones(40)@ok|-np.ones(40)@no"><p>I dati delle due classi uno sotto l'altro, e le etichette nello stesso ordine. Attenzione: nel notebook il commento dice "-1 for positive class, 0 for negative class", ma il testo chiede <b>1 e −1</b>: vale il testo.</p></li>
+      <li data-righe="3-4" data-segna="np.ones(len(X))@due|np.linalg.lstsq@ora"><p>Design matrix con la colonna di 1 (il bias w₀) e minimi quadrati: si cerca w che renda wᵀx il più vicino possibile a ±1.</p></li>
+      <li data-righe="5-6" data-segna="A @ w &gt; 0@ok"><p>Classe = segno. Accuratezza 0.8875 (il notebook stampa 0.887).</p></li>
+    </ol>
+  </figure>
+  <div class="box attenzione" data-tit="Task 5: perché a mano si fa meglio (0.925)">
+    <p>I minimi quadrati non contano gli errori di classe: misurano quanto wᵀx dista da ±1. Un punto classificato benissimo, con wᵀx = 1.62, "sbaglia" lo stesso di (1.62 − 1)² = 0.38 e tira il confine verso di sé. Per questo w = [0.5, 1, 1], scelto a occhio, arriva a 0.925. Per la classificazione servono loss pensate apposta: la logistica (sotto) o la hinge delle SVM.</p>
+  </div>
+</section>
+
+<section>
+  <h2>La regressione logistica</h2>
+  <figure class="passi" data-titolo="Tre pezzi (Task 1–3)">
+    <div class="passo"><div class="espr">z = <mark class="ora">w₀ + w₁x</mark></div><p class="nota">Funzione lineare dell'input.</p></div>
+    <div class="passo"><div class="espr">σ(z) = 1 / (1 + e<sup>−z</sup>)  ∈ (<mark class="dato">0</mark>, <mark class="dato">1</mark>)</div><p class="nota">La <b>sigmoide</b> schiaccia qualsiasi numero tra 0 e 1: si legge come la <b>probabilità</b> che x sia della classe 1.</p></div>
+    <div class="passo"><div class="espr">classe 1 se σ(z) &gt; <mark class="ok">0.5</mark>  ⇔  z &gt; 0</div><p class="nota">σ(0) = 0.5: il confine di decisione è di nuovo w₀ + w₁x = 0, lo stesso del classificatore lineare. Con i parametri del notebook [3, 0.15]: x = −3/0.15 = <b>−20</b> (σ(−20·0.15 + 3) = 0.5, verificato).</p></div>
+  </figure>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Se cambi…</th><th>la sigmoide…</th></tr></thead>
+    <tbody>
+      <tr><td>w₁ piccolo</td><td>diventa quasi piatta, simile a una retta: le probabilità cambiano lentamente</td></tr>
+      <tr><td>w₁ grande</td><td>diventa quasi un gradino: si avvicina a sign</td></tr>
+      <tr><td>w₁ = 0</td><td>è costante: la probabilità non dipende da x</td></tr>
+      <tr><td>il bias w₀</td><td>si sposta a destra o a sinistra, cioè si sposta il confine</td></tr>
+    </tbody>
+  </table></div>
+  <figure class="scena" data-scena="sigmoide" data-titolo="Come i parametri cambiano la sigmoide"></figure>
+  <figure class="passi" data-titolo="Come si allena: la loss logistica (log loss, binary cross-entropy)">
+    <div class="passo"><div class="espr">L = −[ y·log(p) + (1 − y)·log(1 − p) ]    con p = σ(wᵀx), y ∈ {0, 1}</div><p class="nota">Per un punto di classe 1 conta solo −log(p).</p></div>
+    <div class="passo"><div class="espr">y = 1:  p = 0.9 → <mark class="ok">0.105</mark>;   p = 0.5 → 0.693;   p = 0.1 → <mark class="no">2.303</mark></div><p class="nota">Poca loss se sei sicuro e hai ragione, tantissima se sei sicuro e hai torto. A differenza dei minimi quadrati, un punto "molto giusto" non viene punito.</p></div>
+    <div class="passo"><div class="espr">nessuna formula chiusa  ⇒  <mark class="ora">discesa del gradiente</mark></div><p class="nota">La sigmoide rende il problema non lineare nei pesi: si parte da un w e lo si migliora a piccoli passi (settimana 14). Con i dati del Task 4, <code>LogisticRegression</code> di sklearn trova w₀ = 0.205, w = [1.791, 1.537], accuratezza 0.8875.</p></div>
+  </figure>
+  <div class="box idea" data-tit="Perché le probabilità sono utili">
+    <p>Una probabilità dice anche <b>quanto</b> il modello è sicuro. Cambiando la soglia 0.5 si scambiano falsi positivi e falsi negativi (settimana 11): in medicina si abbassa la soglia per non perdere malati.</p>
+  </div>
+  <div class="box attenzione" data-tit="Accuratezza 0.04 in un problema a due classi">
+    <p>Nel Task 5 del notebook compare "accuracy 0.040". Con due classi, un'accuratezza molto sotto 0.5 vuol dire quasi sempre <b>etichette invertite</b> (il modello dice 1 dove la verità è 0): il classificatore è ottimo (0.96) ma confrontato con le classi scambiate.</p>
+  </div>
+</section>
+
+<section>
+  <h2>k-nearest neighbour (lezione 9)</h2>
+  <p>Un nuovo punto prende la classe della <b>maggioranza dei suoi k vicini</b> nel training. Non impara pesi: ricorda tutti i dati (memory-based) e misura distanze, quindi la scelta della <a href="w02-norme-distanze.html">distanza</a> e la scala delle feature contano. k = 1 dà accuratezza 1.0 sul training (ogni punto è il vicino di sé stesso): non dice niente sulla generalizzazione. Pro: nessun allenamento, confini di qualsiasi forma. Contro: lento a prevedere con tanti dati, sensibile a feature non scalate e a quelle inutili.</p>
+  <div class="box esame" data-tit="Q8 (a) e (b)">
+    <p>(a) "Linear classification, kernels, and classification boundaries." (b) "Logistic regression and classification boundaries." Da portare: wᵀx e il segno, il confine come iperpiano, y·f(x) &gt; 0, minimi quadrati sulle etichette e il loro limite (Task 5), sigmoide e probabilità, confine a σ = 0.5, log loss e discesa del gradiente.</p>
+  </div>
+  <figure class="scena" data-scena="knn" data-titolo="k = 1, 3, 5: la risposta cambia"></figure>
+</section>
+
+</main>
+</body>
+</html>

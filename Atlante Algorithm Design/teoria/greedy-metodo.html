@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Greedy: il metodo</title>
+<link rel="stylesheet" href="../assets/atlas.css">
+<link rel="stylesheet" href="../assets/tema.css">
+<script src="../assets/sito.js"></script>
+<script src="../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+const N = (id,x,y,t,tono) => ({id,tipo:'rett',x,y,w:58,h:34,t,tono});
+SCENE.exch = {
+  w: 540, h: 230, lato: true,
+  legenda: 'dato:elemento,ora:cosa scambio,ok:soluzione valida,no:non valida',
+  oggetti: [
+    {id:'l1',tipo:'testo',x:20,y:60,t:'ottimo O',size:12,bold:true,anchor:'start'},
+    {id:'l2',tipo:'testo',x:20,y:150,t:'greedy G',size:12,bold:true,anchor:'start'},
+    N('o1',110,40,'1','dato'), N('o2',180,40,'2','dato'), N('o3',250,40,'3','dato'), N('o4',320,40,'4','spento'),
+    N('g1',110,130,'1','dato'), N('g2',180,130,'2','spento'), N('g3',250,130,'3','spento'), N('g4',320,130,'4','dato'),
+    {id:'x',tipo:'testo',x:440,y:60,t:'',size:12,bold:true},
+    {id:'c',tipo:'testo',x:20,y:210,t:'',size:13,bold:true,anchor:'start'}
+  ],
+  passi: [
+    { nota: 'Un\'ottima soluzione <b>O</b>. Confronto con il greedy <b>G</b>, che al primo passo prende l\'elemento più piccolo: 1.', set: {} },
+    { nota: 'O non contiene 1. Scambio l\'elemento <b>2</b> di O con l\'elemento <b>1</b>, che il greedy ha scelto. Il numero di elementi non cambia, e il costo non sale perché 1 è il più piccolo.', set: { o2:{tono:'ora'}, o1:{tono:'ok'}, c:{t:'scambio: O\' = O − {2} + {1}: stessa taglia, costo non maggiore'} } },
+    { nota: 'Ripeto per ogni passo del greedy. Alla fine O\' coincide con G e vale almeno quanto O: <b>il greedy è ottimo</b>. È l\'exchange argument (argomento di scambio).', set: { o3:{tono:'ora'}, g3:{tono:'dato'}, x:{t:'O\' = G',tono:'ok'}, c:{t:'ad ogni scambio la soluzione resta valida e ottima',tono:'ok'} } }
+  ]
+};
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Greedy: il metodo</h1>
+  <p class="lede">Un algoritmo greedy (avido) costruisce la soluzione un pezzo alla volta: a ogni passo prende l'elemento migliore secondo una regola fissa, se è ammissibile, e non torna mai indietro. È semplice da scrivere. La difficoltà è dimostrare che la regola scelta porta all'ottimo.</p>
+</header>
+
+<section>
+  <h2>Lo schema di ogni greedy</h2>
+<p>Ogni greedy ripete due decisioni, a ogni passo:</p>
+<ol>
+  <li><b>qual è l'elemento migliore adesso?</b> (la regola: il più corto, il più piccolo, il primo che finisce…);</li>
+  <li><b>è ammissibile?</b> (rispetta i vincoli: non si sovrappone, non crea un ciclo, sta nel budget).</li>
+</ol>
+<p>Se è ammissibile lo prendi; altrimenti lo scarti. Non torni mai indietro sulle scelte fatte.</p>
+<p>Il punto che decide l'esame non è scrivere il ciclo, ma <b>dimostrare</b> che la regola porta all'ottimo. Un greedy sbagliato
+sembra identico a uno giusto: per questo si chiede sempre un controesempio o una dimostrazione.</p>
+</section>
+<section>
+  <h2>Perché funziona: l'exchange argument</h2>
+<p>Il metodo di dimostrazione che serve quasi sempre all'esame è lo <b>scambio</b> (exchange argument):</p>
+<ol>
+  <li>Parti da una soluzione ottima <b>O</b> qualsiasi.</li>
+  <li>Se O differisce dal greedy, trova la prima scelta in cui differiscono.</li>
+  <li>Scambia l'elemento di O con quello del greedy. Mostra che la soluzione resta valida e non peggiora.</li>
+  <li>Ripeti: arrivi a una soluzione uguale al greedy, che quindi è ottima.</li>
+</ol>
+<div class="box regola" data-tit="Lo scambio deve essere gratis"><p>Lo scambio funziona solo se l'elemento greedy non costa più di quello che sostituisce.
+Se gli oggetti hanno valori diversi, lo scambio può peggiorare il risultato: allora il problema non è greedy, è una DP (knapsack).</p></div>
+  <figure class="scena" data-scena="exch" data-titolo="Scambiare una scelta dell'ottimo con quella del greedy"></figure>
+</section>
+<section>
+  <h2>Gli altri due modi di dimostrarlo</h2>
+<p><b>Greedy stays ahead</b> (il greedy resta in vantaggio): dopo ogni passo, la soluzione del greedy è buona almeno quanto quella di
+chiunque altro. È la prova dell'interval scheduling.</p>
+<p><b>Bound strutturale</b> (limite strutturale): trovi un limite che ogni soluzione deve rispettare, e mostri che il greedy lo raggiunge.
+Esempio: il numero di aule necessarie è almeno la profondità massima degli intervalli, e il greedy ne usa esattamente quel numero.</p>
+</section>
+<section>
+  <h2>Come si riconosce un problema greedy</h2>
+<p>Nelle prove il segnale è quasi sempre questo: <b>massimizza il numero di oggetti sotto un unico budget</b>, oppure
+<b>scegli i k migliori</b>, oppure <b>scheduling su una retta</b>. Se gli oggetti hanno valori diversi e un budget sulla somma
+dei valori, è knapsack (DP).</p>
+<p>Quattro stampi ricorrenti: <i>conteggio sotto budget</i> (ordina per costo crescente, prendi finché ci sta);
+<i>top-k</i> (ordina per valore decrescente, prendi i primi k); <i>soglia</i> (il minimo numero per superare metà del totale: ordina
+decrescente); <i>scheduling</i> (intervalli per fine, aule per inizio).</p>
+</section>
+<section>
+  <h2>All’esame</h2>
+<div class="box esame" data-tit="All’esame">
+<p>Scrivi nell'ordine: (a) il problema; (b) la regola in parole precise, <i>"in increasing order of key"</i>, poi lo pseudocodice con il test di ammissibilità;
+(c) il tempo, nei parametri del testo: ordinamento <code>O(n log n)</code> più scansione <code>O(n)</code>.
+Frase di correttezza: <i>"exchange argument: replacing a chosen item by a cheaper unchosen one never hurts."</i></p>
+<p>Errore tipico: dire "greedy" senza dimostrare. Se non trovi l'argomento di scambio, probabilmente è DP.</p>
+</div>
+</section>
+<section>
+  <h2>Formulario rapido</h2>
+<div class="tab-wrap"><table class="tab"><thead><tr><th>metodo</th><th>idea</th><th>uso</th></tr></thead><tbody><tr><td>greedy stays ahead</td><td>il greedy è sempre in vantaggio</td><td>interval scheduling</td></tr><tr><td>bound strutturale</td><td>un limite che il greedy raggiunge</td><td>aule = profondità</td></tr><tr><td>exchange argument</td><td>scambio senza peggiorare</td><td>la più usata all'esame</td></tr><tr><td>tempo tipico</td><td>O(n log n)</td><td>ordinamento + scansione</td></tr></tbody></table></div>
+</section>
+
+</main>
+</body>
+</html>

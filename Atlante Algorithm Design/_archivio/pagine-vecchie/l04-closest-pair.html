@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Closest pair of points</title>
+<link rel="stylesheet" href="../assets/atlas.css">
+<link rel="stylesheet" href="../assets/tema.css">
+<script src="../assets/sito.js"></script>
+<script src="../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  const P = [[8, 60], [18, 22], [28, 78], [35, 40], [44, 64], [56, 58], [62, 20], [70, 80], [80, 45], [92, 65]];
+  const X = x => 30 + x * 5, Y = y => 262 - y * 2.4, d = 21.26;
+  const id = p => 'p' + p[0] + '_' + p[1];
+  const ogg = P.map(p => ({ id: id(p), tipo: 'punto', x: X(p[0]), y: Y(p[1]), r: 6, t: `(${p[0]},${p[1]})`, tx: 8, ty: -8 }));
+  ogg.push({ id: 'L', tipo: 'linea', x1: X(50), y1: 8, x2: X(50), y2: 268, tratt: true, nascosto: true });
+  ogg.push({ id: 'Lt', tipo: 'testo', x: X(50), y: 282, t: 'L', size: 13, bold: true, nascosto: true });
+  ogg.push({ id: 's1', tipo: 'linea', x1: X(50 - d), y1: 8, x2: X(50 - d), y2: 268, tratt: true, tono: 'ora', nascosto: true });
+  ogg.push({ id: 's2', tipo: 'linea', x1: X(50 + d), y1: 8, x2: X(50 + d), y2: 268, tratt: true, tono: 'ora', nascosto: true });
+  ogg.push({ id: 'dl', tipo: 'linea', x1: X(28), y1: Y(78), x2: X(44), y2: Y(64), tono: 'dato', nascosto: true });
+  ogg.push({ id: 'dr', tipo: 'linea', x1: X(80), y1: Y(45), x2: X(92), y2: Y(65), tono: 'due', nascosto: true });
+  ogg.push({ id: 'c1', tipo: 'linea', x1: X(62), y1: Y(20), x2: X(35), y2: Y(40), tono: 'spento', nascosto: true });
+  ogg.push({ id: 'c2', tipo: 'linea', x1: X(35), y1: Y(40), x2: X(56), y2: Y(58), tono: 'spento', nascosto: true });
+  ogg.push({ id: 'c3', tipo: 'linea', x1: X(56), y1: Y(58), x2: X(44), y2: Y(64), tono: 'ok', nascosto: true });
+  ogg.push({ id: 'c4', tipo: 'linea', x1: X(44), y1: Y(64), x2: X(70), y2: Y(80), tono: 'spento', nascosto: true });
+  ogg.push({ id: 'info', tipo: 'testo', x: 290, y: 300, t: '', size: 12.5, bold: true });
+  const fuori = { [id([8, 60])]: { tono: 'spento' }, [id([18, 22])]: { tono: 'spento' }, [id([28, 78])]: { tono: 'spento' }, [id([80, 45])]: { tono: 'spento' }, [id([92, 65])]: { tono: 'spento' } };
+  SCENE.cp = {
+    w: 580, h: 310, lato: true,
+    legenda: 'dato:migliore a sinistra,due:migliore a destra,ora:striscia di larghezza 2δ,ok:migliore in assoluto',
+    codice: { lang: 'pseudo', testo: `sort points by x
+split at the median x (line L)
+δ₁ ← closest pair on the left   (recursion)
+δ₂ ← closest pair on the right  (recursion)
+δ ← min(δ₁, δ₂)
+strip ← points within δ of L, sorted by y
+for each p in strip:
+    compare p with the next points
+    while their y differs by less than δ` },
+    oggetti: ogg,
+    passi: [
+      { nota: 'Dieci punti nel piano. Vogliamo la coppia più vicina. La forza bruta prova tutte le coppie: <i>O(n²)</i>.' },
+      { nota: 'Ordino per x e traccio la retta verticale <b>L</b> che lascia metà dei punti per parte.', righe: [1, 2], set: { L: { nascosto: false }, Lt: { nascosto: false } } },
+      { nota: 'Ricorsione a sinistra: la coppia più vicina è (28,78)–(44,64), distanza <b>δ₁ ≈ 21.3</b>.', righe: [3], set: { dl: { nascosto: false }, [id([28, 78])]: { tono: 'dato' }, [id([44, 64])]: { tono: 'dato' } } },
+      { nota: 'Ricorsione a destra: (80,45)–(92,65), <b>δ₂ ≈ 23.3</b>.', righe: [4], set: { dr: { nascosto: false }, [id([80, 45])]: { tono: 'due' }, [id([92, 65])]: { tono: 'due' } } },
+      { nota: '<b>δ = 21.3</b>. Manca solo il caso difficile: una coppia con <b>un punto per parte</b>. Se è più vicina di δ, entrambi i punti stanno a meno di δ da L: basta guardare la <b>striscia</b> larga 2δ. I punti fuori non servono più.', righe: [5, 6], set: Object.assign({ s1: { nascosto: false }, s2: { nascosto: false }, info: { t: 'δ = min(21.3, 23.3) = 21.3' } }, fuori) },
+      { nota: 'Nella striscia, in ordine di y: (62,20), (35,40), (56,58), (44,64), (70,80). Ogni punto si confronta solo con i successivi che distano <b>meno di δ in y</b>: qui 4 confronti in tutto.', righe: [7, 8, 9], set: { c1: { nascosto: false }, c2: { nascosto: false }, c4: { nascosto: false } } },
+      { nota: '(56,58)–(44,64): distanza <b>≈ 13.4 &lt; δ</b>. È la coppia più vicina di tutte, e sta a cavallo di L. Senza la striscia la ricorsione non l\'avrebbe mai vista.', righe: [8], set: { c3: { nascosto: false }, [id([56, 58])]: { tono: 'ok' }, [id([44, 64])]: { tono: 'ok' }, info: { t: 'risultato: (44,64)–(56,58), ≈ 13.4', tono: 'ok' } } }
+    ]
+  };
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Closest pair of points</h1>
+  <p class="lede">Dati n punti nel piano, trova i due più vicini (K&amp;T 5.4). Forza bruta: <i>O(n²)</i>. Con divide et impera: <i>O(n log n)</i>. Il trucco è dimostrare che, vicino alla linea di divisione, ogni punto va confrontato solo con una manciata di altri.</p>
+</header>
+
+<section>
+  <h2>L'algoritmo</h2>
+  <figure class="scena" data-scena="cp" data-titolo="Dividi, risolvi, e poi la striscia"></figure>
+  <p class="piccolo">Distanze calcolate con Python sui punti della scena; il tuo <code>PairPoints.java</code> sugli stessi punti stampa proprio 56 58 / 44 64.</p>
+</section>
+
+<section>
+  <h2>Perché bastano pochi confronti</h2>
+  <figure class="passi" data-titolo="Il conto dei quadratini">
+    <div class="passo"><div class="espr">divido la striscia in quadratini di lato <mark class="dato">δ/2</mark></div><p class="nota">Ogni quadratino sta tutto da una parte di L.</p></div>
+    <div class="passo"><div class="espr">in un quadratino c'è <mark class="ok">al massimo un punto</mark></div><p class="nota">Due punti nello stesso quadratino sono dalla stessa parte e a distanza ≤ diagonale = δ/√2 &lt; δ: ma δ è il minimo di quella parte. Impossibile.</p></div>
+    <div class="passo"><div class="espr">un punto a meno di δ in y da p sta nelle <mark class="ora">prossime 2 righe</mark> di quadratini</div><p class="nota">Due righe di altezza δ/2 coprono δ in verticale. La striscia è larga 4 quadratini.</p></div>
+    <div class="passo"><div class="espr">⇒ al massimo circa <mark class="ok">2 · 4 = 8 quadratini</mark> ⇒ pochi punti da confrontare</div><p class="nota">Il libro dimostra "entro 15 posizioni", le slide "entro 11", con più attenzione bastano 7. Il numero preciso non conta: è una <b>costante</b>, quindi la striscia costa <i>O(n)</i>.</p></div>
+  </figure>
+  <figure class="passi" data-titolo="Il tempo">
+    <div class="passo"><div class="espr">se ogni volta riordino la striscia per y: T(n) = 2T(n/2) + <mark class="no">O(n log n)</mark> = O(n log² n)</div><p class="nota">Funziona, ma è un po' più lento.</p></div>
+    <div class="passo"><div class="espr">se la ricorsione restituisce i punti <mark class="ok">già ordinati per y</mark> (fondendo come in mergesort): T(n) = 2T(n/2) + <mark class="ok">O(n)</mark></div><p class="nota">È quello che fa il tuo codice con <code>mergeByY</code>.</p></div>
+    <div class="passo"><div class="espr"><mark class="ok">O(n log n)</mark></div><p class="nota">La stessa ricorrenza di mergesort.</p></div>
+  </figure>
+</section>
+
+<section>
+  <h2>La tua soluzione Kattis</h2>
+  <p>Hai trasformato le coordinate in interi (<code>Math.round(x * 100)</code>): con al massimo due decimali nell'input le distanze al quadrato in <code>long</code> sono <b>esatte</b>, niente errori di arrotondamento. Provato su 40 insiemi casuali fino a 300 punti: sempre la stessa distanza minima della forza bruta.</p>
+  <figure class="codice" data-titolo="PairPoints.java: il metodo solve (il tuo codice)">
+<pre data-lang="java">static void solve(int lo, int hi) {
+    if (hi - lo &lt;= 3) {
+        for (int i = lo; i &lt; hi; i++)
+            for (int j = i + 1; j &lt; hi; j++) check(points[i], points[j]);
+        Arrays.sort(points, lo, hi, (a, b) -> Long.compare(a[1], b[1]));
+        return;
+    }
+
+    int mid = (lo + hi) / 2;
+    long midX = points[mid][0];
+
+    solve(lo, mid);
+    solve(mid, hi);
+    mergeByY(lo, mid, hi);
+
+    int size = 0;
+    for (int i = lo; i &lt; hi; i++) {
+        long dx = points[i][0] - midX;
+        if (dx * dx &lt; best) band[size++] = points[i];
+    }
+
+    for (int i = 0; i &lt; size; i++) {
+        for (int j = i + 1; j &lt; size; j++) {
+            long dy = band[j][1] - band[i][1];
+            if (dy * dy &gt;= best) break;
+            check(band[i], band[j]);
+        }
+    }
+}</pre>
+    <ol class="spiega">
+      <li data-righe="1" data-segna="int lo, int hi@dato"><p>Lavora sulla porzione <code>points[lo..hi)</code>, già ordinata per x dal <code>main</code>. <code>best</code> è la distanza minima <b>al quadrato</b> trovata finora.</p></li>
+      <li data-righe="2-7" data-segna="hi - lo &lt;= 3@ok|Arrays.sort(points, lo, hi@due"><p><b>Caso base</b>: con al massimo 3 punti, forza bruta. Poi li ordina per y: la ricorsione restituisce sempre la sua porzione ordinata per y.</p></li>
+      <li data-righe="9-10" data-segna="long midX = points[mid][0];@ora"><p>La retta L passa per il punto di mezzo. Nota: <code>midX</code> va salvato <b>prima</b> delle chiamate ricorsive, perché quelle riordinano i punti per y e <code>points[mid]</code> cambierà. Tu lo fai nell'ordine giusto.</p></li>
+      <li data-righe="12-14" data-segna="solve(lo, mid)@dato|solve(mid, hi)@dato|mergeByY(lo, mid, hi)@due"><p>Le due metà, poi la fusione per y come nel merge di mergesort: <i>O(n)</i> invece di riordinare.</p></li>
+      <li data-righe="16-20" data-segna="dx * dx &lt; best@ora"><p><b>La striscia</b>: i punti con distanza orizzontale da L minore di δ (tutto al quadrato: <span class="m">dx² &lt; δ²</span>). Sono già in ordine di y.</p></li>
+      <li data-righe="22-28" data-segna="dy * dy &gt;= best@no|break@no|check(band[i], band[j])@ok"><p>Ogni punto con i successivi, <b>finché</b> la differenza in y è minore di δ: poi <code>break</code>. Invece di un numero fisso (7, 11, 15) ti fermi appena serve, e la prova dei quadratini garantisce che i giri sono pochi.</p></li>
+    </ol>
+  </figure>
+</section>
+
+</main>
+</body>
+</html>

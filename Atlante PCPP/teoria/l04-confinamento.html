@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Confinamento e azioni composte</title>
+<link rel="stylesheet" href="../assets/atlas.css">
+<link rel="stylesheet" href="../assets/tema.css">
+<link rel="stylesheet" href="../assets/pcpp.css">
+<script src="../assets/sito.js"></script>
+<script src="../assets/atlas.js" defer></script>
+<script src="../assets/pcpp.js" defer></script>
+<script>
+window.PROGRAMMI = window.PROGRAMMI || {};
+PROGRAMMI.addifabsent = {
+  memoria: { l: [] },
+  thread: ['t1', 't2'],
+  locali: { c: false },
+  passi: [
+    { n: 1, codice: 'boolean c = l.contains(1);', fai: (m, l) => { l.c = m.l.includes(1); } },
+    { n: 2, codice: 'if (!c) l.add(1); else l.add(2);', fai: (m, l) => { m.l.push(l.c ? 2 : 1); } }
+  ],
+  esito: m => 'l = [' + m.l.join(', ') + ']',
+  giusto: m => m.l.includes(2)
+};
+PROGRAMMI.addifabsentlock = {
+  memoria: { l: [] },
+  thread: ['t1', 't2'],
+  locali: { c: false },
+  passi: [
+    { n: 1, codice: 'synchronized (l) {', lock: 'l' },
+    { n: 2, codice: '  boolean c = l.contains(1);', fai: (m, l) => { l.c = m.l.includes(1); } },
+    { n: 3, codice: '  if (!c) l.add(1); else l.add(2);', fai: (m, l) => { m.l.push(l.c ? 2 : 1); } },
+    { n: 4, codice: '}', unlock: 'l' }
+  ],
+  esito: m => 'l = [' + m.l.join(', ') + ']',
+  giusto: m => m.l.includes(2)
+};
+</script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  const T = (id, x, y, t, extra) => Object.assign({ id, tipo: 'testo', x, y, t, size: 13 }, extra || {});
+  const R = (id, x, y, w, h, t, extra) => Object.assign({ id, tipo: 'rett', x, y, w, h, t }, extra || {});
+  const N = (id, x, y, t, tono, extra) => Object.assign({ id, tipo: 'nodo', x, y, t, tono, r: 18 }, extra || {});
+  const F = (id, x1, y1, x2, y2, t, extra) => Object.assign({ id, tipo: 'vett', x1, y1, x2, y2, t }, extra || {});
+
+    // instance confinement
+    SCENE.confina = {
+      w: 600, h: 250, lato: true,
+      legenda: 'dato:classe thread-safe,due:oggetto non thread-safe,ora:thread,no:accesso che salta il lock',
+      oggetti: [
+        R('est', 180, 30, 260, 150, '', { tono: 'dato' }), T('et', 310, 50, 'PersonSet (lock di this)', { bold: true, size: 12 }),
+        R('in', 230, 80, 160, 60, 'HashSet mySet', { tono: 'due' }),
+        N('t1', 60, 70, 't1', 'ora'), N('t2', 60, 150, 't2', 'ora'), N('t3', 550, 110, 't3', 'ora', { nascosto: true }),
+        F('f1', 80, 70, 178, 90, 'addPerson', { tx: -70, ty: -14, nascosto: true }), F('f2', 80, 150, 178, 130, 'contains', { tx: -60, ty: 22, nascosto: true }),
+        F('f3', 530, 110, 394, 110, 'l.add(…)', { tx: 40, ty: -12, nascosto: true, tono: 'no' }),
+        T('c', 300, 212, '', { size: 12, bold: true }), T('c2', 300, 236, '', { size: 12 })
+      ],
+      passi: [
+        { nota: "<b>Instance confinement</b>: un oggetto <b>non</b> thread-safe (HashSet) chiuso dentro una classe thread-safe (PersonSet). Il set è <code>private final</code>: non scappa ed è pubblicato in modo sicuro." },
+        { nota: "Ogni accesso al set passa da un metodo <code>synchronized</code> di PersonSet: la porta è una sola, con il lock di this. Mutua esclusione garantita.", set: { f1: { nascosto: false }, f2: { nascosto: false }, c: { t: 'tutti gli accessi passano dal lock di PersonSet', tono: 'ok' } } },
+        { nota: "I metodi restituiscono boolean o niente: il riferimento al set non esce mai. Il set è <b>confinato</b>, PersonSet è thread-safe anche se HashSet non lo è.", set: { c2: { t: 'nessun metodo restituisce mySet' } } },
+        { nota: "Le <b>synchronized collections</b> fanno lo stesso in automatico: <code>Collections.synchronizedList(l)</code> restituisce un involucro con ogni metodo sincronizzato.", set: { et: { t: 'synchronizedList(l)' }, in: { t: 'ArrayList l' }, f1: { t: 'add' }, f2: { t: 'get' }, c: { t: 'involucro: ogni metodo sincronizzato' }, c2: { t: '' } } },
+        { nota: "Ma funziona solo se nessuno tiene un altro riferimento all'oggetto interno. Se t3 continua a usare <code>l</code> direttamente, quegli accessi <b>saltano il lock</b>: data race sulla lista.", set: { t3: { nascosto: false }, f3: { nascosto: false }, in: { tono: 'no' }, c: { t: 'riferimento diretto a l: il confinamento è rotto', tono: 'no' } } }
+      ]
+    };
+  })();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Confinamento e azioni composte</h1>
+  <p class="lede">Un oggetto non thread-safe si può rendere sicuro chiudendolo dentro una classe thread-safe: <b>instance confinement</b>. Ma usare solo classi thread-safe <b>non basta</b> a evitare le race condition: le <b>azioni composte</b> vanno protette a parte.</p>
+</header>
+
+<section>
+  <h2>Instance confinement</h2>
+  <div class="box regola" data-tit="Definizione">
+    <p><b>Instance confinement</b>: incapsulare l'accesso a un oggetto <b>non</b> thread-safe dentro una classe thread-safe. L'oggetto è "confinato": nessuno lo raggiunge se non attraverso i metodi della classe.</p>
+  </div>
+  <figure class="codice" data-titolo="PersonSet (Goetz p. 59)">
+<pre data-lang="java">public class PersonSet {
+    private final Set&lt;Person&gt; mySet = new HashSet&lt;Person&gt;();
+
+    public synchronized void addPerson(Person p) {
+        mySet.add(p);
+    }
+
+    public synchronized boolean contains(Person p) {
+        return mySet.contains(p);
+    }
+}</pre>
+    <ol class="spiega">
+      <li data-righe="2" data-segna="HashSet&lt;Person&gt;@no|private final@ok"><p><code>HashSet</code> non è thread-safe. Qui è <code>private</code> (non scappa) e <code>final</code> (pubblicato in modo sicuro).</p></li>
+      <li data-righe="4-10" data-segna="synchronized*@ok"><p>Ogni accesso al set passa da un metodo <code>synchronized</code>: mutua esclusione con il lock di <code>this</code>.</p></li>
+      <li data-righe="8-10" data-segna="boolean@dato"><p>I metodi restituiscono <code>boolean</code> o niente: il set non esce mai. Il set è confinato, <code>PersonSet</code> è thread-safe.</p></li>
+    </ol>
+  </figure>
+  <div class="box idea" data-tit="Esempio nella libreria Java">
+    <p>Le <b>synchronized collections</b>: <code>Collections.synchronizedList(l)</code> restituisce un involucro in cui ogni metodo è sincronizzato, e la lista originale è accessibile solo da lì. Qualsiasi collezione si può rendere thread-safe così (<code>synchronizedSet</code>, <code>synchronizedMap</code>…).</p>
+  </div>
+  <div class="box attenzione" data-tit="Condizione">
+    <p>Funziona solo se nessuno tiene un altro riferimento all'oggetto interno. Se dopo <code>synchronizedList(l)</code> qualcuno continua a usare <code>l</code> direttamente, quegli accessi non passano dal lock.</p>
+  </div>
+  <figure class="scena" data-scena="confina" data-titolo="Un HashSet chiuso dentro una classe thread-safe"></figure>
+</section>
+
+<section>
+  <h2>Classi thread-safe ≠ nessuna race condition</h2>
+  <figure class="codice" data-titolo="SynchronizedSetProblem.java (ridotto)">
+<pre data-lang="java">List&lt;Integer&gt; lSync = Collections.synchronizedList(new ArrayList&lt;Integer&gt;());
+new Thread(() -> { add1IfAbsent(lSync); }).start();
+new Thread(() -> { add1IfAbsent(lSync); }).start();
+
+void add1IfAbsent(List&lt;Integer&gt; l) {
+    if (!l.contains(1))
+        l.add(1);
+    else
+        l.add(2);
+}</pre>
+    <ol class="spiega">
+      <li data-righe="1-3" data-segna="Collections.synchronizedList@ok"><p>Una lista thread-safe e due thread che fanno la stessa cosa. Alla fine ci si aspetta <code>[1, 2]</code>: il primo aggiunge 1, il secondo trova 1 e aggiunge 2.</p></li>
+      <li data-righe="6-7" data-segna="l.contains(1)@due|l.add(1)@ora"><p>Due chiamate separate: <b>controlla</b>, poi <b>agisci</b> (check-then-act). Ognuna prende e rilascia il lock della lista. <b>Tra le due</b> il lock è libero.</p></li>
+      <li data-righe="1-10" data-segna="add1IfAbsent*@no"><p>Nessuna data race: ogni accesso alla lista è dentro un metodo sincronizzato, quindi ordinato da happens-before. Ma se entrambi i thread fanno <code>contains</code> prima di qualsiasi <code>add</code>, entrambi aggiungono 1: <code>[1, 1]</code>. È una <b>race condition</b>.</p></li>
+    </ol>
+  </figure>
+  <p>Prova tu: ogni chiamata a un metodo della lista sincronizzata è un passo atomico.</p>
+  <figure class="interleaving" data-prog="addifabsent" data-titolo="add1IfAbsent con una lista sincronizzata"></figure>
+  <div class="box attenzione" data-tit="Misurato davvero">
+    <p>Ripetendo l'esperimento 200 000 volte (JDK 26), <code>[1, 1]</code> è uscito <b>8 volte</b>. Raro, ma possibile: per questo un test che "passa" non dimostra niente.</p>
+  </div>
+  <div class="box regola" data-tit="Le due definizioni a confronto">
+    <p>Se "programma thread-safe" vuol dire <b>senza data race</b> (la definizione del corso), questo programma è thread-safe. Se volesse dire <b>senza race condition</b>, non lo sarebbe. Il commento nel codice del corso lo dice esplicitamente: dipende dalla definizione.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Azioni composte: estendere una classe thread-safe</h2>
+  <p>Un'<b>azione composta</b> è una sequenza di chiamate di metodo o accessi ai campi che deve avvenire tutta in una sezione critica. Esempi tipici: <b>check-and-set</b> (controlla e poi modifica), <b>iterazione</b>, <b>navigazione</b> (per esempio <code>contains</code> seguito da un'azione).</p>
+
+  <h3>Soluzione 1: usare il lock intrinseco della collezione</h3>
+  <pre class="cod" data-lang="java">public void addIfAbsent(List l, Integer e) {
+    synchronized (l) {
+        if (!l.contains(e)) l.add(e);
+    }
+}</pre>
+  <p>Funziona perché la lista di <code>synchronizedList</code> usa <b>sé stessa</b> come lock: <code>synchronized (l)</code> prende lo stesso lock dei suoi metodi, e nessun altro può entrare tra <code>contains</code> e <code>add</code>. La documentazione Java chiede la stessa cosa per iterare: <code>synchronized (list) { for (…) … }</code>.</p>
+  <figure class="interleaving" data-prog="addifabsentlock" data-titolo="Con synchronized (l) attorno all'azione composta"></figure>
+  <p class="piccolo">Stesso esperimento da 200 000 prove con <code>synchronized (l)</code>: <code>[1, 1]</code> uscito 0 volte.</p>
+
+  <h3>Soluzione 2: un metodo nuovo nella classe thread-safe</h3>
+  <figure class="codice" data-titolo="ThreadSafeList con addIfAbsent">
+<pre data-lang="java">class ThreadSafeList&lt;T&gt; {
+    private final List&lt;T&gt; l = new ArrayList&lt;&gt;();
+    public synchronized void add(T e) { l.add(e); }
+    public synchronized boolean contains(T e) { return l.contains(e); }
+    public synchronized void addIfAbsent(T e) {
+        if (!l.contains(e)) l.add(e);
+    }
+}</pre>
+    <ol class="spiega">
+      <li data-righe="5-7" data-segna="public synchronized void addIfAbsent@ok"><p>L'azione composta diventa <b>un solo metodo</b> sincronizzato: controllo e aggiunta avvengono con il lock tenuto per tutto il tempo.</p></li>
+    </ol>
+  </figure>
+  <p>Attenzione: nella slide 79 il metodo è scritto <code>public void synchronized</code>. In Java non compila (messaggi veri di <code>javac</code>):</p>
+  <div class="errori">
+    <div class="errore">
+      <pre data-lang="java">public void synchronized addIfAbsent(T e) { if (!l.contains(e)) l.add(e); }</pre>
+      <pre class="msg">error: &lt;identifier&gt; expected
+error: '(' expected
+error: invalid method declaration; return type required</pre>
+      <div class="fix"><p>I modificatori (<code>public</code>, <code>static</code>, <code>synchronized</code>, <code>final</code>) vanno <b>prima</b> del tipo di ritorno: <code>public synchronized void addIfAbsent(…)</code>. Se lo scrivi a mano all'esame, occhio all'ordine.</p></div>
+    </div>
+  </div>
+</section>
+
+</main>
+</body>
+</html>

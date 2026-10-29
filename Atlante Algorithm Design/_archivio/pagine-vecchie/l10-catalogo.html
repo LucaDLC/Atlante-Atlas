@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Il catalogo dei problemi difficili</title>
+<link rel="stylesheet" href="../assets/atlas.css">
+<link rel="stylesheet" href="../assets/tema.css">
+<script src="../assets/sito.js"></script>
+<script src="../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  const N = {
+    sat: [310, 25, '3-SAT'],
+    is: [80, 100, 'Independent Set'], ham: [245, 100, 'Dir. Ham. Cycle'], col: [390, 100, '3-Color'], ss: [530, 100, 'Subset Sum'],
+    vc: [80, 170, 'Vertex Cover'], hc: [245, 170, 'Ham. Cycle / Path'], ks: [530, 170, 'Knapsack'],
+    sc: [80, 240, 'Set Cover'], tsp: [245, 240, 'TSP'], lp: [390, 240, 'Longest Path']
+  };
+  const ogg = Object.entries(N).map(([id, [x, y, t]]) => ({ id, tipo: 'testo', x, y, t, size: 12.5, bold: true, nascosto: id !== 'sat' }));
+  const A = [['sat', 'is'], ['sat', 'ham'], ['sat', 'col'], ['sat', 'ss'], ['is', 'vc'], ['vc', 'sc'], ['ham', 'hc'], ['hc', 'tsp'], ['hc', 'lp'], ['ss', 'ks']];
+  A.forEach(([a, b]) => ogg.push({ id: a + '_' + b, tipo: 'vett', x1: N[a][0], y1: N[a][1] + 8, x2: N[b][0], y2: N[b][1] - 14, nascosto: true }));
+  const mostra = (...ids) => Object.fromEntries(ids.map(i => [i, { nascosto: false }]));
+  SCENE.albero = {
+    w: 620, h: 260, lato: false, legenda: 'ok:appena aggiunto alla catena',
+    oggetti: ogg,
+    passi: [
+      { nota: 'Si parte da <b>3-SAT</b>, NP-completo per il teorema di Cook-Levin. Ogni freccia A → B è una riduzione A ≤<sub>p</sub> B: B è almeno difficile quanto A.', set: { sat: { tono: 'ok' } } },
+      { nota: '<b>Packing e covering</b>: 3-SAT → Independent Set (gadget a triangoli) → Vertex Cover (complemento) → Set Cover (caso particolare).', set: Object.assign(mostra('is', 'vc', 'sc', 'sat_is', 'is_vc', 'vc_sc'), { is: { nascosto: false, tono: 'ok' }, vc: { nascosto: false, tono: 'ok' }, sc: { nascosto: false, tono: 'ok' } }) },
+      { nota: '<b>Sequencing</b>: 3-SAT → Hamiltonian Cycle orientato → non orientato → TSP e Longest Path.', set: Object.assign(mostra('ham', 'hc', 'tsp', 'lp', 'sat_ham', 'ham_hc', 'hc_tsp', 'hc_lp'), { is: { tono: null }, vc: { tono: null }, sc: { tono: null }, ham: { nascosto: false, tono: 'ok' }, hc: { nascosto: false, tono: 'ok' }, tsp: { nascosto: false, tono: 'ok' }, lp: { nascosto: false, tono: 'ok' } }) },
+      { nota: '<b>Partitioning</b>: 3-SAT → 3-Color (colorare un grafo con 3 colori). <b>Numerical</b>: 3-SAT → Subset Sum → Knapsack (nel libro Subset Sum passa da 3D-Matching).', set: Object.assign(mostra('col', 'ss', 'ks', 'sat_col', 'sat_ss', 'ss_ks'), { ham: { tono: null }, hc: { tono: null }, tsp: { tono: null }, lp: { tono: null }, col: { nascosto: false, tono: 'ok' }, ss: { nascosto: false, tono: 'ok' }, ks: { nascosto: false, tono: 'ok' } }) },
+      { nota: 'All\'esame non si rifà la catena: si prende il problema <b>più vicino</b> al nuovo (quello da cui la riduzione è più corta) e si riduce da lui.', set: { col: { tono: null }, ss: { tono: null }, ks: { tono: null } } }
+    ]
+  };
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Il catalogo dei problemi difficili</h1>
+  <p class="lede">Per la domanda NP-hard dell'esame devi riconoscere il problema difficile tra quelli del foglio e dire da quale problema noto ridurre. Qui i problemi NP-completi del corso (K&amp;T 8.1–8.8), come si travestono, e i sosia <b>facili</b> che fanno sbagliare.</p>
+</header>
+
+<section>
+  <h2>La catena delle riduzioni</h2>
+  <figure class="scena" data-scena="albero" data-titolo="Da 3-SAT a tutto il resto (lo schema delle slide)"></figure>
+</section>
+
+<section>
+  <h2>I problemi da conoscere</h2>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Problema</th><th>Domanda (versione di decisione)</th><th>Come si traveste all'esame</th></tr></thead>
+    <tbody>
+      <tr><td><b>Independent Set</b></td><td>ci sono k nodi senza archi tra loro?</td><td>scegliere più cose possibile tra cui certe coppie sono incompatibili</td></tr>
+      <tr><td><b>Clique</b></td><td>ci sono k nodi tutti collegati tra loro?</td><td>Independent Set sul grafo complementare</td></tr>
+      <tr><td><b>Vertex Cover</b></td><td>ci sono k nodi che toccano tutti gli archi?</td><td>scegliere pochi punti che "sorvegliano" tutte le coppie (router che controllano i fili, tessere del domino da comprare)</td></tr>
+      <tr><td><b>Set Cover</b></td><td>ci sono k insiemi la cui unione è tutto U?</td><td>scegliere pochi pacchetti che coprono tutti i requisiti (bitstring il cui or dà tutti 1)</td></tr>
+      <tr><td><b>Set Packing</b></td><td>ci sono k insiemi disgiunti?</td><td>scegliere più gruppi possibile senza risorse in comune</td></tr>
+      <tr><td><b>3-SAT</b></td><td>la formula (clausole di 3 letterali) è soddisfacibile?</td><td>vincoli logici "almeno uno tra…"</td></tr>
+      <tr><td><b>Hamiltonian Cycle / Path</b></td><td>c'è un ciclo/cammino che passa da ogni nodo una volta?</td><td>visitare tutto senza ripetere, "un ciclo lungo almeno r" con r = n</td></tr>
+      <tr><td><b>TSP</b></td><td>c'è un giro di tutti i nodi di costo ≤ D?</td><td>il giro più economico di tutte le città</td></tr>
+      <tr><td><b>Longest Path</b></td><td>c'è un cammino semplice con almeno k archi?</td><td>la sequenza più lunga senza ripetizioni, su un grafo con cicli</td></tr>
+      <tr><td><b>3-Color</b> (k-Color, k ≥ 3)</td><td>si colorano i nodi con 3 colori, vicini di colore diverso?</td><td>assegnare turni, frequenze, aule a cose in conflitto</td></tr>
+      <tr><td><b>3D-Matching</b></td><td>ci sono n triple disgiunte che coprono tutto?</td><td>formare terne (persona, compito, orario)</td></tr>
+      <tr><td><b>Subset Sum</b> / Knapsack</td><td>un sottoinsieme ha somma esattamente W?</td><td>numeri <b>grandi</b> (con numeri piccoli c'è la DP pseudo-polinomiale)</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section>
+  <h2>I sosia facili</h2>
+  <p>Ogni problema difficile ha un "gemello" che sembra uguale ma si risolve in tempo polinomiale. All'esame gli altri 4 problemi del foglio sono di questo tipo.</p>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Difficile (NP-hard)</th><th>Facile (in P)</th><th>Con cosa</th></tr></thead>
+    <tbody>
+      <tr><td>longest path in un grafo qualsiasi</td><td>shortest path; longest path in un <b>DAG</b></td><td>BFS/Dijkstra; DP sull'ordine topologico</td></tr>
+      <tr><td>Hamiltonian cycle (ogni <b>nodo</b> una volta)</td><td>ciclo di Eulero (ogni <b>arco</b> una volta)</td><td>controllo dei gradi</td></tr>
+      <tr><td>3-coloring</td><td>2-coloring</td><td>BFS: il grafo è bipartito?</td></tr>
+      <tr><td>3D-matching</td><td>matching bipartito (coppie)</td><td>flusso</td></tr>
+      <tr><td>3-SAT</td><td>2-SAT</td><td>componenti fortemente connesse</td></tr>
+      <tr><td>max cut</td><td>min cut</td><td>flusso</td></tr>
+      <tr><td>independent set / vertex cover in un grafo qualsiasi</td><td>gli stessi su un <b>albero</b> o su intervalli</td><td>DP, greedy (interval scheduling è un independent set sugli intervalli)</td></tr>
+      <tr><td>subset sum con numeri enormi</td><td>subset sum con numeri piccoli</td><td>DP O(nW)</td></tr>
+      <tr><td>set cover</td><td>edge cover, coprire con intervalli su una retta</td><td>matching, greedy</td></tr>
+    </tbody>
+  </table></div>
+  <div class="box attenzione" data-tit="Un indizio pratico">
+    <p>Se i limiti del problema Kattis-style sono piccolissimi (n ≤ 20) e il problema "sembra di tipo copertura/sequenza", è probabile che sia quello NP-hard: il testo lascia spazio solo alla ricerca esaustiva. Ma all'esame decide la <b>struttura</b>, non i numeri: bisogna saper dire da quale problema noto ridurre.</p>
+  </div>
+</section>
+
+</main>
+</body>
+</html>

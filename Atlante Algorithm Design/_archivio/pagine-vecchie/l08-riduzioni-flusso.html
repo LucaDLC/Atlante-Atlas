@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Ridurre a un flusso</title>
+<link rel="stylesheet" href="../assets/atlas.css">
+<link rel="stylesheet" href="../assets/tema.css">
+<script src="../assets/sito.js"></script>
+<script src="../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  const S = ['1110', '1111', '0001', '0000'], Ys = [40, 110, 180, 250], Yp = [60, 145, 230];
+  const ogg = [
+    { id: 's', tipo: 'nodo', x: 40, y: 145, t: 's', nascosto: true },
+    { id: 't', tipo: 'nodo', x: 480, y: 145, t: 't', nascosto: true }
+  ];
+  const coppie = ['1110 1111', '1111 0001', '1010 0101'];
+  coppie.forEach((c, i) => ogg.push({ id: 'P' + (i + 1), tipo: 'nodo', x: 160, y: Yp[i], t: 'P' + (i + 1), sotto: c }));
+  S.forEach((x, i) => ogg.push({ id: 'S' + x, tipo: 'nodo', x: 350, y: Ys[i], r: 26, t: x }));
+  const E = [['P1', '1110', 'and'], ['P1', '1111', 'or'], ['P1', '0001', 'xor'], ['P2', '0001', 'and'], ['P2', '1111', 'or'], ['P2', '1110', 'xor'], ['P3', '0000', 'and'], ['P3', '1111', 'or, xor']];
+  E.forEach(([p, x]) => ogg.push({ id: p + x, tipo: 'arco', da: p, a: 'S' + x, dir: true, nascosto: true }));
+  ['P1', 'P2', 'P3'].forEach(p => ogg.push({ id: 's' + p, tipo: 'arco', da: 's', a: p, dir: true, t: '1', nascosto: true }));
+  S.forEach(x => ogg.push({ id: x + 't', tipo: 'arco', da: 'S' + x, a: 't', dir: true, t: '1', nascosto: true }));
+  ogg.push({ id: 'v', tipo: 'testo', x: 260, y: 300, t: '', size: 13, bold: true });
+  const archiMedi = {}; E.forEach(([p, x]) => archiMedi[p + x] = { nascosto: false });
+  const bordo = { s: { nascosto: false }, t: { nascosto: false } };
+  ['P1', 'P2', 'P3'].forEach(p => bordo['s' + p] = { nascosto: false, tono: 'spento' });
+  S.forEach(x => bordo[x + 't'] = { nascosto: false, tono: 'spento' });
+  SCENE.xor = {
+    w: 520, h: 310, lato: true,
+    legenda: 'ok:flusso 1 (coppia → stringa scelta),spento:arco di capacità 1',
+    oggetti: ogg,
+    passi: [
+      { nota: 'Esame 21 dic 2023, <i>To Xor Or Not To Xor</i>, esempio 1: tre coppie di stringhe. Per ogni coppia scelgo and, or o xor; voglio il <b>massimo numero di stringhe diverse</b> tra i risultati.' },
+      { nota: 'Un nodo per ogni coppia, un nodo per ogni stringa che si può ottenere (qui 4). Un arco coppia → stringa se un\'operazione la produce: al massimo 3 archi per coppia (P3 ne ha 2: or e xor danno entrambe 1111).', set: archiMedi },
+      { nota: 'Sorgente s → ogni coppia con capacità 1 (ogni coppia produce <b>una</b> stringa); ogni stringa → t con capacità 1 (ogni stringa si <b>conta una volta</b>). Anche gli archi centrali hanno capacità 1.', set: bordo },
+      { nota: 'Un flusso massimo: P1 → 1110, P2 → 0001, P3 → 0000. Valore <b>3</b>: tre coppie mandate su tre stringhe <b>diverse</b>. È il d dell\'output (e il codice Java dà 3).', set: { sP1: { tono: 'ok' }, sP2: { tono: 'ok' }, sP3: { tono: 'ok' }, P11110: { tono: 'ok' }, P20001: { tono: 'ok' }, P30000: { tono: 'ok' }, '1110t': { tono: 'ok' }, '0001t': { tono: 'ok' }, '0000t': { tono: 'ok' }, v: { t: 'd = flusso massimo = 3', tono: 'ok' } } },
+      { nota: 'Perché è giusto: un flusso intero di valore k sceglie k coppie con k stringhe diverse (matching). Le coppie senza flusso usano un\'operazione qualsiasi: possono solo ripetere stringhe già contate, altrimenti ci sarebbe un cammino aumentante. Quindi d = matching massimo = flusso massimo.' }
+    ]
+  };
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Ridurre a un flusso</h1>
+  <p class="lede">Il cuore della domanda "flow" dell'esame: riconoscere che un problema <b>è</b> un flusso massimo travestito, e descrivere la rete in modo "ridiculously precise". Qui la ricetta, un esercizio d'esame svolto e le applicazioni del capitolo 7.</p>
+</header>
+
+<section>
+  <h2>La ricetta</h2>
+  <figure class="passi" data-titolo="Come si scrive una riduzione a flusso">
+    <div class="passo"><div class="espr">1. i <mark class="dato">nodi</mark>: quali, quanti (in funzione dei parametri del problema)</div><p class="nota">Di solito: s, t, un nodo per ogni oggetto di tipo A, uno per ogni oggetto di tipo B.</p></div>
+    <div class="passo"><div class="espr">2. gli <mark class="dato">archi</mark>: da dove a dove, orientati, e <mark class="ora">quante</mark> in tutto</div><p class="nota">"Every node for a giraffe is connected to every node for a letter…"</p></div>
+    <div class="passo"><div class="espr">3. le <mark class="ora">capacità</mark>: ognuna con il suo significato</div><p class="nota">Una capacità 1 vuol dire "al massimo una volta"; una capacità ∞ vuol dire "nessun limite, ma l'arco non si può tagliare".</p></div>
+    <div class="passo"><div class="espr">4. cosa <mark class="ok">significa</mark> un flusso massimo nel problema originale, e quanto vale</div><p class="nota">E perché vale in entrambe le direzioni (soluzione → flusso, flusso intero → soluzione).</p></div>
+    <div class="passo"><div class="espr">5. il <mark class="ok">tempo</mark>: quale algoritmo di flusso e con che parametri</div><p class="nota">"Ford-Fulkerson [KT 7.1], O(mC), where m = … and C = …".</p></div>
+  </figure>
+  <div class="box esame" data-tit="Il testo d'esame lo chiede letteralmente">
+    <p>"Start by drawing the graph corresponding to Sample Input 1. Be ridiculously precise about which nodes and arcs there are, how many there are… What does a maximum flow mean in terms of the original problem?" Prima il disegno sull'esempio, poi la regola generale.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Svolto: To Xor Or Not To Xor (esame 21 dic 2023)</h2>
+  <figure class="scena" data-scena="xor" data-titolo="La rete per il Sample Input 1"></figure>
+  <div class="box inglese" data-tit="Risposta modello (domanda 5b–c)">
+    <p>"Given n pairs of bitstrings of length k, we build a flow network. There is a source s, a sink t, one node for each pair (n nodes) and one node for each distinct bitstring that can be obtained as the and, or or xor of some pair (at most 3n nodes). For every pair i there is an arc s → i of capacity 1, and an arc from i to each of the at most 3 bitstrings it can produce, capacity 1. For every bitstring node there is an arc to t of capacity 1. In total at most 7n arcs.</p>
+    <p>An integral flow of value d selects d pairs and assigns them d different bitstrings, so the maximum flow value equals the maximum number d of different bitstrings; the remaining pairs can use any operation. Computing the bitstrings takes O(nk) time. With Ford-Fulkerson [KT 7.1] the flow takes O(mC) = O(n · n) = O(n²) time, since m = O(n) and the flow value is at most C = n."</p>
+  </div>
+  <p class="piccolo">Verificato: il codice Java di questa riduzione dà d = 3 e d = 2 sui due esempi del testo, e su 500 istanze casuali piccole il flusso massimo coincide con la forza bruta che prova tutte le 3ⁿ scelte.</p>
+</section>
+
+<section>
+  <h2>Le altre applicazioni del capitolo 7</h2>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Problema</th><th>Idea della rete</th><th>K&amp;T</th></tr></thead>
+    <tbody>
+      <tr><td><b>Matching bipartito</b></td><td>s → sinistra → destra → t, tutto capacità 1</td><td>7.5 · <a href="l08-matching-cammini.html">pagina</a></td></tr>
+      <tr><td><b>Cammini disgiunti</b></td><td>capacità 1 sugli archi; sdoppio i nodi per i cammini disgiunti sui nodi</td><td>7.6</td></tr>
+      <tr><td><b>Circolazione con domande</b></td><td>ogni nodo v ha una domanda d<sub>v</sub> (&gt;0 consuma, &lt;0 produce). Super-sorgente s* → nodi che producono (capacità −d<sub>v</sub>), nodi che consumano → super-pozzo t* (capacità d<sub>v</sub>). Esiste una circolazione ⇔ il flusso massimo satura tutti gli archi di s*.</td><td>7.7</td></tr>
+      <tr><td><b>Limiti inferiori</b> ℓ<sub>e</sub> ≤ f(e)</td><td>mando subito ℓ<sub>e</sub> su ogni arco, sposto le domande di conseguenza, e cerco una circolazione con capacità c<sub>e</sub> − ℓ<sub>e</sub></td><td>7.7</td></tr>
+      <tr><td><b>Survey design</b></td><td>clienti e prodotti come nel matching, ma con limiti inferiori e superiori su quante domande per cliente e per prodotto</td><td>7.8</td></tr>
+      <tr><td><b>Airline scheduling</b></td><td>voli come archi con limite inferiore 1 (devono essere coperti); gli aerei sono il flusso</td><td>7.9</td></tr>
+      <tr><td><b>Image segmentation</b></td><td>taglio minimo: ogni pixel sta dalla parte "primo piano" o "sfondo"; gli archi pagano la probabilità sbagliata e la separazione tra vicini</td><td>7.10</td></tr>
+      <tr><td><b>Project selection</b></td><td>taglio minimo con archi di capacità ∞ per i prerequisiti (sotto)</td><td>7.11</td></tr>
+      <tr><td><b>Baseball elimination</b></td><td>le partite rimaste come nodi che distribuiscono vittorie alle squadre; la squadra è eliminata se il flusso non satura</td><td>7.12</td></tr>
+    </tbody>
+  </table></div>
+  <figure class="passi" data-titolo="Project selection: scegliere progetti con prerequisiti">
+    <div class="passo"><div class="espr">ogni progetto i ha un profitto <mark class="dato">pᵢ</mark> (anche negativo); "i richiede j" = se prendo i devo prendere j</div><p class="nota">Vogliamo l'insieme ammissibile di profitto massimo.</p></div>
+    <div class="passo"><div class="espr">s → i con capacità <mark class="ok">pᵢ</mark> se pᵢ &gt; 0;   i → t con capacità <mark class="no">−pᵢ</mark> se pᵢ &lt; 0</div><p class="nota">Chiamo C = somma dei profitti positivi.</p></div>
+    <div class="passo"><div class="espr">"i richiede j" ⇒ arco i → j con capacità <mark class="ora">∞</mark></div><p class="nota">Un taglio di capacità finita non può avere i dalla parte di s e j dall'altra: i prerequisiti sono rispettati.</p></div>
+    <div class="passo"><div class="espr">taglio (A, B): prendo i progetti in A − {s}.  cap(A, B) = <mark class="ok">C − profitto(A)</mark></div><p class="nota">Pago i profitti positivi lasciati fuori e i costi dei progetti presi.</p></div>
+    <div class="passo"><div class="espr">profitto massimo = <mark class="ok">C − taglio minimo</mark></div><p class="nota">Un flusso massimo e una BFS nel residuo danno la scelta ottima.</p></div>
+  </figure>
+</section>
+
+<section>
+  <h2>Kattis: Open-Pit Mining, il tuo PitMine</h2>
+  <p>È project selection quasi alla lettera. Il blocco i vale <code>vᵢ − cᵢ</code> (anche negativo); "il blocco j copre i" vuol dire che per scavare i devo aver scavato j, quindi arco <b>i → j</b> con capacità ∞. Nel codice: <code>capacity[below][node] = infinity</code>, dove <code>below</code> è il blocco coperto. I blocchi sono numerati da 1, e il nodo 0 è la sorgente: per questo <code>node = i + 1</code>, e <code>sink = nBlocks + 1</code>.</p>
+  <div class="box domanda-tua" data-tit="Perché nBlocks e non nBlocks − 1?">
+    <p>È vero che un blocco copre al massimo N − 1 altri blocchi, perché non copre se stesso. Ma questo limita le <b>colonne</b> di <code>obstructs[i][j]</code>, cioè quanti ne copre. Le <b>righe</b> sono una per blocco: N. Lo stesso per <code>nObstructs</code>, che ha una casella per blocco. Con <code>new int[nBlocks - 1]</code> l'ultimo blocco non ha posto: <code>ArrayIndexOutOfBoundsException: Index 4 out of bounds for length 4</code> sul sample.</p>
+  </div>
+  <figure class="codice" data-titolo="Il flusso massimo con la matrice delle capacità (verificato: 2 sul sample, 300 casi casuali uguali alla forza bruta su tutti i sottoinsiemi, N = 200 istantaneo)">
+<pre data-lang="java">int maxFlow = 0;
+while (true) {
+    int[] parent = new int[size];
+    Arrays.fill(parent, -1);
+    parent[source] = source;
+    ArrayDeque&lt;Integer&gt; queue = new ArrayDeque&lt;&gt;();
+    queue.add(source);
+    while (!queue.isEmpty()) {
+        int u = queue.poll();
+        for (int v = 0; v &lt; size; v++) {
+            if (capacity[u][v] &gt; 0 &amp;&amp; parent[v] == -1) {
+                parent[v] = u;
+                queue.add(v);
+            }
+        }
+    }
+    if (parent[sink] == -1) break;
+
+    int bottleneck = Integer.MAX_VALUE;
+    for (int v = sink; v != source; v = parent[v]) {
+        bottleneck = Math.min(bottleneck, capacity[parent[v]][v]);
+    }
+    for (int v = sink; v != source; v = parent[v]) {
+        capacity[parent[v]][v] -= bottleneck;
+        capacity[v][parent[v]] += bottleneck;
+    }
+    maxFlow += bottleneck;
+}
+System.out.println(totalGain - maxFlow);</pre>
+    <ol class="spiega">
+      <li data-righe="1-2" data-segna="while (true)@due"><p>Ogni giro cerca <b>un</b> cammino da s a t e ci spinge acqua. Non sai quanti giri servono: si esce col <code>break</code>.</p></li>
+      <li data-righe="3-16" data-segna="capacity[u][v] &gt; 0@ora|parent[v] = u@dato"><p>La BFS del tuo <a href="l07-ford-fulkerson.html">Augmenting Path</a>, rifatta da zero a ogni giro. La matrice <code>capacity</code> <b>è</b> il residuo: dopo ogni giro la aggiorno, e la BFS successiva vede lo spazio che resta.</p></li>
+      <li data-righe="17" data-segna="break@no"><p>Se t non è raggiungibile, nessun cammino porta più acqua: il flusso è massimo.</p></li>
+      <li data-righe="19-22" data-segna="capacity[parent[v]][v]@ora"><p>Risalgo il cammino con <code>parent</code>: l'arco è <code>parent[v] → v</code>. Il collo di bottiglia è la capacità più piccola.</p></li>
+      <li data-righe="23-26" data-segna="-= bottleneck@no|+= bottleneck@ok"><p>Il passo che fa più fatica, sotto passo per passo. Per ogni arco del cammino: in avanti c'è <b>meno spazio</b>, all'indietro nasce acqua che posso <b>ritirare</b>.</p></li>
+      <li data-righe="29" data-segna="totalGain - maxFlow@ok"><p>Profitto massimo = somma dei guadagni positivi − flusso massimo.</p></li>
+    </ol>
+  </figure>
+  <div class="box domanda-tua" data-tit="Il passo 5: aggiornare il residuo dentro la matrice">
+    <figure class="passi" data-titolo="Sample 1, giro 1: cammino s → 4 → 2 → t, collo 2">
+      <div class="passo"><div class="espr">prima:   capacity[s][4] = <mark class="dato">2</mark>   capacity[4][2] = ∞   capacity[2][t] = <mark class="dato">2</mark>   capacity[2][4] = <mark class="dato">0</mark></div><p class="nota">Gli archi in avanti hanno la capacità della rete. Quello all'indietro 2 → 4 nella rete non esiste: vale 0.</p></div>
+      <div class="passo"><div class="espr">capacity[parent[v]][v] <mark class="no">-= 2</mark>   ⇒   s→4 = 0,   4→2 = ∞ − 2,   2→t = 0</div><p class="nota">In avanti ho usato 2 unità di spazio. s → 4 e 2 → t ora sono pieni: la BFS dopo non li vede più.</p></div>
+      <div class="passo"><div class="espr">capacity[v][parent[v]] <mark class="ok">+= 2</mark>   ⇒   4→s = 2,   <mark class="ora">2→4 = 2</mark>,   t→2 = 2</div><p class="nota">All'indietro nasce lo spazio per ritirare quell'acqua. Sono le due regole del residuo (avanti c − f, indietro f), ma scritte direttamente nella matrice.</p></div>
+      <div class="passo"><div class="espr">giro 3:   s → 5 → 2 <mark class="ora">→ 4</mark> → 3 → t,   collo 2</div><p class="nota">Il giro 3 usa proprio <b>2 → 4</b>, l'arco nato al giro 1. Il flusso cambia idea: i 2 del blocco 4, che pagavano il blocco 2, ora pagano il blocco 3, e la strada 2 → t si libera per il blocco 5.</p></div>
+      <div class="passo"><div class="espr">giri: 2 + 3 + 2 = <mark class="ok">7</mark>   ·   9 − 7 = <mark class="ok">2</mark></div><p class="nota">Al giro 4 da s si arriva solo a 5, 2, 1: sono i blocchi da scavare (7 − 2 − 3 = 2). Cammini e colli presi eseguendo il codice.</p></div>
+    </figure>
+  </div>
+</section>
+
+</main>
+</body>
+</html>

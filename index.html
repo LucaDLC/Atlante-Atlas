@@ -1,0 +1,590 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Atlante Atlas · autumn 2026</title>
+<link rel="stylesheet" href="_motore/atlas.css">
+<style>
+  /* Colori di ogni corso: gli stessi di assets/tema.css in ogni atlante, chiaro e scuro */
+  [data-corso="adpro"]{--c:#5257D6;--c-soft:#E3E4FA}
+  [data-corso="pcpp"]{--c:#0B7680;--c-soft:#D8EEF0}
+  [data-corso="algdes"]{--c:#6D4A8C;--c-soft:#F1EBF6}
+  [data-corso="iml"]{--c:#9B2E6B;--c-soft:#F7E0EE}
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]) [data-corso="adpro"]{--c:#8E93FF;--c-soft:#2A2C58}
+    :root:not([data-theme="light"]) [data-corso="pcpp"]{--c:#4CC3CC;--c-soft:#123A3E}
+    :root:not([data-theme="light"]) [data-corso="algdes"]{--c:#BC9BDD;--c-soft:#271E31}
+    :root:not([data-theme="light"]) [data-corso="iml"]{--c:#E88BC0;--c-soft:#4A1233}
+  }
+  :root[data-theme="dark"] [data-corso="adpro"]{--c:#8E93FF;--c-soft:#2A2C58}
+  :root[data-theme="dark"] [data-corso="pcpp"]{--c:#4CC3CC;--c-soft:#123A3E}
+  :root[data-theme="dark"] [data-corso="algdes"]{--c:#BC9BDD;--c-soft:#271E31}
+  :root[data-theme="dark"] [data-corso="iml"]{--c:#E88BC0;--c-soft:#4A1233}
+
+  .home{max-width:1000px}
+  .oggi-riga{display:flex;align-items:center;flex-wrap:wrap;gap:12px;margin-top:14px;
+    font-family:var(--f-mono);font-size:13px;color:var(--ink-3)}
+  .btn-tema{font:inherit;font-size:13px;color:var(--ink-2);background:none;border:1px solid var(--riga);
+    border-radius:8px;padding:5px 10px;cursor:pointer}
+  .btn-tema:hover{color:var(--ink);border-color:var(--ink-3)}
+  .lingue{display:flex;gap:4px}
+  .lingue button{font:inherit;font-size:12px;font-weight:700;color:var(--ink-3);background:none;border:1px solid var(--riga);border-radius:6px;padding:3px 7px;cursor:pointer}
+  .lingue button:hover{color:var(--ink);border-color:var(--ink-3)}
+  .lingue button[aria-pressed="true"]{color:var(--acc-ink);background:var(--acc);border-color:var(--acc)}
+
+  .blocco{margin-top:46px}
+  .blocco h2{margin-bottom:4px}
+  .blocco > .nota{margin:0 0 14px}
+  .nota{font-size:14px;color:var(--ink-3)}
+
+  .chip{display:inline-block;font-family:var(--f-mono);font-size:11px;font-weight:700;letter-spacing:.06em;
+    color:var(--c);background:var(--c-soft);border-radius:6px;padding:2px 7px;white-space:nowrap}
+  .tag{display:inline-block;font-style:normal;font-family:var(--f-mono);font-size:10.5px;font-weight:700;letter-spacing:.05em;
+    text-transform:uppercase;color:var(--ink-3);border:1px dashed var(--riga);border-radius:6px;padding:1px 6px;white-space:nowrap}
+
+  /* materie */
+  .griglia-materie{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;margin-top:16px}
+  .materia{background:var(--foglio);border:1px solid var(--riga);border-radius:14px;box-shadow:var(--ombra);
+    overflow:hidden;display:flex;flex-direction:column}
+  .materia .fascia{height:6px;background:var(--c)}
+  .materia .corpo{padding:16px 18px 18px;display:flex;flex-direction:column;gap:12px;flex:1}
+  .materia h3{margin:0;font-size:20px;line-height:1.2}
+  .materia h3 a{color:var(--ink);text-decoration:none}
+  .materia h3 a:hover{color:var(--c)}
+  .info .etichetta{display:block;font-family:var(--f-mono);font-size:11px;font-weight:700;letter-spacing:.08em;
+    text-transform:uppercase;color:var(--ink-3);margin-bottom:2px}
+  .info{font-size:15px;color:var(--ink-2);line-height:1.4}
+  .info b{color:var(--ink)}
+  .info a{color:var(--ink);font-weight:700;text-decoration:none}
+  .info a:hover{color:var(--c);text-decoration:underline}
+  .info small{color:var(--ink-3)}
+  .info .numero{font-family:var(--f-titolo);font-weight:800;font-size:22px;color:var(--c);margin-right:6px}
+  .apri{margin-top:auto;font-weight:700;color:var(--c);text-decoration:none}
+  .apri:hover{text-decoration:underline}
+
+  /* esami */
+  .esami{list-style:none;padding:0;margin:16px 0 0;background:var(--foglio);border:1px solid var(--riga);
+    border-radius:14px;box-shadow:var(--ombra);overflow:hidden}
+  .esami li{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:14px;align-items:center;
+    padding:14px 18px;border-bottom:1px solid var(--riga-2)}
+  .esami li:last-child{border-bottom:0}
+  .esami .quando{font-size:16px;font-weight:700;color:var(--ink)}
+  .esami .quando small{display:block;font-weight:400;font-size:13.5px;color:var(--ink-3)}
+  .esami .tra{font-family:var(--f-mono);font-size:12.5px;color:var(--ink-2);white-space:nowrap}
+  .esami .tra b{font-family:var(--f-titolo);font-size:20px;color:var(--c)}
+  .esami .passato{color:var(--ink-3)}
+
+  /* elenchi con data: scadenze imminenti e calendario */
+  .lista{list-style:none;padding:0;margin:0;background:var(--foglio);border:1px solid var(--riga);
+    border-radius:14px;box-shadow:var(--ombra);overflow:hidden}
+  .lista li{display:grid;grid-template-columns:104px minmax(0,1fr) auto;gap:14px;align-items:center;
+    padding:11px 16px;border-bottom:1px solid var(--riga-2);box-shadow:inset 4px 0 0 var(--c)}
+  .lista li:last-child{border-bottom:0}
+  .lista .quando{font-family:var(--f-mono);font-size:12.5px;color:var(--ink-3)}
+  .lista .quando small{display:block;font-size:12px;margin-top:2px}
+  .lista .cosa{font-size:15.5px;line-height:1.35}
+  .lista .cosa a{color:var(--ink);font-weight:600;text-decoration:none}
+  .lista .cosa a:hover{color:var(--c);text-decoration:underline}
+  .lista .cosa b{font-weight:700}
+  .lista .cosa .tag{margin-left:8px}
+  .lista .cosa small{display:block;color:var(--ink-3);font-size:13.5px;margin-top:3px;line-height:1.45}
+  .lista li.esame{background:color-mix(in srgb,var(--c-soft) 60%,transparent)}
+  .lista li.esame .cosa a{font-weight:800}
+  .lista li.pausa{box-shadow:none;color:var(--ink-3);font-style:italic}
+  .lista li.pausa .chip{font-style:normal}
+  .lista li.passata{color:var(--ink-3)}
+  .lista li.vuota{display:block;color:var(--ink-3);box-shadow:none}
+  .lista .stato{font-family:var(--f-mono);font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+    padding:3px 8px;border-radius:6px;white-space:nowrap;color:var(--ink-3);border:1px dashed var(--riga)}
+  .lista li.urgente .stato{color:var(--acc-ink);background:var(--acc);border-color:var(--acc)}
+  .lista li.passata .stato{background:var(--foglio-2);border-style:solid}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-end;align-items:center}
+  .settimana{margin-top:20px}
+  .settimana > h3{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 8px;font-size:17px}
+  .adesso{font-family:var(--f-mono);font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+    color:var(--acc-ink);background:var(--acc);border-radius:6px;padding:2px 8px}
+  .resto{margin-top:12px}
+  .resto > summary{cursor:pointer;font-weight:700;color:var(--ink-2);padding:8px 0}
+  .resto .lista{margin-top:8px}
+
+  /* orari e punti da confermare */
+  .orari{width:100%;border-collapse:collapse;background:var(--foglio);border:1px solid var(--riga);border-radius:14px;
+    box-shadow:var(--ombra);overflow:hidden;font-size:15px}
+  .orari th,.orari td{padding:11px 14px;border-bottom:1px solid var(--riga-2);text-align:left;vertical-align:top}
+  .orari tr:last-child th,.orari tr:last-child td{border-bottom:0}
+  .orari th{font-family:var(--f-mono);font-size:12px;color:var(--ink-3);font-weight:700;width:96px}
+  .orari td small{display:block;color:var(--ink-3);font-size:13.5px;margin-top:3px;line-height:1.45}
+  .da-confermare{list-style:none;padding:0;margin:14px 0 0}
+  .da-confermare li{margin:0 0 10px;display:flex;gap:10px;align-items:baseline}
+  .piede-home{margin-top:52px;padding-top:18px;border-top:1px solid var(--riga);color:var(--ink-3);font-size:14px}
+  .piede-home p{margin:0 0 8px}
+  #errore{color:var(--no);margin-top:30px}
+
+  @media (max-width:640px){
+    .esami li{grid-template-columns:1fr;gap:6px}
+    .lista li{grid-template-columns:1fr;gap:4px}
+    .lista .chips{justify-content:flex-start}
+    .orari th{width:auto}
+  }
+</style>
+<script>
+  try { const t = localStorage.getItem('atlante:tema'); if (t) document.documentElement.dataset.theme = t; } catch (e) { }
+  try { const l = localStorage.getItem('atlante:lingua'); document.documentElement.lang = (l === 'it' || l === 'da') ? l : 'en'; } catch (e) { }
+</script>
+</head>
+<body>
+<main class="pagina home">
+
+<header class="testa">
+  <div class="occhiello"><span data-t="Università ITU · autunno 2026">ITU University · autumn 2026</span></div>
+  <h1>Atlante Atlas</h1>
+  <p class="lede" data-t="I quattro atlanti del semestre in una pagina: le materie, le scadenze imminenti, gli esami e il calendario di tutti i corsi. Ogni materia si apre con il suo atlante.">The four atlases of the semester on one page: the courses, upcoming deadlines, exams and the calendar of all courses. Each course opens with its own atlas.</p>
+  <div class="oggi-riga"><span id="oggi"></span><button class="btn-tema" id="tema" type="button" data-t="◐ Tema">◐ Theme</button><div class="lingue" role="group" aria-label="Language" id="lingue"></div></div>
+</header>
+
+<section class="blocco" id="materie">
+  <h2 data-t="Le materie">Courses</h2>
+  <div class="griglia-materie" id="materie-lista"></div>
+</section>
+
+<section class="blocco" id="scadenze">
+  <h2 data-t="Scadenze imminenti">Upcoming deadlines</h2>
+  <p class="nota" data-t="Consegne, test, sessioni e cose da preparare, di tutti i corsi, in ordine di data. Nessuna spunta: lo stato dipende solo dalla data di oggi.">Hand-ins, tests, sessions and things to prepare, for all courses, in date order. No ticks: the status depends only on today’s date.</p>
+  <div id="scadenze-lista"></div>
+</section>
+
+<section class="blocco" id="esami">
+  <h2 data-t="Esami">Exams</h2>
+  <p class="nota" data-t="In ordine di data. Il conto è dal giorno di oggi.">In date order. The countdown starts from today.</p>
+  <ol class="esami" id="esami-lista"></ol>
+</section>
+
+<section class="blocco" id="calendario">
+  <h2 data-t="Calendario di tutti i corsi">Calendar of all courses</h2>
+  <p class="nota" data-t="Lezioni e scadenze, settimana per settimana. Il colore è la materia; il titolo di una lezione porta alla sua pagina nell’atlante.">Lectures and deadlines, week by week. The colour is the course; the title of a lecture links to its page in the atlas.</p>
+  <div id="settimane"></div>
+  <details class="resto" id="passate" hidden>
+    <summary id="passate-titolo">Settimane già passate</summary>
+    <div id="passate-lista"></div>
+  </details>
+</section>
+
+<section class="blocco" id="orari">
+  <h2 data-t="Orari della settimana">Weekly timetable</h2>
+  <p class="nota" data-t="Lezioni ed esercizi dei quattro corsi, giorno per giorno.">Lectures and exercises of the four courses, day by day.</p>
+  <div id="orari-lista"></div>
+</section>
+
+<section class="blocco" id="confermare" hidden>
+  <h2 data-t="Da confermare">To be confirmed</h2>
+  <p class="nota" data-t="Punti che la documentazione ufficiale non chiarisce ancora.">Points the official documentation does not yet clarify.</p>
+  <ul class="da-confermare" id="confermare-lista"></ul>
+</section>
+
+<footer class="piede-home">
+  <p data-t="Per tornare qui da un atlante: menu ☰ Indice, prima voce Mostra gli altri atlanti.">To come back here from an atlas: menu ☰ Index, first entry Show the other atlases.</p>
+  <p class="nota" data-t="Calendario, scadenze, orari ed esami vengono da assets/sito.js di ogni atlante: modifichi lì, e questa pagina si aggiorna da sola.">Calendar, deadlines, timetables and exams come from assets/sito.js of each atlas: edit them there, and this page updates by itself.</p>
+</footer>
+<p id="errore" hidden></p>
+
+</main>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ---------- i quattro atlanti ---------- */
+  const CORSI = [
+    { cartella: 'Atlante Advanced Programming', classe: 'adpro' },
+    { cartella: 'Atlante PCPP', classe: 'pcpp' },
+    { cartella: 'Atlante Algorithm Design', classe: 'algdes' },
+    { cartella: 'Atlante Machine Learning', classe: 'iml' }
+  ];
+
+  /* ---------- lingua: EN predefinita, poi DK e IT. Le chiavi sono le frasi italiane ---------- */
+  const LINGUE = { en: 'EN', da: 'DK', it: 'IT' };
+  const LINGUA = (() => { try { const l = localStorage.getItem('atlante:lingua'); return LINGUE[l] ? l : 'en'; } catch (e) { return 'en'; } })();
+  const LOC = { en: 'en-GB', da: 'da-DK', it: 'it-IT' }[LINGUA];
+  const DIZ = {
+    en: {
+      'Università ITU · autunno 2026': 'ITU University · autumn 2026',
+      'sett.': 'wk',
+      'I quattro atlanti del semestre in una pagina: le materie, le scadenze imminenti, gli esami e il calendario di tutti i corsi. Ogni materia si apre con il suo atlante.': 'The four atlases of the semester on one page: the courses, upcoming deadlines, exams and the calendar of all courses. Each course opens with its own atlas.',
+
+      'Le materie': 'Courses',
+      'Scadenze imminenti': 'Upcoming deadlines',
+      'Esami': 'Exams',
+      'Calendario di tutti i corsi': 'Calendar of all courses',
+      'Orari della settimana': 'Weekly timetable',
+      'Da confermare': 'To be confirmed',
+      '◐ Tema': '◐ Theme',
+      'Mostra gli altri atlanti': 'Show the other atlases',
+      'Apri l’atlante →': 'Open the atlas →',
+      'prossima scadenza': 'next deadline',
+      'nessuna in programma': 'none scheduled',
+      'esame': 'exam',
+      'giorni': 'days',
+      'oggi': 'today',
+      'già passato': 'already past',
+      'Oggi è ': 'Today is ',
+      'Nessuna scadenza in programma.': 'No deadlines scheduled.',
+      'Altre scadenze': 'More deadlines',
+      'Già passate': 'Already past',
+      'Settimane già passate': 'Weeks already past',
+      'Settimane già passate (': 'Weeks already past (',
+      'Nessun appuntamento in calendario da qui in poi.': 'No appointments in the calendar from here on.',
+      'questa settimana': 'this week',
+      'Pausa autunnale': 'Autumn break',
+      'nessuna lezione in questa settimana': 'no lectures this week',
+      'lezione': 'lecture',
+      'passata': 'past',
+      'domani': 'tomorrow',
+      'tra ': 'in ',
+      ' giorni': ' days',
+      'consegna': 'hand-in',
+      'orale': 'oral',
+      'test': 'test',
+      'da fare': 'to do',
+      'tappa': 'milestone',
+      'da confermare': 'to confirm',
+      'facoltativo': 'optional',
+      'giorno': 'day',
+      'quando e dove': 'when and where',
+      'note': 'notes',
+      'Lunedì': 'Monday', 'Martedì': 'Tuesday', 'Mercoledì': 'Wednesday', 'Giovedì': 'Thursday', 'Venerdì': 'Friday',
+      'In ordine di data. Il conto è dal giorno di oggi.': 'In date order. The countdown starts from today.',
+      'Non riesco a leggere i dati degli atlanti: controlla che le cartelle siano nella stessa cartella di questa pagina.': 'I cannot read the atlas data: check that the folders are in the same folder as this page.',
+      'Per tornare qui da un atlante: menu ☰ Indice, prima voce Mostra gli altri atlanti.': 'To come back here from an atlas: menu ☰ Index, first entry Show the other atlases.'
+    },
+    da: {
+      'Università ITU · autunno 2026': 'ITU Universitet · efterår 2026',
+      'sett.': 'uge',
+      'I quattro atlanti del semestre in una pagina: le materie, le scadenze imminenti, gli esami e il calendario di tutti i corsi. Ogni materia si apre con il suo atlante.': 'De fire atlas for semestret på én side: fagene, kommende frister, eksamener og kalenderen for alle fag. Hvert fag åbnes med sit eget atlas.',
+      'Consegne, test, sessioni e cose da preparare, di tutti i corsi, in ordine di data. Nessuna spunta: lo stato dipende solo dalla data di oggi.': 'Afleveringer, test, sessioner og ting at forberede, for alle fag, i datorækkefølge. Ingen flueben: status afhænger kun af dagens dato.',
+      'Lezioni e scadenze, settimana per settimana. Il colore è la materia; il titolo di una lezione porta alla sua pagina nell’atlante.': 'Undervisning og frister, uge for uge. Farven er faget; titlen på en lektion fører til siden i atlasset.',
+      'Lezioni ed esercizi dei quattro corsi, giorno per giorno.': 'Undervisning og øvelser for de fire fag, dag for dag.',
+      'Punti che la documentazione ufficiale non chiarisce ancora.': 'Punkter som den officielle dokumentation endnu ikke præciserer.',
+      'Calendario, scadenze, orari ed esami vengono da assets/sito.js di ogni atlante: modifichi lì, e questa pagina si aggiorna da sola.': 'Kalender, frister, skema og eksamener kommer fra assets/sito.js i hvert atlas: ret dem der, så opdateres denne side af sig selv.',
+      'Per tornare qui da un atlante: menu ☰ Indice, prima voce Mostra gli altri atlanti.': 'For at komme tilbage hertil fra et atlas: menuen ☰ Indeks, første punkt Vis de andre atlas.',
+
+      'Le materie': 'Fagene',
+      'Scadenze imminenti': 'Kommende frister',
+      'Esami': 'Eksamener',
+      'Calendario di tutti i corsi': 'Kalender for alle fag',
+      'Orari della settimana': 'Ugens skema',
+      'Da confermare': 'Skal bekræftes',
+      '◐ Tema': '◐ Tema',
+      'Mostra gli altri atlanti': 'Vis de andre atlas',
+      'Apri l’atlante →': 'Åbn atlasset →',
+      'prossima scadenza': 'næste frist',
+      'nessuna in programma': 'ingen planlagt',
+      'esame': 'eksamen',
+      'giorni': 'dage',
+      'oggi': 'i dag',
+      'già passato': 'allerede passeret',
+      'Oggi è ': 'I dag er ',
+      'Nessuna scadenza in programma.': 'Ingen frister planlagt.',
+      'Altre scadenze': 'Flere frister',
+      'Già passate': 'Allerede passeret',
+      'Settimane già passate': 'Uger allerede passeret',
+      'Settimane già passate (': 'Uger allerede passeret (',
+      'Nessun appuntamento in calendario da qui in poi.': 'Ingen aftaler i kalenderen herfra.',
+      'questa settimana': 'denne uge',
+      'Pausa autunnale': 'Efterårsferie',
+      'nessuna lezione in questa settimana': 'ingen undervisning denne uge',
+      'lezione': 'undervisning',
+      'passata': 'passeret',
+      'domani': 'i morgen',
+      'tra ': 'om ',
+      ' giorni': ' dage',
+      'consegna': 'aflevering',
+      'orale': 'mundtlig',
+      'test': 'test',
+      'da fare': 'at gøre',
+      'tappa': 'milepæl',
+      'da confermare': 'skal bekræftes',
+      'facoltativo': 'valgfri',
+      'giorno': 'dag',
+      'quando e dove': 'hvornår og hvor',
+      'note': 'noter',
+      'Lunedì': 'Mandag', 'Martedì': 'Tirsdag', 'Mercoledì': 'Onsdag', 'Giovedì': 'Torsdag', 'Venerdì': 'Fredag',
+      'In ordine di data. Il conto è dal giorno di oggi.': 'I datorækkefølge. Nedtællingen starter i dag.',
+      'Non riesco a leggere i dati degli atlanti: controlla che le cartelle siano nella stessa cartella di questa pagina.': 'Jeg kan ikke læse atlas-data: kontrollér, at mapperne ligger i samme mappe som denne side.',
+      'Per tornare qui da un atlante: menu ☰ Indice, prima voce Mostra gli altri atlanti.': 'For at komme tilbage hertil fra et atlas: menuen ☰ Indeks, første punkt Vis de andre atlas.'
+    }
+  };
+  // testi statici: se la lingua è it il testo resta quello scritto nell'HTML
+  const T = s => (DIZ[LINGUA] && DIZ[LINGUA][s]) || s;
+  const tv = (c, s) => (c.sito && c.sito.traduzioni && c.sito.traduzioni[LINGUA] && c.sito.traduzioni[LINGUA][s]) || s;
+
+  /* ---------- utilità ---------- */
+  const GIORNO = 86400000;
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
+  const parseData = s => { const [y, m, d] = String(s).slice(0, 10).split('-').map(Number); return new Date(y, m - 1, d); };
+  const aggiungi = (d, n) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
+  const lunedi = d => aggiungi(d, -((d.getDay() + 6) % 7));
+  const oggi = (() => { const n = new Date(); return new Date(n.getFullYear(), n.getMonth(), n.getDate()); })();
+  const lunOggi = lunedi(oggi);
+  const giorniDa = d => Math.round((d - oggi) / GIORNO);
+  const tempo = g => LINGUA === 'en' ? `in ${g} days` : LINGUA === 'da' ? `om ${g} dage` : `tra ${g} giorni`;
+  const fmtData = d => d.toLocaleDateString(LOC, { weekday: 'short', day: 'numeric', month: 'short' });
+  const fmtBreve = d => d.toLocaleDateString(LOC, { day: 'numeric', month: 'short' });
+  const fmtLunga = d => d.toLocaleDateString(LOC, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  const url = (c, h) => encodeURIComponent(c.cartella) + '/' + (h || 'index.html');
+  const sigla = c => (c.sito && c.sito.sigla) || c.classe.toUpperCase();
+  const chip = c => `<span class="chip" data-corso="${c.classe}">${esc(sigla(c))}</span>`;
+
+  /* ---------- carica assets/sito.js di ogni atlante (funziona anche con doppio clic) ---------- */
+  function caricaSito(cartella) {
+    return new Promise(risolvi => {
+      const s = document.createElement('script');
+      s.src = encodeURIComponent(cartella) + '/assets/sito.js';
+      s.onload = () => { const dati = window.SITO || null; window.SITO = undefined; risolvi(dati); };
+      s.onerror = () => risolvi(null);
+      document.head.appendChild(s);
+    });
+  }
+
+  /* ---------- voci: lezioni del calendario e scadenze (task) di tutti i corsi ---------- */
+  function vociDi(corsi) {
+    const voci = [];
+    for (const c of corsi) {
+      if (!c.sito) continue;
+      const dopo = c.sito.lezioneDopo || 0;
+      for (const e of c.sito.calendario || []) {
+        const da = parseData(e.da);
+        const semplice = !e.etichetta && !e.pausa && !e.esame && !e.giorni;
+        const inizio = semplice ? aggiungi(da, dopo) : da;
+        voci.push({ tipo: 'lezione', c, e, inizio, fine: e.giorni ? aggiungi(da, e.giorni - 1) : inizio });
+      }
+      for (const t of c.sito.task || []) {
+        const d = parseData(t.data);
+        voci.push({ tipo: 'task', c, t, inizio: d, fine: t.soloSettimana ? aggiungi(d, 6) : d });
+      }
+    }
+    return voci.sort((a, b) => a.inizio - b.inizio
+      || (a.tipo === b.tipo ? 0 : a.tipo === 'lezione' ? -1 : 1)
+      || ((a.t && a.t.ora) || '').localeCompare((b.t && b.t.ora) || ''));
+  }
+
+  /* ---------- una scadenza ---------- */
+  function quandoTask(v) {
+    const t = v.t;
+    if (t.soloSettimana) return `${T('sett.') === 'sett.' ? 'sett.' : T('sett.')} ${esc(t.soloSettimana)}<small>${esc(fmtBreve(v.inizio))} – ${esc(fmtBreve(v.fine))}</small>`;
+    return `${esc(fmtData(v.inizio))}${t.ora ? `<small>${esc(t.ora)}</small>` : ''}`;
+  }
+
+  function statoTask(v) {
+    if (v.fine < oggi) return T('passata');
+    if (v.inizio <= oggi) return v.t.soloSettimana ? T('questa settimana') : T('oggi');
+    const g = giorniDa(v.inizio);
+    return g === 1 ? T('domani') : tempo(g);
+  }
+
+  function tagTask(t) {
+    return `<span class="tag">${esc(T(t.tipo === 'azione' ? 'da fare' : t.tipo) || 'consegna')}</span>`
+      + (t.provvisoria ? `<span class="tag">${esc(T('da confermare'))}</span>` : '')
+      + (t.facoltativa ? `<span class="tag">${esc(T('facoltativo'))}</span>` : '');
+  }
+
+  function rigaTask(v, conStato) {
+    const t = v.t;
+    const stato = statoTask(v);
+    const passata = v.fine < oggi;
+    const urgente = !passata && v.inizio <= oggi + GIORNO;
+    const classi = [passata ? 'passata' : urgente ? 'urgente' : ''].join(' ').trim();
+    return `<li data-corso="${v.c.classe}"${classi ? ` class="${classi}"` : ''}>
+      <span class="quando">${quandoTask(v)}</span>
+      <div class="cosa"><b>${esc(tv(v.c, t.t))}</b>${t.nota ? `<small>${t.nota}</small>` : ''}</div>
+      <div class="chips">${tagTask(t)}${chip(v.c)}${conStato ? `<span class="stato">${esc(stato)}</span>` : ''}</div>
+    </li>`;
+  }
+
+  /* ---------- schede delle materie ---------- */
+  function scheda(c, voci) {
+    const sito = c.sito;
+    const prossima = voci.find(v => v.tipo === 'task' && v.c === c && v.t.tipo !== 'azione' && !v.t.facoltativa && v.fine >= oggi);
+    const esame = sito.esame && sito.esame.data ? parseData(sito.esame.data) : null;
+    const rigaProssima = prossima
+      ? `<div class="info"><span class="etichetta">${esc(T('prossima scadenza'))}</span><b>${esc(tv(c, prossima.t.t))}</b><br><small>${esc(prossima.t.soloSettimana ? 'settimana ' + prossima.t.soloSettimana : fmtData(prossima.inizio) + (prossima.t.ora ? ', ' + prossima.t.ora : ''))}</small></div>`
+      : `<div class="info"><span class="etichetta">${esc(T('prossima scadenza'))}</span>${esc(T('nessuna in programma'))}</div>`;
+    let esameRiga = '';
+    if (esame) {
+      const n = giorniDa(esame);
+      const conto = n > 0 ? `<span class="numero">${n}</span>${esc(T('giorni'))}` : n === 0 ? `<span class="numero">${esc(T('oggi'))}</span>` : esc(T('già passato'));
+      esameRiga = `<div class="info"><span class="etichetta">${esc(T('esame'))}</span>${esc(fmtLunga(esame))}<br>${conto}</div>`;
+    }
+    return `<article class="materia" data-corso="${c.classe}">
+      <div class="fascia"></div>
+      <div class="corpo">
+        ${chip(c)}
+        <h3><a href="${url(c)}">${esc(sito.nome || sigla(c))}</a></h3>
+        ${rigaProssima}
+        ${esameRiga}
+        <a class="apri" href="${url(c)}">${esc(T('Apri l’atlante →'))}</a>
+      </div>
+    </article>`;
+  }
+
+  /* ---------- scadenze imminenti ---------- */
+  function scadenzeHtml(voci) {
+    const tutte = voci.filter(v => v.tipo === 'task');
+    const prossime = tutte.filter(v => v.fine >= oggi);
+    const passate = tutte.filter(v => v.fine < oggi).reverse();
+    const MAX = 8;
+    const lista = arr => `<ul class="lista">${arr.map(v => rigaTask(v, true)).join('')}</ul>`;
+    let html = prossime.length ? lista(prossime.slice(0, MAX)) : `<ul class="lista"><li class="vuota">${esc(T('Nessuna scadenza in programma.'))}</li></ul>`;
+    if (prossime.length > MAX) html += `<details class="resto"><summary>${esc(T('Altre scadenze'))} (${prossime.length - MAX})</summary>${lista(prossime.slice(MAX))}</details>`;
+    if (passate.length) html += `<details class="resto"><summary>${esc(T('Già passate'))} (${passate.length})</summary>${lista(passate)}</details>`;
+    return html;
+  }
+
+  /* ---------- lista degli esami ---------- */
+  function listaEsami(corsi) {
+    const esami = corsi.filter(c => c.sito && c.sito.esame && c.sito.esame.data)
+      .map(c => ({ c, data: parseData(c.sito.esame.data), etichetta: c.sito.esame.etichetta || '' }))
+      .sort((a, b) => a.data - b.data);
+    return esami.map(x => {
+      const n = giorniDa(x.data);
+      const tra = n > 0 ? `<b>${n}</b> ${esc(T('giorni'))}` : n === 0 ? `<b>${esc(T('oggi'))}</b>` : `<span class="passato">${esc(T('già passato'))}</span>`;
+      return `<li data-corso="${x.c.classe}">
+        ${chip(x.c)}
+        <div class="quando">${esc(fmtLunga(x.data))}<small>${esc(tv(x.c, x.etichetta))}</small></div>
+        <div class="tra">${tra}</div>
+      </li>`;
+    }).join('');
+  }
+
+  /* ---------- una settimana del calendario ---------- */
+  function settimanaHtml(lun, voci, corrente) {
+    const dom = aggiungi(lun, 6);
+    const pause = voci.filter(v => v.tipo === 'lezione' && v.e.pausa);
+    const altre = voci.filter(v => !(v.tipo === 'lezione' && v.e.pausa));
+    let righe = '';
+    for (const v of altre) {
+      if (v.tipo === 'task') { righe += rigaTask(v, false); continue; }
+      const e = v.e, c = v.c;
+      const quando = e.giorni && e.giorni > 1 ? `${esc(fmtBreve(v.inizio))} – ${esc(fmtBreve(v.fine))}` : esc(fmtData(v.inizio));
+      const titolo = e.h ? `<a href="${url(c, e.h)}">${esc(tv(c, e.t))}</a>` : esc(tv(c, e.t));
+      righe += `<li data-corso="${c.classe}"${e.esame ? ' class="esame"' : ''}>
+        <span class="quando">${quando}</span>
+        <div class="cosa">${titolo}${e.sub ? `<small>${esc(e.sub)}</small>` : ''}</div>
+        <div class="chips"><span class="tag">${esc(e.esame ? T('esame') : T('lezione'))}</span>${chip(c)}</div>
+      </li>`;
+    }
+    if (pause.length) {
+      righe += `<li class="pausa">
+        <span class="quando">${esc(fmtData(pause[0].inizio))}</span>
+        <div class="cosa">${esc(T('Pausa autunnale'))}<small>${esc(T('nessuna lezione in questa settimana'))}</small></div>
+        <div class="chips">${pause.map(v => chip(v.c)).join('')}</div>
+      </li>`;
+    }
+    return `<div class="settimana">
+      <h3>${esc(fmtBreve(lun))} – ${esc(fmtBreve(dom))}${corrente ? `<span class="adesso">${esc(T('questa settimana'))}</span>` : ''}</h3>
+      <ul class="lista">${righe}</ul>
+    </div>`;
+  }
+
+  function raggruppa(voci, chiave) {
+    const mappa = new Map();
+    for (const v of voci) {
+      const k = chiave(v).getTime();
+      if (!mappa.has(k)) mappa.set(k, []);
+      mappa.get(k).push(v);
+    }
+    return [...mappa.entries()].sort((a, b) => a[0] - b[0]);
+  }
+
+  /* ---------- orari della settimana ---------- */
+  const GIORNI_SETTIMANA = { 'Lunedì': 1, 'Martedì': 2, 'Mercoledì': 3, 'Giovedì': 4, 'Venerdì': 5 };
+  function orariHtml(corsi) {
+    const righe = [];
+    for (const c of corsi) for (const o of (c.sito && c.sito.orario) || []) righe.push({ c, o });
+    righe.sort((a, b) => (GIORNI_SETTIMANA[a.o.giorno] || 9) - (GIORNI_SETTIMANA[b.o.giorno] || 9));
+    if (!righe.length) return '';
+    return `<table class="orari"><thead><tr><th>${esc(T('giorno'))}</th><th>${esc(T('quando e dove'))}</th><th>${esc(T('note'))}</th></tr></thead><tbody>${righe.map(({ c, o }) =>
+      `<tr><th scope="row">${esc(T(o.giorno))}</th><td>${chip(c)}</td><td>${o.quando}${o.nota ? `<small>${o.nota}</small>` : ''}</td></tr>`).join('')}</tbody></table>`;
+  }
+
+  /* ---------- da confermare ---------- */
+  function confermareHtml(corsi) {
+    let html = '';
+    for (const c of corsi) for (const x of (c.sito && c.sito.daConfermare) || []) html += `<li>${chip(c)}<span>${x}</span></li>`;
+    return html;
+  }
+
+  /* ---------- testi statici tradotti (chiave = frase italiana scritta in data-t) ---------- */
+  function traduciStatici() {
+    document.querySelectorAll('[data-t]').forEach(el => {
+      const it = el.dataset.t;
+      if (!el.dataset.tEn) el.dataset.tEn = el.textContent;
+      el.textContent = LINGUA === 'it' ? it : (DIZ[LINGUA] && DIZ[LINGUA][it]) || el.dataset.tEn;
+    });
+    document.getElementById('tema').textContent = LINGUA === 'it' ? '◐ Tema' : T('◐ Tema');
+  }
+
+  /* ---------- montaggio ---------- */
+  function render(corsi) {
+    const voci = vociDi(corsi);
+    document.getElementById('oggi').textContent = T('Oggi è ') + fmtLunga(oggi);
+    document.getElementById('materie-lista').innerHTML = corsi.filter(c => c.sito).map(c => scheda(c, voci)).join('');
+    document.getElementById('scadenze-lista').innerHTML = scadenzeHtml(voci);
+    document.getElementById('esami-lista').innerHTML = listaEsami(corsi);
+
+    // calendario: da questa settimana in poi; le settimane passate in un riquadro a parte
+    const future = voci.filter(v => v.fine >= lunOggi);
+    const passate = voci.filter(v => v.fine < lunOggi);
+    const gruppiFuture = raggruppa(future, v => new Date(Math.max(lunedi(v.inizio).getTime(), lunOggi.getTime())));
+    document.getElementById('settimane').innerHTML = gruppiFuture.length
+      ? gruppiFuture.map(([k, vs]) => settimanaHtml(new Date(k), vs, k === lunOggi.getTime())).join('')
+      : `<p class="nota">${esc(T('Nessun appuntamento in calendario da qui in poi.'))}</p>`;
+    if (passate.length) {
+      const gruppiPassate = raggruppa(passate, v => lunedi(v.inizio)).reverse();
+      document.getElementById('passate-lista').innerHTML = gruppiPassate.map(([k, vs]) => settimanaHtml(new Date(k), vs, false)).join('');
+      document.getElementById('passate-titolo').textContent = `${T('Settimane già passate (')}${gruppiPassate.length})`;
+      document.getElementById('passate').hidden = false;
+    }
+
+    document.getElementById('orari-lista').innerHTML = orariHtml(corsi);
+    const conf = confermareHtml(corsi);
+    if (conf) { document.getElementById('confermare-lista').innerHTML = conf; document.getElementById('confermare').hidden = false; }
+  }
+
+  /* ---------- lingua: pulsanti IT / EN / DK, poi ricarica ---------- */
+  const lingueBox = document.getElementById('lingue');
+  lingueBox.innerHTML = Object.entries(LINGUE).map(([k, v]) =>
+    `<button type="button" data-lingua="${k}"${k === LINGUA ? ' aria-pressed="true"' : ''}>${v}</button>`).join('');
+  lingueBox.querySelectorAll('[data-lingua]').forEach(b => b.addEventListener('click', () => {
+    try { localStorage.setItem('atlante:lingua', b.dataset.lingua); } catch (e) { }
+    location.reload();
+  }));
+
+  /* ---------- tema chiaro/scuro, condiviso con gli atlanti tramite localStorage ---------- */
+  const radice = document.documentElement;
+  function temaCorrente() {
+    return radice.dataset.theme || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+  }
+  document.getElementById('tema').addEventListener('click', () => {
+    const nuovo = temaCorrente() === 'dark' ? 'light' : 'dark';
+    radice.dataset.theme = nuovo;
+    try { localStorage.setItem('atlante:tema', nuovo); } catch (e) { }
+  });
+
+  /* ---------- avvio: carica i quattro atlanti uno dopo l'altro ---------- */
+  traduciStatici();
+  (async function () {
+    const corsi = [];
+    for (const c of CORSI) corsi.push({ ...c, sito: await caricaSito(c.cartella) });
+    if (!corsi.some(c => c.sito)) {
+      const p = document.getElementById('errore');
+      p.hidden = false;
+      p.textContent = T('Non riesco a leggere i dati degli atlanti: controlla che le cartelle siano nella stessa cartella di questa pagina.');
+      return;
+    }
+    render(corsi);
+  })();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Esempi: monoid in Scala</title>
+<link rel="stylesheet" href="../assets/atlas.css">
+<link rel="stylesheet" href="../assets/tema.css">
+<script src="../assets/sito.js"></script>
+<script src="../assets/atlas.js" defer></script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <div class="occhiello"><span>Settimana 9 · esempi</span></div>
+  <h1>Esempi: monoid in Scala</h1>
+  <p class="lede">Il codice della <a href="../teoria/s09-monoid.html">pagina di teoria</a>, in un file che si compila e si esegue. Ogni esempio è verificato con Scala 3.8.4 e le opzioni del corso (<code>-Werror</code>, <code>-source:future</code>). Non contiene le soluzioni degli esercizi del corso: usa tipi e operazioni diversi.</p>
+</header>
+
+<section>
+  <h2>Il file intero</h2>
+  <p>Lo esegui da terminale con <code>scala-cli run Monoid.scala</code>. Le prime due righe sono istruzioni per <code>scala-cli</code>: dicono la versione di Scala e i controlli di compilazione.</p>
+  <figure class="codice" data-titolo="Monoid.scala">
+<pre data-lang="scala">//&gt; using scala 3.8.4
+//&gt; using options -Werror -deprecation -feature -source:future
+
+trait Monoid[A]:
+  def combine(a1: A, a2: A): A
+  def empty: A
+
+val stringMonoid: Monoid[String] = new Monoid[String]:
+  def combine(a1: String, a2: String): String = a1 + a2
+  val empty: String = ""
+
+val maxMonoid: Monoid[Int] = new Monoid[Int]:
+  def combine(a1: Int, a2: Int): Int = a1.max(a2)
+  val empty: Int = Int.MinValue
+
+def concatenate[A](as: List[A], m: Monoid[A]): A =
+  as.foldLeft(m.empty)(m.combine)
+
+def unitLaw[A](m: Monoid[A], x: A): Boolean =
+  m.combine(x, m.empty) == x &amp;&amp; m.combine(m.empty, x) == x
+
+def assocLaw[A](m: Monoid[A], x: A, y: A, z: A): Boolean =
+  m.combine(m.combine(x, y), z) == m.combine(x, m.combine(y, z))
+
+val length: String =&gt; Int = s =&gt; s.length
+
+@main def esempiMonoid(): Unit =
+  println(concatenate(List("a", "b", "c"), stringMonoid))
+  println(concatenate(List(3, 9, 4), maxMonoid))
+  println(concatenate(List.empty[Int], maxMonoid))
+  println(unitLaw(stringMonoid, "ciao"))
+  println(unitLaw(maxMonoid, 7))
+  println(assocLaw(maxMonoid, 1, 8, 5))
+  println(length("foo" + "bar") == length("foo") + length("bar"))
+  println("abc".toList.mkString == "abc")</pre>
+    <ol class="spiega">
+      <li data-righe="1-2"><p>Direttive per <code>scala-cli</code>. <code>-Werror</code> trasforma ogni avviso del compilatore in errore: è la regola del corso, perché il codice deve compilare senza avvisi.</p></li>
+      <li data-righe="4-6" data-segna="trait Monoid[A]@ora|def combine@due|def empty@due"><p>Il type class. <code>[A]</code> è il tipo che il monoide combina. <code>combine</code> è ⊕ e <code>empty</code> è il neutro: sono le due cose che un monoide deve avere.</p></li>
+      <li data-righe="8-10" data-segna="new Monoid[String]@ora|a1 + a2@ok"><p>Prima istanza: la concatenazione di stringhe. <code>new Monoid[String]:</code> crea un valore anonimo che implementa il trait. <code>a1 + a2</code> concatena, e <code>""</code> è il neutro.</p></li>
+      <li data-righe="12-14" data-segna="a1.max(a2)@ora|Int.MinValue@due"><p>Seconda istanza, sullo stesso tipo Int ma con un’altra operazione. <code>max</code> restituisce il più grande dei due. Il neutro è <code>Int.MinValue</code>, il più piccolo intero: <code>max(x, Int.MinValue) = x</code> per ogni x.</p></li>
+      <li data-righe="16-17" data-segna="foldLeft(m.empty)(m.combine)@ora"><p><code>concatenate</code> riduce la lista. Parte dal neutro e combina un elemento alla volta da sinistra. <code>m.combine</code> passa il metodo come funzione a due argomenti. Con una lista vuota il risultato è il neutro.</p></li>
+      <li data-righe="19-20" data-segna="m.combine(x, m.empty) == x@ora"><p>Legge di identità, controllata su un solo valore <code>x</code>. Un test su un valore non dimostra la legge: per questo il corso usa property-based testing, che prova molti valori casuali.</p></li>
+      <li data-righe="22-23" data-segna="m.combine(m.combine(x, y), z)@ora|m.combine(x, m.combine(y, z))@due"><p>Legge di associatività: i due raggruppamenti di <code>x</code>, <code>y</code>, <code>z</code> devono dare lo stesso risultato. Anche questa è controllata su un solo tripletta di valori.</p></li>
+      <li data-righe="25" data-segna="s.length@ora"><p><code>length</code> è una funzione da String a Int. È un omomorfismo da (String, concatenazione, "") a (Int, +, 0): la riga 34 lo verifica su un esempio.</p></li>
+      <li data-righe="27-35"><p><code>@main</code> rende la funzione <code>esempiMonoid</code> il punto di ingresso del programma. Ogni <code>println</code> stampa un risultato, una riga per riga.</p></li>
+    </ol>
+  </figure>
+</section>
+
+<section>
+  <h2>L’output</h2>
+  <p>Eseguendo il programma compare questo output. Ogni riga corrisponde a una <code>println</code>, nello stesso ordine.</p>
+  <figure class="codice" data-titolo="Output dell’esecuzione">
+<pre data-lang="text">abc
+9
+-2147483648
+true
+true
+true
+true
+true</pre>
+    <ol class="spiega">
+      <li data-righe="1"><p><code>concatenate</code> con stringMonoid concatena "a", "b", "c" nell’ordine: <b>abc</b>.</p></li>
+      <li data-righe="2"><p>Il massimo di 3, 9, 4 è 9.</p></li>
+      <li data-righe="3"><p>Lista vuota: si ottiene il neutro di maxMonoid, <b>Int.MinValue</b> = −2147483648.</p></li>
+      <li data-righe="4-8"><p>Tutti <code>true</code>: le leggi valgono sugli esempi scelti, e l’omomorfismo <code>length</code> e l’isomorfismo String ↔ List[Char] funzionano su quei valori.</p></li>
+    </ol>
+  </figure>
+</section>
+
+<section>
+  <h2>Da ricordare</h2>
+  <div class="box inglese" data-tit="Frase per l’esame">A <em>monoid</em> is a type with an associative binary operation and an identity element.</div>
+  <div class="box attenzione" data-tit="Attenzione">Il test di una legge su qualche valore non prova la legge. Il corso la prova con ScalaCheck, generando molti valori: è il motivo per cui il trait ha <code>object laws</code> con le proprietà.</div>
+</section>
+
+</main>
+</body>
+</html>

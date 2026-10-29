@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Scala in dieci minuti</title>
+<link rel="stylesheet" href="../assets/atlas.css">
+<link rel="stylesheet" href="../assets/tema.css">
+<script src="../assets/sito.js"></script>
+<script src="../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+SCENE.blocco = {
+  w: 520, h: 230, lato: false,
+  legenda: 'dato:nomi locali,ora:la riga che conta,ok:valore del blocco',
+  oggetti: [
+    { id: 'l0', tipo: 'testo', x: 40, y: 40, t: 'val area =', size: 15, bold: true, anchor: 'start' },
+    { id: 'l1', tipo: 'testo', x: 70, y: 75, t: 'val base = 4', size: 15, anchor: 'start' },
+    { id: 'l2', tipo: 'testo', x: 70, y: 105, t: 'val altezza = 3', size: 15, anchor: 'start' },
+    { id: 'l3', tipo: 'testo', x: 70, y: 135, t: 'base * altezza', size: 15, anchor: 'start' },
+    { id: 'v', tipo: 'testo', x: 380, y: 105, t: '', size: 16, bold: true },
+    { id: 'n', tipo: 'testo', x: 260, y: 200, t: '', size: 15, bold: true }
+  ],
+  passi: [
+    { nota: 'Un blocco dopo <code>val area =</code>: due nomi locali e un\'espressione finale.' },
+    { nota: 'Dentro il blocco nascono due nomi: base = 4 e altezza = 3.', set: { l1: { tono: 'dato' }, l2: { tono: 'dato' } } },
+    { nota: 'Il <b>valore</b> del blocco è la sua ultima riga: base * altezza. Niente <code>return</code>.', set: { l3: { tono: 'ora' }, v: { t: '4 * 3', tono: 'ora' } } },
+    { nota: '4 * 3 = <b>12</b>: area vale 12.', set: { v: { t: '= 12', tono: 'ok' }, n: { t: 'area = 12', tono: 'ok' } } },
+    { nota: 'Fuori dal blocco base e altezza non esistono più: resta solo area. In Scala tutto è un\'espressione con un valore, anche un blocco o un if.', set: { l1: { tono: 'spento' }, l2: { tono: 'spento' }, l3: { tono: 'spento' } } }
+  ]
+};
+</script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  const T = (id, x, y, t, extra) => Object.assign({ id, tipo: 'testo', x, y, t, size: 13 }, extra || {});
+  const R = (id, x, y, w, h, t, extra) => Object.assign({ id, tipo: 'rett', x, y, w, h, t }, extra || {});
+  const N = (id, x, y, t, tono, extra) => Object.assign({ id, tipo: 'nodo', x, y, t, tono, r: 20 }, extra || {});
+  const F = (id, x1, y1, x2, y2, t, extra) => Object.assign({ id, tipo: 'vett', x1, y1, x2, y2, t }, extra || {});
+  const C = (id, x, y, valori, extra) => Object.assign({ id, tipo: 'celle', x, y, cw: 52, ch: 40, valori, indici: false }, extra || {});
+
+    SCENE.modulo = {
+      w: 580, h: 240, lato: true,
+      legenda: 'dato:membro pubblico,no:private (solo dentro),ok:chiamata riuscita',
+      oggetti: [
+        R('pk', 20, 20, 400, 200, '', { tono: 'spento' }), T('pkt', 220, 40, 'package adpro.intro', { size: 12 }),
+        R('ob', 40, 55, 360, 150, '', { tono: 'spento' }), T('obt', 220, 75, 'object MyModule', { bold: true, size: 12 }),
+        R('m1', 60, 90, 150, 32, 'def abs', { tono: 'dato' }), R('m2', 230, 90, 150, 32, 'private formatAbs', { tono: 'no' }),
+        R('m3', 60, 140, 150, 32, 'val magic = 42', { tono: 'dato' }), R('m4', 230, 140, 150, 32, '@main printAbs', { tono: 'dato' }),
+        T('fu', 500, 60, 'da fuori:', { size: 12, bold: true }), T('c1', 500, 100, '', { size: 12 }), T('c2', 500, 140, '', { size: 12 }), T('c3', 500, 180, '', { size: 12 })
+      ],
+      passi: [
+        { nota: "Il file della settimana 1: un <b>package</b> (la cartella logica) che contiene un <b>object</b>, un contenitore con un solo esemplare. Si usa come spazio dei nomi, come una classe Java con solo metodi static." },
+        { nota: "Da fuori si chiama con il nome dell'object: <code>MyModule.abs(-7)</code> = 7. Il nome completo inizia con il package: adpro.intro.MyModule.abs.", set: { m1: { tono: 'ok' }, c1: { t: 'MyModule.abs(-7) → 7', tono: 'ok' } } },
+        { nota: "<code>formatAbs</code> è <b>private</b>: si può usare solo dentro MyModule. printAbs la usa; da fuori non si vede.", set: { c2: { t: 'formatAbs: vietato', tono: 'no' } } },
+        { nota: "<code>@main</code> segna da dove parte il programma: <code>scala-cli run . -M adpro.intro.printAbs</code>. Stampa \"The absolute value of -58 is 58\" (magic − 100 = −58).", set: { m4: { tono: 'ok' }, c3: { t: 'run: … -58 is 58', tono: 'ok' } } }
+      ]
+    };
+
+    const K = [['val x = …', 'subito, una volta'], ['def x = …', 'a ogni uso'], ['lazy val x = …', 'al primo uso, poi ricorda'], ['var x = …', 'subito; si può riassegnare']];
+    const og = [];
+    K.forEach(([k], i) => og.push(R('k' + i, 20, 30 + i * 48, 160, 36, k, { tono: 'spento' }), T('u' + i, 200, 53 + i * 48, '', { size: 12, anchor: 'start' })));
+    og.push(T('c', 300, 228, '', { size: 12, bold: true }));
+    SCENE.valdef = {
+      w: 600, h: 240, lato: true,
+      legenda: 'ora:riga attuale,ok:permesso nel corso,no:vietato',
+      oggetti: og,
+      passi: [
+        { nota: "Quattro modi di dare un nome. La differenza è <b>quando</b> si calcola il valore. Immagina che il calcolo stampi \"calcolo!\" e che x venga usato due volte." },
+        { nota: "<b>val</b>: calcola subito, una volta. Due usi, una stampa. Il modo normale, da usare sempre.", set: { k0: { tono: 'ok' }, u0: { t: 'stampa 1 volta, subito' } } },
+        { nota: "<b>def</b>: ricalcola a ogni uso. Due usi, due stampe. È una funzione senza argomenti.", set: { k1: { tono: 'ok' }, u1: { t: 'stampa a ogni uso: 2 volte' } } },
+        { nota: "<b>lazy val</b>: calcola al primo uso, poi ricorda. Due usi, una stampa, ma solo quando serve (settimana 4).", set: { k2: { tono: 'ok' }, u2: { t: 'stampa 1 volta, al primo uso' } } },
+        { nota: "<b>var</b>: calcola subito e si può riassegnare con <code>x = …</code>. Negli esercizi del corso è <b>vietata</b>.", set: { k3: { tono: 'no' }, u3: { t: 'riassegnabile: vietata negli esercizi', tono: 'no' }, c: { t: 'val sempre; def per ricalcolare; lazy val per rimandare' } } }
+      ]
+    };
+
+    SCENE.scalacli = {
+      w: 580, h: 230, lato: true,
+      legenda: 'dato:tuo file,ora:comando,ok:tutto passa,no:errore',
+      oggetti: [
+        R('f', 20, 40, 150, 50, 'Exercises.scala', { tono: 'dato' }), R('cmd', 210, 40, 170, 50, 'scala-cli test . -w', { tono: 'ora' }), R('out', 420, 40, 140, 50, '', { tono: 'spento' }),
+        F('a1', 172, 65, 206, 65, ''), F('a2', 382, 65, 416, 65, ''),
+        T('c', 290, 130, '', { size: 12, bold: true }), T('c2', 290, 160, '', { size: 12 }), T('c3', 290, 200, '', { size: 12 })
+      ],
+      passi: [
+        { nota: "Il modo consigliato di lavorare: dalla cartella della settimana lanci <code>scala-cli test . -w</code>. Il punto vuol dire \"questa cartella\", -w vuol dire \"rilancia a ogni salvataggio\"." },
+        { nota: "Compila e lancia i test di Exercises.test.scala. Finché una funzione è <code>???</code> il suo test fallisce con NotImplementedError.", set: { out: { t: 'test falliti', tono: 'no' }, c: { t: '??? compila, ma lancia NotImplementedError', tono: 'no' } } },
+        { nota: "Scrivi la funzione e salvi: i test ripartono da soli.", set: { f: { t: 'salvato ✓' }, out: { t: 'test passati', tono: 'ok' }, c: { t: 'salvi → ricompila → test di nuovo', tono: 'ok' } } },
+        { nota: "Per provare a mano: <code>scala-cli repl .</code>, poi <code>import adpro.intro.MyModule.*</code> e <code>abs(-7)</code> → 7. Se \"prima funzionava e ora no\": <code>scala-cli clean .</code>.", set: { cmd: { t: 'scala-cli repl .' }, out: { t: 'abs(-7) = 7', tono: 'ok' }, c2: { t: 'repl: prova le funzioni a mano' }, c3: { t: 'clean: cancella i file generati' } } }
+      ]
+    };
+
+    SCENE.errrepl = {
+      w: 580, h: 210, lato: true,
+      legenda: 'no:errore,ok:corretto,dato:dove sta davvero',
+      oggetti: [
+        R('e', 20, 30, 540, 40, 'scala> adpro.intro.Exercise.fib(10)', { tono: 'spento' }),
+        T('m', 290, 100, '', { size: 12, bold: true }), R('fix', 20, 130, 540, 40, '', { tono: 'ok', nascosto: true }), T('c', 290, 196, '', { size: 12 })
+      ],
+      passi: [
+        { nota: "Nel REPL chiami fib con il nome completo." },
+        { nota: "Errore: <code>value Exercise is not a member of adpro.intro</code>. Nel package non esiste niente con quel nome.", set: { e: { tono: 'no' }, m: { t: 'value Exercise is not a member of adpro.intro', tono: 'no' } } },
+        { nota: "Controlla il nome esatto dell'object nel file. Se fib sta fuori da ogni object, il nome completo è <code>adpro.intro.fib(10)</code>. E se hai appena modificato il file, riapri il REPL: vede il codice compilato all'avvio.", set: { fix: { nascosto: false, t: 'scala> adpro.intro.fib(10)' }, c: { t: 'nome completo = package + object (se c’è) + funzione' } } }
+      ]
+    };
+  
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Scala in dieci minuti</h1>
+  <p class="lede">Le parole che trovi in ogni file del corso: <code>package</code>, <code>object</code>, <code>def</code>, <code>val</code>, <code>if</code>. Più i comandi di <b>scala-cli</b> per compilare e lanciare i test.</p>
+</header>
+
+<section>
+  <h2>Il file della settimana 1, riga per riga</h2>
+  <p>Questo è l'inizio di <code>01-intro/Exercises.scala</code>. Contiene quasi tutta la sintassi di base.</p>
+  <figure class="codice" data-titolo="01-intro/Exercises.scala">
+<pre data-lang="scala">package adpro.intro
+
+object MyModule:
+
+  def abs(n: Int): Int =
+    if n &lt; 0 then -n else n
+
+  private def formatAbs(x: Int): String =
+    s"The absolute value of ${x} is ${abs(x)}"
+
+  val magic: Int = 42
+  var result: Option[Int] = None
+
+  @main def printAbs: Unit =
+    assert(magic - 84 == magic.-(84))
+    println(formatAbs(magic - 100))
+
+end MyModule</pre>
+    <div class="intro"><p>Un file intero. Premi <b>Avanti</b>: ogni passo accende le righe di cui parla.</p></div>
+    <ol class="spiega">
+      <li data-righe="1" data-segna="package@due"><p><code>package</code> dice in che "cartella logica" vive il codice, come in Java. Il nome completo di tutto quello che segue inizia con <code>adpro.intro</code>.</p></li>
+      <li data-righe="3" data-segna="object@ora|MyModule@dato"><p><code>object</code> crea un contenitore con <b>un solo esemplare</b>. Si usa come uno spazio dei nomi: dall'esterno scrivi <code>MyModule.abs(42)</code>. È come una classe Java con solo metodi <code>static</code>.</p></li>
+      <li data-righe="3" data-segna=":@ora"><p>I <b>due punti</b> in fondo alla riga aprono un blocco. In Scala 3 il blocco è fatto dall'<b>indentazione</b>, non dalle graffe.</p></li>
+      <li data-righe="5" data-segna="def@ora|(n: Int)@dato|: Int#2@ok"><p>Una funzione: nome, parametri con il loro tipo, tipo di ritorno, <code>=</code>. Dopo l'uguale c'è il corpo.</p></li>
+      <li data-righe="6" data-segna="if@ora|then@ora|else@ora"><p><code>if … then … else</code> è un'<b>espressione</b>: ha un valore. Qui il valore di tutto l'<code>if</code> è il risultato di <code>abs</code>. In Java sarebbe <code>n &lt; 0 ? -n : n</code>.</p></li>
+      <li data-righe="5-6"><p>Non c'è <code>return</code>: il risultato di una funzione è semplicemente il valore dell'ultima espressione del corpo.</p></li>
+      <li data-righe="8" data-segna="private@due"><p><code>private</code>: si può usare solo dentro <code>MyModule</code>.</p></li>
+      <li data-righe="9" data-segna="s&quot;@ora|${x}@dato|${abs(x)}@dato"><p>Una stringa che inizia con <code>s</code> può contenere valori: <code>${…}</code> viene sostituito con il valore dell'espressione dentro.</p></li>
+      <li data-righe="11" data-segna="val@ok"><p><code>val</code> dà un nome a un valore <b>che non cambia più</b>. Usalo sempre.</p></li>
+      <li data-righe="12" data-segna="var@no"><p><code>var</code> è una variabile modificabile. Nel corso è <b>vietata</b>: la slide la mette qui solo per mostrarla. <code>Option[Int]</code> e <code>None</code> li vedi nella settimana 3.</p></li>
+      <li data-righe="14" data-segna="@main@ora|Unit@due"><p><code>@main</code> segna il punto di partenza del programma. <code>Unit</code> vuol dire "nessun risultato utile", come <code>void</code>.</p></li>
+      <li data-righe="15" data-segna="magic - 84@dato|magic.-(84)@ok"><p>Anche <code>-</code> è un <b>metodo</b>. <code>magic - 84</code> è solo un modo comodo di scrivere <code>magic.-(84)</code>. L'<code>assert</code> controlla che siano uguali.</p></li>
+      <li data-righe="18"><p><code>end MyModule</code> chiude il blocco in modo esplicito. È facoltativo, aiuta nei file lunghi.</p></li>
+    </ol>
+  </figure>
+  <figure class="scena" data-scena="modulo" data-titolo="package, object, private, @main"></figure>
+</section>
+
+<section>
+  <h2>Tutto è un'espressione</h2>
+  <p>In Java separi <b>istruzioni</b> (fanno qualcosa) ed <b>espressioni</b> (valgono qualcosa). In Scala quasi tutto vale qualcosa, anche un blocco intero.</p>
+  <figure class="passi" data-titolo="Quanto vale un blocco?">
+    <div class="passo">
+      <div class="espr">val area =
+  val base = <mark class="dato">4</mark>
+  val altezza = <mark class="dato">3</mark>
+  base * altezza</div>
+      <p class="nota">Un blocco indentato dopo <code>val area =</code>. Dentro ci sono due nomi locali.</p>
+    </div>
+    <div class="passo">
+      <div class="espr">val area =
+  val base = 4
+  val altezza = 3
+  <mark class="ora">base * altezza</mark></div>
+      <p class="nota">Il valore del blocco è l'<b>ultima riga</b>.</p>
+    </div>
+    <div class="passo">
+      <div class="espr">val area = <mark class="ora">4 * 3</mark></div>
+      <p class="nota">I nomi vengono sostituiti con i loro valori.</p>
+    </div>
+    <div class="passo">
+      <div class="espr">val area = <mark class="ok">12</mark></div>
+      <p class="nota"><code>base</code> e <code>altezza</code> fuori dal blocco non esistono più. Resta solo <code>area</code>.</p>
+    </div>
+  </figure>
+  <figure class="scena" data-scena="blocco" data-titolo="Il valore di un blocco"></figure>
+</section>
+
+<section>
+  <h2><code>val</code>, <code>var</code>, <code>def</code>: tre modi di dare un nome</h2>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Scritto</th><th>Quando calcola</th><th>Si può cambiare?</th><th>Nel corso</th></tr></thead>
+    <tbody>
+      <tr><td><code>val x = …</code></td><td>subito, una volta</td><td>no</td><td><span class="t-ok">sì, sempre</span></td></tr>
+      <tr><td><code>def x = …</code></td><td>ogni volta che scrivi <code>x</code></td><td>no</td><td><span class="t-ok">sì</span></td></tr>
+      <tr><td><code>lazy val x = …</code></td><td>al primo uso, poi ricorda</td><td>no</td><td><span class="t-ok">sì</span> (settimana 4)</td></tr>
+      <tr><td><code>var x = …</code></td><td>subito</td><td>sì, con <code>x = …</code></td><td><span class="t-no">vietata</span></td></tr>
+    </tbody>
+  </table></div>
+  <figure class="scena" data-scena="valdef" data-titolo="Quando viene calcolato il valore"></figure>
+</section>
+
+<section>
+  <h2>Lanciare il codice con scala-cli</h2>
+  <p>Tutti i comandi si lanciano <b>dalla cartella della settimana</b> e finiscono con un <b>punto</b>, che vuol dire "questa cartella".</p>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Comando</th><th>Cosa fa</th></tr></thead>
+    <tbody>
+      <tr><td><code>scala-cli compile .</code></td><td>Compila e basta. Utile per vedere gli errori.</td></tr>
+      <tr><td><code>scala-cli test .</code></td><td>Compila e lancia i test di <code>Exercises.test.scala</code>.</td></tr>
+      <tr><td><code>scala-cli test . -w</code></td><td>Come sopra, ma rilancia i test <b>a ogni salvataggio</b>. Il modo consigliato di lavorare.</td></tr>
+      <tr><td><code>scala-cli repl .</code></td><td>Apre il REPL con il tuo codice caricato, per provare a mano.</td></tr>
+      <tr><td><code>scala-cli run . -M adpro.intro.printAbs</code></td><td>Esegue il <code>@main</code> indicato (serve <code>-M</code> se ce n'è più di uno).</td></tr>
+      <tr><td><code>scala-cli clean .</code></td><td>Cancella i file generati. Prova questo se "prima funzionava e ora no".</td></tr>
+    </tbody>
+  </table></div>
+  <p>Nel REPL le funzioni vanno chiamate con il nome completo, oppure importate:</p>
+  <pre class="cod" data-lang="scala">scala&gt; import adpro.intro.MyModule.*
+scala&gt; abs(-7)
+val res0: Int = 7</pre>
+  <figure class="scena" data-scena="scalacli" data-titolo="test -w, repl, clean"></figure>
+</section>
+
+<section>
+  <h2>Errori tipici</h2>
+  <div class="errori">
+    <div class="errore">
+      <pre data-lang="scala">scala&gt; adpro.intro.Exercise.fib(10)</pre>
+      <pre class="msg">value Exercise is not a member of adpro.intro</pre>
+      <div class="fix">Nel package <code>adpro.intro</code> non esiste niente che si chiami <code>Exercise</code>. Controlla il nome esatto dell'<code>object</code> nel file (e se <code>fib</code> sta fuori da ogni object, si chiama <code>adpro.intro.fib(10)</code>). Se hai appena modificato il file, chiudi e riapri <code>scala-cli repl .</code>: il REPL vede il codice compilato all'avvio.</div>
+    </div>
+  </div>
+  <div class="box attenzione" data-tit="Compila, ma è vietato">
+    <p><code>def square(n: Int): Int = return n * n</code> compila senza errori. Però <code>return</code> è nella lista dei costrutti vietati negli esercizi e all'esame: scrivi solo <code>n * n</code>. Vedi <a href="../esame/regole.html">Regole e divieti</a>.</p>
+  </div>
+  <figure class="scena" data-scena="errrepl" data-titolo="value … is not a member of …"></figure>
+</section>
+
+</main>
+</body>
+</html>

@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Weighted interval scheduling</title>
+<link rel="stylesheet" href="../assets/atlas.css">
+<link rel="stylesheet" href="../assets/tema.css">
+<script src="../assets/sito.js"></script>
+<script src="../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  const J = [[0, 3, 2], [1, 5, 4], [4, 6, 4], [2, 7, 7], [6, 8, 2], [6, 9, 1]];
+  const p = [0, 0, 0, 1, 0, 3, 3], M = [0, 2, 4, 6, 7, 8, 8];
+  const X = t => 150 + t * 40, ogg = [];
+  J.forEach(([s, f, v], i) => {
+    ogg.push({ id: 'l' + (i + 1), tipo: 'testo', x: 60, y: 22 + i * 30, t: `${i + 1}: v=${v}, p=${p[i + 1]}`, size: 11.5, anchor: 'middle' });
+    ogg.push({ id: 'j' + (i + 1), tipo: 'rett', x: X(s), y: 10 + i * 30, w: (f - s) * 40, h: 22, t: String(i + 1) });
+  });
+  ogg.push({ id: 'M', tipo: 'celle', x: 150, y: 215, cw: 50, ch: 36, valori: ['0', '', '', '', '', '', ''], etichette: ['M[0]', 'M[1]', 'M[2]', 'M[3]', 'M[4]', 'M[5]', 'M[6]'] });
+  ogg.push({ id: 'cod', tipo: 'testo', x: 300, y: 285, t: 'M[0] = 0', size: 12.5, bold: true });
+  const passi = [{ nota: 'Sei lavori <b>con un peso</b> v, ordinati per fine. <code>p(j)</code> = l\'ultimo lavoro prima di j compatibile con j (0 se nessuno). Vogliamo il peso totale massimo. <code>M[0] = 0</code>: senza lavori si guadagna 0.', righe: [1] }];
+  const toniM = { 0: 'ok' };
+  for (let j = 1; j <= 6; j++) {
+    const v = J[j - 1][2], a = v + M[p[j]], b = M[j - 1];
+    const vals = M.map((x, k) => k <= j ? String(x) : '');
+    const t = Object.assign({}, toniM, { [p[j]]: 'dato', [j - 1]: 'due', [j]: 'ora' });
+    const setJ = {}; for (let k = 1; k <= 6; k++) setJ['j' + k] = { tono: k === j ? 'ora' : (k <= j ? null : 'spento') };
+    passi.push({ nota: `M[${j}]: <b>prendo ${j}</b> → v${j} + M[p(${j})] = ${v} + M[${p[j]}] = <b>${a}</b>; <b>non prendo ${j}</b> → M[${j - 1}] = <b>${b}</b>. Massimo: <b>${M[j]}</b>.`, righe: [3], set: Object.assign(setJ, { M: { valori: vals, toni: t }, cod: { t: `M[${j}] = max(${v} + ${M[p[j]]}, ${b}) = ${M[j]}` } }) });
+    toniM[j] = 'ok';
+  }
+  const tutti = {}; for (let k = 1; k <= 6; k++) tutti['j' + k] = { tono: null };
+  passi.push({ nota: 'Tabella piena: il valore ottimo è <b>M[6] = 8</b>. Ma quali lavori? Si ricostruisce andando all\'indietro.', righe: [5], set: Object.assign({}, tutti, { M: { valori: M.map(String), toni: { 6: 'ok' } }, cod: { t: 'valore ottimo = M[6] = 8' } }) });
+  passi.push({ nota: 'j = 6: 1 + M[3] = 7 &lt; M[5] = 8 ⇒ il 6 <b>non</b> è preso, scendo a j = 5.', set: { j6: { tono: 'no' }, M: { valori: M.map(String), toni: { 6: 'spento', 5: 'ora' } }, cod: { t: 'j = 6: salto' } } });
+  passi.push({ nota: 'j = 5: 2 + M[3] = 8 ≥ M[4] = 7 ⇒ <b>prendo 5</b> e salto a p(5) = 3.', set: { j5: { tono: 'ok' }, M: { valori: M.map(String), toni: { 5: 'ok', 3: 'ora' } }, cod: { t: 'j = 5: preso, vado a p(5) = 3' } } });
+  passi.push({ nota: 'j = 3: 4 + M[1] = 6 ≥ M[2] = 4 ⇒ <b>prendo 3</b> e salto a p(3) = 1.', set: { j3: { tono: 'ok' }, M: { valori: M.map(String), toni: { 5: 'ok', 3: 'ok', 1: 'ora' } }, cod: { t: 'j = 3: preso, vado a p(3) = 1' } } });
+  passi.push({ nota: 'j = 1: 2 + M[0] = 2 ≥ 0 ⇒ <b>prendo 1</b>. Soluzione: <b>{1, 3, 5}</b>, peso 2 + 4 + 2 = 8. Verificato in Java.', set: { j1: { tono: 'ok' }, j2: { tono: 'spento' }, j4: { tono: 'spento' }, j6: { tono: 'spento' }, M: { valori: M.map(String), toni: { 5: 'ok', 3: 'ok', 1: 'ok' } }, cod: { t: 'soluzione {1, 3, 5}, peso 8', tono: 'ok' } } });
+  SCENE.wis = {
+    w: 600, h: 300, lato: true,
+    legenda: 'ora:j adesso,dato:M[p(j)] (prendo j),due:M[j−1] (salto j),ok:calcolato / preso',
+    codice: { lang: 'pseudo', testo: `M[0] ← 0
+for j = 1 to n:
+  M[j] ← max(v[j] + M[p(j)], M[j−1])
+// valore ottimo:
+return M[n]` },
+    oggetti: ogg, passi
+  };
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Weighted interval scheduling</h1>
+  <p class="lede">Primo esempio di <b>programmazione dinamica</b> (K&amp;T 6.1–6.2). Quando nessuna scelta greedy funziona, si scrive la soluzione ottima in funzione delle soluzioni ottime di problemi più piccoli, e si riempie una tabella dal più piccolo al più grande.</p>
+</header>
+
+<section>
+  <h2>Il problema</h2>
+  <ul>
+    <li>Come <a href="l03-interval-scheduling.html">interval scheduling</a>, ma ogni lavoro j ha un <b>peso</b> <span class="m">v<sub>j</sub> &gt; 0</span>.</li>
+    <li>Obiettivo: un insieme di lavori compatibili di <b>peso totale</b> massimo.</li>
+    <li>Greedy per fine non funziona più: un lavoro corto e leggero può bloccare uno pesantissimo. Con tutti i pesi uguali a 1 si torna al problema di prima.</li>
+  </ul>
+  <div class="box regola" data-tit="Notazione">
+    <p>Ordino i lavori per fine: <span class="m">f₁ ≤ f₂ ≤ … ≤ fₙ</span>. <span class="m">p(j)</span> = il più grande indice <span class="m">i &lt; j</span> tale che i e j sono compatibili (0 se non c'è). Esempio delle slide: <span class="m">p(8) = 5, p(7) = 3, p(2) = 0</span>.</p>
+  </div>
+</section>
+
+<section>
+  <h2>La ricorrenza</h2>
+  <figure class="passi" data-titolo="OPT(j) = il peso massimo usando solo i lavori 1…j">
+    <div class="passo"><div class="espr">caso 1: la soluzione ottima <mark class="dato">contiene j</mark></div><p class="nota">Allora non contiene i lavori incompatibili con j: p(j)+1, …, j−1. Del resto usa il meglio di 1…p(j).</p></div>
+    <div class="passo"><div class="espr">⇒ OPT(j) = <mark class="dato">v<sub>j</sub> + OPT(p(j))</mark></div><p class="nota">Il peso di j più l'ottimo sul problema più piccolo che resta.</p></div>
+    <div class="passo"><div class="espr">caso 2: la soluzione ottima <mark class="due">non contiene j</mark>  ⇒ OPT(j) = <mark class="due">OPT(j − 1)</mark></div><p class="nota">È l'ottimo sui primi j − 1 lavori.</p></div>
+    <div class="passo"><div class="espr">OPT(j) = <mark class="ok">max( v<sub>j</sub> + OPT(p(j)),  OPT(j − 1) )</mark>,   OPT(0) = 0</div><p class="nota">Non so quale caso vale: li provo entrambi e tengo il migliore. Risposta: OPT(n).</p></div>
+  </figure>
+  <div class="box attenzione" data-tit="La ricorsione diretta è esponenziale">
+    <p>Scritta come funzione ricorsiva, <code>OPT(j)</code> chiama <code>OPT(j−1)</code> e <code>OPT(p(j))</code>, che richiamano gli stessi valori moltissime volte. Se <span class="m">p(j) = j − 2</span> per ogni j, il numero di chiamate cresce come i numeri di Fibonacci: esponenziale. Ma i valori <b>diversi</b> sono solo n + 1.</p>
+  </div>
+  <div class="colonne">
+    <div class="carta buona"><h4>Memoization</h4><p>Ricorsione, ma ogni <code>OPT(j)</code> calcolato si salva in <code>M[j]</code> e la volta dopo si legge. Ogni valore si calcola una volta: <i>O(n)</i>.</p></div>
+    <div class="carta buona"><h4>Tabella bottom-up</h4><p>Un ciclo da j = 1 a n che riempie <code>M[j]</code> usando valori già pronti. Stesso tempo, niente ricorsione.</p></div>
+  </div>
+  <figure class="scena" data-scena="wis" data-titolo="Riempire la tabella e ricostruire la soluzione (esempio di K&amp;T fig. 6.2)"></figure>
+</section>
+
+<section>
+  <h2>In Java</h2>
+  <figure class="codice" data-titolo="Bottom-up con p(j) per ricerca binaria (verificato: M = [0,2,4,6,7,8,8], lavori 1, 3, 5)">
+<pre data-lang="java">// job[j-1] = { inizio, fine, peso }, già ordinati per fine
+int[] p = new int[n + 1];
+for (int j = 1; j &lt;= n; j++) {
+    int s = job[j - 1][0];
+    int lo = 0, hi = j - 1;
+    while (lo &lt; hi) {
+        int mid = (lo + hi + 1) / 2;
+        if (fine[mid - 1] &lt;= s) lo = mid; else hi = mid - 1;
+    }
+    p[j] = lo;
+}
+long[] M = new long[n + 1];
+for (int j = 1; j &lt;= n; j++)
+    M[j] = Math.max(job[j - 1][2] + M[p[j]], M[j - 1]);</pre>
+    <ol class="spiega">
+      <li data-righe="2-11" data-segna="fine[mid - 1] &lt;= s@ora|p[j] = lo@dato"><p><b>p(j) con la ricerca binaria</b>: tra i lavori 1…j−1 (ordinati per fine) cerco l'ultimo che finisce entro l'inizio di j. Il predicato "finisce entro s" è vero per un prefisso: la ricerca binaria trova il confine in <i>O(log n)</i>. <code>(lo + hi + 1) / 2</code> arrotonda in su, altrimenti con <code>lo = mid</code> il ciclo potrebbe non finire.</p></li>
+      <li data-righe="12" data-segna="new long[n + 1]@ok"><p>Tabella <code>M[0..n]</code>; Java la inizializza a 0, quindi <code>M[0] = 0</code> è già a posto.</p></li>
+      <li data-righe="13-14" data-segna="job[j - 1][2] + M[p[j]]@dato|M[j - 1]@due"><p>La ricorrenza, tale e quale. Quando calcolo <code>M[j]</code>, <code>M[p[j]]</code> e <code>M[j-1]</code> sono già pronti perché hanno indice più piccolo.</p></li>
+    </ol>
+  </figure>
+  <figure class="passi" data-titolo="Tempo">
+    <div class="passo"><div class="espr">ordinare per fine: <mark class="dato">O(n log n)</mark></div><p class="nota"></p></div>
+    <div class="passo"><div class="espr">tutti i p(j): n ricerche binarie = <mark class="dato">O(n log n)</mark></div><p class="nota">O(n) se i lavori sono già ordinati sia per inizio sia per fine (slide).</p></div>
+    <div class="passo"><div class="espr">tabella: n celle, O(1) ciascuna = <mark class="ok">O(n)</mark>; ricostruzione O(n)</div><p class="nota">Totale <b>O(n log n)</b>, spazio O(n).</p></div>
+  </figure>
+</section>
+
+<section>
+  <h2>Le 4 domande di ogni programma dinamico</h2>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Domanda</th><th>Qui</th></tr></thead>
+    <tbody>
+      <tr><td>1. Cosa sono i sottoproblemi?</td><td>OPT(j): il meglio con i lavori 1…j, per j = 0…n</td></tr>
+      <tr><td>2. Qual è la ricorrenza?</td><td>max(v<sub>j</sub> + OPT(p(j)), OPT(j−1))</td></tr>
+      <tr><td>3. Casi base e ordine di calcolo?</td><td>OPT(0) = 0; j crescente</td></tr>
+      <tr><td>4. Dov'è la risposta? Tempo e spazio?</td><td>OPT(n); O(n log n) tempo, O(n) spazio</td></tr>
+    </tbody>
+  </table></div>
+  <div class="box esame" data-tit="È esattamente la domanda d'esame">
+    <p>"Let OPT(…) denote the value of a partial solution… tell me what the parameters are and their range… Give a recurrence relation, including boundary conditions and base cases. Which values of OPT are used to answer the problem? State the running time and space." Rispondi alle 4 domande in quest'ordine. <a href="../esame/domande.html">Le 6 domande</a>.</p>
+  </div>
+</section>
+
+</main>
+</body>
+</html>

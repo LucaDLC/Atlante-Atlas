@@ -1,0 +1,308 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Pattern matching</title>
+<link rel="stylesheet" href="../assets/atlas.css">
+<link rel="stylesheet" href="../assets/tema.css">
+<script src="../assets/sito.js"></script>
+<script src="../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+SCENE.casi = {
+  w: 600, h: 270, lato: false,
+  legenda: 'ora:caso che sto provando,no:non combacia,ok:combacia',
+  oggetti: [
+    { id: 'L', tipo: 'celle', x: 150, y: 20, cw: 54, ch: 40, valori: ['1', '2', '3', '4', '5'] },
+    { id: 'c1', tipo: 'testo', x: 30, y: 110, t: 'case Cons(x, Cons(2, Cons(4, _))) => x', size: 14, anchor: 'start' },
+    { id: 'c2', tipo: 'testo', x: 30, y: 140, t: 'case Nil => 42', size: 14, anchor: 'start' },
+    { id: 'c3', tipo: 'testo', x: 30, y: 170, t: 'case Cons(x, Cons(y, Cons(3, Cons(4, _)))) => x + y', size: 14, anchor: 'start' },
+    { id: 'c4', tipo: 'testo', x: 30, y: 200, t: 'case Cons(h, t) => h + sum(t)', size: 14, anchor: 'start' },
+    { id: 'n', tipo: 'testo', x: 300, y: 248, t: '', size: 14, bold: true }
+  ],
+  passi: [
+    { nota: 'Il soggetto: List(1, 2, 3, 4, 5), cioè cinque celle Cons. I case si provano <b>dall\'alto</b>, uno alla volta.' },
+    { nota: 'Caso 1: x = 1, poi 2 = 2, poi serve un 4 in terza posizione ma c\'è un 3. <b>Non combacia</b>.', set: { c1: { tono: 'no' }, L: { toni: { 0: 'ok', 1: 'ok', 2: 'no' } } } },
+    { nota: 'Caso 2: la lista non è vuota. Non combacia.', set: { c2: { tono: 'no' }, L: { toni: {} } } },
+    { nota: 'Caso 3: x = 1, y = 2, poi 3 = 3, poi 4 = 4; il resto (la cella del 5) va nel <code>_</code>. <b>Combacia</b>.', set: { c3: { tono: 'ok' }, L: { toni: { 0: 'ok', 1: 'ok', 2: 'ok', 3: 'ok' } } } },
+    { nota: 'Si esegue il corpo del caso 3: x + y = 1 + 2 = <b>3</b>. Il caso 4 non viene nemmeno provato: vince il primo che combacia.', set: { c4: { tono: 'spento' }, n: { t: 'risultato: x + y = 3', tono: 'ok' } } }
+  ]
+};
+</script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  const T = (id, x, y, t, extra) => Object.assign({ id, tipo: 'testo', x, y, t, size: 13 }, extra || {});
+  const R = (id, x, y, w, h, t, extra) => Object.assign({ id, tipo: 'rett', x, y, w, h, t }, extra || {});
+  const N = (id, x, y, t, tono, extra) => Object.assign({ id, tipo: 'nodo', x, y, t, tono, r: 20 }, extra || {});
+  const F = (id, x1, y1, x2, y2, t, extra) => Object.assign({ id, tipo: 'vett', x1, y1, x2, y2, t }, extra || {});
+  const C = (id, x, y, valori, extra) => Object.assign({ id, tipo: 'celle', x, y, cw: 52, ch: 40, valori, indici: false }, extra || {});
+
+    SCENE.leggimatch = {
+      w: 540, h: 170,
+      codice: { lang: 'scala', testo: `def head[A](l: List[A]): A = l match
+  case Nil => throw NoSuchElementException()
+  case Cons(h, _) => h` },
+      legenda: 'ora:caso che sto provando,no:non combacia,ok:combacia,dato:nome creato dal pattern',
+      oggetti: [
+        R('c1', 30, 40, 60, 40, '7', { tono: 'spento' }), R('t1', 90, 40, 40, 40, '•', { tono: 'spento' }), F('a1', 122, 60, 156, 60, ''),
+        R('c2', 160, 40, 60, 40, '8', { tono: 'spento' }), F('a2', 222, 60, 256, 60, ''), R('nil', 260, 40, 60, 40, 'Nil', { tono: 'spento' }),
+        T('h', 60, 110, '', { bold: true, tono: 'dato' }), T('u', 190, 130, '', { size: 12 }), T('c', 420, 60, '', { bold: true, size: 14 })
+      ],
+      passi: [
+        { nota: "<code>head(List(7, 8))</code>. <code>l match</code>: l è il <b>soggetto</b>, la cosa di cui chiedo la forma. I casi si provano dall'alto." },
+        { nota: "Primo caso: <code>Nil</code>? No, l è una cella.", righe: [2], set: { c1: { tono: 'no' }, t1: { tono: 'no' } } },
+        { nota: "Secondo caso: <code>Cons(h, _)</code>? Sì. Il pattern mette in fila i due campi della cella, head e tail: il primo si chiama <b>h</b> (un nome nuovo, che si riempie con 7)…", righe: [3], set: { c1: { tono: 'dato' }, t1: { tono: 'ok' }, h: { t: 'h = 7' } } },
+        { nota: "…il secondo, la coda, c'è ma non mi serve: <b>_</b> vuol dire \"lo scarto\".", righe: [3], set: { c2: { tono: 'spento' }, u: { t: '_ = il resto, scartato' } } },
+        { nota: "A destra della freccia il risultato: <b>h = 7</b>. Potevi scrivere Cons(primo, resto): i nomi li scegli tu, conta la posizione.", righe: [3], set: { c: { t: 'head = 7', tono: 'ok' } } }
+      ]
+    };
+
+    const P = [['Nil', false, ''], ['Cons(h, t)', true, 'h = 2, t = List(5)'], ['Cons(_, Nil)', false, 'ha due elementi, non uno'], ['Cons(2, t)', true, 't = List(5)'], ['Cons(x, Cons(y, _))', true, 'x = 2, y = 5'], ['_', true, 'tutto: nessun nome']];
+    const og = [T('v', 300, 24, 'valore: List(2, 5)', { bold: true })];
+    P.forEach(([p], i) => og.push(R('p' + i, 20, 40 + i * 33, 200, 28, p, { tono: 'spento' }), T('r' + i, 240, 59 + i * 33, '', { size: 12, anchor: 'start' })));
+    SCENE.pattern = {
+      w: 600, h: 250, lato: true,
+      legenda: 'ok:combacia,no:non combacia',
+      oggetti: og,
+      passi: [{ nota: "Lo stesso valore, <code>List(2, 5)</code>, provato contro vari pattern. Un pattern descrive una <b>forma</b>; i nomi minuscoli si riempiono, i Maiuscoli (Nil, Cons, costanti) devono combaciare." }].concat(P.map(([p, ok, w], i) => ({
+        nota: ['<code>Nil</code>: solo la lista vuota. No.', '<code>Cons(h, t)</code>: qualsiasi cella. Sì: h = 2, t = List(5).', '<code>Cons(_, Nil)</code>: un solo elemento (la coda è Nil). Qui la coda è List(5): no.', '<code>Cons(2, t)</code>: una lista che inizia con 2. Il 2 è una costante: deve essere uguale. Sì, t = List(5).', '<code>Cons(x, Cons(y, _))</code>: almeno due elementi, pattern annidato. Sì: x = 2, y = 5.', '<code>_</code>: combacia con tutto, non crea nomi. (Anche un nome minuscolo da solo, come x, combacia con tutto.)'][i],
+        set: { ['p' + i]: { tono: ok ? 'ok' : 'no' }, ['r' + i]: { t: ok ? '✓ ' + w : '✗ ' + w, tono: ok ? 'ok' : 'no' } }
+      })))
+    };
+
+    SCENE.guardie = {
+      w: 580, h: 230, lato: true,
+      legenda: 'ok:coperto di sicuro,due:forse (guardia),no:avviso del compilatore',
+      oggetti: [
+        R('g1', 20, 30, 260, 32, 'case Some(a) if p(a) => this', { tono: 'spento' }), R('g2', 20, 70, 260, 32, 'case Some(a) if !p(a) => None', { tono: 'spento' }), R('g3', 20, 110, 260, 32, 'case None => None', { tono: 'spento' }),
+        T('v1', 300, 51, '', { size: 12, anchor: 'start' }), T('v2', 300, 91, '', { size: 12, anchor: 'start' }), T('v3', 300, 131, '', { size: 12, anchor: 'start' }),
+        T('c', 290, 180, '', { size: 12, bold: true }), T('c2', 290, 210, '', { size: 12 })
+      ],
+      passi: [
+        { nota: "Una <b>guardia</b>: <code>case … if condizione</code>. Il caso vale solo se il pattern combacia <b>e</b> la condizione è vera. Questi tre casi sembrano coprire tutto: p(a) o è vero o è falso." },
+        { nota: "Ma per il compilatore una guardia vale \"<b>forse</b>\": non ragiona su cosa fa p. I due Some sono solo \"forse\".", set: { g1: { tono: 'due' }, g2: { tono: 'due' }, v1: { t: 'forse' }, v2: { t: 'forse' } } },
+        { nota: "None è coperto di sicuro. Un Some invece potrebbe \"sfuggire\" ai due forse: avviso <i>match may not be exhaustive</i>, e con -Werror non compila.", set: { g3: { tono: 'ok' }, v3: { t: 'sì' }, c: { t: 'match may not be exhaustive', tono: 'no' } } },
+        { nota: "Soluzione 1: l'ultimo caso senza guardia, <code>case _ =&gt; None</code>. Soluzione 2: niente guardie, la decisione nel corpo: <code>case Some(a) =&gt; if p(a) then this else None</code>.", set: { g2: { t: 'case _ => None', tono: 'ok' }, v2: { t: 'sì, senza guardia' }, g3: { tono: 'spento', t: '' }, v3: { t: '' }, c: { t: 'ultimo caso senza guardia: esaustivo', tono: 'ok' }, c2: { t: 'oppure: case Some(a) => if p(a) then this else None' } } }
+      ]
+    };
+
+    SCENE.duelist = {
+      w: 560, h: 170,
+      codice: { lang: 'scala', testo: `def addPairwise(l: List[Int], r: List[Int]): List[Int] = (l, r) match
+  case (Nil, _) => Nil
+  case (_, Nil) => Nil
+  case (Cons(h1, t1), Cons(h2, t2)) => Cons(h1 + h2, addPairwise(t1, t2))` },
+      legenda: 'ora:teste h1 e h2,ok:risultato,no:finita',
+      oggetti: [C('l', 60, 20, ['1', '2']), C('r', 60, 70, ['10', '20', '30']), C('o', 60, 120, ['', ''], { toni: { 0: 'spento', 1: 'spento' } }), T('ll', 30, 45, 'l', { bold: true }), T('lr', 30, 95, 'r', { bold: true }), T('c', 400, 90, '', { size: 12 })],
+      passi: [
+        { nota: "Per scorrere due liste insieme: metto le due liste in una <b>coppia</b> <code>(l, r)</code> e faccio il match sulla coppia. Ogni pattern ha due pezzi.", righe: [1] },
+        { nota: "Entrambe hanno una cella: h1 = 1, h2 = 10, nomi diversi per le due teste. Cella del risultato: 11, poi le code.", righe: [4], set: { l: { toni: { 0: 'ora' } }, r: { toni: { 0: 'ora' } }, o: { valori: ['11', ''], toni: { 0: 'ok', 1: 'spento' } } } },
+        { nota: "2 + 20 = 22.", righe: [4], set: { l: { toni: { 1: 'ora' } }, r: { toni: { 1: 'ora' } }, o: { valori: ['11', '22'], toni: { 0: 'ok', 1: 'ok' } } } },
+        { nota: "l è finita: <code>(Nil, _)</code>, il _ dice \"l'altra non mi interessa\". Mi fermo: List(11, 22). I due casi con Nil coprono insieme anche (Nil, Nil).", righe: [2], set: { l: { toni: {} }, r: { toni: { 2: 'no' } }, c: { t: 'List(11, 22)', tono: 'ok' } } }
+      ]
+    };
+
+    const E = [['= match', 'expression expected but match found', '= t match'], ['case Const(h, t)', 'no pattern match extractor named Const', 'case Cons(h, t)'], ['case n < 0 => l', 'no pattern match extractor named <', 'case _ if n <= 0 => l'], ['case Some(X) => X', 'Not found: X', 'case Some(x) => x'], ['solo case Cons(h, _)', 'match may not be exhaustive: Nil', '+ case Nil => …'], ['Cons(h, t) prima di Cons(1, t)', 'Unreachable case', 'casi specifici prima']];
+    SCENE.errorimatch = {
+      w: 600, h: 220, lato: true,
+      legenda: 'no:codice sbagliato e messaggio,ok:correzione',
+      oggetti: [T('n', 300, 24, '', { bold: true }), R('s', 20, 40, 270, 40, '', { tono: 'no' }), R('g', 310, 40, 270, 40, '', { tono: 'ok' }), T('m', 300, 120, '', { size: 12, bold: true }), T('p', 300, 170, '', { size: 12 })],
+      passi: [{ nota: "Sei errori veri degli esercizi, con il messaggio di Scala 3.8. Per ognuno: codice, messaggio, correzione." }].concat(E.map(([s, m, g], i) => ({
+        nota: ['Manca il <b>soggetto</b> prima di match.', 'Il costruttore si chiama <b>Cons</b>, senza t. Gli altri errori a cascata (value * is not a member of Any) spariscono correggendo il nome.', 'Un pattern descrive una <b>forma</b>, non una condizione: per n serve un if prima del match o una guardia.', '<b>Maiuscolo</b> = Scala cerca una X che esiste già. Per un nome nuovo, minuscolo.', 'Manca una forma. Con <b>-Werror</b> è un errore: la consegna non passa.', 'Il primo caso prende già tutte le celle: il secondo non scatta mai. Casi <b>specifici prima</b>.'][i],
+        set: { n: { t: 'errore ' + (i + 1) + ' di 6' }, s: { t: s }, g: { t: g }, m: { t: m, tono: 'no' } }
+      })))
+    };
+  
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Pattern matching</h1>
+  <p class="lede"><code>x match</code> chiede "che forma ha <code>x</code>?". Ogni <code>case</code> descrive una forma possibile. Scala prova i <code>case</code> dall'alto e sceglie il <b>primo</b> che combacia, e intanto dà un nome ai pezzi che ti servono.</p>
+</header>
+
+<section>
+  <h2>Leggere un match</h2>
+  <figure class="codice" data-titolo="head: il primo elemento di una lista">
+<pre data-lang="scala">def head[A](l: List[A]): A = l match
+  case Nil => throw NoSuchElementException()
+  case Cons(h, _) => h</pre>
+    <ol class="spiega">
+      <li data-righe="1" data-segna="l@dato|match@ora"><p><code>l</code> è il <b>soggetto</b>: la cosa di cui chiedo la forma. <code>match</code> va sempre <b>dopo</b> il soggetto.</p></li>
+      <li data-righe="2" data-segna="Nil@ora"><p>Primo caso: se <code>l</code> è la lista vuota non esiste un primo elemento. Qui l'esercizio chiede esplicitamente un'eccezione.</p></li>
+      <li data-righe="3" data-segna="Cons@ora"><p>Secondo caso: <code>l</code> è una cella <code>Cons</code>.</p></li>
+      <li data-righe="3" data-segna="h@dato"><p><code>h</code> <b>non esisteva prima</b>. Scrivendolo nel pattern dico: "se combacia, chiama <code>h</code> il primo campo della cella". Il primo campo di <code>Cons</code> è la testa.</p></li>
+      <li data-righe="3" data-segna="_@due"><p>Il secondo campo (la coda) c'è, ma non mi serve: <code>_</code> vuol dire "qui c'è qualcosa, lo scarto".</p></li>
+      <li data-righe="3" data-segna="=> h@ok"><p>A destra della freccia il risultato di questo caso: la testa.</p></li>
+    </ol>
+  </figure>
+  <div class="box domanda-tua" data-tit="Dubbio frequente: da dove prende h?">
+    <p>Dalla cella stessa. <code>Cons(head: A, tail: List[A])</code> ha due campi, in quell'ordine. Il pattern <code>Cons(h, _)</code> li mette in fila con i nomi che scegli tu: il primo si chiama <code>h</code>, il secondo lo butti. Potresti scrivere <code>Cons(primo, resto)</code> e sarebbe uguale.</p>
+  </div>
+  <figure class="scena" data-scena="leggimatch" data-titolo="head(List(7, 8)): i casi dall’alto"></figure>
+</section>
+
+<section>
+  <h2>Un match eseguito caso per caso</h2>
+  <p>Esercizio 1 della settimana 2: quanto vale questa espressione? Si risponde senza eseguire, provando i casi in ordine.</p>
+  <pre class="cod" data-lang="scala">List(1, 2, 3, 4, 5) match
+  case Cons(x, Cons(2, Cons(4, _))) => x
+  case Nil => 42
+  case Cons(x, Cons(y, Cons(3, Cons(4, _)))) => x + y
+  case Cons(h, t) => h
+  case _ => 101</pre>
+  <figure class="passi" data-titolo="Prova i case dall'alto">
+    <div class="passo">
+      <div class="espr">Cons(<mark class="dato">1</mark>, Cons(<mark class="dato">2</mark>, Cons(<mark class="dato">3</mark>, Cons(<mark class="dato">4</mark>, Cons(<mark class="dato">5</mark>, Nil)))))</div>
+      <p class="nota">Prima scrivo la lista come celle: <code>List(1, 2, 3, 4, 5)</code> chiama <code>List.apply</code>, che costruisce questo.</p>
+    </div>
+    <div class="passo">
+      <div class="espr">case Cons(<mark class="ok">x</mark>, Cons(<mark class="ok">2</mark>, Cons(<mark class="no">4</mark>, _)))
+     Cons(1,   Cons(2,   Cons(3, …</div>
+      <p class="nota">Caso 1. <code>x</code> = 1, poi 2 = 2 ok, poi serve un 4 in terza posizione ma c'è un <b>3</b>. Non combacia.</p>
+    </div>
+    <div class="passo">
+      <div class="espr">case <mark class="no">Nil</mark></div>
+      <p class="nota">Caso 2. La lista non è vuota. Non combacia.</p>
+    </div>
+    <div class="passo">
+      <div class="espr">case Cons(<mark class="ok">x</mark>, Cons(<mark class="ok">y</mark>, Cons(<mark class="ok">3</mark>, Cons(<mark class="ok">4</mark>, _))))
+     Cons(1,   Cons(2,   Cons(3,   Cons(4, …</div>
+      <p class="nota">Caso 3. <code>x</code> = 1, <code>y</code> = 2, poi 3 = 3, poi 4 = 4, il resto (<code>Cons(5, Nil)</code>) va nel <code>_</code>. <b>Combacia.</b></p>
+    </div>
+    <div class="passo">
+      <div class="espr">x + y   =   1 + 2   =   <mark class="ok">3</mark></div>
+      <p class="nota">Risultato: <b>3</b> (verificato). I casi 4 e 5 non vengono nemmeno guardati.</p>
+    </div>
+  </figure>
+  <figure class="scena" data-scena="casi" data-titolo="I case provati dall'alto"></figure>
+  <div class="box attenzione" data-tit="Con le opzioni del corso">
+    <p>Compilando questo match con <code>-Werror</code> (il <code>project.scala</code> del corso) Scala segnala l'ultimo caso: <i>Unreachable case except for null</i>. Ogni lista è <code>Nil</code> o <code>Cons</code>, e <code>case Cons(h, t)</code> le prende già tutte: <code>case _ => 101</code> non può mai scattare.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Cosa si può scrivere in un pattern</h2>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Pattern</th><th>Combacia con</th><th>Nomi che crea</th></tr></thead>
+    <tbody>
+      <tr><td><code>Nil</code></td><td>solo la lista vuota</td><td>nessuno</td></tr>
+      <tr><td><code>Cons(h, t)</code></td><td>qualsiasi cella</td><td><code>h</code> testa, <code>t</code> coda</td></tr>
+      <tr><td><code>Cons(_, Nil)</code></td><td>una lista con <b>un solo</b> elemento</td><td>nessuno</td></tr>
+      <tr><td><code>Cons(2, t)</code></td><td>una lista che inizia con 2</td><td><code>t</code></td></tr>
+      <tr><td><code>Cons(x, Cons(y, _))</code></td><td>almeno due elementi</td><td><code>x</code>, <code>y</code></td></tr>
+      <tr><td><code>(Nil, _)</code></td><td>una coppia il cui primo pezzo è vuoto</td><td>nessuno</td></tr>
+      <tr><td><code>_</code></td><td>tutto</td><td>nessuno</td></tr>
+      <tr><td><code>x</code> (minuscolo)</td><td>tutto</td><td><code>x</code></td></tr>
+    </tbody>
+  </table></div>
+  <div class="box regola" data-tit="Regola dei nomi">
+    <p>Nei pattern un nome <b>minuscolo</b> è un nome nuovo, che si riempie. Un nome <b>Maiuscolo</b> è una cosa che deve già esistere (un costruttore come <code>Nil</code> o una costante).</p>
+  </div>
+  <figure class="scena" data-scena="pattern" data-titolo="Lo stesso valore contro sei pattern"></figure>
+</section>
+
+<section>
+  <h2>Guardie: <code>case … if</code></h2>
+  <p>Dopo il pattern puoi aggiungere una condizione. Il caso vale solo se il pattern combacia <b>e</b> la condizione è vera.</p>
+  <figure class="passi" data-titolo="Il compilatore non conta le condizioni">
+    <div class="passo">
+      <div class="espr">case Some(a) <mark class="ora">if p(a)</mark> => this</div>
+      <p class="nota">Combacia solo se è un <code>Some</code> e <code>p(a)</code> è vero.</p>
+    </div>
+    <div class="passo">
+      <div class="espr">case Some(a) if p(a)  => this
+case Some(a) if !p(a) => None
+case None             => None</div>
+      <p class="nota">Sembra coprire tutto: <code>p(a)</code> o è vero o è falso.</p>
+    </div>
+    <div class="passo">
+      <div class="espr">case Some(a) <mark class="no">if ???</mark>  => this      <span class="mano">// forse</span>
+case Some(a) <mark class="no">if ???</mark>  => None      <span class="mano">// forse</span>
+case None               => None      <span class="mano">// sì</span></div>
+      <p class="nota">Per il compilatore una guardia vale "forse": non ragiona su cosa fa <code>p</code>. Quindi pensa che un <code>Some</code> possa sfuggire.</p>
+    </div>
+    <div class="passo">
+      <div class="espr">case Some(a) if p(a) => this
+case <mark class="ok">_</mark>              => None</div>
+      <p class="nota">Soluzione 1: l'ultimo caso senza guardia.</p>
+    </div>
+    <div class="passo">
+      <div class="espr">case Some(a) => <mark class="ok">if p(a) then this else None</mark>
+case None    => None</div>
+      <p class="nota">Soluzione 2: la decisione va dentro il corpo.</p>
+    </div>
+  </figure>
+  <figure class="scena" data-scena="guardie" data-titolo="Perché il compilatore vede un “forse”"></figure>
+</section>
+
+<section>
+  <h2>Match su due liste insieme</h2>
+  <p>Per scorrere due liste in parallelo metti le due liste in una coppia e fai il match sulla coppia (esercizio 16).</p>
+  <figure class="codice" data-titolo="addPairwise">
+<pre data-lang="scala">def addPairwise(l: List[Int], r: List[Int]): List[Int] = (l, r) match
+  case (Nil, _) => Nil
+  case (_, Nil) => Nil
+  case (Cons(h1, t1), Cons(h2, t2)) => Cons(h1 + h2, addPairwise(t1, t2))</pre>
+    <ol class="spiega">
+      <li data-righe="1" data-segna="(l, r) match@ora"><p>Il soggetto è la coppia <code>(l, r)</code>. Ogni pattern avrà quindi due pezzi.</p></li>
+      <li data-righe="2-3" data-segna="(Nil, _)@no|(_, Nil)@no"><p>Se una delle due è finita, mi fermo. Il <code>_</code> dice "l'altra non mi interessa". Insieme coprono anche <code>(Nil, Nil)</code>.</p></li>
+      <li data-righe="4" data-segna="Cons(h1, t1)@dato|Cons(h2, t2)@due"><p>Entrambe hanno una cella: prendo le due teste e le due code, con nomi diversi.</p></li>
+      <li data-righe="4" data-segna="h1 + h2@ok|addPairwise(t1, t2)@ora"><p>La cella del risultato: somma delle teste, e come resto la somma delle code.</p></li>
+    </ol>
+  </figure>
+  <figure class="scena" data-scena="duelist" data-titolo="Il match sulla coppia (l, r)"></figure>
+</section>
+
+<section>
+  <h2>Errori tipici</h2>
+  <p>Tutti presi da tentativi veri degli esercizi, con il messaggio che dà Scala 3.8.</p>
+  <div class="errori">
+    <div class="errore">
+      <pre data-lang="scala">def size[A](t: Tree[A]): Int = match
+  case Leaf(_) => 1</pre>
+      <pre class="msg">expression expected but match found</pre>
+      <div class="fix">Manca il soggetto prima di <code>match</code>: scrivi <code>= t match</code>.</div>
+    </div>
+    <div class="errore">
+      <pre data-lang="scala">case Const(h, t) => h * product(t)</pre>
+      <pre class="msg">no pattern match extractor named Const was found</pre>
+      <div class="fix">Il costruttore si chiama <code>Cons</code>, senza la t. (Seguono altri errori a cascata come <i>value * is not a member of Any</i>: sparisce tutto correggendo il nome.)</div>
+    </div>
+    <div class="errore">
+      <pre data-lang="scala">def drop[A](l: List[A], n: Int): List[A] = l match
+  case n &lt; 0 => l</pre>
+      <pre class="msg">no pattern match extractor named &lt; was found</pre>
+      <div class="fix">Un pattern descrive una <b>forma</b>, non una condizione. Per controllare <code>n</code> usa un <code>if</code> prima del match, o una guardia: <code>case _ if n &lt;= 0 => l</code>.</div>
+    </div>
+    <div class="errore">
+      <pre data-lang="scala">case Some(X) => X</pre>
+      <pre class="msg">Not found: X</pre>
+      <div class="fix">Maiuscolo = Scala cerca una <code>X</code> che esiste già. Per un nome nuovo usa il minuscolo: <code>case Some(x) => x</code>.</div>
+    </div>
+    <div class="errore">
+      <pre data-lang="scala">def head[A](l: List[A]): A = l match
+  case Cons(h, _) => h</pre>
+      <pre class="msg">match may not be exhaustive.
+
+It would fail on pattern case: Nil</pre>
+      <div class="fix">Hai dimenticato una forma. Con <code>-Werror</code> è un errore: il file non compila e la consegna non passa. Aggiungi <code>case Nil => …</code>.</div>
+    </div>
+    <div class="errore">
+      <pre data-lang="scala">case Cons(h, t) => h
+case Cons(1, t) => 1</pre>
+      <pre class="msg">Unreachable case</pre>
+      <div class="fix">Il primo caso prende già tutte le celle: il secondo non scatta mai. Metti i casi <b>più specifici prima</b>.</div>
+    </div>
+  </div>
+  <figure class="scena" data-scena="errorimatch" data-titolo="Sei errori veri e la correzione"></figure>
+</section>
+
+</main>
+</body>
+</html>

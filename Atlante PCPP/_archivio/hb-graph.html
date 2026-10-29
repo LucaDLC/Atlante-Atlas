@@ -1,0 +1,627 @@
+<title>Grafo Happens-Before</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;450;500;600&display=swap">
+<style>
+:root{
+  --ground:#EAEDF3;
+  --surface:#FFFFFF;
+  --surface-2:#F4F6FA;
+  --lane:#F0F2F7;
+  --ink:#11141F;
+  --ink-2:#4E5769;
+  --ink-3:#828C9F;
+  --line:#D4DAE4;
+  --line-soft:#E5E9F0;
+  --po:#7A879E;
+  --sw:#0C737C;
+  --sw-soft:#DDEFF0;
+  --path:#A96A00;
+  --path-soft:#F7EAD1;
+  --race:#B23A30;
+  --race-soft:#F8E2DF;
+  --sel:#11141F;
+  --shadow:0 1px 2px rgba(17,20,31,.06),0 8px 24px -12px rgba(17,20,31,.18);
+  --node-fill:#FFFFFF;
+  --focus:#0C737C;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --ground:#0F1119;
+    --surface:#171A24;
+    --surface-2:#1D212D;
+    --lane:#141822;
+    --ink:#E7EAF1;
+    --ink-2:#A0A9BB;
+    --ink-3:#7B8497;
+    --line:#2C3242;
+    --line-soft:#242938;
+    --po:#6C778D;
+    --sw:#2FB4BC;
+    --sw-soft:#123134;
+    --path:#E0A63F;
+    --path-soft:#3A2E15;
+    --race:#E4695E;
+    --race-soft:#3B1F1C;
+    --sel:#E7EAF1;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px -12px rgba(0,0,0,.7);
+    --node-fill:#1B1F2B;
+    --focus:#2FB4BC;
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#0F1119;
+  --surface:#171A24;
+  --surface-2:#1D212D;
+  --lane:#141822;
+  --ink:#E7EAF1;
+  --ink-2:#A0A9BB;
+  --ink-3:#7B8497;
+  --line:#2C3242;
+  --line-soft:#242938;
+  --po:#6C778D;
+  --sw:#2FB4BC;
+  --sw-soft:#123134;
+  --path:#E0A63F;
+  --path-soft:#3A2E15;
+  --race:#E4695E;
+  --race-soft:#3B1F1C;
+  --sel:#E7EAF1;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px -12px rgba(0,0,0,.7);
+  --node-fill:#1B1F2B;
+  --focus:#2FB4BC;
+}
+
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{
+  background:var(--ground);
+  color:var(--ink);
+  font-family:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  font-size:15px;
+  line-height:1.55;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1180px;margin:0 auto;padding:40px 24px 72px;display:flex;flex-direction:column;gap:34px}
+
+/* ---------- header ---------- */
+.eyebrow{
+  font-family:"IBM Plex Mono",ui-monospace,monospace;
+  font-size:11.5px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--ink-3);
+}
+h1{
+  font-family:"IBM Plex Mono",ui-monospace,monospace;
+  font-weight:600;font-size:clamp(28px,4.2vw,42px);line-height:1.1;
+  letter-spacing:-.02em;margin:10px 0 0;text-wrap:balance;
+}
+.lede{margin:14px 0 0;max-width:63ch;color:var(--ink-2);font-size:16px}
+.lede b{color:var(--ink);font-weight:600}
+
+h2{
+  font-family:"IBM Plex Mono",ui-monospace,monospace;
+  font-size:13px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--ink-2);margin:0 0 14px;
+}
+section{display:flex;flex-direction:column}
+
+/* ---------- code ---------- */
+.codegrid{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:20px;align-items:start}
+@media(max-width:840px){.codegrid{grid-template-columns:1fr}}
+.panel{
+  background:var(--surface);border:1px solid var(--line);border-radius:10px;
+  box-shadow:var(--shadow);
+}
+pre.code{
+  margin:0;padding:18px 20px;overflow-x:auto;
+  font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:12.6px;line-height:1.72;
+}
+.kw{color:var(--ink-2);font-weight:600}
+.lbl{
+  color:var(--sw);cursor:pointer;border-bottom:1px dotted color-mix(in srgb,var(--sw) 55%,transparent);
+  border-radius:2px;padding:0 1px;
+}
+.lbl:hover,.lbl:focus-visible{background:var(--sw-soft);outline:none}
+.lbl.is-a,.lbl.is-b{background:var(--path-soft);color:var(--path);font-weight:600}
+
+.types{padding:18px 20px;display:flex;flex-direction:column;gap:14px}
+.type-row{display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:start}
+.dot{width:9px;height:9px;border-radius:2px;margin-top:6px}
+.type-row h3{margin:0;font-size:13.5px;font-weight:600;font-family:"IBM Plex Mono",monospace}
+.type-row p{margin:2px 0 0;font-size:13px;color:var(--ink-2);line-height:1.5}
+
+/* ---------- explorer ---------- */
+.bar{
+  display:flex;flex-wrap:wrap;gap:10px;align-items:center;
+  padding:12px 14px;background:var(--surface);border:1px solid var(--line);
+  border-radius:10px;margin-bottom:16px;box-shadow:var(--shadow);
+}
+.btn{
+  font-family:"IBM Plex Mono",monospace;font-size:12px;font-weight:500;
+  padding:7px 11px;border-radius:6px;border:1px solid var(--line);
+  background:var(--surface-2);color:var(--ink-2);cursor:pointer;
+  transition:background .15s,color .15s,border-color .15s;
+}
+.btn:hover{border-color:var(--ink-3);color:var(--ink)}
+.btn:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.bar .sep{width:1px;align-self:stretch;background:var(--line);margin:0 4px}
+.toggle{
+  display:flex;align-items:center;gap:9px;cursor:pointer;user-select:none;
+  font-family:"IBM Plex Mono",monospace;font-size:12.5px;font-weight:500;color:var(--ink);
+  padding:5px 4px;border-radius:6px;
+}
+.toggle:focus-within{outline:2px solid var(--focus);outline-offset:2px}
+.switch{
+  width:38px;height:21px;border-radius:11px;background:var(--line);
+  position:relative;transition:background .2s;flex:none;
+}
+.switch::after{
+  content:"";position:absolute;top:2px;left:2px;width:17px;height:17px;border-radius:50%;
+  background:var(--surface);box-shadow:0 1px 3px rgba(0,0,0,.28);transition:transform .2s;
+}
+.toggle input{position:absolute;opacity:0;pointer-events:none}
+.toggle input:checked + .switch{background:var(--sw)}
+.toggle input:checked + .switch::after{transform:translateX(17px)}
+.bar .hint{font-size:12.5px;color:var(--ink-3);margin-left:auto}
+
+.explorer{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(300px,1fr);gap:20px;align-items:start}
+@media(max-width:940px){.explorer{grid-template-columns:1fr}}
+.graphbox{padding:6px;overflow-x:auto}
+svg.graph{display:block;width:100%;min-width:640px;height:auto}
+
+/* graph elements */
+.lanebg{fill:var(--lane)}
+.lanehead{font-family:"IBM Plex Mono",monospace;font-size:13px;font-weight:600;fill:var(--ink)}
+.lanesub{font-family:"IBM Plex Mono",monospace;font-size:10.5px;fill:var(--ink-3)}
+.node{cursor:pointer}
+.node rect{fill:var(--node-fill);stroke:var(--line);stroke-width:1.2;transition:stroke .18s,fill .18s,stroke-width .18s}
+.node .nlbl{font-family:"IBM Plex Mono",monospace;font-size:11.5px;font-weight:500;fill:var(--ink)}
+.node .ncode{font-family:"IBM Plex Mono",monospace;font-size:11px;fill:var(--ink-3);text-anchor:end}
+.node:hover rect{stroke:var(--ink-3)}
+.node:focus-visible{outline:none}
+.node:focus-visible rect{stroke:var(--focus);stroke-width:2.2}
+.node.sel rect{stroke:var(--sel);stroke-width:2.2}
+.node.onpath rect{stroke:var(--path);stroke-width:2.2;fill:var(--path-soft)}
+.node.race rect{stroke:var(--race);stroke-width:2.2;fill:var(--race-soft)}
+.node.dim{opacity:.3}
+.badge circle{fill:var(--sel)}
+.badge text{font-family:"IBM Plex Mono",monospace;font-size:10px;font-weight:600;fill:var(--surface);text-anchor:middle}
+
+.edge{fill:none;stroke-width:1.4;transition:opacity .18s,stroke .18s,stroke-width .18s}
+.edge.po{stroke:var(--po);marker-end:url(#a-po)}
+.edge.sw{stroke:var(--sw);stroke-width:2.1;marker-end:url(#a-sw)}
+.edge.vol{opacity:0;pointer-events:none;transition:opacity .35s}
+.vol-on .edge.vol{opacity:1}
+.edge.onpath{stroke:var(--path);stroke-width:2.8;marker-end:url(#a-path)}
+.edge.dim{opacity:.14}
+.vol-on .edge.vol.dim{opacity:.14}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* ---------- inspector ---------- */
+.inspector{padding:20px;position:sticky;top:20px;display:flex;flex-direction:column;gap:16px}
+@media(max-width:940px){.inspector{position:static}}
+.pair{display:flex;flex-direction:column;gap:7px}
+.pairline{display:flex;align-items:center;gap:9px;font-family:"IBM Plex Mono",monospace;font-size:13px}
+.tag{
+  width:19px;height:19px;border-radius:50%;background:var(--sel);color:var(--surface);
+  font-size:10.5px;font-weight:600;display:grid;place-items:center;flex:none;
+}
+.pairline .empty{color:var(--ink-3);font-style:italic;font-family:"IBM Plex Sans",sans-serif;font-size:13px}
+.verdict{
+  display:inline-flex;align-items:center;gap:8px;align-self:flex-start;
+  font-family:"IBM Plex Mono",monospace;font-size:11.5px;font-weight:600;
+  letter-spacing:.08em;text-transform:uppercase;padding:6px 11px;border-radius:5px;
+}
+.v-ord{background:var(--path-soft);color:var(--path)}
+.v-race{background:var(--race-soft);color:var(--race)}
+.v-conc{background:var(--surface-2);color:var(--ink-2);border:1px solid var(--line)}
+.explain{margin:0;font-size:13.5px;line-height:1.6;color:var(--ink-2)}
+.explain b{color:var(--ink);font-weight:600}
+.explain code,.mono{font-family:"IBM Plex Mono",monospace;font-size:12.5px}
+.chain{display:flex;flex-direction:column;gap:0;margin-top:2px}
+.chain .step{
+  font-family:"IBM Plex Mono",monospace;font-size:12.2px;font-weight:500;
+  background:var(--surface-2);border:1px solid var(--line);border-radius:6px;
+  padding:6px 10px;display:flex;justify-content:space-between;gap:10px;
+}
+.chain .step em{font-style:normal;color:var(--ink-3);font-size:11px}
+.chain .link{
+  display:flex;align-items:center;gap:8px;padding:4px 0 4px 13px;
+  font-family:"IBM Plex Mono",monospace;font-size:10.5px;letter-spacing:.04em;
+}
+.chain .link .rail{width:2px;height:17px;background:var(--path);flex:none;border-radius:1px}
+.chain .link span{color:var(--path);font-weight:500}
+
+/* ---------- outputs ---------- */
+.outs{display:flex;flex-wrap:wrap;gap:10px}
+.out{
+  font-family:"IBM Plex Mono",monospace;font-size:15px;font-weight:600;
+  padding:13px 17px;border-radius:8px;border:1px solid var(--line);
+  background:var(--surface);display:flex;flex-direction:column;gap:3px;min-width:126px;
+  box-shadow:var(--shadow);transition:opacity .3s,border-color .3s;
+}
+.out em{font-style:normal;font-size:10.5px;font-weight:500;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-3)}
+.out.bad{border-color:var(--race);background:var(--race-soft)}
+.out.bad em{color:var(--race)}
+.out.gone{opacity:.4}
+.out.gone .val{text-decoration:line-through;text-decoration-thickness:1.5px}
+.out.gone{border-color:var(--line);background:var(--surface)}
+.out.gone em{color:var(--ink-3)}
+
+/* ---------- rules ---------- */
+.rules{width:100%;border-collapse:collapse;font-size:13.5px}
+.rules th{
+  text-align:left;font-family:"IBM Plex Mono",monospace;font-size:10.5px;font-weight:600;
+  letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);
+  padding:0 12px 9px 0;border-bottom:1px solid var(--line);
+}
+.rules td{padding:11px 12px 11px 0;border-bottom:1px solid var(--line-soft);vertical-align:top;color:var(--ink-2)}
+.rules tr:last-child td{border-bottom:none}
+.rules .m{font-family:"IBM Plex Mono",monospace;font-size:12.4px;color:var(--ink);white-space:nowrap}
+.rules .arrow{color:var(--sw);font-weight:600;text-align:center;padding-right:12px}
+.rules tr.live td{background:color-mix(in srgb,var(--sw-soft) 60%,transparent)}
+.tablewrap{overflow-x:auto;padding:18px 20px}
+
+.note{
+  font-size:13px;color:var(--ink-2);border-left:2px solid var(--sw);
+  padding:2px 0 2px 14px;margin:16px 0 0;max-width:70ch;line-height:1.6;
+}
+footer{font-size:12.5px;color:var(--ink-3);border-top:1px solid var(--line);padding-top:18px;max-width:70ch}
+</style>
+
+<div class="wrap">
+
+<header>
+  <div class="eyebrow" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><a href="https://claude.ai/code/artifact/28d55e87-8c70-4b36-8dac-532818fc0088" style="color:var(--ink-3);text-decoration:none;border-bottom:1px solid var(--line)">Atlante PCPP</a><span>&middot;</span><span>Lezione 3 &middot; Java Memory Model</span></div>
+  <h1>Grafo Happens-Before</h1>
+  <p class="lede">Il programma <span class="mono">SeePossibleReordering</span> può stampare <b>(0,0)</b>, un risultato che nessun interleaving può produrre. Il motivo si legge direttamente dal grafo: <b>clicca due azioni</b> e scopri se sono ordinate da happens-before o se sono in data race.</p>
+</header>
+
+<section>
+  <h2>Il programma, con le azioni etichettate</h2>
+  <div class="codegrid">
+    <div class="panel">
+<pre class="code"><span class="kw">int</span> x=0; <span class="lbl" data-n="m_ix">// (init(x))</span>
+<span class="kw">int</span> y=0; <span class="lbl" data-n="m_iy">// (init(y))</span>
+<span class="kw">int</span> a=0; <span class="lbl" data-n="m_ia">// (init(a))</span>
+<span class="kw">int</span> b=0; <span class="lbl" data-n="m_ib">// (init(b))</span>
+
+Thread one = <span class="kw">new</span> Thread(() -> {
+    a=1;  <span class="lbl" data-n="t1_1">// (1)</span>
+    x=b;  <span class="lbl" data-n="t1_2">// (2)</span>
+});
+Thread other = <span class="kw">new</span> Thread(() -> {
+    b=1;  <span class="lbl" data-n="t2_3">// (3)</span>
+    y=a;  <span class="lbl" data-n="t2_4">// (4)</span>
+});
+
+one.start();    <span class="lbl" data-n="m_s1">// (start(t1))</span>
+other.start();  <span class="lbl" data-n="m_s2">// (start(t2))</span>
+one.join();     <span class="lbl" data-n="m_j1">// (join(t1))</span>
+other.join();   <span class="lbl" data-n="m_j2">// (join(t2))</span>
+System.out.println(...); <span class="lbl" data-n="m_5">// (5)</span></pre>
+    </div>
+    <div class="panel types">
+      <div class="type-row">
+        <div class="dot" style="background:var(--po)"></div>
+        <div>
+          <h3>Variable access</h3>
+          <p>Read e write sulle variabili. Fanno il lavoro ma <b>non creano nessun ordine fra thread diversi</b>.</p>
+        </div>
+      </div>
+      <div class="type-row">
+        <div class="dot" style="background:var(--sw)"></div>
+        <div>
+          <h3>Synchronization action</h3>
+          <p><span class="mono">start</span>, <span class="mono">join</span>, lock/unlock, accessi <span class="mono">volatile</span>. Le uniche che possono generare archi fra thread.</p>
+        </div>
+      </div>
+      <div class="type-row">
+        <div class="dot" style="background:var(--ink-3)"></div>
+        <div>
+          <h3>Other</h3>
+          <p>Tutto il resto. Irrilevante per il memory model.</p>
+        </div>
+      </div>
+      <div class="type-row" style="border-top:1px solid var(--line-soft);padding-top:14px">
+        <div class="dot" style="background:transparent"></div>
+        <div>
+          <p style="margin:0">Un'azione è la coppia <span class="mono">t(o)</span>: <b>chi</b> la esegue e <b>cosa</b> fa. Fra <span class="mono">t1</span> e <span class="mono">t2</span> qui ci sono solo variable access — ecco perché il grafo li lascia scollegati.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Esploratore</h2>
+  <div class="bar">
+    <label class="toggle">
+      <input type="checkbox" id="vol">
+      <span class="switch"></span>
+      <span><span class="kw">volatile</span> su a, b</span>
+    </label>
+    <div class="sep"></div>
+    <button class="btn" data-preset="t1_1,t2_4">Race su a</button>
+    <button class="btn" data-preset="t1_2,t2_3">Race su b</button>
+    <button class="btn" data-preset="m_ia,t2_4">Catena garantita</button>
+    <button class="btn" data-preset="t1_2,m_5">Perché x è al sicuro</button>
+    <span class="hint">clicca due azioni nel grafo</span>
+  </div>
+
+  <div class="explorer">
+    <div class="panel graphbox">
+      <svg class="graph" id="g" viewBox="0 0 740 648" role="img" aria-label="Grafo delle azioni con archi di program order e synchronizes-with"></svg>
+    </div>
+    <div class="panel inspector">
+      <div class="pair">
+        <div class="pairline"><span class="tag">A</span><span id="pa" class="empty">nessuna azione</span></div>
+        <div class="pairline"><span class="tag">B</span><span id="pb" class="empty">nessuna azione</span></div>
+      </div>
+      <div id="vbox"></div>
+    </div>
+  </div>
+
+  <p class="note" id="volnote" hidden>Con <span class="mono">volatile</span> compaiono due archi <b>synchronizes-with</b> dove prima c'era il vuoto. A rigore l'arco esiste nell'esecuzione in cui la read <em>osserva</em> quella write — il punto è che ogni tentativo di costruire <span class="mono">(0,0)</span> chiude un <b>ciclo</b>, e un ordine parziale non può contenerne.</p>
+</section>
+
+<section>
+  <h2>Output possibili</h2>
+  <div class="outs" id="outs"></div>
+  <p class="note" id="outnote"></p>
+</section>
+
+<section>
+  <h2>Regole synchronizes-with</h2>
+  <div class="panel tablewrap">
+    <table class="rules">
+      <thead><tr><th>Azione A</th><th style="text-align:center">sw</th><th>Azione B</th><th>In questo grafo</th></tr></thead>
+      <tbody>
+        <tr data-rule="start"><td class="m">T.start()</td><td class="arrow">→</td><td class="m">prima azione di T</td><td>2 archi</td></tr>
+        <tr data-rule="join"><td class="m">ultima azione di T</td><td class="arrow">→</td><td class="m">T.join() che ritorna</td><td>2 archi</td></tr>
+        <tr data-rule="vol"><td class="m">write volatile v</td><td class="arrow">→</td><td class="m">successiva read di v</td><td id="volcount">0 archi</td></tr>
+        <tr><td class="m">unlock(M)</td><td class="arrow">→</td><td class="m">successivo lock(M)</td><td>nessun lock qui</td></tr>
+        <tr><td class="m">write dei default</td><td class="arrow">→</td><td class="m">prima azione di ogni thread</td><td>implicito</td></tr>
+        <tr><td class="m">T.interrupt()</td><td class="arrow">→</td><td class="m">rilevamento interrupt</td><td>non usato</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="note">Se una coppia non rientra in questa tabella, <b>non c'è arco</b>. Non esiste una regola "e poi il buon senso": è qui che nasce la maggior parte dei bug di concorrenza.</p>
+</section>
+
+<footer>
+  happens-before = chiusura transitiva di (program order ∪ synchronizes-with). Non è ordine temporale: è <b>garanzia di visibilità</b>. Assenza di arco non significa "andrà male", significa <b>nessuna promessa</b> — può funzionare per anni e rompersi su un'altra architettura.
+</footer>
+
+</div>
+
+<script>
+const LANES = {
+  m:{x:130, name:'m',  sub:'main thread'},
+  t1:{x:370, name:'t1', sub:'one'},
+  t2:{x:610, name:'t2', sub:'other'}
+};
+const RY = [76,108,140,172, 226, 276, 354, 414, 486, 534, 594];
+const HW = 88;
+
+const N = [
+  {id:'m_ix', lane:'m', row:0, sm:1, label:'m(init(x))', code:'x=0', w:['x'], r:[]},
+  {id:'m_iy', lane:'m', row:1, sm:1, label:'m(init(y))', code:'y=0', w:['y'], r:[]},
+  {id:'m_ia', lane:'m', row:2, sm:1, label:'m(init(a))', code:'a=0', w:['a'], r:[]},
+  {id:'m_ib', lane:'m', row:3, sm:1, label:'m(init(b))', code:'b=0', w:['b'], r:[]},
+  {id:'m_s1', lane:'m', row:4, label:'m(start(t1))', code:'', w:[], r:[], sync:1},
+  {id:'m_s2', lane:'m', row:5, label:'m(start(t2))', code:'', w:[], r:[], sync:1},
+  {id:'t1_1', lane:'t1', row:6, label:'t1(1)', code:'a=1', w:['a'], r:[]},
+  {id:'t1_2', lane:'t1', row:7, label:'t1(2)', code:'x=b', w:['x'], r:['b']},
+  {id:'t2_3', lane:'t2', row:6, label:'t2(3)', code:'b=1', w:['b'], r:[]},
+  {id:'t2_4', lane:'t2', row:7, label:'t2(4)', code:'y=a', w:['y'], r:['a']},
+  {id:'m_j1', lane:'m', row:8, label:'m(join(t1))', code:'', w:[], r:[], sync:1},
+  {id:'m_j2', lane:'m', row:9, label:'m(join(t2))', code:'', w:[], r:[], sync:1},
+  {id:'m_5',  lane:'m', row:10, label:'m(5)', code:'print', w:[], r:['x','y']}
+];
+const byId = Object.fromEntries(N.map(n=>[n.id,n]));
+
+const E = [
+  // program order
+  {f:'m_ix',t:'m_iy',k:'po'},{f:'m_iy',t:'m_ia',k:'po'},{f:'m_ia',t:'m_ib',k:'po'},
+  {f:'m_ib',t:'m_s1',k:'po'},{f:'m_s1',t:'m_s2',k:'po'},{f:'m_s2',t:'m_j1',k:'po'},
+  {f:'m_j1',t:'m_j2',k:'po'},{f:'m_j2',t:'m_5',k:'po'},
+  {f:'t1_1',t:'t1_2',k:'po'},{f:'t2_3',t:'t2_4',k:'po'},
+  // synchronizes-with, sempre presenti
+  {f:'m_s1',t:'t1_1',k:'sw',why:'start(t1) → prima azione di t1'},
+  {f:'m_s2',t:'t2_3',k:'sw',why:'start(t2) → prima azione di t2'},
+  {f:'t1_2',t:'m_j1',k:'sw',why:'ultima azione di t1 → join(t1)'},
+  {f:'t2_4',t:'m_j2',k:'sw',why:'ultima azione di t2 → join(t2)'},
+  // synchronizes-with da volatile
+  {f:'t1_1',t:'t2_4',k:'sw',vol:1,why:'write volatile a → read a'},
+  {f:'t2_3',t:'t1_2',k:'sw',vol:1,why:'write volatile b → read b'}
+];
+
+/* ---------- rendering ---------- */
+const svg = document.getElementById('g');
+const NS = 'http://www.w3.org/2000/svg';
+const cx = n => LANES[n.lane].x;
+const cy = n => RY[n.row];
+const hh = n => n.sm ? 13 : 18;
+
+function marker(id,varname){
+  return `<marker id="${id}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+    <path d="M0,1 L9,5 L0,9 z" fill="var(--${varname})"/></marker>`;
+}
+function edgePath(e){
+  const A=byId[e.f], B=byId[e.t];
+  const ax=cx(A), ay=cy(A), bx=cx(B), by=cy(B);
+  if(A.lane===B.lane) return `M${ax},${ay+hh(A)} L${bx},${by-hh(B)-3}`;
+  const dir = bx>ax ? 1 : -1;
+  const sx = ax + dir*HW, ex = bx - dir*HW;
+  const span = Math.abs(ex-sx);
+  const c1 = sx + dir*Math.max(38, span*0.45);
+  const c2 = ex - dir*Math.max(38, span*0.45);
+  return `M${sx},${ay} C${c1},${ay} ${c2},${by} ${ex-dir*3},${by}`;
+}
+
+let html = `<defs>${marker('a-po','po')}${marker('a-sw','sw')}${marker('a-path','path')}</defs>`;
+for(const k in LANES){
+  const L=LANES[k];
+  html += `<rect class="lanebg" x="${L.x-104}" y="50" width="208" height="570" rx="10"/>`;
+  html += `<text class="lanehead" x="${L.x-96}" y="36">${L.name}</text>`;
+  html += `<text class="lanesub" x="${L.x-96+(L.name.length*8)+8}" y="36">${L.sub}</text>`;
+}
+for(const e of E){
+  html += `<path id="e-${e.f}-${e.t}" class="edge ${e.k}${e.vol?' vol':''}" d="${edgePath(e)}"/>`;
+}
+for(const n of N){
+  const x=cx(n)-HW, y=cy(n)-hh(n), h=hh(n)*2;
+  html += `<g class="node" id="n-${n.id}" data-n="${n.id}" tabindex="0" role="button" aria-label="${n.label} ${n.code}">
+    <rect x="${x}" y="${y}" width="${HW*2}" height="${h}" rx="6"/>
+    <text class="nlbl" x="${x+11}" y="${cy(n)+4}">${n.label}</text>
+    <text class="ncode" x="${x+HW*2-11}" y="${cy(n)+4}">${n.code}</text>
+    <g class="badge" hidden><circle cx="${x-1}" cy="${y+1}" r="9"/><text x="${x-1}" y="${y+4.5}"></text></g>
+  </g>`;
+}
+svg.innerHTML = html;
+
+/* ---------- modello ---------- */
+let volOn = false, A = 't1_2', B = 't2_3';
+
+const activeEdges = () => E.filter(e => !e.vol || volOn);
+
+function findPath(from,to){
+  const es = activeEdges();
+  const prev = {}, seen = new Set([from]);
+  let q=[from];
+  while(q.length){
+    const cur=q.shift();
+    if(cur===to){
+      const path=[]; let c=to;
+      while(c!==from){ const p=prev[c]; path.unshift({e:p.e, from:p.f, to:c}); c=p.f; }
+      return path;
+    }
+    for(const e of es) if(e.f===cur && !seen.has(e.t)){ seen.add(e.t); prev[e.t]={e,f:cur}; q.push(e.t); }
+  }
+  return null;
+}
+function sharedRace(a,b){
+  const A_=byId[a], B_=byId[b];
+  const all = v => [...v.w, ...v.r];
+  for(const v of all(A_)) if(all(B_).includes(v) && (A_.w.includes(v)||B_.w.includes(v))) return v;
+  return null;
+}
+
+/* ---------- update ---------- */
+const pa=document.getElementById('pa'), pb=document.getElementById('pb'), vbox=document.getElementById('vbox');
+
+function edgeLabel(e){ return e.k==='po' ? 'program order' : 'synchronizes-with · '+e.why; }
+
+function update(){
+  svg.classList.toggle('vol-on', volOn);
+  document.getElementById('volnote').hidden = !volOn;
+  document.getElementById('volcount').textContent = volOn ? '2 archi' : '0 archi';
+  document.querySelector('tr[data-rule="vol"]').classList.toggle('live', volOn);
+
+  // reset classi
+  svg.querySelectorAll('.node').forEach(g=>{ g.classList.remove('sel','onpath','race','dim'); g.querySelector('.badge').hidden=true; });
+  svg.querySelectorAll('.edge').forEach(p=>p.classList.remove('onpath','dim'));
+  document.querySelectorAll('.lbl').forEach(s=>s.classList.remove('is-a','is-b'));
+
+  const setPair = (el,id,letter)=>{
+    if(!id){ el.className='empty'; el.textContent='nessuna azione'; return; }
+    const n=byId[id];
+    el.className=''; el.textContent = n.label + (n.code? '   '+n.code : '');
+    const g=svg.querySelector('#n-'+id); g.classList.add('sel');
+    const bg=g.querySelector('.badge'); bg.hidden=false; bg.querySelector('text').textContent=letter;
+    const src=document.querySelector(`.lbl[data-n="${id}"]`); if(src) src.classList.add(letter==='A'?'is-a':'is-b');
+  };
+  setPair(pa,A,'A'); setPair(pb,B,'B');
+
+  if(!A||!B){ vbox.innerHTML = `<p class="explain">Seleziona due azioni per confrontarle. Ogni nodo è una coppia <span class="mono">t(o)</span>: il thread che esegue e l'operazione eseguita.</p>`; return; }
+  if(A===B){ vbox.innerHTML = `<p class="explain">Stessa azione selezionata due volte.</p>`; return; }
+
+  let path = findPath(A,B), rev=false;
+  if(!path){ path = findPath(B,A); rev = !!path; }
+
+  if(path){
+    const chain = [byId[rev?B:A].id];
+    path.forEach(s=>chain.push(s.to));
+    chain.forEach(id=>svg.querySelector('#n-'+id).classList.add('onpath'));
+    path.forEach(s=>{ const p=svg.querySelector(`#e-${s.from}-${s.to}`); if(p) p.classList.add('onpath'); });
+    svg.querySelectorAll('.node').forEach(g=>{ if(!chain.includes(g.dataset.n)) g.classList.add('dim'); });
+    svg.querySelectorAll('.edge').forEach(p=>{ if(!p.classList.contains('onpath')) p.classList.add('dim'); });
+
+    const first = rev?B:A, last = rev?A:B;
+    let steps = `<div class="chain"><div class="step"><span>${byId[first].label}</span><em>${byId[first].code||'sync'}</em></div>`;
+    path.forEach(s=>{
+      steps += `<div class="link"><div class="rail"></div><span>${edgeLabel(s.e)}</span></div>`;
+      steps += `<div class="step"><span>${byId[s.to].label}</span><em>${byId[s.to].code||'sync'}</em></div>`;
+    });
+    steps += `</div>`;
+
+    vbox.innerHTML = `<span class="verdict v-ord">${byId[first].label} happens-before ${byId[last].label}</span>
+      <p class="explain">Esiste un cammino nel grafo, quindi le due azioni <b>sono ordinate</b>. Se <span class="mono">${byId[last].label}</span> legge una variabile scritta da <span class="mono">${byId[first].label}</span>, è <b>garantito</b> vedere quel valore.${rev?' <br><em style="color:var(--ink-3);font-style:normal">(l\'ordine è B → A: hai selezionato le azioni al contrario)</em>':''}</p>
+      ${steps}`;
+    return;
+  }
+
+  // nessun cammino in nessuna direzione
+  const v = sharedRace(A,B);
+  svg.querySelectorAll('.edge').forEach(p=>p.classList.add('dim'));
+  svg.querySelectorAll('.node').forEach(g=>{ if(g.dataset.n!==A && g.dataset.n!==B) g.classList.add('dim'); });
+
+  if(v){
+    svg.querySelector('#n-'+A).classList.add('race');
+    svg.querySelector('#n-'+B).classList.add('race');
+    vbox.innerHTML = `<span class="verdict v-race">data race su ${v}</span>
+      <p class="explain">Nessun cammino happens-before collega le due azioni, entrambe toccano <span class="mono">${v}</span> e almeno una la <b>scrive</b>. La read può osservare il vecchio valore <b>oppure</b> quello nuovo: il memory model non promette nulla.</p>
+      <p class="explain">Attiva <span class="mono">volatile</span> per creare l'arco <b>synchronizes-with</b> che manca.</p>`;
+  } else {
+    vbox.innerHTML = `<span class="verdict v-conc">concorrenti · nessuna race</span>
+      <p class="explain">Le due azioni <b>non sono ordinate</b> da happens-before — nel grafo non c'è cammino né in un verso né nell'altro. Ma non toccano nessuna variabile in comune con almeno una write, quindi non c'è data race.</p>
+      <p class="explain">Ordine parziale, non totale: la maggior parte delle coppie fra thread diversi <b>non</b> è in relazione.</p>`;
+  }
+}
+
+/* ---------- outputs ---------- */
+const OUT = [
+  {v:'(0,1)', how:'a=1 · x=b · b=1 · y=a'},
+  {v:'(1,0)', how:'b=1 · y=a · a=1 · x=b'},
+  {v:'(1,1)', how:'a=1 · b=1 · poi le read'},
+  {v:'(0,0)', how:'nessun interleaving', bad:1}
+];
+const outsEl = document.getElementById('outs');
+outsEl.innerHTML = OUT.map(o=>`<div class="out${o.bad?' bad':''}" data-bad="${o.bad?1:0}"><span class="val">${o.v}</span><em>${o.how}</em></div>`).join('');
+function updateOuts(){
+  const bad = outsEl.querySelector('[data-bad="1"]');
+  bad.classList.toggle('gone', volOn);
+  bad.querySelector('em').textContent = volOn ? 'impossibile' : 'nessun interleaving';
+  document.getElementById('outnote').innerHTML = volOn
+    ? 'Con <span class="mono">volatile</span> gli archi chiudono il ciclo <span class="mono">write(a) → read(b) → write(b) → read(a) → write(a)</span>. Un ordine parziale non ammette cicli, quindi <b>(0,0) è genuinamente impossibile</b>, non solo improbabile.'
+    : '<b>(0,0) non è sequenzialmente consistente</b>: richiederebbe che ogni read preceda la write dell\'altro thread, ma il program order impone il contrario. Il risultato è un ciclo — eppure la JVM può produrlo, perché il programma ha data race e quindi non ha comprato nessuna garanzia.';
+}
+
+/* ---------- eventi ---------- */
+function pick(id){
+  if(id===A){ A=B; B=null; }
+  else if(id===B){ B=null; }
+  else if(!A){ A=id; }
+  else if(!B){ B=id; }
+  else { A=B; B=id; }
+  update();
+}
+svg.addEventListener('click', ev=>{
+  const g = ev.target.closest('.node'); if(g) pick(g.dataset.n);
+});
+svg.addEventListener('keydown', ev=>{
+  if(ev.key!=='Enter' && ev.key!==' ') return;
+  const g = ev.target.closest('.node'); if(g){ ev.preventDefault(); pick(g.dataset.n); }
+});
+document.querySelectorAll('.lbl').forEach(s=>{
+  s.tabIndex = 0;
+  s.addEventListener('click', ()=>pick(s.dataset.n));
+  s.addEventListener('keydown', ev=>{ if(ev.key==='Enter'||ev.key===' '){ ev.preventDefault(); pick(s.dataset.n);} });
+});
+document.querySelectorAll('[data-preset]').forEach(b=>{
+  b.addEventListener('click', ()=>{ const [a,c]=b.dataset.preset.split(','); A=a; B=c; update(); });
+});
+document.getElementById('vol').addEventListener('change', e=>{ volOn=e.target.checked; update(); updateOuts(); });
+
+update(); updateOuts();
+</script>

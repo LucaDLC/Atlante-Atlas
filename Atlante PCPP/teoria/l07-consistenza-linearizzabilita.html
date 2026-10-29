@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Consistenza sequenziale e linearizzabilità</title>
+<link rel="stylesheet" href="../assets/atlas.css">
+<link rel="stylesheet" href="../assets/tema.css">
+<script src="../assets/sito.js"></script>
+<script src="../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+SCENE.es711 = {
+  w: 640, h: 310, lato: false,
+  legenda: 'dato:thread A,due:thread B,ok:valido,no:impossibile',
+  oggetti: [
+    { id: 'lA', tipo: 'testo', x: 30, y: 65, t: 'A', size: 15, bold: true },
+    { id: 'lB', tipo: 'testo', x: 30, y: 125, t: 'B', size: 15, bold: true },
+    { id: 'tA', tipo: 'linea', x1: 50, y1: 60, x2: 620, y2: 60, tratt: true },
+    { id: 'tB', tipo: 'linea', x1: 50, y1: 120, x2: 620, y2: 120, tratt: true },
+    { id: 'tt', tipo: 'testo', x: 600, y: 150, t: 'tempo reale →', size: 11.5 },
+    { id: 'deq', tipo: 'rett', x: 70, y: 105, w: 120, h: 30, t: 'q.deq(x)', tono: 'due' },
+    { id: 'enqx', tipo: 'rett', x: 270, y: 45, w: 120, h: 30, t: 'q.enq(x)', tono: 'dato' },
+    { id: 'enqy', tipo: 'rett', x: 430, y: 45, w: 120, h: 30, t: 'q.enq(y)', tono: 'dato' },
+    { id: 'ls', tipo: 'testo', x: 30, y: 225, t: 'una alla volta:', size: 12, bold: true, anchor: 'start', nascosto: true },
+    { id: 'pd', tipo: 'punto', x: 130, y: 120, r: 6, nascosto: true },
+    { id: 'px', tipo: 'punto', x: 330, y: 60, r: 6, nascosto: true },
+    { id: 'py', tipo: 'punto', x: 490, y: 60, r: 6, nascosto: true },
+    { id: 'coda', tipo: 'testo', x: 320, y: 285, t: '', size: 12.5 }
+  ],
+  passi: [
+    { nota: 'L\'esecuzione dell\'esercizio 7.1.1. B fa <code>q.deq(x)</code> e <b>finisce</b> prima che A cominci <code>q.enq(x)</code>. Poi A fa <code>q.enq(y)</code>. Ogni rettangolo va dall\'invocazione (bordo sinistro) alla risposta (bordo destro).' },
+    { nota: 'La domanda della consistenza sequenziale: si possono mettere le tre chiamate <b>in fila, una alla volta</b>, in modo che (1) dentro ogni thread l\'ordine resti quello del programma e (2) il risultato rispetti la FIFO? Per A: <code>enq(x)</code> prima di <code>enq(y)</code>, obbligatorio. Tra A e B: <b>nessun vincolo</b>.', set: { ls: { nascosto: false } } },
+    { nota: 'Primo tentativo: l\'ordine del tempo reale. <code>deq</code> su una coda <b>vuota</b> non può restituire x. Questa fila viola la specifica FIFO.', set: { deq: { x: 160, y: 210, tono: 'no' }, enqx: { x: 300, y: 210 }, enqy: { x: 440, y: 210 }, coda: { t: 'coda: [ ]  →  deq(x)?  impossibile', tono: 'no' } } },
+    { nota: 'Ma la consistenza sequenziale <b>non guarda il tempo reale tra thread diversi</b>: <code>deq(x)</code> è di B, <code>enq(x)</code> è di A, quindi B si può spostare dopo. L\'ordine di A (x prima di y) resta. La fila rispetta la FIFO: <b>sequentially consistent</b>.', set: { deq: { x: 300, tono: 'ok' }, enqx: { x: 160, tono: 'ok' }, enqy: { tono: 'ok' }, coda: { t: '[ ] → enq(x) → [x] → deq(x) → [ ] → enq(y) → [y]   ✓', tono: 'ok' } } },
+    { nota: 'Va bene anche <code>enq(x), enq(y), deq(x)</code>: basta che esista <b>una</b> fila valida.', set: { deq: { x: 440 }, enqy: { x: 300 }, coda: { t: '[ ] → enq(x) → [x] → enq(y) → [x, y] → deq(x) → [y]   ✓' } } },
+    { nota: 'La linearizzabilità aggiunge una regola: ogni chiamata ha effetto in un <b>istante</b> (punto di linearizzazione) <b>dentro</b> il suo rettangolo. Rimettiamo le chiamate sul tempo reale.', set: { ls: { nascosto: true }, deq: { x: 70, y: 105, tono: 'due' }, enqx: { x: 270, y: 45, tono: 'dato' }, enqy: { x: 430, y: 45, tono: 'dato' }, coda: { t: '', tono: null } } },
+    { nota: 'Qualunque punto si scelga dentro <code>deq(x)</code> viene <b>prima</b> di qualunque punto dentro <code>enq(x)</code>: il rettangolo di <code>deq</code> finisce prima che l\'altro cominci. Quindi in ogni linearizzazione <code>deq(x)</code> sta prima di <code>enq(x)</code>, su una coda vuota: <b>non linearizzabile</b> (esercizio 7.1.2).', set: { pd: { nascosto: false, tono: 'no' }, px: { nascosto: false, tono: 'dato' }, py: { nascosto: false, tono: 'dato' }, deq: { tono: 'no' }, coda: { t: 'deq(x) prima di enq(x) per forza  →  coda vuota  ✗', tono: 'no' } } }
+  ]
+};
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Consistenza sequenziale e linearizzabilità</h1>
+  <p class="lede">Lezione 7 (<i>Linearizability</i>), slide 28–45. Due modi di rispondere alla domanda "questa esecuzione concorrente è corretta?". La differenza è una sola: la linearizzabilità rispetta il <b>tempo reale</b> anche tra thread diversi, la consistenza sequenziale no.</p>
+</header>
+
+<section>
+  <h2>Il punto di partenza: chiamate che durano</h2>
+  <p>In un programma sequenziale una chiamata <code>q.enq(x)</code> è un passo solo. In un programma concorrente <b>dura</b>: comincia quando viene invocata (<i>invocation</i>) e finisce quando torna la risposta (<i>response</i>). In mezzo, altri thread fanno altre chiamate sullo stesso oggetto. Per dire se il risultato è giusto si cerca di <b>rimettere le chiamate in fila</b>, una alla volta, e di confrontare la fila con la specifica sequenziale (qui: una coda FIFO).</p>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>simbolo</th><th>vuol dire</th></tr></thead>
+    <tbody>
+      <tr><td><code>A:</code>, <code>B:</code></td><td>i thread, uno per riga</td></tr>
+      <tr><td><code>---</code></td><td>il tempo reale che scorre, da sinistra a destra</td></tr>
+      <tr><td><code>|q.enq(x)|</code></td><td>una chiamata: <code>|</code> sinistro = invocazione, <code>|</code> destro = risposta</td></tr>
+      <tr><td><code>&lt;q.enq(x),q.deq(x)&gt;</code></td><td>una esecuzione <b>sequenziale</b>: le chiamate in fila, nell'ordine scritto</td></tr>
+    </tbody>
+  </table></div>
+  <p>Due chiamate dello <b>stesso</b> thread non si sovrappongono mai: un thread fa una cosa alla volta, e l'ordine in cui le fa è l'<b>ordine di programma</b> (<i>program order</i>).</p>
+</section>
+
+<section>
+  <h2>Consistenza sequenziale</h2>
+  <p>Definizione della slide 31: un'esecuzione concorrente è <b>sequentially consistent</b> se <b>esiste</b> una proiezione sequenziale (le chiamate rimesse in fila) in cui:</p>
+  <ol>
+    <li>le operazioni avvengono <b>una alla volta</b>;</li>
+    <li>l'<b>ordine di programma</b> è rispettato <b>per ogni thread</b>;</li>
+    <li>l'esecuzione rispetta la <b>specifica</b> dell'oggetto.</li>
+  </ol>
+  <p>Quello che <b>manca</b> nella lista è il punto importante: nessuna regola dice di rispettare il tempo reale tra chiamate di thread <b>diversi</b>. Se una chiamata di B finisce prima che una di A cominci, nella fila si possono comunque mettere in ordine inverso.</p>
+  <div class="box idea" data-tit="Come mescolare due mazzi di carte">
+    <p>Ogni thread è un mazzo, con le carte nell'ordine del programma. La consistenza sequenziale permette di <b>intercalare</b> i mazzi come si vuole (un mescolamento "a coda di rondine"), ma senza mai cambiare l'ordine dentro un mazzo. Se almeno un mescolamento dà una fila che rispetta la FIFO, l'esecuzione è sequentially consistent.</p>
+  </div>
+  <figure class="scena" data-scena="es711" data-titolo="Esercizio 7.1.1 e 7.1.2: stessa esecuzione, due risposte"></figure>
+  <div class="box domanda-tua" data-tit="Ma il dequeue viene prima dell'enqueue: come fa a essere consistente?">
+    <p>Viene prima <b>nel tempo reale</b>, e la consistenza sequenziale il tempo reale tra thread diversi non lo guarda. <code>deq(x)</code> è di B, <code>enq(x)</code> è di A: tra loro non c'è ordine di programma, quindi nella fila B si può spostare dopo A. L'unico ordine obbligato è quello dentro A: <code>enq(x)</code> prima di <code>enq(y)</code>.</p>
+    <p>Fila valida: <code>&lt;q.enq(x),q.deq(x),q.enq(y)&gt;</code> (va bene anche <code>&lt;q.enq(x),q.enq(y),q.deq(x)&gt;</code>). Coda vuota, entra x, esce x, entra y: rispetta la FIFO.</p>
+  </div>
+  <div class="box inglese" data-tit="Risposta pronta 7.1.1">
+    <p>Yes, it is sequentially consistent. Sequential consistency only requires that the calls happen one at a time, that the program order of each thread is preserved, and that the result satisfies the FIFO specification; it does not require preserving the real-time order between calls of different threads. The only program-order constraint is that A's <code>q.enq(x)</code> comes before A's <code>q.enq(y)</code>. Since <code>q.deq(x)</code> belongs to thread B, it can be placed after <code>q.enq(x)</code>, giving the sequential execution <code>&lt;q.enq(x),q.deq(x),q.enq(y)&gt;</code>, which is a valid FIFO execution.</p>
+  </div>
+  <div class="box attenzione" data-tit="Non è composizionale">
+    <p>Slide 38: due oggetti che singolarmente sono sequentially consistent possono dare, insieme, un'esecuzione che non lo è. Per questo non si può ragionare un oggetto alla volta. La linearizzabilità invece è composizionale.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Linearizzabilità</h2>
+  <p>Slide 39: la linearizzabilità <b>estende</b> la consistenza sequenziale con una regola in più:</p>
+  <ol start="4">
+    <li>ogni chiamata deve avere effetto <b>in un istante</b>, in un momento <b>tra la sua invocazione e la sua risposta</b>.</li>
+  </ol>
+  <p>Quell'istante è il <b>punto di linearizzazione</b> (<i>linearization point</i>). Mettendo in fila le chiamate nell'ordine dei loro punti si ottiene la linearizzazione. Conseguenza: se una chiamata <b>finisce prima</b> che un'altra <b>cominci</b>, anche di thread diversi, nella fila deve stare prima. Il tempo reale conta.</p>
+  <div class="colonne">
+    <div class="carta media"><h4>Sequentially consistent</h4><p>Ordine di programma <b>dentro</b> ogni thread. Tra thread diversi, libertà totale. Esecuzione 7.1.1: <b>sì</b>.</p></div>
+    <div class="carta buona"><h4>Linearizzabile</h4><p>Ordine di programma <b>più</b> ordine del tempo reale tra chiamate che non si sovrappongono. Esecuzione 7.1.2: <b>no</b>.</p></div>
+  </div>
+  <div class="box regola" data-tit="Linearizzabile ⇒ sequentially consistent">
+    <p>Una linearizzazione è anche una fila valida per la consistenza sequenziale: rispetta l'ordine di programma (le chiamate di un thread non si sovrappongono, quindi i loro punti sono in ordine). Al contrario no: 7.1.1 è il controesempio.</p>
+  </div>
+  <div class="box inglese" data-tit="Risposta pronta 7.1.2">
+    <p>No, it is not linearizable. In a linearization each call must take effect at a point between its invocation and its response. <code>q.deq(x)</code> returns before <code>q.enq(x)</code> is invoked, so every linearization point of <code>q.deq(x)</code> comes before every linearization point of <code>q.enq(x)</code>. Therefore every linearization starts with <code>q.deq(x)</code> on an empty queue, which cannot return x according to the FIFO specification.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Sovrapposizione: libertà, non garanzia (7.1.3 e 7.1.4)</h2>
+  <p>Quando due chiamate di thread diversi <b>si sovrappongono</b> nel tempo, i loro punti di linearizzazione si possono mettere <b>in tutti e due gli ordini</b>. La sovrapposizione dà quindi <b>libertà</b> di scelta. Ma poi la fila scelta deve rispettare la FIFO: se nessuna scelta la rispetta, l'esecuzione non è linearizzabile, con o senza sovrapposizione.</p>
+  <figure class="passi" data-titolo="7.1.3: la sovrapposizione basta" data-legenda="dato:enq,due:deq,ok:valido">
+    <div class="passo"><div class="espr">A: ---|       <mark class="dato">q.enq(x)</mark>          |-->
+B: ------|<mark class="due">q.deq(x)</mark>|---------------></div><p class="nota"><code>deq(x)</code> sta tutto <b>dentro</b> l'intervallo di <code>enq(x)</code>: si sovrappongono.</p></div>
+    <div class="passo"><div class="espr">A: ---|  <mark class="dato">●</mark>    q.enq(x)          |-->
+B: ------|<mark class="due">●</mark>q.deq(x)|---------------></div><p class="nota">Scelgo il punto di <code>enq(x)</code> subito dopo la sua invocazione, prima che cominci <code>deq(x)</code>; il punto di <code>deq(x)</code> dopo. Tutti e due stanno dentro il proprio intervallo.</p></div>
+    <div class="passo"><div class="espr"><mark class="ok">&lt;q.enq(x),q.deq(x)&gt;</mark>     [ ] → [x] → [ ]</div><p class="nota">Entra x, esce x: rispetta la FIFO. <b>Linearizzabile.</b></p></div>
+  </figure>
+  <figure class="passi" data-titolo="7.1.4: la sovrapposizione non basta" data-legenda="dato:enq di A,due:deq di B,no:viola la FIFO">
+    <div class="passo"><div class="espr">A: ---|<mark class="dato">q.enq(x)</mark>|-----|<mark class="dato">q.enq(y)</mark>|-->
+B: --|         <mark class="due">q.deq(y)</mark>          |-></div><p class="nota"><code>deq(y)</code> si sovrappone a <b>tutte e due</b> le <code>enq</code>. Dentro A l'ordine è fisso: <code>enq(x)</code> prima di <code>enq(y)</code> (e non si sovrappongono). Il punto di <code>deq(y)</code> può cadere in tre posti.</p></div>
+    <div class="passo"><div class="espr">&lt;<mark class="due">q.deq(y)</mark>,q.enq(x),q.enq(y)&gt;     [ ] → deq(y)?   <mark class="no">✗</mark></div><p class="nota">Prima di tutto: coda vuota, non può restituire y.</p></div>
+    <div class="passo"><div class="espr">&lt;q.enq(x),<mark class="due">q.deq(y)</mark>,q.enq(y)&gt;     [x] → deq restituirebbe x   <mark class="no">✗</mark></div><p class="nota">In mezzo: nella coda c'è solo x, e y non è ancora entrato.</p></div>
+    <div class="passo"><div class="espr">&lt;q.enq(x),q.enq(y),<mark class="due">q.deq(y)</mark>&gt;     [x, y] → deq restituirebbe x   <mark class="no">✗</mark></div><p class="nota">Alla fine: x è entrato <b>prima</b> di y, quindi la FIFO fa uscire x per primo.</p></div>
+    <div class="passo"><div class="espr"><mark class="no">nessuna posizione funziona → non linearizzabile</mark></div><p class="nota">Le tre posizioni sono tutte le scelte possibili, e nessuna rispetta la FIFO. Non è nemmeno sequentially consistent: le file possibili sono le stesse tre.</p></div>
+  </figure>
+  <div class="box domanda-tua" data-tit="&quot;Si sovrappongono, quindi è linearizzabile&quot;: perché non basta?">
+    <p>La sovrapposizione dice solo <b>quali file sono permesse</b>. Per dire "linearizzabile" bisogna <b>mostrare una fila</b> permessa che rispetta la specifica; per dire "non linearizzabile", mostrare che <b>nessuna</b> fila permessa la rispetta. Nel 7.1.4 le file permesse sono tre, e falliscono tutte per colpa della FIFO.</p>
+  </div>
+  <div class="box inglese" data-tit="Risposta pronta 7.1.4">
+    <p>No, it is not linearizable. A's <code>q.enq(x)</code> and <code>q.enq(y)</code> do not overlap, so <code>q.enq(x)</code> comes before <code>q.enq(y)</code> in every linearization. <code>q.deq(y)</code> overlaps both, so its linearization point can be before, between or after them. Before: the queue is empty. Between: the queue contains only x. After: the queue is [x, y], and since x was enqueued first, a dequeue returns x. In no case can <code>q.deq(y)</code> return y, so no linearization satisfies the FIFO specification.</p>
+  </div>
+</section>
+
+</main>
+</body>
+</html>

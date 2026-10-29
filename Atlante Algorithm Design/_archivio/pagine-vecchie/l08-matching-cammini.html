@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Matching e cammini disgiunti</title>
+<link rel="stylesheet" href="../assets/atlas.css">
+<link rel="stylesheet" href="../assets/tema.css">
+<script src="../assets/sito.js"></script>
+<script src="../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  const L = ['1', '2', '3', '4'], R = ['A', 'B', 'C', 'D'], Y = [45, 115, 185, 255];
+  const ogg = [{ id: 's', tipo: 'nodo', x: 40, y: 150, t: 's', nascosto: true }, { id: 't', tipo: 'nodo', x: 460, y: 150, t: 't', nascosto: true }];
+  L.forEach((n, i) => ogg.push({ id: 'L' + n, tipo: 'nodo', x: 170, y: Y[i], t: n }));
+  R.forEach((n, i) => ogg.push({ id: 'R' + n, tipo: 'nodo', x: 330, y: Y[i], t: n }));
+  const E = [['1', 'A'], ['1', 'B'], ['2', 'A'], ['3', 'B'], ['3', 'C'], ['4', 'C'], ['4', 'D']];
+  E.forEach(([a, b]) => ogg.push({ id: a + b, tipo: 'arco', da: 'L' + a, a: 'R' + b, dir: true }));
+  L.forEach(n => ogg.push({ id: 's' + n, tipo: 'arco', da: 's', a: 'L' + n, dir: true, tono: 'spento', nascosto: true }));
+  R.forEach(n => ogg.push({ id: n + 't', tipo: 'arco', da: 'R' + n, a: 't', dir: true, tono: 'spento', nascosto: true }));
+  ogg.push({ id: 'indietro', tipo: 'arco', da: 'RA', a: 'L1', dir: true, curva: -30, t: 'indietro', nascosto: true });
+  ogg.push({ id: 'v', tipo: 'testo', x: 250, y: 292, t: 'matching: 0 coppie', size: 13, bold: true });
+  const mostra = {}; ['s', 't'].forEach(k => mostra[k] = { nascosto: false }); L.forEach(n => mostra['s' + n] = { nascosto: false }); R.forEach(n => mostra[n + 't'] = { nascosto: false });
+  SCENE.bip = {
+    w: 500, h: 300, lato: true,
+    legenda: 'ora:cammino aumentante,due:arco all\'indietro,ok:coppia del matching,spento:arco di capacità 1 verso s o t',
+    oggetti: ogg,
+    passi: [
+      { nota: 'Un grafo <b>bipartito</b>: a sinistra 1–4 (per esempio persone), a destra A–D (lavori). Un arco = "può fare quel lavoro". Un <b>matching</b> è un insieme di archi senza estremi in comune. Lo vogliamo il più grande possibile.' },
+      { nota: 'Riduzione: aggiungo <b>s</b> collegato a ogni nodo di sinistra e <b>t</b> collegato da ogni nodo di destra. Oriento tutto da sinistra a destra, <b>capacità 1</b> ovunque.', set: mostra },
+      { nota: 'Cammino aumentante s→1→A→t: mando 1. La coppia <b>1–A</b> entra nel matching.', set: { '1A': { tono: 'ok' }, L1: { tono: 'ok' }, RA: { tono: 'ok' }, v: { t: 'matching: 1–A' } } },
+      { nota: 'Il nodo 2 conosce solo A, già preso. Nel residuo c\'è però l\'arco <b>all\'indietro</b> A→1: il cammino s→2→A→1→B→t "sposta" 1 su B e libera A per 2.', set: { '2A': { tono: 'ora' }, indietro: { nascosto: false, tono: 'due' }, '1B': { tono: 'ora' }, L2: { tono: 'ora' }, RB: { tono: 'ora' } } },
+      { nota: 'Dopo l\'aumento: <b>2–A</b> e <b>1–B</b>. Il flusso su 1→A è tornato a 0.', set: { indietro: { nascosto: true }, '1A': { tono: null }, '2A': { tono: 'ok' }, '1B': { tono: 'ok' }, L2: { tono: 'ok' }, RB: { tono: 'ok' }, v: { t: 'matching: 2–A, 1–B' } } },
+      { nota: 'Il 3: B è preso, ma C è libero: cammino s→3→C→t. <b>3–C</b>.', set: { '3C': { tono: 'ok' }, L3: { tono: 'ok' }, RC: { tono: 'ok' }, v: { t: 'matching: 2–A, 1–B, 3–C' } } },
+      { nota: 'Il 4: C è preso, D libero: <b>4–D</b>. Flusso 4 = matching di 4 coppie, <b>perfetto</b>: tutti hanno un compagno. Stessa sequenza del codice Java qui sotto.', set: { '4D': { tono: 'ok' }, L4: { tono: 'ok' }, RD: { tono: 'ok' }, v: { t: '2–A, 1–B, 3–C, 4–D: 4 coppie', tono: 'ok' } } }
+    ]
+  };
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Matching e cammini disgiunti</h1>
+  <p class="lede">Le due applicazioni classiche del flusso (K&amp;T 7.5–7.6). Qui si vede il modo di lavorare di tutto il capitolo: non si inventa un algoritmo nuovo, si <b>costruisce una rete</b> e si lascia lavorare Ford-Fulkerson.</p>
+</header>
+
+<section>
+  <h2>Matching bipartito</h2>
+  <ul>
+    <li>Grafo <b>bipartito</b>: nodi divisi in due lati L e R, archi solo tra un lato e l'altro.</li>
+    <li><b>Matching</b>: insieme di archi in cui ogni nodo compare al massimo una volta.</li>
+    <li>Obiettivo: il matching con più archi.</li>
+  </ul>
+  <figure class="scena" data-scena="bip" data-titolo="Da matching a flusso"></figure>
+  <figure class="passi" data-titolo="Perché la riduzione è corretta">
+    <div class="passo"><div class="espr">matching di k coppie ⇒ flusso di valore <mark class="ok">k</mark></div><p class="nota">Per ogni coppia (x, y) mando 1 su s→x→y→t. Ogni nodo è usato una volta, le capacità 1 sono rispettate.</p></div>
+    <div class="passo"><div class="espr">flusso <mark class="dato">intero</mark> di valore k ⇒ matching di k coppie</div><p class="nota">Per l'integralità ogni arco porta 0 o 1. In x entra al massimo 1 (da s), quindi esce su al massimo un arco verso destra; in y esce al massimo 1 (verso t), quindi entra da al massimo un arco. Gli archi centrali con flusso 1 sono un matching.</p></div>
+    <div class="passo"><div class="espr">flusso massimo = <mark class="ok">matching massimo</mark></div><p class="nota">Le due direzioni insieme.</p></div>
+    <div class="passo"><div class="espr">tempo: C = |L| ≤ n ⇒ Ford-Fulkerson in <mark class="ok">O(mn)</mark></div><p class="nota">Al massimo n aumenti, ognuno O(m).</p></div>
+  </figure>
+  <div class="box regola" data-tit="Matching perfetto e teorema di Hall">
+    <p>Con |L| = |R| = n, un matching <b>perfetto</b> ha n coppie. Esiste se e solo se ogni insieme S ⊆ L ha almeno |S| vicini in R: <span class="m">|N(S)| ≥ |S|</span> (K&amp;T 7.5). Se il flusso massimo è minore di n, il taglio minimo dà proprio un insieme S che viola la condizione: un certificato del "no".</p>
+  </div>
+  <figure class="codice" data-titolo="Ford-Fulkerson specializzato ai grafi bipartiti (algoritmo di Kuhn; verificato sull'esempio: 4 coppie)">
+<pre data-lang="java">static boolean aumenta(int u) {
+    for (int r : adj.get(u)) {
+        if (visto[r]) continue;
+        visto[r] = true;
+        if (partnerR[r] == -1 || aumenta(partnerR[r])) {
+            partnerR[r] = u;
+            return true;
+        }
+    }
+    return false;
+}
+
+// nel main
+Arrays.fill(partnerR, -1);
+for (int u = 0; u &lt; nL; u++) {
+    visto = new boolean[nR];
+    if (aumenta(u)) tot++;
+}</pre>
+    <ol class="spiega">
+      <li data-righe="1-4" data-segna="visto[r]@dato"><p><code>aumenta(u)</code> cerca un cammino aumentante che parte dal nodo di sinistra u (è una DFS nel residuo). <code>visto</code> evita di passare due volte dallo stesso nodo di destra.</p></li>
+      <li data-righe="5" data-segna="partnerR[r] == -1@ok|aumenta(partnerR[r])@due"><p>r è libero: il cammino arriva a t. Oppure r è preso da qualcuno che riesce a spostarsi altrove: è l'arco <b>all'indietro</b> della scena.</p></li>
+      <li data-righe="6-7" data-segna="partnerR[r] = u@ok"><p>Aggiorno le coppie lungo il cammino, tornando indietro dalla ricorsione.</p></li>
+      <li data-righe="14-17" data-segna="aumenta(u)@ora|tot++@ok"><p>Un tentativo di aumento per ogni nodo di sinistra. n tentativi, ognuno O(m): <b>O(nm)</b>, come Ford-Fulkerson.</p></li>
+    </ol>
+  </figure>
+</section>
+
+<section>
+  <h2>Cammini disgiunti</h2>
+  <p>Quanti cammini da s a t si possono trovare che <b>non condividono archi</b>? Serve per esempio a sapere quante connessioni indipendenti ci sono tra due computer.</p>
+  <figure class="passi" data-titolo="Cammini disgiunti sugli archi = flusso con capacità 1">
+    <div class="passo"><div class="espr">capacità <mark class="dato">1</mark> su ogni arco</div><p class="nota">Un arco può essere usato da un solo cammino.</p></div>
+    <div class="passo"><div class="espr">k cammini disgiunti ⇒ flusso di valore <mark class="ok">k</mark></div><p class="nota">Mando 1 lungo ogni cammino.</p></div>
+    <div class="passo"><div class="espr">flusso intero di valore k ⇒ <mark class="ok">k</mark> cammini disgiunti</div><p class="nota">Seguo gli archi con flusso 1 da s: per la conservazione arrivo a t; tolgo quel cammino e ripeto. (Se il cammino ha un ciclo, lo si toglie.)</p></div>
+    <div class="passo"><div class="espr">tempo <mark class="ok">O(mn)</mark></div><p class="nota">Il valore del flusso è al massimo n − 1 (gli archi che escono da s, in un grafo semplice).</p></div>
+  </figure>
+  <div class="box regola" data-tit="Teorema di Menger (K&amp;T 7.6)">
+    <p>Il numero massimo di cammini s-t disgiunti sugli archi è uguale al numero minimo di archi da togliere per scollegare t da s. È max-flow min-cut con capacità 1.</p>
+  </div>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Variante</th><th>Trucco</th></tr></thead>
+    <tbody>
+      <tr><td>grafo <b>non orientato</b></td><td>ogni arco {u, v} diventa due archi (u, v) e (v, u) di capacità 1; se il flusso li usa entrambi, si annullano</td></tr>
+      <tr><td>cammini disgiunti sui <b>nodi</b></td><td>ogni nodo v diventa v<sub>in</sub> → v<sub>out</sub> con capacità 1; gli archi entranti vanno in v<sub>in</sub>, gli uscenti partono da v<sub>out</sub></td></tr>
+      <tr><td>nodi con una capacità</td><td>stesso trucco dello sdoppiamento, con la capacità del nodo sull'arco v<sub>in</sub> → v<sub>out</sub></td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+</main>
+</body>
+</html>

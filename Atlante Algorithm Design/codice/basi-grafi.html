@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Codice: grafi come liste di adiacenza</title>
+<link rel="stylesheet" href="../assets/atlas.css">
+<link rel="stylesheet" href="../assets/tema.css">
+<script src="../assets/sito.js"></script>
+<script src="../assets/atlas.js" defer></script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Codice: grafi come liste di adiacenza</h1>
+  <p class="lede">Come si costruisce un grafo in Java, come si calcola il grado di un nodo, come si verifica un arco. È il codice di base su cui poggiano BFS, DFS e il topological sort.</p>
+</header>
+
+<section>
+  <h2>Leggere il grafo</h2>
+  <p>Il grafo arriva come testo: prima riga <code>n m</code>, poi <code>m</code> righe con gli archi. Lo memorizzo come lista di adiacenza: una lista di vicini per ogni nodo.</p>
+  <figure class="codice" data-titolo="Leggere il grafo">
+<pre data-lang="java">import java.io.*;
+import java.util.*;
+
+public class Main {
+    public static void main(String[] args) throws IOException {
+        BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
+        StringTokenizer st = new StringTokenizer(in.readLine());
+        int n = Integer.parseInt(st.nextToken());
+        int m = Integer.parseInt(st.nextToken());
+
+        // Lista di adiacenza: una lista di vicini per ogni nodo.
+        List&lt;List&lt;Integer&gt;&gt; adj = new ArrayList&lt;&gt;();
+        for (int i = 0; i &lt; n; i++) {
+            adj.add(new ArrayList&lt;&gt;());
+        }
+        for (int i = 0; i &lt; m; i++) {
+            st = new StringTokenizer(in.readLine());
+            int u = Integer.parseInt(st.nextToken());
+            int v = Integer.parseInt(st.nextToken());
+            adj.get(u).add(v);
+            adj.get(v).add(u);
+        }
+
+        // Grado di ogni nodo = lunghezza della sua lista.
+        StringBuilder out = new StringBuilder();
+        out.append("n = ").append(n).append(", m = ").append(m).append('\n');
+        for (int u = 0; u &lt; n; u++) {
+            out.append("grado(").append(u).append(") = ").append(adj.get(u).size()).append('\n');
+        }
+
+        // Domanda: c'è l'arco u–v? Scorro la lista di u: costa il grado di u.
+        int u = 0, v = 3;
+        boolean c = adj.get(u).contains(v);
+        out.append("arco ").append(u).append('-').append(v).append(": ").append(c).append('\n');
+        System.out.print(out);
+    }
+}</pre>
+    <ol class="spiega">
+    <li data-righe="6"><p><code>BufferedReader</code> legge l'input una riga alla volta. È più veloce di <code>Scanner</code> su input grandi.</p></li>
+    <li data-righe="8"><p>Leggo <code>n</code> (nodi) dalla prima riga. <code>Integer.parseInt</code> trasforma il testo in un <code>int</code>.</p></li>
+    <li data-righe="12"><p>Lista di liste. <code>adj.get(u)</code> è la lista dei vicini di <code>u</code>. I generici <code>&lt;…&gt;</code> dicono il tipo degli elementi.</p></li>
+    <li data-righe="20"><p>Aggiungo <code>v</code> ai vicini di <code>u</code>.</p></li>
+    <li data-righe="21"><p>Il grafo è non diretto: l'arco vale nei due versi, quindi aggiungo anche <code>u</code> ai vicini di <code>v</code>.</p></li>
+    </ol>
+  </figure>
+  <div class="box basi" data-tit="Note di sintassi"><ul><li><code>import java.io.*;</code> e <code>import java.util.*;</code> importano tutte le classi dei due pacchetti.</li><li><code>throws IOException</code>: <code>readLine()</code> può fallire, e Java obbliga a dichiararlo (eccezione <i>checked</i>).</li><li><code>new ArrayList&lt;&gt;()</code>: il diamante <code>&lt;&gt;</code> dice a Java di dedurre il tipo dal contesto.</li></ul></div>
+</section>
+<section>
+  <h2>Grado e domanda sull'arco</h2>
+  <p>Il grado di <code>u</code> è la dimensione della sua lista. Verificare l'arco <code>u–v</code> vuol dire cercare <code>v</code> nella lista di <code>u</code>: costa il grado di <code>u</code>.</p>
+  <figure class="codice" data-titolo="Grado e domanda sull'arco">
+<pre data-lang="java">import java.io.*;
+import java.util.*;
+
+public class Main {
+    public static void main(String[] args) throws IOException {
+        BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
+        StringTokenizer st = new StringTokenizer(in.readLine());
+        int n = Integer.parseInt(st.nextToken());
+        int m = Integer.parseInt(st.nextToken());
+
+        // Lista di adiacenza: una lista di vicini per ogni nodo.
+        List&lt;List&lt;Integer&gt;&gt; adj = new ArrayList&lt;&gt;();
+        for (int i = 0; i &lt; n; i++) {
+            adj.add(new ArrayList&lt;&gt;());
+        }
+        for (int i = 0; i &lt; m; i++) {
+            st = new StringTokenizer(in.readLine());
+            int u = Integer.parseInt(st.nextToken());
+            int v = Integer.parseInt(st.nextToken());
+            adj.get(u).add(v);
+            adj.get(v).add(u);
+        }
+
+        // Grado di ogni nodo = lunghezza della sua lista.
+        StringBuilder out = new StringBuilder();
+        out.append("n = ").append(n).append(", m = ").append(m).append('\n');
+        for (int u = 0; u &lt; n; u++) {
+            out.append("grado(").append(u).append(") = ").append(adj.get(u).size()).append('\n');
+        }
+
+        // Domanda: c'è l'arco u–v? Scorro la lista di u: costa il grado di u.
+        int u = 0, v = 3;
+        boolean c = adj.get(u).contains(v);
+        out.append("arco ").append(u).append('-').append(v).append(": ").append(c).append('\n');
+        System.out.print(out);
+    }
+}</pre>
+    <ol class="spiega">
+    <li data-righe="28"><p>Il grado è <code>size()</code> della lista. Costo <code>O(1)</code>, perché la lista sa già la sua lunghezza.</p></li>
+    <li data-righe="33"><p><code>contains</code> scorre la lista: costo <code>O(grado(u))</code>. Con la matrice di adiacenza sarebbe <code>O(1)</code>, ma allo spazio <code>O(n²)</code>.</p></li>
+    </ol>
+  </figure>
+  <div class="box basi" data-tit="Note di sintassi"><ul><li><code>.size()</code> è il numero di elementi di una lista; <code>.length</code> è solo per gli array.</li><li><code>int u = 0, v = 3;</code> dichiara più variabili dello stesso tipo in una riga.</li></ul></div>
+</section>
+<section>
+  <h2>Eseguirlo</h2>
+  <p>Esempio di input e di output (compilato e lanciato davvero).</p>
+  <pre class="cod">4 4
+0 1
+0 3
+1 2
+2 3
+
+(output)
+n = 4, m = 4
+grado(0) = 2
+grado(1) = 2
+grado(2) = 2
+grado(3) = 2
+arco 0-3: true</pre>
+</section>
+<section>
+  <h2>La teoria, affiancata</h2>
+  <p><a href="../teoria/basi-grafi.html"><b>← Torna alla teoria di questo argomento</b></a></p>
+</section>
+
+</main>
+</body>
+</html>

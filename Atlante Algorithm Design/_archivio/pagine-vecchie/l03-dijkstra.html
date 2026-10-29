@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Dijkstra</title>
+<link rel="stylesheet" href="../assets/atlas.css">
+<link rel="stylesheet" href="../assets/tema.css">
+<script src="../assets/sito.js"></script>
+<script src="../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+SCENE.dij = {
+  w: 560, h: 300, lato: true,
+  legenda: 'ok:esplorato (distanza definitiva),dato:scoperto (distanza provvisoria),ora:rilassato adesso,spento:non più migliore',
+  codice: { lang: 'java', testo: `dist[s] = 0; pq.add(s);
+while (!pq.isEmpty()) {
+    int u = pq.poll();        // dist minima
+    if (esplorato[u]) continue;
+    esplorato[u] = true;
+    for (arco u→v di peso w)
+        if (!esplorato[v] && dist[u] + w < dist[v]) {
+            dist[v] = dist[u] + w;
+            pq.add(v);        // con chiave dist[v]
+        }
+}` },
+  oggetti: [
+    { id: 's', tipo: 'nodo', x: 50, y: 150, t: 's', sotto: '0' },
+    { id: 'a', tipo: 'nodo', x: 200, y: 60, t: 'a', sotto: '∞' },
+    { id: 'b', tipo: 'nodo', x: 200, y: 240, t: 'b', sotto: '∞' },
+    { id: 'c', tipo: 'nodo', x: 350, y: 60, t: 'c', sotto: '∞' },
+    { id: 'd', tipo: 'nodo', x: 350, y: 240, t: 'd', sotto: '∞' },
+    { id: 't', tipo: 'nodo', x: 500, y: 150, t: 't', sotto: '∞' },
+    { id: 'sa', tipo: 'arco', da: 's', a: 'a', dir: true, t: '4' },
+    { id: 'sb', tipo: 'arco', da: 's', a: 'b', dir: true, t: '1' },
+    { id: 'ba', tipo: 'arco', da: 'b', a: 'a', dir: true, t: '2' },
+    { id: 'bd', tipo: 'arco', da: 'b', a: 'd', dir: true, t: '5' },
+    { id: 'ac', tipo: 'arco', da: 'a', a: 'c', dir: true, t: '1' },
+    { id: 'cd', tipo: 'arco', da: 'c', a: 'd', dir: true, t: '1' },
+    { id: 'ct', tipo: 'arco', da: 'c', a: 't', dir: true, t: '6' },
+    { id: 'dt', tipo: 'arco', da: 'd', a: 't', dir: true, t: '2' }
+  ],
+  passi: [
+    { nota: 'Grafo orientato con lunghezze ≥ 0. Sotto ogni nodo la distanza provvisoria da s: 0 per s, ∞ per gli altri.', righe: [1] },
+    { nota: 'Estraggo il nodo con distanza minima: <b>s</b> (0). Diventa <b>esplorato</b>: la sua distanza è definitiva. Rilasso i suoi archi: a = 0 + 4 = 4, b = 0 + 1 = 1.', righe: [3, 4, 5, 6, 7, 8, 9], set: { s: { tono: 'ok' }, sa: { tono: 'ora' }, sb: { tono: 'ora' }, a: { tono: 'dato', sotto: '4' }, b: { tono: 'dato', sotto: '1' } } },
+    { nota: 'Minimo tra i non esplorati: <b>b</b> (1). Rilasso: b→a dà 1 + 2 = <b>3 &lt; 4</b>, migliora; b→d dà 1 + 5 = 6.', righe: [3, 5, 7, 8], set: { sa: { tono: 'spento' }, sb: { tono: 'ok' }, b: { tono: 'ok' }, ba: { tono: 'ora' }, bd: { tono: 'ora' }, a: { sotto: '3' }, d: { tono: 'dato', sotto: '6' } } },
+    { nota: 'Minimo: <b>a</b> (3). Rilasso a→c: c = 3 + 1 = 4.', righe: [3, 5, 7, 8], set: { ba: { tono: 'ok' }, bd: { tono: 'dato' }, a: { tono: 'ok' }, ac: { tono: 'ora' }, c: { tono: 'dato', sotto: '4' } } },
+    { nota: 'Minimo: <b>c</b> (4). c→d dà 4 + 1 = <b>5 &lt; 6</b>, migliora; c→t dà 10.', righe: [3, 5, 7, 8], set: { ac: { tono: 'ok' }, c: { tono: 'ok' }, cd: { tono: 'ora' }, bd: { tono: 'spento' }, ct: { tono: 'ora' }, d: { sotto: '5' }, t: { tono: 'dato', sotto: '10' } } },
+    { nota: 'Minimo: <b>d</b> (5). d→t dà 5 + 2 = <b>7 &lt; 10</b>, migliora.', righe: [3, 5, 7, 8], set: { cd: { tono: 'ok' }, ct: { tono: 'spento' }, d: { tono: 'ok' }, dt: { tono: 'ora' }, t: { sotto: '7' } } },
+    { nota: 'Ultimo: <b>t</b> (7). Tutti esplorati. Gli archi verdi formano l\'<b>albero dei cammini minimi</b>: il cammino più corto da s a t è s → b → a → c → d → t, lungo 7. Verificato con il codice Java qui sotto.', righe: [2], set: { dt: { tono: 'ok' }, t: { tono: 'ok' } } }
+  ]
+};
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Dijkstra</h1>
+  <p class="lede">Cammini minimi da un nodo <i>s</i> a tutti gli altri, in un grafo con lunghezze <b>non negative</b> (K&amp;T 4.4). È un greedy: a ogni passo rende definitivo il nodo più vicino tra quelli non ancora sistemati.</p>
+</header>
+
+<section>
+  <h2>Il problema e l'algoritmo</h2>
+  <ul>
+    <li>Grafo orientato <span class="m">G = (V, E)</span>, lunghezze <span class="m">ℓ<sub>e</sub> ≥ 0</span>, una sorgente <i>s</i>.</li>
+    <li>Per ogni nodo <i>v</i>: la lunghezza del cammino più corto da <i>s</i> a <i>v</i>.</li>
+    <li>L'algoritmo tiene un insieme <b>S</b> di nodi <b>esplorati</b>, con distanza già definitiva. A ogni passo aggiunge il nodo fuori da S che si raggiunge con il cammino più corto passando solo da S.</li>
+  </ul>
+  <figure class="scena" data-scena="dij" data-titolo="Dijkstra da s"></figure>
+</section>
+
+<section>
+  <h2>Perché è corretto</h2>
+  <figure class="passi" data-titolo="Invariante: per ogni u in S, d(u) è la distanza vera">
+    <div class="passo"><div class="espr">all'inizio S = {s}, d(s) = 0 <mark class="ok">✓</mark></div><p class="nota">Nessun cammino è più corto di 0, perché le lunghezze sono ≥ 0.</p></div>
+    <div class="passo"><div class="espr">aggiungo <mark class="ora">v</mark> tramite l'arco (u, v), u ∈ S: cammino P lungo <mark class="ora">d(u) + ℓ(u,v)</mark></div><p class="nota">È il minimo tra tutti gli archi che escono da S.</p></div>
+    <div class="passo"><div class="espr">un altro cammino P' da s a v deve <mark class="dato">uscire da S</mark> con un arco (x, y), x ∈ S, y ∉ S</div><p class="nota">s è in S, v no: da qualche parte P' attraversa il confine.</p></div>
+    <div class="passo"><div class="espr">ℓ(P') ≥ d(x) + ℓ(x,y) + <mark class="no">(resto di P' ≥ 0)</mark> ≥ d(u) + ℓ(u,v) = ℓ(P)</div><p class="nota">Il primo pezzo vale almeno d(x) + ℓ(x,y), che non è più piccolo del minimo scelto. Il resto non è negativo <b>perché le lunghezze sono ≥ 0</b>.</p></div>
+    <div class="passo"><div class="espr"><mark class="ok">P è il più corto ⇒ d(v) è definitiva</mark></div><p class="nota">L'invariante vale anche dopo aver aggiunto v. Per induzione vale fino alla fine.</p></div>
+  </figure>
+  <div class="box attenzione" data-tit="Con un arco negativo si rompe">
+    <p>s→a lungo 2, s→b lungo 3, b→a lungo −2. Dijkstra esplora a con distanza 2 e non la cambia più; ma s→b→a è lungo 1. Il punto "resto ≥ 0" della prova è falso. Provato con il codice qui sotto: dà 2. Per i pesi negativi serve <a href="l06-bellman-ford.html">Bellman-Ford</a>.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Implementazione in Java</h2>
+  <figure class="codice" data-titolo="Con PriorityQueue (verificato sull'esempio della scena: s=0 a=3 b=1 c=4 d=5 t=7)">
+<pre data-lang="java">long[] dist = new long[n];
+Arrays.fill(dist, Long.MAX_VALUE);
+dist[s] = 0;
+PriorityQueue&lt;long[]&gt; pq = new PriorityQueue&lt;&gt;((x, y) -> Long.compare(x[0], y[0]));
+pq.add(new long[] { 0, s });
+boolean[] esplorato = new boolean[n];
+while (!pq.isEmpty()) {
+    int u = (int) pq.poll()[1];
+    if (esplorato[u]) continue;
+    esplorato[u] = true;
+    for (int[] e : adj.get(u)) {
+        int v = e[0], w = e[1];
+        if (!esplorato[v] &amp;&amp; dist[u] + w &lt; dist[v]) {
+            dist[v] = dist[u] + w;
+            pq.add(new long[] { dist[v], v });
+        }
+    }
+}</pre>
+    <ol class="spiega">
+      <li data-righe="1-3" data-segna="Long.MAX_VALUE@dato|dist[s] = 0@ok"><p>Distanze provvisorie: "infinito" per tutti, 0 per s. <code>long</code> perché una somma di tante lunghezze può superare <code>int</code>.</p></li>
+      <li data-righe="4-5" data-segna="PriorityQueue&lt;long[]&gt;@ora|Long.compare(x[0], y[0])@ora"><p>Una coda di priorità di coppie <code>{distanza, nodo}</code>, ordinata per distanza: <code>poll()</code> restituisce la più piccola in <i>O(log n)</i>.</p></li>
+      <li data-righe="8-10" data-segna="pq.poll()@ora|if (esplorato[u]) continue;@no"><p>Estraggo il nodo più vicino. La <code>PriorityQueue</code> di Java non sa "abbassare" una chiave: quando una distanza migliora aggiungo una coppia nuova, e le coppie vecchie si scartano qui.</p></li>
+      <li data-righe="11-16" data-segna="dist[u] + w &lt; dist[v]@due|pq.add(new long[] { dist[v], v })@due"><p><b>Rilassamento</b>: se passare da u accorcia la strada verso v, aggiorno e inserisco la nuova coppia.</p></li>
+    </ol>
+  </figure>
+  <figure class="passi" data-titolo="Tempo">
+    <div class="passo"><div class="espr">ogni arco causa al massimo <mark class="dato">un</mark> inserimento</div><p class="nota">Un nodo viene esplorato una volta sola, e solo allora si scorrono i suoi archi.</p></div>
+    <div class="passo"><div class="espr">≤ m inserimenti e m estrazioni, ognuno <mark class="ora">O(log m) = O(log n)</mark></div><p class="nota">m ≤ n², quindi log m ≤ 2 log n.</p></div>
+    <div class="passo"><div class="espr"><mark class="ok">O(m log n)</mark></div><p class="nota">Il libro usa una coda con "decrease-key": stesso tempo. Con un array al posto della coda: <i>O(n²)</i>, meglio per grafi densissimi.</p></div>
+  </figure>
+</section>
+
+</main>
+</body>
+</html>

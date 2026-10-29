@@ -1,0 +1,321 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Liste infinite e unfold</title>
+<link rel="stylesheet" href="../assets/atlas.css">
+<link rel="stylesheet" href="../assets/tema.css">
+<script src="../assets/sito.js"></script>
+<script src="../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+SCENE.unfold = {
+  w: 580, h: 240, lato: false,
+  legenda: 'dato:stato,ora:f al lavoro,ok:valore emesso,no:None = fine',
+  oggetti: [
+    { id: 's0', tipo: 'nodo', r: 22, x: 60, y: 60, t: '0', tono: 'dato' },
+    { id: 's1', tipo: 'nodo', r: 22, x: 200, y: 60, t: '1', nascosto: true },
+    { id: 's2', tipo: 'nodo', r: 22, x: 340, y: 60, t: '2', nascosto: true },
+    { id: 's3', tipo: 'nodo', r: 22, x: 480, y: 60, t: '3', nascosto: true },
+    { id: 'e1', tipo: 'arco', da: 's0', a: 's1', dir: true, t: 'emette 0', nascosto: true },
+    { id: 'e2', tipo: 'arco', da: 's1', a: 's2', dir: true, t: 'emette 10', nascosto: true },
+    { id: 'e3', tipo: 'arco', da: 's2', a: 's3', dir: true, t: 'emette 20', nascosto: true },
+    { id: 'L', tipo: 'celle', x: 200, y: 140, cw: 60, ch: 40, valori: ['', '', ''], indici: false },
+    { id: 'n', tipo: 'testo', x: 290, y: 222, t: 'f = n => if n < 3 then Some((n * 10, n + 1)) else None', size: 13 }
+  ],
+  passi: [
+    { nota: '<code>unfold(0)(f)</code>: si parte dallo <b>stato</b> 0. A ogni passo f guarda lo stato e dice cosa emettere e quale sarà lo stato dopo.' },
+    { nota: 'f(0) = Some((0, 1)): emette <b>0</b>, nuovo stato 1.', set: { s0: { tono: 'ora' }, e1: { nascosto: false }, s1: { nascosto: false, tono: 'dato' }, L: { valori: ['0', '', ''], toni: { 0: 'ok' } } } },
+    { nota: 'f(1) = Some((10, 2)): emette <b>10</b>.', set: { s0: { tono: 'dato' }, s1: { tono: 'ora' }, e2: { nascosto: false }, s2: { nascosto: false, tono: 'dato' }, L: { valori: ['0', '10', ''], toni: { 1: 'ok' } } } },
+    { nota: 'f(2) = Some((20, 3)): emette <b>20</b>.', set: { s1: { tono: 'dato' }, s2: { tono: 'ora' }, e3: { nascosto: false }, s3: { nascosto: false, tono: 'dato' }, L: { valori: ['0', '10', '20'], toni: { 2: 'ok' } } } },
+    { nota: 'f(3) = <b>None</b>: la lista finisce. <code>.toList</code> = List(0, 10, 20). Lo stato serve a ricordare, il valore è quello che esce.', set: { s2: { tono: 'dato' }, s3: { tono: 'no' }, L: { toni: { 0: 'ok', 1: 'ok', 2: 'ok' } } } }
+  ]
+};
+</script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  const T = (id, x, y, t, extra) => Object.assign({ id, tipo: 'testo', x, y, t, size: 13 }, extra || {});
+  const R = (id, x, y, w, h, t, extra) => Object.assign({ id, tipo: 'rett', x, y, w, h, t }, extra || {});
+  const N = (id, x, y, t, tono, extra) => Object.assign({ id, tipo: 'nodo', x, y, t, tono, r: 20 }, extra || {});
+  const F = (id, x1, y1, x2, y2, t, extra) => Object.assign({ id, tipo: 'vett', x1, y1, x2, y2, t }, extra || {});
+  const C = (id, x, y, valori, extra) => Object.assign({ id, tipo: 'celle', x, y, cw: 52, ch: 40, valori, indici: false }, extra || {});
+  const vuote = n => Array(n).fill('');
+  const toni = (n, tono) => Object.fromEntries(Array.from({ length: n }, (_, i) => [i, tono]));
+
+    SCENE.ones = {
+      w: 580, h: 210, lato: true,
+      legenda: 'ok:cella costruita,due:coda non ancora forzata',
+      oggetti: [
+        N('o', 100, 80, '1', 'ok'), T('loop', 100, 45, '↺ la coda è ones stessa', { size: 11 }),
+        T('ot', 100, 140, 'ones = cons(1, ones)', { size: 12 }),
+        R('f0', 250, 60, 60, 40, '1', { tono: 'ok', nascosto: true }), R('f1', 330, 60, 60, 40, '2', { tono: 'ok', nascosto: true }), R('f2', 410, 60, 60, 40, '3', { tono: 'ok', nascosto: true }), R('fr', 490, 60, 70, 40, 'from(4)', { tono: 'due', nascosto: true }), R('fr1', 330, 60, 70, 40, 'from(2)', { tono: 'due', nascosto: true }),
+        T('c', 390, 150, '', { size: 12 }), T('c2', 290, 195, '', { size: 12 })
+      ],
+      passi: [
+        { nota: "<code>val ones = cons(1, ones)</code>: una lista di 1 infinita, che punta a <b>se stessa</b>. Funziona perché il secondo argomento di cons è by-name: ones non viene letto adesso." },
+        { nota: "<code>from(n) = cons(n, from(n + 1))</code>: la chiamata ricorsiva sta dentro cons, quindi <b>non parte</b>. from(1) costruisce una cella e si ferma.", set: { f0: { nascosto: false }, fr1: { nascosto: false } } },
+        { nota: "Forzando la coda nasce la cella successiva, e così via. <code>take(3)</code> ne forza tre: la coda dopo resta una ricetta.", set: { fr1: { nascosto: true }, f1: { nascosto: false }, f2: { nascosto: false }, fr: { nascosto: false }, c: { t: 'naturals.take(3).toList = List(1, 2, 3)' } } },
+        { nota: "<code>naturals = from(1)</code> (il test Ex01.06 vuole la testa 1). Ma <code>naturals.toList</code> non termina mai: vuole tutto. to(n) è uguale, scendendo.", set: { c2: { t: 'naturals.toList: non termina', tono: 'no' } } }
+      ]
+    };
+
+    SCENE.fibsgo = {
+      w: 560, h: 150,
+      codice: { lang: 'scala', testo: `lazy val fibs: LazyList[Int] =
+  def go(a: Int, b: Int): LazyList[Int] = cons(a, go(b, a + b))
+  go(0, 1)` },
+      legenda: 'ok:emesso,dato:a,ora:b',
+      oggetti: [C('l', 20, 30, vuote(6), { toni: {} }), T('g', 280, 110, 'go(0, 1)', { bold: true })],
+      passi: [
+        { nota: "Come Fibonacci della settimana 1, ma invece di restituire un numero produco la lista di tutti. <code>go(a, b)</code>: emetto a, la finestra scorre.", righe: [3] },
+        { nota: "go(0, 1) = cons(0, go(1, 1)).", righe: [2], set: { l: { valori: ['0', '', '', '', '', ''], toni: { 0: 'ok' } }, g: { t: 'cons(0, go(1, 1))' } } },
+        { nota: "go(1, 1) = cons(1, go(1, 2)): b diventa a, a + b diventa b.", righe: [2], set: { l: { valori: ['0', '1', '', '', '', ''], toni: { 0: 'ok', 1: 'ok' } }, g: { t: 'cons(1, go(1, 2))' } } },
+        { nota: "…go(1, 2) → 1, go(2, 3) → 2, go(3, 5) → 3, go(5, 8) → 5. <code>fibs.take(6).toList</code> = List(0, 1, 1, 2, 3, 5) (verificato). Il tipo, che il file lascia a Any, è LazyList[Int].", righe: [2], set: { l: { valori: ['0', '1', '1', '2', '3', '5'], toni: toni(6, 'ok') }, g: { t: 'List(0, 1, 1, 2, 3, 5)', tono: 'ok' } } }
+      ]
+    };
+
+    const RA = ['lista creata', 'calcolo f(1)', 'calcolo f(2)', 'List(2, 4)'], RB = ['calcolo f(1)', 'lista creata', 'calcolo f(2)', 'calcolo f(3)', 'List(2, 4)'];
+    const og = [T('ha', 150, 24, 'map (foldRight)', { bold: true }), T('hb', 430, 24, 'mapUnfold', { bold: true })];
+    RA.forEach((t, i) => og.push(T('a' + i, 150, 60 + i * 30, t, { size: 12, nascosto: true })));
+    RB.forEach((t, i) => og.push(T('b' + i, 430, 60 + i * 30, t, { size: 12, nascosto: true })));
+    og.push(T('c', 290, 225, '', { size: 12 }));
+    SCENE.perchunfold = {
+      w: 580, h: 240, lato: true,
+      legenda: 'ora:stampa,no:calcolo in più',
+      oggetti: og,
+      passi: [
+        { nota: "unfold scrive la ricorsione al posto tuo: tu descrivi un passo solo (Some((valore, nuovoStato)) invece di cons, None invece di empty). Ma c'è una differenza di pigrizia. Esperimento: stampo dentro f e chiedo 2 elementi su 3." },
+        { nota: "<b>map con foldRight</b>: la lista viene creata <b>prima</b> di calcolare f(1): foldRight + cons tiene sospesa anche la testa. Poi f(1), f(2). Due calcoli.", set: Object.fromEntries(RA.map((_, i) => ['a' + i, { nascosto: false, tono: 'ora' }])) },
+        { nota: "<b>mapUnfold</b>: f(1) viene calcolata <b>prima</b> di creare la lista, e alla fine anche f(3), che non serviva. unfold deve chiamare f per sapere se la risposta è None (fine) o Some. Output reale.", set: Object.assign(Object.fromEntries(RB.map((_, i) => ['b' + i, { nascosto: false, tono: 'ora' }])), { b3: { nascosto: false, tono: 'no' } }) },
+        { nota: "Stesso risultato, List(2, 4); unfold è un po' meno pigro. foldRight <b>consuma</b> una lista e dà un valore; unfold parte da un valore (lo stato) e <b>costruisce</b> una lista.", set: { c: { t: 'foldRight: lista → valore · unfold: stato → lista' } } }
+      ]
+    };
+
+    SCENE.takeunfold = {
+      w: 560, h: 170,
+      codice: { lang: 'scala', testo: `def takeUnfold(n: Int): LazyList[A] =
+  unfold((this, n)) {
+    case (Cons(h, t), k) if k > 0 => Some((h(), (t(), k - 1)))
+    case _ => None
+  }` },
+      legenda: 'dato:stato (lista, k),ok:emesso,no:fine',
+      oggetti: [R('st', 40, 30, 230, 40, 'stato: (5, 6, 7…), k = 2', { tono: 'dato' }), C('o', 300, 30, ['', ''], { toni: {} }), T('c', 280, 120, 'LazyList(5, 6, 7).takeUnfold(2)', { size: 12, bold: true })],
+      passi: [
+        { nota: "Lo stato di takeUnfold è una <b>coppia</b>: la lista ancora da leggere e quanti elementi mancano. Le parentesi doppie <code>unfold((this, n))</code> mostrano che è un argomento solo.", righe: [2] },
+        { nota: "C'è una cella e k = 2 &gt; 0: emetto 5, nuovo stato (6, 7…; 1). k nasce nel pattern, quando il case smonta la coppia.", righe: [3], set: { o: { valori: ['5', ''], toni: { 0: 'ok' } }, st: { t: 'stato: (6, 7…), k = 1' } } },
+        { nota: "k = 1: emetto 6, nuovo stato (7…; 0).", righe: [3], set: { o: { valori: ['5', '6'], toni: { 0: 'ok', 1: 'ok' } }, st: { t: 'stato: (7…), k = 0' } } },
+        { nota: "k = 0: la guardia è falsa, si cade in <code>case _ =&gt; None</code>, che raccoglie i due modi di finire (lista vuota o contatore a 0): fine. List(5, 6). Stessa idea per fibsUnfold (stato (a, b)), mapUnfold (stato: la lista), zipWith (stato: le due liste).", righe: [4], set: { st: { tono: 'no' }, c: { t: 'List(5, 6)', tono: 'ok' } } }
+      ]
+    };
+  
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Liste infinite e unfold</h1>
+  <p class="lede">Esercizi 1, 10–13. Una lista infinita si definisce con una funzione che <b>chiama se stessa nella coda</b>: grazie a <code>cons</code> la chiamata non parte finché non serve. <code>unfold</code> generalizza l'idea: da uno stato iniziale e una regola "prossimo valore e prossimo stato" genera tutta la lista.</p>
+</header>
+
+<section>
+  <h2><code>ones</code>, <code>from</code>, <code>to</code>, <code>naturals</code></h2>
+  <figure class="codice" data-titolo="Esercizio 1 e l'esempio della slide">
+<pre data-lang="scala">val ones: LazyList[Int] = cons(1, ones)
+
+def from(n: Int): LazyList[Int] = cons(n, from(n + 1))
+def to(n: Int): LazyList[Int] = cons(n, to(n - 1))
+
+lazy val naturals: LazyList[Int] = from(1)</pre>
+    <ol class="spiega">
+      <li data-righe="1" data-segna="cons(1, ones)@ora"><p>Una lista di 1 infinita, che punta a <b>se stessa</b>. Funziona perché il secondo argomento di <code>cons</code> è by-name: <code>ones</code> non viene letto adesso.</p></li>
+      <li data-righe="3" data-segna="from(n + 1)@due"><p><code>from(n)</code>: la testa è <code>n</code>, la coda è "da n + 1 in poi". La chiamata ricorsiva sta dentro <code>cons</code>, quindi non parte.</p></li>
+      <li data-righe="4" data-segna="to(n - 1)@due"><p><code>to(n)</code>: uguale, scendendo. Anche questa è infinita (verso i negativi).</p></li>
+      <li data-righe="6" data-segna="from(1)@ok"><p>I naturali sono <code>from(1)</code>: il test del corso <code>Ex01.06</code> vuole che la testa sia <b>1</b> (con <code>from(0)</code> fallisce: <code>Falsified after 0 passed tests</code>). <code>lazy val</code> nel companion object: calcolata al primo uso.</p></li>
+    </ol>
+  </figure>
+  <div class="box attenzione" data-tit="Una funzione ricorsiva senza caso base?">
+    <p>Sulle liste normali sarebbe un ciclo infinito. Qui no: ogni chiamata costruisce <b>una</b> cella e si ferma. La cella successiva nasce solo quando qualcuno forza la coda. <code>naturals.toList</code> invece non termina mai: vuole tutto.</p>
+  </div>
+  <figure class="scena" data-scena="ones" data-titolo="Liste infinite: una cella alla volta"></figure>
+</section>
+
+<section>
+  <h2><code>fibs</code>: Fibonacci infinito (esercizio 10)</h2>
+  <p>Stessa idea della settimana 1: per il prossimo numero bastano gli ultimi due. Qui però non restituisco un numero: produco la lista di tutti.</p>
+  <pre class="cod" data-lang="scala">lazy val fibs: LazyList[Int] =
+  def go(a: Int, b: Int): LazyList[Int] = cons(a, go(b, a + b))
+  go(0, 1)</pre>
+  <figure class="passi" data-titolo="fibs.take(6).toList">
+    <div class="passo"><div class="espr">go(<mark class="dato">0</mark>, <mark class="due">1</mark>) = cons(<mark class="ok">0</mark>, go(1, 1))</div><p class="nota">Emetto <code>a</code>, poi la finestra scorre.</p></div>
+    <div class="passo"><div class="espr">go(<mark class="dato">1</mark>, <mark class="due">1</mark>) = cons(<mark class="ok">1</mark>, go(1, 2))</div><p class="nota">b diventa a, a + b diventa b.</p></div>
+    <div class="passo"><div class="espr">go(<mark class="dato">1</mark>, <mark class="due">2</mark>) = cons(<mark class="ok">1</mark>, go(2, 3))</div><p class="nota">…</p></div>
+    <div class="passo"><div class="espr">go(2, 3) → <mark class="ok">2</mark>     go(3, 5) → <mark class="ok">3</mark>     go(5, 8) → <mark class="ok">5</mark></div><p class="nota">…</p></div>
+    <div class="passo"><div class="espr"><mark class="ok">List(0, 1, 1, 2, 3, 5)</mark></div><p class="nota">Verificato. Il tipo, che il file lascia a <code>Any</code>, è <code>LazyList[Int]</code>.</p></div>
+  </figure>
+  <figure class="scena" data-scena="fibsgo" data-titolo="go(a, b): la finestra che emette"></figure>
+</section>
+
+<section>
+  <h2><code>unfold</code>: il generatore generale (esercizio 11)</h2>
+  <pre class="cod" data-lang="scala">def unfold[A, S](z: S)(f: S => Option[(A, S)]): LazyList[A]</pre>
+  <figure class="passi" data-titolo="Leggere la firma">
+    <div class="passo"><div class="espr">unfold[A, <mark class="dato">S</mark>](<mark class="dato">z: S</mark>)</div><p class="nota"><code>S</code> è il tipo dello <b>stato</b>: cosa devo ricordare tra un passo e l'altro. <code>z</code> è lo stato iniziale.</p></div>
+    <div class="passo"><div class="espr">(f: <mark class="dato">S</mark> => Option[(<mark class="ok">A</mark>, <mark class="dato">S</mark>)])</div><p class="nota"><code>f</code> guarda lo stato e risponde con una <b>coppia</b>: il prossimo valore da emettere (<code>A</code>) e il nuovo stato (<code>S</code>).</p></div>
+    <div class="passo"><div class="espr">Option[…]  →  <mark class="ok">Some((valore, stato))</mark> oppure <mark class="no">None</mark></div><p class="nota">È dentro un Option: <code>None</code> vuol dire "la lista finisce qui".</p></div>
+    <div class="passo"><div class="espr">: <mark class="ok">LazyList[A]</mark></div><p class="nota">Il risultato è la lista dei valori emessi, uno per passo.</p></div>
+  </figure>
+  <figure class="codice" data-titolo="Senza pattern matching: map e getOrElse della settimana 3">
+<pre data-lang="scala">def unfold[A, S](z: S)(f: S => Option[(A, S)]): LazyList[A] =
+  f(z).map((a, s) => cons(a, unfold(s)(f))).getOrElse(empty)</pre>
+    <ol class="spiega">
+      <li data-righe="2" data-segna="f(z)@dato"><p>Chiedo a <code>f</code> cosa fare con lo stato attuale: ottengo un <code>Option[(A, S)]</code>.</p></li>
+      <li data-righe="2" data-segna="(a, s) =>@ora"><p>Se c'è una coppia, la apro: <code>a</code> il valore, <code>s</code> il nuovo stato. (Scala 3 permette di scrivere <code>(a, s) =></code> per una funzione che riceve una coppia.)</p></li>
+      <li data-righe="2" data-segna="cons(a, unfold(s)(f))@ok"><p>Emetto <code>a</code> e, come coda pigra, lo <code>unfold</code> dal nuovo stato.</p></li>
+      <li data-righe="2" data-segna="getOrElse(empty)@no"><p>Se <code>f</code> ha detto <code>None</code>, la lista è vuota. Il risultato di <code>map</code> è un <code>Option[LazyList[A]]</code>: <code>getOrElse</code> lo "apre".</p></li>
+    </ol>
+  </figure>
+  <figure class="passi" data-titolo="unfold(0)(n => if n < 3 then Some((n * 10, n + 1)) else None).toList">
+    <div class="passo"><div class="espr">stato <mark class="dato">0</mark>  →  f(0) = Some((<mark class="ok">0</mark>, <mark class="dato">1</mark>))</div><p class="nota">Emetto 0, nuovo stato 1.</p></div>
+    <div class="passo"><div class="espr">stato <mark class="dato">1</mark>  →  f(1) = Some((<mark class="ok">10</mark>, <mark class="dato">2</mark>))</div><p class="nota">Emetto 10.</p></div>
+    <div class="passo"><div class="espr">stato <mark class="dato">2</mark>  →  f(2) = Some((<mark class="ok">20</mark>, <mark class="dato">3</mark>))</div><p class="nota">Emetto 20.</p></div>
+    <div class="passo"><div class="espr">stato <mark class="dato">3</mark>  →  f(3) = <mark class="no">None</mark></div><p class="nota">Fine.</p></div>
+    <div class="passo"><div class="espr"><mark class="ok">List(0, 10, 20)</mark></div><p class="nota">Lo stato serve a ricordare; il valore è quello che esce.</p></div>
+  </figure>
+  <figure class="scena" data-scena="unfold" data-titolo="Stato dopo stato"></figure>
+</section>
+
+<section>
+  <h2>Perché <code>unfold</code>?</h2>
+  <p>Fa la stessa cosa della ricorsione scritta a mano, ma la ricorsione la scrive lui: tu descrivi <b>un passo solo</b>.</p>
+  <div class="colonne">
+    <div class="carta media"><h4>A mano</h4>
+<pre class="cod" data-lang="scala" data-segna="cons(f(h()), t().map(f))@ora|empty@no">def map[B](f: A => B): LazyList[B] =
+  this match
+    case Cons(h, t) =>
+      cons(f(h()), t().map(f))
+    case Empty => empty</pre></div>
+    <div class="carta buona"><h4>Con unfold</h4>
+<pre class="cod" data-lang="scala" data-segna="Some((f(h()), t()))@ok|None@no">def mapUnfold[B](f: A => B): LazyList[B] =
+  unfold(this) {
+    case Cons(h, t) =>
+      Some((f(h()), t()))
+    case Empty => None
+  }</pre></div>
+  </div>
+  <p>Cambiano due cose: dove scrivevi <code>cons(valore, &lt;ricorsione&gt;)</code> scrivi <code>Some((valore, nuovoStato))</code>; dove scrivevi <code>empty</code> scrivi <code>None</code>. <code>cons</code> e la chiamata ricorsiva li mette <code>unfold</code>, nella sua ultima riga: <code>case Some((a, s)) => cons(a, unfold(s)(f))</code>.</p>
+  <div class="box idea" data-tit="Il gemello di fold">
+    <p><code>foldRight</code> <b>consuma</b> una lista e dà un valore (esercizio 8). <code>unfold</code> parte da un valore (lo stato) e <b>costruisce</b> una lista (esercizio 13). In entrambi i casi non scrivi la ricorsione: nella scala di stile del corso è il passo da <i>forgivable</i> a <i>enlightened</i>.</p>
+  </div>
+  <div class="box domanda-tua" data-tit="Dubbio: unfold è ufficiale come cons?">
+    <p>No. Nel file il docente ha scritto <code>empty</code>, <code>cons</code>, <code>apply</code> (companion) e <code>headOption</code>, <code>tail</code>, <code>foldRight</code>, <code>foldLeft</code>, <code>find</code> (nell'enum). <code>unfold</code> l'hai scritto tu nell'esercizio 11. La <code>LazyList</code> della libreria standard di Scala, che il corso <b>non</b> usa, ne ha uno suo: <code>scala.collection.immutable.LazyList.unfold(1)(n => if n &gt; 4 then None else Some((n, n * 2)))</code> → <code>List(1, 2, 4)</code> (verificato).</p>
+  </div>
+  <figure class="passi" data-titolo="Misurato: unfold è avanti di un passo" data-legenda="ora:calcolato prima del necessario">
+    <div class="passo"><div class="espr testo">Stampo dentro la f dell'utente e chiedo 2 elementi su 3: <code>.map(…)</code> contro <code>.mapUnfold(…)</code>, poi <code>.take(2).toList</code>.</div><p class="nota">Stessa lista, stessa funzione.</p></div>
+    <div class="passo"><div class="espr">map (foldRight)         mapUnfold
+  lista creata            <mark class="ora">calcolo f(1)</mark>
+  calcolo f(1)            lista creata
+  calcolo f(2)            calcolo f(2)
+List(2, 4)                <mark class="ora">calcolo f(3)</mark>
+                        List(2, 4)</div><p class="nota"><code>unfold</code> deve chiamare <code>f</code> <b>prima</b>, per sapere se la risposta è <code>None</code> (lista finita) o <code>Some</code>. <code>foldRight</code> + <code>cons</code> invece tiene sospesa anche la testa. Output reale.</p></div>
+  </figure>
+  <figure class="scena" data-scena="perchunfold" data-titolo="map contro mapUnfold: chi calcola prima"></figure>
+</section>
+
+<section>
+  <h2>Tutto con <code>unfold</code> (esercizi 12–13)</h2>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Funzione</th><th>Stato</th><th>Regola</th></tr></thead>
+    <tbody>
+      <tr><td><code>from(n)</code></td><td>il numero attuale</td><td><code>unfold(n)(k => Some((k, k + 1)))</code></td></tr>
+      <tr><td><code>fibsUnfold</code></td><td>la coppia (a, b)</td><td><code>unfold((0, 1))((a, b) => Some((a, (b, a + b))))</code></td></tr>
+      <tr><td><code>mapUnfold(f)</code></td><td>la lista rimanente</td><td>se è un Cons, emetti <code>f(h())</code> e passa a <code>t()</code></td></tr>
+      <tr><td><code>takeUnfold(n)</code></td><td>(lista, quanti mancano)</td><td>se c'è una cella e mancano &gt; 0, emetti e scala di 1</td></tr>
+      <tr><td><code>zipWith</code></td><td>(lista 1, lista 2)</td><td>se entrambe hanno una cella, emetti <code>ope(h1(), h2())</code></td></tr>
+    </tbody>
+  </table></div>
+  <figure class="codice" data-titolo="Le versioni con unfold (verificate)">
+<pre data-lang="scala">lazy val fibsUnfold: LazyList[Int] =
+  unfold((0, 1))((a, b) => Some((a, (b, a + b))))
+
+def mapUnfold[B](f: A => B): LazyList[B] =
+  unfold(this) {
+    case Cons(h, t) => Some((f(h()), t()))
+    case Empty => None
+  }
+
+def takeUnfold(n: Int): LazyList[A] =
+  unfold((this, n)) {
+    case (Cons(h, t), k) if k &gt; 0 => Some((h(), (t(), k - 1)))
+    case _ => None
+  }
+
+def takeWhileUnfold(p: A => Boolean): LazyList[A] =
+  unfold(this) {
+    case Cons(h, t) if p(h()) => Some((h(), t()))
+    case _ => None
+  }
+
+def zipWith[B &gt;: A, C](ope: (=> B, => B) => C)(bs: LazyList[B]): LazyList[C] =
+  unfold((this, bs)) {
+    case (Cons(h1, t1), Cons(h2, t2)) => Some((ope(h1(), h2()), (t1(), t2())))
+    case _ => None
+  }</pre>
+    <ol class="spiega">
+      <li data-righe="2" data-segna="(0, 1)@dato|Some((a, (b, a + b)))@ok"><p>Lo stato è la finestra (a, b). Emetto <code>a</code>, il nuovo stato è <code>(b, a + b)</code>. <code>fibsUnfold.take(100).toList == fibs.take(100).toList</code> è vero.</p></li>
+      <li data-righe="5-8" data-segna="unfold(this)@dato|Some((f(h()), t()))@ok"><p>Lo stato è "la parte di lista che devo ancora leggere". Le graffe con dei <code>case</code> sono una funzione che fa pattern matching sul suo argomento.</p></li>
+      <li data-righe="11-14" data-segna="(this, n)@dato|if k &gt; 0@ora"><p>Lo stato è una coppia: la lista e quanti elementi mancano. Scrivi le parentesi doppie <code>unfold((this, n))</code>: si vede che è <b>un</b> argomento, lo stato.</p></li>
+      <li data-righe="12" data-segna="k@dato"><p>Da dove viene <code>k</code>? Non lo dichiari: nasce nel pattern, quando il <code>case</code> smonta la coppia. <code>n</code> resta fisso (è il parametro del metodo); quello che scende è il contatore <b>dentro lo stato</b>.</p></li>
+      <li data-righe="13" data-segna="case _ => None@no"><p><code>case _</code> raccoglie i due modi di finire: lista vuota <b>oppure</b> contatore a 0. Va per <b>ultimo</b>: i case si provano dall'alto.</p></li>
+      <li data-righe="16-20" data-segna="if p(h())@ora"><p><code>takeWhileUnfold</code>: come <code>mapUnfold</code>, ma la guardia decide se continuare. Predicato falso → si cade in <code>case _</code> → fine.</p></li>
+      <li data-righe="22" data-segna="ope: (=> B, => B) => C@ora"><p>Il testo sceglie un'operazione non strict: <code>ope</code> può ignorare un argomento senza calcolarlo (utile con <code>||</code> e <code>&amp;&amp;</code>).</p></li>
+      <li data-righe="23-26" data-segna="(this, bs)@dato|ope(h1(), h2())@ok|(t1(), t2())@due"><p>Lo stato sono le due liste. Si ferma appena una finisce.</p></li>
+    </ol>
+  </figure>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Caso di prova del testo</th><th>Risultato (verificato)</th></tr></thead>
+    <tbody>
+      <tr><td><code>naturals.zipWith[Int, Int](_+_)(naturals).take(2000000000).take(5).toList</code></td><td><code>List(2, 4, 6, 8, 10)</code></td></tr>
+      <tr><td><code>naturals.map(_%2==0).zipWith[Boolean, Boolean](_||_)(naturals.map(_%2==1)).take(4).toList</code></td><td><code>List(true, true, true, true)</code></td></tr>
+    </tbody>
+  </table></div>
+  <p>Il secondo: ogni numero è pari <b>oppure</b> dispari, quindi sempre <code>true</code>. Pensaci prima di eseguire, come chiede il testo.</p>
+  <div class="box inglese" data-tit="Esercizio 13: cosa devono dare i due casi di prova">
+    <p>"naturals.zipWith(_ + _)(naturals) adds each number to itself, so it gives the even numbers 2, 4, 6, …; take(2000000000) costs nothing, because it builds one node at a time. The Boolean one gives only true: every number is either even or odd. Since ope takes its operands by name, || never evaluates the second one once the first is true."</p>
+  </div>
+  <div class="errori">
+    <div class="errore">
+      <pre data-lang="scala">def takeUnfold(n: Int): LazyList[A] =
+  unfold(this,n) {
+    case Cons(h, t) => Some(f(h(), (t(), n-1)))
+    case Empty => None
+  }</pre>
+      <pre class="msg">Not found: f</pre>
+      <div class="fix">Copiato da <code>mapUnfold</code>: qui non c'è nessuna <code>f</code>, l'elemento esce così com'è. E sotto ci sono altri tre problemi che il compilatore non vede ancora: lo stato è una coppia, quindi il case deve essere <code>(Cons(h, t), k)</code>; <code>n</code> non scende mai, scende <code>k</code>; manca il controllo <code>if k &gt; 0</code>, senza il quale <code>naturals.takeUnfold(3)</code> non finisce.</div>
+    </div>
+    <div class="errore">
+      <pre data-lang="scala">unfold(this) {
+  case _          => None
+  case Cons(h, t) => Some((f(h()), t()))
+}</pre>
+      <pre class="msg">Unreachable case</pre>
+      <div class="fix"><code>case _</code> combacia con tutto: i case sotto non vengono mai provati. Con <code>-Werror</code> il file non compila. <code>case _</code> va per ultimo.</div>
+    </div>
+    <div class="errore">
+      <pre data-lang="scala">def mapUnfold[B](f: A => B): LazyList[B] = this match
+  case Cons(h, t) => Some((f(h()), t()))
+  case Empty => None</pre>
+      <pre class="msg">Found:    Some[(B, adpro.lazyList.LazyList[A])]
+Required: adpro.lazyList.LazyList[B]</pre>
+      <div class="fix">Senza <code>unfold</code> il metodo restituisce l'<code>Option</code>, che è la risposta di <code>f</code> a <code>unfold</code>, non la lista. Il <code>match</code> va <b>dentro</b> <code>unfold(this) { … }</code>: le graffe con i case sono proprio la funzione <code>f</code>.</div>
+    </div>
+  </div>
+  <figure class="scena" data-scena="takeunfold" data-titolo="Lo stato (lista, k) di takeUnfold"></figure>
+</section>
+
+</main>
+</body>
+</html>
