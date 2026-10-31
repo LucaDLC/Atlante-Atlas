@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Max-flow min-cut: the minimum cut</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+const N = (id,x,y,t) => ({id,tipo:'nodo',x,y,t,r:20});
+const A = (id,da,a,t,extra) => Object.assign({id,tipo:'arco',da,a,dir:true,t},extra||{});
+SCENE.cut = {
+  w: 540, h: 260, lato: true,
+  legenda: 'ok:reachable from s in the residual network,no:arc of the cut (capacity = value of the flow),dato:side t',
+  oggetti: [
+    N('s',60,130,'s'), N('a',240,50,'a'), N('b',240,210,'b'), N('t',420,130,'t'),
+    A('sa','s','a','1/1'), A('sb','s','b','1/1'), A('ab','a','b','0/1'), A('at','a','t','1/1'), A('bt','b','t','1/1'),
+    {id:'c1',tipo:'testo',x:20,y:250,t:'',size:12,bold:true,anchor:'start'}
+  ],
+  passi: [
+    { nota: 'Maximum flow in the previous network. I compute the residual network and the set <b>A</b> of the nodes reachable from s.', set:{s:{tono:'ok'},c1:{t:'A = ?'}} },
+    { nota: 'From s: s → a is saturated, s → b is saturated. No residual arc leaves s: <b>A = {s}</b>.', set:{s:{tono:'ok'},sa:{tono:'no'},sb:{tono:'no'},c1:{t:'A = {s}'}} },
+    { nota: 'The cut (A, B) has capacity: arcs from A towards B, that is s → a and s → b: <b>1 + 1 = 2</b>. It is equal to the maximum flow: max-flow = min-cut.', set:{c1:{t:'capacità del taglio = 2 = flusso massimo',tono:'ok'}} }
+  ]
+};
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Max-flow min-cut: the minimum cut</h1>
+  <p class="lede">The max-flow min-cut theorem says that the value of the maximum flow equals the capacity of the minimum cut. The cut is read from the final residual network, and with disjoint paths it gives Menger's theorem.</p>
+</header>
+
+<section>
+  <h2>The cut</h2>
+<p>A <b>cut</b> <code>(A, B)</code> divides the nodes into two sets, with <code>s ∈ A</code> and <code>t ∈ B</code>. Its <b>capacity</b> is the sum of the capacities of the arcs going from <code>A</code> to <code>B</code>. Every flow crosses the cut: so the value of the flow is at most the capacity of the cut.</p>
+  <figure class="scena" data-scena="cut" data-titolo="The cut from the final residual network"></figure>
+</section>
+<section>
+  <h2>The theorem</h2>
+<p><b>Max-flow min-cut</b>: value of the maximum flow = capacity of the minimum cut. The cut is found at the end: <code>A</code> is the set of nodes reachable from <code>s</code> in the final residual network. The arcs leaving <code>A</code> are the cut.</p>
+</section>
+<section>
+  <h2>Menger: disjoint paths</h2>
+<p><b>Menger</b>: the maximum number of <b>arc-disjoint</b> <code>s–t</code> paths equals the minimum number of arcs to remove to detach <code>t</code> from <code>s</code>. For nodes (node-disjoint paths, or nodes to remove) the node-split gadget is used (see the gadgets page).</p>
+</section>
+<section>
+  <h2>Project selection: choosing with the cut</h2>
+  <p>You have projects, each with a <b>profit</b> <code>pᵢ</code>. The profit can be negative: it is a cost. Some projects <b>require</b> others: if you take <i>i</i>, you must also take <i>j</i>. You want the feasible set of maximum profit.</p>
+  <p>The trick: the minimum cut decides on which side each project lies. I build the network:</p>
+  <ul>
+    <li><code>s → i</code> with capacity <code>pᵢ</code>, if <code>pᵢ &gt; 0</code>. If I leave the project out of the side of <code>s</code>, I pay <code>pᵢ</code>.</li>
+    <li><code>i → t</code> with capacity <code>−pᵢ</code>, if <code>pᵢ &lt; 0</code>. If I take it (on the side of <code>s</code>), I pay the cost.</li>
+    <li><code>i → j</code> with capacity <code>∞</code>, if <i>i</i> requires <i>j</i>. <code>∞</code> means "not cuttable": a finite cut cannot have <i>i</i> on the side of <code>s</code> and <i>j</i> on the other, so the requirements are respected.</li>
+  </ul>
+  <p>Let <code>C</code> be the sum of the positive profits. For a cut <code>(A, B)</code> with <code>s</code> in <code>A</code>, I take the projects of <code>A</code>. The cost of the cut is <code>C − profit(A)</code>: I pay the positive profits left out and the costs of those taken. So:</p>
+  <p><code>maximum profit = C − minimum cut</code></p>
+  <figure class="scena" data-scena="proj" data-titolo="Project selection: the minimum cut says which projects to take"></figure>
+  <p>The Kattis problem <i>Open-Pit Mining</i> is exactly this: each block of rock is a project with a profit (value of the ore minus the digging cost), and to dig a block you must have dug those that cover it. The flow code is that of <i>Ford-Fulkerson</i>, with the matrix of residuals.</p>
+  <p>Other models of chapter 7. Each row is a pattern: the work is recognising the shape in the text.</p>
+  <div class="tab-wrap"><table class="tab"><thead><tr><th>problem</th><th>idea of the network</th></tr></thead><tbody>
+    <tr><td>bipartite matching</td><td>left → right, capacity 1; source and sink (see <i>Bipartite matching via flow</i>)</td></tr>
+    <tr><td>disjoint paths on the arcs</td><td>capacity 1 on each arc</td></tr>
+    <tr><td>disjoint paths on the nodes</td><td>each node is split in two (see <i>Reducing to a flow: recipe and gadget</i>)</td></tr>
+    <tr><td>circulation with demands</td><td>node <i>v</i> with demand <code>dᵥ</code>: super-source <code>s*</code> → those who produce (capacity −dᵥ), those who consume → super-sink <code>t*</code> (capacity dᵥ). A circulation exists if the maximum flow saturates all the arcs of <code>s*</code></td></tr>
+    <tr><td>lower bounds <code>ℓₑ ≤ f(e)</code></td><td>I immediately move <code>ℓₑ</code> on each arc, adjust the demands and look for a circulation with capacity <code>cₑ − ℓₑ</code></td></tr>
+    <tr><td>survey design</td><td>customers and products as in matching, with lower and upper limits on how many questions per customer and per product</td></tr>
+    <tr><td>airline scheduling</td><td>flights as arcs with lower limit 1 (they must be covered); the planes are the flow</td></tr>
+    <tr><td>image segmentation</td><td>minimum cut: each pixel is "foreground" or "background"; the arcs pay the wrong probability and the separation between neighbouring pixels</td></tr>
+    <tr><td>project selection</td><td>see above: positive profits from <code>s</code>, costs towards <code>t</code>, requirements with <code>∞</code></td></tr>
+    <tr><td>baseball elimination</td><td>the remaining games are nodes that distribute wins to the teams; the team is eliminated if the flow does not saturate</td></tr>
+  </tbody></table></div>
+</section>
+<section>
+  <h2>At the exam</h2>
+<div class="box esame" data-tit="At the exam">
+<p>"The minimum number of things to destroy to separate s from t" → min cut = max flow (Menger). Phrase: <i>"By the max-flow min-cut theorem, the minimum cut value equals the value of a maximum flow. The min cut is the set of arcs leaving the nodes reachable from s in the final residual network."</i></p>
+</div>
+</section>
+<section>
+  <h2>Quick reference</h2>
+<div class="tab-wrap"><table class="tab"><thead><tr><th>concept</th><th>meaning</th><th>note</th></tr></thead><tbody><tr><td>cut (A, B)</td><td>set with s inside, t outside</td><td>capacity = arcs A → B</td></tr><tr><td>max-flow = min-cut</td><td>same number</td><td>theorem</td></tr><tr><td>Menger</td><td>disjoint paths = arcs to remove</td><td>special case</td></tr></tbody></table></div>
+</section>
+
+</main>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+const N = (id,x,y,t) => ({id,tipo:'nodo',x,y,t,r:22});
+const A = (id,da,a,t,extra) => Object.assign({id,tipo:'arco',da,a,dir:true,t},extra||{});
+const ogg = [
+  N('S',50,150,'s'), N('T',490,150,'t'),
+  N('pa',220,60,'a +5'), N('pc',220,240,'c +4'), N('pb',370,150,'b −2'),
+  A('sa','S','pa','5',{tono:'dato'}), A('sc','S','pc','4',{tono:'dato'}),
+  A('ab','pa','pb','∞',{tono:'dato'}), A('cb','pc','pb','∞',{tono:'dato'}),
+  A('bt','pb','T','2',{tono:'dato'}),
+  {id:'c',tipo:'testo',x:40,y:292,t:'',size:12,bold:true,anchor:'start'}
+];
+const passi = [
+  {nota:"Tre progetti: <b>a</b> vale +5, <b>c</b> vale +4, <b>b</b> costa 2 (profitto −2). <b>a</b> richiede <b>b</b>, e anche <b>c</b> richiede <b>b</b>. Voglio il profitto massimo di un insieme che rispetta le richieste.", set:{c:{t:'profitto massimo: quali progetti prendere?'}}},
+  {nota:"Regole. Profitto positivo: arco <b>s → progetto</b> con quella capacità (5 e 4). Costo: arco <b>progetto → t</b> (2). Richiesta: arco <b>∞</b> verso il prerequisito, così il taglio non può separare i due progetti.", set:{sa:{tono:'ora'}, sc:{tono:'ora'}, bt:{tono:'ora'}, ab:{tono:'ora'}, cb:{tono:'ora'}, c:{t:'profitti da s, costi verso t, richieste ∞'}}},
+  {nota:"C = 5 + 4 = 9 è la somma dei profitti positivi. Taglio con <b>A = {s, a, b, c}</b>: tutti i progetti dal lato di s. Taglia solo l’arco <b>b → t</b>, capacità 2. Costo = C − profitto(A) = 9 − (5 − 2 + 4) = 2.", set:{sa:{tono:'dato'}, sc:{tono:'dato'}, ab:{tono:'dato'}, cb:{tono:'dato'}, bt:{tono:'no'}, c:{t:'taglio A = {s, a, b, c}: costa 2'}}},
+  {nota:"Il taglio minimo è 2: non esiste nulla di più economico. Quindi profitto massimo = C − 2 = <b>7</b>: prendo <b>a, b e c</b> insieme. Il lato di <b>s</b> del taglio minimo dice quali progetti prendere.", set:{bt:{tono:'ok'}, c:{t:'profitto massimo = 9 − 2 = 7: prendo a, b, c', tono:'ok'}}}
+];
+SCENE.proj = {
+  w: 540, h: 310, lato: true,
+  legenda: 'ok:projects taken,no:arc cut,ora:rule in use,dato:capacity',
+  oggetti: ogg, passi
+};
+})();
+</script>
+</body>
+</html>

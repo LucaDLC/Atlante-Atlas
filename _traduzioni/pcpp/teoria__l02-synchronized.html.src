@@ -1,0 +1,63 @@
+@@s001 synchronized: lock intrinseci
+@@s002 dato:t1,due:t2,no:accesso non protetto,ok:protetto
+@@s003 <p><code>sum</code> è <b>static</b>: una sola variabile per tutta la classe. t1 chiama <code>m.addInstance(1)</code>, t2 chiama <code>Mystery.addStatic(1)</code>.</p>
+@@s004 <p><code>addInstance</code> è <code>synchronized</code> <b>d'istanza</b>: t1 prende il lock dell'oggetto <code>m</code>.</p>
+@@s005 <p><code>addStatic</code> è <code>static synchronized</code>: t2 prende il lock dell'oggetto <code>Mystery.class</code>. È un <b>altro</b> lock, libero: t2 <b>non si blocca</b>.</p>
+@@s006 <p>Entrambi eseguono <code>sum += x</code> nello stesso momento. I due lock non si escludono a vicenda: <b>data race</b> su <code>sum</code> e incrementi persi (verificato: circa 1,5–1,7 milioni invece di 2).</p>
+@@s007 <p><b>Correzione</b> (esercizio 2.3.3): dentro <code>addInstance</code> si sincronizza su <code>Mystery.class</code>. Ora t1 e t2 usano lo <b>stesso</b> lock.</p>
+@@s008 <p>Se t1 ha il lock della classe, t2 aspetta, e viceversa: gli accessi a <code>sum</code> sono in mutua esclusione. Risultato sempre 2 000 000 (verificato).</p>
+@@s009 dato:thread,ora:ha il lock di o,no:eccezione,ok:lock rilasciato
+@@s010 dato:lock dell’oggetto c1,due:lock dell’oggetto c2,ora:lock della classe,no:in attesa
+@@s011 no:errore,ok:corretto,dato:thread
+@@s012 synchronized: lock intrinseci
+@@s013 In Java <b>ogni oggetto</b> ha già dentro un lock con una condition variable: il lock <b>intrinseco</b> (le specifiche Java lo chiamano monitor). Si usa con la parola chiave <code>synchronized</code>. Il punto delicato è capire <b>quale oggetto</b> fa da lock.
+@@s014 Blocco <code>synchronized</code> = lock + try/finally
+@@s015 In Java ogni oggetto ha già dentro un lock, detto <b>lock intrinseco</b> (o monitor lock). La parola chiave <code>synchronized</code> lo usa senza dover creare un <code>ReentrantLock</code>: prende il lock entrando in un blocco o in un metodo e lo rilascia uscendo. Fa la stessa cosa dell'idioma lock + try/finally, con meno righe e senza la possibilità di dimenticare l'unlock.
+@@s016 Con un Lock
+@@s017 Con il lock intrinseco
+@@s018 Il lock di <code>o</code> si prende entrando nel blocco e si rilascia uscendo, <b>anche</b> con un'eccezione. Ed è rientrante.
+@@s019 Il lock si rilascia anche con un'eccezione
+@@s020 Su un metodo: quale lock?
+@@s021 <code>synchronized</code> si può scrivere anche davanti a un metodo. Allora la domanda importante è: <b>quale oggetto</b> fornisce il lock? Dipende da se il metodo è d'istanza o static, e sbagliare questa risposta è l'errore dell'esercizio 2.3.
+@@s022 Tre scritture, due lock diversi
+@@s023 Metodo d'istanza synchronized…
+@@s024 …equivale a sincronizzare su <b><code>this</code></b>: il lock dell'oggetto su cui chiami il metodo. Due oggetti <code>C</code> diversi = due lock diversi.
+@@s025 Metodo static synchronized…
+@@s026 …equivale a sincronizzare su <b><code>C.class</code></b>, l'oggetto che rappresenta la classe. Ce n'è uno solo: tutti i chiamanti usano lo stesso lock.
+@@s027 Scritto
+@@s028 Lock usato
+@@s029 Esempio della slide 44–45
+@@s030 <code>synchronized</code> su metodo d'istanza
+@@s031 l'oggetto <code>this</code>
+@@s032 due thread con <code>new C()</code> diversi: <b>lock diversi</b>, nessuna attesa
+@@s033 <code>static synchronized</code>
+@@s034 l'oggetto <code>C.class</code>
+@@s035 due thread con <code>new C()</code> diversi: <b>stesso lock</b>
+@@s036 <code>synchronized (x) { … }</code>
+@@s037 l'oggetto <code>x</code>
+@@s038 scegli tu l'oggetto
+@@s039 this contro C.class
+@@s040 Esercizio 2.3: la classe <code>Mystery</code>
+@@s041 Tutto è <code>private</code> e tutti i metodi sono <code>synchronized</code>: sembra sicura. Non lo è.
+@@s042 Due lock diversi sulla stessa variabile
+@@s043 La correzione senza cambiare static/istanza (compilata ed eseguita)
+@@s044 <code>addStatic</code> usa il lock di <code>Mystery.class</code>.
+@@s045 Anche l'accesso a <code>sum</code> in <code>addInstance</code> ora usa <code>Mystery.class</code>. Il testo vieta di cambiare i modificatori, e questa modifica li lascia intatti.
+@@s046 Il <code>synchronized</code> d'istanza rimasto non fa danni (prende anche il lock di <code>m</code>), ma non è quello che protegge <code>sum</code>.
+@@s047 Esercizio 2.3.4: serve synchronized su sum()?
+@@s048 In <b>questo</b> programma no: <code>main</code> chiama <code>sum()</code> dopo <code>t1.join()</code> e <code>t2.join()</code>. Le ultime scritture dei thread vengono prima del join per la regola di terminazione (lezione 3), quindi la lettura vede i valori finali senza data race. In una classe usata da thread che leggono <b>mentre</b> altri scrivono, invece, servirebbe.
+@@s049 In inglese (2.3.2)
+@@s050 "A synchronized instance method locks <code>this</code>, the Mystery object, while a static synchronized method locks <code>Mystery.class</code>. Since t1 and t2 hold different locks, their executions of <code>sum += x</code> are not mutually exclusive, and the non-atomic read-modify-write on the static field sum can interleave and lose updates."
+@@s051 <code>wait()</code>, <code>notify()</code>, <code>notifyAll()</code>
+@@s052 Con <code>ReentrantLock</code> + <code>Condition</code>
+@@s053 Con <code>synchronized</code>
+@@s054 <code>c.await()</code>
+@@s055 <code>o.wait()</code>
+@@s056 <code>c.signal()</code>
+@@s057 <code>o.notify()</code>
+@@s058 <code>c.signalAll()</code>
+@@s059 <code>o.notifyAll()</code>
+@@s060 più condizioni per lock (<code>newCondition()</code>)
+@@s061 una sola condizione per oggetto
+@@s062 In un metodo <code>synchronized</code> si scrive <code>this.wait()</code>. <code>wait()</code> e <code>notify()</code> vanno chiamati <b>tenendo</b> il lock di quell'oggetto, cioè dentro <code>synchronized</code> su di esso.
+@@s063 wait senza il lock: l'errore

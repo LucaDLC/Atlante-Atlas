@@ -1,0 +1,56 @@
+@@s001 Cache og koherens: MESI-protokollen
+@@s002 <span>Uge 9 · Performance</span>
+@@s003 Cache og koherens: MESI-protokollen
+@@s004 CPU'en er hurtigere end RAM'en, og cachen lukker kløften. Med flere kerner har hver cache en kopi af dataene, og kopierne skal være enige: det er MESI-protokollens opgave.
+@@s005 Broen mellem CPU og RAM
+@@s006 CPU'en arbejder meget hurtigere end RAM'en. <b>Cachen</b> er en lille, hurtig hukommelse tæt på CPU'en, der holder kopier af de data, der er brugt for nylig. Den virker godt på grund af <b>lokalitet i adgangen</b>: hvis et datum skal bruges nu, skal det sandsynligvis bruges igen, og data, der ligger tæt i hukommelsen, bruges ofte sammen.
+@@s007 En læsning fra hukommelsen
+@@s008 dato:den forespurgte adresse,ora:trin i gang,ok:hurtig,no:langsom
+@@s009 Det første trin er altid at lede efter den i cachen.
+@@s010 Det er det gode tilfælde: dataene er allerede der, og RAM'en røres ikke.
+@@s011 Cachen kopierer en hel blok, ikke en enkelt byte: så de nærliggende data er allerede klar.
+@@s012 Flere kerner, flere caches
+@@s013 Hver kerne har sine egne caches. Den samme hukommelsesadresse kan derfor være i flere caches samtidigt. Hukommelsesblokken, som cachen kopierer, kaldes en <b>cache-linje</b>: normalt 64 byte. Cachene skal blive enige om værdien af hver linje: mekanismen kaldes en <b>koherensprotokol</b>, og i slides er det <b>MESI</b>, opkaldt efter dens fire tilstande.
+@@s014 MESI-tilstandene
+@@s015 Hver cache-linje, i hver kerne, er i en af fire tilstande:
+@@s016 tilstand
+@@s017 betydning
+@@s018 er RAM'en opdateret?
+@@s019 <b>M</b> Modified
+@@s020 ændret kopi, til stede kun i denne cache
+@@s021 no: RAM'en har den gamle værdi
+@@s022 <b>E</b> Exclusive
+@@s023 uændret kopi, til stede kun her
+@@s024 ja
+@@s025 <b>S</b> Shared
+@@s026 uændret kopi, til stede i flere caches
+@@s027 ja
+@@s028 <b>I</b> Invalid
+@@s029 linjen er ikke gyldig: den skal læses igen
+@@s030 For at skrive på en linje i tilstand S skal kernen først sende en <b>invalidate</b>-besked til de andre caches og vente på deres bekræftelse (<i>ack</i>). Først da bliver linjen M.
+@@s031 Hurtig eller langsom
+@@s032 Hastigheden afhænger af, hvad kernen vil gøre, og af linjens tilstand i dens cache. De vigtigste rækker i sliden:
+@@s033 aktuel tilstand
+@@s034 kernen vil
+@@s035 hastighed
+@@s036 læse eller skrive
+@@s037 hurtig: dataene er allerede dens egne
+@@s038 læse
+@@s039 hurtig: kopien er gyldig
+@@s040 læse
+@@s041 langsom: den skal hentes fra en anden cache eller fra RAM'en
+@@s042 skrive
+@@s043 meget langsom: invalidate til alle de andre kopier
+@@s044 skrive
+@@s045 meget langsom: først læse, derefter invalidate
+@@s046 To kerner på den samme linje
+@@s047 dato:værdi,ora:hvad der ændrer sig,ok:stabil tilstand,no:høj omkostning
+@@s048 Ingen andre har den: kopien er dens egen, og RAM'en er opdateret.
+@@s049 To identiske og rene kopier: hurtige læsninger for begge.
+@@s050 At skrive på S koster: invalidate-beskeden skal nå den anden kerne.
+@@s051 Hver udveksling af skrivning og læsning mellem to kerner koster en tur på bussen: ping-pong'en på den næste side.
+@@s052 Hvad det betyder for koden
+@@s053 Idéen
+@@s054 Omkostningen ligger ikke i beregningen, den ligger i flytningen af linjerne mellem caches. Et datum, der kun skrives af én tråd, bliver i M i dens cache: hurtigt. Et datum, der skrives af flere tråde, går frem og tilbage: langsomt.
+@@s055 Hvis du kommer fra…
+@@s056 Hvis du kun har brugt tråde uden at tænke på hukommelsen, er det den del, der mangler: der findes ikke én enkelt "værdi" i hukommelsen, der findes kopier i flere caches, som skal være enige.

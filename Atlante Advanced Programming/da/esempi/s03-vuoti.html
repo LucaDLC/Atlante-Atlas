@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Eksempler: Nil, None, null i Scala</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <div class="occhiello"><span>Eksempler · lister og Option</span></div>
+  <h1>Eksempler: Nil, None, null i Scala</h1>
+  <p class="lede">Koden fra <a href="../teoria/s03-vuoti.html">teorisiden</a>: en fil, der kan kompileres og køres. Kontrolleret med Scala 3.8.4 og kursets indstillinger (<code>-Werror</code>, <code>-source:future</code>).</p>
+</header>
+
+<section>
+  <h2>Hele filen</h2>
+  <p>Kør den med <code>scala-cli run NilNone.scala</code>.</p>
+  <figure class="codice" data-titolo="NilNone.scala">
+<pre data-lang="scala">//&gt; using scala 3.8.4
+//&gt; using options -Werror -deprecation -feature -source:future
+
+val lista: List[Int] = 1 :: 2 :: Nil
+val vuota: List[Int] = Nil
+
+val trovato: Option[Int] = Some(3)
+val niente: Option[Int] = None
+
+def primoOpzione(xs: List[Int]): Option[Int] = xs match
+  case Nil =&gt; None
+  case h :: _ =&gt; Some(h)
+
+@main def esempiNilNone(): Unit =
+  println(lista)
+  println(vuota.isEmpty)
+  println(Nil == List())
+  println(primoOpzione(lista))
+  println(primoOpzione(vuota))
+  println(trovato.getOrElse(0))
+  println(niente.getOrElse(0))
+  println(Option(null: String))
+  println(Option("ciao"))
+  println(None == null)
+  val testo: String = null
+  println(testo == null)
+  try
+    println(testo.length)
+  catch
+    case e: NullPointerException =&gt; println("NPE su null")</pre>
+    <ol class="spiega">
+      <li data-righe="1-2"><p>Direktiver til <code>scala-cli</code>: Scala-version og kontroller. <code>-Werror</code> gør advarsler til fejl.</p></li>
+      <li data-righe="4" data-segna="1 :: 2 :: Nil@ora"><p>Liste bygget med <code>::</code> (tilføjer forrest) og afsluttet med <code>Nil</code>, den tomme liste. Det udskrevne resultat er <code>List(1, 2)</code>.</p></li>
+      <li data-righe="5" data-segna="val vuota: List[Int] = Nil@ora"><p>Liste uden elementer: <code>Nil</code> er en gyldig liste, og <code>isEmpty</code> siger <code>true</code>.</p></li>
+      <li data-righe="7-8" data-segna="None@ora"><p>To <code>Option</code>: <code>Some(3)</code> har en værdi, <code>None</code> siger, at der ikke er noget.</p></li>
+      <li data-righe="10-12" data-segna="case Nil =&gt; None@ora"><p>Funktion, der måske ikke har et resultat. Mønsteret <code>Nil</code> genkender den tomme liste og returnerer <code>None</code> i stedet for en opdigtet værdi.</p></li>
+      <li data-righe="14-16" data-segna="vuota.isEmpty@ora"><p><code>Nil</code> er en liste: <code>isEmpty</code> og <code>==</code> virker som for enhver liste.</p></li>
+      <li data-righe="18-19" data-segna="primoOpzione(vuota)@ora"><p>Med en liste, der ikke er tom, giver den <code>Some(1)</code>, med <code>Nil</code> giver den <code>None</code>: den, der kalder, skal håndtere begge tilfælde.</p></li>
+      <li data-righe="20-21" data-segna="getOrElse(0)@ora"><p><code>getOrElse</code> giver værdien inde i <code>Some</code>, eller reserveværdien hvis det er <code>None</code>.</p></li>
+      <li data-righe="22" data-segna="Option(null: String)@ora"><p><code>Option(x)</code> omsætter <code>null</code> til <code>None</code>: den sikre måde at bringe en Java-værdi ind i Scala.</p></li>
+      <li data-righe="23" data-segna="Option(&quot;ciao&quot;)@ora"><p>En værdi, der ikke er null, bliver til <code>Some(ciao)</code>.</p></li>
+      <li data-righe="24" data-segna="None == null@no"><p>De er forskellige værdier: sammenligningen giver <code>false</code>. Bland ikke de to måder at sige "intet" på.</p></li>
+      <li data-righe="25-26" data-segna="val testo: String = null@no"><p>Compileren accepterer <code>null</code> som <code>String</code>. Risikoen er at bruge det: sammenligningen med <code>null</code> giver <code>true</code>.</p></li>
+      <li data-righe="27-30" data-segna="testo.length@no"><p>At spørge en <code>null</code> om <code>.length</code> kaster <code>NullPointerException</code>: derfor omsætter man straks til <code>Option</code>.</p></li>
+    </ol>
+  </figure>
+</section>
+
+<section>
+  <h2>Outputtet</h2>
+  <figure class="codice" data-titolo="Output fra kørslen">
+<pre data-lang="text">1
+List(1, 2)
+true
+true
+Some(1)
+None
+3
+0
+None
+Some(ciao)
+false
+true
+NPE su null</pre>
+    <ol class="spiega">
+      <li data-righe="1"><p>Listen bygget med <code>::</code> og afsluttet med <code>Nil</code>.</p></li>
+      <li data-righe="2-3"><p><code>Nil</code> er tom og lig med <code>List()</code>.</p></li>
+      <li data-righe="4-5"><p>Funktionen med <code>Nil</code> som input giver <code>None</code>.</p></li>
+      <li data-righe="6-7"><p><code>getOrElse</code> vælger værdien eller reserveværdien: <code>3</code> og <code>0</code>.</p></li>
+      <li data-righe="8-9"><p><code>Option(null)</code> giver <code>None</code>, <code>Option("ciao")</code> giver <code>Some(ciao)</code>.</p></li>
+      <li data-righe="10"><p>Sammenligningen mellem <code>None</code> og <code>null</code> giver <code>false</code>.</p></li>
+      <li data-righe="11-12"><p><code>testo == null</code> giver <code>true</code>; <code>NullPointerException</code> fanges af <code>try</code>.</p></li>
+    </ol>
+  </figure>
+</section>
+
+</main>
+</body>
+</html>

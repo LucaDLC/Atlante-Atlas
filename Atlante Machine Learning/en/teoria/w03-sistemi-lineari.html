@@ -1,0 +1,319 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Linear systems, inverse, determinant</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  const T = (id, x, y, t, extra) => Object.assign({ id, tipo: 'testo', x, y, t, size: 14 }, extra || {});
+  const G = (id, x, y, vals, extra) => Object.assign({ id, tipo: 'griglia', x, y, cw: 50, ch: 40, valori: vals }, extra || {});
+
+  // 1. dal sistema alla matrice
+  SCENE.allamatrice = {
+    w: 600, h: 250, lato: true,
+    legenda: 'dato:coefficients,ora:unknowns,ok:constant terms',
+    oggetti: [
+      T('e1', 150, 40, '2·x + 1·y = 4', { size: 17, bold: true }), T('e2', 150, 76, '1·x + 3·y = 7', { size: 17, bold: true }),
+      G('A', 50, 130, [['', ''], ['', '']]), T('tA', 100, 118, 'A', { bold: true }),
+      G('x', 170, 130, [[''], ['']]), T('tx', 195, 118, 'x', { bold: true }),
+      T('eq', 250, 170, '=', { size: 20, bold: true }),
+      G('b', 275, 130, [[''], ['']]), T('tb', 300, 118, 'b', { bold: true }),
+      T('c', 470, 150, '', { size: 16, bold: true }), T('c2', 470, 186, '', { size: 13 })
+    ],
+    passi: [
+      { nota: "Un sistema di due equazioni lineari in due incognite, x e y. \"Lineare\" vuol dire: ogni incognita è solo moltiplicata per un numero, poi si somma (niente x², niente x·y)." },
+      { nota: "I <b>coefficienti</b> (i numeri davanti alle incognite) vanno nella matrice A, <b>una riga per equazione</b>.", set: { A: { valori: [['2', '1'], ['1', '3']], toni: { '0,0': 'dato', '0,1': 'dato', '1,0': 'dato', '1,1': 'dato' } } } },
+      { nota: "Le <b>incognite</b> vanno in un vettore x, nello stesso ordine delle colonne: prima x, poi y.", set: { x: { valori: [['x'], ['y']], toni: { '0,0': 'ora', '1,0': 'ora' } } } },
+      { nota: "I <b>termini noti</b> (a destra dell'uguale) vanno in un vettore b.", set: { b: { valori: [['4'], ['7']], toni: { '0,0': 'ok', '1,0': 'ok' } } } },
+      { nota: "Tutto il sistema diventa <b>Ax = b</b>. Controllo: la riga 1 di A per x dà 2x + 1y, cioè il lato sinistro della prima equazione. È la vista per righe del prodotto matrice-vettore.", set: { c: { t: 'A x = b', tono: 'ok' }, c2: { t: 'riga i di A · x = bᵢ' } } }
+    ]
+  };
+
+  // 2. vista per righe: due rette
+  SCENE.righe = {
+    w: 600, h: 280, lato: true,
+    legenda: 'dato:first equation,due:second equation,ok:solution',
+    oggetti: [
+      { id: 'ax', tipo: 'assi', box: [40, 25, 280, 240], dom: [-1, 5, -1, 4], tacche: 1, etX: 'x', etY: 'y' },
+      { id: 'l1', tipo: 'linea', in: 'ax', x1: 0, y1: 4, x2: 2.5, y2: -1, tono: 'dato', nascosto: true },
+      { id: 'l2', tipo: 'linea', in: 'ax', x1: -1, y1: 2.667, x2: 5, y2: 0.667, tono: 'due', nascosto: true },
+      { id: 's', tipo: 'punto', in: 'ax', x: 1, y: 2, t: '(1, 2)', tono: 'ok', nascosto: true },
+      T('c1', 470, 60, '', { size: 13, tono: 'dato' }), T('c2', 470, 90, '', { size: 13, tono: 'due' }), T('c3', 470, 140, '', { bold: true }), T('c4', 470, 170, '', { size: 13 })
+    ],
+    passi: [
+      { nota: "<b>Vista per righe</b> (<i>row picture</i>): ogni equazione è una retta, l'insieme dei punti che la rendono vera." },
+      { nota: "Prima equazione, 2x + y = 4: la retta blu. Ogni punto della retta la soddisfa, per esempio (0, 4) e (2, 0).", set: { l1: { nascosto: false }, c1: { t: '2x + y = 4' } } },
+      { nota: "Seconda equazione, x + 3y = 7: la retta viola.", set: { l2: { nascosto: false }, c2: { t: 'x + 3y = 7' } } },
+      { nota: "La <b>soluzione</b> del sistema è il punto che sta su <b>entrambe</b> le rette: la loro intersezione, (1, 2).", set: { s: { nascosto: false }, c3: { t: 'soluzione: (1, 2)', tono: 'ok' } } },
+      { nota: "Controllo sostituendo: 2·1 + 2 = 4 ✓ e 1 + 3·2 = 7 ✓. Con tre incognite ogni equazione è un piano, e la soluzione è il punto comune ai piani.", set: { c4: { t: '2 + 2 = 4 ✓   1 + 6 = 7 ✓' } } }
+    ]
+  };
+
+  // 3. tre casi (scena originale)
+  SCENE.rette = {
+    w: 400, h: 300, lato: true,
+    legenda: 'dato:first equation,due:second equation,ok:solution,no:no solution',
+    oggetti: [
+      { id: 'ax', tipo: 'assi', box: [40, 25, 300, 250], dom: [-1, 5, -1, 4], tacche: 1, etX: 'x', etY: 'y' },
+      { id: 'l1', tipo: 'linea', in: 'ax', x1: 0, y1: 4, x2: 2.5, y2: -1, tono: 'dato' },
+      { id: 'l2', tipo: 'linea', in: 'ax', x1: -1, y1: 2.667, x2: 5, y2: 0.667, tono: 'due' },
+      { id: 's', tipo: 'punto', in: 'ax', x: 1, y: 2, t: '(1, 2)', nascosto: true },
+      { id: 'eq', tipo: 'testo', x: 200, y: 292, t: '2x + y = 4    ·    x + 3y = 7', size: 13, bold: true }
+    ],
+    passi: [
+      { nota: 'Two equations in two unknowns: two lines. Three things can happen.' },
+      { nota: '<b>One solution</b>: the lines meet at one point, (1, 2). The determinant of [[2, 1], [1, 3]] is 5 ≠ 0.', set: { s: { nascosto: false, tono: 'ok' } } },
+      { nota: '<b>No solution</b>: x + 2y = 3 and 2x + 4y = 10 are <b>parallel</b> (same slope, different lines). The determinant of [[1, 2], [2, 4]] is 0.', set: { s: { nascosto: true }, l1: { x1: -1, y1: 2, x2: 5, y2: -1, tono: 'dato' }, l2: { x1: -1, y1: 3, x2: 5, y2: 0, tono: 'no' }, eq: { t: 'x + 2y = 3    ·    2x + 4y = 10' } } },
+      { nota: '<b>Infinitely many solutions</b>: x + 2y = 3 and 2x + 4y = 6 are the <b>same line</b> (the second is the first times 2). Every point of the line is a solution. Determinant always 0.', set: { l2: { x1: -1, y1: 2, x2: 5, y2: -1, tono: 'ok' }, l1: { tono: 'ok' }, eq: { t: 'x + 2y = 3    ·    2x + 4y = 6' } } }
+    ]
+  };
+
+  // 4. vista per colonne
+  SCENE.percolonne = {
+    w: 600, h: 290, lato: true,
+    legenda: 'due:columns of A,ora:weighted columns,ok:b',
+    oggetti: [
+      { id: 'ax', tipo: 'assi', box: [50, 20, 260, 250], dom: [-0.5, 5, -0.5, 8], tacche: 1, etX: '', etY: '' },
+      { id: 'b', tipo: 'punto', in: 'ax', x: 4, y: 7, t: 'b = [4, 7]', tono: 'ok', tx: -80 },
+      { id: 'a1', tipo: 'vett', in: 'ax', x1: 0, y1: 0, x2: 2, y2: 1, t: 'a₁', tono: 'due' },
+      { id: 'a2', tipo: 'vett', in: 'ax', x1: 0, y1: 0, x2: 1, y2: 3, t: 'a₂', tx: -22, tono: 'due' },
+      { id: 'p1', tipo: 'vett', in: 'ax', x1: 0, y1: 0, x2: 2, y2: 1, t: '', tono: 'ora', nascosto: true },
+      { id: 'p2', tipo: 'vett', in: 'ax', x1: 2, y1: 1, x2: 4, y2: 7, t: 'y·a₂', tx: 10, tono: 'ora', nascosto: true },
+      T('c1', 470, 50, 'x·a₁ + y·a₂ = b', { bold: true }), T('c2', 470, 90, '', { size: 13 }), T('c3', 470, 130, '', { size: 13, bold: true })
+    ],
+    passi: [
+      { nota: "<b>Vista per colonne</b> (<i>column picture</i>, slide 61): Ax = b si legge come \"x volte la colonna a₁ più y volte la colonna a₂ deve fare b\". Le colonne sono a₁ = [2, 1] e a₂ = [1, 3]." },
+      { nota: "La domanda diventa: <b>quanto</b> di a₁ e quanto di a₂ servono per arrivare a b = [4, 7]? Proviamo x = 1: una volta a₁.", set: { p1: { nascosto: false }, c2: { t: 'x = 1: 1·[2, 1]' } } },
+      { nota: "Poi y = 2: due volte a₂, attaccato in coda. Si arriva esattamente in b.", set: { p2: { nascosto: false }, c2: { t: '1·[2, 1] + 2·[1, 3] = [4, 7]' } } },
+      { nota: "La soluzione (x, y) = (1, 2) è la stessa della vista per righe: sono i <b>pesi</b> della combinazione di colonne che produce b. Il sistema ha soluzione quando b si può scrivere come combinazione delle colonne.", set: { c3: { t: '(x, y) = (1, 2)', tono: 'ok' } } }
+    ]
+  };
+
+  // 5. spazio delle colonne / span
+  SCENE.span = {
+    w: 600, h: 290, lato: true,
+    legenda: 'due:columns,spento:column space,ok:b reachable,no:b outside',
+    oggetti: [
+      { id: 'ax', tipo: 'assi', box: [50, 20, 260, 250], dom: [-1, 5, -1, 8], tacche: 1 },
+      { id: 'sp', tipo: 'linea', in: 'ax', x1: -0.5, y1: -1, x2: 4, y2: 8, tono: 'spento', nascosto: true },
+      { id: 'a1', tipo: 'vett', in: 'ax', x1: 0, y1: 0, x2: 1, y2: 2, t: 'a₁ = [1, 2]', tx: 12, ty: 4, tono: 'due' },
+      { id: 'a2', tipo: 'vett', in: 'ax', x1: 0, y1: 0, x2: 2, y2: 4, t: 'a₂ = [2, 4]', tx: -92, ty: -8, tono: 'due' },
+      { id: 'b1', tipo: 'punto', in: 'ax', x: 3, y: 6, t: '[3, 6]', tono: 'ok', nascosto: true },
+      { id: 'b2', tipo: 'punto', in: 'ax', x: 3, y: 5, t: '[3, 5]', tono: 'no', nascosto: true, tx: 10, ty: 10 },
+      T('c1', 470, 60, 'A = [[1, 2], [2, 4]]', { bold: true, size: 13 }), T('c2', 470, 100, '', { size: 13 }), T('c3', 470, 140, '', { size: 13 }), T('c4', 470, 180, '', { size: 13 })
+    ],
+    passi: [
+      { nota: "Le colonne di A = [[1, 2], [2, 4]] sono a₁ = [1, 2] e a₂ = [2, 4]. Ma a₂ = 2·a₁: puntano nella stessa direzione." },
+      { nota: "Tutte le combinazioni x·a₁ + y·a₂ restano su <b>una retta</b>: si chiama lo <b>span</b> delle colonne, o <b>spazio delle colonne</b> (<i>column space</i>, slide 64). Le colonne non \"coprono\" il piano.", set: { sp: { nascosto: false }, c2: { t: 'span = una retta' } } },
+      { nota: "b = [3, 6] sta sulla retta: si raggiunge, e in <b>infiniti</b> modi (x + 2y = 3 ha infinite soluzioni).", set: { b1: { nascosto: false }, c3: { t: '[3, 6]: infinite soluzioni', tono: 'ok' } } },
+      { nota: "b = [3, 5] è fuori dalla retta: <b>nessuna</b> combinazione delle colonne ci arriva, nessuna soluzione. È l'esercizio 8 del test. Regola della slide 64: \"vectors should span the space to have an inverse\".", set: { b2: { nascosto: false }, c4: { t: '[3, 5]: nessuna soluzione', tono: 'no' } } }
+    ]
+  };
+
+  // 6. determinante come area
+  const par = (a, b) => [[0, 0], a, [a[0] + b[0], a[1] + b[1]], b];
+  SCENE.det = {
+    w: 600, h: 280, lato: true,
+    legenda: 'spento:unit square,ok:its image,no:zero area',
+    oggetti: [
+      { id: 'ax', tipo: 'assi', box: [50, 20, 260, 240], dom: [-1, 4, -1, 5], tacche: 1 },
+      { id: 'q', tipo: 'poli', in: 'ax', punti: [[0, 0], [1, 0], [1, 1], [0, 1]], tono: 'spento' },
+      { id: 'p', tipo: 'poli', in: 'ax', punti: par([2, 1], [1, 3]), tono: 'ok', nascosto: true },
+      T('c1', 470, 50, 'det [[a, b], [c, d]] = ad − bc', { size: 13, bold: true }),
+      T('c2', 470, 100, '', { size: 13 }), T('c3', 470, 130, '', { size: 14, bold: true }), T('c4', 470, 180, '', { size: 13 })
+    ],
+    passi: [
+      { nota: "Il <b>determinante</b> di una matrice 2 × 2 [[a, b], [c, d]] è il numero ad − bc. Ha un significato geometrico: di quanto la matrice moltiplica le <b>aree</b>. Il quadrato grigio ha area 1." },
+      { nota: "A = [[2, 1], [1, 3]] manda il quadrato unitario nel parallelogramma che ha per lati le colonne [2, 1] e [1, 3].", set: { p: { nascosto: false }, c2: { t: 'A = [[2, 1], [1, 3]]' } } },
+      { nota: "L'area del parallelogramma è det A = 2·3 − 1·1 = <b>5</b>: A moltiplica ogni area per 5.", set: { c3: { t: 'det A = 2·3 − 1·1 = 5', tono: 'ok' } } },
+      { nota: "Con A = [[1, 2], [2, 4]] le colonne [1, 2] e [2, 4] sono sulla stessa retta: il parallelogramma si <b>schiaccia</b> in un segmento, area 0. det = 1·4 − 2·2 = <b>0</b>. Un piano schiacciato su una retta non si può \"srotolare\": la matrice non ha inversa.", set: { p: { punti: par([1, 2], [2, 4]), tono: 'no' }, c2: { t: 'A = [[1, 2], [2, 4]]' }, c3: { t: 'det = 1·4 − 2·2 = 0', tono: 'no' }, c4: { t: 'area schiacciata: niente inversa' } } }
+    ]
+  };
+
+  // 7. inversa: la formula passo passo
+  SCENE.inversa = {
+    w: 600, h: 250, lato: true,
+    legenda: 'dato:A,ora:the move,ok:A⁻¹',
+    oggetti: [
+      T('ta', 90, 30, 'A', { bold: true }), G('A', 40, 40, [['2', '1'], ['1', '3']], { toni: { '0,0': 'dato', '0,1': 'dato', '1,0': 'dato', '1,1': 'dato' } }),
+      T('tm', 280, 30, '', { bold: true }), G('M', 230, 40, [['', ''], ['', '']], { cw: 60 }),
+      T('c1', 480, 60, '', { size: 13 }), T('c2', 480, 100, '', { size: 13 }), T('c3', 480, 140, '', { size: 13, bold: true }),
+      T('c4', 300, 200, '', { size: 13 })
+    ],
+    passi: [
+      { nota: "L'<b>inversa</b> A⁻¹ è la matrice che \"disfa\" A: A⁻¹A = I. Per una 2 × 2 c'è una formula: A⁻¹ = (1/det) · [[d, −b], [−c, a]]. Si costruisce in tre mosse." },
+      { nota: "Mossa 1: si <b>scambiano</b> i due elementi della diagonale principale, a e d: 2 e 3.", set: { tm: { t: 'scambio a e d' }, M: { valori: [['3', ''], ['', '2']], toni: { '0,0': 'ora', '1,1': 'ora' } } } },
+      { nota: "Mossa 2: si <b>cambia segno</b> agli altri due, b e c: 1 diventa −1.", set: { tm: { t: '− a b e c' }, M: { valori: [['3', '−1'], ['−1', '2']], toni: { '0,1': 'ora', '1,0': 'ora' } } } },
+      { nota: "Mossa 3: si <b>divide</b> tutto per il determinante, 5. Ecco perché con det = 0 l'inversa non esiste: si dividerebbe per zero.", set: { tm: { t: 'A⁻¹' }, M: { valori: [['0.6', '−0.2'], ['−0.2', '0.4']], toni: { '0,0': 'ok', '0,1': 'ok', '1,0': 'ok', '1,1': 'ok' } }, c1: { t: 'det A = 5' }, c2: { t: 'A⁻¹ = (1/5)·[[3, −1], [−1, 2]]' } } },
+      { nota: "Controllo: A⁻¹A = I (verificato con NumPy). E la soluzione del sistema: da Ax = b si moltiplica a sinistra per A⁻¹ e resta <b>x = A⁻¹b</b> = [0.6·4 − 0.2·7, −0.2·4 + 0.4·7] = [1, 2].", set: { c3: { t: 'x = A⁻¹ b = [1, 2]', tono: 'ok' }, c4: { t: 'A⁻¹A = I: la mossa che isola x' } } }
+    ]
+  };
+
+  // 8. NumPy: solve, inv, errori
+  SCENE.numpysolve = {
+    w: 600, h: 240, lato: true,
+    legenda: 'ok:result,due:rounding,no:error',
+    codice: { lang: 'python', testo: `A = np.array([[2, 1], [1, 3]])
+b = np.array([4, 7])
+np.linalg.det(A)          # 5.000000000000001
+np.linalg.solve(A, b)     # array([1., 2.])
+S = np.array([[1, 2], [2, 4]])
+np.linalg.solve(S, b)     # LinAlgError: Singular matrix` },
+    oggetti: [
+      T('c1', 300, 50, '', { size: 14 }), T('c2', 300, 100, '', { size: 14, bold: true }), T('c3', 300, 150, '', { size: 14, bold: true }), T('c4', 300, 200, '', { size: 13 })
+    ],
+    passi: [
+      { nota: "Le tre funzioni di NumPy per i sistemi, e cosa aspettarsi.", righe: [1, 2] },
+      { nota: "<code>np.linalg.det</code> calcola il determinante in virgola mobile: 5.000000000000001 invece di 5. È un normale errore di arrotondamento: per controllare \"det = 0\" si usa una tolleranza, per esempio <code>abs(d) &lt; 1e-10</code>, mai <code>==</code>.", righe: [3], set: { c1: { t: 'det(A) = 5.000000000000001', tono: 'due' } } },
+      { nota: "<code>np.linalg.solve(A, b)</code> risolve il sistema: [1, 2]. È meglio di <code>np.linalg.inv(A) @ b</code>: non calcola l'inversa, è più veloce e più preciso.", righe: [4], set: { c2: { t: 'solve(A, b) = [1, 2]', tono: 'ok' } } },
+      { nota: "Con una matrice singolare (det = 0) <code>solve</code> si ferma con <code>LinAlgError: Singular matrix</code> (errore vero, riprodotto). Quando i dati sono più delle incognite si usa invece <code>np.linalg.lstsq</code> (<a href=\"w05-minimi-quadrati.html\">minimi quadrati</a>).", righe: [5, 6], set: { c3: { t: 'LinAlgError: Singular matrix', tono: 'no' }, c4: { t: 'più dati che incognite → lstsq' } } }
+    ]
+  };
+
+  // 9. imparare = risolvere
+  SCENE.imparasist = {
+    w: 600, h: 280, lato: true,
+    legenda: 'dato:the points,ora:unknowns (weights),ok:the model',
+    oggetti: [
+      { id: 'ax', tipo: 'assi', box: [40, 20, 230, 230], dom: [0, 4, 0, 9], tacche: 1, etX: 'x', etY: 'y' },
+      { id: 'p1', tipo: 'punto', in: 'ax', x: 1, y: 3, t: '(1, 3)', tono: 'dato' },
+      { id: 'p2', tipo: 'punto', in: 'ax', x: 3, y: 7, t: '(3, 7)', tono: 'dato', tx: -48 },
+      { id: 'li', tipo: 'linea', in: 'ax', x1: 0, y1: 1, x2: 4, y2: 9, tono: 'ok', nascosto: true },
+      T('m', 440, 40, 'y = w₀ + w₁·x', { bold: true }),
+      T('e1', 440, 80, '', { size: 13 }), T('e2', 440, 106, '', { size: 13 }),
+      G('M', 330, 130, [['', ''], ['', '']], { cw: 44, ch: 34 }), T('mw', 450, 164, '', { size: 13 }),
+      T('r', 440, 230, '', { bold: true })
+    ],
+    passi: [
+      { nota: "Il modello y = w₀ + w₁x e due punti misurati. Le <b>incognite</b> sono i pesi w₀ e w₁; le x e le y sono <b>numeri noti</b>." },
+      { nota: "Ogni punto dà un'equazione <b>nei pesi</b>: (1, 3) dà w₀ + 1·w₁ = 3, (3, 7) dà w₀ + 3·w₁ = 7.", set: { e1: { t: 'w₀ + 1·w₁ = 3' }, e2: { t: 'w₀ + 3·w₁ = 7' } } },
+      { nota: "In forma matriciale: una riga per punto, [1, x]. La colonna di 1 moltiplica w₀, la colonna delle x moltiplica w₁. Questa matrice è la <b>design matrix</b> (settimana 4).", set: { M: { valori: [['1', '1'], ['1', '3']], toni: { '0,0': 'ora', '1,0': 'ora', '0,1': 'dato', '1,1': 'dato' } }, mw: { t: '· [w₀, w₁] = [3, 7]' } } },
+      { nota: "Si risolve: w₁ = 2, w₀ = 1. Il modello è y = 1 + 2x, e passa per entrambi i punti. <b>Imparare un modello lineare = risolvere un sistema lineare nei pesi.</b>", set: { li: { nascosto: false }, r: { t: 'w = [1, 2]  →  y = 1 + 2x', tono: 'ok' } } }
+    ]
+  };
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Linear systems, inverse, determinant</h1>
+  <p class="lede">Learning a linear model means finding the weights that make many equations true together: a <b>linear system</b>. Here: how it is written with matrices, the two views (rows and columns), when it has one, no or infinitely many solutions, the column span, what the determinant measures, how the inverse is computed, and how it is solved in NumPy. Slides 51–65 of lecture 2.</p>
+</header>
+
+<section>
+  <h2>From the system to the matrix: Ax = b</h2>
+  <p>A <b>linear system</b> is a group of linear equations that must hold <b>at the same time</b>. The example of slide 51: two species that eat different quantities of two foods, and one asks how many there are knowing the total consumption. Each constraint is an equation.</p>
+  <p>It is written in compact form by gathering the numbers into three objects: the matrix of <b>coefficients</b> A (one row per equation), the vector of the <b>unknowns</b> x, the vector of the <b>constant terms</b> b. Then the whole system is <span class="m">Ax = b</span>.</p>
+  <figure class="passi" data-titolo="Three ways of writing the same system">
+    <div class="passo"><div class="espr"><mark class="dato">2x + 1y = 4</mark><br><mark class="due">1x + 3y = 7</mark></div><p class="nota">Two linear equations: each unknown multiplied by a number, then summed.</p></div>
+    <div class="passo"><div class="espr">[<mark class="dato">2, 1</mark>] · [x, y] = 4,   [<mark class="due">1, 3</mark>] · [x, y] = 7</div><p class="nota">Each equation is an inner product ("linear equations are those that can be represented by an inner product").</p></div>
+    <div class="passo"><div class="espr">[[<mark class="dato">2, 1</mark>], [<mark class="due">1, 3</mark>]] · [x, y] = [4, 7]    ⇔    <mark class="ok">A x = b</mark></div><p class="nota">The coefficients in a matrix, the unknowns in a vector, the constant terms in another.</p></div>
+  </figure>
+  <figure class="scena" data-scena="allamatrice" data-titolo="Every number in its place"></figure>
+</section>
+
+<section>
+  <h2>The row view: lines that cross</h2>
+  <p>In the <b>row picture</b> (<i>row picture</i>) each equation is a geometric object: with two unknowns a line, with three a plane, with n a hyperplane (<a href="w02-iperpiani.html">hyperplanes</a>). Every point of the object makes that equation true.</p>
+  <p>The solution of the system is the point that makes <b>all</b> the equations true together: the <b>intersection</b> of all the lines. With 2x + y = 4 and x + 3y = 7 the two lines meet at (1, 2), and substituting one checks that both equations hold.</p>
+  <p>This view makes clear why one needs as many equations as unknowns: with one line alone the possible points are infinitely many; the second line chooses one.</p>
+  <figure class="scena" data-scena="righe" data-titolo="Two equations, two lines, one crossing"></figure>
+</section>
+
+<section>
+  <h2>One, no or infinitely many solutions</h2>
+  <p>Two lines in the plane can be in only three ways, so a 2 × 2 system has only three possible outcomes (slide 53).</p>
+  <p><b>One solution</b>: the lines cross at one point. <b>No solution</b>: the lines are <b>parallel</b> and distinct, they never meet (the equations contradict each other: x + 2y should be worth 3 and also 5). <b>Infinitely many solutions</b>: the lines <b>coincide</b>, because one equation is a multiple of the other and adds no information.</p>
+  <p>In the last two cases the rows of A are multiples of each other (linearly dependent) and the <b>determinant is 0</b>. If det ≠ 0 there is always one and only one solution, whatever b.</p>
+  <figure class="scena" data-scena="rette" data-titolo="One, no or infinitely many solutions"></figure>
+</section>
+
+<section>
+  <h2>The column view: combining the columns</h2>
+  <p>The same system can also be read by columns (slide 61, <i>column picture</i>): <span class="m">Ax = x·a₁ + y·a₂</span>, where a₁ and a₂ are the columns of A. Solving Ax = b means finding <b>how much</b> of each column is needed to build b.</p>
+  <p>The solution is the same as in the row view, but the question is different and more useful in ML: "can the vector b be obtained by combining the columns?". If yes, the weights of the combination are the solution. If no, the system has no solution.</p>
+  <figure class="scena" data-scena="percolonne" data-titolo="How much of a₁ and how much of a₂ to reach b"></figure>
+</section>
+
+<section>
+  <h2>The column space and the span</h2>
+  <p>The set of <b>all</b> the linear combinations of the columns of A is called the <b>column space</b> (<i>column space</i>), or the <b>span</b> of the columns. It is the set of the b for which Ax = b has a solution.</p>
+  <p>If the columns point in different directions, in 2D their span is the whole plane: every b is reached. If instead one column is a multiple of the other, the span shrinks to a <b>line</b>: the b on the line are reached in infinitely many ways, those outside never. Hence the sentence of slide 64: "vectors should span the space to have an inverse".</p>
+  <p>The number of really different directions among the columns is called the <b>rank</b> (<i>rank</i>): for [[1, 2], [2, 4]] it is 1. Span and rank return in week 6 (bases) and in least squares, where b usually does <b>not</b> lie in the column space and one looks for the nearest point.</p>
+  <figure class="scena" data-scena="span" data-titolo="Parallel columns: the span is a line"></figure>
+</section>
+
+<section>
+  <h2>The determinant</h2>
+  <p>For a 2 × 2 matrix the <b>determinant</b> is <span class="m">det [[a, b], [c, d]] = ad − bc</span>: product of the main diagonal minus product of the other diagonal. For [[2, 1], [1, 3]]: 2·3 − 1·1 = 5. For [[1, 2], [2, 4]]: 4 − 4 = 0.</p>
+  <p>Geometric meaning: |det A| is the factor by which A multiplies the <b>areas</b>. The unit square becomes the parallelogram formed by the columns, and its area is |det A|. The sign says whether A flips the orientation (like a mirror).</p>
+  <div class="box regola" data-tit="What the determinant says">
+    <p><b>det ≠ 0</b>: A squashes nothing, the system <span class="m">Ax = b</span> has <b>one single</b> solution for every b, and A is invertible (also called <i>non-singular</i>). <b>det = 0</b>: A squashes the plane onto a line (or a point), the columns are dependent, the solutions are none or infinitely many, and A is not invertible (<i>singular</i>).</p>
+  </div>
+  <figure class="scena" data-scena="det" data-titolo="The determinant is an area factor"></figure>
+</section>
+
+<section>
+  <h2>The inverse</h2>
+  <p>The <b>inverse</b> of a square matrix A is the matrix <span class="m">A⁻¹</span> that "undoes" it: <span class="m">A⁻¹A = AA⁻¹ = I</span>. It exists only if det A ≠ 0 (slide 65: <i>invertible</i> = <i>non-singular</i>).</p>
+  <p>It serves to solve the system with the same move as a balance: both sides of Ax = b are multiplied, <b>on the left</b>, by A⁻¹. On the left remains A⁻¹Ax = Ix = x, so <span class="m">x = A⁻¹b</span>. "On the left" matters: the product of matrices is not commutative, and bA⁻¹ would not even have the right shapes.</p>
+  <figure class="passi" data-titolo="The inverse of a 2 × 2">
+    <div class="passo"><div class="espr">[[a, b], [c, d]]⁻¹ = <mark class="dato">1 / (ad − bc)</mark> · [[d, −b], [−c, a]]</div><p class="nota">Swap the diagonal, change the sign of the rest, divide by the determinant.</p></div>
+    <div class="passo"><div class="espr">A⁻¹ = (1/5) · [[3, −1], [−1, 2]] = [[0.6, −0.2], [−0.2, 0.4]]</div><p class="nota">For A = [[2, 1], [1, 3]].</p></div>
+    <div class="passo"><div class="espr">x = <mark class="ok">A⁻¹b</mark> = [0.6·4 − 0.2·7, −0.2·4 + 0.4·7] = [1, 2]</div><p class="nota">The same solution found with the lines.</p></div>
+  </figure>
+  <figure class="scena" data-scena="inversa" data-titolo="Three moves for the inverse of a 2 × 2"></figure>
+</section>
+
+<section>
+  <h2>Solving a system in NumPy</h2>
+  <p>In practice systems are solved with NumPy (slide 63: "solving the equation in python"). The functions are in the module <code>np.linalg</code> (linear algebra).</p>
+  <figure class="codice" data-titolo="In NumPy (verified)">
+<pre data-lang="python">A = np.array([[2, 1], [1, 3]])
+b = np.array([4, 7])
+np.linalg.det(A)            # 5.000000000000001
+np.linalg.inv(A) @ b        # array([1., 2.])
+np.linalg.solve(A, b)       # array([1., 2.])</pre>
+    <ol class="spiega">
+      <li data-righe="3" data-segna="5.000000000000001@due"><p>The determinant computed in floating point: 5 with a small rounding error. Normal: to check "det = 0" a tolerance is used, not <code>==</code>.</p></li>
+      <li data-righe="4" data-segna="np.linalg.inv(A) @ b@ora"><p>Inverse and then product: the formula of the theory.</p></li>
+      <li data-righe="5" data-segna="np.linalg.solve(A, b)@ok"><p>In practice <code>solve</code> is used: it solves the system without computing the inverse, faster and more precise.</p></li>
+    </ol>
+  </figure>
+  <figure class="scena" data-scena="numpysolve" data-titolo="det, solve and the error of singular matrices"></figure>
+</section>
+
+<section>
+  <h2>Learning a model = solving a system</h2>
+  <p>The link with ML (slide 52: "meaning of solving for model parameters in linear models"). In a linear model the <b>unknowns are the weights</b>; the data (x, y) are known numbers. Each measured point gives a linear equation in the weights, and the set of points gives a system.</p>
+  <figure class="passi" data-titolo="A line through two points">
+    <div class="passo"><div class="espr">modello: y = <mark class="ora">w₀</mark> + <mark class="ora">w₁</mark> x      dati: (1, 3), (3, 7)</div><p class="nota">Two parameters to find.</p></div>
+    <div class="passo"><div class="espr">w₀ + 1·w₁ = 3<br>w₀ + 3·w₁ = 7</div><p class="nota">Each point gives an equation. The unknowns are the <b>weights</b>, not x.</p></div>
+    <div class="passo"><div class="espr">[[1, 1], [1, 3]] · [w₀, w₁] = [3, 7]</div><p class="nota">The first column of 1s is for w₀ (the constant term of the model), the second contains the x values.</p></div>
+    <div class="passo"><div class="espr">w₁ = 2,  w₀ = 1   ⇒   <mark class="ok">y = 1 + 2x</mark></div><p class="nota">Check: 1 + 2·1 = 3 ✓, 1 + 2·3 = 7 ✓.</p></div>
+  </figure>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Points (equations) versus parameters</th><th>System</th><th>What happens</th></tr></thead>
+    <tbody>
+      <tr><td>as many as</td><td>square</td><td>usually one solution: the model passes exactly through the points</td></tr>
+      <tr><td><b>more</b> points than parameters</td><td><b>overdetermined</b></td><td>with real data (noise) no exact solution: the best one is sought, with <a href="w05-minimi-quadrati.html">least squares</a></td></tr>
+      <tr><td><b>fewer</b> points than parameters</td><td>underdetermined</td><td>infinitely many solutions: the data are not enough to decide the model</td></tr>
+    </tbody>
+  </table></div>
+  <div class="box esame" data-tit="Exam question Q1 (c)">
+    <p>"Explain how systems of linear equations are represented using matrices. Discuss when such systems have no solution, one solution, or multiple solutions, and relate this to model learning." This is the page: the matrix of coefficients, the three cases with the determinant, and the link "points = equations, weights = unknowns".</p>
+  </div>
+  <figure class="scena" data-scena="imparasist" data-titolo="Two points, two equations in the weights, one line"></figure>
+</section>
+
+</main>
+</body>
+</html>

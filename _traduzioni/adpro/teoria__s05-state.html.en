@@ -1,0 +1,92 @@
+@@s001 State[S, A]: the general pattern
+@@s002 State <b>${stato}</b>: <code>run(${stato})</code> = ("${out[k]}", ${prossimo}). The value "${out[k]}" goes into the list, the state ${prossimo} serves for the next step.
+@@s003 ora:current state and transition,ok:value just produced,dato:states
+@@s004 An automaton with three states. <code>abc</code> is a <code>State[Int, String]</code>: for each state it says what to produce and where to go. From 1 it produces "a" and goes to 2, and so on.
+@@s005 And one starts again: the list is infinite, but <code>cons</code> is lazy, so each element is computed only when needed. <code>take(7).toList</code> asks for 7 of them: <b>List(a, b, c, a, b, c, a)</b> (checked).
+@@s006 ora:state,ok:value produced,dato:function of the file
+@@s007 dato:state,ok:value emitted,spento:not yet computed
+@@s008 dato:state,ora:automaton,ok:result
+@@s009 State[S, A]: the general pattern
+@@s010 Week 5, exercises 9–11 and slides. None of what we did with <a href="s05-rand.html">Rand</a> depends on the state being a number generator: it holds for <b>any</b> state. <code>State[S, A]</code> is a transition: from a state S it produces a value A and the next state. It is a monad, like Option and LazyList.
+@@s011 From Rand to State
+@@s012 One type for all computations with state
+@@s013 The Rand of the previous page: the state is a generator.
+@@s014 The same pattern with any state: a web session, a database, a protocol, a counter.
+@@s015 One "wraps" the function in a class to give it methods (map, flatMap). The slides suggest reading <code>State</code> as "automaton" or "transition" and <code>run</code> as "step".
+@@s016 Rand becomes a special case.
+@@s017 The automaton of the slides and its lazy list (exercise 10)
+@@s018 The other example of the slides: the counter
+@@s019 Imperative: the state is the variable x, modified at each turn.
+@@s020 Functional: from x it produces x and says that the next state is x + 1. Nothing is modified.
+@@s021 Checked: it is the test <code>Ex10.02</code> ("an increment automaton generates a list of naturals").
+@@s022 The API of State (exercise 9)
+@@s023 flatMap, map, map2 in the class; sequence in the object (44 tests out of 44)
+@@s024 The same <code>flatMap</code> as Rand, with <code>S</code> in place of RNG: you do your step, then you run the step of the automaton chosen by <code>f</code> on the new state. <code>abc.flatMap(a =&gt; abc.map(b =&gt; a + b)).run(1)</code> = ("ab", 3).
+@@s025 <code>map</code> written with <code>flatMap</code>: the second step is an automaton that does not change the state and returns <code>f(a)</code>. (The test <code>Ex09.06</code> checks precisely this equality.)
+@@s026 With for/yield (week 3), which Scala translates into <code>flatMap</code> and <code>map</code>. <code>abc.map2(abc)(_ + _).run(2)</code> = ("bc", 1).
+@@s027 As for Rand. In the file the method is in the object <code>State</code> (second part of exercise 9). <code>sequence(List(abc, abc, abc)).run(1)</code> = (List(a, b, c), 1).
+@@s028 In plain words: what exercise 9 asks
+@@s029 You have already written <code>map</code>, <code>map2</code>, <code>flatMap</code>, <code>sequence</code> for <code>Rand</code> (state = RNG). Rewrite them <b>identical</b> for any state <code>S</code>. Only two things change: the function now sits in a box, so one <b>builds</b> it with <code>State { s =&gt; … }</code> and <b>runs</b> it with <code>.run(s)</code>.
+@@s030 Image: the ticket machine of the turn (the same as ex. 10–11). The display is the state; <code>run</code> = you tear off a ticket and the display advances. All of exercise 9 is a single rule: <b>whoever comes after starts from the display left by whoever comes before</b>.
+@@s031 Variant written like your ex. 7 (all 44 tests pass also like this):
+@@s032 Three people, one machine: f(a).run(s1) against f(a).run(s)
+@@s033 dato:display,ora:ticket,ok:right,no:wrong
+@@s034 Three people tear a ticket from the same machine, which starts from 0.
+@@s035 Each starts from the display left by the previous one.
+@@s036 Three different tickets, final display 3.
+@@s037 If the second step restarts from the old state <code>s</code>, everyone reads the display 0: three people with the same ticket, and the display never advances. Values printed by Scala 3.8.4 with the two flatMaps.
+@@s038 The same error on a smaller example: right 0·10 + 1 = 1 with display 2; wrong 0·10 + 0 = 0 with display stuck at 0.
+@@s039 Rand (ex. 5–8)
+@@s040 State (ex. 9)
+@@s041 the type
+@@s042 <code>RNG =&gt; (A, RNG)</code>, bare function
+@@s043 <code>State[S, A](run: S =&gt; (A, S))</code>, function in the box
+@@s044 to build
+@@s045 <code>rng =&gt; …</code>
+@@s046 <code>State { s =&gt; … }</code>
+@@s047 to run
+@@s048 <code>f(rng)</code>, <code>g(a)(rng2)</code>
+@@s049 <code>run(s)</code>, <code>f(a).run(s1)</code>
+@@s050 map2, sequence
+@@s051 <code>map2(h, …)(…)</code>
+@@s052 <code>h.map2(…)(…)</code>, it is a method
+@@s053 Function of the file
+@@s054 What it does
+@@s055 Example (checked)
+@@s056 <code>get</code>
+@@s057 reads the state and returns it as a value
+@@s058 <code>get.run(7)</code> = (7, 7)
+@@s059 <code>set(s)</code>
+@@s060 replaces the state
+@@s061 <code>set(5).run(7)</code> = ((), 5)
+@@s062 <code>modify(f)</code>
+@@s063 get, then set of f(state)
+@@s064 <code>modify(_ * 10).run(4)</code> = ((), 40)
+@@s065 With get, set, modify and for/yield the code with State looks imperative ("read the state, change it"), but it remains pure: it is only the description of a transition, which starts when <code>run</code> is called.
+@@s066 flatMap, map, map2, get, set, modify
+@@s067 Composing automata: map, flatMap, map2 (slides 11–13)
+@@s068 State is a <b>monad</b>: it has the same key operations as List, Option and LazyList. Thinking of a State as an automaton, these operations serve to <b>build new automata from existing ones</b>, without ever writing by hand the passing of the state.
+@@s069 <b>map</b> changes the values produced and leaves the transition as it is: <code>val even: Rand[Int] = int.map(n =&gt; n * 2)</code> is a generator of even numbers. <b>flatMap</b> uses the value produced to <b>choose</b> the next automaton: <code>int.flatMap(n =&gt; ints(n))</code> generates a list of random length, and the length is drawn with a state different from that of the numbers, because flatMap passes on the new state. <b>map2</b> "zips" two automata on the same space of states: with <code>C = (A, B)</code> it is the <b>product automaton</b>, which advances two calculations in step. <b>sequence</b> lines up a list of automata.
+@@s070 Slide 8 summarises why it is needed: everything that has a state is written with this pattern. A random number generator (state: the seed), a site with a session (state: the session), an application with a database (state: the database), a communication protocol (state: the phase of the protocol). And one always composes with the same four tools.
+@@s071 map, flatMap, map2 and sequence on automata
+@@s072 States and lazy lists (exercises 10–11)
+@@s073 From the automaton to its trace
+@@s074 One step, and the rest of the list is "the same automaton from the next state". Without base case: it works only because <code>cons</code> does not compute the tail until it is needed (week 4). With an ordinary List it would be an infinite loop.
+@@s075 Ex. 11: the integer generator is an automaton; its trace is an infinite list of random numbers.
+@@s076 Ten numbers in a line: 16159453, −1281479697, −340305902, −2015756020, 1770001318, … The abstractions compose: automaton → lazy list → take → list.
+@@s077 In plain words: what exercises 10 and 11 ask
+@@s078 <b>Ex. 10:</b> you have an automaton (a <code>State</code>) and a starting state. Run it forever and line up the values that come out, in a <code>LazyList</code>. <b>Ex. 11:</b> the random number generator is an automaton too (state = RNG, step = nextInt): put it in a <code>State</code>, pass it to ex. 10 → infinite list of random numbers; then take 10 of them in an ordinary List.
+@@s079 Image: the ticket machine of the turn. The state is the number on the display; <code>run</code> = you tear off a ticket: it gives you the number and the display advances. The <code>LazyList</code> is the roll: a ticket is printed only when someone tears it off (<code>take</code>).
+@@s080 stateToLazyList(counter)(0).take(3).toList
+@@s081 dato:state,ora:value emitted,due:state after,ok:result
+@@s082 The machine: returns the number on the display and advances it by 1.
+@@s083 One step of the automaton from the initial state.
+@@s084 ⟨ ⟩ = tail not yet computed. <code>cons</code> receives it "by name" (<code>tl: =&gt; LazyList[A]</code>) and keeps it suspended.
+@@s085 Only now is the tail computed: one more step, from the state after.
+@@s086 One more step.
+@@s087 No base case and no infinite loop: whoever reads stops, not whoever writes. Checked (Scala 3.8.4).
+@@s088 The test file of this week does not compile
+@@s089 <code>Exercises.test.scala</code> begins with <code>package adpro.state.solution</code>, while the solutions are in <code>package adpro.state</code>: from the "solution" package <code>RNG</code> is not visible and compilation stops with <code>Not found: RNG</code> (checked). In my copy I changed that line to <code>package adpro.state</code> and all 44 tests pass. If it happens to you, it is not the fault of your code: change the first line of the test file, or ask the TAs.
+@@s090 Ready sentences (written exam)
+@@s091 "State[S, A] wraps a state transition S =&gt; (A, S); flatMap threads the state from one transition to the next, so the state stays explicit but invisible to the user."
+@@s092 Unrolling an automaton into a lazy list

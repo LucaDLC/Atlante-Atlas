@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Exercise 6.1: CasHistogram</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Exercise 6.1: CasHistogram</h1>
+  <p class="lede">A lock-free histogram made of <code>AtomicInteger</code>, using only <code>get</code> and <code>compareAndSet</code>, and a test that compares it with the sequential version. First what a histogram is, then the class, then the test.</p>
+</header>
+
+<section>
+  <h2>What a histogram is</h2>
+  <p>A row of <b>bins</b>, each with a <b>counter</b>: it serves to count how many times each thing happens. The interface <code>Histogram</code>:</p>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>method</th><th>what it does</th></tr></thead>
+    <tbody>
+      <tr><td><code>increment(7)</code></td><td>+1 to bin 7</td></tr>
+      <tr><td><code>getCount(7)</code></td><td>the value of bin 7</td></tr>
+      <tr><td><code>getSpan()</code></td><td>how many bins there are (in exercise 30)</td></tr>
+      <tr><td><code>getAndClear(7)</code></td><td>returns the value of bin 7 <b>and</b> sets it back to 0</td></tr>
+    </tbody>
+  </table></div>
+  <div class="colonne">
+    <div class="carta cattiva"><h4>Histogram1</h4><p><code>int[]</code> and <code>counts[bin] = counts[bin] + 1</code>: read, then write. Perfect with one thread; with several threads it loses increments (race condition). In the test it serves as the <b>reference</b>, used by one thread only.</p></div>
+    <div class="carta buona"><h4>CasHistogram</h4><p>The same thing, but each bin is an <code>AtomicInteger</code> and the increment is a CAS loop: it loses nothing even with many threads. It is the class <b>under test</b>.</p></div>
+  </div>
+</section>
+
+<section>
+  <h2>6.1.1 · The class</h2>
+  <figure class="codice" data-titolo="CasHistogram (compiled with javac)">
+<pre data-lang="java">class CasHistogram implements Histogram {
+    private final AtomicInteger[] counts;
+
+    public CasHistogram(int span) {
+        this.counts = new AtomicInteger[span];
+        for (int i = 0; i &lt; span; i++) {
+            this.counts[i] = new AtomicInteger(0);
+        }
+    }
+
+    public void increment(int bin) {
+        int oldValue;
+        do {
+            oldValue = counts[bin].get();
+        } while (!counts[bin].compareAndSet(oldValue, oldValue + 1));
+    }
+
+    public int getCount(int bin) { return counts[bin].get(); }
+
+    public int getSpan() { return counts.length; }
+
+    public int getAndClear(int bin) {
+        int oldValue;
+        do {
+            oldValue = counts[bin].get();
+        } while (!counts[bin].compareAndSet(oldValue, 0));
+        return oldValue;
+    }
+}</pre>
+    <ol class="spiega">
+      <li data-righe="2" data-segna="private final@ok"><p><code>private</code>: the state does not leave the class. <code>final</code>: safe publication (rule of the final fields).</p></li>
+      <li data-righe="5-8" data-segna="new AtomicInteger(0)@ora"><p><code>new AtomicInteger[span]</code> creates <b>empty</b> positions (<code>null</code>), not zeros: every position must be filled, otherwise the first <code>increment</code> gives a <code>NullPointerException</code>.</p></li>
+      <li data-righe="11-15" data-segna="compareAndSet(oldValue, oldValue + 1)@ora"><p>CAS loop: I read, I try to write <i>read + 1</i>; if somebody has changed the value in the meantime the CAS fails and I try again. Lock-free. Methods such as <code>incrementAndGet</code> or <code>getAndSet</code> are <b>forbidden</b> by the exercise: the loop must be written by hand.</p></li>
+      <li data-righe="18-20"><p>A single read, or a value that never changes: no loop (wait-free).</p></li>
+      <li data-righe="22-28" data-segna="return oldValue;@ok"><p>The same loop with the new value 0. One returns the value <b>that the CAS set to zero</b>, not a re-read done afterwards.</p></li>
+    </ol>
+  </figure>
+  <div class="box regola" data-tit="final also covers what is inside the array">
+    <p>The rule of <code>final</code> fields does not apply only to the reference <code>counts</code>: a thread that sees the object after the constructor also sees <b>everything that can be reached from that field</b> as it was at the end of the constructor. So it sees the array and the 30 <code>AtomicInteger</code>s already created, each at 0. Later changes are visible because each <code>AtomicInteger</code> behaves like a <code>volatile</code>.</p>
+    <p><b>Immutable variables:</b> the reference <code>counts</code> (final, never reassigned) and, in fact, the contents of the array: after the constructor <code>counts[i]</code> always points to the same <code>AtomicInteger</code>. Only the values inside the <code>AtomicInteger</code>s are mutable: they are the state of the histogram.</p>
+  </div>
+  <figure class="passi" data-titolo="i) Why the state does not escape: three doors, all closed" data-legenda="dato:the state,ok:door closed">
+    <div class="passo"><div class="espr">stato = <mark class="dato">counts</mark> e i 30 AtomicInteger dentro</div><p class="nota">The state "escapes" if another object obtains a reference to the array or to one of the <code>AtomicInteger</code>s: at that point it could change them without going through the methods of the class.</p></div>
+    <div class="passo"><div class="espr">1. campo: <mark class="ok">private</mark></div><p class="nota">No other class can read <code>counts</code> directly.</p></div>
+    <div class="passo"><div class="espr">2. metodi: restituiscono solo <mark class="ok">int</mark></div><p class="nota"><code>getCount</code>, <code>getSpan</code> and <code>getAndClear</code> return an <code>int</code>, that is a <b>copy</b> of the number, never the array or an <code>AtomicInteger</code>. No method receives an array from outside and keeps it.</p></div>
+    <div class="passo"><div class="espr">3. costruttore: <mark class="ok">this non esce</mark></div><p class="nota">The constructor starts no threads and passes <code>this</code> to nobody: nobody can see the object half built.</p></div>
+  </figure>
+  <div class="box inglese" data-tit="Ready answer 6.1.1">
+    <p>i) No escaping: the state is the array <code>counts</code> and the <code>AtomicInteger</code> objects in it. The field is <code>private</code>, no method returns the array or one of its <code>AtomicInteger</code>s (they only return <code>int</code> values), and the constructor neither starts threads nor passes <code>this</code> to other objects. ii) Safe publication: <code>counts</code> is <code>final</code>, so any thread that obtains a reference to the object after construction sees the array and all <code>AtomicInteger</code>s initialised to 0. Later updates are visible because each <code>AtomicInteger</code> behaves like a volatile variable. Immutable: the reference <code>counts</code> and, in practice, the array contents (each slot always points to the same <code>AtomicInteger</code>). Only the values inside the <code>AtomicInteger</code>s change.</p>
+  </div>
+  <div class="box attenzione" data-tit="AtomicIntegerArray is not good here">
+    <p>With <code>AtomicIntegerArray</code> and <code>incrementAndGet</code> / <code>getAndSet</code> the class is thread-safe, but it violates the text: <code>AtomicInteger</code> is required, and <b>only</b> <code>get</code> and <code>compareAndSet</code> may be used.</p>
+  </div>
+</section>
+
+<section>
+  <h2>6.1.2 · Is getAndClear atomic?</h2>
+  <p>The method does two things: <b>get</b> (reads the value) and <b>clear</b> (sets it back to 0). The question: can another thread slip in between the two and make something be lost? With the CAS loop, no.</p>
+  <figure class="passi" data-titolo="getAndClear(7) and increment(7) together" data-legenda="dato:value read,ora:CAS,ok:succeeded,no:failed">
+    <div class="passo"><div class="espr">bin 7 = 5      T1: getAndClear(7)      T2: increment(7)</div><p class="nota">Two threads on the same bin.</p></div>
+    <div class="passo"><div class="espr">T1: oldValue = get() = <mark class="dato">5</mark></div><p class="nota">T1 has done the "get". The "clear" is not there yet.</p></div>
+    <div class="passo"><div class="espr">T2: <mark class="ora">CAS(5 → 6)</mark> <mark class="ok">riesce</mark>      bin 7 = 6</div><p class="nota">T2 slips in exactly between the get and the clear of T1.</p></div>
+    <div class="passo"><div class="espr">T1: <mark class="ora">CAS(5 → 0)</mark> <mark class="no">fallisce</mark>      bin 7 = 6</div><p class="nota">The CAS writes 0 only if the bin is still 5. It is not 5: it zeroes nothing, and T2's increment remains.</p></div>
+    <div class="passo"><div class="espr">T1: oldValue = <mark class="dato">6</mark>, <mark class="ora">CAS(6 → 0)</mark> <mark class="ok">riesce</mark>, return 6</div><p class="nota">The loop tries again. The returned value is <b>exactly</b> the one the CAS replaced with 0: get and clear happen together, in the successful CAS.</p></div>
+  </figure>
+  <div class="colonne">
+    <div class="carta cattiva"><h4>get, then set(0)</h4><p><code>v = c.get(); c.set(0); return v;</code> If T2 increments between the two lines, <code>set(0)</code> erases its increment and nobody returns it: <b>lost</b>.</p></div>
+    <div class="carta buona"><h4>get, then CAS(v, 0)</h4><p>The CAS zeroes only if the value is still <code>v</code>. Otherwise it tries again. Nothing is lost: it behaves as if get and clear were <b>one atomic operation</b>.</p></div>
+  </div>
+  <div class="box inglese" data-tit="Ready answer">
+    <p>Yes. <code>getAndClear</code> reads the value and then calls <code>compareAndSet(oldValue, 0)</code>, which writes 0 only if the bin still contains <code>oldValue</code>. If another thread changes the bin between the read and the CAS, the CAS fails and the loop retries. So when the CAS succeeds, the returned value is exactly the value that was replaced by 0, and no update can happen in between and be lost: the get and the clear take effect together at the successful CAS.</p>
+  </div>
+</section>
+
+<section>
+  <h2>6.1.3 · What the test does</h2>
+  <p><code>countFactors(p)</code> says into how many primes <i>p</i> decomposes, and it is <b>the bin to increment</b>. With the numbers from 0 to 9:</p>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>numbers</th><th>decomposition</th><th>bin</th></tr></thead>
+    <tbody>
+      <tr><td>0, 1</td><td>none</td><td>0</td></tr>
+      <tr><td>2, 3, 5, 7</td><td>are primes</td><td>1</td></tr>
+      <tr><td>4, 6, 9</td><td>2·2, 2·3, 3·3</td><td>2</td></tr>
+      <tr><td>8</td><td>2·2·2</td><td>3</td></tr>
+    </tbody>
+  </table></div>
+  <p>Resulting histogram: bin 0 → 2, bin 1 → 4, bin 2 → 3, bin 3 → 1. The test does the same with the numbers from 0 to 4999.</p>
+  <figure class="passi" data-titolo="The test, step by step" data-legenda="dato:Histogram1 (sequential),due:CasHistogram (parallel),ok:comparison">
+    <div class="passo"><div class="espr"><mark class="dato">expected</mark>: un thread, p = 0…4999, expected.increment(countFactors(p))</div><p class="nota">No race: this is the <b>true</b> result.</p></div>
+    <div class="passo"><div class="espr"><mark class="due">histogram</mark>: 5000 thread, uno per numero, tutti sullo stesso oggetto</div><p class="nota">The thread of number 8 does <code>increment(3)</code>, that of 9 does <code>increment(2)</code>… In the lambda one needs <code>final int num = p;</code>: a lambda uses only variables that do not change, and <code>p</code> changes at every turn.</p></div>
+    <div class="passo"><div class="espr">barriera da 5000 + 1: partenza insieme, poi main aspetta la fine</div><p class="nota">The scheme of week 5. Bins 1 and 2 are the most crowded: that is where they collide.</p></div>
+    <div class="passo"><div class="espr">per ogni bin 0…29: assertEquals(<mark class="dato">expected</mark>.getCount(bin), <mark class="due">histogram</mark>.getCount(bin))</div><p class="nota">A lost increment would leave a bin with 1 less: <mark class="ok">all equal</mark> means no lost increment in that execution.</p></div>
+  </figure>
+  <div class="box attenzione" data-tit="A test that discovers little">
+    <p>Tried by putting <code>Histogram1</code> (not thread-safe) in the parallel part: it passed 100 repetitions out of 100. Each thread does a single increment, and the barrier wakes the 5000 threads almost one at a time, so they rarely collide. It is the test the exercise asks for, but it is a good example of "a test that passes proves nothing". Each repetition lasts about a second (creating 5000 threads costs): 20 repetitions are enough.</p>
+  </div>
+  <div class="box attenzione" data-tit="Where the file goes">
+    <p>The test goes in <code>app/src/test/java/exercises06/TestHistograms.java</code>, with <code>package exercises06;</code>. In <code>src/main</code> JUnit is not available (it is a <code>testImplementation</code> dependency), and without the package <code>Histogram1</code>, which is not <code>public</code>, cannot be seen.</p>
+  </div>
+</section>
+
+</main>
+</body>
+</html>

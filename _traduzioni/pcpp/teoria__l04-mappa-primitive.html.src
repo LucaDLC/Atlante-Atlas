@@ -1,0 +1,102 @@
+@@s001 Mappa delle primitive
+@@s002 ora:domanda di adesso,no:risposta no: si scende,ok:la primitiva scelta
+@@s003 Si parte da cosa serve, non dalla primitiva. Il caso: più thread fanno <code>count++</code> sullo stesso contatore.
+@@s004 Il valore cambia: final non basta.
+@@s005 Non è un flag scritto una volta: count++ è <b>leggi-e-poi-scrivi</b>. volatile darebbe visibilità ma non atomicità (esercizio 3.1.8).
+@@s006 Leggi-e-poi-scrivi: <b>lock</b> (synchronized se basta; ReentrantLock per fairness, più condition o tryLock).
+@@s007 Le altre domande servono ad altri casi: aspettare una condizione (bounded buffer) → monitor con while; limitare a c thread → Semaphore; aspettare tutti → CyclicBarrier.
+@@s008 ora:dentro / ha il permesso,no:bloccato,ok:vede l’ultima scrittura,dato:thread
+@@s009 ora:riga aggiunta,ok:sì,no:no,due:dipende,dato:regola
+@@s010 no:sbagliato,ok:giusto
+@@s011 Mappa delle primitive
+@@s012 Tutti gli strumenti di sincronizzazione visti fino alla lezione 4, in un posto solo: cosa garantiscono, quale regola di happens-before danno, e quando usarli.
+@@s013 Avevi chiesto (10 settembre)
+@@s014 "Spiegami i vari tipi di lock che abbiamo usato, non mi ricordo le varie categorie." Questa pagina è la risposta, aggiornata fino alla lezione 4.
+@@s015 Tre famiglie
+@@s016 1 · Lock
+@@s017 Un thread alla volta nella sezione critica: <b>mutua esclusione</b>. <code>synchronized</code>, <code>ReentrantLock</code>.
+@@s018 2 · Attesa di una condizione
+@@s019 Un thread aspetta che lo stato cambi: <b>monitor</b> (lock + condition variable), <code>Semaphore</code>, <code>CyclicBarrier</code>.
+@@s020 3 · Solo visibilità
+@@s021 Nessuna mutua esclusione, solo "chi legge vede l'ultima scrittura": <code>volatile</code>, <code>final</code>.
+@@s022 Lock, attesa di una condizione, solo visibilità
+@@s023 La tabella
+@@s024 Primitiva
+@@s025 Come si scrive
+@@s026 Mutua esclusione
+@@s027 Happens-before
+@@s028 Proprietario / rientrante
+@@s029 Fairness
+@@s030 <b>Lock intrinseco</b> (monitor lock)
+@@s031 <code>synchronized (o) { … }</code>, metodo <code>synchronized</code> (lock di <code>this</code>), <code>static synchronized</code> (lock di <code>X.class</code>)
+@@s032 sì
+@@s033 regola del monitor: unlock → lock successivo sullo stesso oggetto
+@@s034 sì / sì
+@@s035 nessuna garanzia, non configurabile
+@@s036 <b><code>ReentrantLock</code></b>
+@@s037 <code>l.lock(); try { … } finally { l.unlock(); }</code>
+@@s038 sì
+@@s039 come il monitor
+@@s040 sì / sì
+@@s041 <code>new ReentrantLock(true)</code>: favorisce chi aspetta da più tempo
+@@s042 <b>Condition</b> (di un <code>ReentrantLock</code>)
+@@s043 <code>c = l.newCondition()</code>; <code>while (!ok) c.await();</code> · <code>c.signal()</code> / <code>c.signalAll()</code>
+@@s044 si usa tenendo il lock
+@@s045 passa dal lock: <code>await()</code> lo rilascia e lo riprende
+@@s046 chi viene svegliato non è specificato in generale
+@@s047 <b><code>wait</code>/<code>notifyAll</code></b>
+@@s048 dentro <code>synchronized</code>: <code>while (!ok) wait();</code> · <code>notifyAll()</code>
+@@s049 si usa tenendo il lock intrinseco
+@@s050 passa dal lock intrinseco
+@@s051 una sola condition per oggetto
+@@s052 <b><code>Semaphore</code></b>
+@@s053 <code>s.acquire(); try { … } finally { s.release(); }</code>
+@@s054 solo se c = 1 (mutex)
+@@s055 <code>release()</code> → <code>acquire()</code> riuscito in un altro thread
+@@s056 <b>no</b> / <b>no</b>
+@@s057 <code>new Semaphore(c, true)</code>
+@@s058 <b><code>CyclicBarrier</code></b>
+@@s059 <code>cb.await()</code>
+@@s060 no
+@@s061 azioni prima di <code>await()</code> → azioni dopo il ritorno da <code>await()</code> negli altri thread
+@@s062 <b><code>volatile</code></b>
+@@s063 <code>volatile int x;</code>
+@@s064 <b>no</b>
+@@s065 regola volatile: scrittura → letture successive; accessi volatile mai in conflitto
+@@s066 <b><code>final</code></b>
+@@s067 <code>final int x;</code>
+@@s068 no
+@@s069 inizializzazione → ogni azione dopo il costruttore
+@@s070 <b><code>start</code>/<code>join</code></b>
+@@s071 <code>t.start()</code>, <code>t.join()</code>
+@@s072 no
+@@s073 start → prima azione di t; ultima azione di t → join
+@@s074 Le garanzie di happens-before di <code>Semaphore</code> e <code>CyclicBarrier</code> sono scritte nella documentazione Java ("memory consistency effects"). Le altre sono le regole viste a lezione.
+@@s075 Mutua esclusione e origine dell’happens-before
+@@s076 Quale uso?
+@@s077 Parti da cosa ti serve
+@@s078 Niente lock per leggerlo. <a href="l04-pubblicazione.html">Immutabilità</a>.
+@@s079 Esempio: il <code>while (!stop)</code> che deve vedere <code>stop = true</code>. Non basta se la scrittura dipende da una lettura (<code>count++</code>).
+@@s080 <code>synchronized</code> se basta; <code>ReentrantLock</code> se servono fairness, più condition o <code>tryLock</code>.
+@@s081 Lock + condition, sempre con <code>while</code>. <a href="l02-monitor.html">Monitor</a>.
+@@s082 <a href="l04-semafori.html">Semafori</a> e bounded buffer.
+@@s083 Per esempio: tutti hanno inizializzato la loro parte di array.
+@@s084 Scegliere la primitiva, una domanda alla volta
+@@s085 Gli errori classici
+@@s086 Errore
+@@s087 Perché è sbagliato
+@@s088 <code>volatile int count</code> per un contatore condiviso
+@@s089 niente data race, ma <code>count++</code> resta una race condition (<a href="l03-esercizio-31.html">esercizio 3.1.8</a>)
+@@s090 <code>synchronized</code> di istanza per proteggere un campo <code>static</code>
+@@s091 oggetti diversi, lock diversi: nessuna mutua esclusione (<a href="l02-synchronized.html">synchronized</a>)
+@@s092 <code>lock()</code> senza <code>try/finally</code>
+@@s093 un'eccezione nella sezione critica lascia il lock preso per sempre
+@@s094 <code>if (!ok) c.await();</code>
+@@s095 dopo il risveglio la condizione può essere di nuovo falsa (spurious wakeup, altri thread): serve <code>while</code>
+@@s096 attesa attiva: <code>while (!ok) { }</code>
+@@s097 busy-wait, vietato negli esercizi del corso: consuma CPU invece di bloccarsi
+@@s098 mutex prima di <code>spaces.acquire()</code>
+@@s099 ci si blocca tenendo il mutex: deadlock (<a href="l04-semafori.html">bounded buffer</a>)
+@@s100 <code>release()</code> di un semaforo da un thread che non ha fatto <code>acquire()</code>
+@@s101 Java lo permette: i permessi crescono oltre la capacità
+@@s102 Sbagliato → giusto, uno alla volta

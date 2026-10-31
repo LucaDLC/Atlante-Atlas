@@ -1,0 +1,118 @@
+@@s001 LazyList
+@@s002 no:not yet computed,ora:forced now,ok:computed
+@@s003 <p><code>naturals = from(1)</code> is <b>a single cell</b> with two recipes inside: one for the head, one for the tail. No number has been computed.</p>
+@@s004 <p><code>take(3)</code> creates a new cell with <code>cons(h(), t().take(2))</code>. But <code>cons</code> has by-name parameters: <code>h()</code> and <code>t().take(2)</code> <b>are not run</b>. Still zero numbers.</p>
+@@s005 <p><code>toList</code> is strict: it wants the values. <code>h()</code> on the first cell of take forces the head of naturals: <b>1</b>.</p>
+@@s006 <p>Then <code>t().toList</code>: it forces the tail of take, that is <code>t().take(2)</code>. This forces the tail of naturals, which creates the cell of <code>from(2)</code>, and the second cell of take.</p>
+@@s007 <p>Head of the second cell: <b>2</b>.</p>
+@@s008 <p>Tail: <code>take(1)</code>. The third cell of naturals and of take is born.</p>
+@@s009 <p>Head: <b>3</b>.</p>
+@@s010 <p>Tail: <code>t().take(0)</code>. To call <code>take(0)</code> one needs <code>t()</code>: the tail of the third cell is forced and <b>a fourth cell</b> of naturals is born, with the head still to be computed. Then <code>take(0)</code>: the case <code>n &gt; 0</code> does not hold, <code>empty</code>.</p>
+@@s011 <p><code>toList</code> on <code>Empty</code> gives <code>Nil</code>: result <b>List(1, 2, 3)</b>. From an infinite list 4 cells have been created and 3 numbers computed. The head of the fourth will never be computed. (Checked by printing every forcing.)</p>
+@@s012 due:recipe (not computed),ok:value computed
+@@s013 ora:computation run,ok:value remembered,no:computation repeated
+@@s014 dato:LazyList,ok:List built,ora:return type
+@@s015 spento:only described,due:tail forced (head never computed),ok:head computed
+@@s016 ok:true,no:false: stop,ora:still to check
+@@s017 no:different values at each read,ok:always the same
+@@s018 ora:pass over the list,spento:only described,ok:computed on demand
+@@s019 LazyList
+@@s020 A <code>LazyList</code> has the same shape as a list, but head and tail are <b>recipes</b> that run only when someone asks for the value. That is why it can be infinite: only the piece you use is computed.
+@@s021 Open homework
+@@s022 This week's exercises are the assessed hand-in due <b>Tuesday 22 September, 10:00</b>. This page explains the mechanism and shows the code: the hand-in must be written by you ("You must type your hand-in yourself").
+@@s023 The type
+@@s024 04-lazy-list/Exercises.scala
+@@s025 Two shapes, as with <code>List</code>: empty (<code>Empty</code>) or one cell (<code>Cons</code>). The slide says that the two structures are <b>isomorphic</b>: same shape.
+@@s026 The difference: the head is not an <code>A</code> but a <code>() => A</code>, a function with no arguments that <b>when you call it</b> gives an A.
+@@s027 The tail is a recipe too. Until someone calls it, the rest of the list does not exist.
+@@s028 To get the value one calls the recipe: <code>h()</code>. <code>Some</code> wants the value, not the recipe.
+@@s029 Head and tail as recipes
+@@s030 <code>cons</code>: the convenient constructor
+@@s031 The fields of a <code>case</code> cannot be by-name, so <code>Cons</code> uses thunks. To avoid writing them by hand, the companion object offers <code>cons</code>.
+@@s032 In the companion object
+@@s033 <code>empty</code> is <code>Empty</code> with the right type already written (<code>LazyList[A]</code> instead of <code>Empty.type</code>). It helps the compiler.
+@@s034 <b>By-name</b> parameters: whoever writes <code>cons(1 + 1, altro)</code> makes nothing be computed.
+@@s035 I put them in <code>lazy val</code>: they will be computed at first use and then <b>remembered</b>. Asking for the head twice computes it only once.
+@@s036 I build the <code>Cons</code> with two recipes that read the lazy vals. Note: <code>head</code> inside the recipe is written without <code>()</code>, because it is a lazy val, not a function.
+@@s037 <code>LazyList(1, 2, 3)</code> as for lists, but using <code>cons</code>.
+@@s038 lazy val: computes once, then remembers
+@@s039 What is really computed
+@@s040 naturals.take(3).toList
+@@s041 <code>toList</code>: when to use <code>::</code> and when <code>cons</code>
+@@s042 The type you must return decides
+@@s043 I look at the return type: an ordinary <code>List</code>.
+@@s044 To build a <code>List</code> I use <code>Nil</code> and <code>::</code>. Value of the head: <code>h()</code>. Rest: the forced tail, <code>t()</code>, turned into a list.
+@@s045 If instead I must return a <code>LazyList</code> (as in <code>take</code>), I use <code>cons</code> and <code>empty</code>.
+@@s046 Write
+@@s047 Builds
+@@s048 Does it compute the rest at once?
+@@s049 <code>x :: resto</code>
+@@s050 <code>List</code>
+@@s051 yes
+@@s052 <code>cons(x, resto)</code>
+@@s053 <code>LazyList</code>
+@@s054 no, then it remembers
+@@s055 <code>Cons(() => x, () => resto)</code>
+@@s056 <code>LazyList</code>
+@@s057 no, and it recomputes at each use
+@@s058 None, empty or Nil? The return type decides
+@@s059 Write
+@@s060 It is the "nothing" of…
+@@s061 Where it comes from
+@@s062 Example
+@@s063 <code>None</code>
+@@s064 <code>Option</code>: "there is no result"
+@@s065 Scala library
+@@s066 <code>headOption</code>, <code>find</code>
+@@s067 <code>empty</code>
+@@s068 <code>LazyList</code>: list with no elements
+@@s069 companion object of the file
+@@s070 <code>take</code>, <code>filter</code>, <code>map</code>
+@@s071 <code>Nil</code>
+@@s072 ordinary <code>List</code>
+@@s073 Scala library
+@@s074 <code>toList</code>
+@@s075 I look at the type after the colon in the signature: <code>Option[A]</code> → <code>None</code>, <code>LazyList[A]</code> → <code>empty</code>, <code>List[A]</code> → <code>Nil</code>. In <code>unfold</code> both appear: your function says <code>None</code> ("there is no other element") and <code>unfold</code> translates it into <code>empty</code>.
+@@s076 :: for List, cons for LazyList, and the right "nothing"
+@@s077 <code>take</code> and <code>drop</code>
+@@s078 Exercise 3, with the guards
+@@s079 There is a cell and I still want at least one more.
+@@s080 I keep it, and as the rest I put the <code>take</code> of the rest with one element less. Inside <code>cons</code> nothing is computed now.
+@@s081 All the other cases (finite list, or <code>n &lt;= 0</code>): empty list. The case without a guard makes the match exhaustive.
+@@s082 <code>drop</code> instead <b>skips</b> the cell: it does not put it in the result, and continues from the tail.
+@@s083 When I no longer have to skip, I return <b>the list from here on</b>: <code>this</code>, not <code>empty</code>.
+@@s084 A frequent logic error
+@@s085 A <code>drop</code> that returns <code>empty</code> on <code>n &lt;= 0</code> compiles, but it is wrong: <code>LazyList(1, 2, 3).drop(0)</code> must give 1, 2, 3, not the empty list. Five tests fail: <code>Ex03.01</code>, <code>Ex03.02</code>, <code>Ex03.05</code>, <code>Ex04.01</code>, <code>Ex10.02</code> (also Fibonacci, because its test uses <code>drop</code>). In your file there was exactly this line, now corrected.
+@@s086 naturals.take(1000000000).drop(41).take(10).toList — why is it instantaneous?
+@@s087 It creates only the first cell, with recipes inside. Not a billion elements.
+@@s088 drop forces 41 tails, one at a time. The heads of those cells are never computed: <code>drop</code> does not look at them.
+@@s089 Again only one cell with recipes.
+@@s090 toList forces the 10 heads and the tails needed. About fifty cells in all, out of a billion "described" (checked result: 42…51).
+@@s091 Exercise 3: the comment required in the file
+@@s092 "It terminates because cons is non-strict in its tail: take(1000000000) only builds the first node and keeps the rest as an unevaluated thunk. drop(41) then forces 41 nodes, and take(10).toList forces 10 more. About 51 elements are ever computed; nothing is allocated for the remaining billion."
+@@s093 Exercise 2: why does toList fail on an infinite list?
+@@s094 "toList is strict: it recurses until it meets Empty, which on an infinite list never happens. The recursion never returns, so it loops forever or overflows the stack."
+@@s095 A billion described, fifty computed
+@@s096 <code>takeWhile</code>, <code>forAll</code>, <code>exists</code>
+@@s097 <code>&amp;&amp;</code> and <code>||</code> are not strict: if the left part already decides the result, the right one is not computed. So <code>forAll</code> stops at the first element that fails, <code>exists</code> at the first that succeeds.
+@@s098 <b><code>naturals.forAll(_ &lt; 0)</code> terminates?</b> Answer: <b>Yes, at once: false</b>. 1 &lt; 0 is false at the first element: <code>&amp;&amp;</code> does not look at the rest (checked: <code>false</code>).
+@@s099 <b>And <code>naturals.forAll(_ &gt;= 0)</code>?</b> Answer: <b>No: it never finds a counterexample and runs out of stack</b>. Every natural is ≥ 0, so it must check to infinity. The text says so: on infinite lists <code>forAll</code> and <code>exists</code> make sense only if you already know the answer.
+@@s100 Exercise 4: why is naturals.takeWhile { _ &lt; 1000000000 }.drop(100).take(50).toList instantaneous?
+@@s101 "takeWhile builds its result with cons, one node at a time, so it never scans ahead. Only the ~150 elements that drop and take actually request are evaluated. The predicate is never false here, but that does not matter: nobody asks for more."
+@@s102 Exercise 5: the two Whys
+@@s103 <b>forAll { _ &gt;= 0 }</b>: "forAll stops only when it finds an element that fails the predicate. Every natural is ≥ 0, so it keeps recursing over an infinite list and overflows the stack."
+@@s104 <b>forAll and exists on infinite lists</b>: "On an infinite list forAll can only terminate by returning false, and exists only by returning true — so you may use them only when you already know the answer, and then you do not need them. On a finite list they always terminate, because in the worst case they reach the end."
+@@s105 && and || stop as soon as they can
+@@s106 Two lists of random numbers (slide 14)
+@@s107 random1: direct Cons
+@@s108 The recipe <code>() => Math.random</code> is run again at <b>each</b> read: <code>random1.take(2).toList</code> gives different numbers each time.
+@@s109 random2: with cons
+@@s110 <code>cons</code> puts the head in a <code>lazy val</code>: computed once, then always the same.
+@@s111 Checked: two calls to <code>random1.take(2).toList</code> give different lists, with <code>random2</code> the same ones. <code>random1</code> is not referentially transparent because <code>Math.random</code> is an effect.
+@@s112 Direct Cons against cons
+@@s113 Why lazy lists
+@@s114 They separate the <b>description</b> of a calculation from its execution: the generator is the same whether 42 numbers or 1000 are needed.
+@@s115 Only what is needed is computed, as if everything were in memory.
+@@s116 <code>lista.map(f).map(g)</code> on a List goes through the list twice; on a LazyList <b>zero</b> times, until someone asks for the values.
+@@s117 They are functional iterators: in Java an <code>Iterator</code> is laziness with <code>next()</code> as the forcing.
+@@s118 Description at once, execution on request

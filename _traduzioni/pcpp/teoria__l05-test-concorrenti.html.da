@@ -1,0 +1,82 @@
+@@s001 At skrive samtidige tests
+@@s002 dato:tråd der arbejder,ora:venter ved barrieren,ok:startet sammen med de andre
+@@s003 Barrieren oprettes med <b>nrThreads + 1</b> deltagere: de 3 tråde i testen plus <b>main</b>, tråden der kører testen. Den åbner først, når alle 4 er ankommet.
+@@s004 t1 starter straks og når det første <code>await()</code>: den stopper der.
+@@s005 t2 kommer: 2 ud af 4. Uden barrieren ville t1 allerede have lavet alt sit arbejde alene, og trådene ville køre næsten én efter én.
+@@s006 t3 kommer: 3 ud af 4. Der mangler stadig en deltager.
+@@s007 Main laver sit <code>await()</code>: 4 ud af 4, barrieren åbner, og de tre tråde <b>starter på samme øjeblik</b>. Sådan maksimeres konkurrencen: flere operationer parallelt, flere chancer for en dårlig interleaving.
+@@s008 Den samme barriere er cyklisk: den genbruges. Ved det andet <code>await()</code> venter main, til alle er færdige, og først derefter kontrollerer den egenskaben med <b>assertionen</b>.
+@@s009 dato:main,ora:tråd,no:egenskab overtrådt,ok:inde i den kritiske sektion
+@@s010 dato:producenter,due:konsumenter,ok:lige summer,no:forskellige summer
+@@s011 At skrive samtidige tests
+@@s012 Forelæsning 5 og øvelse 5.1–5.2 (del af Assignment 3). En samtidig test kan ikke vælge interleavingen: den kan kun gøre den dårlige <b>sandsynlig</b>. Her er forelæsningens opskrift, JUnit, barrieren til at starte trådene sammen, og de rigtige resultater på øvelsens mængder.
+@@s013 Opskriften i 4 punkter (slide 25)
+@@s014 Før du skriver kode
+@@s015 "Efter at N tråde har gjort X inc(), er tælleren N·X." Det bliver den afsluttende assertion.
+@@s016 Den samme test kører på alle implementeringerne (Buggy, Sync, Library): kun linjen i metoden <code>@BeforeEach</code> ændres.
+@@s017 Flere tråde end kerner (på 8 kerner, 16 tråde) og en <code>CyclicBarrier</code> til at starte dem sammen.
+@@s018 <code>@RepeatedTest(n)</code> og <code>@ParameterizedTest</code>: flere udførelser, flere interleavings besøgt. Øvelsen siger, at der kan være brug for op til 5000–10000 gentagelser.
+@@s019 JUnit
+@@s020 Hvad det bruges til
+@@s021 <code>@BeforeEach</code>
+@@s022 metode der kører før <b>hver</b> test: den opretter et nyt objekt at teste
+@@s023 <code>@Test</code> / <code>@RepeatedTest(100)</code>
+@@s024 én test, kørt én gang eller 100 gange
+@@s025 <code>@ParameterizedTest</code> + <code>@MethodSource("argsGeneration")</code>
+@@s026 den samme test med mange parametre (antal tråde, antal operationer), genereret af en metode, der returnerer en liste af <code>Arguments</code>
+@@s027 <code>@DisplayName("…")</code>
+@@s028 navnet der vises i rapporten
+@@s029 <code>assertTrue(cond, "besked")</code>, <code>assertEquals(forventet, værdi)</code>
+@@s030 egenskaben der skal kontrolleres
+@@s031 <code>gradle cleanTest test --tests exercises05.ConcurrentSetTest</code>
+@@s032 kører testene; HTML-rapporten ligger i <code>build/reports/tests/test/</code>
+@@s033 CyclicBarrier(nrThreads + 1)
+@@s034 Barrieren starter trådene næsten én ad gangen
+@@s035 Indeni bruger <code>CyclicBarrier</code> en lås (<code>ReentrantLock</code>) og en condition. Når den sidste ankommer, vækker den alle, men hver vækket tråd skal <b>tage den lås igen</b>, før den forlader <code>await()</code>: de går ud i kø. Hvis hver tråd laver én enkelt, meget kort operation, er de første færdige, når de sidste går ud, og sammenstødene er sjældne.
+@@s036 Målt med <code>push</code>-testen i øvelse 7.2.2 (1000 tråde, én <code>push</code> hver) mod en <code>push</code>, der med vilje er forkert (<code>get</code> og så <code>set</code>): med <code>CyclicBarrier</code> kommer fejlen frem i <b>1 gentagelse ud af 20</b>. Med en <code>CountDownLatch(1)</code> som "startpistol" (alle laver <code>await()</code>, main laver <code>countDown()</code> én gang) og <code>join()</code> til slutningen: <b>18 ud af 20</b>. Latchen vækker trådene uden at lade dem passere en eksklusiv lås. <code>CountDownLatch</code> er ikke i kursets slides: barrieren er stadig den "officielle" teknik, latchen er en forstærkning.
+@@s037 Øvelse 5.1: mængderne
+@@s038 Tre implementeringer af <code>ConcurrentIntegerSet</code>: <b>Buggy</b> (en <code>HashSet</code> uden beskyttelse), <b>Sync</b> (der skal rettes) og <b>Library</b> (<code>ConcurrentSkipListSet</code>). Testen: 16 tråde tilføjer alle de samme tal 0…999, så størrelsen til sidst skal være <b>1000</b>; derefter fjerner de dem alle, med tallene allerede indeni: størrelsen skal være <b>0</b>.
+@@s039 Implementering
+@@s040 add: mislykkede tests
+@@s041 remove: mislykkede tests
+@@s042 Buggy (HashSet)
+@@s043 <b>169 / 200</b> (størrelse op til 1633)
+@@s044 <b>23 / 200</b> (størrelse ned til −219)
+@@s045 Sync (<code>synchronized</code>-metoder)
+@@s046 Library (ConcurrentSkipListSet)
+@@s047 Kørt med JDK 26 på en maskine med 12 kerner: 16 tråde, CyclicBarrier, 200 gentagelser (et program med samme struktur som JUnit-testen). En størrelse på 1633 for en mængde med 1000 tal, eller en negativ, er umulig i en sekventiel udførelse.
+@@s048 Byg selv interleavingen af add(5)
+@@s049 To tråde kalder <code>add(5)</code> på en tom mængde. <code>HashSet.add</code> er ikke atomisk: her er den delt i tre trin (led efter, indsæt noden, forøg størrelsen). Find en interleaving, der efterlader 5 i mængden <b>én gang</b>, men med <b>størrelse = 2</b>.
+@@s050 To add(5) parallelt
+@@s051 5.1.3: hvorfor synchronized reparerer det
+@@s052 Med <code>add</code>, <code>remove</code> og <code>size</code> alle <code>synchronized</code> på det samme objekt, kan de tre trin i én operation ikke længere blandes med en andens (gensidig udelukkelse), og hver tråd ser den foregående tråds skrivninger (happens-before fra unlock til den næste lock, <a href="l03-happens-before.html">forelæsning 3</a>). Den interne mængde er indesluttet: den forlader ikke klassen (<a href="l04-confinamento.html">indkapsling</a>).
+@@s053 5.1.5 og 5.1.6: hvad en test beviser
+@@s054 Fejlen er et konkret modeksempel: en samtidig udførelse, der giver et resultat, som er umuligt i sekvens. Med kursets definition (ingen data race på felterne) er ræsonnementet det i jeres svar: en forkert størrelse kan kun opstå af usynkroniserede samtidige adgange til felterne i HashSet.
+@@s055 Kun nogle interleavings er besøgt, og kun den endelige størrelse er kontrolleret. Dijkstra: tests viser tilstedeværelsen af fejl, ikke fraværet af dem.
+@@s056 Øvelse 5.2: semaforen
+@@s057 Kapacitet 2, men 3 tråde i den kritiske sektion (verificeret: 3 udførelser ud af 3)
+@@s058 <code>acquire()</code> venter kun, hvis state == capacity; <code>release()</code> laver state-- uden at kontrollere noget.
+@@s059 Ingen havde lavet acquire: det svarer til at give en ekstra tilladelse væk. Også main er en del af interleavingen.
+@@s060 Når hver kontrollerer, er state −1, 0, 1: aldrig lig med 2, så ingen venter.
+@@s061 Herlihys egenskab overtrådt. Jeres svar 5.2.1 er netop dette, og det er rigtigt. Testen afhænger ikke af schedulingen: en almindelig <code>@Test</code> er nok.
+@@s062 Tre tråde inde med kapacitet 2
+@@s063 Notationen m(2) → t1(1) → t2(1) → t3(1)
+@@s064 Tallene er etiketterne på kommentarerne i <code>SemaphoreImp.java</code>: <code>// [1]</code> står over <code>acquire()</code>, <code>// [2]</code> over <code>release()</code>. Altså er <code>m(2)</code> = <b>main</b> kalder <code>release()</code>, <code>t1(1)</code> = tråden t1 kalder <code>acquire()</code>. Pilen → betyder "og så". Interleavingen er skrevet på niveau af <b>metodekald</b>, fordi felterne er <code>private</code>: udefra kan de ikke røres (hint I i øvelsen).
+@@s065 5.2.2: testen capacity() (SemaphoreImpTest.java, forkortet)
+@@s066 Testen genskaber interleavingen fra 5.2.1: CAPACITY = 2, THREADS_NUMBER = CAPACITY + 1 = 3. Den nye semafor oprettes i <code>@BeforeEach</code>.
+@@s067 Barrieren har <b>4</b> deltagere: de 3 tråde plus main. Den åbner kun, når alle 4 er ankommet.
+@@s068 Tælleren over "hvor mange er kommet ind". Den er en <code>AtomicInteger</code>, fordi 3 tråde forøger den sammen: med en <code>int</code> ville testen selv have en data race.
+@@s069 Det er trinnet <code>m(2)</code>: main kalder <code>release()</code> <b>før</b> trådene oprettes. state går fra 0 til −1: den ekstra tilladelse er allerede der, når trådene starter.
+@@s070 Opretter og starter 3 tråde. <code>() -&gt; { … }</code> er en lambda: kroppen af trådens <code>run()</code>-metode.
+@@s071 Første barriere: de 3 tråde og main venter på hinanden, og starter så sammen.
+@@s072 Det er trinnet <code>t(1)</code>: hver tråd laver <code>acquire()</code>. Hvis den ikke blokeres, har den for øvelsen <b>kommet ind</b> i den kritiske sektion, og tæller det. Ingen kalder <code>release()</code>: den der kommer ind, bliver inde.
+@@s073 Anden barriere: main venter, til alle har talt. Først derefter læser den tælleren.
+@@s074 Herlihys egenskab: højst CAPACITY tråde inde. Med den fejlagtige semafor er værdien altid 3, og testen <b>fejler altid</b>.
+@@s075 Hvorfor <code>@Test</code> er nok og ikke <code>@RepeatedTest</code>: efter <code>m(2)</code> er state −1, og hvert <code>acquire()</code> hæver den med 1 (−1 → 0 → 1 → 2). Den tråd der kommer først, finder altid state &lt; 2. Trådenes rækkefølge ændrer ikke resultatet.
+@@s076 Med en korrekt semafor består denne test ikke: den blokeres
+@@s077 Hvis semaforen var korrekt, ville den tredje tråd blive stående i <code>acquire()</code> og aldrig nå det andet <code>barrier.await()</code>. Barrieren venter på 4 deltagere, kun 3 kommer: main bliver blokeret, og testen slutter ikke. En test bør kunne <b>bestå</b> på en korrekt implementering. For eksempel kan man i main bruge <code>barrier.await(1, TimeUnit.SECONDS)</code> og håndtere <code>TimeoutException</code>; efter timeout er tælleren 2, og assertionen er sand.
+@@s078 Den afgrænsede buffer fra forelæsningen
+@@s079 Egenskab: hvis producenter og konsumenter lægger og tager det samme antal elementer, er <b>summen af de tal, der er lagt, lig med summen af de tal, der er taget</b>. Hver producent akkumulerer sin lokale sum og lægger den til sidst i en global <code>AtomicInteger</code> (<code>putSum</code>); konsumenterne gør det samme med <code>takeSum</code>; til sidst <code>assert(putSum.get() == takeSum.get())</code>. Testen stoler på <code>AtomicInteger</code>: hvis objektet, der bruges til at kontrollere, var forkert, ville testen ikke være noget værd.
+@@s080 Udfordring 5.1.7–5.1.8: size() kan lyve
+@@s081 I <code>HashMap</code> læser size() et felt, opdateret efter indsættelsen af noden: en tråd, der kalder size() mellem indsættelsen og en anden tråds size++, ser en gammel værdi. For <code>ConcurrentSkipListSet</code> siger dokumentationen, at size() gennemløber strukturen og kan være unøjagtig, hvis mængden ændrer sig under tællingen. At teste det er svært: man skulle vide, hvor mange elementer der "virkelig" er i det præcise øjeblik, size() læser, og en test kan ikke stoppe alle tråde på netop det punkt.
+@@s082 putSum == takeSum

@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Regler og forbud</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <div class="occhiello"><span>Eksamen</span></div>
+  <h1>Regler og forbud</h1>
+  <p class="lede">Hvert opgaveark starter med den samme sætning: <i>"Do not use variables, side effects, exceptions or return statements (unless explicitly asked for)."</i> Compileren forhindrer dig <b>ikke</b> i det: <code>var</code> og <code>return</code> kompilerer. Karakteren gør.</p>
+</header>
+
+<section>
+  <h2>Hvad der er forbudt</h2>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Forbudt</th><th>Eksempel</th><th>I stedet</th><th>Side</th></tr></thead>
+    <tbody>
+      <tr><td><b>Variable</b></td><td><code>var i = 0</code></td><td><code>val</code>, parametre, akkumulatorer</td><td><a href="../teoria/s01-ricorsione.html">Rekursion</a></td></tr>
+      <tr><td><b>Tildelinger</b></td><td><code>i = i + 1</code></td><td>at sende den nye værdi til et kald</td><td><a href="../teoria/s01-ricorsione.html">Rekursion</a></td></tr>
+      <tr><td><b>Løkker</b></td><td><code>for i &lt;- 0 until n do …</code>, <code>while</code></td><td>rekursion, fold, funktioner som <code>map</code></td><td><a href="../teoria/s02-fold.html">Fold</a></td></tr>
+      <tr><td><b>return</b></td><td><code>return x</code></td><td>værdien af det sidste udtryk</td><td><a href="../teoria/s01-scala-base.html">Scala-grundlag</a></td></tr>
+      <tr><td><b>Undtagelser</b></td><td><code>throw …</code></td><td><code>Option</code> eller <code>Either</code></td><td><a href="../teoria/s03-option.html">Option</a></td></tr>
+      <tr><td><b>Bivirkninger</b></td><td><code>println</code>, ændring af strukturer</td><td>rene funktioner, der returnerer værdier</td><td><a href="../teoria/s01-purezza.html">Renhed</a></td></tr>
+      <tr><td><b>Typerne Any / Object</b></td><td><code>def f(x: Any): Any</code></td><td>polymorfi: <code>def f[A](x: A): A</code></td><td><a href="../teoria/s02-polimorfismo.html">Polymorfi</a></td></tr>
+    </tbody>
+  </table></div>
+  <div class="box attenzione" data-tit="Undtagelser når det er bedt om">
+    <p>"Unless explicitly asked for": i nogle opgaver beder teksten netop om en undtagelse. Eksempel: <code>tail</code>, <code>drop</code> og <code>init</code> i uge 2 skal kaste <code>NoSuchElementException</code>. Der skal det gøres.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Stilskalaen (slide 11, uge 2)</h2>
+  <p>Det er det gitter, kurset bruger til at bedømme koden. Hver række går fra venstre (værst) til højre (bedst). <i>"Always choose the best possible style for an exercise and your abilities."</i></p>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th><span class="t-no">Fordømt</span> (dumpet)</th><th><span class="t-ora">Tilgiveligt</span> (middelkarakter)</th><th><span class="t-ok">Oplyst</span> (høj karakter)</th></tr></thead>
+    <tbody>
+      <tr><td>variable</td><td></td><td>værdier</td></tr>
+      <tr><td>tildelinger</td><td></td><td>binding af værdier (<code>val</code>)</td></tr>
+      <tr><td><code>return</code></td><td></td><td>udtrykkets værdi</td></tr>
+      <tr><td>typen <code>Any</code> / <code>Object</code></td><td></td><td>parametrisk polymorfi</td></tr>
+      <tr><td>løkker</td><td>haledrekursion &lt; simpel rekursion &lt; fold</td><td>at komponere dedikerede funktioner af højere orden</td></tr>
+      <tr><td></td><td><code>if</code>-betingelser &lt; pattern matching</td><td>bruge den dedikerede API</td></tr>
+      <tr><td>undtagelser</td><td></td><td>monaden Option eller Either</td></tr>
+    </tbody>
+  </table></div>
+  <p class="piccolo">Fodnote på slide'en: reglen gælder "unless asked for explicitly, or really important for memory use". For eksempel bruges haledrekursion, hvis det virkelig er nødvendigt for ikke at udtømme stakken.</p>
+
+  <figure class="passi" data-titolo="Den samme funktion, når man går op ad skalaen: sum af en liste" data-modo="sostituisci">
+    <div class="passo">
+      <div class="espr">def somma(xs: List[Int]): Int =
+  <mark class="no">var</mark> tot = 0
+  <mark class="no">for</mark> x &lt;- xs do
+    <mark class="no">tot = tot + x</mark>
+  <mark class="no">return</mark> tot</div>
+      <p class="nota"><span class="t-no">Fordømt.</span> Variabel, løkke, tildeling, return: fire forbud på fem linjer. Den kompilerer og virker, men den dumper.</p>
+    </div>
+    <div class="passo">
+      <div class="espr">def somma(xs: List[Int]): Int =
+  @annotation.tailrec
+  def go(xs: List[Int], <mark class="ora">tot: Int</mark>): Int = xs match
+    case Nil => tot
+    case h :: t => go(t, tot + h)
+  go(xs, 0)</div>
+      <p class="nota"><span class="t-ora">Tilgiveligt, lavt.</span> Haledrekursion med en akkumulator: ingen variable, men meget kode til noget standard.</p>
+    </div>
+    <div class="passo">
+      <div class="espr">def somma(xs: List[Int]): Int = xs match
+  case Nil => 0
+  case h :: t => <mark class="ora">h + somma(t)</mark></div>
+      <p class="nota"><span class="t-ora">Tilgiveligt.</span> Simpel rekursion med pattern matching: mere læsbar, men den skriver et mønster om, der allerede findes.</p>
+    </div>
+    <div class="passo">
+      <div class="espr">def somma(xs: List[Int]): Int =
+  xs.<mark class="ok">foldLeft(0)(_ + _)</mark></div>
+      <p class="nota"><span class="t-ora">Tilgiveligt, højt.</span> Fold'en navngiver mønsteret: kun det specifikke er tilbage, nul'et og +.</p>
+    </div>
+    <div class="passo">
+      <div class="espr">def somma(xs: List[Int]): Int =
+  xs.<mark class="ok">sum</mark></div>
+      <p class="nota"><span class="t-ok">Oplyst.</span> Der findes en dedikeret API: brug den. (I opgaverne kun hvis den er blandt de tilladte funktioner.)</p>
+    </div>
+  </figure>
+
+  <figure class="passi" data-titolo="En fejl, når man går op ad skalaen: middelværdi af en liste" data-modo="sostituisci">
+    <div class="passo">
+      <div class="espr">def mean(xs: List[Double]): Double =
+  if xs.isEmpty then <mark class="no">throw new ArithmeticException("empty")</mark>
+  else xs.sum / xs.length</div>
+      <p class="nota"><span class="t-no">Fordømt.</span> Undtagelse: typen siger ikke, at den kan fejle.</p>
+    </div>
+    <div class="passo">
+      <div class="espr">def mean(xs: List[Double]): <mark class="ok">Option[Double]</mark> =
+  if xs.isEmpty then None
+  else Some(xs.sum / xs.length)</div>
+      <p class="nota"><span class="t-ok">Oplyst.</span> Fejlen er en værdi. Den, der bruger <code>mean</code>, kæder den med <code>map</code>/<code>flatMap</code>.</p>
+    </div>
+  </figure>
+</section>
+
+<section>
+  <h2>Fra uge 2: eksplicit rekursion "lugter"</h2>
+  <div class="box regola" data-tit="Fra opgavearket i uge 2">
+    <p>"From now on, the use of explicit recursion is bad-smell for us. Only use explicit recursion when dealing with a non-standard iteration. Otherwise, you should use a suitable HOF. Similarly, you should only use fold if any of the other simpler HOFs cannot."</p>
+  </div>
+  <p>Valgrækkefølge: <b>dedikeret API</b> (<code>map</code>, <code>filter</code>, <code>exists</code>…) → <b>fold</b> → <b>rekursion</b> kun hvis iterationen er usædvanlig.</p>
+</section>
+
+<section>
+  <h2>Begrænsninger for de enkelte opgaver</h2>
+  <p>Mange opgaver tilføjer et specifikt forbud. Til eksamen kan du forvente spørgsmål med lignende instruktioner: læs dem, før du skriver.</p>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Opgave</th><th>Begrænsning</th><th>Hvorfor</th></tr></thead>
+    <tbody>
+      <tr><td>S1 · isSorted</td><td>ingen pattern matching, haledrekursion med <code>@tailrec</code></td><td>efterligne en <code>for</code> over indeksene</td></tr>
+      <tr><td>S1 · compose</td><td>ingen <code>Function1.compose</code> / <code>andThen</code></td><td>skriv den selv</td></tr>
+      <tr><td>S2 · alle</td><td>kun funktionerne øverst i <code>Exercises.scala</code> og dem fra de tidligere opgaver</td><td>kursets liste er ikke bibliotekets</td></tr>
+      <tr><td>S2 · foldLeft med foldRight</td><td>ingen <code>reverse</code></td><td>reverse er et tilfælde af foldLeft</td></tr>
+      <tr><td>S3 · map, flatMap… på Option</td><td><b>med</b> pattern matching, som metoder</td><td>så du senere kan undgå det</td></tr>
+      <tr><td>S3 · headGrade, map2, sequence</td><td>ingen pattern matching</td><td>brug map, flatMap, for</td></tr>
+      <tr><td>S3 · variance</td><td>ingen pattern matching, ingen <code>map</code> på Option, undgå <code>isEmpty</code></td><td>brug flatMap</td></tr>
+      <tr><td>S4 · toList, take, drop, takeWhile, forAll</td><td><b>med</b> pattern matching</td><td></td></tr>
+      <tr><td>S4 · map, filter, append, flatMap</td><td>med <code>foldRight</code>, ingen rekursion</td><td></td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section>
+  <h2>Når compileren dumper dig selv</h2>
+  <p>Kursets <code>project.scala</code> kompilerer med <code>-Werror</code>: <b>hver advarsel bliver en fejl</b>. Så filen kompilerer ikke, og et homework, der ikke kompilerer, består ikke.</p>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Advarsel</th><th>Typisk årsag</th></tr></thead>
+    <tbody>
+      <tr><td><code>match may not be exhaustive</code></td><td>et tilfælde mangler, eller alle tilfældene har en <code>if</code>-vagt</td></tr>
+      <tr><td><code>Unreachable case</code></td><td>et generelt tilfælde før et specifikt</td></tr>
+      <tr><td><code>Unreachable case except for null</code></td><td>et <code>case _</code> efter tilfælde, der allerede dækker alt</td></tr>
+    </tbody>
+  </table></div>
+  <p>Fulde meddelelser og løsninger: <a href="errori.html">Compilerfejl</a>.</p>
+</section>
+
+<section>
+  <h2>Akademisk ærlighed</h2>
+  <ul>
+    <li>Under kurset <b>må</b> du drøfte løsningerne, rådføre dig med AI og indsætte kodestykker på Discord.</li>
+    <li>Du <b>må ikke</b> aflevere løsninger skrevet af andre, heller ikke AI-genererede, og heller ikke kopiere væsentlige dele. "You must type your hand-in yourself."</li>
+    <li><b>Til eksamen</b>: ingen konsultation af andre personer, ingen AI af nogen art.</li>
+  </ul>
+</section>
+
+</main>
+</body>
+</html>

@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Funktioner som værdier</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+SCENE.filtro = {
+  w: 520, h: 230, lato: false,
+  legenda: 'ora:element under undersøgelse,ok:beholdt,no:kasseret',
+  oggetti: [
+    { id: 'L', tipo: 'celle', x: 60, y: 40, cw: 60, ch: 42, valori: ['1', '−2', '3'] },
+    { id: 'p', tipo: 'nodo', forma: 'quadrato', r: 38, x: 380, y: 60, t: 'x < 0' },
+    { id: 'v', tipo: 'testo', x: 380, y: 125, t: '', size: 14, bold: true },
+    { id: 'R', tipo: 'celle', x: 60, y: 150, cw: 60, ch: 42, valori: ['', '', ''], indici: false },
+    { id: 'tr', tipo: 'testo', x: 150, y: 140, t: 'risultato', size: 12 },
+    { id: 'n', tipo: 'testo', x: 260, y: 215, t: '', size: 14, bold: true }
+  ],
+  passi: [
+    { nota: '<code>List(1, -2, 3).filter(x =&gt; x &lt; 0)</code>. Jeg skriver kun reglen (prædikatet); løkken udføres af filter.' },
+    { nota: 'x = 1: 1 &lt; 0 er <b>false</b>. Kasseret.', set: { L: { toni: { 0: 'no' } }, p: { tono: 'ora' }, v: { t: '1 < 0 → false', tono: 'no' } } },
+    { nota: 'x = −2: −2 &lt; 0 er <b>true</b>. Den bliver.', set: { L: { toni: { 0: 'no', 1: 'ok' } }, v: { t: '−2 < 0 → true', tono: 'ok' }, R: { valori: ['−2', '', ''], toni: { 0: 'ok' } } } },
+    { nota: 'x = 3: false. Kasseret.', set: { L: { toni: { 0: 'no', 1: 'ok', 2: 'no' } }, v: { t: '3 < 0 → false', tono: 'no' } } },
+    { nota: 'Resultatet er en <b>ny</b> liste, List(−2). Den oprindelige er ikke ændret.', set: { p: { tono: null }, v: { t: '' }, n: { t: 'List(1, −2, 3).filter(x => x < 0) = List(−2)', tono: 'ok' } } }
+  ]
+};
+</script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  const T = (id, x, y, t, extra) => Object.assign({ id, tipo: 'testo', x, y, t, size: 13 }, extra || {});
+  const R = (id, x, y, w, h, t, extra) => Object.assign({ id, tipo: 'rett', x, y, w, h, t }, extra || {});
+  const F = (id, x1, y1, x2, y2, t, extra) => Object.assign({ id, tipo: 'vett', x1, y1, x2, y2, t }, extra || {});
+  const C = (id, x, y, valori, extra) => Object.assign({ id, tipo: 'celle', x, y, cw: 52, ch: 40, valori, indici: false }, extra || {});
+
+    SCENE.lambda = {
+      w: 580, h: 230, lato: true,
+      legenda: 'dato:bogstav af data,ora:bogstav af funktion,ok:resultat',
+      oggetti: [
+        C('l', 20, 40, ['1', '-2', '3'], { toni: { 0: 'dato', 1: 'dato', 2: 'dato' } }), T('lt', 98, 28, 'List(1, -2, 3)', { size: 12 }),
+        R('z', 200, 40, 110, 40, '(42, false)', { tono: 'dato' }), T('zt', 255, 28, 'coppia', { size: 12 }),
+        R('fn', 340, 40, 220, 40, '(x: Int) => x < 0', { tono: 'ora', nascosto: true }), T('fnt', 450, 28, 'funzione anonima', { size: 12, nascosto: true }),
+        T('e1', 290, 130, '', { bold: true, size: 15 }), T('e2', 290, 170, '', { size: 13 })
+      ],
+      passi: [
+        { nota: "Per i dati ci sono i <b>letterali</b>: scrivi il valore direttamente nel codice, una lista, una coppia." },
+        { nota: "Anche una funzione ha il suo letterale: la <b>funzione anonima</b> (lambda). Parametro con tipo, freccia, corpo. Non ha nome: lo prende se la metti in una val.", set: { fn: { nascosto: false }, fnt: { nascosto: false }, e1: { t: 'val negative = (x: Int) => x < 0' } } },
+        { nota: "La chiami come una funzione normale: <code>negative(-42)</code>.", set: { e1: { t: 'negative(-42)' } } },
+        { nota: "x viene <b>sostituito</b> da −42 nel corpo.", set: { e1: { t: '-42 < 0' } } },
+        { nota: "Risultato: true. Il tipo di negative è Int =&gt; Boolean.", set: { e1: { t: 'true', tono: 'ok' }, e2: { t: 'negative: Int => Boolean' } } }
+      ]
+    };
+
+    SCENE.ph = {
+      w: 560, h: 150,
+      codice: { lang: 'scala', testo: `def dropWhile[A](l: List[A], p: A => Boolean): List[A] = l match
+  case Nil => Nil
+  case Cons(h, t) => if p(h) then dropWhile(t, p) else l` },
+      legenda: 'ora:h (hoved),ok:p(h) = true,no:p(h) = false,spento:allerede kasseret',
+      oggetti: [
+        C('l', 20, 40, ['-2', '-1', '3', '4']), R('p', 270, 40, 150, 40, 'p = _ < 0', { tono: 'dato' }),
+        T('c', 290, 116, 'dropWhile(List(-2, -1, 3, 4), _ < 0)', { size: 12, bold: true })
+      ],
+      passi: [
+        { nota: "<code>p</code> è la funzione intera (tipo A =&gt; Boolean). <code>p(h)</code> è il suo <b>risultato</b> su h (un Boolean). Seguiamo dropWhile su List(−2, −1, 3, 4) con p = _ &lt; 0.", righe: [1] },
+        { nota: "h = −2. <code>p(h)</code> esegue la funzione: −2 &lt; 0 è true. Si richiama su t, passando <b>p</b> senza parentesi: non la eseguo, la consegno intera.", righe: [3], set: { l: { toni: { 0: 'ok' } }, c: { t: 'p(-2) = true → dropWhile(t, p)' } } },
+        { nota: "h = −1: p(−1) = true. Scarto anche questo e passo avanti p, di nuovo intera.", righe: [3], set: { l: { toni: { 0: 'spento', 1: 'ok' } }, c: { t: 'p(-1) = true → dropWhile(t, p)' } } },
+        { nota: "h = 3: p(3) = false. Restituisco <code>l</code> così com'è: inizia già dall'elemento giusto.", righe: [3], set: { l: { toni: { 0: 'spento', 1: 'spento', 2: 'no' } }, c: { t: 'p(3) = false → l = List(3, 4)', tono: 'ok' } } }
+      ]
+    };
+
+    SCENE.tremodi = {
+      w: 580, h: 230, lato: true,
+      legenda: 'ora:nuværende form,ok:resultat,no:kompilerer ikke',
+      oggetti: [
+        T('f', 290, 40, 'l.filter((x: Int) => x < 0)', { bold: true, size: 15 }), T('s', 290, 76, 'forma completa, con il tipo', { size: 12 }),
+        C('acc', 150, 110, ['1', '2', '3'], { nascosto: true }), T('ft', 290, 180, '', { size: 13, bold: true }), T('ft2', 290, 208, '', { size: 12 })
+      ],
+      passi: [
+        { nota: "La stessa funzione in tre forme. Prima quella completa, con il tipo del parametro." },
+        { nota: "l è una List[Int]: Scala sa già che x è un Int. Il tipo si toglie.", set: { f: { t: 'l.filter(x => x < 0)' }, s: { t: 'il tipo lo deduce Scala' } } },
+        { nota: "Il parametro compare una volta sola: al suo posto <code>_</code>. Niente nome, niente freccia.", set: { f: { t: 'l.filter(_ < 0)' }, s: { t: 'un _ = un parametro' } } },
+        { nota: "Ogni <code>_</code> è un parametro <b>nuovo</b>, nell'ordine: <code>_ + _</code> è <code>(a, b) =&gt; a + b</code>. Perfetto per foldLeft, che vuole (accumulatore, elemento).", set: { f: { t: 'List(1, 2, 3).foldLeft(0)(_ + _)' }, s: { t: '_ + _  =  (a, b) => a + b' }, acc: { nascosto: false }, ft: { t: '0+1 = 1, 1+2 = 3, 3+3 = 6', tono: 'ok' } } },
+        { nota: "Attenzione: <code>map(_ * _)</code> non compila (\"Wrong number of parameters, expected: 1\"): sono due parametri, map ne vuole uno. Per x · x serve il nome: <code>map(x =&gt; x * x)</code>. E <code>val negative = x =&gt; x &lt; 0</code> non compila: senza lista, il tipo di x non si deduce.", set: { f: { t: 'List(1, 2, 3).map(_ * _)', tono: 'no' }, s: { t: 'due _ = due parametri: map ne vuole uno' }, acc: { nascosto: true }, ft: { t: 'map(x => x * x)  →  List(1, 4, 9)', tono: 'ok' }, ft2: { t: 'senza contesto: (x: Int) => x < 0' } } }
+      ]
+    };
+
+    SCENE.fabbrica = {
+      w: 580, h: 220, lato: true,
+      legenda: 'ora:fabrikken,due:producerede funktion,ok:beholdt,no:kasseret',
+      oggetti: [
+        R('fa', 20, 40, 170, 50, 'piuDi(soglia)', { tono: 'ora' }), R('in', 20, 110, 80, 36, '100', { tono: 'dato', nascosto: true }),
+        F('f1', 192, 65, 246, 65, '', { nascosto: true }), R('gr', 250, 40, 150, 50, 'x => x > 100', { tono: 'due', nascosto: true }), T('grt', 325, 110, 'grande', { size: 12, nascosto: true }),
+        C('l', 420, 40, ['50', '150', '300'], { cw: 48, nascosto: true }), T('c', 290, 190, '', { size: 12, bold: true })
+      ],
+      passi: [
+        { nota: "Una funzione può <b>produrre</b> una funzione. <code>piuDi(soglia: Int): Int =&gt; Boolean</code>: il tipo di ritorno ha una freccia." },
+        { nota: "Chiamo la fabbrica con 100.", set: { in: { nascosto: false } } },
+        { nota: "Esce una funzione con la soglia già fissata: <code>x =&gt; x &gt; 100</code>. La metto in <code>val grande</code>.", set: { f1: { nascosto: false }, gr: { nascosto: false }, grt: { nascosto: false } } },
+        { nota: "La uso dove serve una funzione: <code>List(50, 150, 300).filter(grande)</code> = List(150, 300). È la base del currying.", set: { l: { nascosto: false, toni: { 0: 'no', 1: 'ok', 2: 'ok' } }, c: { t: 'filter(grande) → List(150, 300)', tono: 'ok' } } }
+      ]
+    };
+  
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Funktioner som værdier</h1>
+  <p class="lede">I Scala er en funktion en værdi ligesom <code>42</code> eller <code>"ciao"</code>: du putter den i en <code>val</code>, sender den til en anden funktion, returnerer den. En funktion, der modtager eller returnerer funktioner, kaldes <b>af højere orden</b> (higher-order function, HOF).</p>
+</header>
+
+<section>
+  <h2>At skrive en værdi, at skrive en funktion</h2>
+  <p>For data har du <b>bogstaver</b>: du skriver værdien direkte i koden.</p>
+  <pre class="cod" data-lang="scala">val l = List(1, -2, 3)        // una lista
+val a = Array(-1, 2, -3)      // un array
+val z = (42, false)           // una coppia</pre>
+  <p>Også for funktioner findes der et bogstav: den <b>anonyme funktion</b> (eller lambda). Den har intet navn; den får et kun, hvis du putter den i en <code>val</code>.</p>
+
+  <figure class="passi" data-titolo="At læse og bruge en anonym funktion">
+    <div class="passo">
+      <div class="espr">val negative = <mark class="dato">(x: Int)</mark> => x &lt; 0</div>
+      <p class="nota">Til venstre for pilen står parameteren med sin type.</p>
+    </div>
+    <div class="passo">
+      <div class="espr">val negative = (x: Int) <mark class="ora">=></mark> x &lt; 0</div>
+      <p class="nota">Pilen adskiller "hvad der kommer ind" fra "hvad jeg beregner".</p>
+    </div>
+    <div class="passo">
+      <div class="espr">val negative = (x: Int) => <mark class="ok">x &lt; 0</mark></div>
+      <p class="nota">Til højre står kroppen. Dens værdi er resultatet. Typen af <code>negative</code> er <code>Int => Boolean</code>.</p>
+    </div>
+    <div class="passo">
+      <div class="espr">negative(<mark class="dato">-42</mark>)</div>
+      <p class="nota">Du kalder den som en almindelig funktion.</p>
+    </div>
+    <div class="passo">
+      <div class="espr"><mark class="dato">-42</mark> &lt; 0</div>
+      <p class="nota"><code>x</code> erstattes af <code>-42</code> i kroppen.</p>
+    </div>
+    <div class="passo">
+      <div class="espr"><mark class="ok">true</mark></div>
+      <p class="nota">Resultatet.</p>
+    </div>
+  </figure>
+  <figure class="scena" data-scena="lambda" data-titolo="Bogstaver af data og bogstaver af funktioner"></figure>
+</section>
+
+<section>
+  <h2>At give en funktion til en anden</h2>
+  <p><code>filter</code> er en metode på lister, som modtager en "ja/nej"-funktion og kun beholder de elementer, hvor svaret er ja. <b>Den, der kalder din funktion, er <code>filter</code></b>, én gang pr. element.</p>
+  <figure class="passi" data-titolo="List(1, -2, 3).filter(x => x < 0)">
+    <div class="passo">
+      <div class="espr">List(<mark class="dato">1</mark>, -2, 3).filter(<mark class="ora">x => x &lt; 0</mark>)</div>
+      <p class="nota">Jeg skriver kun reglen. Jeg skriver ingen løkke.</p>
+    </div>
+    <div class="passo">
+      <div class="espr">x = <mark class="dato">1</mark>   →   1 &lt; 0   →   <mark class="no">false</mark></div>
+      <p class="nota"><code>filter</code> kalder funktionen på det første element: <code>x</code> får værdien 1. Falsk: 1 kasseres.</p>
+    </div>
+    <div class="passo">
+      <div class="espr">x = <mark class="dato">-2</mark>   →   -2 &lt; 0   →   <mark class="ok">true</mark></div>
+      <p class="nota">Andet element: sand, -2 bliver.</p>
+    </div>
+    <div class="passo">
+      <div class="espr">x = <mark class="dato">3</mark>   →   3 &lt; 0   →   <mark class="no">false</mark></div>
+      <p class="nota">Tredje element: kasseret.</p>
+    </div>
+    <div class="passo">
+      <div class="espr"><mark class="ok">List(-2)</mark></div>
+      <p class="nota">Resultatet er en <b>ny</b> liste. Den oprindelige er ikke ændret.</p>
+    </div>
+  </figure>
+  <figure class="scena" data-scena="filtro" data-titolo="filter, ét element ad gangen"></figure>
+  <div class="box domanda-tua" data-tit="Hyppigt spørgsmål: hvor kommer x fra?">
+    <p><code>x</code> findes ikke før. Det er <b>navnet på parameteren</b> i den funktion, du har skrevet. Værdien gives af den, der kalder den, her <code>filter</code>. Det er det samme, der sker, når du kalder <code>abs(-3)</code>: inde i <code>abs</code> er <code>n</code> lig med -3.</p>
+  </div>
+</section>
+
+<section>
+  <h2><code>p</code> mod <code>p(h)</code></h2>
+  <p>Når en funktion modtager en anden funktion som parameter, kan du inde i kroppen gøre to forskellige ting med navnet. Det er din løsning af <code>dropWhile</code> (uge 2).</p>
+  <figure class="codice" data-titolo="dropWhile: fjern elementer, så længe betingelsen gælder">
+<pre data-lang="scala">def dropWhile[A](l: List[A], p: A => Boolean): List[A] = l match
+  case Nil => Nil
+  case Cons(h, t) => if p(h) then dropWhile(t, p) else l</pre>
+    <ol class="spiega">
+      <li data-righe="1" data-segna="p: A => Boolean"><p><code>p</code> er en parameter af typen <code>A => Boolean</code>: en funktion, der modtager et element og svarer sand eller falsk. Den, der kalder <code>dropWhile</code>, bestemmer hvilken.</p></li>
+      <li data-righe="3" data-segna="Cons(h, t)@dato"><p>Hvis listen ikke er tom, er <code>h</code> det første element og <code>t</code> resten.</p></li>
+      <li data-righe="3" data-segna="p(h)@ora"><p><code>p(h)</code> <b>kører</b> funktionen på det første element. Resultatet er en <code>Boolean</code>, perfekt til <code>if</code>.</p></li>
+      <li data-righe="3" data-segna="dropWhile(t, @ok|p)@due"><p>I det rekursive kald sender jeg <code>p</code> <b>uden parenteser</b>: jeg kører den ikke, jeg afleverer den hel til næste kald, som bruger den på det næste element.</p></li>
+      <li data-righe="3" data-segna="else l@ok"><p>Så snart et element ikke opfylder <code>p</code>, returnerer jeg <code>l</code> som den er: den liste starter allerede ved det rigtige element.</p></li>
+    </ol>
+  </figure>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Jeg skriver</th><th>Hvad det er</th><th>Type</th></tr></thead>
+    <tbody>
+      <tr><td><code>p</code></td><td>hele funktionen, som sendes videre</td><td><code>A => Boolean</code></td></tr>
+      <tr><td><code>p(h)</code></td><td>resultatet af funktionen på <code>h</code></td><td><code>Boolean</code></td></tr>
+    </tbody>
+  </table></div>
+  <figure class="scena" data-scena="ph" data-titolo="dropWhile: send p videre, kør p(h)"></figure>
+</section>
+
+<section>
+  <h2>Tre måder at skrive den samme funktion på</h2>
+  <p>Scala lader dig forkorte anonyme funktioner, når den selv forstår typerne.</p>
+  <figure class="passi" data-titolo="Fra den længste til den korteste">
+    <div class="passo">
+      <div class="espr">l.filter((x: <mark class="dato">Int</mark>) => x &lt; 0)</div>
+      <p class="nota">Fuld version, med parameterens type.</p>
+    </div>
+    <div class="passo">
+      <div class="espr">l.filter(<mark class="ora">x</mark> => x &lt; 0)</div>
+      <p class="nota"><code>l</code> er en <code>List[Int]</code>, så Scala ved allerede, at <code>x</code> er en <code>Int</code>: typen kan udelades.</p>
+    </div>
+    <div class="passo">
+      <div class="espr">l.filter(<mark class="ora">_</mark> &lt; 0)</div>
+      <p class="nota">Hvis parameteren optræder <b>kun én gang</b>, kan du sætte <code>_</code> i stedet. Intet navn, ingen pil.</p>
+    </div>
+    <div class="passo">
+      <div class="espr"><mark class="ora">_</mark> + <mark class="due">_</mark>    =    (<mark class="ora">a</mark>, <mark class="due">b</mark>) => <mark class="ora">a</mark> + <mark class="due">b</mark></div>
+      <p class="nota">Hver <code>_</code> er en <b>ny</b> parameter, i rækkefølge. To understregninger = to parametre.</p>
+    </div>
+    <div class="passo">
+      <div class="espr">List(1, 2, 3).foldLeft(0)(<mark class="ok">_ + _</mark>)   →   6</div>
+      <p class="nota">Der er virkelig brug for en funktion med to argumenter (akkumulator og element): <code>_ + _</code> er fint.</p>
+    </div>
+  </figure>
+  <div class="errori">
+    <div class="errore">
+      <pre data-lang="scala">List(1, 2, 3).map(_ * _)</pre>
+      <pre class="msg">Wrong number of parameters, expected: 1</pre>
+      <div class="fix"><code>_ * _</code> è una funzione a <b>due</b> parametri, ma <code>map</code> ne vuole una a uno. Per "moltiplica x per se stesso" serve il nome: <code>map(x => x * x)</code>.</div>
+    </div>
+    <div class="errore">
+      <pre data-lang="scala">val negative = x => x &lt; 0</pre>
+      <pre class="msg">Missing parameter type
+
+I could not infer the type of the parameter x</pre>
+      <div class="fix">Qui non c'è nessuna lista da cui dedurre il tipo di <code>x</code>. Scrivilo: <code>(x: Int) => x &lt; 0</code>.</div>
+    </div>
+  </div>
+  <figure class="scena" data-scena="tremodi" data-titolo="Fra den fulde form til _"></figure>
+</section>
+
+<section>
+  <h2>Funktioner, der returnerer funktioner</h2>
+  <p>En funktion kan også <b>producere</b> en funktion. Det er grundlaget for currying, på næste side.</p>
+  <figure class="passi" data-titolo="En fabrik af funktioner">
+    <div class="passo">
+      <div class="espr">def piuDi(<mark class="dato">soglia</mark>: Int): Int => Boolean =
+  x => x &gt; <mark class="dato">soglia</mark></div>
+      <p class="nota">Returtypen er <code>Int => Boolean</code>: <code>piuDi</code> returnerer en funktion.</p>
+    </div>
+    <div class="passo">
+      <div class="espr">val grande = piuDi(<mark class="dato">100</mark>)</div>
+      <p class="nota">Jeg kalder fabrikken med 100.</p>
+    </div>
+    <div class="passo">
+      <div class="espr">val grande = <mark class="ora">x => x &gt; 100</mark></div>
+      <p class="nota"><code>grande</code> er funktionen med tærsklen allerede fastlagt indeni.</p>
+    </div>
+    <div class="passo">
+      <div class="espr">List(50, 150, 300).filter(<mark class="ora">grande</mark>)   →   <mark class="ok">List(150, 300)</mark></div>
+      <p class="nota">Og jeg bruger den, hvor der er brug for en funktion.</p>
+    </div>
+  </figure>
+  <figure class="scena" data-scena="fabbrica" data-titolo="piuDi(100): en fabrik af funktioner"></figure>
+</section>
+
+</main>
+</body>
+</html>

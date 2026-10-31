@@ -1,0 +1,58 @@
+@@s001 Java for concurrency
+@@s002 dato:main thread,due:turnstile threads,ora:call happening now,no:main blocked
+@@s003 <code>Turnstile turnstile = new Turnstile();</code> creates the thread object. Nothing starts yet: there is only main.
+@@s004 <code>turnstile.start();</code> starts a <b>new</b> thread that runs run(). start() returns at once: main continues while the other one works.
+@@s005 The two threads go ahead together, each with its own steps.
+@@s006 <code>turnstile.join();</code>: main <b>blocks</b> until turnstile has finished.
+@@s007 Turnstile terminates; main resumes and only now reads counter: the result is complete.
+@@s008 dato:how it is written,ok:what the thread executes
+@@s009 dato:static main,ok:the object with the shared fields,due:the threads (inner class)
+@@s010 dato:instance field (one per object),ok:static field (one per class)
+@@s011 dato:what you write,no:how PowerShell splits it,ok:with the quotes
+@@s012 Java for concurrency
+@@s013 The minimum of Java needed to read the course code: creating and starting a thread, waiting for it, what changes between <code>static</code> and not, and how to launch an exercise with Gradle (also from PowerShell).
+@@s014 Three ways of writing a thread
+@@s015 A <b>thread</b> is a sequence of instructions that advances <b>concurrently</b> with the others: in mixed pieces on one core, or really in parallel on several cores. In Java the behaviour of the thread is written in the <code>run()</code> method.
+@@s016 The same thread, three writings (slides 32 and 36)
+@@s017 Form 1: the class <b>is</b> a thread. Convenient when the thread has several methods or a state of its own.
+@@s018 <code>run()</code> contains what the thread does. It is redefined (override).
+@@s019 Form 2: a <code>Runnable</code> object (an interface with only the <code>run</code> method) given to the constructor of <code>Thread</code>.
+@@s020 Form 3: the lambda <code>() -> { … }</code> is a Runnable written on the fly. The slides recommend it only when the thread's code is short.
+@@s021 Three writings, the same run()
+@@s022 <code>start()</code> and <code>join()</code>
+@@s023 Creating, starting, waiting
+@@s024 Creates the thread object. <b>Nothing starts yet.</b>
+@@s025 Starts a <b>new</b> thread that runs <code>run()</code>. <code>start()</code> returns at once: the main thread continues while the other one works.
+@@s026 The thread that calls <code>join()</code> <b>stops</b> until <code>turnstile</code> has finished. It is a blocking call.
+@@s027 Only after <code>join()</code> does it make sense to read the result: the thread has terminated.
+@@s028 start() and join() over time
+@@s029 Classic mistake: run() instead of start()
+@@s030 <code>turnstile.run()</code> does <b>not</b> create a thread: it runs <code>run()</code> as an ordinary method, in the thread that calls it. For concurrency you need <code>start()</code>.
+@@s031 Why join() wants try/catch
+@@s032 <code>join()</code> can throw <code>InterruptedException</code> (if someone interrupts the thread that is waiting). It is a <b>checked</b> exception: Java forces you to handle it with <code>try { … } catch (InterruptedException e) { … }</code> or to declare it with <code>throws</code>. The same holds for <code>await()</code>, <code>wait()</code>, <code>sleep()</code>, <code>acquire()</code>.
+@@s033 Why the code of the lectures sits in the constructor
+@@s034 In the code of the lectures the <code>main</code> does almost nothing: it creates an object, and all the work is in the <b>constructor</b>. The reason is a Java rule: <code>main</code> is <code>static</code>, so it belongs to no object and does not see the instance fields. By putting the shared fields (the counter, the lock) in an object, and the threads in an inner class, all the threads see the same fields.
+@@s035 CounterThreadsLock.java, structure
+@@s036 <code>counter</code> and <code>lock</code> are fields of the object <code>CounterThreadsLock</code>: all the threads created here share them.
+@@s037 <code>main</code> is <code>static</code>: it belongs to the class, not to an object, so it <b>cannot</b> use <code>counter</code> directly. For this reason it creates an object…
+@@s038 …and the real work is in the constructor, which instead sees the fields.
+@@s039 An <b>inner</b> class (not static) can read and write the fields of the object that contains it. So the two threads touch the same <code>counter</code>.
+@@s040 main, the object and the inner threads
+@@s041 <code>static</code> against instance
+@@s042 Instance field
+@@s043 Each object has its <b>own</b> <code>saldo</code>: <code>a.saldo</code> and <code>b.saldo</code> are two different variables.
+@@s044 Static field
+@@s045 There is <b>only one</b> <code>totale</code> for the whole class, shared by all the objects.
+@@s046 It matters a lot for locks: <code>synchronized</code> on an instance method uses the lock <b>of the object</b>, on a <code>static</code> method it uses the lock <b>of the class</b>. They are two different locks: see <a href="l02-synchronized.html">synchronized</a> (exercise 2.3).
+@@s047 One per object or one per class
+@@s048 Launching an exercise with Gradle
+@@s049 Command (from the folder <code>week01exercises</code>)
+@@s050 What it does
+@@s051 <code>gradle compileJava</code>
+@@s052 compiles everything in <code>app/src/main/java</code>
+@@s053 <code>gradle -PmainClass=exercises01.TestLongCounterExperiments run</code>
+@@s054 compiles and runs the given class (bash, macOS, Linux)
+@@s055 <code>gradle "-PmainClass=exercises01.TestLongCounterExperiments" run</code>
+@@s056 <b>the same thing in PowerShell</b>: the quotes are needed
+@@s057 The files go in <code>app/src/main/java/exercises01/</code> and the first line of each file is <code>package exercises01;</code>. The name of the class with <code>main</code> is what you pass to <code>-PmainClass</code>, preceded by the package.
+@@s058 The point that PowerShell splits

@@ -1,0 +1,97 @@
+@@s001 Asserzioner og kontrakter
+@@s002 dato:betingelse,ok:sand: der sker intet,no:falsk: undtagelse
+@@s003 ora:denne smag af trin,dato:før funktionen,due:efter funktionen
+@@s004 ok:input tilladt,no:input udelukket
+@@s005 dato:input,ok:post-betingelse sand,no:post-betingelse falsk
+@@s006 dato:pre (op til den, der kalder),due:post (op til funktionen),no:kontrakt brudt
+@@s007 dato:sorteret liste,ok:stadig sorteret,no:invariant brudt
+@@s008 Asserzioner og kontrakter
+@@s009 Uge 6, slide 1–14. Før man tester et program, skal man sige, hvad "korrekt" betyder. Det gør man med betingelser sand/falsk om programmet: asserzioner, pre-betingelser (hvad den, der kalder, skal garantere), post-betingelser (hvad funktionen garanterer), kontrakter og invarianter. <a href="s06-pbt.html">Næste side</a> lader computeren kontrollere dem på tilfældige input.
+@@s010 Asserzioner
+@@s011 En <b>asserzion</b> (assertion) er en boolsk betingelse om programmets tilstand (variable, værdier), som i korrekte kørsler er sand. Det er en sætning på italiensk ("en tom liste har længde 0") omsat til kode, der har værdien <code>true</code> eller <code>false</code>.
+@@s012 Asserzionerne fra sliderne (slide 4)
+@@s013 <code>assert(condition)</code>: hvis betingelsen er sand, sker der intet; hvis den er falsk, stopper programmet med <code>java.lang.AssertionError: assertion failed</code>. <code>assert</code> står i objektet <code>Predef</code>, som Scala importerer selv: der skal ingen import til.
+@@s014 Tre fakta om "jeg lægger 42 forrest i en liste l": listen har mindst ét element; længden vokser med 1; hovedet er 42. På sliderne kaldes de "kontrakter for Cons". Med <code>l = List(7, 8)</code> er de alle sande (kontrolleret). Hver <code>assert</code> kontrollerer <b>kun én</b> ting: hvis den fejler, ved du straks hvilken.
+@@s015 Hvad de er til (slide 6): de hjælper den, der <b>læser</b> koden (de siger, hvad der forventes); de får programmet til at fejle <b>med det samme</b>, der hvor fejlen opstår (fail-fast); de hjælper compileren; de er grundlaget for test og verifikation. Asserzioner er ikke kun imperative: i FP bruges de også.
+@@s016 assert: sand gør intet, falsk stopper alt
+@@s017 Definition (eksamen)
+@@s018 "An assertion is a Boolean predicate over the program state (variables and values), usually expressed as a logical proposition, that evaluates to true in the correct executions."
+@@s019 De fire smag: require, ensuring, assert, assume
+@@s020 Scala har fire måder at skrive en asserzion på. Under kørslen opfører de sig næsten ens: hvis betingelsen er falsk, kaster de en undtagelse. Forskellen ligger i <b>betydningen</b>: hvornår man kontrollerer, og hvis skyld det er, når den fejler. Billedet: en kaffeautomat. Pre-betingelse: "indsæt mindst 50 cent" (hvis du ikke gør det, er det din skyld). Post-betingelse: "der kommer en kaffe ud" (hvis du har betalt, og der ikke kommer noget ud, er det automatens skyld).
+@@s021 Smag
+@@s022 Hvornår
+@@s023 Hvis den fejler, skyld i
+@@s024 Undtagelse (Scala 3.8.4)
+@@s025 <code>require(c)</code>
+@@s026 før: pre-betingelse
+@@s027 den, der kalder
+@@s028 <code>IllegalArgumentException: requirement failed</code>
+@@s029 <code>(e) ensuring { r =&gt; P(r) }</code>
+@@s030 efter: post-betingelse
+@@s031 funktionen
+@@s032 <code>AssertionError: assertion failed</code>
+@@s033 <code>assert(c)</code>
+@@s034 overalt: den skal gælde
+@@s035 programmet (det er en test)
+@@s036 <code>AssertionError: assertion failed</code>
+@@s037 <code>assume(c)</code>
+@@s038 en hypotese: tager kun de tilfælde i betragtning, hvor den gælder
+@@s039 — (for verifikatoren er det et aksiom)
+@@s040 <code>AssertionError: assumption failed</code>
+@@s041 require og ensuring i en funktion
+@@s042 <code>require</code> er funktionens første linje: den kontrollerer argumentet, før den gør noget. <code>factorial(-1)</code> → <code>IllegalArgumentException: requirement failed: n deve essere &gt;= 0</code>.
+@@s043 <code>ensuring</code> hæftes <b>efter</b> udtrykket for resultatet. <code>r</code> er det netop beregnede resultat; hvis betingelsen er sand, returnerer <code>ensuring</code> netop det resultat. <code>abs(-5)</code> = 5; <code>abs(Int.MinValue)</code> → <code>AssertionError</code>.
+@@s044 Kaffeautomaten: før, efter, overalt, antagelse
+@@s045 Reglen fra sliderne
+@@s046 Skriv <b>små</b> asserzioner: én overtrædelse ad gangen. Hvis én enkelt asserzion kontrollerer fem ting, ved du ikke, når den fejler, hvilken af de fem der er forkert.
+@@s047 Pre-betingelser: svagere og stærkere
+@@s048 En <b>pre-betingelse</b> er en betingelse, der, hvis den er sand <b>før</b> et stykke kode køres, garanterer, at koden opfører sig pænt. Den sættes normalt ved indgangen til en funktion og handler om argumenterne. En funktion kan have mange forskellige pre-betingelser, der alle er i orden: det, der tæller, er, hvor meget de kræver.
+@@s049 factorial: n &gt;= 0 mod n &gt;= 2
+@@s050 dato:pre-betingelse,ok:tilladt,no:udelukket
+@@s051 Hvis n ≥ 0, virker factorial. Det er en pre-betingelse.
+@@s052 Også denne er en pre-betingelse: hvis n ≥ 2, virker factorial. Men den udelukker 0 og 1 uden grund.
+@@s053 Stærkere = kræver mere = tillader færre input. Hvert n, der opfylder n ≥ 2, opfylder også n ≥ 0, men ikke omvendt.
+@@s054 I fuldstændige specifikationer skriver man den svageste. I test bruger man også stærkere, for at prøve ét aspekt ad gangen.
+@@s055 Eksempler fra sliderne: <code>reduceRight</code> har pre true; <code>def f = throw Exception()</code> har pre false (fejler altid); <code>get</code> på Option har pre "er ikke tom".
+@@s056 Hvilke n pre-betingelsen tillader
+@@s057 Post-betingelser
+@@s058 En <b>post-betingelse</b> beskriver det korrekte resultat af et stykke kode: den kontrolleres <b>efter</b>. For en funktion handler den om den returnerede værdi. I test gør man sådan: man kalder funktionen og kontrollerer derefter med en asserzion, at resultatet opfylder post-betingelsen.
+@@s059 <b>Stærkere</b> = garanterer mere. Den <b>stærkeste</b> (strongest post-condition) beskriver hele opførslen, men ofte betyder det at skrive den om, at man skriver funktionen om. Derfor deler man den op i flere svage post-betingelser og tester hver enkelt. <code>true</code> som post-betingelse siger intet om resultatet: sliderne bruger den til <code>nextInt</code>, fordi det at sige mere ville betyde at beskrive hele generatoren.
+@@s060 Funktion
+@@s061 En post-betingelse (fra sliderne)
+@@s062 Er den den stærkeste?
+@@s063 <code>size(t: Tree[A])</code>
+@@s064 size(t) ≥ 1
+@@s065 no: den siger ikke, hvor mange noder
+@@s066 <code>depth(t: Tree[A])</code>
+@@s067 depth(t) ≥ 0
+@@s068 nej
+@@s069 <code>maximum(t: Tree[Int])</code>
+@@s070 maximum(t) ≥ get(t) (get = et tilfældigt blad)
+@@s071 nej, og den bruger en anden funktion: post-betingelser kan knytte flere funktioner sammen
+@@s072 <code>nextInt</code>
+@@s073 true
+@@s074 no: den garanterer intet
+@@s075 abs: post-betingelsen finder overflowet
+@@s076 Kontrakter
+@@s077 En <b>kontrakt</b> for en funktion er parret <b>pre-betingelse + post-betingelse</b>. Den, der kalder, skal garantere pre'en i øjeblikket for kaldet; funktionen skal, hvis pre'en var sand, garantere post'en, når den slutter. Hvis pre'en var falsk, lover funktionen intet.
+@@s078 Tre kontrakter fra sliderne (slide 12)
+@@s079 <code>=&gt;</code> betyder her "medfører": hvis Option'en er fyldt, returnerer orElse sig selv; hvis den er tom, returnerer den alternativet. Pre true: den kan altid kaldes.
+@@s080 To halvdele: maksimum er ≥ alle elementer, og det er et af elementerne. Med kun én halvdel ville den være svagere: "≥ alle" ville også overholdes af Int.MaxValue.
+@@s081 En <b>partiel</b> funktion (virker ikke på alle input): pre'en er ikke true. Alle tre bruger igen de <b>algebraiske love</b>: man beskriver en funktion ved at sige, hvordan den opfører sig sammen med de andre i API'en.
+@@s082 Den ideelle kontrakt
+@@s083 Pre <b>svagere</b> (jeg beder om minimum) og post <b>stærkere</b> (jeg lover maksimum). Svært at skrive alt.
+@@s084 I test
+@@s085 Man deler den op i mange stykker: "hvis φ gælder før, så gælder ψ efter", med stærkere pre'er og svagere post'er. Hvert stykke bliver en test.
+@@s086 Den svageste af alle
+@@s087 <code>false =&gt; true</code>: den kræver intet, der kan realiseres, og den lover intet. Enhver funktion, der terminerer, overholder den.
+@@s088 get: den, der kalder, garanterer pre'en, funktionen post'en
+@@s089 Invarianter
+@@s090 En <b>invariant</b> er en egenskab, der skal gælde <b>altid</b>, for et objekt eller en datastruktur, mens programmet kører. To typer på sliderne:
+@@s091 <b>Løkkeinvariant</b> (loop invariant): gælder ved hver omgang af en løkke. Eksempel: i insertion sort er elementerne til venstre for det aktuelle indeks allerede sorteret. I FP findes der ingen løkker: dens plads tages af <b>kontrakten for den rekursive funktion</b>, der erstatter løkken.
+@@s092 <b>Invariant for en datastruktur</b>: gælder for enhver værdi af den type. Eksempel: i et AVL-træ differerer højderne af de to undertræer i hver node højst med 1. Eller: "denne liste er sorteret".
+@@s093 Invarianten &quot;sorteret liste&quot; kontrolleret på 100 tilfældige lister
+@@s094 Invarianten skrevet som en funktion: hvert element er ≤ det næste. <code>l.zip(l.drop(1))</code> parrer hvert element med det efter.
+@@s095 <code>insert</code> gennemløber listen og sætter x før det første større element.
+@@s096 Jeg starter fra en sorteret liste (<code>l.sorted</code>), indsætter og kontrollerer, at den stadig er sorteret. ScalaCheck: <code>+ OK, passed 100 tests.</code> Med den forkerte insert <code>x :: l</code>: <code>! Falsified after 3 passed tests</code>, modeksempel l = List(0), x = 1. <code>forAll</code> forklares på <a href="s06-pbt.html">næste side</a>.
+@@s097 insert skal efterlade listen sorteret

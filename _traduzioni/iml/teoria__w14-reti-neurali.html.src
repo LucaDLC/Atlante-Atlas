@@ -1,0 +1,77 @@
+@@s001 Reti neurali: discesa del gradiente e backpropagation
+@@s002 dato:L(w) = (w − 3)²,ok:η = 0.1,ora:η = 0.9,no:η = 1.1
+@@s003 La loss L(w) = (w − 3)², minimo in w = 3. Si parte da w = 0. Regola: w ← w − η · 2(w − 3).
+@@s004 <b>η = 0.1</b>, primo passo: il gradiente in 0 è −6, quindi w = 0 − 0.1 · (−6) = <b>0.6</b>.
+@@s005 Passi successivi: 1.08, 1.464, 1.771, 2.017… Si avvicina a 3 con passi sempre più corti, perché il gradiente si rimpicciolisce.
+@@s006 <b>η = 0.9</b>: scavalca il minimo a ogni passo (0 → 5.4 → 1.08 → 4.54 → 1.77 → 3.98) ma le oscillazioni si stringono: converge lo stesso.
+@@s007 <b>η = 1.1</b>: ogni passo scavalca di più (0 → 6.6 → −1.32 → 8.18 → −3.22 → 10.47): la loss cresce, <b>diverge</b>. Per questa loss il limite è η &lt; 1.
+@@s008 dato:input,ora:neurone che calcola,ok:valore calcolato
+@@s009 La rete 2 → 2 → 1 del testo. Sugli archi i pesi W₁ = [[0.5, −1], [1, 0.5]] e W₂ = [1, −2]; bias b₁ = [0, 1], b₂ = 0.5.
+@@s010 Input x = [1, 2].
+@@s011 h1: z = 0.5·1 + (−1)·2 + 0 = <b>−1.5</b>. ReLU(−1.5) = <b>0</b>: il neurone si "spegne".
+@@s012 h2: z = 1·1 + 0.5·2 + 1 = <b>3</b>. ReLU(3) = <b>3</b>.
+@@s013 Uscita: z = 1·0 + (−2)·3 + 0.5 = <b>−5.5</b>; con la sigmoide p = σ(−5.5) ≈ <b>0.0041</b>: probabilità quasi zero di classe 1.
+@@s014 dato:input,ok:valori in avanti,ora:gradienti all'indietro
+@@s015 Il grafo di DW 26: f(x, y, z) = (x + y) · z. Un nodo "+" calcola q = x + y, un nodo "×" calcola f = q · z.
+@@s016 <b>Avanti</b>: x = 1, y = 2, z = 3.
+@@s017 q = 1 + 2 = <b>3</b>.
+@@s018 f = 3 · 3 = <b>9</b>. Il passaggio in avanti ricorda i valori intermedi: servono per tornare indietro.
+@@s019 <b>Indietro</b>: si parte dall'uscita con ∂f/∂f = 1.
+@@s020 Nodo "×": la derivata rispetto a un ingresso è l'altro ingresso. ∂f/∂q = z = <b>3</b>, ∂f/∂z = q = <b>3</b>.
+@@s021 Nodo "+": passa il gradiente com'è (derivata locale 1). Regola della catena: ∂f/∂x = ∂f/∂q · 1 = <b>3</b>, ∂f/∂y = <b>3</b>.
+@@s022 dato:immagine 28 × 28,ora:collegamenti / filtro,ok:parametri
+@@s023 no:lineare (identità),dato:sigmoide,due:tanh,ok:ReLU
+@@s024 Reti neurali: discesa del gradiente e backpropagation
+@@s025 Lezioni 13–14 ed esercizi della settimana 14 (rete per lo sguardo, ottimizzazione, derivate e regola della catena). Una rete è una catena di prodotti interni e funzioni di attivazione; si allena scendendo lungo il gradiente della loss, calcolato con la regola della catena. Domanda d'esame <b>Q12</b>. DW capitoli 25–26.
+@@s026 Discesa del gradiente
+@@s027 L'idea
+@@s028 Il <a href="w08-derivate-bordi.html">gradiente</a> punta dove la loss sale di più: si fa un passo nel verso opposto. η è il <b>learning rate</b> (la lunghezza del passo). Si ripete finché il gradiente è quasi 0 o per un numero fisso di passi.
+@@s029 Ogni passo si avvicina a 3, con passi sempre più corti perché il gradiente si rimpicciolisce vicino al minimo.
+@@s030 Per i minimi quadrati lineari basta risolvere un sistema; con sigmoidi e reti (non lineari nei pesi) no.
+@@s031 Tre learning rate sulla stessa loss
+@@s032 Tutti i punti calcolati con Python.
+@@s033 L'esempio di DW 25: f(x₁, x₂) = 0.5x₁² + 2.5x₂² − x₁x₂ − 2(x₁ + x₂)
+@@s034 Verificato: il gradiente in (3, 1) è [0, 0].
+@@s035 Dopo 50 passi (2.94, 0.99): ci arriva, lentamente.
+@@s036 Learning rate troppo piccolo: lento. Troppo grande: i passi scavalcano il minimo e crescono. Qui il limite è 2/5.24 ≈ 0.38 (5.24 è l'autovalore più grande della matrice delle derivate seconde, l'hessiana).
+@@s037 Convessità
+@@s038 Una funzione convessa (a forma di scodella, derivata seconda positiva) ha un solo minimo, e la discesa del gradiente lo trova. La loss di una rete non è convessa: si può finire in un minimo locale, e il punto di partenza conta.
+@@s039 La rete: passaggio in avanti
+@@s040 Una rete 2 → 2 → 1 (ReLU, poi sigmoide)
+@@s041 Ogni neurone dello strato nascosto fa un prodotto interno pesi · input più un bias: tutto insieme è una matrice per un vettore (<a href="nozioni-dimensioni.html">(2 × 2)(2) → 2</a>).
+@@s042 L'attivazione non lineare. Senza, due strati lineari di fila sarebbero ancora una sola trasformazione lineare.
+@@s043 Uscita per classificazione binaria: una probabilità (sigmoide). Per la regressione l'uscita resta z₂ (attivazione identità) e la loss è l'MSE. Numeri verificati con NumPy.
+@@s044 I valori che scorrono in avanti
+@@s045 Funzioni di attivazione: perché servono
+@@s046 Ogni neurone fa due cose: un prodotto interno <code>z = wᵀx</code> (come la regressione lineare) e poi una <b>funzione di attivazione</b> <code>g(z)</code>. Senza attivazione, una rete con tanti strati sarebbe inutile: due strati lineari <code>W₂(W₁x)</code> sono la stessa cosa di una sola matrice <code>(W₂W₁)x</code>, quindi tutta la rete resterebbe un modello lineare.
+@@s047 Le attivazioni del corso: la <b>sigmoide</b> σ(z) = 1/(1 + e⁻ᶻ), fra 0 e 1, che si legge come una probabilità (regressione logistica, uscita per due classi); la <b>tanh</b>, stessa forma fra −1 e 1; la <b>ReLU</b> max(0, z), la scelta standard negli strati nascosti, perché è semplice e la sua derivata non si spegne per z grandi (quella della sigmoide sì, e l'allenamento rallenta). Sull'uscita si sceglie l'attivazione in base al compito: identità per la regressione (la rete per lo sguardo prevede due numeri), sigmoide o softmax per la classificazione.
+@@s048 Con una non linearità fra gli strati, combinare neuroni produce funzioni nuove: per esempio <code>|z| = ReLU(z) + ReLU(−z)</code>, una V che nessun modello lineare può rappresentare. Una rete neurale è quindi una <b>funzione di previsione non lineare</b>: una composizione di trasformazioni lineari e non linearità, i cui pesi si imparano con la discesa del gradiente.
+@@s049 Sigmoide, tanh, ReLU, e perché servono
+@@s050 Backpropagation = regola della catena
+@@s051 Il grafo di DW 26: f(x, y, z) = (x + y) · z in (1, 2, 3)
+@@s052 Si calcolano e si ricordano i valori intermedi.
+@@s053 Derivate locali del nodo "per": ognuna è il valore dell'altro ingresso.
+@@s054 Il nodo "più" passa indietro il gradiente com'è (derivata locale 1). Regola della catena: si moltiplicano le derivate lungo il cammino (<a href="nozioni-derivate.html">regole</a>).
+@@s055 Avanti i valori, indietro i gradienti
+@@s056 Un neurone con sigmoide e log loss
+@@s057 La <a href="w10-classificatore-lineare.html">regressione logistica</a> è una rete con un solo neurone.
+@@s058 Tre fattori della catena; con σ′ = σ(1 − σ) quasi tutto si semplifica. Con w = [0.3, −0.2], x = [1, 2], y = 1: gradiente [−0.525, −1.050], uguale a quello numerico.
+@@s059 Ogni strato riceve il gradiente dallo strato dopo, lo moltiplica per la sua derivata locale e lo passa a quello prima. Poi ogni peso fa un passo di discesa del gradiente.
+@@s060 MLP e CNN, allenare e valutare
+@@s061 MLP (fully connected)
+@@s062 CNN (convoluzionale)
+@@s063 strato
+@@s064 ogni uscita collegata a <b>tutti</b> gli ingressi
+@@s065 un piccolo <a href="w07-filtri.html">filtro</a> scorre sull'immagine
+@@s066 parametri, immagine 28 × 28
+@@s067 784 → 100 neuroni: <b>78 500</b>
+@@s068 16 filtri 3 × 3: <b>160</b>
+@@s069 idea
+@@s070 nessuna ipotesi sulla struttura
+@@s071 vicinato locale e stessi pesi in ogni posizione (weight sharing): i filtri che impara somigliano a quelli per bordi e a HOG
+@@s072 <b>Loss</b>: MSE per la regressione (per esempio la rete per lo sguardo, che prevede (x', y')), log loss / cross-entropy per la classificazione.
+@@s073 <b>Allenamento</b>: epoche di discesa del gradiente, spesso su piccoli gruppi di dati (mini-batch). Learning rate da scegliere.
+@@s074 <b>Overfitting</b>: tanti parametri ⇒ curve di training e validation che si separano (<a href="w07-complessita-modello.html">settimana 7</a>). Rimedi: più dati, early stopping, regolarizzazione (<a href="w07-validazione.html">ridge = weight decay</a>), reti più piccole. Scelte di architettura e iperparametri con validation set o cross-validation.
+@@s075 Q12
+@@s076 (a) previsione per regressione e classificazione (uscita e attivazione). (b) allenamento: gradienti, regola della catena, forward e backward (il grafo di DW). (c) training e valutazione, over/underfitting. (d) MLP contro CNN. (e) loss, complessità, cross-validation.
+@@s077 78 500 parametri contro 160

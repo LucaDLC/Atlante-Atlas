@@ -1,0 +1,50 @@
+@@s001 Mappe concorrenti: dal lock unico a ConcurrentHashMap
+@@s002 <span>Settimana 9 · Performance</span>
+@@s003 Mappe concorrenti: dal lock unico a ConcurrentHashMap
+@@s004 Il secondo caso di studio: otto implementazioni di una mappa hash thread-safe, dal lock unico alle strutture senza lock. La regola che le attraversa tutte è la stessa del contatore: tenere i dati scritti vicini a un solo thread.
+@@s005 Le otto mappe
+@@s006 Il secondo caso di studio è una mappa hash thread-safe. La lezione confronta otto implementazioni, dalla più semplice alla libreria di Java:
+@@s007 nome
+@@s008 idea
+@@s009 SynchronizedMap
+@@s010 un lock unico sulla mappa intera
+@@s011 StripedMap
+@@s012 un array di lock: ogni lock protegge una parte dei bucket. Le slide dicono 16 lock in un punto e 32 in un altro
+@@s013 StripedMapPadded
+@@s014 come sopra, con padding tra i lock
+@@s015 StripedWriteMap
+@@s016 come StripedMap, ma le liste di coppie (chiave, valore) sono immutabili: le <b>letture</b> non prendono lock
+@@s017 StripedWriteMapPadded
+@@s018 come sopra, con padding
+@@s019 StripedLevelWriteMap
+@@s020 due livelli: un array di array, ognuno con il suo lock; i sotto-array si ridimensionano separatamente
+@@s021 HashTrieMap
+@@s022 senza lock: operazioni CAS su un hash array mapped trie (Prokopec, Bagwell)
+@@s023 WrapConcHashMap
+@@s024 il <code>java.util.concurrent.ConcurrentHashMap</code> di Doug Lea: lock e CAS insieme, con padding
+@@s025 Il carico di lavoro
+@@s026 Per confrontarle, la lezione usa lo stesso schema di lavoro per tutte: N thread eseguono in totale 5 000 000 operazioni (ognuno 5 000 000 / N). Ogni operazione cerca una chiave a caso e agisce così:
+@@s027 Un’operazione del carico di lavoro
+@@s028 dato:chiave,ora:decisione,ok:azione
+@@s029 È il primo controllo: <code>containsKey</code>.
+@@s030 Se il numero casuale è sotto addProb, si fa <code>put</code>.
+@@s031 Se il numero casuale è sotto removeProb, si fa <code>remove</code>.
+@@s032 Cambiando addProb e removeProb si ottengono carichi diversi: <b>dominati dalle letture</b> (60% e 2%) oppure <b>dominati dalle scritture</b> (90% e 30%).
+@@s033 Cosa mostrano le misure
+@@s034 Il lock unico (<code>SynchronizedMap</code>) non scala: più thread, più tempo. Sul server è molto peggiore che sul laptop.
+@@s035 Con carico bilanciato o dominato dalle scritture, nessuna versione scritta a mano scala bene: vince la <code>ConcurrentHashMap</code> della libreria.
+@@s036 Con carico dominato dalle letture, la <code>ConcurrentHashMap</code> resta la migliore; il padding aiuta le versioni con letture non bloccanti.
+@@s037 Le letture non bloccanti (liste immutabili) funzionano bene solo se la mappa è letta molto più di quanto è scritta.
+@@s038 Le versioni non bloccanti hanno un costo in memoria: ogni scrittura crea una coppia nuova, quindi servono un garbage collector e una gestione attenta. È per questo che la lezione dice che la tecnica non è praticabile in C o C++ senza un GC.
+@@s039 Le lezioni
+@@s040 Quando un lock è la scelta giusta, e quando no
+@@s041 dato:situazione,ora:passo di ragionamento,ok:conclusione,no:da evitare
+@@s042 Un lock che aspetta non fa lavorare la CPU: è un vantaggio.
+@@s043 Ma solo se i dati mutabili, lock compresi, restano per lo più locali a un thread.
+@@s044 I thread riprovano in un ciclo di attesa attiva, e le linee passano M → I → M → I.
+@@s045 @Contended è riservato alle librerie di Java: nel tuo codice serve il padding a mano.
+@@s046 Come scegliere
+@@s047 In pratica
+@@s048 Non scrivere una mappa concorrente da zero: usa <code>ConcurrentHashMap</code>. Scrivi una versione tua solo per capire il trade-off, o se misuri che la libreria non basta per un caso preciso.
+@@s049 Frase per l’orale
+@@s050 Striped locks and padding keep frequently written data core-local, so the cache lines can stay in the Modified state; ConcurrentHashMap combines these ideas in the library.

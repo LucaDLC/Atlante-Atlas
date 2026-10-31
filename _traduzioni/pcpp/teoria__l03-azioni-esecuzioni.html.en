@@ -1,0 +1,59 @@
+@@s001 Actions and executions
+@@s002 dato:main's action,ora:action just executed,ok:already executed
+@@s003 Three threads: the main m, t1 and t2. An execution is a sequence of actions, one per column, from left to right.
+@@s004 The main initialises the variables (the four inits, gathered here) and starts the two threads.
+@@s005 t1(1): a = 1.
+@@s006 t2(3): b = 1. The steps of the two threads are mixed: it is one of the possible interleavings.
+@@s007 t1(2): x = b, and b is already 1.
+@@s008 t2(4): y = a = 1.
+@@s009 The main waits for the two threads (join) and prints: this execution prints <b>(1,1)</b>. With a different order of the four central actions it would print (0,1) or (1,0).
+@@s010 ok:sequentially consistent,no:not SC (reordering)
+@@s011 dato:variable access,ora:synchronization,due:other
+@@s012 dato:program order of the main,ora:of t1,due:of t2,no:no order
+@@s013 Actions and executions
+@@s014 Visibility and reordering make the real behaviour hard to predict by looking at the hardware. The <b>Java Memory Model</b> (JMM) gives rules at the level of the language to say which executions are valid. One starts from three words: <b>action</b>, <b>execution</b>, <b>program order</b>.
+@@s015 Why a memory model is needed
+@@s016 Hardware changes from one computer to another: different instructions, different memory management.
+@@s017 Compilers, runtimes and CPUs make optimisations (reordering, rewriting of the code) that produce "paradoxical" results: the loop that does not end, the output (0,0).
+@@s018 The JMM is a set of rules: the JVM generates only executions valid under those rules, <b>on any hardware</b>. So the programmer can predict what happens.
+@@s019 Sequential consistency (Lamport)
+@@s020 The "normal" behaviour you expect. A concurrent execution is <b>sequentially consistent</b> if 1) it respects the order of the instructions inside each thread and 2) the operations seem to happen in an instant, one at a time. The output (0,0) of <code>PossibleReordering</code> is <b>not</b> sequentially consistent.
+@@s021 Guaranteeing it for every program would cost all the optimisations. The JMM guarantees it only for <b>correctly synchronized</b> programs (<a href="l03-data-race.html">data race page</a>).
+@@s022 Sequentially consistent outputs, and (0,0)
+@@s023 Actions: "who does what"
+@@s024 Definition
+@@s025 An <b>action</b> is a pair <code>t(o)</code>: <code>t</code> is the thread, <code>o</code> the operation. For example <code>t1(1)</code> = the thread t1 executes the operation numbered (1).
+@@s026 Type
+@@s027 Examples
+@@s028 <b>Variable access</b>
+@@s029 reading or writing a variable of the program: <code>a=1</code> (writing a), <code>x=b</code> (reading b and writing x)
+@@s030 <b>Synchronization</b>
+@@s031 synchronization primitives: <code>lock()</code>, <code>unlock()</code>, <code>start()</code>, <code>join()</code>…
+@@s032 <b>Other</b>
+@@s033 everything else (creating an object, printing…)
+@@s034 Giving a name to each operation (slide 13)
+@@s035 The main (thread <code>m</code>) initialises the variables: actions <code>m(init(x))</code>… They are <b>variable access</b> (writes).
+@@s036 The operations of <code>one</code>, which we call t1: <code>t1(1)</code> writes <code>a</code>, <code>t1(2)</code> reads <code>b</code> and writes <code>x</code>.
+@@s037 Those of <code>other</code> (t2): <code>t2(3)</code>, <code>t2(4)</code>.
+@@s038 <b>Synchronization</b>: <code>m(start(t1))</code>, <code>m(start(t2))</code>, <code>m(join(t1))</code>, <code>m(join(t2))</code>.
+@@s039 <code>m(5)</code> reads <code>x</code> and <code>y</code>.
+@@s040 Three types of actions
+@@s041 Executions
+@@s042 Definition
+@@s043 An <b>execution</b> is a sequence of actions <span class="m">σ = α<sub>1</sub>, α<sub>2</sub>, α<sub>3</sub>, …</span>
+@@s044 Question from the slide: write a possible execution
+@@s045 The main initialises.
+@@s046 It starts the two threads.
+@@s047 The steps of the threads, mixed in one of the possible ways.
+@@s048 The main waits and prints. This execution prints (1,1).
+@@s049 One execution, action by action
+@@s050 Program order
+@@s051 Definition
+@@s052 Given two actions <code>a</code>, <code>b</code> of the <b>same</b> thread, <code>a</code> comes before <code>b</code> in the <b>program order</b> if, executing that thread alone, <code>a</code> would be executed before <code>b</code>. It is defined on the code: the reorderings of the compiler or CPU do not count.
+@@s053 For each thread it is a <b>total order</b>: taking any pair of its actions, one of the two comes first.
+@@s054 Writing the program order as pairs
+@@s055 For the main: each action and the one <b>immediately after</b>.
+@@s056 It can be written as a chain. It is a shortcut: <code>a → b → c</code> means the pairs <b>(a,b), (b,c) and also (a,c)</b>.
+@@s057 The program order of t1 and of t2.
+@@s058 The program order <b>says nothing</b> about pairs of different threads. For those one needs the happens-before rules: <a href="l03-happens-before.html">next page</a>.
+@@s059 Chains inside each thread, nothing between threads

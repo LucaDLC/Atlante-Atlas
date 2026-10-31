@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Minimalt udspændende træ: Kruskal og Prim</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+const N = (id,x,y,t) => ({id,tipo:'nodo',x,y,t,r:18});
+const A = (id,da,a,t) => ({id,tipo:'arco',da,a,dir:false,t});
+SCENE.kru = {
+  w: 520, h: 270, lato: true,
+  legenda: 'ok:taget i træet,no:kasseret (cyklus),dato:ikke endnu behandlet',
+  oggetti: [
+    N('a',60,70,'a'), N('b',180,40,'b'), N('c',300,70,'c'), N('d',300,190,'d'), N('e',180,200,'e'),
+    A('ab','a','b','1'), A('bc','b','c','2'), A('de','d','e','2'), A('ac','a','c','3'), A('cd','c','d','4'), A('be','b','e','5'),
+    {id:'c1',tipo:'testo',x:20,y:250,t:'',size:12,bold:true,anchor:'start'}
+  ],
+  passi: [
+    { nota: 'Kanter med vægte, seks knuder <b>a … e</b>. Et udspændende træ (spanning tree) forbinder alle knuderne med <b>n − 1 = 4 kanter</b> uden cyklusser, til mindste omkostning.', set:{ab:{tono:'dato'},bc:{tono:'dato'},de:{tono:'dato'},ac:{tono:'dato'},cd:{tono:'dato'},be:{tono:'dato'}} },
+    { nota: 'Jeg sorterer kanterne efter stigende vægt: 1, 2, 2, 3, 4, 5. Jeg tager den første: <b>ab = 1</b>, den skaber ingen cyklusser.', set:{ab:{tono:'ok'},c1:{t:'preso: ab(1)'}} },
+    { nota: '<b>bc = 2</b>: forbinder c til komponenten a–b, ingen cyklus. Taget.', set:{bc:{tono:'ok'},c1:{t:'preso: ab(1), bc(2)'}} },
+    { nota: '<b>de = 2</b>: forbinder d–e, som er en anden komponent. Taget.', set:{de:{tono:'ok'},c1:{t:'preso: ab, bc, de (1+2+2)'}} },
+    { nota: '<b>ac = 3</b>: a og c er allerede i samme komponent (a–b–c). Hvis jeg tilføjer den, lukkes en cyklus: <b>kasseret</b>.', set:{ac:{tono:'no'},c1:{t:'ac scartato: chiuderebbe un ciclo'}} },
+    { nota: '<b>cd = 4</b>: forener de to komponenter {a,b,c} og {d,e}. Taget: nu har jeg 4 = n − 1 kanter, omkostning <b>9</b>. Jeg stopper.', set:{cd:{tono:'ok'},ac:{tono:null},c1:{t:'albero: ab, bc, de, cd · costo 9',tono:'ok'}} }
+  ]
+};
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Minimalt udspændende træ: Kruskal og Prim</h1>
+  <p class="lede">At forbinde alle knuderne i en graf til den mindste samlede omkostning: problemet med det minimale udspændende træ (MST). To grådige algoritmer løser det: Kruskal, der tilføjer de billigste kanter, og Prim, der lader ét træ vokse.</p>
+</header>
+
+<section>
+  <h2>Problemet</h2>
+<p>Et <b>udspændende træ</b> (spanning tree) i en sammenhængende graf er en delmængde af kanter, der forbinder alle knuderne uden cyklusser. Det har altid <code>n − 1</code> kanter. Det <b>minimale udspændende træ</b> (MST) er det med mindst samlet omkostning: mindste sum af vægtene.</p>
+<p>Omkostningen afhænger ikke af roden: et træ har ingen iboende rod. Spørgsmålet er kun, hvilke kanter man beholder.</p>
+</section>
+<section>
+  <h2>Kruskal: tag den billigste kant</h2>
+<p>Regel: sortér kanterne efter stigende vægt. For hver kant <code>u–v</code>: hvis <code>u</code> og <code>v</code> er i forskellige komponenter, tag den og flet komponenterne; ellers kassér den, fordi den ville lukke en cyklus. Stop ved <code>n − 1</code> kanter.</p>
+<p>For at vide, om <code>u</code> og <code>v</code> allerede er forbundet, bruges <b>union-find</b> (egen side).</p>
+  <figure class="scena" data-scena="kru" data-titolo="Kruskal: sortering efter vægt og cykeltest"></figure>
+</section>
+<section>
+  <h2>Hvorfor den virker: snitegenskaben</h2>
+<p><b>Snitegenskaben</b> (cut property): givet et snit i grafen (en opdeling af knuderne i to grupper), er den billigste kant, der krydser snittet, med i <i>nogle</i> MST. Kruskal tager altid denne type kant: den billigste, der forbinder to komponenter.</p>
+<p>Symmetrisk, <b>cykelegenskaben</b> (cycle property): den dyreste kant i en cyklus er i ingen MST. Derfor kasserer du den, når den lukker en cyklus.</p>
+</section>
+<section>
+  <h2>Prim: lad ét træ vokse</h2>
+<p>Prim starter fra en knude og lader ét træ vokse: i hvert trin tilføjer den <b>den billigste kant, der går ud af træet</b> mod en ydre knude. Det er samme skema som Dijkstra: en prioritetskø over de ydre knuder, med den mindste afstand fra træet.</p>
+<p>Omkostning <code>O(m log n)</code> med en binær heap, ligesom Kruskal. Prim er mere bekvem, når grafen er tæt; Kruskal, når kanterne allerede er sorteret, eller når du har brug for den globale orden.</p>
+</section>
+<section>
+  <h2>Koden side om side</h2>
+  <p>Denne side forklarer begrebet. Java-koden, der implementerer det, med en forklaring linje for linje og de syntaksnoter, der skal bruges, står på den side ved siden af.</p>
+  <p><a href="../codice/mst-kruskal-prim.html"><b>→ Java-kode til dette emne</b></a></p>
+</section>
+<section>
+  <h2>Til eksamen</h2>
+<div class="box esame" data-tit="Til eksamen">
+<p>At forbinde alt til mindste omkostning → MST. Skriv: <i>"Sort the edges by non-decreasing weight. Add an edge if its endpoints are in different components (union-find). The result is a minimum spanning tree by the cut property. Time O(m log n)."</i></p>
+<p>Hvis spørgsmålet beder om at <b>bevise</b> korrektheden, citer snitegenskaben og lav bytteargumentet på den kasserede kant.</p>
+</div>
+</section>
+<section>
+  <h2>Hurtig oversigt</h2>
+<div class="tab-wrap"><table class="tab"><thead><tr><th>element</th><th>betydning</th><th>note</th></tr></thead><tbody><tr><td>kant</td><td>u–v med vægt ℓ</td><td>skal sorteres</td></tr><tr><td>Kruskal</td><td>kanter efter vægt, union-find</td><td>O(m log n)</td></tr><tr><td>Prim</td><td>et træ der vokser</td><td>O(m log n) med heap</td></tr><tr><td>n − 1</td><td>kanter i træet</td><td>altid</td></tr></tbody></table></div>
+</section>
+
+</main>
+</body>
+</html>

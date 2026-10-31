@@ -1,0 +1,72 @@
+@@s001 Esercizio 6.1: CasHistogram
+@@s002 Esercizio 6.1: CasHistogram
+@@s003 Un istogramma lock-free fatto di <code>AtomicInteger</code>, usando solo <code>get</code> e <code>compareAndSet</code>, e un test che lo confronta con la versione sequenziale. Prima cos'è un istogramma, poi la classe, poi il test.
+@@s004 Cos'è un istogramma
+@@s005 Una fila di <b>caselle</b> (bin), ognuna con un <b>contatore</b>: serve a contare quante volte capita ogni cosa. L'interfaccia <code>Histogram</code>:
+@@s006 metodo
+@@s007 cosa fa
+@@s008 <code>increment(7)</code>
+@@s009 +1 alla casella 7
+@@s010 <code>getCount(7)</code>
+@@s011 il valore della casella 7
+@@s012 <code>getSpan()</code>
+@@s013 quante caselle ci sono (nell'esercizio 30)
+@@s014 <code>getAndClear(7)</code>
+@@s015 restituisce il valore della casella 7 <b>e</b> la rimette a 0
+@@s016 Histogram1
+@@s017 <code>int[]</code> e <code>counts[bin] = counts[bin] + 1</code>: leggi, poi scrivi. Perfetto con un thread solo; con più thread perde incrementi (race condition). Nel test fa da <b>riferimento</b>, usato da un solo thread.
+@@s018 CasHistogram
+@@s019 La stessa cosa, ma ogni casella è un <code>AtomicInteger</code> e l'incremento è un ciclo CAS: non perde niente anche con molti thread. È la classe <b>sotto test</b>.
+@@s020 6.1.1 · La classe
+@@s021 CasHistogram (compilato con javac)
+@@s022 <code>private</code>: lo stato non esce dalla classe. <code>final</code>: pubblicazione sicura (regola dei campi final).
+@@s023 <code>new AtomicInteger[span]</code> crea posizioni <b>vuote</b> (<code>null</code>), non zeri: ogni posizione va riempita, altrimenti il primo <code>increment</code> dà <code>NullPointerException</code>.
+@@s024 Ciclo CAS: leggo, provo a scrivere <i>letto + 1</i>; se qualcuno ha cambiato il valore nel frattempo il CAS fallisce e riprovo. Lock-free. Metodi come <code>incrementAndGet</code> o <code>getAndSet</code> sono <b>vietati</b> dall'esercizio: il ciclo va scritto a mano.
+@@s025 Una sola lettura, o un valore che non cambia mai: nessun ciclo (wait-free).
+@@s026 Stesso ciclo con nuovo valore 0. Si restituisce il valore <b>che il CAS ha azzerato</b>, non una rilettura fatta dopo.
+@@s027 final copre anche quello che c'è dentro l'array
+@@s028 La regola dei campi <code>final</code> non vale solo per il riferimento <code>counts</code>: un thread che vede l'oggetto dopo il costruttore vede anche <b>tutto ciò che si raggiunge da quel campo</b> com'era alla fine del costruttore. Quindi vede l'array e i 30 <code>AtomicInteger</code> già creati, ognuno a 0. Le modifiche successive sono visibili perché ogni <code>AtomicInteger</code> si comporta come un <code>volatile</code>.
+@@s029 <b>Variabili immutabili:</b> il riferimento <code>counts</code> (final, mai riassegnato) e, di fatto, il contenuto dell'array: dopo il costruttore <code>counts[i]</code> punta sempre allo stesso <code>AtomicInteger</code>. Mutabili sono solo i valori dentro gli <code>AtomicInteger</code>: sono lo stato dell'istogramma.
+@@s030 i) Perché lo stato non esce: tre porte, tutte chiuse
+@@s031 dato:lo stato,ok:porta chiusa
+@@s032 Lo stato "esce" se un altro oggetto ottiene un riferimento all'array o a uno degli <code>AtomicInteger</code>: a quel punto potrebbe cambiarli senza passare dai metodi della classe.
+@@s033 Nessun'altra classe può leggere <code>counts</code> direttamente.
+@@s034 <code>getCount</code>, <code>getSpan</code> e <code>getAndClear</code> restituiscono un <code>int</code>, cioè una <b>copia</b> del numero, mai l'array o un <code>AtomicInteger</code>. Nessun metodo riceve un array da fuori e lo tiene.
+@@s035 Il costruttore non avvia thread e non passa <code>this</code> a nessuno: nessuno può vedere l'oggetto mezzo costruito.
+@@s036 Risposta pronta 6.1.1
+@@s037 i) No escaping: the state is the array <code>counts</code> and the <code>AtomicInteger</code> objects in it. The field is <code>private</code>, no method returns the array or one of its <code>AtomicInteger</code>s (they only return <code>int</code> values), and the constructor neither starts threads nor passes <code>this</code> to other objects. ii) Safe publication: <code>counts</code> is <code>final</code>, so any thread that obtains a reference to the object after construction sees the array and all <code>AtomicInteger</code>s initialised to 0. Later updates are visible because each <code>AtomicInteger</code> behaves like a volatile variable. Immutable: the reference <code>counts</code> and, in practice, the array contents (each slot always points to the same <code>AtomicInteger</code>). Only the values inside the <code>AtomicInteger</code>s change.
+@@s038 AtomicIntegerArray non va bene qui
+@@s039 Con <code>AtomicIntegerArray</code> e <code>incrementAndGet</code> / <code>getAndSet</code> la classe è thread-safe, ma viola il testo: serve <code>AtomicInteger</code>, e si possono usare <b>solo</b> <code>get</code> e <code>compareAndSet</code>.
+@@s040 6.1.2 · getAndClear è atomico?
+@@s041 Il metodo fa due cose: <b>get</b> (legge il valore) e <b>clear</b> (lo rimette a 0). La domanda: un altro thread può infilarsi tra le due e far perdere qualcosa? Con il ciclo CAS no.
+@@s042 getAndClear(7) e increment(7) insieme
+@@s043 dato:valore letto,ora:CAS,ok:riuscito,no:fallito
+@@s044 Due thread sulla stessa casella.
+@@s045 T1 ha fatto il "get". Il "clear" non c'è ancora.
+@@s046 T2 si infila proprio tra il get e il clear di T1.
+@@s047 Il CAS scrive 0 solo se la casella vale ancora 5. Non vale 5: non azzera niente, l'incremento di T2 resta.
+@@s048 Il ciclo riprova. Il valore restituito è <b>esattamente</b> quello che il CAS ha sostituito con 0: get e clear avvengono insieme, nel CAS riuscito.
+@@s049 get, poi set(0)
+@@s050 <code>v = c.get(); c.set(0); return v;</code> Se T2 incrementa tra le due righe, <code>set(0)</code> cancella il suo incremento e nessuno lo restituisce: <b>perso</b>.
+@@s051 get, poi CAS(v, 0)
+@@s052 Il CAS azzera solo se il valore è ancora <code>v</code>. Altrimenti riprova. Niente si perde: si comporta come se get e clear fossero <b>un'operazione atomica</b>.
+@@s053 Risposta pronta
+@@s054 Yes. <code>getAndClear</code> reads the value and then calls <code>compareAndSet(oldValue, 0)</code>, which writes 0 only if the bin still contains <code>oldValue</code>. If another thread changes the bin between the read and the CAS, the CAS fails and the loop retries. So when the CAS succeeds, the returned value is exactly the value that was replaced by 0, and no update can happen in between and be lost: the get and the clear take effect together at the successful CAS.
+@@s055 6.1.3 · Cosa fa il test
+@@s056 <code>countFactors(p)</code> dice in quanti primi si scompone <i>p</i>, ed è <b>la casella da incrementare</b>. Con i numeri da 0 a 9:
+@@s057 numeri
+@@s058 scomposizione
+@@s059 casella
+@@s060 nessuna
+@@s061 sono primi
+@@s062 Istogramma risultante: casella 0 → 2, casella 1 → 4, casella 2 → 3, casella 3 → 1. Il test fa lo stesso con i numeri da 0 a 4999.
+@@s063 Il test, passo passo
+@@s064 dato:Histogram1 (sequenziale),due:CasHistogram (parallelo),ok:confronto
+@@s065 Nessuna race: questo è il risultato <b>vero</b>.
+@@s066 Il thread del numero 8 fa <code>increment(3)</code>, quello del 9 fa <code>increment(2)</code>… Nella lambda serve <code>final int num = p;</code>: una lambda usa solo variabili che non cambiano, e <code>p</code> cambia a ogni giro.
+@@s067 Lo schema della settimana 5. Le caselle 1 e 2 sono le più affollate: lì si scontrano.
+@@s068 Un incremento perso lascerebbe una casella con 1 in meno: <mark class="ok">tutte uguali</mark> vuol dire nessun incremento perso in quell'esecuzione.
+@@s069 Un test che scopre poco
+@@s070 Provato mettendo <code>Histogram1</code> (non thread-safe) nella parte parallela: ha passato 100 ripetizioni su 100. Ogni thread fa un solo incremento, e la barriera sveglia i 5000 thread quasi uno alla volta, quindi si scontrano di rado. È il test che chiede l'esercizio, ma è un buon esempio di "un test che passa non dimostra niente". Ogni ripetizione dura circa un secondo (creare 5000 thread costa): 20 ripetizioni bastano.
+@@s071 Dove va il file
+@@s072 Il test va in <code>app/src/test/java/exercises06/TestHistograms.java</code>, con <code>package exercises06;</code>. In <code>src/main</code> JUnit non è disponibile (è una dipendenza <code>testImplementation</code>), e senza package <code>Histogram1</code>, che non è <code>public</code>, non si vede.

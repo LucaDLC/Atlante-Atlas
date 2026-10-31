@@ -1,0 +1,59 @@
+@@s001 Currying e composizione
+@@s002 dato:valore che entra,ora:funzione che lavora,ok:risultato
+@@s003 <code>add</code> è una macchina che prende <b>un</b> argomento alla volta.
+@@s004 <code>add(2)</code>: entra il 2 e non esce un numero, esce una <b>nuova macchina</b>, <code>y =&gt; 2 + y</code>, con il 2 già dentro (applicazione parziale).
+@@s005 Il secondo argomento, 3, entra nella macchina nuova…
+@@s006 …ed esce <b>5</b>. <code>add(2)(3)</code> = 5, come <code>add2(2, 3)</code>, ma a metà strada avevo in mano una funzione riusabile.
+@@s007 <b>Composizione</b>: <code>compose(square, abs)(-3)</code>. Prima lavora abs (la funzione a destra): −3 → 3. Poi square: 3 → 9. "f dopo g".
+@@s008 dato:argomento,ora:funzione,due:funzione con un argomento già dentro,ok:risultato
+@@s009 ora:devo ancora produrre,dato:ho in mano,ok:fatto
+@@s010 dato:funzione di partenza,ora:trasformazione,ok:funzione ottenuta
+@@s011 Currying e composizione
+@@s012 Una funzione a due argomenti si può riscrivere come una funzione che ne prende <b>uno</b> e restituisce un'altra funzione che aspetta il secondo. Si chiama <b>currying</b>. Serve a fissare un argomento una volta e riusare il resto.
+@@s013 Due argomenti insieme, o uno alla volta
+@@s014 Insieme
+@@s015 Tipo: <code>(Int, Int) => Int</code>. Devi dare tutti e due gli argomenti subito.
+@@s016 Uno alla volta (curried)
+@@s017 Tipo: <code>Int => (Int => Int)</code>. Ogni argomento ha la sua coppia di parentesi.
+@@s018 add(2)(3), un argomento alla volta
+@@s019 <code>add</code> prende <code>x</code> e restituisce <b>tutto quello che c'è dopo la prima freccia</b>.
+@@s020 Do solo il primo argomento. Ottengo una funzione con il 2 già dentro. Si chiama <b>applicazione parziale</b>.
+@@s021 Il secondo <code>(3)</code> chiama quella funzione.
+@@s022 Stesso risultato di <code>add2(2, 3)</code>.
+@@s023 Il vantaggio: fisso il primo argomento una volta e ottengo una funzione nuova, riusabile.
+@@s024 Funziona anche con i <code>def</code> che hanno più liste di parametri: <code>def add(x: Int)(y: Int): Int = x + y</code>, e poi <code>val incr = add(1)</code> (verificato con Scala 3.8).
+@@s025 add2(2, 3) contro add(2)(3)
+@@s026 Scrivere <code>curry</code>: lascia decidere ai tipi
+@@s027 Esercizio 5. Sembra difficile, ma i tipi ti dicono ogni pezzo. Guarda cosa devi <b>produrre</b> e costruiscilo da fuori verso dentro.
+@@s028 curry costruita guidati dal tipo
+@@s029 dato:A,due:B,ok:C
+@@s030 Scrivo sotto cosa devo produrre e cosa ho.
+@@s031 Il risultato è una funzione che prende un <code>A</code>. Una funzione si scrive con la freccia: comincio con <code>a =></code>.
+@@s032 Dopo aver ricevuto <code>a</code> devo dare <code>B => C</code>: un'altra funzione. Scrivo <code>b =></code>.
+@@s033 Ora devo dare un <code>C</code>. Ho in mano solo <code>a</code>, <code>b</code> e <code>f</code>.
+@@s034 L'unico modo di ottenere un <code>C</code> è chiamare <code>f</code> con un A e un B. Non c'erano altre scelte: il codice era scritto nel tipo.
+@@s035 Stesso metodo per <code>uncurry</code> (esercizio 6), che fa il viaggio inverso:
+@@s036 uncurry
+@@s037 Devo produrre una funzione che prende <b>due</b> argomenti insieme.
+@@s038 Quindi scrivo una funzione a due parametri.
+@@s039 Ho <code>f</code> che vuole un argomento alla volta. <code>f(a)</code> mi dà una funzione <code>B => C</code>…
+@@s040 …che chiamo subito con <code>b</code>. Ottengo il <code>C</code>.
+@@s041 <code>curry</code> e <code>uncurry</code> sono una l'inversa dell'altra: <code>uncurry(curry(f))</code> si comporta come <code>f</code>. È esattamente quello che controllano i test dell'esercizio 6.
+@@s042 Dai tipi al codice, un pezzo alla volta
+@@s043 <code>isSortedCurried</code>: riusare invece di riscrivere
+@@s044 Esercizi 5 e 6: niente codice nuovo
+@@s045 Il tipo richiesto: prima l'array, poi il criterio, poi il risultato. È la versione a un argomento alla volta di <code>isSorted</code>.
+@@s046 Non riscrivo niente: prendo <code>isSorted</code> (a due argomenti) e la passo a <code>curry</code>. Le quadre <code>[A]</code> dicono per quale tipo.
+@@s047 E tornando indietro con <code>uncurry</code> riottengo una funzione equivalente all'originale.
+@@s048 Perché è utile
+@@s049 Il primo argomento può configurare la funzione per tutto il progetto, il secondo arriva a runtime. E spesso curry/uncurry servono solo a far combaciare i tipi quando passi una funzione a un'altra che la vuole nell'altra forma.
+@@s050 curry(isSorted) invece di riscrivere
+@@s051 Comporre due funzioni
+@@s052 Esercizio 7: attaccare due funzioni in fila. Senza usare <code>compose</code> o <code>andThen</code> della libreria.
+@@s053 compose(square, abs)(-3)
+@@s054 <code>f</code> = <code>square</code>, <code>g</code> = <code>abs</code>. L'ordine segue la matematica: <span class="m">f ∘ g</span> si legge "f dopo g".
+@@s055 Sostituisco <code>f</code> e <code>g</code> nel corpo.
+@@s056 <code>a</code> = -3. Prima si calcola la funzione più interna: <code>g</code>.
+@@s057 Il risultato di <code>g</code> entra in <code>f</code>. Per questo il tipo di uscita di <code>g</code> (<code>B</code>) deve essere il tipo di entrata di <code>f</code>.
+@@s058 Fine.
+@@s059 Funzioni come macchine

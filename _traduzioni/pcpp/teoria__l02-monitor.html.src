@@ -1,0 +1,80 @@
+@@s001 Monitor e condition variable
+@@s002 dato:lettore,due:scrittore,ora:chi si muove adesso,no:regola violata,ok:comportamento giusto
+@@s003 Lo scrittore W1 ha il lock e sta scrivendo: writer = true. Il lettore R1 chiama readLock().
+@@s004 R1 entra, vede writer = true e fa <code>await()</code>: rilascia il lock e va nel wait set.
+@@s005 W1 finisce: writeUnlock() mette writer = false e fa <code>signalAll()</code>. R1 non riparte subito: torna nella <b>entry queue</b> a competere per il lock (semantica Mesa, quella di Java).
+@@s006 Un altro scrittore, W2, prende il lock <b>prima</b> di R1: writer = true di nuovo.
+@@s007 Con <code>if (writer) await();</code> R1, quando riprende il lock, <b>non ricontrolla</b>: fa readers++ e legge mentre W2 scrive.
+@@s008 Con <code>while (writer) await();</code> R1 ricontrolla la condizione, la trova vera e torna ad aspettare. Per questo la regola è: <b>sempre while</b>.
+@@s009 dato:lettori,due:scrittori,ok:ammesso,no:deve aspettare
+@@s010 dato:thread,ora:ha il lock,due:in attesa sulla condition
+@@s011 ora:chiamata,no:thread in attesa,ok:stato aggiornato
+@@s012 dato:Lock e Condition,ok:lock intrinseco,no:in attesa
+@@s013 Monitor e condition variable
+@@s014 Un lock semplice dice "uno alla volta". Ma alcuni problemi vogliono regole più ricche: <b>molti lettori insieme, oppure un solo scrittore</b>. Per questo serve un <b>monitor</b>: stato condiviso, metodi in mutua esclusione e <b>code d'attesa</b> per chi deve aspettare.
+@@s015 Il problema dei lettori e degli scrittori
+@@s016 Una struttura dati condivisa, su cui i thread leggono o scrivono.
+@@s017 <b>Molti</b> thread possono leggere contemporaneamente, purché nessuno stia scrivendo.
+@@s018 <b>Al più uno</b> può scrivere, e solo se nessuno sta leggendo.
+@@s019 Domanda della slide: basta un lock normale?
+@@s020 Un lock garantirebbe la sicurezza, ma escluderebbe anche <b>lettore contro lettore</b>: butteresti via proprio il parallelismo che il problema permette. Serve qualcosa che decida <i>chi</i> può entrare in base allo stato.
+@@s021 Lettori insieme sì, scrittore da solo
+@@s022 Cos'è un monitor
+@@s023 Definizione (Brinch Hansen, Hoare)
+@@s024 Un <b>monitor</b> è uno stato condiviso più operazioni significative su quello stato, che lo proteggono dalla corruzione anche se eseguite in modo concorrente.
+@@s025 Pezzo
+@@s026 Cosa fa
+@@s027 In Java
+@@s028 <b>Stato interno</b>
+@@s029 i dati, accessibili solo dai metodi del monitor
+@@s030 campi <code>private</code>
+@@s031 <b>Metodi</b>
+@@s032 tutti in mutua esclusione tra loro
+@@s033 ogni metodo fa <code>lock()</code> … <code>unlock()</code>
+@@s034 <b>Condition variable</b>
+@@s035 code dove il monitor mette i thread ad aspettare
+@@s036 <code>Condition c = lock.newCondition()</code>
+@@s037 Le tre operazioni di una condition variable
+@@s038 <code>await()</code>
+@@s039 Rilascia il lock <b>e</b> blocca il thread nella coda della condizione. Le due cose insieme.
+@@s040 <code>signal()</code>
+@@s041 Sveglia <b>un</b> thread in coda, se c'è. Quale, non è deciso.
+@@s042 <code>signalAll()</code>
+@@s043 Sveglia <b>tutti</b> i thread in coda.
+@@s044 Un thread svegliato deve <b>riprendere il lock</b> prima di eseguire qualsiasi altra cosa. Non confondere la <i>condition variable</i> con le condizioni degli <code>if</code> e dei <code>while</code>: è una coda.
+@@s045 Entry queue, monitor, coda della condition
+@@s046 <code>ReadWriteMonitor</code>, metodo per metodo
+@@s047 Il monitor della lezione per il problema lettori-scrittori. Lo stato sono due campi privati: <code>readers</code> (quanti lettori sono dentro) e <code>writer</code> (c'è uno scrittore?). I quattro metodi prendono il lock, controllano lo stato in un <code>while</code>, aspettano con <code>await()</code> finché serve, aggiornano lo stato e rilasciano il lock. Chi libera la risorsa sveglia gli altri con <code>signalAll()</code>.
+@@s048 week02/code-lecture/.../ReadWriteMonitor.java
+@@s049 Il monitor non contiene la risorsa: regola chi può usarla. I thread fanno <code>readLock()</code> / leggono / <code>readUnlock()</code>, oppure <code>writeLock()</code> / scrivono / <code>writeUnlock()</code>.
+@@s050 <b>Stato</b>: quanti lettori sono dentro, e se c'è uno scrittore.
+@@s051 Un lock per la mutua esclusione dei metodi, e <b>una</b> condition variable legata a quel lock.
+@@s052 Ogni metodo inizia con <code>lock()</code> e rilascia nel <code>finally</code>: i metodi sono mutuamente esclusivi.
+@@s053 Un lettore deve aspettare solo se c'è uno scrittore. <code>await()</code> rilascia il lock mentre aspetta, così gli altri possono entrare nel monitor.
+@@s054 Quando può, si registra come lettore ed esce: il lock del monitor è libero, e altri lettori possono entrare e leggere <b>insieme</b> a lui.
+@@s055 Un lettore che finisce si toglie dal conto. Se era l'ultimo, sveglia chi aspetta (magari uno scrittore).
+@@s056 Uno scrittore aspetta finché ci sono lettori <b>o</b> un altro scrittore. Poi si registra.
+@@s057 Lo scrittore che finisce sveglia <b>sempre</b> tutti: possono entrare molti lettori o un altro scrittore.
+@@s058 readers e writer, chiamata per chiamata
+@@s059 Perché <code>while</code> e non <code>if</code>
+@@s060 Con if, un lettore può entrare mentre c'è uno scrittore
+@@s061 Versione con <code>if</code>: controlla una volta sola.
+@@s062 Il lettore R1 aspetta.
+@@s063 Lo scrittore finisce e sveglia tutti. R1 torna nella <b>entry queue</b>: deve ricompetere per il lock.
+@@s064 Semantica <b>Mesa</b> (quella di Java): un altro scrittore può entrare prima di R1.
+@@s065 Con <code>if</code> R1 non ricontrolla: legge mentre W2 scrive. Violata la specifica.
+@@s066 Con <code>while</code> la condizione si ricontrolla a ogni risveglio. In più, i thread possono svegliarsi anche senza signal (<b>spurious wakeup</b>): il while protegge anche da questo.
+@@s067 Perché while e non if
+@@s068 Domanda della slide: serve controllare readers == 0 prima di signalAll?
+@@s069 Per la <b>correttezza</b> no: chi si sveglia ricontrolla la sua condizione nel <code>while</code> e, se non può entrare, torna ad aspettare. Il controllo evita solo risvegli <b>inutili</b>: se ci sono ancora lettori, nessuno scrittore potrebbe comunque entrare.
+@@s070 Esercizio 2.1: lo stesso monitor con <code>synchronized</code>
+@@s071 Ogni oggetto Java ha già un lock <b>e una condition variable</b> dentro. Con <code>synchronized</code> si usano <code>wait()</code>, <code>notify()</code>, <code>notifyAll()</code> al posto di <code>await()</code>, <code>signal()</code>, <code>signalAll()</code>.
+@@s072 Versione con lock intrinseco, già fair verso gli scrittori (compilata ed eseguita)
+@@s073 <code>synchronized</code> sui metodi: tutti usano il lock dell'oggetto <code>this</code>, quindi sono mutuamente esclusivi.
+@@s074 <code>wait()</code> fa quello che faceva <code>await()</code>: rilascia il lock di <code>this</code> e aspetta nella sua coda. Anche qui dentro un <code>while</code>.
+@@s075 La modifica "fair": lo scrittore <b>prenota</b> subito (<code>writer = true</code>) e poi aspetta che i lettori già dentro escano. Da quel momento i nuovi lettori si fermano al <code>while (writer)</code>. È l'idea di <code>FairReadWriteMonitor.java</code>.
+@@s076 <code>notifyAll()</code> sveglia tutti i thread in attesa su <code>this</code>.
+@@s077 Esercizio 2.1.3: quante condition variable?
+@@s078 <b>Una</b>: quella intrinseca dell'oggetto su cui fai <code>synchronized</code>. Lettori e scrittori aspettano tutti nella stessa coda, con <code>wait()</code>, e vengono svegliati con <code>notifyAll()</code>. Con <code>ReentrantLock</code> invece puoi creare più condizioni (<code>lock.newCondition()</code> due volte), per esempio una per i lettori e una per gli scrittori (esercizio 2.1.5).
+@@s079 Verificato: 15 lettori e 5 scrittori, 200 accessi ciascuno, nessuna violazione della specifica.
+@@s080 Dal Lock esplicito al lock intrinseco

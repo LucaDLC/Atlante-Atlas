@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Kode: Dijkstra i Java</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Kode: Dijkstra i Java</h1>
+  <p class="lede">Dijkstra med en PriorityQueue: foreløbige afstande, prioritetskø med en komparator, relaksation og teknikken med den forældede post.</p>
+</header>
+
+<section>
+  <h2>Graf med vægte og afstande</h2>
+  <p>Hver kant er et par <code>{nabo, vægt}</code> i knudens liste. Afstandene starter fra uendelig, undtagen for kilden.</p>
+  <figure class="codice" data-titolo="Graf med vægte og afstande">
+<pre data-lang="java">import java.io.*;
+import java.util.*;
+
+public class Main {
+    public static void main(String[] args) throws IOException {
+        BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
+        StringTokenizer st = new StringTokenizer(in.readLine());
+        int n = Integer.parseInt(st.nextToken());
+        int m = Integer.parseInt(st.nextToken());
+        int s = Integer.parseInt(st.nextToken());
+
+        // Archi con peso: adj.get(u) contiene coppie {vicino, peso}.
+        List&lt;List&lt;int[]&gt;&gt; adj = new ArrayList&lt;&gt;();
+        for (int i = 0; i &lt; n; i++) {
+            adj.add(new ArrayList&lt;&gt;());
+        }
+        for (int i = 0; i &lt; m; i++) {
+            st = new StringTokenizer(in.readLine());
+            int u = Integer.parseInt(st.nextToken());
+            int v = Integer.parseInt(st.nextToken());
+            int w = Integer.parseInt(st.nextToken());
+            adj.get(u).add(new int[]{v, w});
+            adj.get(v).add(new int[]{u, w});
+        }
+
+        // dist = distanze provvisorie; Integer.MAX_VALUE fa da infinito.
+        int[] dist = new int[n];
+        Arrays.fill(dist, Integer.MAX_VALUE);
+        dist[s] = 0;
+
+        // Coda di priorità: esce per primo l'elemento con distanza minima.
+        // Ogni elemento è {nodo, distanza}; il comparatore confronta la distanza (colonna 1).
+        PriorityQueue&lt;int[]&gt; coda = new PriorityQueue&lt;&gt;((x, y) -&gt; Integer.compare(x[1], y[1]));
+        coda.add(new int[]{s, 0});
+
+        while (!coda.isEmpty()) {
+            int[] top = coda.poll();
+            int u = top[0];
+            if (top[1] &gt; dist[u]) {
+                continue;                 // voce vecchia: esiste già una distanza migliore
+            }
+            for (int[] arco : adj.get(u)) {
+                int v = arco[0];
+                int nuova = dist[u] + arco[1];
+                if (nuova &lt; dist[v]) {    // rilassamento: passare da u è più economico
+                    dist[v] = nuova;
+                    coda.add(new int[]{v, nuova});
+                }
+            }
+        }
+
+        StringBuilder out = new StringBuilder();
+        for (int i = 0; i &lt; n; i++) {
+            out.append(i).append(' ').append(dist[i] == Integer.MAX_VALUE ? "inf" : String.valueOf(dist[i])).append('\n');
+        }
+        System.out.print(out);
+    }
+}</pre>
+    <ol class="spiega">
+    <li data-righe="13"><p>En liste af arrays: hver nabo bærer vægten af kanten med sig.</p></li>
+    <li data-righe="28"><p><code>Integer.MAX_VALUE</code> fungerer som uendelig. Vær forsigtig, når man lægger til: den løber over.</p></li>
+    </ol>
+  </figure>
+  <div class="box basi" data-tit="Syntaksnoter"><ul><li><code>new int[]{v, w}</code> laver et array, der allerede er fyldt med disse værdier: syntaksen er en <i>array initializer</i>.</li></ul></div>
+</section>
+<section>
+  <h2>Prioritetskø og relaksation</h2>
+  <p>Køen har den mindste afstand forrest. Hver gang jeg finder en bedre afstand, sætter jeg den tilbage i køen.</p>
+  <figure class="codice" data-titolo="Prioritetskø og relaksation">
+<pre data-lang="java">import java.io.*;
+import java.util.*;
+
+public class Main {
+    public static void main(String[] args) throws IOException {
+        BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
+        StringTokenizer st = new StringTokenizer(in.readLine());
+        int n = Integer.parseInt(st.nextToken());
+        int m = Integer.parseInt(st.nextToken());
+        int s = Integer.parseInt(st.nextToken());
+
+        // Archi con peso: adj.get(u) contiene coppie {vicino, peso}.
+        List&lt;List&lt;int[]&gt;&gt; adj = new ArrayList&lt;&gt;();
+        for (int i = 0; i &lt; n; i++) {
+            adj.add(new ArrayList&lt;&gt;());
+        }
+        for (int i = 0; i &lt; m; i++) {
+            st = new StringTokenizer(in.readLine());
+            int u = Integer.parseInt(st.nextToken());
+            int v = Integer.parseInt(st.nextToken());
+            int w = Integer.parseInt(st.nextToken());
+            adj.get(u).add(new int[]{v, w});
+            adj.get(v).add(new int[]{u, w});
+        }
+
+        // dist = distanze provvisorie; Integer.MAX_VALUE fa da infinito.
+        int[] dist = new int[n];
+        Arrays.fill(dist, Integer.MAX_VALUE);
+        dist[s] = 0;
+
+        // Coda di priorità: esce per primo l'elemento con distanza minima.
+        // Ogni elemento è {nodo, distanza}; il comparatore confronta la distanza (colonna 1).
+        PriorityQueue&lt;int[]&gt; coda = new PriorityQueue&lt;&gt;((x, y) -&gt; Integer.compare(x[1], y[1]));
+        coda.add(new int[]{s, 0});
+
+        while (!coda.isEmpty()) {
+            int[] top = coda.poll();
+            int u = top[0];
+            if (top[1] &gt; dist[u]) {
+                continue;                 // voce vecchia: esiste già una distanza migliore
+            }
+            for (int[] arco : adj.get(u)) {
+                int v = arco[0];
+                int nuova = dist[u] + arco[1];
+                if (nuova &lt; dist[v]) {    // rilassamento: passare da u è più economico
+                    dist[v] = nuova;
+                    coda.add(new int[]{v, nuova});
+                }
+            }
+        }
+
+        StringBuilder out = new StringBuilder();
+        for (int i = 0; i &lt; n; i++) {
+            out.append(i).append(' ').append(dist[i] == Integer.MAX_VALUE ? "inf" : String.valueOf(dist[i])).append('\n');
+        }
+        System.out.print(out);
+    }
+}</pre>
+    <ol class="spiega">
+    <li data-righe="33"><p><code>PriorityQueue</code> er en heap: <code>poll</code> giver altid det mindste element ifølge komparatoren.</p></li>
+    <li data-righe="39"><p>Forældet post: afstanden i køen er allerede overgået. Jeg springer posten over: det er teknikken <i>lazy deletion</i>.</p></li>
+    <li data-righe="45" data-segna="nuova < dist[v]@ora"><p>Relaksation: at gå gennem <code>u</code> er billigere end det, jeg allerede ved.</p></li>
+    </ol>
+  </figure>
+  <div class="box basi" data-tit="Syntaksnoter"><ul><li><code>continue</code> hopper til den næste runde i <code>while</code>.</li><li>Der er ikke brug for et <code>decrease-key</code>: flere kopier indsættes, og de gamle kasseres. Omkostning <code>O(m log m)</code>, svarende til <code>O(m log n)</code>.</li></ul></div>
+</section>
+<section>
+  <h2>Kør det</h2>
+  <p>Eksempel på input og output (faktisk kompileret og kørt).</p>
+  <pre class="cod">4 5 0
+0 1 2
+0 2 5
+1 2 1
+1 3 4
+2 3 1
+
+(output: nodo distanza)
+0 0
+1 2
+2 3
+3 4</pre>
+</section>
+<section>
+  <h2>Teorien side om side</h2>
+  <p><a href="../teoria/dijkstra.html"><b>← Tilbage til teorien om dette emne</b></a></p>
+</section>
+
+</main>
+</body>
+</html>

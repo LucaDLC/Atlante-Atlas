@@ -1,0 +1,78 @@
+@@s001 From loop to recursion
+@@s002 The same question, <b>factorial(5)</b>, with the two versions. Each rectangle is a call still open (a frame in the stack).
+@@s003 On the left the call cannot close: it must wait for <code>factorial(4)</code> to do the multiplication. On the right <code>f</code> passes the work already done in the accumulator and <b>waits for nothing</b>: the new call takes the place of the old one.
+@@s004 On the left the stack grows. On the right only one frame remains: <code>acc</code> is already worth 5 × 4 = 20.
+@@s005 It continues the same.
+@@s006 Fifth call on the left. On the right <code>acc</code> is worth 120: the result is already ready.
+@@s007 Base case in both. On the right <b>I am done</b>: I return 120. On the left I only have the first number: now I must go back and do all the multiplications left pending.
+@@s008 One call closes at a time: 2 × 1.
+@@s009 3 × 2.
+@@s010 4 × 6.
+@@s011 5 × 24 = 120. Same result, but the normal version has kept open up to <b>n</b> calls: with n = 100 000 the stack runs out (<code>StackOverflowError</code>). The tail version always uses <b>one</b>.
+@@s012 dato:state of the variables (while),ora:arguments of the call,ok:result
+@@s013 due:multiplication pending,ok:value computed
+@@s014 no:repeated calculation,dato:curr,ora:next,ok:result
+@@s015 ora:pair (i, i+1) checked,ok:pair in order,no:pair out of order
+@@s016 From loop to recursion
+@@s017 Without <code>var</code> and without <code>for</code>, you repeat a calculation with a function that <b>calls itself</b> on a smaller problem. Here you turn a loop into recursion one step at a time, and see when the recursion is "tail".
+@@s018 The recipe: from <code>while</code> to recursion
+@@s019 It is the file <code>01-intro/Purification.scala</code>. You start from an imperative factorial and "purify" it. Follow the colours: each variable becomes a parameter.
+@@s020 Purifying a loop
+@@s021 dato:variables that change,ora:what I transform now,ok:pure version
+@@s022 The starting point. Two variables change at each turn: <code>result</code> and <code>x</code>.
+@@s023 <b>1.</b> Each variable that changes becomes a <b>parameter</b> of a working function. The return type stays <code>Int</code>.
+@@s024 <b>2.</b> The condition of the <code>while</code> becomes an <code>if</code>: "must I do one more turn, or am I done?"
+@@s025 <b>3.</b> The body of the loop computed the <b>new values</b> of the variables. Instead of assigning them, I pass them to the next call.
+@@s026 <b>4.</b> After the loop there was <code>return result</code>: it becomes the <code>else</code> branch, without <code>return</code>.
+@@s027 <b>5.</b> I hide <code>doWork</code> inside <code>factorial</code> and call it with the <b>initial values</b> of the variables: <code>result = 1</code>, <code>x = n</code>.
+@@s028 Changing variables → arguments of the call
+@@s029 The simplest version, and how it unrolls
+@@s030 For the factorial there is also a direct recursion, copied from the mathematical definition <span class="m">n! = n · (n − 1)!</span>:
+@@s031 factorial(4), substituting each call
+@@s032 4 is not ≤ 1: <code>else</code> branch.
+@@s033 The multiplication by 4 <b>remains pending</b>: first <code>factorial(3)</code> is needed.
+@@s034 Another pending multiplication.
+@@s035 And another.
+@@s036 Base case: 1 ≤ 1, it is 1.
+@@s037 Now the multiplications are closed, from inside outwards.
+@@s038 The number of things pending grows with <code>n</code>: the stack uses space proportional to <code>n</code>.
+@@s039 factorial(4): the stack grows, then closes
+@@s040 Tail recursion
+@@s041 Definition
+@@s042 A call is <b>in tail</b> (in <i>tail position</i>) when the caller returns its result straight away, <b>without doing anything more on it</b>.
+@@s043 Not in tail
+@@s044 After the call there remains to multiply by <code>n</code>.
+@@s045 In tail
+@@s046 The result of the call <b>is</b> the result. The multiplication has already been done, in the argument <code>acc</code>.
+@@s047 The trick to go from one to the other has a name: the <b>accumulator parameter</b>. Instead of combining the results while you go back, you combine them while you go forward and carry the partial result with you.
+@@s048 The stack of calls: normal against tail
+@@s049 The compiler turns a tail recursion into a loop, with constant space. With <code>@annotation.tailrec</code> you ask it to <b>check</b> that it really is tail: if it is not, it does not compile.
+@@s050 In the course
+@@s051 The exercise sheet says it clearly: do not insist on tail recursion if it is not required. The course prefers simplicity. It is needed when there is a real risk of running out of stack.
+@@s052 Fibonacci: why <code>@tailrec</code> did not accept your version
+@@s053 In the first version of exercise 3 there were <b>two</b> recursive calls added together. The compiler rejects it:
+@@s054 The solution: to compute the next number you need <b>only the last two</b>. Carry them with you as parameters and go on.
+@@s055 fib with a window of two values
+@@s056 <code>curr</code> is the current Fibonacci number, <code>next</code> the one right after. They are the sliding window.
+@@s057 One starts from F1 = 0 and F2 = 1, as the exercise text says.
+@@s058 Each step moves the window by one: the new <code>curr</code> is the old <code>next</code>, the new <code>next</code> is the sum of the two. <code>n</code> counts how many moves are missing.
+@@s059 When no moves are missing, <code>curr</code> is the answer. The call at the previous step is in tail: <code>@tailrec</code> is satisfied.
+@@s060 fib(6): the sliding window
+@@s061 Start: curr = 0, next = 1.
+@@s062 curr takes 1 (the old next), next = 1 + 0.
+@@s063 next = 1 + 1.
+@@s064 next = 2 + 1.
+@@s065 next = 3 + 2.
+@@s066 n ≤ 1: I return curr. The sequence was 0, 1, 1, 2, 3, <b>5</b>: the sixth number.
+@@s067 Two calls added together against a sliding window
+@@s068 A loop over the indices: <code>isSorted</code>
+@@s069 Exercise 4: do with recursion what you would do with a <code>for</code> over the indices. It is your solution.
+@@s070 isSorted, exercise 4 of week 1
+@@s071 The working function has only one parameter: the index <code>i</code>, which in a <code>for</code> would be the loop variable.
+@@s072 If there is no pair <code>(i, i+1)</code> to check, the array is sorted. It also holds for empty arrays and for one-element arrays.
+@@s073 I compare the element with the next one using the function received. If the pair does not respect the order, I answer <code>false</code> at once.
+@@s074 Otherwise I go on to the next pair. The call is in tail.
+@@s075 The loop starts from index 0.
+@@s076 Frequent doubt
+@@s077 <b>Why is it enough to compare the adjacent pairs?</b> If <code>as(0) ≤ as(1)</code> and <code>as(1) ≤ as(2)</code>, then also <code>as(0) ≤ as(2)</code>: the order propagates. Checking all the pairs would be useless.
+@@s078 go(i): the for over the indices as recursion

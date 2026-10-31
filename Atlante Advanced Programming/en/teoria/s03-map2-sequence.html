@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>map2, sequence, traverse</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+SCENE.sequenza = {
+  w: 600, h: 230, lato: false,
+  legenda: 'ora:element combined now,ok:accumulator Some,no:accumulator None',
+  oggetti: [
+    { id: 'L', tipo: 'celle', x: 20, y: 40, cw: 100, ch: 42, valori: ['Some(1)', 'None', 'Some(3)'] },
+    { id: 'acc', tipo: 'testo', x: 475, y: 60, t: 'acc = Some(Nil)', size: 15, bold: true, tono: 'ok' },
+    { id: 'op', tipo: 'testo', x: 280, y: 150, t: '', size: 14 },
+    { id: 'n', tipo: 'testo', x: 280, y: 200, t: '', size: 14, bold: true }
+  ],
+  passi: [
+    { nota: '<code>sequence(List(Some(1), None, Some(3)))</code> with foldRight: one starts from the bottom with <code>Some(Nil)</code>, "all ok, no value".' },
+    { nota: 'Last element: <code>map2(Some(3), Some(Nil))(_ :: _)</code> = <b>Some(List(3))</b>.', set: { L: { toni: { 2: 'ora' } }, op: { t: 'map2(Some(3), Some(Nil))(_ :: _)' }, acc: { t: 'acc = Some(List(3))', tono: 'ok' } } },
+    { nota: 'Middle element: <code>map2(None, Some(List(3)))</code>. A value is missing: the result is <b>None</b>.', set: { L: { toni: { 1: 'no' } }, op: { t: 'map2(None, Some(List(3)))(_ :: _)' }, acc: { t: 'acc = None', tono: 'no' } } },
+    { nota: 'First element: 1 is there, but the accumulator is None, and map2 with a None gives None.', set: { L: { toni: { 0: 'ora', 1: 'no' } }, op: { t: 'map2(Some(1), None)(_ :: _)' } } },
+    { nota: 'Result <b>None</b>: one failure is enough for everything to fail. With List(Some(1), Some(2), Some(3)) it would be Some(List(1, 2, 3)) (checked).', set: { op: { t: '' }, n: { t: 'sequence(...) = None', tono: 'no' } } }
+  ]
+};
+</script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  const T = (id, x, y, t, extra) => Object.assign({ id, tipo: 'testo', x, y, t, size: 13 }, extra || {});
+  const R = (id, x, y, w, h, t, extra) => Object.assign({ id, tipo: 'rett', x, y, w, h, t }, extra || {});
+  const F = (id, x1, y1, x2, y2, t, extra) => Object.assign({ id, tipo: 'vett', x1, y1, x2, y2, t }, extra || {});
+  const C = (id, x, y, valori, extra) => Object.assign({ id, tipo: 'celle', x, y, cw: 52, ch: 40, valori, indici: false }, extra || {});
+
+    SCENE.map2 = {
+      w: 560, h: 150,
+      codice: { lang: 'scala', testo: `def map2[A, B, C](ao: Option[A], bo: Option[B])(f: (A, B) => C): Option[C] =
+  ao.flatMap(a => bo.map(b => f(a, b)))` },
+      legenda: 'dato:first Option,due:second Option,ok:result,no:None',
+      oggetti: [R('ao', 30, 40, 110, 40, 'Some(2)', { tono: 'dato' }), R('bo', 170, 40, 110, 40, 'Some(3)', { tono: 'due' }), R('r', 400, 40, 120, 40, '?', { tono: 'spento' }), T('f', 340, 60, 'f = _ + _', { size: 12 }), T('c', 280, 120, '', { size: 12 })],
+      passi: [
+        { nota: "<code>map2</code>: due valori che forse ci sono, e una funzione <b>normale</b> che li combina. map2(Some(2), Some(3))(_ + _).", righe: [1] },
+        { nota: "Apro il primo con <b>flatMap</b>: a = 2. flatMap perché quello che faccio dopo restituisce ancora un Option.", righe: [2], set: { ao: { tono: 'ok' }, c: { t: 'a = 2' } } },
+        { nota: "Apro il secondo con <b>map</b>: b = 3. Basta map, perché f dà un valore normale. f(2, 3) = 5: <b>Some(5)</b>.", righe: [2], set: { bo: { tono: 'ok' }, r: { t: 'Some(5)', tono: 'ok' }, c: { t: 'a = 2, b = 3, f(a, b) = 5' } } },
+        { nota: "Se uno dei due è None: map su None dà None, e f <b>non viene mai chiamata</b>. map2 \"solleva\" una funzione a due argomenti nel mondo degli Option, ed esegue due calcoli che possono fallire.", righe: [2], set: { bo: { t: 'None', tono: 'no' }, r: { t: 'None', tono: 'no' }, c: { t: 'map2(Some(2), None)(_ + _) = None' } } }
+      ]
+    };
+
+    SCENE.cons = {
+      w: 560, h: 200, lato: true,
+      legenda: 'ora:element added,dato:list already built',
+      oggetti: [T('e', 280, 30, '', { bold: true, size: 15 }), C('l', 130, 70, ['', '', ''], { toni: {} }), R('nil', 300, 70, 60, 40, 'Nil', { tono: 'spento' }), T('c', 280, 170, '', { size: 12 })],
+      passi: [
+        { nota: "Dalla settimana 3, <code>::</code> è il Cons della libreria, scritto <b>in mezzo</b>: x :: resto è la lista con x davanti a resto. Si parte da Nil." },
+        { nota: "<code>3 :: Nil</code> = List(3).", set: { e: { t: '3 :: Nil' }, l: { valori: ['', '', '3'], toni: { 2: 'ora' } } } },
+        { nota: "<code>2 :: List(3)</code> = List(2, 3).", set: { e: { t: '2 :: List(3)' }, l: { valori: ['', '2', '3'], toni: { 1: 'ora', 2: 'dato' } } } },
+        { nota: "<code>1 :: List(2, 3)</code> = List(1, 2, 3). Scritto tutto insieme: 1 :: 2 :: 3 :: Nil. Nel match: <code>case h :: t =&gt;</code> al posto di case Cons(h, t).", set: { e: { t: '1 :: 2 :: 3 :: Nil = List(1, 2, 3)' }, l: { valori: ['1', '2', '3'], toni: { 0: 'ora', 1: 'dato', 2: 'dato' } } } },
+        { nota: "Con i segnaposto <code>_ :: _</code> è una funzione a due argomenti, (x, xs) =&gt; x :: xs: un elemento e una lista. È quella che sequence e traverse passano a map2.", set: { c: { t: '_ :: _   =   (x, xs) => x :: xs' } } }
+      ]
+    };
+
+    SCENE.traverse = {
+      w: 580, h: 170,
+      codice: { lang: 'scala', testo: `def traverse[A, B](as: List[A])(f: A => Option[B]): Option[List[B]] =
+  as.foldRight[Option[List[B]]](Some(Nil))((a, acc) => map2(f(a), acc)(_ :: _))` },
+      legenda: 'ora:element,ok:Some,no:None',
+      oggetti: [C('l', 20, 30, ['1', '2', '3']), R('acc', 220, 30, 330, 40, 'acc = Some(Nil)', { tono: 'ok' }), T('f', 290, 100, 'f = x => if x > 0 then Some(x * 10) else None', { size: 12 }), T('c', 290, 140, '', { size: 12, bold: true })],
+      passi: [
+        { nota: "<code>traverse</code>: come map, ma f può fallire. Stessa struttura di sequence, con f(a) applicata mentre scorro. foldRight parte dall'ultimo.", righe: [2] },
+        { nota: "a = 3: f(3) = Some(30); map2 con acc: Some(List(30)).", righe: [2], set: { l: { toni: { 2: 'ora' } }, acc: { t: 'acc = Some(List(30))' } } },
+        { nota: "a = 2: Some(20) :: … = Some(List(20, 30)). a = 1: <b>Some(List(10, 20, 30))</b>.", righe: [2], set: { l: { toni: { 0: 'ora', 1: 'ora', 2: 'ora' } }, acc: { t: 'Some(List(10, 20, 30))' }, c: { t: 'tutti positivi: Some(List(10, 20, 30))', tono: 'ok' } } },
+        { nota: "Con List(1, −2, 3): f(−2) = None, map2 dà None, e da lì ogni map2 dà None. Risultato <b>None</b>.", righe: [2], set: { l: { valori: ['1', '-2', '3'], toni: { 1: 'no' } }, acc: { t: 'None', tono: 'no' }, c: { t: 'uno fallisce: None', tono: 'no' } } },
+        { nota: "Perché non <code>sequence(as.map(f))</code>? Stesso risultato, ma map applica f a tutta la lista e costruisce una lista intermedia. traverse fa tutto in <b>una passata</b>.", set: { c: { t: 'una passata invece di due', tono: null } } }
+      ]
+    };
+  
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>map2, sequence, traverse</h1>
+  <p class="lede">Exercises 9–11. Three ways of <b>combining several Options</b>: <code>map2</code> joins two, <code>sequence</code> turns a list of Options into an Option of a list, <code>traverse</code> does <code>map</code> and <code>sequence</code> together. In all of them: if even a single piece is missing, the result is <code>None</code>.</p>
+</header>
+
+<section>
+  <h2><code>map2</code>: combining two Options</h2>
+  <figure class="codice" data-titolo="Exercise 9">
+<pre data-lang="scala">def map2[A, B, C](ao: Option[A], bo: Option[B])(f: (A, B) => C): Option[C] =
+  ao.flatMap(a => bo.map(b => f(a, b)))</pre>
+    <ol class="spiega">
+      <li data-righe="1" data-segna="ao: Option[A]@dato|bo: Option[B]@due|f: (A, B) => C@ora"><p>Two values that may be there, and an ordinary function that combines them.</p></li>
+      <li data-righe="2" data-segna="ao.flatMap(a =>@dato"><p>I open the first Option: if there is one, I call its value <code>a</code>. I use <code>flatMap</code> because what I do next still returns an Option.</p></li>
+      <li data-righe="2" data-segna="bo.map(b =>@due"><p>I open the second: if there is one, I call it <code>b</code>. Here <code>map</code> is enough, because <code>f</code> gives an ordinary value.</p></li>
+      <li data-righe="2" data-segna="f(a, b)@ok"><p>With both in hand, I combine. If one of the two was <code>None</code>, <code>f</code> is never called.</p></li>
+    </ol>
+  </figure>
+  <figure class="passi" data-titolo="Two runs">
+    <div class="passo"><div class="espr">map2(<mark class="dato">Some(2)</mark>, <mark class="due">Some(3)</mark>)(_ + _)</div><p class="nota">Both present.</p></div>
+    <div class="passo"><div class="espr">Some(2).flatMap(a => Some(3).map(b => a + b))   con a = <mark class="dato">2</mark>, b = <mark class="due">3</mark></div><p class="nota">Both are opened.</p></div>
+    <div class="passo"><div class="espr"><mark class="ok">Some(5)</mark></div><p class="nota">Checked.</p></div>
+    <div class="passo"><div class="espr">map2(Some(2), <mark class="no">None</mark>)(_ + _)   →   Some(2).flatMap(a => <mark class="no">None</mark>.map(…))   →   <mark class="no">None</mark></div><p class="nota">The second is missing: <code>map</code> on None gives None, and that becomes the result.</p></div>
+  </figure>
+  <div class="box idea" data-tit="Two ways of seeing it">
+    <p>1) <code>map2</code> "lifts" a two-argument function into the world of Options. 2) It is a <b>sequencer</b>: it runs two calculations that can fail and combines the results only if both succeed.</p>
+  </div>
+  <figure class="scena" data-scena="map2" data-titolo="Open two Options, combine them if they are there"></figure>
+</section>
+
+<section>
+  <h2>The symbol <code>::</code></h2>
+  <p>From week 3 the lists of the standard library are used. <code>::</code> is their <code>Cons</code>, written in the middle: <code>x :: resto</code> is the list with <code>x</code> in front of <code>resto</code>.</p>
+  <figure class="passi" data-titolo="1 :: 2 :: 3 :: Nil">
+    <div class="passo"><div class="espr">3 :: <mark class="dato">Nil</mark>             →   <mark class="ok">List(3)</mark></div><p class="nota">I start from the empty list.</p></div>
+    <div class="passo"><div class="espr">2 :: <mark class="dato">List(3)</mark>         →   <mark class="ok">List(2, 3)</mark></div><p class="nota">I put 2 in front.</p></div>
+    <div class="passo"><div class="espr">1 :: <mark class="dato">List(2, 3)</mark>      →   <mark class="ok">List(1, 2, 3)</mark></div><p class="nota">E 1.</p></div>
+    <div class="passo"><div class="espr">_ :: _   =   (<mark class="ora">x</mark>, <mark class="due">xs</mark>) => <mark class="ora">x</mark> :: <mark class="due">xs</mark></div><p class="nota">With the placeholders it is a function of two arguments: an element and a list. We will use it in a moment.</p></div>
+  </figure>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Week 2 (course list)</th><th>From week 3 (library)</th></tr></thead>
+    <tbody>
+      <tr><td><code>Cons(1, Cons(2, Nil))</code></td><td><code>1 :: 2 :: Nil</code></td></tr>
+      <tr><td><code>case Cons(h, t) =></code></td><td><code>case h :: t =></code></td></tr>
+    </tbody>
+  </table></div>
+  <figure class="scena" data-scena="cons" data-titolo="Building List(1, 2, 3) from the right"></figure>
+</section>
+
+<section>
+  <h2><code>sequence</code>: from List[Option[A]] to Option[List[A]]</h2>
+  <p>Example from the text: for each employee you have asked the database for the salary. Each answer is an Option (None if the connection dropped). You want <b>all</b> the salaries, or to know that something went wrong.</p>
+  <figure class="codice" data-titolo="Exercise 10">
+<pre data-lang="scala">def sequence[A](aos: List[Option[A]]): Option[List[A]] =
+  aos.foldRight[Option[List[A]]](Some(Nil))((ao, acc) => map2(ao, acc)(_ :: _))</pre>
+    <ol class="spiega">
+      <li data-righe="1" data-segna="List[Option[A]]@dato|Option[List[A]]@ok"><p>Inside and outside swap places: a list of "maybes" becomes a "maybe" of a list.</p></li>
+      <li data-righe="2" data-segna="foldRight[Option[List[A]]]@due"><p>I reduce the list with <code>foldRight</code>. The result is an <code>Option[List[A]]</code>: I write it in square brackets to help the compiler.</p></li>
+      <li data-righe="2" data-segna="Some(Nil)@ok"><p>Initial value: an empty list of Options becomes <code>Some(Nil)</code>, "all ok, no value". Not <code>None</code>: on zero requests nothing has failed.</p></li>
+      <li data-righe="2" data-segna="map2(ao, acc)@ora|(_ :: _)@due"><p>Step: I combine the current Option <code>ao</code> with the Option-list already built <code>acc</code>. If both are there, I put the value in front of the list with <code>::</code>.</p></li>
+    </ol>
+  </figure>
+  <figure class="passi" data-titolo="sequence(List(Some(1), None, Some(3)))">
+    <div class="passo"><div class="espr">acc = <mark class="ok">Some(Nil)</mark></div><p class="nota">foldRight starts from the bottom.</p></div>
+    <div class="passo"><div class="espr">map2(<mark class="dato">Some(3)</mark>, Some(Nil))(_ :: _) = <mark class="ok">Some(List(3))</mark></div><p class="nota">Last element: present.</p></div>
+    <div class="passo"><div class="espr">map2(<mark class="no">None</mark>, Some(List(3)))(_ :: _) = <mark class="no">None</mark></div><p class="nota">The second is missing: from here the accumulator is None.</p></div>
+    <div class="passo"><div class="espr">map2(<mark class="dato">Some(1)</mark>, <mark class="no">None</mark>)(_ :: _) = <mark class="no">None</mark></div><p class="nota">Even though 1 is there, the accumulator is None.</p></div>
+    <div class="passo"><div class="espr"><mark class="no">None</mark>        e con List(Some(1), Some(2), Some(3)):   <mark class="ok">Some(List(1, 2, 3))</mark></div><p class="nota">Results checked.</p></div>
+  </figure>
+  <figure class="scena" data-scena="sequenza" data-titolo="The accumulator of sequence"></figure>
+  <div class="box attenzione" data-tit="Where it goes">
+    <p>The text observes that <code>sequence</code> should not be a method of <code>List</code> (it would tie lists to Options) and cannot be a method of <code>Option</code> (its argument is a list). So it goes as a function of its own, in the file or in the companion object.</p>
+  </div>
+</section>
+
+<section>
+  <h2><code>traverse</code>: map and sequence in one pass</h2>
+  <figure class="codice" data-titolo="Exercise 11">
+<pre data-lang="scala">def traverse[A, B](as: List[A])(f: A => Option[B]): Option[List[B]] =
+  as.foldRight[Option[List[B]]](Some(Nil))((a, acc) => map2(f(a), acc)(_ :: _))</pre>
+    <ol class="spiega">
+      <li data-righe="1" data-segna="f: A => Option[B]@ora"><p>Like <code>map</code>, but the function can fail.</p></li>
+      <li data-righe="2" data-segna="map2(f(a), acc)@ok"><p>Same structure as <code>sequence</code>: the only difference is <code>f(a)</code> in place of <code>ao</code>. I apply <code>f</code> while I go through.</p></li>
+    </ol>
+  </figure>
+  <pre class="cod" data-lang="scala">traverse(List(1, 2, 3))(x => if x &gt; 0 then Some(x * 10) else None)    // Some(List(10, 20, 30))
+traverse(List(1, -2, 3))(x => if x &gt; 0 then Some(x * 10) else None)   // None</pre>
+  <p><b>Why not <code>sequence(as.map(f))</code>?</b> It gives the same result, but <code>map</code> knows nothing about Options: it applies <code>f</code> to the <b>whole</b> list and builds an intermediate list, even if the first element fails. <code>traverse</code> does everything in a single pass.</p>
+  <figure class="scena" data-scena="traverse" data-titolo="map that can fail, in one pass"></figure>
+</section>
+
+</main>
+</body>
+</html>

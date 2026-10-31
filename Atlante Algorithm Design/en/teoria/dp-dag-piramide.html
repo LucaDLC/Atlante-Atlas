@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DP on trees and DAGs: the pyramid</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+const N = (id,x,y,t) => ({id,tipo:'nodo',x,y,t,r:18});
+const A = (id,da,a) => ({id,tipo:'arco',da,a,dir:true});
+SCENE.dag = {
+  w: 520, h: 260, lato: true,
+  legenda: 'dato:value of the cell,ora:OPT computed,ok:chosen path',
+  oggetti: [
+    N('p',260,30,'1'), N('l',170,100,'1'), N('r',350,100,'2'), N('a',110,180,'2'), N('b',260,180,'0'), N('c',410,180,'0'),
+    A('pl','p','l'), A('pr','p','r'), A('la','l','a'), A('lb','l','b'), A('rb','r','b'), A('rc','r','c'),
+    {id:'o',tipo:'testo',x:20,y:240,t:'',size:12,bold:true,anchor:'start'}
+  ],
+  passi: [
+    { nota: 'Pyramid: from each cell you go down to the left or to the right. It is a DAG: no cycles, so there is a natural order of computation, from the bottom up.', set:{} },
+    { nota: 'Last row: OPT = value of the cell. The three cells at the bottom are worth 2, 0, 0: OPT = 2, 0, 0.', set:{a:{tono:'dato',sotto:'OPT 2'},b:{tono:'dato',sotto:'OPT 0'},c:{tono:'dato',sotto:'OPT 0'}} },
+    { nota: 'Row above: OPT = value + max(OPT of the children). For the 2 on the right: 2 + max(0, 0) = 2. For the cell 1 on the left: 1 + max(2, 0) = 3.', set:{l:{tono:'ora',sotto:'OPT 3'},r:{tono:'ora',sotto:'OPT 2'}} },
+    { nota: 'At the top: 1 + max(3, 2) = <b>4</b>. For the path go down to the child with the greater OPT: left, then left. Value 1 + 1 + 2 = 4.', set:{p:{tono:'ok',sotto:'OPT 4'},pl:{tono:'ok'},la:{tono:'ok'}} }
+  ]
+};
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>DP on trees and DAGs: the pyramid</h1>
+  <p class="lede">When the path can be followed in only one direction (a pyramid, a DAG, a tree), the DP computes the best value from the bottom up. It is the Tower problem of the exam.</p>
+</header>
+
+<section>
+  <h2>The problem</h2>
+<p>A pyramid of cells with numbers. From each cell you go down to the left or to the right until the bottom: you want the path with the maximum sum. There are no cycles, because you always go down: it is a DAG.</p>
+  <figure class="scena" data-scena="dag" data-titolo="From the bottom up: OPT of a cell"></figure>
+</section>
+<section>
+  <h2>The recurrence</h2>
+<p><code>OPT(i, j) = value(i, j) + max( OPT(i+1, j), OPT(i+1, j+1) )</code>, with the last row as base case. The answer is <code>OPT(0, 0)</code>. For the path: always go down to the child with the greater OPT.</p>
+</section>
+<section>
+  <h2>Cost and general form</h2>
+<p>Pyramid of <code>N</code> levels: <code>O(N²)</code> time and space. Generic DAG: <code>O(n + m)</code>, computing in reverse topological order. The same form is Bellman-Ford: the counter of edges is the "row" of the table.</p>
+</section>
+<section>
+  <h2>The code, side by side</h2>
+  <p>This page explains the concept. The Java code that implements it, with a line-by-line explanation and the syntax notes needed, is on the side-by-side page.</p>
+  <p><a href="../codice/dp-dag-piramide.html"><b>→ Java code for this topic</b></a></p>
+</section>
+<section>
+  <h2>Longest path in a DAG</h2>
+  <p>Points on a mountain, connected by slopes. Each slope goes from <code>u</code> to <code>v</code> only downhill and has a score <code>c</code>. You can start and stop wherever you like. You want the path with the <b>highest sum of scores</b>.</p>
+  <p>Three sentences of the text decide everything:</p>
+  <ul>
+    <li>«start and end … at any point»: no fixed start. Each point can be the beginning, with value 0.</li>
+    <li>«maximum sum»: the <i>longest</i> path, not the shortest.</li>
+    <li>«all slopes go downhill» (no cycles): the graph is a <b>DAG</b> (<i>directed acyclic graph</i>, a directed graph without cycles).</li>
+  </ul>
+  <p>The longest path in any graph is NP-hard (you will see it with the Hamiltonian path). On a DAG instead it is dynamic programming in polynomial time: the absence of cycles allows a computation order, the <a href="topological-sort.html">topological</a> one.</p>
+  <p>I define <code>OPT(i, v)</code> = the score of the best path that arrives at <code>v</code> with <b>at most</b> <code>i</code> slopes.</p>
+  <p><code>OPT(0, v) = 0</code> for every <code>v</code>: without slopes, the helicopter left you at <code>v</code>.</p>
+  <p><code>OPT(i, v) = max( OPT(i−1, v), max over each slope (u, v, c) of OPT(i−1, u) + c )</code></p>
+  <p>The first term is "I do not use a last slope". The second is "I arrive at <code>v</code> with one more slope, from the point <code>u</code>". Answer: the maximum over <code>v</code> of <code>OPT(n−1, v)</code>, because a path with <code>n</code> points uses at most <code>n − 1</code> slopes. Time O(n·m), space O(n²) with the whole table.</p>
+  <div class="tab-wrap"><table class="tab"><thead><tr><th></th><th>knapsack (Walrus)</th><th>Coolest Ski Route</th></tr></thead><tbody>
+    <tr><td>row</td><td><code>i</code>: the first <code>i</code> discs</td><td><code>i</code>: at most <code>i</code> slopes</td></tr>
+    <tr><td>column</td><td>the sum</td><td>the arrival point <code>v</code></td></tr>
+    <tr><td>cell</td><td>can I make this sum? (boolean)</td><td>how much the best path arriving here is worth (int)</td></tr>
+    <tr><td>row 0</td><td>true only in [0][0]</td><td>all 0: you start from any point</td></tr>
+    <tr><td>answer</td><td>last row, the closest to 1000</td><td>last row, the maximum</td></tr>
+  </tbody></table></div>
+  <p>The table is the same as for the knapsack: each row is computed by looking only at the row above, with the option "I do not add" and the option "I add a piece". Only the labels change.</p>
+  <div class="box attenzione" data-tit="Trap: double slopes">Two slopes between the same points can have different scores (sample 2: 1→2 with score 2 and 1→2 with score 4). If you store them in a matrix <code>voto[u][v]</code>, the second overwrites the first and you keep the last one read, not the best. With a list of arcs (from, to, cost) all the slopes remain, and the <code>max</code> chooses.</div>
+</section>
+<section>
+  <h2>At the exam</h2>
+<div class="box esame" data-tit="At the exam">
+<p>Best path in a structure that can be followed in one direction → DP on DAG/pyramid. Phrase: <i>"OPT(v) = value(v) + max{OPT(u) : (v,u) ∈ E}, with OPT(t) = value(t). Time O(n + m) in topological order."</i></p>
+</div>
+</section>
+<section>
+  <h2>Quick reference</h2>
+<div class="tab-wrap"><table class="tab"><thead><tr><th>structure</th><th>time</th><th>example</th></tr></thead><tbody><tr><td>pyramid</td><td>O(N²)</td><td>Tower, Clean the Wall</td></tr><tr><td>DAG</td><td>O(n + m)</td><td>reverse topological order</td></tr><tr><td>longest path in a DAG</td><td>DP</td><td>in a generic graph it is NP-hard</td></tr></tbody></table></div>
+</section>
+
+</main>
+</body>
+</html>

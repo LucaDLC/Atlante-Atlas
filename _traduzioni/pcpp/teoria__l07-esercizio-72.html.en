@@ -1,0 +1,28 @@
+@@s001 Exercise 7.2: Treiber stack
+@@s002 Exercise 7.2: Treiber stack
+@@s003 The lock-free Treiber stack: where the linearization points are, how <code>push</code> is tested, and which points the tests really reach. The point most often got wrong is 7.2.4: two tests are not enough.
+@@s004 The stack and its linearization points (7.2.1)
+@@s005 A <b>linearization point</b> is the instant in which a call "takes effect" for all the other threads. In the Treiber stack all the state is the reference <code>top</code>, so the points are the moments in which <code>top</code> changes, or in which it is read to decide.
+@@s006 LockFreeStack (code of the exercise)
+@@s007 The state: <code>top</code> points to the node at the top, <code>null</code> if the stack is empty.
+@@s008 <b>Point 1, push:</b> the CAS that <b>succeeds</b>. At that instant the new node becomes the top for everybody. Before, nobody sees it; afterwards everybody sees it.
+@@s009 <b>Point 2, pop on a non-empty stack:</b> the CAS that <b>succeeds</b>. At that instant the top is removed.
+@@s010 <b>Point 3, pop on an empty stack:</b> the read <code>top.get()</code> that returns <code>null</code>. There is no CAS: the call "takes effect" at the instant in which it sees the empty stack.
+@@s011 7.2.4 · Do the tests cover all the points?
+@@s012 "Covering" a linearization point means that a test makes it run <b>concurrently</b>, with other threads that can collide there. A point run by one thread only tests nothing concurrent.
+@@s013 Point by point
+@@s014 ok:covered,no:not covered
+@@s015 The CASes of the pushes collide on <code>top</code>; one wins, the others try again.
+@@s016 The stack has n elements and there are n pops: the CASes of the pops collide.
+@@s017 In 7.2.3 there are <b>exactly</b> n elements for n pops: in a correct execution no pop finds the stack empty. In 7.2.2 the stack empties at the end, but with <b>one thread only</b>.
+@@s018 In the two tests pushes and pops never overlap: first all the pushes, then all the pops. The collision between a push CAS and a pop CAS is never tested.
+@@s019 "The push always comes before the pop, so everything is covered"?
+@@s020 That is exactly why it is <b>not</b> everything covered. If the pushes always come before the pops, the two kinds of call never collide, and the pop never finds the stack empty while others work. The answer to 7.2.4 is <b>no</b>.
+@@s021 The test to add
+@@s022 <b>Pop on an almost empty stack:</b> put m elements, then start n &gt; m threads that do <code>pop</code> together. At the end: exactly m pops returned an element (with a sum equal to the one put in) and n − m returned <code>null</code>. So point 3 happens concurrently, while other threads still do CASes.
+@@s023 <b>Optional, push and pop together:</b> half the threads do push, half pop, all together. At the end: sum remaining in the stack + sum of the values popped = sum of the values pushed.
+@@s024 A simpler variant: each thread does <code>push(x)</code> and immediately <code>pop()</code>. Each thread has always made one push more than its pops, so the stack is never empty when somebody pops: at the end the sum of the popped values equals that of the pushed values, and the stack is empty. Watch out: this covers the push/pop collision, but <b>not</b> the pop on an empty stack.
+@@s025 One round per thread discovers little
+@@s026 Measured with 16 threads, barrier, 1000 repetitions. With <b>a single</b> push+pop per thread, a deliberately wrong <code>push</code> (<code>get</code> and then <code>set</code>) is <b>never</b> discovered, a wrong <code>pop</code> 1 time in 1000. With <b>1000 rounds</b> of push+pop per thread: wrong push discovered 999 times out of 1000, wrong pop 1000 out of 1000; the correct stack passes 1000 out of 1000. When the text does not impose "one operation per thread", it is better to make each thread work in a loop.
+@@s027 Ready answer 7.2.4
+@@s028 No. The push test exercises the linearization point of push (the successful CAS) concurrently, and the pop test exercises the linearization point of a successful pop (the successful CAS). But the linearization point of a pop on an empty stack (the <code>top.get()</code> that returns null) is never reached concurrently: in the pop test there are exactly n elements for n pops, so in a correct execution no pop finds the stack empty, and in the push test the stack is emptied by a single thread. Moreover, pushes and pops never run at the same time. We therefore add a test where n threads pop concurrently from a stack with m &lt; n elements, and check that exactly m pops return elements whose sum equals the sum pushed and n − m pops return null.

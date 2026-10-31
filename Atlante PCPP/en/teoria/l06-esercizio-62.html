@@ -1,0 +1,430 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Exercise 6.2: read-write lock with CAS</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+SCENE.stati = {
+  w: 640, h: 270, lato: false,
+  legenda: 'ora:just changed,ok:succeeded,no:rejected',
+  oggetti: [
+    { id: 'th', tipo: 'testo', x: 320, y: 30, t: 'holders', size: 14, bold: true },
+    { id: 'hold', tipo: 'rett', x: 200, y: 42, w: 240, h: 50, t: 'null' },
+    { id: 'R1', tipo: 'nodo', x: 110, y: 180, t: 'R1' },
+    { id: 'R2', tipo: 'nodo', x: 200, y: 180, t: 'R2' },
+    { id: 'W', tipo: 'nodo', x: 470, y: 180, t: 'W' },
+    { id: 'cod', tipo: 'testo', x: 320, y: 255, t: 'new ReadWriteCASLock()', size: 12.5 }
+  ],
+  passi: [
+    { nota: 'A single field, <code>holders</code>, says who holds the lock. <code>null</code> = nobody. Two readers (R1, R2) and one writer (W).' },
+    { nota: 'R1 calls <code>readerTryLock()</code>: it reads <code>null</code>, it is not a Writer, so CAS(<code>null</code> → list [R1]). It succeeds: <b>true</b>.', set: { hold: { t: '[R1]', tono: 'ora' }, R1: { tono: 'ok', sotto: 'true' }, cod: { t: 'R1: readerTryLock()' } } },
+    { nota: 'R2 calls <code>readerTryLock()</code>: it reads [R1], which is a list of readers, so CAS([R1] → [R2 → R1]). It succeeds: several readers together are fine.', set: { hold: { t: '[R2 → R1]' }, R2: { tono: 'ok', sotto: 'true' }, cod: { t: 'R2: readerTryLock()' } } },
+    { nota: 'W calls <code>writerTryLock()</code>: CAS(<code>null</code> → Writer(W)). It fails, because <code>holders</code> is not <code>null</code>: <b>false</b>. It does not wait, it returns at once.', set: { hold: { tono: null }, W: { tono: 'no', sotto: 'false' }, cod: { t: 'W: writerTryLock()' } } },
+    { nota: 'R1 calls <code>readerUnlock()</code>: the list contains R1, so CAS([R2 → R1] → [R2]).', set: { hold: { t: '[R2]', tono: 'ora' }, R1: { tono: null, sotto: '' }, W: { tono: null, sotto: '' }, cod: { t: 'R1: readerUnlock()' } } },
+    { nota: 'R2 calls <code>readerUnlock()</code>: removing R2 the list stays empty, and <b>empty list = <code>null</code></b>. The lock is free again.', set: { hold: { t: 'null' }, R2: { tono: null, sotto: '' }, cod: { t: 'R2: readerUnlock()' } } },
+    { nota: 'W tries <code>writerTryLock()</code> again: CAS(<code>null</code> → Writer(W)) succeeds.', set: { hold: { t: 'Writer(W)', tono: 'ora' }, W: { tono: 'ok', sotto: 'true' }, cod: { t: 'W: writerTryLock()' } } },
+    { nota: 'R1 calls <code>readerTryLock()</code>: it reads a Writer, so <b>false</b>, without touching anything.', set: { hold: { tono: null }, R1: { tono: 'no', sotto: 'false' }, cod: { t: 'R1: readerTryLock()' } } },
+    { nota: 'R2 calls <code>writerUnlock()</code>: there is a Writer, but its thread is W, not R2. <b>Exception</b>: you cannot open a lock that is not yours.', set: { R1: { tono: null, sotto: '' }, R2: { tono: 'no', sotto: 'eccezione' }, cod: { t: 'R2: writerUnlock()' } } },
+    { nota: 'W calls <code>writerUnlock()</code>: the Writer is its own, so <code>holders = null</code>. Free again.', set: { hold: { t: 'null', tono: 'ora' }, R2: { tono: null, sotto: '' }, W: { tono: null, sotto: '' }, cod: { t: 'W: writerUnlock()' } } }
+  ]
+};
+SCENE.rimuovi = {
+  w: 640, h: 260, lato: false,
+  legenda: 'dato:old list,ora:node under examination,ok:new list,no:removed',
+  oggetti: [
+    { id: 'lv', tipo: 'testo', x: 40, y: 75, t: 'h', size: 14, bold: true, anchor: 'start' },
+    { id: 'a3', tipo: 'nodo', x: 130, y: 70, t: 'T3', tono: 'dato' },
+    { id: 'a2', tipo: 'nodo', x: 280, y: 70, t: 'T2', tono: 'dato' },
+    { id: 'a1', tipo: 'nodo', x: 430, y: 70, t: 'T1', tono: 'dato' },
+    { id: 'e32', tipo: 'arco', da: 'a3', a: 'a2', dir: true, t: 'next' },
+    { id: 'e21', tipo: 'arco', da: 'a2', a: 'a1', dir: true, t: 'next' },
+    { id: 'nul', tipo: 'testo', x: 545, y: 75, t: 'next = null', size: 12 },
+    { id: 'ln', tipo: 'testo', x: 40, y: 195, t: 'nuova', size: 14, bold: true, anchor: 'start', nascosto: true },
+    { id: 'b3', tipo: 'nodo', x: 130, y: 190, t: 'T3', tono: 'ok', nascosto: true },
+    { id: 'e31', tipo: 'arco', da: 'b3', a: 'a1', dir: true, t: 'next', nascosto: true },
+    { id: 'cod', tipo: 'testo', x: 320, y: 245, t: 'h.remove(T2)', size: 12.5 }
+  ],
+  passi: [
+    { nota: 'The list of readers: T3 → T2 → T1. Each node has <code>final</code> fields: once created it <b>does not change any more</b>. T2 wants to leave: <code>remove(T2)</code>.' },
+    { nota: 'First node: T3 ≠ T2. T3 must stay, but its <code>next</code> must change, and it cannot (it is final). So a <b>copy</b> of T3 is needed, with <code>next</code> = <code>next.remove(T2)</code>.', set: { a3: { tono: 'ora' }, cod: { t: 'T3 ≠ T2 → new ReaderList(T3, next.remove(T2))' } } },
+    { nota: 'Second node: T2 == T2. It is the one to remove: it returns its <code>next</code>, that is the node T1 <b>as it is</b>. No copy: the tail after T2 is shared.', set: { a3: { tono: 'dato' }, a2: { tono: 'no' }, a1: { tono: 'ok' }, cod: { t: 'T2 == T2 → return next (il nodo T1)' } } },
+    { nota: 'The copy of T3 points to T1: the new list is T3 → T1. Only the nodes <b>before</b> the removed one are copied.', set: { ln: { nascosto: false }, b3: { nascosto: false }, e31: { nascosto: false, tono: 'ok' }, cod: { t: 'risultato: T3 → T1' } } },
+    { nota: 'The old list is <b>intact</b>: a thread that is reading it (for example inside <code>contains</code>) still sees T3 → T2 → T1, never a half-changed piece. Then <code>compareAndSet(h, new)</code> changes <code>holders</code> in one go.', set: { a2: { tono: 'dato' }, a1: { tono: 'dato' }, cod: { t: 'holders.compareAndSet(h, nuova)' } } }
+  ]
+};
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Exercise 6.2: read-write lock with CAS</h1>
+  <p class="lede">A lock that can be held by many readers together <b>or</b> by a single writer, without ever blocking: each method tries and returns at once <code>true</code> or <code>false</code>. All the state is in a single <code>AtomicReference</code>, changed with <code>compareAndSet</code>.</p>
+</header>
+
+<section>
+  <h2>The idea: a single field says who holds the lock</h2>
+  <p>A <b>read-write lock</b> distinguishes who reads from who writes: several readers together do not disturb each other (nobody changes anything), while a writer must be <b>alone</b>. Here the "try" version (<i>try-lock</i>): if the lock cannot be taken, the method does not wait, it returns <code>false</code>.</p>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th><code>holders</code> is</th><th>means</th><th>can enter</th></tr></thead>
+    <tbody>
+      <tr><td><code>null</code></td><td>nobody holds the lock</td><td>a reader or a writer</td></tr>
+      <tr><td>a <code>ReaderList</code></td><td>held by the readers in the list</td><td>other readers, no writer</td></tr>
+      <tr><td>a <code>Writer</code></td><td>held by the indicated writer</td><td>nobody</td></tr>
+    </tbody>
+  </table></div>
+  <p>All the state is <b>a single reference</b>. That is why one CAS is enough to change it: there is never a moment in which "half" of the lock is updated.</p>
+  <figure class="scena" data-scena="stati" data-titolo="Who holds the lock, call after call"></figure>
+</section>
+
+<section>
+  <h2>The classes that describe who holds the lock</h2>
+  <figure class="codice" data-titolo="Field holders, ReaderList and Writer (compiled and tested with Gradle)">
+<pre data-lang="java">private final AtomicReference&lt;Holders&gt; holders = new AtomicReference&lt;&gt;(null);
+
+private static abstract class Holders { }
+
+private static class ReaderList extends Holders {
+    private final Thread thread;
+    private final ReaderList next;
+
+    public ReaderList(Thread thread, ReaderList next) {
+        this.thread = thread;
+        this.next = next;
+    }
+
+    public boolean contains(Thread t) {
+        for (ReaderList node = this; node != null; node = node.next) {
+            if (node.thread == t)
+                return true;
+        }
+        return false;
+    }
+
+    public ReaderList remove(Thread t) {
+        if (thread == t)
+            return next;
+        return new ReaderList(thread, next == null ? null : next.remove(t));
+    }
+}
+
+private static class Writer extends Holders {
+    public final Thread thread;
+
+    public Writer(Thread thread) {
+        this.thread = thread;
+    }
+}</pre>
+    <ol class="spiega">
+      <li data-righe="1" data-segna="AtomicReference&lt;Holders&gt;@dato|null@ok"><p><code>AtomicReference&lt;Holders&gt;</code>: a box that contains a reference to a <code>Holders</code> and offers the atomic <code>get</code>, <code>set</code> and <code>compareAndSet</code>. <code>&lt;&gt;</code> (diamond) makes the compiler deduce the type. It starts from <code>null</code>: lock free. <code>private final</code>: the state does not leave the class and the field is published safely.</p></li>
+      <li data-righe="3" data-segna="abstract@ora"><p><code>abstract</code>: a "pure" <code>Holders</code> is never created, only the two subtypes. It only serves to give a common type to the two cases, so that they fit in the same <code>AtomicReference</code>.</p></li>
+      <li data-righe="5-12" data-segna="private final*@ok"><p>A node of the list: a reader thread and the node after it. <code>final</code> fields, no method that changes them: the list is <b>immutable</b>. <code>next == null</code> marks the end.</p></li>
+      <li data-righe="14-20" data-segna="node = node.next@ora"><p><code>contains</code> walks through the nodes: it starts from <code>this</code>, at each round it goes to <code>node.next</code>, it stops at <code>null</code>. <code>==</code> compares references: is it exactly that thread?</p></li>
+      <li data-righe="22-26" data-segna="return next;@ok|new ReaderList@ora"><p><code>remove</code> returns a <b>new</b> list without the first <code>t</code>: if the node is <code>t</code>, the answer is the rest of the list; otherwise it copies this node and removes <code>t</code> from the rest (recursion). <code>a ? b : c</code> = "if a then b, otherwise c": if there is no rest, the rest is <code>null</code>. If the list contained only <code>t</code>, the result is <code>null</code>: lock free.</p></li>
+      <li data-righe="29-35"><p><code>Writer</code>: only the writer thread, <code>final</code>. It serves to know <b>who</b> holds the lock, so that <code>writerUnlock</code> can reject the others.</p></li>
+    </ol>
+  </figure>
+  <figure class="scena" data-scena="rimuovi" data-titolo="remove on an immutable list"></figure>
+  <div class="box regola" data-tit="Why the list must be immutable">
+    <p><code>compareAndSet(h, new)</code> compares <b>references</b>, not contents. If a thread modified the list in place (for example changing a <code>next</code>), the reference in <code>holders</code> would stay the same: the CAS of another thread would not notice the change and would overwrite it (lost update). Moreover, whoever is reading the list would see half-changed nodes. With immutable nodes every change is a <b>new object</b>, so a new reference, and the CAS sees it. It is the same rule as <code>IntPair</code> in <code>CasNumberRange</code> of the lecture.</p>
+  </div>
+</section>
+
+<section>
+  <h2>6.2.1 and 6.2.2 · Writer: writerTryLock and writerUnlock</h2>
+  <figure class="codice" data-titolo="The two methods of the writer">
+<pre data-lang="java">public boolean writerTryLock() {
+    final Thread current = Thread.currentThread();
+    return holders.compareAndSet(null, new Writer(current));
+}
+
+public void writerUnlock() {
+    final Thread current = Thread.currentThread();
+    final Holders h = holders.get();
+    if (h instanceof Writer w &amp;&amp; w.thread == current)
+        holders.set(null);
+    else
+        throw new IllegalStateException("writerUnlock: the calling thread does not hold the write lock");
+}</pre>
+    <ol class="spiega">
+      <li data-righe="2" data-segna="Thread.currentThread()@dato"><p><code>Thread.currentThread()</code> returns the <code>Thread</code> object of whoever is executing this line. It is the identity of the caller.</p></li>
+      <li data-righe="3" data-segna="compareAndSet(null, new Writer(current))@ora"><p>The check "is the lock free?" and taking the lock are <b>one single atomic step</b>: the CAS writes the Writer only if <code>holders</code> is still <code>null</code>. It returns <code>true</code> if it has written, <code>false</code> if somebody was already there (readers or a writer, even if it is itself: it is not reentrant). No loop: wait-free.</p></li>
+      <li data-righe="8-9" data-segna="h instanceof Writer w@dato|w.thread == current@ora"><p><code>h instanceof Writer w</code>: true if <code>h</code> is a <code>Writer</code> (false if it is <code>null</code> or a list), and in that case it calls it <code>w</code>, already of the right type. <code>&amp;&amp;</code> evaluates the right part only if the left one is true, so <code>w</code> always exists when used. Then: is it <b>my</b> Writer? <code>holders.get()</code> is read <b>once</b> into <code>h</code>: check and use concern the same value. Two separate <code>get()</code> calls could read different values.</p></li>
+      <li data-righe="10" data-segna="holders.set(null)@ok"><p>I read, check and then write: usually this is a race (check-then-act). Here not. While <b>I</b> hold the lock, no other thread can change <code>holders</code>. Another <code>writerTryLock</code> fails (it is not <code>null</code>), <code>readerTryLock</code> sees a Writer and returns <code>false</code>, the unlocks of the others throw an exception. So between my <code>get</code> and my <code>set</code> the value does not change. It is the reasoning of <code>unlockVariant</code> in <code>SimpleTryLock</code> of the lecture.</p></li>
+      <li data-righe="11-12" data-segna="throw@no"><p>Lock free, held by readers, or held by another writer: exception, as the text asks. <code>IllegalStateException</code> ("called in the wrong state") is <b>unchecked</b> (it extends <code>RuntimeException</code>): there is no need to write <code>throws</code> in the signature, and that is good, because the interface says only <code>void writerUnlock()</code> and one cannot add a checked exception.</p></li>
+    </ol>
+  </figure>
+  <div class="box domanda-tua" data-tit="Why does writerUnlock not use the CAS, if the other methods do?">
+    <p>The question to ask is always: <b>who can change the state between my read and my write?</b></p>
+    <p>In <code>readerTryLock</code>: anybody (the list is shared by many readers, and a writer can enter). The CAS is needed. In <code>writerUnlock</code>, after having checked that the Writer is mine: <b>nobody</b>, because every method called by another thread fails without touching <code>holders</code> (<code>writerTryLock</code> → false, <code>readerTryLock</code> → false, the two unlocks → exception). The state "Writer(me)" can be changed only by its owner. A simple <code>set</code> is enough; <code>compareAndSet(h, null)</code> would work the same and would always succeed.</p>
+    <p><code>set(null)</code> also acts as a <b>release</b> in the sense of memory: <code>AtomicReference.set</code> is a volatile write, so everything the writer wrote before unlocking is visible to the next thread that reads <code>holders</code> and takes the lock (happens-before). That is what makes the lock useful for protecting data.</p>
+  </div>
+  <div class="box inglese" data-tit="Ready answer 6.2.1">
+    <p><code>writerTryLock</code> calls <code>holders.compareAndSet(null, new Writer(current))</code>. The lock is unheld exactly when <code>holders</code> is null, so the CAS checks that the lock is free and installs a Writer for the calling thread in one atomic step. If two writers try at the same time, only the first CAS succeeds: afterwards <code>holders</code> is no longer null, so the other CAS fails and returns false. It also fails if readers hold the lock (<code>holders</code> is a ReaderList) or if the caller already holds it, so the lock is not reentrant. There is no loop and no waiting, so the method never blocks. The Writer stores the owner thread, which <code>writerUnlock</code> needs.</p>
+  </div>
+  <div class="box inglese" data-tit="Ready answer 6.2.2">
+    <p><code>writerUnlock</code> reads <code>holders</code> once and checks that it is a Writer whose thread is the calling thread. Otherwise (null, a ReaderList, or another thread's Writer) it throws an <code>IllegalStateException</code>. If the check passes, it releases the lock with <code>holders.set(null)</code>. This check-then-act is safe without a CAS because, while the calling thread holds the write lock, no other thread can change <code>holders</code>: <code>writerTryLock</code> fails because <code>holders</code> is not null, <code>readerTryLock</code> returns false when it sees a Writer, and <code>writerUnlock</code> and <code>readerUnlock</code> called by other threads throw. So the value cannot change between our get and our set. Moreover, <code>set</code> on an <code>AtomicReference</code> is a volatile write, so everything the writer did before unlocking happens-before the next thread that reads <code>holders</code> and acquires the lock.</p>
+  </div>
+</section>
+
+<section>
+  <h2>6.2.3 and 6.2.4 · Readers: readerTryLock and readerUnlock</h2>
+  <figure class="codice" data-titolo="The two methods of the reader">
+<pre data-lang="java">public boolean readerTryLock() {
+    final Thread current = Thread.currentThread();
+    while (true) {
+        final Holders h = holders.get();
+        if (h instanceof Writer)
+            return false;
+        final ReaderList newList = new ReaderList(current, (ReaderList) h);
+        if (holders.compareAndSet(h, newList))
+            return true;
+    }
+}
+
+public void readerUnlock() {
+    final Thread current = Thread.currentThread();
+    while (true) {
+        final Holders h = holders.get();
+        if (h instanceof ReaderList readers &amp;&amp; readers.contains(current)) {
+            if (holders.compareAndSet(h, readers.remove(current)))
+                return;
+        } else {
+            throw new IllegalStateException("readerUnlock: the calling thread does not hold a read lock");
+        }
+    }
+}</pre>
+    <ol class="spiega">
+      <li data-righe="3-4" data-segna="while (true)@ora|holders.get()@dato"><p>CAS loop: one reads the state (<code>h</code>), prepares the new one, tries to replace it. A loop is needed because other readers can enter or leave at the same moment.</p></li>
+      <li data-righe="5-6" data-segna="return false;@no"><p>There is a writer: <code>false</code> at once, without waiting.</p></li>
+      <li data-righe="7" data-segna="(ReaderList) h@dato"><p>Here <code>h</code> is <code>null</code> or a <code>ReaderList</code> (the only other cases). The cast <code>(ReaderList) h</code> is fine for both: the cast of <code>null</code> gives <code>null</code>. The new node goes <b>at the head</b>: <code>current</code> followed by the old list, which stays intact and is shared.</p></li>
+      <li data-righe="8-9" data-segna="compareAndSet(h, newList)@ora|return true;@ok"><p>The CAS succeeds only if <code>holders</code> is still exactly <code>h</code>. If another reader has entered or left in the meantime, it fails and the <code>while</code> retries on the new value. Lock-free.</p></li>
+      <li data-righe="16-17" data-segna="h instanceof ReaderList readers@dato|readers.contains(current)@ora"><p>The three conditions of the text in one line: <code>h</code> is not <code>null</code> and is not a Writer (<code>instanceof</code> is false on <code>null</code>), and I am in the list.</p></li>
+      <li data-righe="18-19" data-segna="readers.remove(current)@ok"><p>I try to put the list without me. If the list has changed in the meantime (another reader has entered or left), the CAS fails and I retry. If I was the last, <code>remove</code> returns <code>null</code> and the lock is free again.</p></li>
+      <li data-righe="20-21" data-segna="throw@no"><p>Otherwise: I do not hold a read lock, exception. No loop here: the case "they are not there" cannot become true through another thread (only I can add myself).</p></li>
+    </ol>
+  </figure>
+  <figure class="passi" data-titolo="Why the loop is needed: two readers enter together" data-legenda="dato:value read,ora:CAS,ok:succeeded,no:failed">
+    <div class="passo"><div class="espr">holders = [T1]        R2 e R3 chiamano readerTryLock()</div><p class="nota">T1 is already inside. Two readers arrive at the same moment.</p></div>
+    <div class="passo"><div class="espr">R2: h = <mark class="dato">[T1]</mark>        R3: h = <mark class="dato">[T1]</mark></div><p class="nota">They read the same value. Each prepares its list: [R2 → T1] and [R3 → T1].</p></div>
+    <div class="passo"><div class="espr">R2: <mark class="ora">CAS([T1] → [R2 → T1])</mark>  <mark class="ok">riesce</mark></div><p class="nota">holders is [T1]: the CAS writes.</p></div>
+    <div class="passo"><div class="espr">R3: <mark class="ora">CAS([T1] → [R3 → T1])</mark>  <mark class="no">fallisce</mark></div><p class="nota">holders is now [R2 → T1], not [T1]. If it wrote, R2 would disappear from the list while holding the lock: lost update. The CAS prevents it.</p></div>
+    <div class="passo"><div class="espr">R3: h = <mark class="dato">[R2 → T1]</mark>, <mark class="ora">CAS([R2 → T1] → [R3 → R2 → T1])</mark>  <mark class="ok">riesce</mark></div><p class="nota">The <code>while</code> reads again and retries on the new value. Three readers, none lost.</p></div>
+  </figure>
+  <div class="box domanda-tua" data-tit="Why has the reader the loop and the writer not?">
+    <p>For the writer there is <b>only one</b> good state: <code>null</code>. If the CAS fails, the lock is busy: the right answer is <code>false</code>, at once.</p>
+    <p>For the reader the good states are <b>many</b>: <code>null</code>, [R1], [R2 → R1]… If its CAS fails because another reader has entered or left, the lock is <b>still</b> available to it: answering <code>false</code> would be wrong. So it retries.</p>
+    <p>And if in the meantime a writer has entered? The reader reads <code>null</code> and prepares [R]; W does CAS(<code>null</code> → Writer(W)) and wins; the reader's CAS (<code>null</code> → [R]) fails, because <code>holders</code> is no longer <code>null</code>. At the next round the reader reads the Writer and returns <code>false</code>. Correct: the CAS compares with <b>exactly</b> the state on which the reader decided.</p>
+  </div>
+  <div class="box inglese" data-tit="Ready answer 6.2.3">
+    <p><code>readerTryLock</code> is a CAS loop. It reads a snapshot <code>h</code> of <code>holders</code>; if <code>h</code> is a Writer it returns false. Otherwise <code>h</code> is null or a ReaderList, and it builds a new list with the calling thread in front of <code>h</code>, then tries <code>holders.compareAndSet(h, newList)</code>. The CAS succeeds only if <code>holders</code> is still exactly the snapshot, so the decision was based on the current state and no concurrent update is overwritten. If it fails, another thread changed <code>holders</code> in the meantime. If another reader locked or unlocked, the lock may still be available, so the method retries. If a writer took the lock, the next iteration sees the Writer and returns false. Since a ReaderList is immutable, every change creates a new object, so the reference comparison in the CAS detects every change, and threads reading the old list are not affected. A CAS fails only when another thread succeeded, so the method is lock-free.</p>
+  </div>
+  <div class="box idea" data-tit="What kind of progress">
+    <p><code>writerTryLock</code> and <code>writerUnlock</code>: no loop, they always finish in a few steps (<b>wait-free</b>). <code>readerTryLock</code> and <code>readerUnlock</code>: CAS loop, a CAS fails only if another thread has changed the list, that is it has finished its operation (<b>lock-free</b>). See <a href="l06-progresso.html">Wait-free, lock-free, obstruction-free</a>.</p>
+  </div>
+</section>
+
+<section>
+  <h2>The principle: snapshot, new copy, CAS</h2>
+  <p>All the methods of the lock follow the same recipe. It works only if <b>all</b> the ingredients are there: a single reference, immutable objects, a CAS that checks the snapshot.</p>
+  <figure class="passi" data-titolo="The recipe, ingredient by ingredient" data-legenda="dato:the snapshot,due:the new copy,ora:the CAS,ok:why it works">
+    <div class="passo"><div class="espr">tutto lo stato = <mark class="dato">un solo riferimento</mark> (holders)</div><p class="nota">Who holds the lock (nobody, which readers, which writer) is all inside <b>one</b> object. A CAS on a reference changes the whole state together: there is no moment in which it is updated halfway.</p></div>
+    <div class="passo"><div class="espr">h = holders.get()   →   <mark class="dato">fotografia</mark></div><p class="nota">I read the state. The objects are immutable, so the snapshot <b>cannot change</b> while I look at it: I decide on something still.</p></div>
+    <div class="passo"><div class="espr">newList = new ReaderList(current, h)   →   <mark class="due">copia nuova, a parte</mark></div><p class="nota">I prepare the new state in a new object that nobody else sees yet. The old state stays intact for whoever is reading it.</p></div>
+    <div class="passo"><div class="espr"><mark class="ora">compareAndSet(h, newList)</mark></div><p class="nota">"Write the copy <b>only if</b> the state is still my snapshot". Comparison and writing are a single instruction of the processor: nobody can slip in between.</p></div>
+    <div class="passo"><div class="espr">riesce → <mark class="ok">come se lettura, decisione e scrittura fossero un solo passo atomico</mark></div><p class="nota">The successful CAS proves that between my read and my write nobody has changed anything: my decision was taken on the true state.</p></div>
+    <div class="passo"><div class="espr">fallisce → butto la copia e ricomincio dalla fotografia</div><p class="nota">My work was never visible, so throwing it away does no harm. And if I failed it is because another thread succeeded: the system always advances (<a href="l06-progresso.html">lock-free</a>).</p></div>
+  </figure>
+  <div class="colonne">
+    <div class="carta cattiva"><h4>Two separate atomic fields</h4><p><code>AtomicInteger readers</code> + <code>AtomicReference&lt;Thread&gt; writer</code>. The reader sees <code>writer == null</code>; the writer sees <code>readers == 0</code> and puts itself in <code>writer</code>; the reader does <code>readers++</code>. <b>Inside both.</b> Each operation is atomic, but the rule "readers or writer" ties <b>two</b> fields, and a CAS protects only one.</p></div>
+    <div class="carta buona"><h4>A single reference</h4><p>Readers and writer are in the same <code>holders</code>. The reader and the writer do CAS on the <b>same</b> reference: if one changes the state, the other's CAS fails and that one checks again. It is the solution of <code>CasNumberRange</code> of the lecture: <code>lower</code> and <code>upper</code> inside a single immutable <code>IntPair</code>.</p></div>
+  </div>
+  <div class="box regola" data-tit="Why immutability is indispensable">
+    <p>The CAS compares <b>references</b>. "Same reference" means "same state" only if the object cannot change. If a thread could modify the list in place, the reference would stay the same, the CAS of another thread would succeed all the same and would erase the modification. Moreover, an object with <code>final</code> fields published through an <code>AtomicReference</code> (which behaves like a <code>volatile</code>) is seen complete by whoever reads it.</p>
+  </div>
+</section>
+
+<section>
+  <h2>6.2.5 · Sequential tests</h2>
+  <p>One thread only, no concurrency: one checks that the rules of the lock are right. Each test creates its own lock, so the tests do not depend on each other.</p>
+  <figure class="codice" data-titolo="TestLocks, sequential part">
+<pre data-lang="java">@Test
+public void cannotTakeReadLockWhileHoldingWriteLock() {
+    ReadWriteCASLock lock = new ReadWriteCASLock();
+    assertTrue(lock.writerTryLock());
+    assertFalse(lock.readerTryLock());
+    lock.writerUnlock();
+}
+
+@Test
+public void cannotTakeWriteLockWhileHoldingReadLock() {
+    ReadWriteCASLock lock = new ReadWriteCASLock();
+    assertTrue(lock.readerTryLock());
+    assertFalse(lock.writerTryLock());
+    lock.readerUnlock();
+}
+
+@Test
+public void cannotUnlockALockYouDoNotHold() {
+    ReadWriteCASLock lock = new ReadWriteCASLock();
+    assertThrows(IllegalStateException.class, lock::writerUnlock);
+    assertThrows(IllegalStateException.class, lock::readerUnlock);
+    assertTrue(lock.writerTryLock());
+    assertThrows(IllegalStateException.class, lock::readerUnlock);
+    lock.writerUnlock();
+    assertTrue(lock.readerTryLock());
+    assertThrows(IllegalStateException.class, lock::writerUnlock);
+    lock.readerUnlock();
+}
+
+@Test
+public void lockIsFreeAgainAfterUnlock() {
+    ReadWriteCASLock lock = new ReadWriteCASLock();
+    assertTrue(lock.writerTryLock());
+    assertFalse(lock.writerTryLock());
+    lock.writerUnlock();
+    assertTrue(lock.readerTryLock());
+    lock.readerUnlock();
+    assertTrue(lock.writerTryLock());
+    lock.writerUnlock();
+}</pre>
+    <ol class="spiega">
+      <li data-righe="1-7" data-segna="assertTrue@ok|assertFalse@no"><p>First rule of the text. <code>assertTrue(x)</code>: the test fails if <code>x</code> is false. First I make sure I really have the write lock, then I check that the read lock is <b>rejected</b>. At the end I release.</p></li>
+      <li data-righe="9-15"><p>Second rule, the other way round: with a read lock, the writer is rejected.</p></li>
+      <li data-righe="17-28" data-segna="assertThrows*@no|lock::writerUnlock#1@dato"><p>Third rule, in the two possible modes: lock <b>of nobody</b> (lines 20-21) and lock <b>of the other type</b> (lines 22-27). <code>assertThrows(Type.class, code)</code> runs the code and passes only if it throws an exception of that type. <code>lock::writerUnlock</code> (method reference) is a short way to write <code>() -&gt; lock.writerUnlock()</code>.</p></li>
+      <li data-righe="30-40"><p>An extra test: after each unlock the lock is really free (a typical error is to leave an empty list instead of <code>null</code>: the writer would no longer enter). Line 34: the same thread does not take the write lock again, it is not reentrant.</p></li>
+    </ol>
+  </figure>
+</section>
+
+<section>
+  <h2>6.2.6 · Parallel test: never two writers together</h2>
+  <p>Many threads try to take the write lock. Whoever succeeds marks it in a shared counter "how many are inside now". If on entering it finds somebody already there, it is an <b>overlap</b>. At the end, when all the threads have finished, the overlaps must be 0.</p>
+  <figure class="codice" data-titolo="TestLocks, parallel part">
+<pre data-lang="java">@RepeatedTest(10)
+public void writersAreMutuallyExclusive() {
+    final int THREADS = 16;
+    final int ATTEMPTS = 10_000;
+    final ReadWriteCASLock lock = new ReadWriteCASLock();
+    final AtomicInteger holding = new AtomicInteger(0);
+    final AtomicInteger overlaps = new AtomicInteger(0);
+    final AtomicInteger acquisitions = new AtomicInteger(0);
+    final AtomicInteger errors = new AtomicInteger(0);
+    final CyclicBarrier barrier = new CyclicBarrier(THREADS + 1);
+    final Thread[] threads = new Thread[THREADS];
+
+    for (int t = 0; t &lt; THREADS; t++) {
+        threads[t] = new Thread(() -&gt; {
+            try {
+                barrier.await();
+                for (int i = 0; i &lt; ATTEMPTS; i++) {
+                    if (lock.writerTryLock()) {
+                        acquisitions.incrementAndGet();
+                        if (holding.incrementAndGet() &gt; 1)
+                            overlaps.incrementAndGet();
+                        holding.decrementAndGet();
+                        lock.writerUnlock();
+                    }
+                }
+            } catch (InterruptedException | BrokenBarrierException e) {
+                e.printStackTrace();
+            } catch (IllegalStateException e) {
+                errors.incrementAndGet();
+            }
+        });
+        threads[t].start();
+    }
+
+    try {
+        barrier.await();
+        for (Thread thread : threads)
+            thread.join();
+    } catch (InterruptedException | BrokenBarrierException e) {
+        e.printStackTrace();
+    }
+
+    assertTrue(acquisitions.get() &gt; 0, "no writer ever got the lock");
+    assertEquals(0, overlaps.get(), "two or more writers held the lock at the same time");
+    assertEquals(0, errors.get(), "a writer could not release a lock it had acquired");
+}</pre>
+    <ol class="spiega">
+      <li data-righe="1" data-segna="@RepeatedTest(10)@ora"><p>A concurrency error appears only in certain interleavings: the test is repeated.</p></li>
+      <li data-righe="6-9" data-segna="holding@dato|overlaps@no"><p>The measuring tools are <code>AtomicInteger</code>: all the threads touch them together, and a non-thread-safe counter would falsify the measurement. <code>holding</code> = writers inside now; <code>overlaps</code> = times in which one entered finding another.</p></li>
+      <li data-righe="18-23" data-segna="holding.incrementAndGet() &gt; 1@ora"><p>The measured part. I enter: +1. If the value after the +1 is above 1, somebody was already there: overlap. I leave: −1, then unlock. The −1 comes <b>before</b> the unlock: after the unlock another thread can legitimately enter, and must not find me still counted.</p></li>
+      <li data-righe="16,28-29,36-38" data-segna="barrier.await()*@dato|thread.join()@ok|IllegalStateException@no"><p>Start together with the barrier (week 5), end with <code>join()</code> on each thread. A rejected <code>writerUnlock</code> (lines 28-29) is counted in <code>errors</code>, it does not make the thread die in silence. Why <code>join</code> and not a second <code>await</code>: see the steps below.</p></li>
+      <li data-righe="43-45"><p>The check is done <b>after</b> all the threads have finished, as the text asks. <code>acquisitions &gt; 0</code> avoids a test that passes without having tried anything (a lock that always says <code>false</code> would never have overlaps).</p></li>
+    </ol>
+  </figure>
+  <figure class="passi" data-titolo="With two awaits the test with a wrong lock stays blocked" data-legenda="dato:main,due:threads,no:the problem,ok:the fix">
+    <div class="passo"><div class="espr">lock sbagliato: if (holders.get() == null) holders.set(new Writer(current));</div><p class="nota">Check and writing separated: two writers can both see <code>null</code> and both enter.</p></div>
+    <div class="passo"><div class="espr"><mark class="due">W1</mark>, <mark class="due">W2</mark> entrano insieme; W2 sovrascrive il Writer di W1</div><p class="nota">Now <code>holders</code> contains Writer(W2).</p></div>
+    <div class="passo"><div class="espr"><mark class="due">W1</mark>: writerUnlock() → <mark class="no">IllegalStateException</mark></div><p class="nota">The Writer is not its own. The exception is not among those of the thread's <code>catch</code>: the thread <b>dies</b>.</p></div>
+    <div class="passo"><div class="espr"><mark class="dato">main</mark>: seconda barrier.await() → <mark class="no">aspetta per sempre</mark></div><p class="nota">The barrier waits for THREADS + 1 arrivals, but W1 will never arrive. The test does not fail: it <b>blocks</b>. Actually tried: Gradle stopped by the timeout.</p></div>
+    <div class="passo"><div class="espr"><mark class="ok">thread.join()</mark> + catch (IllegalStateException e)</div><p class="nota"><code>join()</code> returns also when the thread has died from an exception; moreover the exception is counted in <code>errors</code>. With this version the wrong lock makes the test fail in 10 repetitions out of 10 (from 3 to 10 overlaps each), the right one passes 10 out of 10.</p></div>
+  </figure>
+  <figure class="codice" data-titolo="Other fix: the second await in the finally">
+<pre data-lang="java">new Thread(() -> {
+    try {
+        barrier.await();
+        for (int i = 0; i &lt; ITERATIONS; i++) { /* writerTryLock … writerUnlock */ }
+    } catch (InterruptedException | BrokenBarrierException e) {
+        e.printStackTrace();
+    } finally {
+        try {
+            barrier.await();
+        } catch (InterruptedException | BrokenBarrierException e) {
+            e.printStackTrace();
+        }
+    }
+}).start();</pre>
+    <div class="intro"><p>If one wants to keep the two <code>await()</code> of the main, the second <code>await()</code> of the thread goes in the <code>finally</code>: it is executed <b>always</b>, even when <code>writerUnlock()</code> throws <code>IllegalStateException</code>.</p></div>
+    <ol class="spiega">
+      <li data-righe="7" data-segna="finally@ok"><p><code>finally</code>: the block runs both if the <code>try</code> ends normally and if it exits with an exception, even if no <code>catch</code> catches it. So the thread reaches the barrier even when it is about to die.</p></li>
+      <li data-righe="8-12" data-segna="barrier.await();@ora|catch (@ok"><p>A <b>second</b> try/catch inside the <code>finally</code> is needed. The <code>catch</code> above protects only the <code>try</code> above, not the <code>finally</code>. And <code>await()</code> throws <b>checked</b> exceptions, which the body of a <code>Runnable</code> lambda cannot let out: <code>run()</code> does not declare <code>throws</code>. Without this try, javac gives <code>error: unreported exception InterruptedException; must be caught or declared to be thrown</code>.</p></li>
+      <li data-righe="7-12"><p>With the wrong lock, after the <code>finally</code> the <code>IllegalStateException</code> keeps rising and the thread dies, but <b>after</b> having reached the barrier: the main restarts and the assertion fails. Tried with a program of the same structure (16 threads, 1000 attempts): right lock 0 failures out of 50, wrong lock (get then set) 50 failures out of 50, no blocking.</p></li>
+    </ol>
+  </figure>
+</section>
+
+<section>
+  <h2>6.2.7 · Challenge: no double read lock</h2>
+  <figure class="codice" data-titolo="readerTryLock that rejects a second read lock by the same thread">
+<pre data-lang="java">public boolean readerTryLock() {
+    final Thread current = Thread.currentThread();
+    while (true) {
+        final Holders h = holders.get();
+        if (h instanceof Writer)
+            return false;
+        final ReaderList readers = (ReaderList) h;
+        if (readers != null &amp;&amp; readers.contains(current))
+            throw new IllegalStateException("readerTryLock: the calling thread already holds a read lock");
+        if (holders.compareAndSet(h, new ReaderList(current, readers)))
+            return true;
+    }
+}</pre>
+    <ol class="spiega">
+      <li data-righe="7-9" data-segna="readers.contains(current)@ora|throw@no"><p>Before adding myself I check that I am not already there. <code>readers != null</code> is needed because on <code>null</code> one cannot call a method (<code>NullPointerException</code>).</p></li>
+      <li data-righe="10-11" data-segna="compareAndSet(h, new ReaderList(current, readers))@ok"><p>Check and CAS are two separate steps (test-then-set), and yet it works, for two reasons.</p></li>
+    </ol>
+  </figure>
+  <div class="box regola" data-tit="Why the test-then-set is safe here">
+    <p><b>1.</b> The CAS succeeds only if <code>holders</code> is still exactly the list <code>h</code> on which I did <code>contains</code>, and that list is immutable: I checked exactly the list I replace. If in the meantime it has changed, the CAS fails and I check again.</p>
+    <p><b>2.</b> Anyway only the thread itself can add or remove itself from the list (<code>readerTryLock</code> and <code>readerUnlock</code> always use <code>Thread.currentThread()</code>). The other threads can change the list, but not the answer to "is <code>current</code> there?".</p>
+  </div>
+  <div class="box attenzione" data-tit="A test changes">
+    <p>With this version a test that takes two read locks from the same thread throws an exception. The right test becomes: <code>assertTrue(lock.readerTryLock()); assertThrows(IllegalStateException.class, lock::readerTryLock);</code></p>
+  </div>
+  <div class="box inglese" data-tit="Ready answer">
+    <p>The check <code>contains(current)</code> and the CAS are not one atomic step, but this is safe here. First, the CAS succeeds only if <code>holders</code> still refers to the same list we checked, and lists are immutable, so we check exactly the list we replace; otherwise the CAS fails and we check again. Second, only the calling thread itself can add or remove itself from the reader list, so other threads cannot change the result of <code>contains(current)</code>.</p>
+  </div>
+</section>
+
+</main>
+</body>
+</html>

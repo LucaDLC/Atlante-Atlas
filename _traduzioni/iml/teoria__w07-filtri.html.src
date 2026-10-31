@@ -1,0 +1,76 @@
+@@s001 Filtri: media, correlazione, convoluzione
+@@s002 Posizione ${n}: la finestra copre ${f[n - 1]}, ${f[n]}, ${f[n + 1]}. Prodotto interno con il filtro: ${somma}.
+@@s003 dato:segnale,ora:finestra sotto il filtro,due:filtro,ok:uscita
+@@s004 Un segnale di 8 campioni: un <b>picco</b> (il 9) e un <b>gradino</b> (da 3 a 6). Il filtro della <b>media mobile</b> ha 3 pesi uguali, 1/3 ciascuno.
+@@s005 Risultato: il picco 9 è diventato 5, 5, 5 (spalmato: <b>rumore attenuato</b>); il gradino netto 3 → 6 è diventato una rampa 4, 5, 6 (<b>bordo sfocato</b>). Ai due estremi la finestra esce dal segnale: con <code>mode="valid"</code> quei valori non si calcolano.
+@@s006 dato:segnale rumoroso,due:media su 3,ok:media su 9,spento:segnale vero
+@@s007 dato:segnale,ora:finestra,due:filtro,ok:uscita
+@@s008 dato:immagine (una riga),ora:pixel sul bordo,ok:uscita del filtro
+@@s009 dato:segnale,spento:zeri aggiunti,ok:uscita
+@@s010 Filtri: media, correlazione, convoluzione
+@@s011 Lezione 7. Un filtro rifà la stessa operazione in ogni punto di un segnale o di un'immagine, guardando solo un piccolo intorno (elaborazione locale). Ogni uscita è un <b>prodotto interno</b> tra i pesi del filtro e i valori vicini. Gli esercizi sono in settimana 8 (<i>Constructing filters</i>, filtraggio dello sguardo); domanda d'esame <b>Q6 (a)</b>. PM capitolo 5, DW capitolo 13.
+@@s012 A cosa serve filtrare
+@@s013 <b>Togliere rumore</b> (smoothing, denoising): il rumore casuale cambia da un campione al vicino, il segnale no. Facendo medie locali il rumore si attenua.
+@@s014 <b>Estrarre informazioni</b>: bordi, variazioni, direzioni (derivate, settimana 8), somiglianza con un modello (template matching).
+@@s015 Si filtrano segnali nel tempo (audio, la coordinata della pupilla frame dopo frame), immagini (2D), volumi (3D).
+@@s016 Filtrare è sempre un compromesso
+@@s017 Lo stesso filtro che attenua il rumore attenua anche i dettagli veri: il bordo netto diventa una rampa. Più il filtro è largo, più rumore toglie e più dettaglio perde. Per lo sguardo: troppo smoothing e i salti veri dell'occhio (saccadi) diventano lenti.
+@@s018 Media locale: meno rumore, meno dettaglio
+@@s019 La media mobile, passo per passo
+@@s020 Media mobile di 3 campioni
+@@s021 Risultato verificato con <code>np.convolve(f, np.ones(3)/3, "valid")</code>.
+@@s022 Ogni uscita è un prodotto interno
+@@s023 Pesi del filtro per i valori della finestra, poi la somma.
+@@s024 È il <a href="w02-prodotto-interno.html">prodotto interno</a> tra il vettore dei pesi e il vettore della finestra. Somma pesata = combinazione lineare: il filtro è un'operazione <b>lineare</b>.
+@@s025 Il centro conta di più: il campione più vicino è quello più affidabile per stimare il valore lì. Con questi pesi l'uscita in posizione 2 vale (3 + 18 + 3)/4 = 6. Un peso molto più grande degli altri ⇒ il filtro quasi non fa niente (copia il centro).
+@@s026 Se tutti i valori valgono 7, l'uscita vale 7·(somma dei pesi) = 7. Per questo i filtri di smoothing sommano a 1: non cambiano la luminosità media.
+@@s027 Correlazione e convoluzione
+@@s028 Sono due formule quasi identiche per fare la stessa cosa: far scorrere un filtro <span class="m">h</span> sul segnale <span class="m">f</span> e sommare i prodotti. Il simbolo <span class="m">y<sub>n</sub></span> è il risultato in posizione <span class="m">n</span>. <span class="m">Σ<sub>m</sub></span> (sigma) vuol dire "somma su tutti i valori di <span class="m">m</span>". <span class="m">h<sub>m</sub></span> è il valore del filtro alla posizione <span class="m">m</span>. <span class="m">f</span> con un indice è un valore del segnale. L'unica cosa che cambia è il segno dell'indice del segnale: <span class="m">n + m</span> nella correlazione, <span class="m">n − m</span> nella convoluzione.
+@@s029 L'unica differenza: il filtro si capovolge
+@@s030 Il filtro scorre sul segnale così com'è.
+@@s031 Stessa cosa con il filtro <b>capovolto</b> (in 2D, ruotato di 180°). È la formula di DW 13.
+@@s032 Capovolto è uguale a sé stesso. Per questo nello smoothing la differenza non si vede.
+@@s033 Con un filtro non simmetrico cambia il segno. Verificato con <code>np.convolve</code> e <code>np.correlate</code>. È il motivo per cui il tutorial scrive il filtro derivata come [1, −1] "al contrario".
+@@s034 Quindi: <b>convolvere con [1, −1]</b> dà lo stesso risultato di <b>correlare con [−1, 1]</b>, cioè con il filtro capovolto.
+@@s035 La convoluzione di un impulso è il filtro stesso
+@@s036 Convolvendo un'immagine con un solo pixel acceso, esce una copia del filtro centrata lì. Così si costruiscono i filtri del Task 1 (<i>shifting pixels</i>): con <code>scipy.ndimage.convolve</code>, un 1 a destra del centro sposta l'immagine a destra; con <code>correlate</code> la sposta a sinistra (verificato su un'immagine 5 × 5).
+@@s037 Perché nel corso si dice “filtro” e non “kernel”
+@@s038 In molti libri il filtro si chiama anche kernel. Nel corso "kernel" indica già la mappa delle feature dei modelli (Φ(x) = [1, x, x²], <a href="w05-kernel.html">settimana 5</a>). Dire "filtro" evita di confondere le due cose.
+@@s039 Lo stesso filtro, capovolto: il segno cambia
+@@s040 Filtri 2D
+@@s041 Stessa idea su un'immagine: una piccola matrice di pesi scorre su ogni pixel; ogni pixel dell'uscita dipende dal suo intorno (3 × 3, 5 × 5, …).
+@@s042 Filtro
+@@s043 Pesi
+@@s044 Somma
+@@s045 Effetto
+@@s046 <b>media</b> 3 × 3
+@@s047 tutti 1/9
+@@s048 sfoca in modo uniforme
+@@s049 <b>gaussiano</b> 3 × 3
+@@s050 sfoca pesando di più il centro
+@@s051 gaussiano 5 × 5 (Task 2)
+@@s052 sfoca di più (più largo)
+@@s053 <b>sharpening</b> K₂ (Task 4)
+@@s054 9 al centro, −1 intorno
+@@s055 esalta le differenze dal vicinato
+@@s056 <b>Sobel</b> x (Task 5)
+@@s057 risponde ai bordi verticali (settimana 8)
+@@s058 Somme calcolate con NumPy. Su un'immagine costante (tutti 7) media, gaussiano e sharpening danno 7, Sobel dà 0: dove non cambia niente, un filtro derivata risponde 0.
+@@s059 Task 4: perché lo sharpening funziona
+@@s060 Si può riscrivere come centro + 8·(centro − media dei vicini).
+@@s061 Pesi con somma 1: l'immagine piatta non cambia.
+@@s062 Il pixel chiaro accanto a uno scuro diventa più chiaro, e viceversa: i bordi sembrano più netti. Anche il rumore viene amplificato.
+@@s063 Template matching (Task 3)
+@@s064 Si usa come filtro un pezzo d'immagine (il template, per esempio un girasole) e si fa la <b>correlazione</b> con tutta l'immagine: dove la finestra somiglia al template il prodotto interno è grande. Il massimo della mappa è la posizione migliore. Il template è un "modello" molto semplice: un prodotto interno usato come misura di somiglianza. <code>skimage.feature.match_template</code> usa la versione normalizzata, che non premia le zone solo perché sono chiare. Provato: in un'immagine con una croce (il template) e un quadrato molto luminoso, la correlazione grezza sceglie il quadrato (valore 25), <code>match_template</code> la croce (valore 1.0, il massimo possibile).
+@@s065 Media, sharpening e Sobel su un bordo
+@@s066 In codice
+@@s067 Le funzioni degli esercizi
+@@s068 Con <code>"valid"</code> si tengono solo le posizioni dove il filtro sta tutto dentro al segnale: 8 − 3 + 1 = 6 uscite. Con il default <code>"full"</code> ne escono 10, completando con zeri.
+@@s069 Il filtro gaussiano 1D usato nell'esercizio sullo sguardo: σ decide la larghezza, cioè quanto si sfoca.
+@@s070 In 2D: a mano con una matrice di pesi, oppure con il gaussiano già pronto di scikit-image.
+@@s071 Q6 (a)
+@@s072 "Filtering (1D, 2D, and n-D convolution and correlation, blurring and smoothing, and noise)." Il percorso: rumore → media locale → filtro come prodotto interno → correlazione vs convoluzione → filtri 2D e somma dei pesi → compromesso rumore/dettaglio → l'esempio dello sguardo (<a href="w08-sguardo-filtrato.html">settimana 8</a>).
+@@s073 Frasi pronte
+@@s074 "Each output sample is the inner product between the filter weights and the local neighbourhood of the input."
+@@s075 "Convolution flips the filter; for symmetric filters such as the Gaussian it gives the same result as correlation."
+@@s076 valid contro full

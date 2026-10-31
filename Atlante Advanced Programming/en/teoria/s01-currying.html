@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Currying and composition</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+SCENE.macchine = {
+  w: 600, h: 250, lato: false,
+  legenda: 'dato:value that enters,ora:function at work,ok:result',
+  oggetti: [
+    { id: 'i2', tipo: 'nodo', r: 20, x: 50, y: 60, t: '2', tono: 'dato' },
+    { id: 'add', tipo: 'nodo', forma: 'quadrato', r: 34, x: 170, y: 60, t: 'add' },
+    { id: 'f2', tipo: 'nodo', forma: 'quadrato', r: 44, x: 330, y: 60, t: 'y => 2 + y', nascosto: true },
+    { id: 'i3', tipo: 'nodo', r: 20, x: 330, y: 150, t: '3', tono: 'dato', nascosto: true },
+    { id: 'r5', tipo: 'nodo', r: 22, x: 490, y: 60, t: '5', tono: 'ok', nascosto: true },
+    { id: 'a1', tipo: 'arco', da: 'i2', a: 'add', dir: true },
+    { id: 'a2', tipo: 'arco', da: 'add', a: 'f2', dir: true, nascosto: true },
+    { id: 'a3', tipo: 'arco', da: 'i3', a: 'f2', dir: true, nascosto: true },
+    { id: 'a4', tipo: 'arco', da: 'f2', a: 'r5', dir: true, nascosto: true },
+    { id: 'n', tipo: 'testo', x: 300, y: 230, t: 'add = (x: Int) => (y: Int) => x + y', size: 13, bold: true }
+  ],
+  passi: [
+    { nota: '<code>add</code> is a machine that takes <b>one</b> argument at a time.' },
+    { nota: '<code>add(2)</code>: the 2 enters and what comes out is not a number, but a <b>new machine</b>, <code>y =&gt; 2 + y</code>, with the 2 already inside (partial application).', set: { add: { tono: 'ora' }, a2: { nascosto: false }, f2: { nascosto: false, tono: 'ok' }, n: { t: 'add(2) = y => 2 + y' } } },
+    { nota: 'The second argument, 3, enters the new machine…', set: { add: { tono: null }, f2: { tono: 'ora' }, i3: { nascosto: false }, a3: { nascosto: false } } },
+    { nota: '…and <b>5</b> comes out. <code>add(2)(3)</code> = 5, like <code>add2(2, 3)</code>, but halfway through I had in hand a reusable function.', set: { f2: { tono: null }, a4: { nascosto: false }, r5: { nascosto: false }, n: { t: 'add(2)(3) = 5', tono: 'ok' } } },
+    { nota: '<b>Composition</b>: <code>compose(square, abs)(-3)</code>. First abs works (the function on the right): −3 → 3. Then square: 3 → 9. "f after g".', set: { i2: { t: '−3' }, add: { t: 'abs', tono: 'ora' }, f2: { t: 'square', tono: 'ora' }, i3: { nascosto: true }, a3: { nascosto: true }, r5: { t: '9' }, n: { t: 'compose(square, abs)(−3) = square(abs(−3)) = 9', tono: 'ok' } } }
+  ]
+};
+</script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  const T = (id, x, y, t, extra) => Object.assign({ id, tipo: 'testo', x, y, t, size: 13 }, extra || {});
+  const R = (id, x, y, w, h, t, extra) => Object.assign({ id, tipo: 'rett', x, y, w, h, t }, extra || {});
+  const F = (id, x1, y1, x2, y2, t, extra) => Object.assign({ id, tipo: 'vett', x1, y1, x2, y2, t }, extra || {});
+  const C = (id, x, y, valori, extra) => Object.assign({ id, tipo: 'celle', x, y, cw: 52, ch: 40, valori, indici: false }, extra || {});
+
+    SCENE.curried = {
+      w: 580, h: 250, lato: true,
+      legenda: 'dato:argument,ora:function,due:function with an argument already inside,ok:result',
+      oggetti: [
+        T('h1', 20, 30, 'add2 = (x, y) => x + y', { anchor: 'start', bold: true, size: 12 }),
+        R('a2in', 20, 45, 80, 36, '2, 3', { tono: 'dato' }), R('a2', 150, 40, 150, 46, 'add2', { tono: 'ora' }), R('a2out', 350, 45, 80, 36, '', { tono: 'ok' }),
+        F('f1', 102, 63, 146, 63, ''), F('f2', 302, 63, 346, 63, ''),
+        T('h2', 20, 130, 'add = x => y => x + y', { anchor: 'start', bold: true, size: 12 }),
+        R('bin', 20, 145, 60, 36, '', { tono: 'dato' }), R('b', 110, 140, 90, 46, 'add', { tono: 'ora' }), R('bmid', 240, 140, 150, 46, '', { tono: 'due', nascosto: true }),
+        R('bin2', 420, 145, 50, 36, '', { tono: 'dato', nascosto: true }), R('bout', 500, 145, 60, 36, '', { tono: 'ok', nascosto: true }),
+        T('c', 290, 226, '', { size: 12 })
+      ],
+      passi: [
+        { nota: "<b>Insieme</b>: <code>add2</code> ha tipo <code>(Int, Int) =&gt; Int</code>. Vuole tutti e due gli argomenti <b>subito</b>: add2(2, 3) = 5.", set: { a2out: { t: '5' } } },
+        { nota: "<b>Uno alla volta</b> (curried): <code>add</code> ha tipo <code>Int =&gt; (Int =&gt; Int)</code>. Gli do solo il 2.", set: { bin: { t: '2' } } },
+        { nota: "Esce una <b>funzione nuova</b>, con il 2 già dentro: <code>y =&gt; 2 + y</code>. Si chiama <b>applicazione parziale</b>.", set: { bmid: { nascosto: false, t: 'y => 2 + y' }, c: { t: 'add(2) = y => 2 + y' } } },
+        { nota: "Il secondo argomento, 3, chiama quella funzione: 2 + 3 = 5. Stesso risultato di add2(2, 3), ma in due chiamate: <code>add(2)(3)</code>.", set: { bin2: { nascosto: false, t: '3' }, bout: { nascosto: false, t: '5' }, c: { t: 'add(2)(3) = 5' } } },
+        { nota: "Il vantaggio: fissare il primo argomento una volta e riusare la funzione. <code>val incr = add(1)</code> è una Int =&gt; Int, e incr(7) = 8.", set: { bin: { t: '1' }, bmid: { t: 'incr = y => 1 + y' }, bin2: { t: '7' }, bout: { t: '8' }, c: { t: 'val incr = add(1); incr(7) = 8', tono: 'ok' } } }
+      ]
+    };
+
+    SCENE.scrivicurry = {
+      w: 560, h: 170,
+      codice: { lang: 'scala', testo: `def curry[A, B, C](f: (A, B) => C): A => (B => C) =
+  a => b => f(a, b)` },
+      legenda: 'ora:still to produce,dato:I have in hand,ok:done',
+      oggetti: [
+        T('l1', 140, 26, 'devo produrre', { size: 12 }), R('dev', 40, 40, 200, 40, 'A => (B => C)', { tono: 'ora' }),
+        T('l2', 420, 26, 'ho in mano', { size: 12 }), R('ho', 320, 40, 200, 40, 'f: (A, B) => C', { tono: 'dato' }),
+        T('sc', 280, 120, 'curry(f) = ???', { bold: true, size: 14 })
+      ],
+      passi: [
+        { nota: "Esercizio 5: i tipi dicono ogni pezzo. Si confronta cosa devo <b>produrre</b> con cosa ho <b>in mano</b>.", righe: [1] },
+        { nota: "Devo produrre una funzione che prende un A: si scrive con la freccia, <code>a =&gt;</code>. Ora ho in mano anche a, e resta da produrre B =&gt; C.", righe: [2], set: { dev: { t: 'B => C' }, ho: { t: 'f, a: A' }, sc: { t: 'a => ???' } } },
+        { nota: "B =&gt; C è un'altra funzione: <code>b =&gt;</code>. Ora ho anche b, resta da produrre un C.", righe: [2], set: { dev: { t: 'C' }, ho: { t: 'f, a: A, b: B' }, sc: { t: 'a => b => ???' } } },
+        { nota: "L'unico modo di ottenere un C è chiamare f con un A e un B: <code>f(a, b)</code>. Non c'erano altre scelte: il codice era scritto nel tipo.", righe: [2], set: { dev: { t: 'fatto', tono: 'ok' }, sc: { t: 'a => b => f(a, b)', tono: 'ok' } } },
+        { nota: "uncurry fa il viaggio inverso: <code>(a, b) =&gt; f(a)(b)</code>. uncurry(curry(f)) si comporta come f: è quello che controllano i test dell'esercizio 6.", set: { sc: { t: 'uncurry(curry(f)) ≡ f' } } }
+      ]
+    };
+
+    SCENE.riuso = {
+      w: 580, h: 220, lato: true,
+      legenda: 'dato:starting function,ora:transformation,ok:function obtained',
+      oggetti: [
+        R('is', 20, 40, 160, 50, 'isSorted[A]', { tono: 'dato' }), T('ist', 100, 110, '(array, criterio) => Boolean', { size: 11 }),
+        R('cu', 220, 40, 110, 50, 'curry', { tono: 'ora', nascosto: true }), F('f1', 182, 65, 216, 65, '', { nascosto: true }), F('f2', 332, 65, 376, 65, '', { nascosto: true }),
+        R('isc', 380, 40, 180, 50, 'isSortedCurried[A]', { tono: 'ok', nascosto: true }), T('isct', 470, 110, 'array => criterio => Boolean', { size: 11, nascosto: true }),
+        T('call', 290, 160, '', { bold: true, size: 12 }), T('ris', 290, 196, '', { size: 12 })
+      ],
+      passi: [
+        { nota: "isSorted prende array e criterio <b>insieme</b>. Serve la versione che li prende <b>uno alla volta</b>." },
+        { nota: "Non si riscrive niente: si passa isSorted a <code>curry</code>. Le quadre <code>[A]</code> dicono per quale tipo.", set: { cu: { nascosto: false }, f1: { nascosto: false }, f2: { nascosto: false }, isc: { nascosto: false }, isct: { nascosto: false } } },
+        { nota: "Si chiama con due coppie di parentesi: prima l'array…", set: { call: { t: 'isSortedCurried(Array(1, 2, 3))' }, ris: { t: '→ una funzione che aspetta il criterio' } } },
+        { nota: "…poi il criterio: true. Il primo argomento può \"configurare\" la funzione una volta, il secondo arrivare dopo. E <code>uncurry(isSortedCurried[A])</code> riporta alla forma a due argomenti.", set: { call: { t: 'isSortedCurried(Array(1, 2, 3))(_ <= _)' }, ris: { t: '→ true', tono: 'ok' } } }
+      ]
+    };
+  
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Currying and composition</h1>
+  <p class="lede">A function with two arguments can be rewritten as a function that takes <b>one</b> and returns another function that waits for the second. It is called <b>currying</b>. It serves to fix an argument once and reuse the rest.</p>
+</header>
+
+<section>
+  <h2>Two arguments together, or one at a time</h2>
+  <div class="colonne">
+    <div class="carta">
+      <h4>Together</h4>
+      <pre class="cod" data-lang="scala">val add2 = (x: Int, y: Int) => x + y
+add2(2, 3)   // 5</pre>
+      <p>Type: <code>(Int, Int) => Int</code>. You must give both arguments at once.</p>
+    </div>
+    <div class="carta">
+      <h4>One at a time (curried)</h4>
+      <pre class="cod" data-lang="scala">val add = (x: Int) => (y: Int) => x + y
+add(2)(3)    // 5</pre>
+      <p>Type: <code>Int => (Int => Int)</code>. Each argument has its own pair of brackets.</p>
+    </div>
+  </div>
+
+  <figure class="passi" data-titolo="add(2)(3), one argument at a time">
+    <div class="passo">
+      <div class="espr">add = (<mark class="dato">x</mark>: Int) => (y: Int) => <mark class="dato">x</mark> + y</div>
+      <p class="nota"><code>add</code> takes <code>x</code> and returns <b>everything that comes after the first arrow</b>.</p>
+    </div>
+    <div class="passo">
+      <div class="espr">add(<mark class="dato">2</mark>)   =   (y: Int) => <mark class="dato">2</mark> + y</div>
+      <p class="nota">I give only the first argument. I get a function with the 2 already inside. It is called <b>partial application</b>.</p>
+    </div>
+    <div class="passo">
+      <div class="espr">((y: Int) => 2 + y)(<mark class="due">3</mark>)</div>
+      <p class="nota">The second <code>(3)</code> calls that function.</p>
+    </div>
+    <div class="passo">
+      <div class="espr">2 + <mark class="due">3</mark>   =   <mark class="ok">5</mark></div>
+      <p class="nota">Same result as <code>add2(2, 3)</code>.</p>
+    </div>
+    <div class="passo">
+      <div class="espr">val <mark class="ora">incr</mark> = add(1)        <span class="mano">// incr: Int => Int</span>
+incr(7)                   <span class="mano">// 8</span></div>
+      <p class="nota">The advantage: I fix the first argument once and get a new function, reusable.</p>
+    </div>
+  </figure>
+  <p>It works also with <code>def</code>s that have several parameter lists: <code>def add(x: Int)(y: Int): Int = x + y</code>, and then <code>val incr = add(1)</code> (checked with Scala 3.8).</p>
+  <figure class="scena" data-scena="curried" data-titolo="add2(2, 3) against add(2)(3)"></figure>
+</section>
+
+<section>
+  <h2>Writing <code>curry</code>: let the types decide</h2>
+  <p>Exercise 5. It looks hard, but the types tell you every piece. Look at what you must <b>produce</b> and build it from the outside in.</p>
+  <pre class="cod" data-lang="scala">def curry[A, B, C](f: (A, B) => C): A => (B => C) = ???</pre>
+
+  <figure class="passi" data-titolo="curry built guided by the type" data-legenda="dato:A,due:B,ok:C">
+    <div class="passo">
+      <div class="espr">devo produrre:  <mark class="dato">A</mark> => (<mark class="due">B</mark> => <mark class="ok">C</mark>)
+ho in mano:     f: (<mark class="dato">A</mark>, <mark class="due">B</mark>) => <mark class="ok">C</mark></div>
+      <p class="nota">I write below what I must produce and what I have.</p>
+    </div>
+    <div class="passo">
+      <div class="espr">def curry[A, B, C](f: (A, B) => C): A => (B => C) =
+  <mark class="dato">a</mark> => ???</div>
+      <p class="nota">The result is a function that takes an <code>A</code>. A function is written with the arrow: I start with <code>a =></code>.</p>
+    </div>
+    <div class="passo">
+      <div class="espr">def curry[A, B, C](f: (A, B) => C): A => (B => C) =
+  a => <mark class="due">b</mark> => ???</div>
+      <p class="nota">After receiving <code>a</code> I must give <code>B => C</code>: another function. I write <code>b =></code>.</p>
+    </div>
+    <div class="passo">
+      <div class="espr">def curry[A, B, C](f: (A, B) => C): A => (B => C) =
+  a => b => <mark class="ok">???: C</mark></div>
+      <p class="nota">Now I must give a <code>C</code>. I have in hand only <code>a</code>, <code>b</code> and <code>f</code>.</p>
+    </div>
+    <div class="passo">
+      <div class="espr">def curry[A, B, C](f: (A, B) => C): A => (B => C) =
+  a => b => <mark class="ok">f(a, b)</mark></div>
+      <p class="nota">The only way to obtain a <code>C</code> is to call <code>f</code> with an A and a B. There were no other choices: the code was written in the type.</p>
+    </div>
+  </figure>
+
+  <p>Same method for <code>uncurry</code> (exercise 6), which makes the reverse trip:</p>
+  <figure class="codice" data-titolo="uncurry">
+<pre data-lang="scala">def uncurry[A, B, C](f: A => B => C): (A, B) => C =
+  (a, b) => f(a)(b)</pre>
+    <ol class="spiega">
+      <li data-righe="1" data-segna="(A, B) => C@ok"><p>I must produce a function that takes <b>two</b> arguments together.</p></li>
+      <li data-righe="2" data-segna="(a, b) =>@dato"><p>So I write a function with two parameters.</p></li>
+      <li data-righe="2" data-segna="f(a)@ora"><p>I have <code>f</code> that wants one argument at a time. <code>f(a)</code> gives me a function <code>B => C</code>…</p></li>
+      <li data-righe="2" data-segna="(b)@ok"><p>…which I call right away with <code>b</code>. I get the <code>C</code>.</p></li>
+    </ol>
+  </figure>
+  <p><code>curry</code> and <code>uncurry</code> are the inverse of each other: <code>uncurry(curry(f))</code> behaves like <code>f</code>. It is exactly what the tests of exercise 6 check.</p>
+  <figure class="scena" data-scena="scrivicurry" data-titolo="From types to code, one piece at a time"></figure>
+</section>
+
+<section>
+  <h2><code>isSortedCurried</code>: reuse instead of rewriting</h2>
+  <figure class="codice" data-titolo="Exercises 5 and 6: no new code">
+<pre data-lang="scala">def isSortedCurried[A]: Array[A] => ((A, A) => Boolean) => Boolean =
+  curry(isSorted[A])
+
+def isSortedCurriedUncurried[A]: (Array[A], (A, A) => Boolean) => Boolean =
+  uncurry(isSortedCurried[A])</pre>
+    <ol class="spiega">
+      <li data-righe="1" data-segna="Array[A]@dato|((A, A) => Boolean)@due|Boolean#2@ok"><p>The required type: first the array, then the criterion, then the result. It is the one-argument-at-a-time version of <code>isSorted</code>.</p></li>
+      <li data-righe="2" data-segna="isSorted[A]@dato|curry@ora"><p>I rewrite nothing: I take <code>isSorted</code> (with two arguments) and pass it to <code>curry</code>. The square brackets <code>[A]</code> say for which type.</p></li>
+      <li data-righe="5" data-segna="uncurry@ora"><p>And going back with <code>uncurry</code> I get back a function equivalent to the original.</p></li>
+    </ol>
+  </figure>
+  <pre class="cod" data-lang="scala">isSortedCurried(Array(1, 2, 3))(_ &lt;= _)   // true</pre>
+  <div class="box idea" data-tit="Why it is useful">
+    <p>The first argument can configure the function for the whole project, the second arrives at runtime. And often curry/uncurry serve only to make the types match when you pass a function to another that wants it in the other form.</p>
+  </div>
+  <figure class="scena" data-scena="riuso" data-titolo="curry(isSorted) instead of rewriting"></figure>
+</section>
+
+<section>
+  <h2>Composing two functions</h2>
+  <p>Exercise 7: joining two functions in a row. Without using the library's <code>compose</code> or <code>andThen</code>.</p>
+  <pre class="cod" data-lang="scala">def compose[A, B, C](f: B => C, g: A => B): A => C =
+  a => f(g(a))</pre>
+  <figure class="passi" data-titolo="compose(square, abs)(-3)">
+    <div class="passo">
+      <div class="espr">compose(<mark class="ok">square</mark>, <mark class="due">abs</mark>)(<mark class="dato">-3</mark>)</div>
+      <p class="nota"><code>f</code> = <code>square</code>, <code>g</code> = <code>abs</code>. The order follows mathematics: <span class="m">f ∘ g</span> is read "f after g".</p>
+    </div>
+    <div class="passo">
+      <div class="espr">(a => <mark class="ok">square</mark>(<mark class="due">abs</mark>(a)))(<mark class="dato">-3</mark>)</div>
+      <p class="nota">I substitute <code>f</code> and <code>g</code> in the body.</p>
+    </div>
+    <div class="passo">
+      <div class="espr">square(<mark class="ora">abs(-3)</mark>)</div>
+      <p class="nota"><code>a</code> = -3. First the innermost function is computed: <code>g</code>.</p>
+    </div>
+    <div class="passo">
+      <div class="espr"><mark class="ora">square(3)</mark></div>
+      <p class="nota">The result of <code>g</code> enters <code>f</code>. That is why the output type of <code>g</code> (<code>B</code>) must be the input type of <code>f</code>.</p>
+    </div>
+    <div class="passo">
+      <div class="espr"><mark class="ok">9</mark></div>
+      <p class="nota">End.</p>
+    </div>
+  </figure>
+  <figure class="scena" data-scena="macchine" data-titolo="Functions as machines"></figure>
+</section>
+
+</main>
+</body>
+</html>

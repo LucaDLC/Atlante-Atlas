@@ -1,0 +1,394 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Semaphores, barriers, producer-consumer</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+SCENE.buttafuori = {
+  w: 620, h: 250, lato: false,
+  legenda: 'ora:inside,dato:just woken up,no:blocked',
+  oggetti: [
+    { id: 'sc', tipo: 'rett', x: 330, y: 50, w: 200, h: 140 },
+    { id: 'tsc', tipo: 'testo', x: 430, y: 40, t: 'sezione critica', size: 12.5, bold: true },
+    { id: 'perm', tipo: 'testo', x: 150, y: 40, t: 'permits = 2', size: 16, bold: true },
+    { id: 'T1', tipo: 'nodo', x: 40, y: 120, t: 'T1' },
+    { id: 'T2', tipo: 'nodo', x: 105, y: 120, t: 'T2' },
+    { id: 'T3', tipo: 'nodo', x: 170, y: 120, t: 'T3' },
+    { id: 'T4', tipo: 'nodo', x: 235, y: 120, t: 'T4' },
+    { id: 'cod', tipo: 'testo', x: 310, y: 232, t: 'new Semaphore(2)', size: 12.5 }
+  ],
+  passi: [
+    { nota: 'A semaphore is a "bouncer": it lets in at most <b>c</b> threads (the <b>capacity</b>, in Java <code>permits</code>). Here c = 2. Four threads want to enter.' },
+    { nota: 'T1 calls <code>acquire()</code>: c &gt; 0, so <b>c--</b> and T1 enters.', set: { T1: { x: 385, y: 100, tono: 'ora' }, perm: { t: 'permits = 1', tono: 'ora' }, cod: { t: 'T1: acquire()' } } },
+    { nota: 'T2 calls <code>acquire()</code>: c = 1 &gt; 0, so c-- and T2 enters.', set: { T2: { x: 475, y: 100, tono: 'ora' }, perm: { t: 'permits = 0' }, cod: { t: 'T2: acquire()' } } },
+    { nota: 'T3 calls <code>acquire()</code>: c = 0, so T3 <b>blocks</b>. <code>acquire()</code> is a blocking call.', set: { T3: { tono: 'no', sotto: 'bloccato' }, perm: { tono: 'no' }, cod: { t: 'T3: acquire() → aspetta' } } },
+    { nota: 'T1 calls <code>release()</code>. There is a thread waiting, so it <b>wakes</b> it (and c stays 0): T3 takes the place. <code>release()</code> never blocks.', set: { T1: { x: 590, y: 120, tono: null }, T3: { x: 385, y: 100, tono: 'dato', sotto: '' }, perm: { tono: null }, cod: { t: 'T1: release() → sveglia T3' } } },
+    { nota: 'T2 calls <code>release()</code>. Nobody is waiting: <b>c++</b>.', set: { T2: { x: 590, y: 175, tono: null }, T3: { tono: 'ora' }, perm: { t: 'permits = 1', tono: 'ok' }, cod: { t: 'T2: release() → c++' } } },
+    { nota: 'T4 calls <code>acquire()</code>: c = 1, enters, c = 0.', set: { T4: { x: 475, y: 100, tono: 'ora' }, perm: { t: 'permits = 0', tono: null }, cod: { t: 'T4: acquire()' } } },
+    { nota: 'Careful: a semaphore <b>has no owner</b>. Any thread can call <code>release()</code>, even if it did not call <code>acquire()</code>. Here the main calls it by mistake: c = 1 with two threads already inside, and a third could enter.', set: { perm: { t: 'permits = 1 (!)', tono: 'no' }, cod: { t: 'main: release() senza acquire()' } } }
+  ]
+};
+SCENE.barriera = {
+  w: 620, h: 250, lato: false,
+  legenda: 'due:waiting,ok:passed',
+  oggetti: [
+    { id: 'bar', tipo: 'linea', x1: 330, y1: 30, x2: 330, y2: 205 },
+    { id: 'tb', tipo: 'testo', x: 330, y: 22, t: 'barriera (parties = 3)', size: 12, bold: true },
+    { id: 'T1', tipo: 'nodo', x: 60, y: 60, t: 'T1' },
+    { id: 'T2', tipo: 'nodo', x: 60, y: 118, t: 'T2' },
+    { id: 'T3', tipo: 'nodo', x: 60, y: 176, t: 'T3' },
+    { id: 'cnt', tipo: 'testo', x: 330, y: 235, t: 'in attesa: 0 / 3', size: 13, bold: true }
+  ],
+  passi: [
+    { nota: 'Three threads each work on their own. The barrier will restart them only when <b>all 3</b> have arrived at the same point.' },
+    { nota: 'T2 arrives first and calls <code>await()</code>: waiting 1 &lt; 3, so it <b>blocks</b>.', set: { T2: { x: 300, tono: 'due' }, cnt: { t: 'in attesa: 1 / 3' } } },
+    { nota: 'T1 arrives: waiting 2 &lt; 3, it blocks too.', set: { T1: { x: 300, tono: 'due' }, cnt: { t: 'in attesa: 2 / 3' } } },
+    { nota: 'T3 arrives: 3 = parties. <b>All</b> wake up and continue, T3 included.', set: { T3: { x: 300, tono: 'due' }, cnt: { t: 'in attesa: 3 / 3', tono: 'ok' }, bar: { tono: 'ok' } } },
+    { nota: 'They pass the barrier together.', set: { T1: { x: 430, tono: 'ok' }, T2: { x: 430, tono: 'ok' }, T3: { x: 430, tono: 'ok' } } },
+    { nota: '<code>CyclicBarrier</code> is <b>cyclic</b>: after <code>parties</code> threads have called <code>await()</code> the state is reset, and the barrier can be used again.', set: { cnt: { t: 'in attesa: 0 / 3 (reset)', tono: null }, bar: { tono: null }, T1: { x: 560 }, T2: { x: 560 }, T3: { x: 560 } } }
+  ]
+};
+SCENE.buffer = {
+  w: 620, h: 240, lato: false,
+  legenda: 'ora:just inserted,ok:taken,no:blocked',
+  oggetti: [
+    { id: 'sp', tipo: 'testo', x: 110, y: 40, t: 'spaces = 3', size: 15, bold: true },
+    { id: 'it', tipo: 'testo', x: 510, y: 40, t: 'items = 0', size: 15, bold: true },
+    { id: 'buf', tipo: 'celle', x: 235, y: 90, cw: 50, ch: 44, valori: ['', '', ''], indici: false },
+    { id: 'P', tipo: 'nodo', x: 110, y: 112, t: 'P' },
+    { id: 'C', tipo: 'nodo', x: 510, y: 112, t: 'C' },
+    { id: 'tP', tipo: 'testo', x: 110, y: 160, t: 'produttore', size: 12 },
+    { id: 'tC', tipo: 'testo', x: 510, y: 160, t: 'consumatore', size: 12 },
+    { id: 'cod', tipo: 'testo', x: 310, y: 215, t: 'new BoundedBuffer(3)', size: 12.5 }
+  ],
+  passi: [
+    { nota: 'Empty buffer of capacity 3. <code>spaces</code> counts the free places (3), <code>items</code> the elements to take (0).' },
+    { nota: 'P does <code>insert(A)</code>: <code>spaces.acquire()</code> (3 → 2), adds A at the end of the queue, <code>items.release()</code> (0 → 1).', set: { buf: { valori: ['A', '', ''], toni: { 0: 'ora' } }, sp: { t: 'spaces = 2' }, it: { t: 'items = 1' }, P: { tono: 'ora' }, cod: { t: 'P: insert(A)' } } },
+    { nota: 'P does <code>insert(B)</code>: spaces 1, items 2.', set: { buf: { valori: ['A', 'B', ''], toni: { 1: 'ora' } }, sp: { t: 'spaces = 1' }, it: { t: 'items = 2' }, cod: { t: 'P: insert(B)' } } },
+    { nota: 'C does <code>take()</code>: <code>items.acquire()</code> (2 → 1), takes the <b>first</b> element (FIFO): A. Then <code>spaces.release()</code> (1 → 2).', set: { buf: { valori: ['B', '', ''], toni: {} }, sp: { t: 'spaces = 2' }, it: { t: 'items = 1' }, P: { tono: null }, C: { tono: 'ok', sopra: 'A' }, cod: { t: 'C: take() → A' } } },
+    { nota: 'P inserts C and D: the buffer is <b>full</b>. spaces = 0.', set: { buf: { valori: ['B', 'C', 'D'], toni: { 1: 'ora', 2: 'ora' } }, sp: { t: 'spaces = 0' }, it: { t: 'items = 3' }, C: { tono: null, sopra: '' }, P: { tono: 'ora' }, cod: { t: 'P: insert(C); insert(D)' } } },
+    { nota: 'P tries <code>insert(E)</code>: <code>spaces.acquire()</code> with 0 permits, so P <b>blocks</b>. It is the first rule of the specification: buffer full ⇒ the producer waits.', set: { buf: { toni: {} }, P: { tono: 'no', sopra: 'E' }, sp: { tono: 'no' }, cod: { t: 'P: insert(E) → spaces.acquire() blocca' } } },
+    { nota: 'C does <code>take()</code> → B, then <code>spaces.release()</code>: it wakes P, which inserts E. Symmetric: with an empty buffer it would be C to block on <code>items.acquire()</code>.', set: { buf: { valori: ['C', 'D', 'E'], toni: { 2: 'ora' } }, P: { tono: 'ora', sopra: '' }, sp: { tono: null }, C: { tono: 'ok', sopra: 'B' }, cod: { t: 'C: take() → B · P si sveglia e inserisce E' } } }
+  ]
+};
+</script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  const T = (id, x, y, t, extra) => Object.assign({ id, tipo: 'testo', x, y, t, size: 13 }, extra || {});
+  const R = (id, x, y, w, h, t, extra) => Object.assign({ id, tipo: 'rett', x, y, w, h, t }, extra || {});
+  const N = (id, x, y, t, tono, extra) => Object.assign({ id, tipo: 'nodo', x, y, t, tono, r: 18 }, extra || {});
+
+  // 1. Semaphore(5, true) dentro il monitor
+  const og = [R('mon', 20, 30, 560, 150, '', { tono: 'spento' }), T('mt', 300, 22, '', { size: 12 }),
+    R('sala', 300, 60, 260, 100, '', { tono: 'spento' }), T('salat', 430, 78, 'lettura (max 5)', { size: 12 }), R('perm', 40, 190, 240, 36, 'permessi liberi: 5', { tono: 'ok' }), T('c', 440, 210, '', { size: 12, bold: true })];
+  for (let i = 0; i < 7; i++) og.push(N('r' + i, 60 + (i % 4) * 55, 80 + Math.floor(i / 4) * 55, 'R' + (i + 1), 'dato', { nascosto: i > 5 }));
+  const dentro = i => ({ x: 330 + (i % 5) * 50, y: 125 });
+  SCENE.semjava = {
+    w: 600, h: 240, lato: true,
+    legenda: 'dato:reader,ok:has a permit,no:blocked in acquire()',
+    oggetti: og,
+    passi: [
+      { nota: "L'esempio del corso: il ReadWriteMonitor lascia entrare <b>quanti</b> lettori vuole. Un <code>new Semaphore(5, true)</code> ne fa leggere al massimo <b>5 alla volta</b>. Sei lettori sono già passati da readLock().", set: { mt: { t: 'dentro il monitor (readLock fatto)' } } },
+      { nota: "Ogni lettore chiama <code>semReaders.acquire()</code>: se c'è un permesso lo prende (il contatore scende) e prosegue.", set: Object.assign(Object.fromEntries([0, 1, 2, 3, 4].map(i => ['r' + i, Object.assign(dentro(i), { tono: 'ok' })])), { perm: { t: 'permessi liberi: 0', tono: 'no' } }) },
+      { nota: "R6 chiama acquire() con 0 permessi: si <b>blocca</b> (senza consumare CPU) finché qualcuno non ne rilascia uno. acquire() può lanciare <code>InterruptedException</code>, che va gestita o dichiarata.", set: { r5: { tono: 'no' }, c: { t: 'R6: acquire() si blocca', tono: 'no' } } },
+      { nota: "Arriva anche R7 e si mette in fila dietro R6.", set: { r6: { nascosto: false, tono: 'no' } } },
+      { nota: "R1 finisce: <code>release()</code> restituisce il permesso (poi readUnlock(), in ordine inverso). Con <code>fair = true</code> il permesso va a chi aspetta da più tempo: R6, non R7.", set: { r0: { x: 578, y: 212, tono: 'dato' }, r5: Object.assign(dentro(0), { tono: 'ok' }), c: { t: 'fair: entra R6, il più vecchio', tono: 'ok' } } }
+    ]
+  };
+
+  // 2. bounded buffer con tre semafori
+  const cella = i => R('q' + i, 220 + i * 60, 40, 56, 40, '', { tono: 'spento' });
+  SCENE.buffer41 = {
+    w: 600, h: 256, lato: true,
+    legenda: 'ok:permits available,no:thread blocked,dato:element in the buffer',
+    oggetti: [
+      T('qt', 280, 28, 'queue (capacità 2)', { size: 12 }), cella(0), cella(1),
+      R('sp', 20, 110, 170, 36, 'spaces = 2', { tono: 'ok' }), R('it', 215, 110, 170, 36, 'items = 0', { tono: 'no' }), R('mx', 410, 110, 170, 36, 'mutex = 1', { tono: 'ok' }),
+      T('op', 300, 180, '', { size: 12, bold: true }), T('op2', 300, 206, '', { size: 12 }), T('op3', 300, 232, '', { size: 12 })
+    ],
+    passi: [
+      { nota: "Tre semafori, tre compiti: <b>spaces</b> conta i posti liberi (parte dalla capacità), <b>items</b> conta gli elementi da prendere (parte da 0), <b>mutex</b> (1 permesso) protegge la LinkedList, che non è thread-safe." },
+      { nota: "<code>insert(A)</code>: spaces.acquire() prende un posto (2 → 1), mutex.acquire(), addLast, mutex.release(), poi items.release() (0 → 1): un consumatore ora può prendere.", set: { q0: { t: 'A', tono: 'dato' }, sp: { t: 'spaces = 1' }, it: { t: 'items = 1', tono: 'ok' }, op: { t: 'insert(A)' } } },
+      { nota: "<code>insert(B)</code>: stesso giro. Il buffer è pieno: spaces = 0.", set: { q1: { t: 'B', tono: 'dato' }, sp: { t: 'spaces = 0', tono: 'no' }, it: { t: 'items = 2' }, op: { t: 'insert(B): buffer pieno' } } },
+      { nota: "<code>insert(C)</code>: spaces.acquire() con 0 permessi, il produttore si <b>blocca</b>. Nota: si blocca <b>prima</b> di prendere il mutex, quindi i consumatori possono ancora entrare.", set: { op: { t: 'insert(C): bloccato in spaces.acquire()', tono: 'no' } } },
+      { nota: "<code>take()</code>: items.acquire() (2 → 1), mutex, removeFirst prende A (FIFO), mutex.release(), spaces.release() (0 → 1). Il produttore bloccato si sveglia e inserisce C.", set: { q0: { t: 'B' }, q1: { t: 'C' }, sp: { t: 'spaces = 0' }, op: { t: 'take() → A, poi insert(C) riparte', tono: 'ok' } } },
+      { nota: "L'ordine conta: se insert facesse <b>mutex.acquire() prima di spaces.acquire()</b>, a buffer pieno il produttore si bloccherebbe <b>tenendo</b> il mutex. Il consumatore non potrebbe più entrare a liberare un posto: <b>deadlock</b>.", set: { op2: { t: 'sbagliato: mutex.acquire(); spaces.acquire();', tono: 'no' }, op3: { t: 'pieno + mutex preso = nessuno può più prendere: deadlock' } } }
+    ]
+  };
+
+  // 3. MySemaphore e MyBarrier
+  SCENE.mysem = {
+    w: 600, h: 256, lato: true,
+    legenda: 'ora:has the lock,due:waiting on the condition,ok:permit taken,no:gate closed',
+    oggetti: [
+      R('st', 20, 20, 180, 40, 'permits = 1', { tono: 'ok' }), R('cq', 400, 30, 180, 80, '', { tono: 'spento' }), T('cqt', 490, 22, 'coda della condition positive', { size: 11 }),
+      N('a', 60, 130, 'A', 'dato'), N('b', 120, 130, 'B', 'dato'),
+      T('c', 300, 190, '', { size: 12, bold: true }),
+      R('gate', 150, 200, 300, 36, 'MyBarrier: gate = MySemaphore(0)', { tono: 'no', nascosto: true })
+    ],
+    passi: [
+      { nota: "4.3: un semaforo costruito con un <b>monitor</b>: il contatore <code>permits</code> protetto da un ReentrantLock, e una condition <code>positive</code> = \"ci sono permessi\". Qui permits parte da 1." },
+      { nota: "A chiama <code>acquire()</code>: prende il lock, <code>while (permits == 0)</code> è falso, quindi permits-- (1 → 0) e rilascia il lock.", set: { a: { x: 300, y: 130, tono: 'ok' }, st: { t: 'permits = 0', tono: 'no' }, c: { t: 'A: permits-- → 0' } } },
+      { nota: "B chiama acquire(): permits == 0, quindi <code>positive.await()</code>: rilascia il lock e aspetta nella coda della condition.", set: { b: { x: 490, y: 70, tono: 'due' }, c: { t: 'B: await() sulla condition' } } },
+      { nota: "A chiama <code>release()</code>: permits++ (0 → 1) e <code>positive.signal()</code>. È la versione Mesa: il permesso torna nel contatore, non viene \"passato\" a B.", set: { a: { x: 60, y: 130, tono: 'dato' }, st: { t: 'permits = 1', tono: 'ok' }, c: { t: 'A: permits++, signal()' } } },
+      { nota: "B si sveglia, riprende il lock e <b>ricontrolla</b> il while (per questo while e non if: anche un risveglio spurio va gestito). permits è 1: lo prende.", set: { b: { x: 300, y: 130, tono: 'ok' }, st: { t: 'permits = 0', tono: 'no' }, c: { t: 'B ricontrolla, poi permits-- → 0', tono: 'ok' } } },
+      { nota: "Con i semafori si costruisce poi una <b>barriera</b>: un contatore degli arrivati protetto da un mutex, e un gate con 0 permessi. Chi arriva e non è l'ultimo aspetta al gate; l'ultimo fa parties − 1 release. Funziona anche se l'ultimo apre prima che gli altri arrivino al gate: il semaforo <b>ricorda</b> i permessi, un signal() senza nessuno in attesa invece va perso.", set: { gate: { nascosto: false }, c: { t: 'semaforo: i permessi restano · signal: si perde se nessuno aspetta' } } }
+    ]
+  };
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Semaphores, barriers, producer-consumer</h1>
+  <p class="lede">Besides locks and monitors, Java has other <b>synchronizers</b>. The <b>semaphore</b> lets in up to <i>c</i> threads; the <b>barrier</b> blocks until all have arrived. With semaphores the <b>producer-consumer</b> problem is solved: it is exercise 4.1.</p>
+</header>
+
+<section>
+  <h2>The semaphore</h2>
+  <p>Invented by Dijkstra in 1968, before monitors (1972).</p>
+  <div class="box regola" data-tit="Definition (slide 49)">
+    <p>A semaphore has:</p>
+    <ul>
+      <li>a <b>capacity</b> <i>c</i> (in Java <code>permits</code>): how many threads can be in the critical section;</li>
+      <li><code>acquire()</code>: if <i>c</i> &gt; 0 it does <i>c</i>-- and lets through, otherwise it <b>blocks</b> the thread;</li>
+      <li><code>release()</code>: if there are threads waiting it <b>wakes</b> one, otherwise it does <i>c</i>++. It <b>never blocks</b>.</li>
+    </ul>
+    <p>A semaphore with capacity 1 is called a <b>mutex</b>: it gives mutual exclusion.</p>
+  </div>
+  <figure class="scena" data-scena="buttafuori" data-titolo="Semaphore(2): the bouncer"></figure>
+  <div class="colonne">
+    <div class="carta"><h4>Lock</h4><p>It has an <b>owner</b>: only whoever did <code>lock()</code> can do <code>unlock()</code>. <code>ReentrantLock</code> is reentrant.</p></div>
+    <div class="carta"><h4>Semaphore</h4><p><b>No owner</b>: the Java documentation says that whoever does <code>release()</code> need not have done <code>acquire()</code>. It is not reentrant: a thread that does two <code>acquire()</code> on a mutex blocks itself.</p></div>
+  </div>
+  <div class="box regola" data-tit="Happens-before with semaphores">
+    <p>The documentation of <code>Semaphore</code> guarantees: the actions of a thread before <code>release()</code> <b>happen-before</b> the actions that follow a successful <code>acquire()</code> in another thread. It works like the monitor rule (unlock → lock).</p>
+  </div>
+</section>
+
+<section>
+  <h2>Semaphores in Java</h2>
+  <figure class="codice" data-titolo="At most 5 readers together (ReadersWritersSemaphore.java, reduced)">
+<pre data-lang="java">ReadWriteMonitor m = new ReadWriteMonitor();
+Semaphore semReaders = new Semaphore(5, true);
+// ogni lettore:
+m.readLock();
+semReaders.acquire();
+// legge
+semReaders.release();
+m.readUnlock();</pre>
+    <ol class="spiega">
+      <li data-righe="2" data-segna="5@dato|true@ok"><p><code>new Semaphore(permits, fair)</code>: 5 permits. <code>true</code> = <b>fair</b>: the permits go to the waiting threads in order of arrival (the oldest first).</p></li>
+      <li data-righe="4-5" data-segna="m.readLock();@due|semReaders.acquire();@ora"><p>The monitor lets many readers in; the semaphore lets at most 5 through at a time.</p></li>
+      <li data-righe="7-8" data-segna="semReaders.release();@ora|m.readUnlock();@due"><p>On exit one releases in reverse order. The course program always prints at most 5 readers.</p></li>
+    </ol>
+  </figure>
+  <div class="box attenzione" data-tit="acquire() throws InterruptedException">
+    <p>Like <code>await()</code>, <code>acquire()</code> can throw <code>InterruptedException</code> (checked): it must be handled with <code>try/catch</code> or declared with <code>throws</code>. The text of exercise 4.1 asks to write the concrete exception.</p>
+  </div>
+  <figure class="scena" data-scena="semjava" data-titolo="Semaphore(5, true): at most 5 readers"></figure>
+</section>
+
+<section>
+  <h2>The barriers</h2>
+  <div class="box regola" data-tit="Definition (slide 64)">
+    <p>A barrier has a number of <b>parties</b> and a method <code>await()</code>: if the threads waiting are fewer than <code>parties</code>, the caller blocks; otherwise all wake up and continue. In Java: <code>CyclicBarrier</code>, which resets after opening.</p>
+  </div>
+  <figure class="scena" data-scena="barriera" data-titolo="CyclicBarrier(3)"></figure>
+  <figure class="codice" data-titolo="Initialisation in parallel (BarrierExample.java)">
+<pre data-lang="java">int parties = 10;
+CyclicBarrier cb = new CyclicBarrier(parties);
+int[] shared_array = new int[parties];
+
+// run() del thread numero index
+shared_array[index] = index + 1;
+try { cb.await(); } catch (InterruptedException | BrokenBarrierException e) { }
+System.out.println(shared_array[(index + 1) % parties]);</pre>
+    <ol class="spiega">
+      <li data-righe="1-3" data-segna="new CyclicBarrier(parties)@ok|shared_array@dato"><p>10 threads, a barrier of 10, a shared array.</p></li>
+      <li data-righe="6" data-segna="shared_array[index]@dato"><p>Each thread writes <b>only its own</b> position: no conflict between the writes.</p></li>
+      <li data-righe="7" data-segna="cb.await()@ok|BrokenBarrierException@no"><p>It waits until everybody has written. <code>await()</code> of <code>CyclicBarrier</code> can also throw <code>BrokenBarrierException</code>.</p></li>
+      <li data-righe="8" data-segna="(index + 1) % parties@due"><p>After the barrier one can read the position of <b>another</b> thread: it is already initialised. The course code suggests removing the <code>await</code> line to see the difference.</p></li>
+    </ol>
+  </figure>
+  <div class="box domanda-tua" data-tit="Why does the barrier have only await(), and the semaphore acquire() and release()?">
+    <p>The semaphore counts <b>permits</b>: you take one (<code>acquire</code>, counter −1) and then <b>give it back</b> (<code>release</code>, +1). They are two different events, so two methods.</p>
+    <p>The barrier counts only <b>arrivals</b>. There is only one event, "I have arrived", and <code>await()</code> does two things together: it counts the arrival (+1) and blocks until the count reaches <code>parties</code>. After the barrier you hold nothing in your hand, so there is nothing to give back. Opening it is simply the <b>last one who arrives</b>, whoever it is; then the count returns to 0 by itself.</p>
+  </div>
+  <figure class="passi" data-titolo="Two await() per thread: leave together, finish together (test of week 5)" data-legenda="dato:worker,due:main,ok:barrier open">
+    <div class="passo"><div class="espr">new CyclicBarrier(<mark class="dato">N</mark> + <mark class="due">1</mark>)</div><p class="nota">N workers + the thread <mark class="due">main</mark>: main too must count, otherwise it would never know when the workers have finished.</p></div>
+    <div class="passo"><div class="espr"><mark class="dato">worker</mark>: await()  → N / N+1, tutti bloccati</div><p class="nota">The workers start one at a time and stop at the first <code>await()</code>. One arrival is still missing.</p></div>
+    <div class="passo"><div class="espr"><mark class="due">main</mark>: await()    → N+1 / N+1  → <mark class="ok">aperta</mark>, reset a 0</div><p class="nota">Main is the last arrival: everybody restarts <b>at the same instant</b>. It is the "go" that maximises the collisions.</p></div>
+    <div class="passo"><div class="espr"><mark class="dato">worker</mark>: lavorano, poi await()  → uno alla volta, bloccati</div><p class="nota">Same barrier, second round (it is cyclic). Whoever finishes first waits for the others.</p></div>
+    <div class="passo"><div class="espr"><mark class="due">main</mark>: secondo await()  → quando arrivano tutti: <mark class="ok">aperta</mark></div><p class="nota">When main passes the second <code>await()</code>, <b>all</b> the workers have finished: now it can check the result (<code>assertEquals</code>). Without main's <code>await()</code> the barrier stays at N / N+1 and the workers stay blocked for ever.</p></div>
+  </figure>
+  <div class="box domanda-tua" data-tit="Is the barrier as a field of the test class fine?">
+    <p>Yes: <code>private CyclicBarrier barrier = new CyclicBarrier(N + 1);</code> as a field works. JUnit 5 creates a <b>new instance of the test class for each execution</b> (also for each repetition of <code>@RepeatedTest</code>), so each repetition has its own new barrier: if one breaks (<code>BrokenBarrierException</code>), the next one is not affected.</p>
+    <p>It should be created inside the test method (as in <code>CounterTest</code> of the lecture) when the number of threads <b>changes</b> from one execution to the other, for example with <code>@ParameterizedTest</code>.</p>
+  </div>
+</section>
+
+<section>
+  <h2>The producer-consumer problem</h2>
+  <ul>
+    <li>A shared data structure of <b>fixed size</b>.</li>
+    <li>The <b>producers</b> add elements until it is full; if it is full, they <b>block</b> until somebody removes an element.</li>
+    <li>The <b>consumers</b> remove elements until it is empty; if it is empty, they <b>block</b> until somebody adds one.</li>
+    <li>A good solution is <b>deadlock free</b> and <b>minimises starvation</b>.</li>
+  </ul>
+  <p>It appears everywhere: bounded data structures, thread pools, asynchronous I/O (keyboard and mouse produce, IoT devices consume).</p>
+  <figure class="scena" data-scena="buffer" data-titolo="Bounded buffer with two counting semaphores"></figure>
+</section>
+
+<section>
+  <h2>Exercise 4.1 · Bounded buffer with semaphores only</h2>
+  <p>Constraints of the text: only <code>Semaphore</code> (no <code>Lock</code>, no <code>synchronized</code>), FIFO queue, state only with collections that are <b>not</b> thread-safe such as <code>LinkedList</code> or arrays.</p>
+  <figure class="codice" data-titolo="One solution (verified: FIFO on 100 000 elements; 4 producers + 4 consumers without losses)">
+<pre data-lang="java">public class BoundedBuffer&lt;T&gt; implements BoundedBufferInteface&lt;T&gt; {
+    private final LinkedList&lt;T&gt; queue = new LinkedList&lt;&gt;();
+    private final Semaphore items = new Semaphore(0);   // elementi da prendere
+    private final Semaphore spaces;                     // posti liberi
+    private final Semaphore mutex = new Semaphore(1);   // mutua esclusione sulla coda
+
+    public BoundedBuffer(int capacity) {
+        spaces = new Semaphore(capacity);
+    }
+
+    public void insert(T elem) throws InterruptedException {
+        spaces.acquire();
+        mutex.acquire();
+        try { queue.addLast(elem); } finally { mutex.release(); }
+        items.release();
+    }
+
+    public T take() throws InterruptedException {
+        items.acquire();
+        T elem;
+        mutex.acquire();
+        try { elem = queue.removeFirst(); } finally { mutex.release(); }
+        spaces.release();
+        return elem;
+    }
+}</pre>
+    <ol class="spiega">
+      <li data-righe="1" data-segna="implements BoundedBufferInteface&lt;T&gt;@dato"><p>It implements the course interface (the name really has the typo <code>Inteface</code>). <code>&lt;T&gt;</code>: the buffer contains elements of any type.</p></li>
+      <li data-righe="2" data-segna="LinkedList&lt;T&gt;@dato"><p>The actual queue: a <code>LinkedList</code>, not thread-safe, as required.</p></li>
+      <li data-righe="3-5" data-segna="items@ok|spaces@due|mutex@ora"><p>Three semaphores, three tasks: <code>items</code> counts the ready elements (starts at 0), <code>spaces</code> the free places, <code>mutex</code> (capacity 1) protects the <code>LinkedList</code>.</p></li>
+      <li data-righe="7-9" data-segna="new Semaphore(capacity)@due"><p>At the start all the places are free: <code>capacity</code>.</p></li>
+      <li data-righe="11-12" data-segna="spaces.acquire();@due"><p>I take a free place. If there are none, I block: <b>buffer full ⇒ the producer waits</b>.</p></li>
+      <li data-righe="13-14" data-segna="mutex.acquire();@ora|queue.addLast(elem);@dato|mutex.release();@ora"><p>Only one thread at a time touches the list. I add at the <b>end</b>. The <code>release</code> is in the <code>finally</code>: it is the try/finally idiom also with semaphores.</p></li>
+      <li data-righe="15" data-segna="items.release();@ok"><p>There is one element more: if a consumer was waiting, it wakes.</p></li>
+      <li data-righe="18-19" data-segna="items.acquire();@ok"><p>I wait for an element: <b>empty buffer ⇒ the consumer waits</b>.</p></li>
+      <li data-righe="21-22" data-segna="queue.removeFirst()@dato"><p>I take the <b>first</b>: adding at the end and removing at the head gives the FIFO order.</p></li>
+      <li data-righe="23-24" data-segna="spaces.release();@due"><p>A place has been freed: a blocked producer can restart.</p></li>
+      <li data-righe="12-13" data-segna="spaces.acquire();@due|mutex.acquire();@ora"><p><b>The order matters.</b> First <code>spaces</code>, then <code>mutex</code>. In reverse, a producer with a full buffer would block on <code>spaces</code> <b>while holding the mutex</b>, and no consumer could enter to free a place: deadlock. Tried: with the order reversed, producer and consumer stay blocked for ever.</p></li>
+    </ol>
+  </figure>
+
+  <h3>4.1.2 · Why it is thread-safe</h3>
+  <figure class="passi" data-titolo="The checklist applied">
+    <div class="passo"><div class="espr">1. <mark class="dato">class state</mark> = { queue, items, spaces, mutex }</div><p class="nota">The elements of type T are not state of the class: they are objects of whoever uses the buffer.</p></div>
+    <div class="passo"><div class="espr">2. <mark class="dato">escaping</mark>: tutti private, nessun metodo restituisce queue</div><p class="nota"><code>take()</code> returns an element, not the list.</p></div>
+    <div class="passo"><div class="espr">3. <mark class="ora">safe publication</mark>: tutti i campi sono final</div><p class="nota">Also <code>spaces</code>, assigned in the constructor.</p></div>
+    <div class="passo"><div class="espr">4. <mark class="ok">immutability</mark>: i riferimenti non cambiano; i semafori sono classi thread-safe della libreria</div><p class="nota">The only mutable state not protected by itself is the content of the <code>LinkedList</code>.</p></div>
+    <div class="passo"><div class="espr">5. <mark class="due">mutual exclusion</mark>: ogni accesso a queue sta tra mutex.acquire() e mutex.release()</div><p class="nota">The mutex lets one thread at a time in, and release → next acquire is happens-before: all the accesses to the list are ordered. No data race.</p></div>
+  </figure>
+  <div class="box inglese" data-tit="Model answer (4.1.2)">
+    <p>"The class state consists of <i>queue</i>, <i>items</i>, <i>spaces</i> and <i>mutex</i>. All fields are private and final, so they are safely published, and no method returns a reference to <i>queue</i>, so the state does not escape. The semaphores are thread-safe library classes. The only mutable non-thread-safe state is the content of <i>queue</i>, and every access to it happens between <i>mutex.acquire()</i> and <i>mutex.release()</i>. Since <i>mutex</i> has one permit, the accesses are mutually exclusive, and a release happens-before the next successful acquire, so all conflicting accesses to <i>queue</i> are ordered by happens-before."</p>
+  </div>
+
+  <h3>4.1.3 · With barriers?</h3>
+  <p><b>No.</b> A barrier blocks until a <b>fixed</b> number of threads arrive, whatever the buffer contains. The buffer instead must block a producer <b>only if full</b> and a consumer <b>only if empty</b>: it needs to count places and elements, and it needs mutual exclusion on the list. The barrier offers neither.</p>
+
+  <h3>4.1.4 · The fair flag (challenging)</h3>
+  <ul>
+    <li><code>new Semaphore(n, true)</code>: when a permit is freed it goes to the thread that has waited <b>longest</b> (FIFO). Without <code>fair</code> (default <code>false</code>) a thread that has just arrived can "jump the queue" (barging).</li>
+    <li>In the bounded buffer it <b>does not change correctness</b>: thread-safety, blocking on full/empty and the FIFO order of the elements hold in any case.</li>
+    <li>It changes <b>starvation</b>: with many producers, without fair one of them can in theory always lose the race for the permit. Where it matters: the limit of 5 readers of slide 57, where the course uses exactly <code>true</code> so that the reader who has waited longest enters first.</li>
+  </ul>
+  <figure class="scena" data-scena="buffer41" data-titolo="spaces, items, mutex"></figure>
+</section>
+
+<section>
+  <h2>Exercise 4.3 · Building them from scratch (challenging)</h2>
+  <p>Monitors are the most general primitive: with a <code>Lock</code> and a <code>Condition</code> one builds a semaphore, and with semaphores a barrier.</p>
+  <figure class="codice" data-titolo="4.3.1 · Semaphore with Lock (verified: with 3 permits and 16 threads, never more than 3 inside)">
+<pre data-lang="java">class MySemaphore {
+    private int permits;                                  // protetto da lock
+    private final Lock lock = new ReentrantLock();
+    private final Condition positive = lock.newCondition();
+
+    public MySemaphore(int permits) {
+        lock.lock();
+        try { this.permits = permits; } finally { lock.unlock(); }
+    }
+
+    public void acquire() throws InterruptedException {
+        lock.lock();
+        try {
+            while (permits == 0) positive.await();
+            permits--;
+        } finally { lock.unlock(); }
+    }
+
+    public void release() {
+        lock.lock();
+        try {
+            permits++;
+            positive.signal();
+        } finally { lock.unlock(); }
+    }
+}</pre>
+    <ol class="spiega">
+      <li data-righe="2-4" data-segna="permits@dato|positive@ok"><p>State: the counter <code>permits</code>, protected by the lock. The condition <code>positive</code> = "there are permits".</p></li>
+      <li data-righe="6-9" data-segna="this.permits = permits;@dato"><p><code>permits</code> cannot be final (it changes). Writing it while holding the lock makes the monitor rule order it with every later access: the initial value is visible to everybody.</p></li>
+      <li data-righe="14" data-segna="while (permits == 0)@no|positive.await()@ok"><p>If there are no permits I wait. <code>while</code>, not <code>if</code>: on waking (also spurious) I check again (<a href="l02-monitor.html">monitor</a>).</p></li>
+      <li data-righe="15" data-segna="permits--;@ora"><p>I take a permit.</p></li>
+      <li data-righe="22-23" data-segna="permits++;@ora|positive.signal();@ok"><p>I give back a permit and wake a waiting thread. It is the Mesa version of the slide: instead of "handing" the permit to the woken thread, I put it back in the counter and the woken thread takes it. Seen from outside it is the same behaviour.</p></li>
+    </ol>
+  </figure>
+  <figure class="codice" data-titolo="4.3.2 · Non-cyclic barrier with semaphores (verified: 2000 trials, nobody passes early)">
+<pre data-lang="java">class MyBarrier {
+    private final int parties;
+    private int waiting = 0;                              // protetto da mutex
+    private final MySemaphore mutex = new MySemaphore(1);
+    private final MySemaphore gate = new MySemaphore(0);
+
+    public MyBarrier(int parties) { this.parties = parties; }
+
+    public void await() throws InterruptedException {
+        mutex.acquire();
+        waiting++;
+        if (waiting &lt; parties) {
+            mutex.release();
+            gate.acquire();                               // aspetta che arrivino tutti
+        } else {
+            if (waiting == parties)
+                for (int i = 0; i &lt; parties - 1; i++) gate.release();
+            mutex.release();
+        }
+    }
+}</pre>
+    <ol class="spiega">
+      <li data-righe="3-5" data-segna="waiting@dato|mutex@ora|gate@ok"><p>A counter of the arrived, a mutex that protects it, and a closed "gate" (0 permits).</p></li>
+      <li data-righe="10-11" data-segna="mutex.acquire();@ora|waiting++;@dato"><p>I arrive and count myself, in mutual exclusion.</p></li>
+      <li data-righe="12-14" data-segna="mutex.release();@ora|gate.acquire();@ok"><p>If we are not all there yet, I release the mutex (<b>before</b> blocking, otherwise nobody else could count itself) and wait at the gate.</p></li>
+      <li data-righe="16-17" data-segna="gate.release()@ok"><p>The last arrival opens the gate: <code>parties - 1</code> permits, one for each waiting thread. It proceeds without waiting.</p></li>
+      <li data-righe="13-14" data-segna="mutex.release();@ora|gate.acquire();@ok"><p>Why it works even if the last one opens the gate <b>before</b> another arrives there: a semaphore <b>remembers</b> the permits. A <code>signal()</code> on a condition, instead, if nobody waits is lost.</p></li>
+    </ol>
+  </figure>
+  <figure class="scena" data-scena="mysem" data-titolo="A semaphore made with a monitor, then a barrier"></figure>
+</section>
+
+</main>
+</body>
+</html>

@@ -1,0 +1,77 @@
+@@s001 Varianza: +A e −A
+@@s002 <p>Punto di partenza: <code>Cat</code> è sottotipo di <code>Animal</code>. La freccia <code>&lt;:</code> va dal più specifico al più generale: un Cat sta dove serve un Animal.</p>
+@@s003 <p><b>Covariante</b> (<code>+A</code>): la freccia tra i contenitori va <b>nello stesso verso</b>. Una <code>List[Cat]</code> sta dove serve una <code>List[Animal]</code>.</p>
+@@s004 <p><b>Contravariante</b> (<code>-A</code>): la freccia si <b>rovescia</b>. Un <code>Printer[Animal]</code> sta dove serve un <code>Printer[Cat]</code>: chi sa stampare qualsiasi animale sa stampare anche i gatti.</p>
+@@s005 <p><b>Invariante</b> (nessun segno, il default): nessuna relazione. <code>Array[Cat]</code> e <code>Array[Animal]</code> sono tipi scollegati, anche se Cat &lt;: Animal.</p>
+@@s006 dato:List[Cat],ora:vista come List[Animal],ok:lettura sicura,no:scrittura (impossibile)
+@@s007 dato:B,due:C,no:errore a runtime,ok:errore alla compilazione (Scala)
+@@s008 dato:Printer[Animal],due:Printer[Cat],ok:compila,no:non compila
+@@s009 ora:T in uscita (get),due:T in ingresso (set),no:rifiutato,ok:compila
+@@s010 dato:A = Cat,due:default Dog,ok:B scelto
+@@s011 ok:compila,no:non compila
+@@s012 Varianza: <code>+A</code> e <code>−A</code>
+@@s013 La varianza risponde a una domanda sola: <b>se un Gatto è un Animale, una scatola di Gatti è una scatola di Animali?</b> Dipende da cosa si può fare con la scatola: solo leggere, solo scrivere, o entrambe le cose.
+@@s014 Prima: cosa vuol dire "sottotipo"
+@@s015 Si scrive <code>Cat &lt;: Animal</code> e si legge "Cat è sottotipo di Animal": <b>un valore Cat può stare dove il programma si aspetta un Animal</b>. Il contrario no: non ogni Animal è un Cat.
+@@s016 Adesso prendi un tipo generico <code>T[A]</code>, per esempio <code>List[A]</code>. La domanda della varianza è: che relazione c'è tra <code>T[Cat]</code> e <code>T[Animal]</code>? Ci sono tre risposte possibili.
+@@s017 Le tre varianze, disegnate
+@@s018 Scritto
+@@s019 Nome
+@@s020 Se Cat &lt;: Animal allora…
+@@s021 Sicuro quando il contenitore…
+@@s022 covariante
+@@s023 <code>T[Cat] &lt;: T[Animal]</code>
+@@s024 produce A (si legge soltanto)
+@@s025 contravariante
+@@s026 <code>T[Animal] &lt;: T[Cat]</code>
+@@s027 consuma A (si scrive soltanto)
+@@s028 invariante (default)
+@@s029 nessuna relazione
+@@s030 legge e scrive
+@@s031 Corrispondenze con altri linguaggi (slide 12): <code>+</code> è <code>out</code> in C#, <code>-</code> è <code>in</code>. Java usa i wildcard <code>? extends</code> e <code>? super</code>.
+@@s032 Covarianza: sicura se leggi soltanto
+@@s033 Una lista di gatti usata come lista di animali
+@@s034 Una lista di gatti.
+@@s035 Compila, perché <code>List</code> è dichiarata <code>List[+A]</code>.
+@@s036 Leggo un elemento e il tipo mi promette un Animal. È vero: è Tom, che è un gatto, quindi un animale.
+@@s037 Il pericolo sarebbe <b>scrivere</b> un cane in quella lista: <code>cats</code> conterrebbe un cane. Ma una <code>List</code> è immutabile, non si scrive. Quindi la covarianza è sicura.
+@@s038 Conseguenza comoda: <code>Nothing</code> è sottotipo di tutto, quindi con <code>+A</code> un solo <code>Nil</code> vale per ogni tipo di lista. Stesso discorso per <code>None: Option[Nothing]</code>.
+@@s039 List[Cat] come List[Animal]
+@@s040 Il buco degli array Java
+@@s041 Java ha reso gli array covarianti, ma gli array <b>si possono scrivere</b>. È l'esempio di <code>03-option/Variance.java</code>.
+@@s042 Variance.java: compila, poi esplode
+@@s043 B e C sono entrambi sottotipi di A, ma sono fratelli: un C non è un B.
+@@s044 Un array di B, con dentro un B.
+@@s045 Compila (array covarianti). Attenzione: <code>a</code> e <code>b</code> sono lo <b>stesso array</b> in memoria, con due nomi.
+@@s046 Per il compilatore va bene: in un array di A ci può stare un C. Ma quell'array è in realtà l'array di B.
+@@s047 Java se ne accorge solo <b>durante l'esecuzione</b> (verificato con <code>java Variance.java</code>). Chi usa <code>b</code> si aspetta dei B.
+@@s048 Scala rende gli array <b>invarianti</b>: l'errore arriva alla compilazione, prima che il programma giri.
+@@s049 La regola da saper dire
+@@s050 La covarianza è sicura solo se il contenitore <b>produce</b> valori (li leggi). La contravarianza è sicura solo se li <b>consuma</b> (glieli passi). Un contenitore che fa entrambe le cose deve essere invariante.
+@@s051 Array covarianti in Java: ArrayStoreException
+@@s052 Contravarianza: sicura se scrivi soltanto
+@@s053 Chi stampa animali sa stampare gatti
+@@s054 Un <code>Printer</code> <b>riceve</b> un A e non lo restituisce mai: A compare solo come parametro.
+@@s055 Un printer capace di stampare qualsiasi animale.
+@@s056 Compila. Dove serve qualcuno che stampi gatti, va benissimo qualcuno che stampa animali qualsiasi.
+@@s057 Il contrario no: un printer che sa stampare solo gatti non può ricevere un cane.
+@@s058 Le funzioni sono così: contravarianti in cosa entra, covarianti in cosa esce (<code>Function1[-A, +B]</code>). Compila (verificato).
+@@s059 Printer[Animal] come Printer[Cat]
+@@s060 Il compilatore controlla le posizioni
+@@s061 Scala guarda <b>dove</b> usi il tipo dichiarato con <code>+</code> o <code>-</code>. Un tipo covariante non può comparire come parametro (posizione "in ingresso"); uno contravariante non può comparire come risultato (posizione "in uscita").
+@@s062 T in ingresso e in uscita
+@@s063 Perché <code>getOrElse</code> ha <code>[B &gt;: A]</code>
+@@s064 <code>Option[+A]</code> è covariante. Ma <code>getOrElse</code> <b>riceve</b> un valore di default: A finirebbe in posizione di ingresso.
+@@s065 Dalla firma sbagliata a quella giusta
+@@s066 La firma "ovvia".
+@@s067 Stesso errore della cella: A covariante usato come parametro.
+@@s068 Introduco un nuovo tipo <code>B</code> che è A <b>oppure un tipo più generale</b> di A. Il parametro usa B, non A: il problema sparisce.
+@@s069 A = Cat, il default è un Dog: Scala sceglie come B il tipo più piccolo che li contiene tutti e due, <code>Animal</code> (verificato).
+@@s070 Nel caso normale B è A stesso: il vincolo non ti costringe a niente.
+@@s071 Il <code>=&gt;</code> davanti a <code>B</code> è un'altra cosa: il default viene calcolato solo se serve (<a href="s04-valutazione.html">settimana 4</a>).
+@@s072 B >: A: il tipo più piccolo che li contiene
+@@s073 Sondaggio della lezione
+@@s074 <b>Con quale dichiarazione di <code>T</code> compila?</b> Risposta: <b>class T[+X] (covariante)</b>. Serve <code>T[B] &lt;: T[A]</code> sapendo <code>B &lt;: A</code>: stesso verso, quindi covariante. Con le altre due Scala dice <i>Found: T[B], Required: T[A]</i> (verificato).
+@@s075 In inglese
+@@s076 "A type parameter is covariant if <code>A &lt;: B</code> implies <code>T[A] &lt;: T[B]</code>; it is safe when T only produces values of that type. It is contravariant if the relation is reversed, which is safe when T only consumes them. Mutable containers must be invariant, which is why Java's covariant arrays can fail at runtime with an ArrayStoreException."
+@@s077 T[B] come T[A]: quale varianza?

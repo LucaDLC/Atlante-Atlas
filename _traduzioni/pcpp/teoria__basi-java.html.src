@@ -1,0 +1,58 @@
+@@s001 Java per la concorrenza
+@@s002 dato:thread main,due:thread turnstile,ora:chiamata di adesso,no:main bloccato
+@@s003 <code>Turnstile turnstile = new Turnstile();</code> crea l'oggetto thread. Non parte ancora niente: c'è solo il main.
+@@s004 <code>turnstile.start();</code> fa partire un <b>nuovo</b> thread che esegue run(). start() ritorna subito: il main continua mentre l'altro lavora.
+@@s005 I due thread vanno avanti insieme, ognuno con i suoi passi.
+@@s006 <code>turnstile.join();</code>: il main si <b>blocca</b> finché turnstile non ha finito.
+@@s007 Turnstile termina; il main riparte e solo ora legge counter: il risultato è completo.
+@@s008 dato:come si scrive,ok:cosa esegue il thread
+@@s009 dato:static main,ok:l’oggetto con i campi condivisi,due:i thread (classe interna)
+@@s010 dato:campo d’istanza (uno per oggetto),ok:campo static (uno per classe)
+@@s011 dato:quello che scrivi,no:come lo spezza PowerShell,ok:con le virgolette
+@@s012 Java per la concorrenza
+@@s013 Il minimo di Java che serve per leggere il codice del corso: creare e avviare un thread, aspettarlo, cosa cambia tra <code>static</code> e non, e come si lancia un esercizio con Gradle (anche da PowerShell).
+@@s014 Tre modi di scrivere un thread
+@@s015 Un <b>thread</b> è una sequenza di istruzioni che avanza <b>in modo concorrente</b> alle altre: a pezzi mescolati su un core, oppure davvero in parallelo su più core. In Java il comportamento del thread si scrive nel metodo <code>run()</code>.
+@@s016 Lo stesso thread, tre scritture (slide 32 e 36)
+@@s017 Forma 1: la classe <b>è</b> un thread. Comoda quando il thread ha più metodi o uno stato suo.
+@@s018 <code>run()</code> contiene cosa fa il thread. Si ridefinisce (override).
+@@s019 Forma 2: un oggetto <code>Runnable</code> (un'interfaccia con il solo metodo <code>run</code>) dato al costruttore di <code>Thread</code>.
+@@s020 Forma 3: la lambda <code>() -> { … }</code> è un Runnable scritto al volo. Le slide la consigliano solo quando il codice del thread è piccolo.
+@@s021 Tre scritture, lo stesso run()
+@@s022 <code>start()</code> e <code>join()</code>
+@@s023 Creare, avviare, aspettare
+@@s024 Crea l'oggetto thread. <b>Non parte ancora niente.</b>
+@@s025 Avvia un <b>nuovo</b> thread che esegue <code>run()</code>. <code>start()</code> ritorna subito: il thread principale continua mentre l'altro lavora.
+@@s026 Il thread che chiama <code>join()</code> <b>si ferma</b> finché <code>turnstile</code> non ha finito. È una chiamata bloccante.
+@@s027 Solo dopo <code>join()</code> ha senso leggere il risultato: il thread ha terminato.
+@@s028 start() e join() nel tempo
+@@s029 Errore classico: run() invece di start()
+@@s030 <code>turnstile.run()</code> <b>non</b> crea un thread: esegue <code>run()</code> come un metodo normale, nel thread che lo chiama. Per la concorrenza serve <code>start()</code>.
+@@s031 Perché join() vuole try/catch
+@@s032 <code>join()</code> può lanciare <code>InterruptedException</code> (se qualcuno interrompe il thread in attesa). È un'eccezione <b>controllata</b>: Java obbliga a gestirla con <code>try { … } catch (InterruptedException e) { … }</code> o a dichiararla con <code>throws</code>. Lo stesso vale per <code>await()</code>, <code>wait()</code>, <code>sleep()</code>, <code>acquire()</code>.
+@@s033 Perché il codice delle lezioni sta nel costruttore
+@@s034 Nel codice delle lezioni il <code>main</code> fa quasi niente: crea un oggetto, e tutto il lavoro sta nel <b>costruttore</b>. Il motivo è una regola di Java: <code>main</code> è <code>static</code>, quindi non appartiene a nessun oggetto e non vede i campi d'istanza. Mettendo i campi condivisi (il contatore, il lock) in un oggetto, e i thread in una classe interna, tutti i thread vedono gli stessi campi.
+@@s035 CounterThreadsLock.java, struttura
+@@s036 <code>counter</code> e <code>lock</code> sono campi dell'oggetto <code>CounterThreadsLock</code>: tutti i thread creati qui dentro li condividono.
+@@s037 <code>main</code> è <code>static</code>: appartiene alla classe, non a un oggetto, quindi <b>non può</b> usare direttamente <code>counter</code>. Per questo crea un oggetto…
+@@s038 …e il lavoro vero sta nel costruttore, che invece vede i campi.
+@@s039 Una classe <b>interna</b> (non static) può leggere e scrivere i campi dell'oggetto che la contiene. Così i due thread toccano lo stesso <code>counter</code>.
+@@s040 main, l'oggetto e i thread interni
+@@s041 <code>static</code> contro istanza
+@@s042 Campo d'istanza
+@@s043 Ogni oggetto ha il <b>suo</b> <code>saldo</code>: <code>a.saldo</code> e <code>b.saldo</code> sono due variabili diverse.
+@@s044 Campo static
+@@s045 C'è <b>una sola</b> <code>totale</code> per tutta la classe, condivisa da tutti gli oggetti.
+@@s046 Conta molto per i lock: <code>synchronized</code> su un metodo d'istanza usa il lock <b>dell'oggetto</b>, su un metodo <code>static</code> usa il lock <b>della classe</b>. Sono due lock diversi: vedi <a href="l02-synchronized.html">synchronized</a> (esercizio 2.3).
+@@s047 Uno per oggetto o uno per classe
+@@s048 Lanciare un esercizio con Gradle
+@@s049 Comando (dalla cartella <code>week01exercises</code>)
+@@s050 Cosa fa
+@@s051 <code>gradle compileJava</code>
+@@s052 compila tutto <code>app/src/main/java</code>
+@@s053 <code>gradle -PmainClass=exercises01.TestLongCounterExperiments run</code>
+@@s054 compila ed esegue la classe indicata (bash, macOS, Linux)
+@@s055 <code>gradle "-PmainClass=exercises01.TestLongCounterExperiments" run</code>
+@@s056 <b>la stessa cosa in PowerShell</b>: servono le virgolette
+@@s057 I file vanno in <code>app/src/main/java/exercises01/</code> e la prima riga di ogni file è <code>package exercises01;</code>. Il nome della classe con <code>main</code> è quello che passi a <code>-PmainClass</code>, preceduto dal package.
+@@s058 Il punto che PowerShell spezza

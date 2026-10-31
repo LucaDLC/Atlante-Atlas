@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{{t|s001|}}</title>
+<link rel="stylesheet" href="../assets/atlas.css">
+<link rel="stylesheet" href="../assets/tema.css">
+<link rel="stylesheet" href="../assets/pcpp.css">
+<script src="../assets/sito.js"></script>
+<script src="../assets/atlas.js" defer></script>
+<script src="../assets/pcpp.js" defer></script>
+<script>
+window.PROGRAMMI = window.PROGRAMMI || {};
+PROGRAMMI.perso = {
+  memoria: { counter: 0 },
+  thread: ['t1', 't2'],
+  locali: { temp: 0 },
+  passi: [
+    { n: 1, codice: 'int temp = counter;', fai: (m, l) => { l.temp = m.counter; } },
+    { n: 2, codice: 'counter = temp + 1;', fai: (m, l) => { m.counter = l.temp + 1; } }
+  ],
+  esito: m => 'counter = ' + m.counter,
+  giusto: m => m.counter === 2
+};
+(function () {
+  const passi = [];
+  for (let i = 0; i < 3; i++) {
+    passi.push({ n: 1, codice: 'int temp = counter;   // giro ' + (i + 1), fai: (m, l) => { l.temp = m.counter; } });
+    passi.push({ n: 2, codice: 'counter = temp + 1;   // giro ' + (i + 1), fai: (m, l) => { m.counter = l.temp + 1; } });
+  }
+  PROGRAMMI.minimo = { memoria: { counter: 0 }, thread: ['t1', 't2'], locali: { temp: 0 }, passi, esito: m => 'counter = ' + m.counter, giusto: m => m.counter === 6 };
+  const stampe = [];
+  for (let i = 0; i < 4; i++) {
+    stampe.push({ n: 1, codice: 'System.out.print("-");', fai: m => { m.out += '-'; } });
+    stampe.push({ n: 2, codice: 'System.out.print("|");', fai: m => { m.out += '|'; } });
+  }
+  PROGRAMMI.printer = { memoria: { out: '' }, thread: ['t1', 't2'], passi: stampe, esito: m => m.out, giusto: m => /^(-\|)+$/.test(m.out) };
+})();
+</script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  const T = (id, x, y, t, extra) => Object.assign({ id, tipo: 'testo', x, y, t, size: 13 }, extra || {});
+  const R = (id, x, y, w, h, t, extra) => Object.assign({ id, tipo: 'rett', x, y, w, h, t }, extra || {});
+
+  // 1. counter++ in tre istruzioni
+  const istr = ['getfield counter', 'lconst_1; ladd', 'putfield counter'];
+  const og1 = [T('src', 120, 26, 'counter++', { bold: true, size: 16 })];
+  istr.forEach((t, i) => og1.push(R('i' + i, 40, 50 + i * 46, 160, 36, t, { nascosto: true })));
+  og1.push(R('mem', 330, 50, 120, 40, 'counter = 0', { tono: 'dato' }), T('tm', 390, 36, 'memoria condivisa', { size: 11 }));
+  og1.push(R('reg', 330, 130, 120, 40, 'temp = ?', { tono: 'due' }), T('tr', 390, 116, 'variabile locale di t1', { size: 11 }));
+  og1.push(T('c', 300, 222, '', { bold: true, size: 13 }));
+  SCENE.bytecode = {
+    w: 600, h: 240, lato: true,
+    legenda: '{{j|s002|'}}',
+    oggetti: og1,
+    passi: [
+      { nota: "<code>counter++</code> sta su una riga sola, ma la JVM lo esegue in <b>tre</b> istruzioni di bytecode (visto con <code>javap -c</code>). Le tre scritture <code>count = count + 1</code>, <code>count += 1</code>, <code>count++</code> diventano lo stesso bytecode.", set: { i0: { nascosto: false }, i1: { nascosto: false }, i2: { nascosto: false } } },
+      { nota: "<b>(1) Lettura</b>: <code>getfield</code> copia il valore del campo dalla memoria condivisa in una variabile locale del thread: temp = 0.", set: { i0: { tono: 'ora' }, reg: { t: 'temp = 0' } } },
+      { nota: "Calcolo: temp + 1 = 1, ancora solo nella copia locale. La memoria condivisa vale ancora 0.", set: { i0: { tono: null }, i1: { tono: 'ora' }, reg: { t: 'temp + 1 = 1' } } },
+      { nota: "Proprio qui lo scheduler può <b>sospendere</b> il thread. Un altro thread che legge counter adesso vede ancora 0: il valore vecchio.", set: { i1: { tono: 'no' }, c: { t: 'sospensione possibile fra lettura e scrittura', tono: 'no' } } },
+      { nota: "<b>(2) Scrittura</b>: <code>putfield</code> copia 1 nella memoria condivisa. Per ragionare si scrive <code>temp = counter</code> (1) e <code>counter = temp + 1</code> (2). Un'istruzione è <b>atomica</b> solo se niente può infilarsi a metà: counter++ non lo è.", set: { i1: { tono: null }, i2: { tono: 'ora' }, mem: { t: 'counter = 1' }, c: { t: 'non atomico: (1) lettura, (2) scrittura', tono: null } } }
+    ]
+  };
+
+  // 2. race condition vs data race: griglia 2 × 2
+  const cella = (id, x, y, t) => R(id, x, y, 200, 60, t, { nascosto: true });
+  SCENE.quadranti = {
+    w: 600, h: 262, lato: true,
+    legenda: '{{j|s003|'}}',
+    oggetti: [
+      T('hc1', 245, 24, 'race condition: sì', { bold: true, size: 12 }), T('hc2', 455, 24, 'race condition: no', { bold: true, size: 12 }),
+      T('hr1', 65, 80, 'data race: sì', { bold: true, size: 12 }), T('hr2', 65, 170, 'data race: no', { bold: true, size: 12 }),
+      cella('q11', 145, 50, 'counter++ da 2 thread'), cella('q12', 355, 50, 'scrivono lo stesso valore'),
+      cella('q21', 145, 140, 'Printer: stampe mescolate'), cella('q22', 355, 140, 'programma sincronizzato'),
+      T('c', 300, 236, '', { size: 12 })
+    ],
+    passi: [
+      { nota: "Due proprietà diverse. <b>Race condition</b>: il <b>risultato</b> dipende dall'interleaving. <b>Data race</b> (definizione della lezione 1): due thread accedono alla <b>stessa</b> locazione e almeno uno <b>scrive</b>. Si incrociano in quattro casi." },
+      { nota: "<b>Entrambe</b>: counter++ da due thread. Letture e scritture sulla stessa variabile (data race) e totale che cambia a seconda dell'interleaving (race condition).", set: { q11: { nascosto: false, tono: 'no' } } },
+      { nota: "<b>Race condition senza data race</b>: il Printer. Due thread stampano senza memoria condivisa: nessuna data race, ma l'ordine dei simboli cambia da esecuzione a esecuzione.", set: { q21: { nascosto: false, tono: 'no' } } },
+      { nota: "<b>Data race senza race condition</b>: due thread scrivono lo <b>stesso</b> valore nella stessa variabile. Accessi in conflitto, ma il risultato non cambia.", set: { q12: { nascosto: false, tono: 'no' } } },
+      { nota: "<b>Nessuna delle due</b>: un programma correttamente sincronizzato. Moral: sono due domande diverse, e all'orale vanno tenute separate (dettagli nel <a href=\"basi-glossario.html\">glossario</a>).", set: { q22: { nascosto: false, tono: 'ok' }, c: { t: 'risultato contro accessi: due domande diverse' } } }
+    ]
+  };
+
+  // 3. pochi giri contro tanti giri
+  SCENE.pochigiri = {
+    w: 600, h: 240, lato: true,
+    legenda: '{{j|s004|'}}',
+    oggetti: [
+      T('l1', 50, 60, 't1', { bold: true }), T('l2', 50, 110, 't2', { bold: true }),
+      R('a', 80, 45, 60, 26, '100 giri', { tono: 'dato' }), R('b', 180, 95, 60, 26, '100 giri', { tono: 'due' }),
+      R('ov', 180, 30, 0, 100, '', { tono: 'no', nascosto: true }),
+      T('c1', 320, 170, '', { bold: true }), T('c2', 320, 200, '', { size: 12 })
+    ],
+    passi: [
+      { nota: "Esercizio 1.1.2: con 100 giri per thread il risultato è quasi sempre 200. Perché? 100 incrementi durano pochissimo: t1 spesso finisce <b>tutto</b> prima che t2 parta.", set: { c1: { t: 'nessuna sovrapposizione: 200' } } },
+      { nota: "Senza sovrapposizione nel tempo non c'è nessuna occasione per l'interleaving cattivo (un thread che si infila fra lettura e scrittura dell'altro).", set: { c2: { t: 'occasioni di errore: quasi nessuna' } } },
+      { nota: "Con 10 milioni di giri i due thread restano in esecuzione <b>insieme</b> a lungo, sui core o alternati dallo scheduler: le occasioni di errore diventano milioni, e un risultato sbagliato è quasi certo.", set: { a: { w: 430, t: '10 000 000 giri' }, b: { x: 110, w: 430, t: '10 000 000 giri' }, ov: { nascosto: false, x: 110, w: 400, y: 40, h: 90 }, c1: { t: 'lunga sovrapposizione: < 20 000 000', tono: 'no' }, c2: { t: 'occasioni di errore: milioni' } } },
+      { nota: "Morale: \"quasi sempre 200\" non vuol dire <b>corretto</b>. Lo scheduler può sospendere un thread fra (1) e (2) anche con 100 giri: rari non vuol dire impossibili. La correttezza si dimostra, non si osserva.", set: { a: { w: 60, t: '100 giri' }, b: { x: 110, w: 60, t: '100 giri' }, ov: { x: 110, w: 30, y: 40, h: 90 }, c1: { t: 'anche con 100 giri: 200 non garantito', tono: 'no' }, c2: { t: 'basta una sospensione nel punto sbagliato' } } }
+    ]
+  };
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>{{s|s005|}}</h1>
+  <p class="lede">{{s|s006|}}</p>
+</header>
+
+<section>
+  <h2>{{s|s007|}}</h2>
+  <p>{{s|s008|}}</p>
+  <div class="box regola" data-tit="{{a|s009|}}">
+    <p>{{s|s010|}}</p>
+  </div>
+  <figure class="passi" data-titolo="{{a|s011|}}">
+    <div class="passo">
+      <div class="espr">count = count + 1;     count += 1;     count++;</div>
+      <p class="nota">{{s|s012|}}</p>
+    </div>
+    <div class="passo">
+      <div class="espr"><mark class="dato">getfield  count</mark>
+lconst_1
+ladd
+<mark class="due">putfield  count</mark></div>
+      <p class="nota">{{s|s013|}}</p>
+    </div>
+    <div class="passo">
+      <div class="espr">int temp = counter;    <span class="mano">// (1) lettura</span>
+counter = temp + 1;    <span class="mano">// (2) scrittura</span></div>
+      <p class="nota">{{s|s014|}}</p>
+    </div>
+    <div class="passo">
+      <div class="espr"><mark class="ok">Nessuna differenza tra le tre forme.</mark></div>
+      <p class="nota">{{s|s015|}}</p>
+    </div>
+  </figure>
+  <figure class="scena" data-scena="bytecode" data-titolo="{{a|s016|}}"></figure>
+</section>
+
+<section>
+  <h2>{{s|s017|}}</h2>
+  <p>{{s|s018|}}</p>
+  <figure class="interleaving" data-prog="perso" data-titolo="{{a|s019|}}"></figure>
+  <figure class="passi" data-titolo="{{a|s020|}}">
+    <div class="passo"><div class="espr"><mark class="dato">t1(1)</mark>    temp<sub>t1</sub> = 0</div><p class="nota">{{s|s021|}}</p></div>
+    <div class="passo"><div class="espr">t1(1), <mark class="due">t2(1)</mark>    temp<sub>t2</sub> = 0</div><p class="nota">{{s|s022|}}</p></div>
+    <div class="passo"><div class="espr">t1(1), t2(1), <mark class="dato">t1(2)</mark>    counter = 1</div><p class="nota">{{s|s023|}}</p></div>
+    <div class="passo"><div class="espr">t1(1), t2(1), t1(2), <mark class="no">t2(2)</mark>    counter = 1</div><p class="nota">{{s|s024|}}</p></div>
+    <div class="passo"><div class="espr"><mark class="no">counter = 1</mark>   invece di 2</div><p class="nota">{{s|s025|}}</p></div>
+  </figure>
+  <div class="box regola" data-tit="{{a|s026|}}">
+    <p>{{s|s027|}}</p>
+  </div>
+</section>
+
+<section>
+  <h2>{{s|s028|}}</h2>
+  <p>{{s|s029|}}</p>
+  <div class="colonne">
+    <div class="carta">
+      <h4>{{s|s030|}}</h4>
+      <p>{{s|s031|}}</p>
+    </div>
+    <div class="carta">
+      <h4>{{s|s032|}}</h4>
+      <p>{{s|s033|}}</p>
+    </div>
+  </div>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>{{s|s034|}}</th><th>{{s|s035|}}</th><th>{{s|s036|}}</th></tr></thead>
+    <tbody>
+      <tr><td>{{s|s037|}}</td><td class="t-no">{{s|s038|}}</td><td class="t-no">{{s|s039|}}</td></tr>
+      <tr><td>{{s|s040|}}</td><td class="t-no">{{s|s041|}}</td><td class="t-ok">{{s|s042|}}</td></tr>
+      <tr><td>{{s|s043|}}</td><td class="t-ok">{{s|s044|}}</td><td class="t-no">{{s|s045|}}</td></tr>
+    </tbody>
+  </table></div>
+  <figure class="scena" data-scena="quadranti" data-titolo="{{a|s046|}}"></figure>
+</section>
+
+<section>
+  <h2>{{s|s047|}}</h2>
+  <p>{{s|s048|}}</p>
+  <figure class="scena" data-scena="pochigiri" data-titolo="{{a|s049|}}"></figure>
+</section>
+
+<section>
+  <h2>{{s|s050|}}</h2>
+  <p>{{s|s051|}}</p>
+  <figure class="interleaving" data-prog="minimo" data-titolo="{{a|s052|}}"></figure>
+  <figure class="passi" data-titolo="{{a|s053|}}">
+    <div class="passo"><div class="espr"><mark class="dato">t1(1)</mark>   temp<sub>t1</sub> = 0</div><p class="nota">{{s|s054|}}</p></div>
+    <div class="passo"><div class="espr"><mark class="due">t2(1), t2(2), t2(1), t2(2)</mark>   counter = 2</div><p class="nota">{{s|s055|}}</p></div>
+    <div class="passo"><div class="espr"><mark class="dato">t1(2)</mark>   counter = <mark class="no">1</mark></div><p class="nota">{{s|s056|}}</p></div>
+    <div class="passo"><div class="espr"><mark class="due">t2(1)</mark>   temp<sub>t2</sub> = 1</div><p class="nota">{{s|s057|}}</p></div>
+    <div class="passo"><div class="espr"><mark class="dato">t1(1), t1(2), t1(1), t1(2)</mark>   counter = 3</div><p class="nota">{{s|s058|}}</p></div>
+    <div class="passo"><div class="espr"><mark class="due">t2(2)</mark>   counter = <mark class="no">2</mark></div><p class="nota">{{s|s059|}}</p></div>
+  </figure>
+  <div class="box inglese" data-tit="{{a|s060|}}">
+    <p>{{s|s061|}}</p>
+  </div>
+</section>
+
+<section>
+  <h2>{{s|s062|}}</h2>
+  <p>{{s|s063|}}</p>
+  <figure class="interleaving" data-prog="printer" data-titolo="{{a|s064|}}"></figure>
+  <figure class="passi" data-titolo="{{a|s065|}}">
+    <div class="passo"><div class="espr"><mark class="dato">t1(1)</mark>   uscita: -</div><p class="nota">{{s|s066|}}</p></div>
+    <div class="passo"><div class="espr">t1(1), <mark class="due">t2(1)</mark>   uscita: <mark class="no">--</mark></div><p class="nota">{{s|s067|}}</p></div>
+    <div class="passo"><div class="espr">t1(1), t2(1), <mark class="dato">t1(2)</mark>, <mark class="due">t2(2)</mark>   uscita: <mark class="no">--||</mark></div><p class="nota">{{s|s068|}}</p></div>
+  </figure>
+  <div class="box domanda-tua" data-tit="{{a|s069|}}">
+    <p>{{s|s070|}}</p>
+    <p><code>t1(1), t2(1), t1(2), t1(1), t1(2), t1(1), t1(2), t1(1), t2(2), t2(1), t2(2), t2(1), t2(2), t2(1), t1(2), t2(2)</code></p>
+    <p>{{s|s071|}}</p>
+  </div>
+</section>
+
+</main>
+</body>
+</html>

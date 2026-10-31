@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sequence alignment: edit distance</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+const A = 'ALTO', B = 'ALTRO';
+const D = [[0,1,2,3,4,5],[1,0,1,2,3,4],[2,1,0,1,2,3],[3,2,1,0,1,2],[4,3,2,1,1,1]];
+const vuota = D.map((r,i) => r.map((v,j) => (i===0||j===0) ? String(v) : ''));
+SCENE.seq = {
+  w: 560, h: 280, lato: true,
+  legenda: 'ora:cell I compute,ok:answer,dato:base cases,due:where the minimum comes from',
+  oggetti: [
+    {id:'g',tipo:'griglia',x:90,y:50,cw:50,ch:34,valori:vuota,intR:['', 'A','L','T','O'].slice(0,5),intC:['','A','L','T','R','O'].slice(0,6)},
+    {id:'t',tipo:'testo',x:20,y:270,t:'',size:12,bold:true,anchor:'start'}
+  ],
+  passi: [
+    { nota: 'Edit distance between <b>ALTO</b> and <b>ALTRO</b>: the minimum of insertions, deletions and substitutions. <code>OPT(i, j)</code> = distance between the first i characters of A and the first j of B.', set:{} },
+    { nota: 'Base cases: <code>OPT(i, 0) = i</code> and <code>OPT(0, j) = j</code>: first row and first column. Already filled.', set:{g:{valori:vuota,toni:{}}} },
+    { nota: '<code>OPT(i, j) = min( OPT(i−1, j) + 1, OPT(i, j−1) + 1, OPT(i−1, j−1) + [characters different] )</code>. Cell (1,1): A[1]=A=B[1]: 0.', set:{g:{valori:D.map((r,i)=>r.map((v,j)=> (i<=1&&j<=1)||(i===0||j===0)?String(v):'')),toni:{'1,1':'ora'}}} },
+    { nota: 'Cell (4,4): ALTO against ALTR: the diagonal gives 1, the neighbour above 1+1, the one on the left 1+1. The minimum is 1: the row of the O is <b>1 1</b>.', set:{g:{valori:D.map((r,i)=>r.map((v,j)=> (i===4&&j>=4)||(i<=3)?String(v):'')),toni:{'4,4':'ora','4,5':'ok'}}} },
+    { nota: 'Answer: <b>OPT(4, 5) = 1</b>: the only difference is the <b>R</b> to insert. The cost is <code>O(n·m)</code>: a table of (n+1)(m+1) cells, each O(1).', set:{g:{valori:D.map(r=>r.map(v=>String(v))),toni:{'4,5':'ok'}}, t:{t:'distanza = 1',tono:'ok'}} }
+  ]
+};
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Sequence alignment: edit distance</h1>
+  <p class="lede">The edit distance between two strings counts the minimum number of insertions, deletions and substitutions. It is the DP on prefixes: a table of cells that depend on three neighbours.</p>
+</header>
+
+<section>
+  <h2>The problem and the recurrence</h2>
+<p><code>OPT(i, j)</code> is the distance between the first <code>i</code> characters of <code>A</code> and the first <code>j</code> of <code>B</code>. The base case is the zero row and column: <code>OPT(i, 0) = i</code>, <code>OPT(0, j) = j</code>. Then:</p>
+<p><code>OPT(i, j) = min( OPT(i−1, j) + 1, OPT(i, j−1) + 1, OPT(i−1, j−1) + [A_i ≠ B_j] )</code></p>
+<p>The three terms are: delete <code>A_i</code>, insert <code>B_j</code>, align the two characters (with substitution if they are different).</p>
+  <figure class="scena" data-scena="seq" data-titolo="The table is filled from left and from above"></figure>
+</section>
+<section>
+  <h2>The cost</h2>
+<p>Table of <code>(n + 1)(m + 1)</code> cells, each in <code>O(1)</code>: time and space <code>O(nm)</code>. Reconstructing the alignment is done by climbing from the final cell towards the one that gave the minimum.</p>
+</section>
+<section>
+  <h2>The code, side by side</h2>
+  <p>This page explains the concept. The Java code that implements it, with a line-by-line explanation and the syntax notes needed, is on the side-by-side page.</p>
+  <p><a href="../codice/sequence-alignment.html"><b>→ Java code for this topic</b></a></p>
+</section>
+<section>
+  <h2>At the exam</h2>
+<div class="box esame" data-tit="At the exam">
+<p>String comparison, words, palindromes → DP on prefixes, O(nm). Phrase: <i>"Let OPT(i,j) be the minimum cost of aligning the first i characters of A with the first j of B. Base cases OPT(i,0)=i, OPT(0,j)=j. Time and space O(mn)."</i></p>
+</div>
+</section>
+<section>
+  <h2>Quick reference</h2>
+<div class="tab-wrap"><table class="tab"><thead><tr><th>entry</th><th>meaning</th><th>note</th></tr></thead><tbody><tr><td>OPT(i, j)</td><td>distance on prefixes</td><td>2D DP</td></tr><tr><td>base case</td><td>zero row and column</td><td>do not forget them</td></tr><tr><td>time</td><td>O(nm)</td><td>table</td></tr></tbody></table></div>
+</section>
+
+</main>
+</body>
+</html>

@@ -188,7 +188,14 @@ def controlla(sito: pathlib.Path) -> int:
         if not (sito / h).exists():
             print(f"  !! nel menu ma il file non esiste: {h}")
             problemi += 1
-    pagine = sorted(p for p in sito.rglob("*.html") if "_archivio" not in p.parts)
+    # Le copie in en/ e da/ le genera traduci.py: si controllano a parte, con il manifesto SITO.tradotte
+    for lingua in ("en", "da"):
+        for h in re.findall(rf'"{lingua}"\s*:\s*\[([^\]]*)\]', sorgente):
+            for voce in re.findall(r'"([^"]+)"', h):
+                if not (sito / lingua / voce).exists():
+                    print(f"  !! tradotta ma il file non esiste: {lingua}/{voce}")
+                    problemi += 1
+    pagine = sorted(p for p in sito.rglob("*.html") if "_archivio" not in p.parts and p.relative_to(sito).parts[0] not in ("en", "da"))
     for p in pagine:
         rel = p.relative_to(sito).as_posix()
         if rel not in menu:

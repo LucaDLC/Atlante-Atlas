@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Dijkstra: shortest paths with non-negative weights</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+const N = (id,x,y,t) => ({id,tipo:'nodo',x,y,t,r:20});
+const A = (id,da,a,t) => ({id,tipo:'arco',da,a,dir:false,t});
+SCENE.dij = {
+  w: 520, h: 270, lato: true,
+  legenda: 'ora:node just fixed,dato:provisional distance,ok:final distance',
+  oggetti: [
+    N('s',60,130,'s'), N('a',230,50,'a'), N('b',230,210,'b'), N('c',400,130,'c'),
+    A('sa','s','a','2'), A('sb','s','b','5'), A('ab','a','b','1'), A('ac','a','c','4'), A('bc','b','c','1'),
+    {id:'c1',tipo:'testo',x:20,y:28,t:'',size:12,bold:true,anchor:'start'}
+  ],
+  passi: [
+    { nota: 'Weights on the edges (costs ≥ 0). Provisional distances: <code>d(s) = 0</code>, all the others ∞.', set:{ s:{tono:'dato',sotto:'d=0'}, a:{sotto:'d=∞'}, b:{sotto:'d=∞'}, c:{sotto:'d=∞'}, c1:{t:'coda: s(0) a(∞) b(∞) c(∞)'} } },
+    { nota: 'Fix <b>s</b> (final distance 0). Relax its neighbours: s→a costs 2, so d(a) = 2; s→b costs 5, so d(b) = 5.', set:{ s:{tono:'ok',sotto:'d=0'}, sa:{tono:'ok'}, sb:{tono:'ok'}, a:{tono:'dato',sotto:'d=2'}, b:{tono:'dato',sotto:'d=5'}, c1:{t:'fissati: s · coda: a(2) b(5) c(∞)'} } },
+    { nota: 'Fix the minimum of the queue: <b>a</b> (2). Relax: a→b costs 1, so 2 + 1 = 3 &lt; 5: <b>d(b) = 3</b>, parent a. a→c costs 4: d(c) = 6.', set:{ a:{tono:'ora',sotto:'d=2'}, ab:{tono:'ok'}, ac:{tono:'ok'}, b:{tono:'dato',sotto:'d=3'}, c:{tono:'dato',sotto:'d=6'}, c1:{t:'fissati: s, a · coda: b(3) c(6)'} } },
+    { nota: 'Fix <b>b</b> (3). Relax b→c: 3 + 1 = 4 &lt; 6: <b>d(c) = 4</b>.', set:{ b:{tono:'ora',sotto:'d=3'}, bc:{tono:'ok'}, c:{tono:'dato',sotto:'d=4'}, c1:{t:'fissati: s, a, b · coda: c(4)'} } },
+    { nota: 'Fix <b>c</b> (4). No neighbour to improve. All distances are now final: <b>s 0, a 2, b 3, c 4</b>. The shortest-path tree is read from the parents.', set:{ c:{tono:'ok',sotto:'d=4'}, a:{tono:'ok',sotto:'d=2'}, b:{tono:'ok',sotto:'d=3'}, c1:{t:'d: s 0 · a 2 · b 3 · c 4',tono:'ok'} } }
+  ]
+};
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Dijkstra: shortest paths with non-negative weights</h1>
+  <p class="lede">Dijkstra's algorithm finds the minimum cost from one source to all the other nodes, when all the weights are ≥ 0. It is greedy: at each step it makes final the smallest distance.</p>
+</header>
+
+<section>
+  <h2>The problem and the idea</h2>
+<p>The problem: edges with <b>weight</b> (cost) <code>ℓ(u, v) ≥ 0</code>, and a source <code>s</code>. I want the minimum cost from <code>s</code> to every node.</p>
+<p>The idea: each node keeps a <b>provisional distance</b> <code>d(v)</code>, at the start <code>0</code> for <code>s</code> and <code>∞</code> for the others. At each step you take the node with the smallest <code>d</code> among those not yet fixed: that distance becomes <b>final</b>.</p>
+  <figure class="scena" data-scena="dij" data-titolo="Dijkstra: fix the minimum, update the neighbours"></figure>
+</section>
+<section>
+  <h2>Relaxation</h2>
+<p>The step that updates the distances is called <b>relaxation</b>. For each edge <code>u → v</code> with weight <code>ℓ</code>:</p>
+<p><code>if d(u) + ℓ &lt; d(v) then d(v) = d(u) + ℓ and parent(v) = u</code></p>
+<p>It means: "going through <code>u</code> I reach <code>v</code> with cost <code>d(u) + ℓ</code>; if that is better than what I already know, I keep it."</p>
+</section>
+<section>
+  <h2>Why it works, and why the weights must be ≥ 0</h2>
+<p>When you fix the node <code>u</code> with distance <code>d(u)</code>, no path that passes through nodes not yet fixed can cost less: every edge adds a cost <code>≥ 0</code>, so a path with more edges does not become cheaper. With a negative weight this guarantee fails: a path that looks more expensive can become cheap further on.</p>
+<div class="box attenzione" data-tit="Negative weights: not Dijkstra"><p>With negative weights Dijkstra gives wrong results, even when there are no negative cycles. For that case use Bellman-Ford (the dynamic programming page).</p></div>
+</section>
+<section>
+  <h2>Cost and priority queue</h2>
+<p>It needs: <code>n</code> insertions, <code>n</code> extractions of the minimum and at most <code>m</code> decrease-key operations. With a <b>binary heap</b> (priority queue) the cost is <code>O(m log n)</code>. With an unsorted array <code>O(n²)</code>, good for dense graphs. With a Fibonacci heap <code>O(m + n log n)</code>, more theoretical.</p>
+</section>
+<section>
+  <h2>The code, side by side</h2>
+  <p>This page explains the concept. The Java code that implements it, with a line-by-line explanation and the syntax notes you need, is on the side-by-side page.</p>
+  <p><a href="../codice/dijkstra.html"><b>→ Java code for this topic</b></a></p>
+</section>
+<section>
+  <h2>At the exam</h2>
+<div class="box esame" data-tit="At the exam">
+<p>Shortest cost from one source with non-negative weights → Dijkstra. Write: <i>"Run Dijkstra's algorithm [KT, Sec. 4.4] from s, using a binary heap. Each edge is relaxed at most once, so the time is O(m log n)."</i></p>
+<p>If the graph has negative weights: Bellman-Ford. If all the edges have weight 1: BFS.</p>
+</div>
+</section>
+<section>
+  <h2>Quick reference</h2>
+<div class="tab-wrap"><table class="tab"><thead><tr><th>item</th><th>meaning</th><th>note</th></tr></thead><tbody><tr><td>weight</td><td>cost ≥ 0</td><td>requirement</td></tr><tr><td>d(v)</td><td>provisional or final distance</td><td>updated by relaxation</td></tr><tr><td>time</td><td>O(m log n) with binary heap</td><td>standard at the exam</td></tr><tr><td>negative weights</td><td>not allowed</td><td>use Bellman-Ford</td></tr></tbody></table></div>
+</section>
+
+</main>
+</body>
+</html>

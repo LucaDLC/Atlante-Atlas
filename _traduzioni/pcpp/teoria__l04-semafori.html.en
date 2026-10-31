@@ -1,0 +1,127 @@
+@@s001 Semaphores, barriers, producer-consumer
+@@s002 ora:inside,dato:just woken up,no:blocked
+@@s003 A semaphore is a "bouncer": it lets in at most <b>c</b> threads (the <b>capacity</b>, in Java <code>permits</code>). Here c = 2. Four threads want to enter.
+@@s004 T1 calls <code>acquire()</code>: c &gt; 0, so <b>c--</b> and T1 enters.
+@@s005 T2 calls <code>acquire()</code>: c = 1 &gt; 0, so c-- and T2 enters.
+@@s006 T3 calls <code>acquire()</code>: c = 0, so T3 <b>blocks</b>. <code>acquire()</code> is a blocking call.
+@@s007 T1 calls <code>release()</code>. There is a thread waiting, so it <b>wakes</b> it (and c stays 0): T3 takes the place. <code>release()</code> never blocks.
+@@s008 T2 calls <code>release()</code>. Nobody is waiting: <b>c++</b>.
+@@s009 T4 calls <code>acquire()</code>: c = 1, enters, c = 0.
+@@s010 Careful: a semaphore <b>has no owner</b>. Any thread can call <code>release()</code>, even if it did not call <code>acquire()</code>. Here the main calls it by mistake: c = 1 with two threads already inside, and a third could enter.
+@@s011 due:waiting,ok:passed
+@@s012 Three threads each work on their own. The barrier will restart them only when <b>all 3</b> have arrived at the same point.
+@@s013 T2 arrives first and calls <code>await()</code>: waiting 1 &lt; 3, so it <b>blocks</b>.
+@@s014 T1 arrives: waiting 2 &lt; 3, it blocks too.
+@@s015 T3 arrives: 3 = parties. <b>All</b> wake up and continue, T3 included.
+@@s016 They pass the barrier together.
+@@s017 <code>CyclicBarrier</code> is <b>cyclic</b>: after <code>parties</code> threads have called <code>await()</code> the state is reset, and the barrier can be used again.
+@@s018 ora:just inserted,ok:taken,no:blocked
+@@s019 Empty buffer of capacity 3. <code>spaces</code> counts the free places (3), <code>items</code> the elements to take (0).
+@@s020 P does <code>insert(A)</code>: <code>spaces.acquire()</code> (3 → 2), adds A at the end of the queue, <code>items.release()</code> (0 → 1).
+@@s021 P does <code>insert(B)</code>: spaces 1, items 2.
+@@s022 C does <code>take()</code>: <code>items.acquire()</code> (2 → 1), takes the <b>first</b> element (FIFO): A. Then <code>spaces.release()</code> (1 → 2).
+@@s023 P inserts C and D: the buffer is <b>full</b>. spaces = 0.
+@@s024 P tries <code>insert(E)</code>: <code>spaces.acquire()</code> with 0 permits, so P <b>blocks</b>. It is the first rule of the specification: buffer full ⇒ the producer waits.
+@@s025 C does <code>take()</code> → B, then <code>spaces.release()</code>: it wakes P, which inserts E. Symmetric: with an empty buffer it would be C to block on <code>items.acquire()</code>.
+@@s026 dato:reader,ok:has a permit,no:blocked in acquire()
+@@s027 ok:permits available,no:thread blocked,dato:element in the buffer
+@@s028 ora:has the lock,due:waiting on the condition,ok:permit taken,no:gate closed
+@@s029 Semaphores, barriers, producer-consumer
+@@s030 Besides locks and monitors, Java has other <b>synchronizers</b>. The <b>semaphore</b> lets in up to <i>c</i> threads; the <b>barrier</b> blocks until all have arrived. With semaphores the <b>producer-consumer</b> problem is solved: it is exercise 4.1.
+@@s031 The semaphore
+@@s032 Invented by Dijkstra in 1968, before monitors (1972).
+@@s033 Definition (slide 49)
+@@s034 A semaphore has:
+@@s035 a <b>capacity</b> <i>c</i> (in Java <code>permits</code>): how many threads can be in the critical section;
+@@s036 <code>acquire()</code>: if <i>c</i> &gt; 0 it does <i>c</i>-- and lets through, otherwise it <b>blocks</b> the thread;
+@@s037 <code>release()</code>: if there are threads waiting it <b>wakes</b> one, otherwise it does <i>c</i>++. It <b>never blocks</b>.
+@@s038 A semaphore with capacity 1 is called a <b>mutex</b>: it gives mutual exclusion.
+@@s039 Semaphore(2): the bouncer
+@@s040 Lock
+@@s041 It has an <b>owner</b>: only whoever did <code>lock()</code> can do <code>unlock()</code>. <code>ReentrantLock</code> is reentrant.
+@@s042 Semaphore
+@@s043 <b>No owner</b>: the Java documentation says that whoever does <code>release()</code> need not have done <code>acquire()</code>. It is not reentrant: a thread that does two <code>acquire()</code> on a mutex blocks itself.
+@@s044 Happens-before with semaphores
+@@s045 The documentation of <code>Semaphore</code> guarantees: the actions of a thread before <code>release()</code> <b>happen-before</b> the actions that follow a successful <code>acquire()</code> in another thread. It works like the monitor rule (unlock → lock).
+@@s046 Semaphores in Java
+@@s047 At most 5 readers together (ReadersWritersSemaphore.java, reduced)
+@@s048 <code>new Semaphore(permits, fair)</code>: 5 permits. <code>true</code> = <b>fair</b>: the permits go to the waiting threads in order of arrival (the oldest first).
+@@s049 The monitor lets many readers in; the semaphore lets at most 5 through at a time.
+@@s050 On exit one releases in reverse order. The course program always prints at most 5 readers.
+@@s051 acquire() throws InterruptedException
+@@s052 Like <code>await()</code>, <code>acquire()</code> can throw <code>InterruptedException</code> (checked): it must be handled with <code>try/catch</code> or declared with <code>throws</code>. The text of exercise 4.1 asks to write the concrete exception.
+@@s053 Semaphore(5, true): at most 5 readers
+@@s054 The barriers
+@@s055 Definition (slide 64)
+@@s056 A barrier has a number of <b>parties</b> and a method <code>await()</code>: if the threads waiting are fewer than <code>parties</code>, the caller blocks; otherwise all wake up and continue. In Java: <code>CyclicBarrier</code>, which resets after opening.
+@@s057 CyclicBarrier(3)
+@@s058 Initialisation in parallel (BarrierExample.java)
+@@s059 10 threads, a barrier of 10, a shared array.
+@@s060 Each thread writes <b>only its own</b> position: no conflict between the writes.
+@@s061 It waits until everybody has written. <code>await()</code> of <code>CyclicBarrier</code> can also throw <code>BrokenBarrierException</code>.
+@@s062 After the barrier one can read the position of <b>another</b> thread: it is already initialised. The course code suggests removing the <code>await</code> line to see the difference.
+@@s063 Why does the barrier have only await(), and the semaphore acquire() and release()?
+@@s064 The semaphore counts <b>permits</b>: you take one (<code>acquire</code>, counter −1) and then <b>give it back</b> (<code>release</code>, +1). They are two different events, so two methods.
+@@s065 The barrier counts only <b>arrivals</b>. There is only one event, "I have arrived", and <code>await()</code> does two things together: it counts the arrival (+1) and blocks until the count reaches <code>parties</code>. After the barrier you hold nothing in your hand, so there is nothing to give back. Opening it is simply the <b>last one who arrives</b>, whoever it is; then the count returns to 0 by itself.
+@@s066 Two await() per thread: leave together, finish together (test of week 5)
+@@s067 dato:worker,due:main,ok:barrier open
+@@s068 N workers + the thread <mark class="due">main</mark>: main too must count, otherwise it would never know when the workers have finished.
+@@s069 The workers start one at a time and stop at the first <code>await()</code>. One arrival is still missing.
+@@s070 Main is the last arrival: everybody restarts <b>at the same instant</b>. It is the "go" that maximises the collisions.
+@@s071 Same barrier, second round (it is cyclic). Whoever finishes first waits for the others.
+@@s072 When main passes the second <code>await()</code>, <b>all</b> the workers have finished: now it can check the result (<code>assertEquals</code>). Without main's <code>await()</code> the barrier stays at N / N+1 and the workers stay blocked for ever.
+@@s073 Is the barrier as a field of the test class fine?
+@@s074 Yes: <code>private CyclicBarrier barrier = new CyclicBarrier(N + 1);</code> as a field works. JUnit 5 creates a <b>new instance of the test class for each execution</b> (also for each repetition of <code>@RepeatedTest</code>), so each repetition has its own new barrier: if one breaks (<code>BrokenBarrierException</code>), the next one is not affected.
+@@s075 It should be created inside the test method (as in <code>CounterTest</code> of the lecture) when the number of threads <b>changes</b> from one execution to the other, for example with <code>@ParameterizedTest</code>.
+@@s076 The producer-consumer problem
+@@s077 A shared data structure of <b>fixed size</b>.
+@@s078 The <b>producers</b> add elements until it is full; if it is full, they <b>block</b> until somebody removes an element.
+@@s079 The <b>consumers</b> remove elements until it is empty; if it is empty, they <b>block</b> until somebody adds one.
+@@s080 A good solution is <b>deadlock free</b> and <b>minimises starvation</b>.
+@@s081 It appears everywhere: bounded data structures, thread pools, asynchronous I/O (keyboard and mouse produce, IoT devices consume).
+@@s082 Bounded buffer with two counting semaphores
+@@s083 Exercise 4.1 · Bounded buffer with semaphores only
+@@s084 Constraints of the text: only <code>Semaphore</code> (no <code>Lock</code>, no <code>synchronized</code>), FIFO queue, state only with collections that are <b>not</b> thread-safe such as <code>LinkedList</code> or arrays.
+@@s085 One solution (verified: FIFO on 100 000 elements; 4 producers + 4 consumers without losses)
+@@s086 It implements the course interface (the name really has the typo <code>Inteface</code>). <code>&lt;T&gt;</code>: the buffer contains elements of any type.
+@@s087 The actual queue: a <code>LinkedList</code>, not thread-safe, as required.
+@@s088 Three semaphores, three tasks: <code>items</code> counts the ready elements (starts at 0), <code>spaces</code> the free places, <code>mutex</code> (capacity 1) protects the <code>LinkedList</code>.
+@@s089 At the start all the places are free: <code>capacity</code>.
+@@s090 I take a free place. If there are none, I block: <b>buffer full ⇒ the producer waits</b>.
+@@s091 Only one thread at a time touches the list. I add at the <b>end</b>. The <code>release</code> is in the <code>finally</code>: it is the try/finally idiom also with semaphores.
+@@s092 There is one element more: if a consumer was waiting, it wakes.
+@@s093 I wait for an element: <b>empty buffer ⇒ the consumer waits</b>.
+@@s094 I take the <b>first</b>: adding at the end and removing at the head gives the FIFO order.
+@@s095 A place has been freed: a blocked producer can restart.
+@@s096 <b>The order matters.</b> First <code>spaces</code>, then <code>mutex</code>. In reverse, a producer with a full buffer would block on <code>spaces</code> <b>while holding the mutex</b>, and no consumer could enter to free a place: deadlock. Tried: with the order reversed, producer and consumer stay blocked for ever.
+@@s097 4.1.2 · Why it is thread-safe
+@@s098 The checklist applied
+@@s099 The elements of type T are not state of the class: they are objects of whoever uses the buffer.
+@@s100 <code>take()</code> returns an element, not the list.
+@@s101 Also <code>spaces</code>, assigned in the constructor.
+@@s102 The only mutable state not protected by itself is the content of the <code>LinkedList</code>.
+@@s103 The mutex lets one thread at a time in, and release → next acquire is happens-before: all the accesses to the list are ordered. No data race.
+@@s104 Model answer (4.1.2)
+@@s105 "The class state consists of <i>queue</i>, <i>items</i>, <i>spaces</i> and <i>mutex</i>. All fields are private and final, so they are safely published, and no method returns a reference to <i>queue</i>, so the state does not escape. The semaphores are thread-safe library classes. The only mutable non-thread-safe state is the content of <i>queue</i>, and every access to it happens between <i>mutex.acquire()</i> and <i>mutex.release()</i>. Since <i>mutex</i> has one permit, the accesses are mutually exclusive, and a release happens-before the next successful acquire, so all conflicting accesses to <i>queue</i> are ordered by happens-before."
+@@s106 4.1.3 · With barriers?
+@@s107 <b>No.</b> A barrier blocks until a <b>fixed</b> number of threads arrive, whatever the buffer contains. The buffer instead must block a producer <b>only if full</b> and a consumer <b>only if empty</b>: it needs to count places and elements, and it needs mutual exclusion on the list. The barrier offers neither.
+@@s108 4.1.4 · The fair flag (challenging)
+@@s109 <code>new Semaphore(n, true)</code>: when a permit is freed it goes to the thread that has waited <b>longest</b> (FIFO). Without <code>fair</code> (default <code>false</code>) a thread that has just arrived can "jump the queue" (barging).
+@@s110 In the bounded buffer it <b>does not change correctness</b>: thread-safety, blocking on full/empty and the FIFO order of the elements hold in any case.
+@@s111 It changes <b>starvation</b>: with many producers, without fair one of them can in theory always lose the race for the permit. Where it matters: the limit of 5 readers of slide 57, where the course uses exactly <code>true</code> so that the reader who has waited longest enters first.
+@@s112 spaces, items, mutex
+@@s113 Exercise 4.3 · Building them from scratch (challenging)
+@@s114 Monitors are the most general primitive: with a <code>Lock</code> and a <code>Condition</code> one builds a semaphore, and with semaphores a barrier.
+@@s115 4.3.1 · Semaphore with Lock (verified: with 3 permits and 16 threads, never more than 3 inside)
+@@s116 State: the counter <code>permits</code>, protected by the lock. The condition <code>positive</code> = "there are permits".
+@@s117 <code>permits</code> cannot be final (it changes). Writing it while holding the lock makes the monitor rule order it with every later access: the initial value is visible to everybody.
+@@s118 If there are no permits I wait. <code>while</code>, not <code>if</code>: on waking (also spurious) I check again (<a href="l02-monitor.html">monitor</a>).
+@@s119 I take a permit.
+@@s120 I give back a permit and wake a waiting thread. It is the Mesa version of the slide: instead of "handing" the permit to the woken thread, I put it back in the counter and the woken thread takes it. Seen from outside it is the same behaviour.
+@@s121 4.3.2 · Non-cyclic barrier with semaphores (verified: 2000 trials, nobody passes early)
+@@s122 A counter of the arrived, a mutex that protects it, and a closed "gate" (0 permits).
+@@s123 I arrive and count myself, in mutual exclusion.
+@@s124 If we are not all there yet, I release the mutex (<b>before</b> blocking, otherwise nobody else could count itself) and wait at the gate.
+@@s125 The last arrival opens the gate: <code>parties - 1</code> permits, one for each waiting thread. It proceeds without waiting.
+@@s126 Why it works even if the last one opens the gate <b>before</b> another arrives there: a semaphore <b>remembers</b> the permits. A <code>signal()</code> on a condition, instead, if nobody waits is lost.
+@@s127 A semaphore made with a monitor, then a barrier

@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{{t|s001|}}</title>
+<link rel="stylesheet" href="../assets/atlas.css">
+<link rel="stylesheet" href="../assets/tema.css">
+<script src="../assets/sito.js"></script>
+<script src="../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  const X = [[4.08, 2.97], [4.97, 1.89], [3.29, 2.04], [5.67, 4.01], [4.27, 2.67], [4.73, 3.25], [6.31, 3.88], [5.57, 3.95], [5.05, 2.8], [6.42, 3.89], [5.1, 2.85], [2.41, 1.82], [10.33, 5.58], [5.47, 3.01], [4.55, 2.83], [1.89, -0.36], [4.8, 4.56], [3.64, 2.5], [6.54, 2.82], [4.67, 2.84], [7.34, 4.26], [5.51, 2.6], [5.13, 3.18], [5.15, 2.69], [3.64, 2.68], [4.79, 2.15], [3.97, 1.78], [3.96, 1.29], [3.47, 1.79], [7.23, 4.48]], mu = [4.998, 2.889], vec = [[0.832, -0.554], [0.554, 0.832]], val = [3.508, 0.294], rec = [[4.404, 2.493], [4.519, 2.57], [3.427, 1.843], [5.978, 3.542], [4.392, 2.486], [4.977, 2.875], [6.363, 3.798], [5.88, 3.476], [4.992, 2.885], [6.447, 3.854], [5.048, 2.922], [2.714, 1.369], [9.936, 6.176], [5.378, 3.142], [4.663, 2.666], [1.342, 0.456], [5.635, 3.313], [3.876, 2.143], [6.03, 3.576], [4.749, 2.723], [7.255, 4.391], [5.218, 3.035], [5.221, 3.037], [5.009, 2.896], [3.961, 2.199], [4.516, 2.568], [3.774, 2.075], [3.537, 1.916], [3.43, 1.845], [7.277, 4.406]];
+  const ogg = [{ id: 'ax', tipo: 'assi', box: [40, 15, 330, 250], dom: [0, 10, -1, 7], tacche: 2, etX: 'x1', etY: 'x2' }];
+  X.forEach((p, i) => ogg.push({ id: 'p' + i, tipo: 'punto', in: 'ax', x: p[0], y: p[1], r: 3.2, tono: 'dato' }));
+  X.forEach((p, i) => ogg.push({ id: 'l' + i, tipo: 'linea', in: 'ax', x1: p[0], y1: p[1], x2: rec[i][0], y2: rec[i][1], tratt: true, tono: 'spento', nascosto: true }));
+  rec.forEach((p, i) => ogg.push({ id: 'r' + i, tipo: 'punto', in: 'ax', x: p[0], y: p[1], r: 3.2, tono: 'ok', nascosto: true }));
+  const s1 = 2 * Math.sqrt(val[0]), s2 = 2 * Math.sqrt(val[1]);
+  ogg.push({ id: 'asse', tipo: 'linea', in: 'ax', x1: mu[0] - 4 * vec[0][0], y1: mu[1] - 4 * vec[1][0], x2: mu[0] + 4 * vec[0][0], y2: mu[1] + 4 * vec[1][0], tono: 'ok', nascosto: true });
+  ogg.push({ id: 'v1', tipo: 'vett', in: 'ax', x1: mu[0], y1: mu[1], x2: mu[0] + s1 * vec[0][0], y2: mu[1] + s1 * vec[1][0], t: 'PC1', tx: 8, ty: -6, tono: 'ora', nascosto: true });
+  ogg.push({ id: 'v2', tipo: 'vett', in: 'ax', x1: mu[0], y1: mu[1], x2: mu[0] + s2 * vec[0][1], y2: mu[1] + s2 * vec[1][1], t: 'PC2', tx: -40, ty: -4, tono: 'due', nascosto: true });
+  ogg.push({ id: 'mu', tipo: 'punto', in: 'ax', x: mu[0], y: mu[1], r: 5, t: 'μ', tx: 10, ty: 16, tono: 'due', nascosto: true });
+  ogg.push({ id: 'n', tipo: 'testo', x: 210, y: 292, t: '', size: 13, bold: true });
+  const tutti = (pref, v) => Object.fromEntries(ogg.filter(o => new RegExp('^' + pref + '\\d+$').test(o.id)).map(o => [o.id, { nascosto: !v }]));
+  SCENE.pca = {
+    w: 420, h: 300, lato: true,
+    legenda: '{{j|s002|'}}',
+    oggetti: ogg,
+    passi: [
+      { nota: '{{j|s003|'}}' },
+      { nota: '{{j|s004|'}}', set: { mu: { nascosto: false }, n: { t: 'μ = (5.00, 2.89)', tono: 'due' } } },
+      { nota: '{{j|s005|'}}', set: { v1: { nascosto: false }, v2: { nascosto: false }, n: { t: 'λ1 = 3.51   λ2 = 0.29', tono: 'ora' } } },
+      { nota: '{{j|s006|'}}', set: { asse: { nascosto: false }, n: { t: 'varianza spiegata da PC1: 92.3%', tono: 'ok' } } },
+      { nota: '{{j|s007|'}}', set: Object.assign(tutti('l', true), { n: { t: 'a = PC1ᵀ(x − μ)', tono: 'ok' } }) },
+      { nota: '{{j|s008|'}}', set: Object.assign(tutti('r', true), tutti('p', false), { n: { t: 'x̂ = μ + a · PC1', tono: 'ok' } }) }
+    ]
+  };
+})();
+</script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  const D = {"c2": [0.035, 1.061, 29.212], "v2": 0.7853981633974483, "c10": [0.483, 1.713, 2.544], "v10": 0.00249039457019272, "c100": [3.376, 4.771, 0.413], "v100": 1.8681820538375915e-70, "c1000": [12.203, 13.53, 0.109], "v1000": 0.0, "f2": 0.7851, "f3": 0.5225, "f10": 0.0024, "griglia": {"1": 10, "2": 100, "3": 1000, "10": 10000000000}, "eig": [1.0, 3.0], "V": [[-0.7071, 0.7071], [0.7071, 0.7071]], "metr": {"a": [1.5, 2.5, 1.58, 0.5], "b": [2.5, 10.5, 3.24, -1.1]}, "sbil": [0.95, 0.0, 0.0, 0.0]};
+  const T = (id, x, y, t, extra) => Object.assign({ id, tipo: 'testo', x, y, t, size: 13 }, extra || {});
+  const R = (id, x, y, w, h, t, extra) => Object.assign({ id, tipo: 'rett', x, y, w, h, t }, extra || {});
+  const P = (id, x, y, t, extra) => Object.assign({ id, tipo: 'punto', in: 'ax', x, y, t }, extra || {});
+  const L = (id, x1, y1, x2, y2, extra) => Object.assign({ id, tipo: 'linea', in: 'ax', x1, y1, x2, y2 }, extra || {});
+  const V = (id, x1, y1, x2, y2, t, extra) => Object.assign({ id, tipo: 'vett', in: 'ax', x1, y1, x2, y2, t }, extra || {});
+  const C = (id, x, y, valori, extra) => Object.assign({ id, tipo: 'celle', x, y, cw: 52, ch: 36, valori, indici: false }, extra || {});
+
+    const cerchio = Array.from({ length: 61 }, (_, i) => [Math.cos(i * Math.PI / 30), Math.sin(i * Math.PI / 30)]);
+    const ell = cerchio.map(([x, y]) => [2 * x + y, x + 2 * y]);
+    const s2 = Math.SQRT1_2;
+    SCENE.autovettori = {
+      w: 640, h: 290, lato: true,
+      legenda: '{{j|s009|'}}',
+      oggetti: [{ id: 'ax', tipo: 'assi', box: [40, 20, 260, 250], dom: [-3.2, 3.2, -3.2, 3.2], tacche: 1, etX: 'x₁', etY: 'x₂' },
+        { id: 'ci', tipo: 'poli', in: 'ax', punti: cerchio, tono: 'spento', vuoto: true }, { id: 'el', tipo: 'poli', in: 'ax', punti: ell, tono: 'ora', vuoto: true, nascosto: true },
+        V('g', 0, 0, 1, 0, '(1, 0)', { tono: 'dato' }), V('v1', 0, 0, s2, s2, 'v₁', { tono: 'ok', nascosto: true }), V('v2', 0, 0, -s2, s2, 'v₂', { tono: 'due', nascosto: true, tx: -30 }),
+        T('c', 480, 50, '', { size: 12 }), T('c2', 480, 80, '', { size: 12 }), T('c3', 480, 120, '', { size: 12 }), T('c4', 480, 160, '', { size: 12 }), T('c5', 480, 200, '', { size: 12 })],
+      passi: [
+        { nota: "<b>A v = λ v</b>: un autovettore è una direzione che la matrice <b>non ruota</b>, la allunga o accorcia soltanto, del fattore λ. Matrice C = [[2, 1], [1, 2]]." },
+        { nota: "Un vettore qualsiasi viene ruotato: C · (1, 0) = (2, 1). Non è un autovettore.", set: { g: { x2: 2, y2: 1, t: 'C·(1, 0) = (2, 1)' }, c: { t: '(1, 0) → (2, 1): ruotato' } } },
+        { nota: "v₁ = (1, 1)/√2: C v₁ = 3 v₁. Stessa direzione, lunga 3 volte: <b>λ = 3</b>.", set: { v1: { nascosto: false, x2: 3 * s2, y2: 3 * s2, t: 'C·v₁ = 3·v₁' }, c2: { t: 'λ₁ = 3, v₁ = (1, 1)/√2', tono: 'ok' } } },
+        { nota: "v₂ = (−1, 1)/√2: C v₂ = 1 · v₂: <b>λ = 1</b>. Verificato con np.linalg.eigh. C è simmetrica (come ogni covarianza): autovalori reali e autovettori <b>ortogonali</b>.", set: { v2: { nascosto: false }, c3: { t: 'λ₂ = 1, v₂ = (−1, 1)/√2', tono: 'due' }, c4: { t: 'simmetrica: v₁ ⊥ v₂' } } },
+        { nota: "C trasforma il cerchio unitario in un'<b>ellisse</b> con gli assi lungo gli autovettori, lunghi 3 e 1. Per una covarianza: la varianza nella direzione v è vᵀCv, e se v è autovettore vale λ. Quindi <b>λᵢ = σᵢ²</b>, e gli autovettori sono gli assi della nuvola dei dati: è la PCA.", set: { el: { nascosto: false }, c5: { t: 'vᵀCv = λ: varianza lungo vᵢ' } } }
+      ]
+    };
+
+    const K = [[1, 36.9], [2, 64.9], [3, 75.9], [4, 82.8], [5, 87.4], [6, 91.2], [8, 95]];
+    const ogv = [{ id: 'ax', tipo: 'assi', box: [50, 20, 300, 220], dom: [0.4, 8.6, 0, 100], tacche: [1, 20], etX: 'k', etY: '% varianza' }];
+    K.forEach(([k, v], i) => ogv.push(R('b' + i, 50 + (k - 0.4 - 0.15) / 8.2 * 300, 240 - v / 100 * 220, 24, v / 100 * 220, '', { tono: k <= 5 ? 'ok' : 'dato', nascosto: true })));
+    ogv.push(L('l95', 0.4, 95, 8.6, 95, { tono: 'no', tratt: true, nascosto: true }));
+    ogv.push(T('c', 510, 50, '', { size: 12 }), T('c2', 510, 80, '', { size: 12 }), T('c3', 510, 120, '', { size: 12 }), T('c4', 510, 160, '', { size: 12 }), T('c5', 510, 200, '', { size: 12 }));
+    SCENE.volti = {
+      w: 680, h: 270, lato: true,
+      legenda: '{{j|s010|'}}',
+      oggetti: ogv,
+      passi: [
+        { nota: "Assignment 2: 120 volti, 73 punti (x, y) ciascuno ⇒ <b>146 feature</b>. Il rango dei dati centrati è 119 = N − 1: al massimo 119 componenti con varianza non nulla." },
+        { nota: "Varianza spiegata <b>cumulata</b> (dati del corso): 1 componente 36.9%, 2: 64.9%, 3: 75.9%, 4: 82.8%, 5: 87.4%.", set: Object.fromEntries([0, 1, 2, 3, 4].map(i => ['b' + i, { nascosto: false }])) },
+        { nota: "6 componenti: 91.2%; con 8 si arriva ad almeno il 95%. Da 146 numeri a 5–8, perdendo pochissimo. Con k = 5 il primo volto si ricostruisce con errore RMS 0.0024, su una scala dei dati di circa 0.09.", set: Object.assign(Object.fromEntries([5, 6].map(i => ['b' + i, { nascosto: false }])), { l95: { nascosto: false }, c: { t: 'k = 5: 87.4%' }, c2: { t: 'k = 8: ≥ 95%' } }) },
+        { nota: "Il modello <b>genera</b> volti: x = μ + Φₖ a. Con a = 0 esce il <b>volto medio</b>. Muovendo un solo componente fra −3σᵢ e +3σᵢ (σᵢ = √λᵢ: 0.056, 0.049, 0.031 per i primi tre) si vede cosa rappresenta: larghezza del viso, apertura della bocca, rotazione.", set: { c3: { t: 'a = 0 → volto medio' }, c4: { t: 'aᵢ ∈ [−3σᵢ, 3σᵢ]: volti plausibili' } } },
+        { nota: "Una retta nello spazio latente, a(t) = (1 − t)a₁ + t a₂, diventa una trasformazione graduale fra due volti (Task 6). Con |aᵢ| ≫ 3σᵢ si esce dalla distribuzione: la ricostruzione è ancora una combinazione di forme, ma non somiglia più a un volto (Task 9).", set: { c5: { t: '|aᵢ| ≫ 3σᵢ: fuori distribuzione', tono: 'no' } } }
+      ]
+    };
+
+    const DIM = [2, 10, 100, 1000];
+    const ogm = [T('h', 320, 22, 'rapporto (distanza max − min) / min, 500 punti a caso nel cubo', { bold: true, size: 12 })];
+    DIM.forEach((d, i) => { const v = D['c' + d][2]; ogm.push(T('l' + i, 110, 62 + i * 40, 'd = ' + d, { anchor: 'end', size: 12 }), R('b' + i, 120, 46 + i * 40, 0, 26, '', { tono: 'dato' }), T('v' + i, 130, 63 + i * 40, '', { size: 12, anchor: 'start' })); });
+    ogm.push(T('c', 320, 220, '', { size: 12 }), T('c2', 320, 246, '', { size: 12 }));
+    const bar = i => { const v = D['c' + DIM[i]][2]; const w = Math.min(v, 30) / 30 * 360; return { ['b' + i]: { w }, ['v' + i]: { t: String(v), x: 130 + w } }; };
+    SCENE.maledizione = {
+      w: 640, h: 260, lato: true,
+      legenda: '{{j|s011|'}}',
+      oggetti: ogm,
+      passi: [
+        { nota: "<b>Maledizione della dimensionalità</b>: in tante dimensioni lo spazio si comporta in modo poco intuitivo. Esperimento (NumPy): 500 punti a caso nel cubo [0, 1]ᵈ e un punto di riferimento; quanto è più lontano il punto più lontano rispetto al più vicino?" },
+        { nota: "d = 2: il più lontano è circa 29 volte più distante del più vicino. \"Vicino\" ha un significato chiaro.", set: bar(0) },
+        { nota: "d = 10: il rapporto scende a 2.5.", set: bar(1) },
+        { nota: "d = 100: 0.41; d = 1000: 0.11. Tutte le distanze sono quasi <b>uguali</b>: il \"vicino più vicino\" non è molto più vicino degli altri, e k-NN perde senso.", set: Object.assign(bar(2), bar(3), { c: { t: 'in alta dimensione le distanze si somigliano', tono: 'no' } }) },
+        { nota: "In più, i dati diventano <b>radi</b>: per avere 10 punti per lato servono 10ᵈ punti (10¹⁰ in 10 dimensioni), e la sfera inscritta nel cubo occupa il 78.5% in 2D, il 52% in 3D, lo 0.25% in 10D: quasi tutto il volume sta negli angoli. Rimedio: <b>ridurre le dimensioni</b> (PCA) o scegliere poche feature buone prima di usare metodi basati sulle distanze.", set: { c2: { t: 'rimedio: ridurre le dimensioni (PCA) prima di k-NN', tono: 'ok' } } }
+      ]
+    };
+  
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>{{s|s012|}}</h1>
+  <p class="lede">{{s|s013|}}</p>
+</header>
+
+<section>
+  <h2>{{s|s014|}}</h2>
+  <figure class="passi" data-titolo="{{a|s015|}}">
+    <div class="passo"><div class="espr">A <mark class="ora">v</mark> = <mark class="due">λ</mark> <mark class="ora">v</mark></div><p class="nota">{{s|s016|}}</p></div>
+    <div class="passo"><div class="espr">C = [[2, 1], [1, 2]]:  λ = <mark class="due">3</mark> con v = (1, 1)/√2;   λ = <mark class="due">1</mark> con v = (−1, 1)/√2</div><p class="nota">{{s|s017|}}</p></div>
+    <div class="passo"><div class="espr">riflessione [[0, 1], [1, 0]]:  λ = 1 e −1;   det = 1 · (−1) = <mark class="ok">−1</mark></div><p class="nota">{{s|s018|}}</p></div>
+    <div class="passo"><div class="espr">matrice <mark class="ok">simmetrica</mark> (come la covarianza):  autovalori reali, autovettori <mark class="ok">ortogonali</mark></div><p class="nota">{{s|s019|}}</p></div>
+  </figure>
+  <div class="box regola" data-tit="{{a|s020|}}">
+    <p>{{s|s021|}}</p>
+  </div>
+  <figure class="scena" data-scena="autovettori" data-titolo="{{a|s022|}}"></figure>
+</section>
+
+<section>
+  <h2>{{s|s023|}}</h2>
+  <figure class="passi" data-titolo="{{a|s024|}}">
+    <div class="passo"><div class="espr">1. <mark class="dato">μ</mark> = media delle righe;  Xc = X − μ</div><p class="nota">{{s|s025|}}</p></div>
+    <div class="passo"><div class="espr">2. C = XcᵀXc / N</div><p class="nota">{{s|s026|}}</p></div>
+    <div class="passo"><div class="espr">3. autovettori e autovalori di C,  4. ordinati per λ decrescente</div><p class="nota">{{s|s027|}}</p></div>
+    <div class="passo"><div class="espr">5. <mark class="ora">Φ</mark> = i primi k autovettori (colonne), d × k</div><p class="nota">{{s|s028|}}</p></div>
+  </figure>
+  <figure class="scena" data-scena="pca" data-titolo="{{a|s029|}}"></figure>
+  <p class="piccolo">{{s|s030|}}</p>
+  <figure class="passi" data-titolo="{{a|s031|}}">
+    <div class="passo"><div class="espr">a = <mark class="ora">Φ</mark>ᵀ(x − <mark class="dato">μ</mark>)    (k × d)(d) → <mark class="ok">k</mark> numeri</div><p class="nota">{{s|s032|}}</p></div>
+    <div class="passo"><div class="espr">x̂ = <mark class="ora">Φ</mark>a + <mark class="dato">μ</mark>    (d × k)(k) → d numeri</div><p class="nota">{{s|s033|}}</p></div>
+  </figure>
+  <figure class="codice" data-titolo="{{a|s034|}}">
+<pre data-lang="python">mu = X.mean(axis=0)
+Xc = X - mu
+C = Xc.T @ Xc / len(X)
+val, vec = np.linalg.eigh(C)
+ordine = np.argsort(val)[::-1]
+val, vec = val[ordine], vec[:, ordine]
+Phi = vec[:, :k]
+a = (x - mu) @ Phi            # nello spazio latente
+x_hat = Phi @ a + mu          # ricostruzione</pre>
+    <ol class="spiega">
+      <li data-righe="1-3" data-segna="X.mean(axis=0)@dato|Xc.T @ Xc@ora"><p>{{s|s035|}}</p></li>
+      <li data-righe="4-6" data-segna="np.linalg.eigh@ok|[::-1]@due"><p>{{s|s036|}}</p></li>
+      <li data-righe="7-9" data-segna="vec[:, :k]@ora|Phi @ a + mu@ok"><p>{{s|s037|}}</p></li>
+    </ol>
+  </figure>
+</section>
+
+<section>
+  <h2>{{s|s038|}}</h2>
+  <p>{{s|s039|}}</p>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>{{s|s040|}}</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th><th>8</th></tr></thead>
+    <tbody>
+      <tr><td>{{s|s041|}}</td><td>36.9%</td><td>64.9%</td><td>75.9%</td><td>82.8%</td><td><b>87.4%</b></td><td><b>91.2%</b></td><td>≥ 95%</td></tr>
+    </tbody>
+  </table></div>
+  <p class="piccolo">{{s|s042|}}</p>
+  <figure class="passi" data-titolo="{{a|s043|}}">
+    <div class="passo"><div class="espr">a = <mark class="dato">0</mark>  ⇒  x = μ</div><p class="nota">{{s|s044|}}</p></div>
+    <div class="passo"><div class="espr">a = (0, …, <mark class="ora">t · σᵢ</mark>, …, 0),  t ∈ [−3, 3]</div><p class="nota">{{s|s045|}}</p></div>
+    <div class="passo"><div class="espr">a(t) = (1 − t)·a₁ + t·a₂   ⇒   interpolazione tra due volti</div><p class="nota">{{s|s046|}}</p></div>
+    <div class="passo"><div class="espr">|aᵢ| ≫ 3σᵢ  ⇒  <mark class="no">fuori distribuzione</mark></div><p class="nota">{{s|s047|}}</p></div>
+  </figure>
+  <div class="box esame" data-tit="{{a|s048|}}">
+    <p>{{s|s049|}}</p>
+  </div>
+  <figure class="scena" data-scena="volti" data-titolo="{{a|s050|}}"></figure>
+</section>
+
+<section>
+  <h2>{{s|s051|}}</h2>
+  <p>{{s|s052|}}</p>
+  <p>{{s|s053|}}</p>
+  <p>{{s|s054|}}</p>
+  <p>{{s|s055|}}</p>
+  <p>{{s|s056|}}</p>
+  <figure class="scena" data-scena="maledizione" data-titolo="{{a|s057|}}"></figure>
+</section>
+
+</main>
+</body>
+</html>

@@ -1,0 +1,65 @@
+@@s001 Fairness, starvation, Mesa
+@@s002 ora:tiene il lock,due:in attesa sulla condition,dato:appena svegliato
+@@s003 Tre thread vogliono entrare nel monitor e aspettano il lock nella <b>entry queue</b>. Si chiama "coda" per motivi storici: in realtà è un insieme, senza ordine garantito.
+@@s004 <b>T2</b> viene scelto (in modo non deterministico), prende il lock ed esegue un metodo.
+@@s005 T2 esegue <code>c.await()</code>: va nella <b>condition queue</b> e <b>rilascia il lock</b>.
+@@s006 Viene scelto <b>T1</b>, che fa anche lui <code>await()</code>. (In questo momento potrebbe anche arrivare uno <i>spurious wakeup</i> e riportare T1 o T2 nella entry queue senza motivo.)
+@@s007 Resta <b>T3</b>: prende il lock ed esegue <code>c.signal()</code>.
+@@s008 <code>signal()</code> sposta <b>un</b> thread dalla condition queue alla <b>entry queue</b>: qui T1, scelto a caso. T1 non riparte subito: deve riprendere il lock.
+@@s009 T3 rilascia il lock e finisce. T1 può prendere il lock. T2 invece resta in condition queue: <b>niente garantisce</b> che prima o poi venga svegliato.
+@@s010 Con <code>signalAll()</code> al posto di <code>signal()</code> anche T2 sarebbe tornato nella entry queue, a competere per il lock.
+@@s011 dato:in coda,ora:ha il lock,no:sorpasso,ok:entra chi aspetta da più tempo
+@@s012 dato:lettore R1,due:scrittori,ok:condizione vera,no:condizione cambiata
+@@s013 dato:lettori dentro,no:scrittore bloccato,ok:scrittore dentro
+@@s014 no:CPU sprecata,ok:bloccato (nessuna CPU)
+@@s015 Fairness, starvation, Mesa
+@@s016 Lanciando <code>ReadersWriters.java</code> di solito leggono prima <b>tutti</b> i lettori e solo dopo scrivono gli scrittori. Il monitor è corretto, ma <b>ingiusto</b>. Per capire perché bisogna guardare dove aspettano i thread: un monitor ha <b>due code</b>.
+@@s017 Fairness nel corso
+@@s018 Un monitor corretto garantisce la mutua esclusione, ma può comunque trattare male qualcuno: un thread che aspetta e viene sempre scavalcato non entra mai. Per ragionarci servono due code: la <b>lock queue</b> (chi aspetta di entrare) e la <b>condition queue</b> (chi è entrato, ha trovato la condizione falsa e aspetta di essere svegliato).
+@@s019 Definizione
+@@s020 In questo corso <b>fairness</b> vuol dire <b>assenza di starvation</b>: se un thread è pronto a entrare nella sezione critica, prima o poi ci entra.
+@@s021 Coda
+@@s022 Chi ci sta
+@@s023 Come ci entra
+@@s024 <b>Lock queue</b> (entry queue)
+@@s025 thread che vogliono entrare nel monitor
+@@s026 chiamando <code>lock()</code> con il lock occupato, o dopo essere stati svegliati
+@@s027 <b>Condition queue</b>
+@@s028 thread già entrati che hanno trovato la condizione falsa
+@@s029 chiamando <code>await()</code>
+@@s030 Lock fair e non fair: il sorpasso
+@@s031 Chi va dove (slide 28–37)
+@@s032 Tre thread, un lock, una condition variable
+@@s033 Il flag fair
+@@s034 <code>new ReentrantLock(true)</code> rende <b>fair la entry queue</b>: entra il thread che aspetta da più tempo (slide 29). Da solo non basta a eliminare la starvation di un monitor: se la <i>logica</i> del monitor fa ripassare sempre avanti qualcuno (come i lettori qui sotto), l'ordine della coda non aiuta.
+@@s035 Nota tecnica: nel modello delle slide nemmeno la condition queue ha un ordine. L'implementazione concreta di <code>ReentrantLock</code> in realtà segnala i thread in ordine FIFO (documentazione di <code>newCondition()</code>); per gli esercizi ragiona con il modello del corso.
+@@s036 Mesa contro Hoare
+@@s037 Mesa — la semantica di Java
+@@s038 I thread svegliati tornano nella <b>entry queue</b> e competono con chi era già lì. Tra il risveglio e il momento in cui riprendono, un altro thread può aver <b>cambiato lo stato</b>: la condizione che li ha svegliati potrebbe non valere più.
+@@s039 Hoare
+@@s040 I thread in attesa su una condition variable hanno <b>priorità</b> su quelli della entry queue: chi viene svegliato riprende subito, con la condizione ancora vera.
+@@s041 Conseguenza
+@@s042 Poiché Java è Mesa, la guardia di un <code>await()</code> va sempre in un <b><code>while</code></b>, mai in un <code>if</code>. Esempio passo per passo nella pagina <a href="l02-monitor.html">Monitor</a>.
+@@s043 Chi è svegliato entra subito, o si rimette in fila?
+@@s044 La starvation degli scrittori
+@@s045 Perché nel ReadWriteMonitor base uno scrittore può aspettare per sempre
+@@s046 Un lettore aspetta solo se c'è uno scrittore <b>dentro</b>.
+@@s047 Uno scrittore aspetta finché c'è <b>almeno un</b> lettore.
+@@s048 Se i lettori continuano ad arrivare, ce n'è sempre almeno uno dentro: <code>readers</code> non torna mai a 0.
+@@s049 Mutua esclusione rispettata, assenza di starvation no.
+@@s050 FairReadWriteMonitor.java: lo scrittore prenota
+@@s051 Prima aspetta solo che non ci sia un altro scrittore.
+@@s052 Poi <b>prenota</b>: mette <code>writer = true</code> anche se ci sono ancora lettori dentro. Da ora <code>readLock()</code> ferma i nuovi lettori.
+@@s053 Aspetta che escano solo i lettori <b>già dentro</b>, che sono in numero finito. Poi scrive.
+@@s054 Domanda della slide: così uno scrittore pronto prima o poi scrive?
+@@s055 Contro i <b>lettori</b> sì: dopo la prenotazione nessun nuovo lettore entra, e quelli dentro prima o poi escono. Resta però la competizione <b>tra scrittori</b>: se più scrittori aspettano il <code>while (writer)</code>, con <code>synchronized</code> o con un <code>ReentrantLock</code> non fair (il default) nessuno garantisce l'ordine, quindi uno scrittore sfortunato può in teoria perdere sempre (esercizio 2.1.4). Il flag fair di <code>ReentrantLock</code> serve proprio a dare un ordine a chi aspetta. Nella tua risposta al 2.1.2 hai usato il fatto che il numero di thread è finito: è l'argomento giusto.
+@@s056 Lettori che si danno il cambio
+@@s057 Busy-wait: vietato
+@@s058 Aspettare vuol dire che un thread non può continuare finché lo stato non cambia. Si può aspettare in due modi molto diversi: continuando a controllare, oppure fermandosi finché qualcuno non avvisa.
+@@s059 Busy-wait
+@@s060 Il thread resta <b>running</b> e consuma CPU a controllare uno stato che non cambia.
+@@s061 Bloccarsi
+@@s062 Il thread va in <b>blocked</b> e non usa CPU finché qualcuno non lo sveglia.
+@@s063 Negli assignment
+@@s064 Dalle slide: "Exercise solutions using busy-wait will not be approved."
+@@s065 Controllare o bloccarsi

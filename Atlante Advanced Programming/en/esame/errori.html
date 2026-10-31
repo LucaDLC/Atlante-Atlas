@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Compiler errors</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <div class="occhiello"><span>Exam</span><span>practice</span></div>
+  <h1>Compiler errors</h1>
+  <p class="lede">Each message below was obtained by <b>really compiling</b> with Scala 3.8.4 and the course options (<code>-Werror -source:future</code>). Many come from real attempts at the exercises. Search with <kbd>Ctrl</kbd>+<kbd>F</kbd> for the first line of the message you see.</p>
+</header>
+
+<section>
+  <h2>How to read "Found / Required"</h2>
+  <figure class="passi" data-titolo="The most common message">
+    <div class="passo"><div class="espr">case Nil => <mark class="no">Nil</mark>          <span class="mano">// dentro length: Int</span></div><p class="nota">The code that does not work.</p></div>
+    <div class="passo"><div class="espr">Found:    <mark class="no">(List.Nil : List[Nothing])</mark></div><p class="nota"><b>Found</b> = the type of what you wrote.</p></div>
+    <div class="passo"><div class="espr">Required: <mark class="ok">Int</mark></div><p class="nota"><b>Required</b> = the type Scala expected at that point (here: the return type of <code>length</code>).</p></div>
+    <div class="passo"><div class="espr">case Nil => <mark class="ok">0</mark></div><p class="nota">The fix is always: to produce a value of the type <b>Required</b>.</p></div>
+  </figure>
+</section>
+
+<section>
+  <h2>Types that do not match</h2>
+  <div class="errori">
+    <div class="errore">
+      <pre data-lang="scala">def length[A](l: List[A]): Int = l match
+  case Nil => Nil</pre>
+      <pre class="msg">Found:    (List.Nil : List[Nothing])
+Required: Int</pre>
+      <div class="fix">La lunghezza della lista vuota è <code>0</code>.</div>
+    </div>
+    <div class="errore">
+      <pre data-lang="scala">case Cons(h, t) => if t == Nil then h else init(h)</pre>
+      <pre class="msg">Found:    (h : A)
+Required: List[A]</pre>
+      <div class="fix"><code>h</code> è un elemento, serve una lista: <code>Cons(h, init(t))</code>. <a href="../teoria/s02-liste.html">Liste</a></div>
+    </div>
+    <div class="errore">
+      <pre data-lang="scala">case Leaf(value) => value.toString()      // dentro map su Tree</pre>
+      <pre class="msg">Found:    String
+Required: Tree[B]</pre>
+      <div class="fix">Usa <code>f</code> e rimetti in una foglia: <code>Leaf(f(value))</code>. <a href="../teoria/s03-alberi.html">Alberi</a></div>
+    </div>
+    <div class="errore">
+      <pre data-lang="scala">def map1[A, B](t: Tree[A])(f: A => B): Tree[B] =
+  fold(t)(Branch(_, _))(a => Leaf(f(a)))</pre>
+      <pre class="msg">Found:    Tree[Any]
+Required: Tree[B]</pre>
+      <div class="fix">Scrivi i tipi del fold: <code>fold[A, Tree[B]](t)(…)(…)</code>. <a href="../teoria/s03-alberi.html">Alberi</a></div>
+    </div>
+    <div class="errore">
+      <pre data-lang="scala">def flatMap[B](f: A => Option[B]): Option[B] = this match
+  case None => None
+  case Some(a) => Some(f(a))</pre>
+      <pre class="msg">Found:    Option[B]
+Required: B</pre>
+      <div class="fix"><code>f(a)</code> è già un Option: scrivi solo <code>f(a)</code>. <a href="../teoria/s03-option.html">Option</a></div>
+    </div>
+    <div class="errore">
+      <pre data-lang="scala">def r: Option[Int] = lst.headOption.map(_._1)</pre>
+      <pre class="msg">Found:    (_$1._1 : String)
+Required: Int</pre>
+      <div class="fix"><code>_1</code> è il primo pezzo della coppia (il nome). Il voto è <code>_2</code>. <a href="../teoria/s03-for-yield.html">for/yield</a></div>
+    </div>
+    <div class="errore">
+      <pre data-lang="scala">case Empty => None          // dentro toList: List[A]</pre>
+      <pre class="msg">Found:    None.type
+Required: List[A]</pre>
+      <div class="fix">La lista vuota è <code>Nil</code>. <a href="../teoria/s04-lazylist.html">LazyList</a></div>
+    </div>
+    <div class="errore">
+      <pre data-lang="scala">case Cons(h, t) => cons(h(), t().toList)</pre>
+      <pre class="msg">Found:    List[A]
+Required: LazyList[A]</pre>
+      <div class="fix"><code>toList</code> costruisce una List: usa <code>::</code>, non <code>cons</code>. <a href="../teoria/s04-lazylist.html">LazyList</a></div>
+    </div>
+    <div class="errore">
+      <pre data-lang="scala">def take(n: Int): LazyList[A] =
+  if n &lt;= 0 then Nil else …</pre>
+      <pre class="msg">Found:    (Nil : scala.collection.immutable.Nil.type)
+Required: LazyList[A]</pre>
+      <div class="fix">La LazyList vuota è <code>empty</code>.</div>
+    </div>
+    <div class="errore">
+      <pre data-lang="scala">case Cons(h, t) => h :: t().toList</pre>
+      <pre class="msg">Found:    (h : () => A)
+Required: A</pre>
+      <div class="fix"><code>h</code> è la ricetta, serve il valore: <code>h()</code>. <a href="../teoria/s04-valutazione.html">Valutazione</a></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Names and methods that do not exist</h2>
+  <div class="errori">
+    <div class="errore">
+      <pre data-lang="scala">scala&gt; adpro.intro.Exercise.fib(10)</pre>
+      <pre class="msg">value Exercise is not a member of adpro.intro</pre>
+      <div class="fix">Nome dell'object o del package sbagliato, oppure il REPL è stato aperto prima di salvare. <a href="../teoria/s01-scala-base.html">Scala base</a></div>
+    </div>
+    <div class="errore">
+      <pre data-lang="scala">case Const(h, t) => h * product(t)</pre>
+      <pre class="msg">no pattern match extractor named Const was found</pre>
+      <div class="fix">Refuso: <code>Cons</code>. <a href="../teoria/s02-pattern-matching.html">Pattern matching</a></div>
+    </div>
+    <div class="errore">
+      <pre data-lang="scala">case Some(X) => X</pre>
+      <pre class="msg">Not found: X</pre>
+      <div class="fix">Nei pattern i nomi nuovi sono minuscoli: <code>Some(x)</code>.</div>
+    </div>
+    <div class="errore">
+      <pre data-lang="scala">case Cons(h, t) => if p(h()) then t().forAll(p) else False</pre>
+      <pre class="msg">Not found: False</pre>
+      <div class="fix">In Scala i booleani sono minuscoli: <code>true</code>, <code>false</code>.</div>
+    </div>
+    <div class="errore">
+      <pre data-lang="scala">cons(h(), t.takeWhile(p))</pre>
+      <pre class="msg">value takeWhile is not a member of () => LazyList[A]</pre>
+      <div class="fix"><code>t</code> è una funzione: prima <code>t()</code>, poi il metodo.</div>
+    </div>
+    <div class="errore">
+      <pre data-lang="scala">case Cons(h, t) => h() :: t</pre>
+      <pre class="msg">value :: is not a member of () => LazyList[A]</pre>
+      <div class="fix"><code>::</code> è un metodo della lista a destra, e <code>t</code> è una ricetta: <code>h() :: t().toList</code>.</div>
+    </div>
+    <div class="errore">
+      <pre data-lang="scala">for x &lt;- Some(4) if x % 2 == 0 yield x      // Option del corso</pre>
+      <pre class="msg">value withFilter is not a member of Option.Some[Int]</pre>
+      <div class="fix"><code>if</code> nel for cerca <code>withFilter</code>, che l'Option degli esercizi non ha. <a href="../teoria/s03-for-yield.html">for/yield</a></div>
+    </div>
+    <div class="errore">
+      <pre data-lang="scala">trait OrderedPoint extends scala.math.Ordered[java.awt.Point]:
+  override def compare(that: java.awt.Point): Int =
+    if this.x &lt; that.x then -1 else 1</pre>
+      <pre class="msg">value x is not a member of OrderedPoint</pre>
+      <div class="fix">Manca il self-type <code>this: java.awt.Point =></code>. <a href="../teoria/s01-trait.html">Trait</a></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Syntax</h2>
+  <div class="errori">
+    <div class="errore">
+      <pre data-lang="scala">def size[A](t: Tree[A]): Int = match</pre>
+      <pre class="msg">expression expected but match found</pre>
+      <div class="fix">Manca il soggetto: <code>t match</code>.</div>
+    </div>
+    <div class="errore">
+      <pre data-lang="scala">def foldLeft[A, B](l: List[A], z: B, f: (B, A) => B): B =
+  case Nil => z</pre>
+      <pre class="msg">Missing parameter type
+
+I could not infer the type of the parameter x$1
+in expanded function:
+  x$1 => x$1 match …</pre>
+      <div class="fix">Manca <code>l match</code> prima dei <code>case</code>. <a href="../teoria/s02-fold.html">Fold</a></div>
+    </div>
+    <div class="errore">
+      <pre data-lang="scala">case n &lt; 0 => l</pre>
+      <pre class="msg">no pattern match extractor named &lt; was found</pre>
+      <div class="fix">Un pattern non è una condizione. Usa <code>if</code> o una guardia <code>case _ if n &lt; 0 =></code>.</div>
+    </div>
+    <div class="errore">
+      <pre data-lang="scala">foldLeft(as, 0, f(acc, _) => acc + 1)</pre>
+      <pre class="msg">not a legal formal parameter for a function literal
+Not found: acc</pre>
+      <div class="fix">Una lambda si scrive <code>(acc, _) => acc + 1</code>, senza nome davanti.</div>
+    </div>
+    <div class="errore">
+      <pre data-lang="scala">val negative = x => x &lt; 0</pre>
+      <pre class="msg">Missing parameter type
+
+I could not infer the type of the parameter x</pre>
+      <div class="fix">Scrivi il tipo: <code>(x: Int) => x &lt; 0</code>. <a href="../teoria/s01-funzioni.html">Funzioni</a></div>
+    </div>
+    <div class="errore">
+      <pre data-lang="scala">List(1, 2, 3).map(_ * _)</pre>
+      <pre class="msg">Wrong number of parameters, expected: 1</pre>
+      <div class="fix">Ogni <code>_</code> è un parametro: <code>_ * _</code> ne ha due. Usa <code>x => x * x</code>.</div>
+    </div>
+    <div class="errore">
+      <pre data-lang="scala">lst.headOption.map(_.1)</pre>
+      <pre class="msg">',' or ')' expected, but number literal found</pre>
+      <div class="fix">Il metodo si chiama <code>_1</code>: <code>_._1</code>.</div>
+    </div>
+    <div class="errore">
+      <pre data-lang="scala">case Cons(h, t) => h() :: t().toList()</pre>
+      <pre class="msg">missing argument for parameter n of method apply in trait LinearSeqOps: (n: Int): A</pre>
+      <div class="fix"><code>toList</code> è senza parentesi; con <code>()</code> Scala pensa a un accesso per posizione. <a href="../teoria/s04-lazylist.html">LazyList</a></div>
+    </div>
+    <div class="errore">
+      <pre data-lang="scala">def foldLeft1[A, B](l: List[A], z: B, f: (B, A) => B): B =
+  def aiuto(x: B): B = f(x, ???)</pre>
+      <pre class="msg">Found:    Unit
+Required: B
+
+Maybe the enclosing block is missing a final expression after the definition of `aiuto`?</pre>
+      <div class="fix">Un blocco non può finire con un <code>def</code>: serve un'espressione finale. Spesso è indentazione sbagliata.</div>
+    </div>
+    <div class="errore">
+      <pre data-lang="scala">enum LazyList[+A]:
+  case Cons(h: => A, t: => LazyList[A])</pre>
+      <pre class="msg">val parameters may not be call-by-name</pre>
+      <div class="fix">I campi dei <code>case</code> non possono essere by-name: si usano i thunk <code>() => A</code>.</div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Pattern matching and <code>-Werror</code></h2>
+  <div class="errori">
+    <div class="errore">
+      <pre data-lang="scala">def head[A](l: List[A]): A = l match
+  case Cons(h, _) => h</pre>
+      <pre class="msg">match may not be exhaustive.
+
+It would fail on pattern case: Nil</pre>
+      <div class="fix">Aggiungi il caso mancante.</div>
+    </div>
+    <div class="errore">
+      <pre data-lang="scala">case Some(a) if p(a)  => this
+case Some(a) if !p(a) => None
+case None             => None</pre>
+      <pre class="msg">match may not be exhaustive.
+
+It would fail on pattern case: Option.Some(_)</pre>
+      <div class="fix">Le guardie per il compilatore valgono "forse". Ultimo caso senza guardia: <code>case _ => None</code>.</div>
+    </div>
+    <div class="errore">
+      <pre data-lang="scala">case Cons(h, t) => h
+case Cons(1, t) => 1</pre>
+      <pre class="msg">Unreachable case</pre>
+      <div class="fix">I casi specifici vanno prima di quelli generali.</div>
+    </div>
+    <div class="errore">
+      <pre data-lang="scala">case Cons(h, t) => h
+case _ => 101</pre>
+      <pre class="msg">Unreachable case except for null (if this is intentional, consider writing case null => instead).</pre>
+      <div class="fix">I casi sopra coprono già tutte le liste: togli <code>case _</code>.</div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Recursion and variance</h2>
+  <div class="errori">
+    <div class="errore">
+      <pre data-lang="scala">@annotation.tailrec
+def bonacci(n: Int, acc: Int): Int = … bonacci(n-1, acc) + bonacci(n-2, acc)</pre>
+      <pre class="msg">Cannot rewrite recursive call: it is not in tail position</pre>
+      <div class="fix">Dopo la chiamata resta del lavoro (<code>+</code>). Usa un accumulatore. <a href="../teoria/s01-ricorsione.html">Ricorsione</a></div>
+    </div>
+    <div class="errore">
+      <pre data-lang="scala">enum Option[+A]:
+  def getOrElse(default: A): A</pre>
+      <pre class="msg">covariant type A occurs in contravariant position in type A of parameter default</pre>
+      <div class="fix"><code>def getOrElse[B &gt;: A](default: => B): B</code>. <a href="../teoria/s03-varianza.html">Varianza</a></div>
+    </div>
+    <div class="errore">
+      <pre data-lang="scala">class Cell[-T](init: T):
+  private var current = init
+  def get = current</pre>
+      <pre class="msg">contravariant type T occurs in covariant position in type => T of method get</pre>
+      <div class="fix">Una cella che si legge e si scrive deve essere invariante: <code>Cell[T]</code>.</div>
+    </div>
+    <div class="errore">
+      <pre data-lang="scala">val animals: Array[Animal] = cats      // cats: Array[Cat]</pre>
+      <pre class="msg">Found:    (cats : Array[Cat])
+Required: Array[Animal]</pre>
+      <div class="fix">Gli array in Scala sono invarianti (e per fortuna). Le List invece sono covarianti.</div>
+    </div>
+    <div class="errore">
+      <pre data-lang="scala">trait Audible:
+  def makeNoise(): String
+class Frog extends Audible</pre>
+      <pre class="msg">class Frog needs to be abstract, since def makeNoise(): String in trait Audible is not defined</pre>
+      <div class="fix">Implementa i metodi astratti dei trait che mescoli. <a href="../teoria/s01-trait.html">Trait</a></div>
+    </div>
+  </div>
+</section>
+
+</main>
+</body>
+</html>

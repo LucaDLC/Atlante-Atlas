@@ -1,0 +1,71 @@
+@@s001 Data race and correctness
+@@s002 dato:actions,ora:happens-before edges,ok:ordered pair,no:unordered conflicting pair
+@@s003 PossibleReordering as a graph: one node per action. The edges already drawn are the <b>program order</b> inside each thread.
+@@s004 <b>Start rule</b>: start(t) comes before the first action of t.
+@@s005 <b>Termination rule</b>: the last action of a thread comes before the join, and hence before the print (here the join is summarised in the arrow towards 5).
+@@s006 Accesses to x: init writes, t1(2) writes, m(5) reads. They conflict but are <b>ordered</b>: init → st1 → 1 → 2 → 5. No data race on x.
+@@s007 Accesses to a: t1(1) writes, t2(4) reads. No path of arrows goes from 1 to 4 or from 4 to 1: they conflict and are <b>not ordered</b>. It is a <b>data race</b>, and one is enough.
+@@s008 dato:main,ora:t1,due:t2,no:breaks mutual exclusion,ok:well formed
+@@s009 ora:t1,due:t2,ok:monitor rule,no:conflicting accesses
+@@s010 dato:main,ora:t1,due:t2,ok:happens-before path,no:write not visible
+@@s011 ora:t1,due:t2,ok:read that sees 1
+@@s012 ora:current step,ok:step done
+@@s013 Data race and correctness
+@@s014 In the JMM a program is correct if <b>no execution has a data race</b>. To prove it two more ingredients are needed: the <b>conflicting actions</b> and the <b>synchronization order</b>. Then one sees how a lock orders the actions, and why <code>volatile</code> changes the rules.
+@@s015 Synchronization order and well-formed executions
+@@s016 Synchronization order
+@@s017 The <b>total</b> order in which the synchronization actions of an execution take place. It must respect mutual exclusion (locks correctly nested) and happens-before. A program can have more than one: every execution has one.
+@@s018 Well-formed execution
+@@s019 An execution is well formed if it is consistent with program order, happens-before and synchronization order. The JVM produces <b>only</b> well-formed executions.
+@@s020 <code>PossibleReordering</code> has only one synchronization order: <code>m(start(t1)), m(start(t2)), m(join(t1)), m(join(t2))</code>. The threads have no synchronization actions of their own.
+@@s021 Valid and invalid synchronization orders
+@@s022 Conflicting actions and data race
+@@s023 Conflicting actions
+@@s024 Two actions are <b>in conflict</b> if they access the same <b>non-volatile</b> variable and at least one of them is a write.
+@@s025 Data race (JMM)
+@@s026 There is a data race between <code>a</code> and <code>b</code> if 1) they are in conflict and 2) they are <b>not</b> ordered by happens-before.
+@@s027 Correctly synchronized
+@@s028 A program is <b>correctly synchronized</b> if none of its executions contains a data race. The JVM guarantees that all its executions are <b>sequentially consistent</b>: no more paradoxical behaviours.
+@@s029 Conflicts in PossibleReordering (slide 25)
+@@s030 List who touches x and how.
+@@s031 All the pairs with at least one write: they are in conflict.
+@@s032 But they are ordered: no data race on x.
+@@s033 This pair is in conflict <b>and</b> not ordered: data race. It is enough to find one in an execution to say that the program is <b>not</b> correctly synchronized.
+@@s034 Looking for a happens-before path
+@@s035 Fix with a lock, and prove it
+@@s036 From the lock to the two families of executions
+@@s037 The lock adds four synchronization actions.
+@@s038 Now there are more synchronization orders. Note: in none of them does a lock sit in the middle of the lock/unlock of the other thread (mutual exclusion).
+@@s039 Monitor rule: the unlock of t1 comes before the lock of t2.
+@@s040 All the synchronization orders fall into one of these two cases.
+@@s041 The write of a (t1(2)) happens-before the read (t2(7)).
+@@s042 Here the order is the opposite, but there is still one.
+@@s043 The same reasoning holds for all the other conflicting pairs: the program is <b>correctly synchronized</b>.
+@@s044 HB1 and HB2: the write and the read of a are always ordered
+@@s045 Predicting the values: visibility
+@@s046 If <code>a → b</code>, the effect of <code>a</code> is visible to <code>b</code>. So one can prove which values are possible.
+@@s047 Can the program with the lock print x == 1? (slide 40)
+@@s048 That is: the last write of b before <code>x=b</code> is that of t2, which writes 1.
+@@s049 This part holds in <b>all</b> the executions: it does not depend on who takes the lock.
+@@s050 This part holds only in HB<sub>2</sub>.
+@@s051 The same reasoning for the other variables.
+@@s052 x is 1 only if t2 takes the lock first
+@@s053 The volatile rule
+@@s054 Volatile rule
+@@s055 If <code>a</code> is a write to a volatile variable and <code>b</code> a <b>later</b> read of the same variable, then <code>a → b</code>.
+@@s056 Accesses to volatile variables are synchronization actions but do <b>not</b> give mutual exclusion: they greatly increase the possible synchronization orders.
+@@s057 By definition the accesses to volatile variables are <b>never in conflict</b>. So they cannot give a data race.
+@@s058 With <code>volatile a, b</code> in <code>PossibleReordering</code> only the accesses to x and y remain in conflict, already ordered by the start and termination rules: the program is correctly synchronized. The possible outputs are (1,0), (0,1), (1,1); (0,0) no.
+@@s059 Careful: in your answer to 3.1.8 (assignment 2 still to be handed in)
+@@s060 You wrote that with <code>count</code> volatile there is a data race between the two writes. By the course definition, <b>no</b>: accesses to volatile variables are not in conflict, so <b>there are no data races</b> and the program is correctly synchronized. But the <b>race condition</b> remains: both threads can read 0 and write 1, so <code>count</code> can be 1. It is exactly the comparison asked by 3.1.9: the version with the lock always prints 2, the volatile one can print 1. Details in the <a href="l03-esercizio-31.html">exercise 3.1 worked out</a>.
+@@s061 With a and b volatile, (0,0) is impossible
+@@s062 The strategy in 6 steps (slide 48)
+@@s063 The strategy is a mechanical procedure: there is no need to "guess" where the problem is. One starts from the actions, adds the pairs that hold <b>always</b> (program order, start, termination), then looks at what <b>depends on the execution</b> (who takes the lock first, which volatile is read afterwards). Each different case gives a different HB set; in the end every exam question (data race? correctly synchronized? which values can it print?) is solved by looking for paths in those sets.
+@@s064 Identify the actions and classify them (variable access, synchronization, other).
+@@s065 Write the pairs of the <b>program order</b>.
+@@s066 Write the pairs of the synchronization actions: <b>start</b>, <b>termination</b>, <b>monitor</b>, <b>volatile</b>.
+@@s067 List the possible <b>synchronization orders</b>.
+@@s068 Look at which happens-before pairs <b>change</b> from one synchronization order to the other.
+@@s069 For each difference, write the corresponding happens-before set (such as HB<sub>1</sub>, HB<sub>2</sub>).
+@@s070 With those sets you can: <b>find</b> data races, <b>prove</b> that there are none (correctness), <b>predict</b> the values of the variables.
+@@s071 The six steps applied to the example with the lock

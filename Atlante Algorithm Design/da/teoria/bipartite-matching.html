@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Bipartit matching via flow</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+const N = (id,x,y,t,tono) => ({id,tipo:'nodo',x,y,t,r:18,tono});
+const A = (id,da,a,t,extra) => Object.assign({id,tipo:'arco',da,a,dir:true,t},extra||{});
+SCENE.bf = {
+  w: 540, h: 290, lato: true,
+  legenda: 'dato:side L (ting der skal tildeles),due:side R,ok:par i matchingen,spento:par ikke tilladt',
+  oggetti: [
+    N('s',40,140,'s'), N('L1',150,50,'1'), N('L2',150,140,'2'), N('L3',150,230,'3'),
+    N('RA',380,50,'A'), N('RB',380,140,'B'), N('RC',380,230,'C'), N('t',500,140,'t'),
+    A('s1','s','L1','',{tono:'spento'}), A('s2','s','L2','',{tono:'spento'}), A('s3','s','L3','',{tono:'spento'}),
+    A('1A','L1','RA','',{tono:'spento'}), A('1B','L1','RB','',{tono:'spento'}),
+    A('2A','L2','RA','',{tono:'spento'}),
+    A('3B','L3','RB','',{tono:'spento'}), A('3C','L3','RC','',{tono:'spento'}),
+    A('At','RA','t','',{tono:'spento'}), A('Bt','RB','t','',{tono:'spento'}), A('Ct','RC','t','',{tono:'spento'}),
+    {id:'c1',tipo:'testo',x:20,y:282,t:'',size:12,bold:true,anchor:'start'}
+  ],
+  passi: [
+    { nota: 'Tilladte par: 1 med A eller B; 2 kun med A; 3 med B eller C. Jeg vil have det <b>største antal par</b>, hvor hvert element bruges højst én gang.', set:{'1A':{tono:'dato'},'1B':{tono:'dato'},'2A':{tono:'dato'},'3B':{tono:'dato'},'3C':{tono:'dato'}} },
+    { nota: 'Jeg omdanner det til et flow: jeg tilføjer en kilde <b>s</b> med kapacitet 1 til hvert element i L, og et sink <b>t</b> med kapacitet 1 fra hvert element i R.', set:{s1:{tono:'dato'},s2:{tono:'dato'},s3:{tono:'dato'},At:{tono:'dato'},Bt:{tono:'dato'},Ct:{tono:'dato'}} },
+    { nota: 'Kapaciteterne 1 på s → L og på R → t forhindrer, at et element bruges to gange. Det heltallige flow læses som 0/1: hver enhed af flow er et par.', set:{'1B':{tono:'ok'},'2A':{tono:'ok'},'3C':{tono:'ok'},c1:{t:'max flow = 3 = matching massimo',tono:'ok'}} },
+    { nota: 'Fundet matching: <b>1–B, 2–A, 3–C</b>. Ingen bruges to gange, og flowets værdi giver svaret. Omkostning med Ford-Fulkerson: <code>O(m·n)</code>.', set:{c1:{t:'matching: 1–B, 2–A, 3–C',tono:'ok'}} }
+  ]
+};
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Bipartit matching via flow</h1>
+  <p class="lede">At parre det største antal elementer af en mængde med elementer af en anden, kun langs tilladte par. Det omdannes til et flow: hver enhed af flow er et par.</p>
+</header>
+
+<section>
+  <h2>At omdanne til et flow</h2>
+<p>Givet to mængder <code>L</code> og <code>R</code> og de tilladte par mellem dem: tilføj en kilde <code>s</code> med buer af kapacitet 1 til hver knude i <code>L</code>, orientér parrene fra <code>L</code> mod <code>R</code> med kapacitet 1, og tilføj et sink <code>t</code> med buer af kapacitet 1 fra hver knude i <code>R</code>.</p>
+<p>Det maksimale flow er det største matching. Kapaciteterne 1 på <code>s → L</code> og <code>R → t</code> forhindrer, at en knude bruges to gange.</p>
+  <figure class="scena" data-scena="bf" data-titolo="Matching: tilladte par og flow"></figure>
+</section>
+<section>
+  <h2>Omkostningen og varianterne</h2>
+<p>Med Ford-Fulkerson: <code>O(mn)</code>. Med Hopcroft-Karp: <code>O(m√n)</code>. Hvis grænserne ikke er 1 (et element kan bruges to gange), ændres kun kapaciteten på buen.</p>
+<p>Kőnig: i en bipartit graf er den mindste vertex cover lig med det største matching. Hall: der findes et perfekt matching, hvis naboskabet til enhver delmængde af L har mindst lige så mange elementer.</p>
+</section>
+<section>
+  <h2>Koden side om side</h2>
+  <p>Denne side forklarer begrebet. Java-koden, der implementerer det, med en forklaring linje for linje og de syntaksnoter, der skal bruges, står på den side ved siden af.</p>
+  <p><a href="../codice/bipartite-matching.html"><b>→ Java-kode til dette emne</b></a></p>
+</section>
+<section>
+  <h2>Til eksamen</h2>
+<div class="box esame" data-tit="Til eksamen">
+<p>At tildele hvert element af en type til et af den anden, med grænser → flow. Sætning: <i>"Let s be a source with arcs of capacity 1 to every node of L, and t a sink with arcs of capacity 1 from every node of R. Max flow equals the maximum matching; by integrality the arcs with flow 1 are the pairs. Time O(mn)."</i></p>
+</div>
+</section>
+<section>
+  <h2>Hurtig oversigt</h2>
+<div class="tab-wrap"><table class="tab"><thead><tr><th>element</th><th>kapacitet</th><th>note</th></tr></thead><tbody><tr><td>L → R</td><td>tilladte par, kapacitet 1</td><td>buerne i matchingen</td></tr><tr><td>s → L, R → t</td><td>kapacitet 1: ét forbrug pr. knude</td><td>betingelsen</td></tr><tr><td>Hopcroft-Karp</td><td>O(m√n)</td><td>hurtigere</td></tr></tbody></table></div>
+</section>
+
+</main>
+</body>
+</html>

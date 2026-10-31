@@ -1,0 +1,273 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Rand[A]: composable generators</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+SCENE.map2 = {
+  w: 560, h: 260, lato: false,
+  legenda: 'dato:RNG state,ora:generator at work,due:values produced,ok:result of map2',
+  codice: { lang: 'scala', testo: `def map2[A, B, C](ra: Rand[A], rb: Rand[B])(f: (A, B) => C): Rand[C] =
+  rng =>
+    val (a, r1) = ra(rng)
+    val (b, r2) = rb(r1)
+    (f(a, b), r2)
+
+map2(nonNegativeInt, double)((_, _))(SimpleRNG(42))` },
+  oggetti: [
+    { id: 's0', tipo: 'nodo', r: 30, x: 70, y: 120, t: 'rng', sotto: 'seed 42', tono: 'dato' },
+    { id: 's1', tipo: 'nodo', r: 30, x: 280, y: 120, t: 'r1', nascosto: true },
+    { id: 's2', tipo: 'nodo', r: 30, x: 490, y: 120, t: 'r2', nascosto: true },
+    { id: 'g1', tipo: 'arco', da: 's0', a: 's1', dir: true, t: 'ra', nascosto: true },
+    { id: 'g2', tipo: 'arco', da: 's1', a: 's2', dir: true, t: 'rb', nascosto: true },
+    { id: 'va', tipo: 'testo', x: 175, y: 60, t: '', size: 14, bold: true },
+    { id: 'vb', tipo: 'testo', x: 385, y: 60, t: '', size: 14, bold: true },
+    { id: 'res', tipo: 'testo', x: 280, y: 215, t: '', size: 14, bold: true }
+  ],
+  passi: [
+    { nota: '<code>map2(ra, rb)(f)</code> does not produce a number at once: it is a new <code>Rand</code>, a function that <b>waits</b> for a state <code>rng</code>.', righe: [1, 2] },
+    { nota: 'When it receives <code>SimpleRNG(42)</code>, it <b>first</b> makes <code>ra</code> work (here <code>nonNegativeInt</code>): it comes out <b>a = 16159453</b> and the state <code>r1</code>.', righe: [3, 7], set: { g1: { nascosto: false, tono: 'ora' }, s1: { nascosto: false, tono: 'dato' }, va: { t: 'a = 16159453', tono: 'due' } } },
+    { nota: 'Then <code>rb</code> (here <code>double</code>) works on the <b>new</b> state <code>r1</code>, not on <code>rng</code>: it comes out <b>b = 0.5967…</b> and the state <code>r2</code>.', righe: [4], set: { g1: { tono: null }, g2: { nascosto: false, tono: 'ora' }, s2: { nascosto: false, tono: 'dato' }, vb: { t: 'b = 0.5967…', tono: 'due' } } },
+    { nota: 'The values are combined with <code>f</code> and the final state <code>r2</code> is returned: ((16159453, 0.5967…), r2). It is exactly <code>intDouble</code>, but without ever naming the states in the code of whoever uses it.', righe: [5], set: { g2: { tono: null }, s2: { tono: 'ok' }, res: { t: '((16159453, 0.5967…), r2)', tono: 'ok' } } }
+  ]
+};
+</script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  const T = (id, x, y, t, extra) => Object.assign({ id, tipo: 'testo', x, y, t, size: 13 }, extra || {});
+  const R = (id, x, y, w, h, t, extra) => Object.assign({ id, tipo: 'rett', x, y, w, h, t }, extra || {});
+  const F = (id, x1, y1, x2, y2, t, extra) => Object.assign({ id, tipo: 'vett', x1, y1, x2, y2, t }, extra || {});
+  const C = (id, x, y, valori, extra) => Object.assign({ id, tipo: 'celle', x, y, cw: 52, ch: 40, valori, indici: false }, extra || {});
+
+    SCENE.randtipo = {
+      w: 580, h: 220, lato: true,
+      legenda: 'dato:state (RNG),ora:generator,ok:value',
+      oggetti: [R('in', 20, 60, 110, 44, 'rng', { tono: 'dato' }), R('g', 180, 50, 200, 64, 'Rand[A]', { tono: 'ora' }), R('o1', 430, 40, 130, 36, 'valore: A', { tono: 'ok' }), R('o2', 430, 86, 130, 36, 'rng2', { tono: 'dato' }),
+        F('f1', 132, 82, 176, 82, ''), F('f2', 382, 70, 426, 58, ''), F('f3', 382, 94, 426, 104, ''), T('c', 290, 160, '', { size: 12 }), T('c2', 290, 195, '', { size: 12 })],
+      passi: [
+        { nota: "<code>type Rand[+A] = RNG =&gt; (A, RNG)</code>: un <b>alias di tipo</b>. Un Rand[A] è una funzione: dato uno stato, dà un valore e lo stato nuovo. Si legge \"un A casuale\"." },
+        { nota: "<code>unit(a)</code>: dà sempre a e lascia lo stato <b>com'è</b>.", set: { g: { t: 'unit(a)' }, o1: { t: 'a' }, o2: { t: 'rng (uguale)' }, c: { t: 'unit(a) = rng => (a, rng)' } } },
+        { nota: "<code>map(s)(f)</code>: fa girare s, applica f al valore, passa avanti lo stato. Chi la usa non vede mai rng.", set: { g: { t: 'map(s)(f)' }, o1: { t: 'f(a)' }, o2: { t: 'rng2 (da s)' }, c: { t: 'map: (a, rng2) = s(rng); (f(a), rng2)' } } },
+        { nota: "<code>double2 = map(nonNegativeInt)(i =&gt; i / (Int.MaxValue.toDouble + 1))</code>. Dopo nonNegativeInt non c'è nessuna parentesi: non lo chiami, lo <b>consegni</b> a map, che gli passerà lo stato. Con SimpleRNG(42): 16159453 / 2147483648 = 0.0075…", set: { in: { t: 'SimpleRNG(42)' }, g: { t: 'double2' }, o1: { t: '0.0075…' }, o2: { t: 'rng2' }, c: { t: 'val gen = … non genera niente: è una descrizione' }, c2: { t: 'i numeri nascono quando chiami gen(SimpleRNG(42))' } } }
+      ]
+    };
+
+    SCENE.sequence5 = {
+      w: 580, h: 210, lato: true,
+      legenda: 'dato:state being passed on,ok:number generated',
+      oggetti: [R('g0', 20, 40, 90, 40, 'G0', { tono: 'dato' }), R('g1', 170, 40, 90, 40, 'G1', { tono: 'dato', nascosto: true }), R('g2', 320, 40, 90, 40, 'G2', { tono: 'dato', nascosto: true }), R('g3', 470, 40, 90, 40, 'G3', { tono: 'dato', nascosto: true }),
+        F('a1', 112, 60, 166, 60, '', { nascosto: true }), F('a2', 262, 60, 316, 60, '', { nascosto: true }), F('a3', 412, 60, 466, 60, '', { nascosto: true }),
+        C('l', 110, 120, ['', '', ''], { cw: 120, toni: {} }), T('c', 290, 195, '', { size: 12 })],
+      passi: [
+        { nota: "<code>sequence</code>: da una lista di generatori a un generatore di lista. <code>ints2(3) = sequence(List.fill(3)(int))</code>. Parte da <code>unit(Nil)</code> e aggiunge in testa con map2, che passa lo stato." },
+        { nota: "Il primo int gira su G0 (SimpleRNG(42)): 16159453, e produce G1.", set: { g1: { nascosto: false }, a1: { nascosto: false }, l: { valori: ['16159453', '', ''], toni: { 0: 'ok' } } } },
+        { nota: "Il secondo gira su <b>G1</b>, non su G0: −1281479697, e produce G2. Usare di nuovo G0 darebbe lo stesso numero.", set: { g2: { nascosto: false }, a2: { nascosto: false }, l: { valori: ['16159453', '-1281479697', ''], toni: { 0: 'ok', 1: 'ok' } } } },
+        { nota: "Il terzo su G2: −340305902. Risultato List(16159453, −1281479697, −340305902), uguale a ints(3) (verificato), e lo stato finale G3 per chi continua.", set: { g3: { nascosto: false }, a3: { nascosto: false }, l: { valori: ['16159453', '-1281479697', '-340305902'], toni: { 0: 'ok', 1: 'ok', 2: 'ok' } }, c: { t: '(_ :: _) mette ogni valore davanti alla lista degli altri' } } }
+      ]
+    };
+
+    SCENE.flatmapdado = {
+      w: 580, h: 220, lato: true,
+      legenda: 'ora:first generator,due:second generator (chosen on the basis of a),ok:result,no:piece discarded',
+      oggetti: [R('f', 20, 40, 170, 44, 'nonNegativeInt', { tono: 'ora' }), R('i', 220, 40, 150, 44, '', { tono: 'spento' }), R('g', 400, 40, 160, 44, '', { tono: 'spento' }),
+        T('c', 290, 120, '', { size: 12 }), T('c2', 290, 150, '', { size: 12 }), T('c3', 290, 190, '', { size: 12, bold: true })],
+      passi: [
+        { nota: "<code>flatMap(f)(g)</code>: come map, ma <b>g restituisce un altro generatore</b>, scelto in base al valore a, e lo si fa girare subito sullo stato nuovo. Con map2 i due generatori erano fissi; qui il secondo dipende dal primo." },
+        { nota: "<code>nonNegativeLessThan(6)</code>, un dado. Primo passo: nonNegativeInt da SimpleRNG(42) dà 16159453.", set: { i: { t: 'i = 16159453', tono: 'ora' } } },
+        { nota: "Non lo scarto: lo riduco con il resto. <code>mod = 16159453 % 6 = 1</code>.", set: { g: { t: 'mod = 1', tono: 'due' } } },
+        { nota: "Controllo <code>i + (bound − 1) − mod &gt;= 0</code>: vero, quindi <code>unit(1)</code>. Si riprova solo se i cade nell'ultimo pezzo incompleto in cima agli Int (2³¹ mod 6 = 2 valori), dove 0 e 1 uscirebbero un po' più spesso: lì la somma trabocca e diventa negativa.", set: { g: { t: 'unit(1)', tono: 'ok' }, c: { t: '16159453 + 5 − 1 ≥ 0 → unit(1)' }, c2: { t: 'riprova solo nel pezzettino in cima: quasi mai' } } },
+        { nota: "Cinque lanci (nonNegativeLessThan(6) + 1) da SimpleRNG(42): <b>2, 3, 2, 4, 5</b> (verificato). La prima idea, \"riprova finché n &lt; 6\", è giusta ma servono in media 358 milioni di tentativi, uno dentro l'altro: la pila finisce.", set: { c3: { t: 'dadi: 2, 3, 2, 4, 5', tono: 'ok' } } }
+      ]
+    };
+  
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Rand[A]: composable generators</h1>
+  <p class="lede">Week 5, exercises 5–8. All the generators of the <a href="s05-rng-puro.html">previous page</a> have the form <span class="m">RNG =&gt; (A, RNG)</span>. One gives a name to that type and builds a small API (unit, map, map2, sequence, flatMap) that passes the state on your behalf. It is the same idea as <code>Option</code> of week 3, applied to the state.</p>
+</header>
+
+<section>
+  <h2>The type and the two basic functions</h2>
+  <figure class="codice" data-titolo="From the exercise file">
+<pre data-lang="scala">type Rand[+A] = RNG =&gt; (A, RNG)
+
+lazy val int: Rand[Int] = _.nextInt
+
+def unit[A](a: A): Rand[A] = rng =&gt; (a, rng)
+
+def map[A, B](s: Rand[A])(f: A =&gt; B): Rand[B] =
+  rng =&gt;
+    val (a, rng2) = s(rng)
+    (f(a), rng2)
+
+def nonNegativeEven: Rand[Int] = map(nonNegativeInt) { i =&gt; i - i % 2 }</pre>
+    <ol class="spiega">
+      <li data-righe="1" data-segna="Rand[+A]@ora|RNG =&gt; (A, RNG)@dato"><p>A <b>type alias</b>: <code>Rand[A]</code> is just a shorter name for "function from RNG to pair (value, new RNG)". A <code>Rand[A]</code> is read "a random A" or "a generator of A".</p></li>
+      <li data-righe="3" data-segna="_.nextInt@due"><p><code>_.nextInt</code> is <code>rng =&gt; rng.nextInt</code>: the method of <code>RNG</code> already has the right form.</p></li>
+      <li data-righe="5" data-segna="(a, rng)@ok"><p><code>unit</code>: a generator that always gives <code>a</code> and leaves the state <b>as it is</b>.</p></li>
+      <li data-righe="7-10" data-segna="s(rng)@ora|f(a)@ok"><p><code>map</code>: makes <code>s</code> work, applies <code>f</code> to the value, passes the state on. Whoever uses it never sees <code>rng</code>.</p></li>
+      <li data-righe="12" data-segna="i - i % 2@ok"><p>Example from the book: a non-negative even number, removing the remainder of the division by 2.</p></li>
+    </ol>
+  </figure>
+  <figure class="codice" data-titolo="Exercise 5: double with map">
+<pre data-lang="scala">lazy val double2: Rand[Double] =
+  map(nonNegativeInt)(i =&gt; i / (Int.MaxValue.toDouble + 1))</pre>
+    <ol class="spiega">
+      <li data-righe="1-2" data-segna="map(nonNegativeInt)@ora"><p>No <code>val (i, r) = …</code>, no state: <code>map</code> passes it on by itself. The test <code>Ex05.01</code> checks that it gives the same numbers as <code>double</code>.</p></li>
+    </ol>
+  </figure>
+  <div class="box domanda-tua" data-tit="Doubt: is the second bracket not the argument of nonNegativeInt?">
+    <p>No: both brackets are of <code>map</code>. After <code>nonNegativeInt</code> there is no bracket, so you are not <b>calling</b> it: you hand it to <code>map</code>, which will pass it the state when it arrives.</p>
+    <pre class="cod" data-lang="scala" data-segna="nonNegativeInt@dato|i =&gt; i / (Int.MaxValue.toDouble + 1)@due">map( nonNegativeInt )( i =&gt; i / (Int.MaxValue.toDouble + 1) )
+   1° argomento di map: quale generatore
+   2° argomento di map: cosa fare col numero</pre>
+    <p>Substituting inside the body of <code>map</code> one gets <code>rng =&gt; { val (a, rng2) = nonNegativeInt(rng); (a / 2147483648.0, rng2) }</code>: that is exactly the <code>double</code> written by hand in exercise 2. The <code>rng =&gt;</code> at the head is the parameter that seemed to be missing, and <code>map</code> wrote it.</p>
+  </div>
+  <div class="box domanda-tua" data-tit="Doubt: that initial rng, what value does it have if nobody gives it?">
+    <p>Nobody: it is the parameter of a function, like the <code>x</code> in <code>x =&gt; x + 1</code>. <code>val gen = map2(int, int)(_ + _)</code> generates <b>no</b> number: it is only the description of the calculation. The numbers are born when someone calls <code>gen(SimpleRNG(42))</code> — in the exercises the tests do it, with <code>forAll { (rng: RNG) =&gt; … }</code>. It is the same idea as the <code>LazyList</code>: first describe, then run.</p>
+  </div>
+  <figure class="scena" data-scena="randtipo" data-titolo="Rand[A], unit, map"></figure>
+</section>
+
+<section>
+  <h2>map2: two generators in a row (exercise 6)</h2>
+  <figure class="scena" data-scena="map2" data-titolo="map2(nonNegativeInt, double)((_, _)) on SimpleRNG(42)"></figure>
+  <div class="box regola" data-tit="The order matters">
+    <p>In <code>map2</code> <code>ra</code> runs first, then <code>rb</code> on the state that <code>ra</code> has left. If it were inverted, the numbers would change: the test <code>Ex07.03</code> ("ints2 &amp; ints are the same") passes only if <code>ints</code> and <code>sequence</code> use the same order.</p>
+  </div>
+</section>
+
+<section>
+  <h2>sequence (exercise 7)</h2>
+  <figure class="codice" data-titolo="A list of generators → a generator of lists">
+<pre data-lang="scala">def sequence[A](ras: List[Rand[A]]): Rand[List[A]] =
+  ras.foldRight(unit(List.empty[A]))((ra, acc) =&gt; map2(ra, acc)(_ :: _))
+
+def ints2(size: Int): Rand[List[Int]] =
+  sequence(List.fill(size)(int))</pre>
+    <ol class="spiega">
+      <li data-righe="1" data-segna="List[Rand[A]]@dato|Rand[List[A]]@ok"><p>The same "turning of the types" of <code>sequence</code> for Option: from a list of generators to a generator of a list.</p></li>
+      <li data-righe="2" data-segna="unit(List.empty[A])@due|map2(ra, acc)@ora"><p>One starts from the generator of the empty list and adds an element at the head at a time with <code>map2</code>. Your recursive version with <code>case h :: t =&gt; map2(h, sequence(t))(_ :: _)</code> does the same thing and is right.</p></li>
+      <li data-righe="4-5" data-segna="List.fill(size)(int)@ora"><p><code>List.fill(n)(x)</code> repeats x n times: a list of n identical generators. With <code>SimpleRNG(42)</code>, <code>ints2(3)</code> = List(16159453, −1281479697, −340305902), equal to <code>ints(3)</code>.</p></li>
+    </ol>
+  </figure>
+  <div class="box domanda-tua" data-tit="Doubt: what are h, t and _ :: _?">
+    <p>In the recursive version <code>case h :: t =&gt;</code>, the two names are born in the pattern: <code>h</code> is the first generator, <code>t</code> the list of all the others. After <code>case</code>, <code>::</code> <b>takes apart</b> the list instead of building it.</p>
+    <p><code>_ :: _</code> is the short form of <code>(a, b) =&gt; a :: b</code>: each <code>_</code> is a parameter, in the order it appears. It is the function that <code>map2</code> uses to put the value of <code>h</code> in front of the list produced by the others.</p>
+  </div>
+  <div class="box idea" data-tit="ints2 does not need an if for size ≤ 0">
+    <p><code>List.fill(0)(int)</code> and also <code>List.fill(-3)(int)</code> give the empty list, and <code>sequence(Nil)</code> is <code>unit(Nil)</code>: the base case is already inside <code>sequence</code>. <code>ints2(0)(SimpleRNG(42))._1</code> = <code>List()</code> (checked).</p>
+  </div>
+  <div class="errori">
+    <div class="errore">
+      <pre data-lang="scala">map(nonNegativeInt(rng), Int.MaxValue.toDouble)</pre>
+      <pre class="msg">Not found: rng</pre>
+      <div class="fix">Dentro un <code>Rand</code> non c'è nessun <code>rng</code> da passare: arriva dopo. E il secondo argomento di <code>map</code> è una <b>funzione</b>, in una seconda coppia di parentesi, non un numero.</div>
+    </div>
+    <div class="errore">
+      <pre data-lang="scala">case (h, t) =&gt; map2(h, sequence(t))(_ :: _)</pre>
+      <pre class="msg">Found:    (h : Any)
+Required: adpro.state.RNG.Rand[Any]</pre>
+      <div class="fix"><code>(h, t)</code> smonta una <b>coppia</b>, non una lista: qui serve <code>h :: t</code>.</div>
+    </div>
+    <div class="errore">
+      <pre data-lang="scala">case h :: t =&gt; map2(h, sequence(t))(_, _)</pre>
+      <pre class="msg">Wrong number of parameters, expected: 1</pre>
+      <div class="fix"><code>(_, _)</code> costruisce una coppia, non una funzione a due argomenti: uscirebbe un <code>Rand[(A, List[A])]</code>. La funzione che unisce è <code>_ :: _</code>.</div>
+    </div>
+  </div>
+  <figure class="scena" data-scena="sequence5" data-titolo="The state passes from one generator to the next"></figure>
+</section>
+
+<section>
+  <h2>flatMap and nonNegativeLessThan (exercise 8)</h2>
+  <figure class="codice" data-titolo="The second generator depends on the first value">
+<pre data-lang="scala">def flatMap[A, B](f: Rand[A])(g: A =&gt; Rand[B]): Rand[B] =
+  rng =&gt;
+    val (a, r1) = f(rng)
+    g(a)(r1)
+
+def nonNegativeLessThan(bound: Int): Rand[Int] =
+  flatMap(nonNegativeInt) { i =&gt;
+    val mod = i % bound
+    if i + (bound - 1) - mod &gt;= 0 then unit(mod)
+    else nonNegativeLessThan(bound)
+  }</pre>
+    <ol class="spiega">
+      <li data-righe="1-4" data-segna="f(rng)@ora|g(a)(r1)@ok"><p>Like <code>map</code>, but <code>g</code> does not return a value: it returns <b>another generator</b>, chosen on the basis of <code>a</code>. It is run at once on the new state <code>r1</code>. With map2 the two generators were fixed; with flatMap the second depends on the result of the first.</p></li>
+      <li data-righe="6-8" data-segna="i % bound@due"><p>A number between 0 and bound − 1: the remainder of the division. Alone, however, it is not enough.</p></li>
+      <li data-righe="9-10" data-segna="&gt;= 0@no|nonNegativeLessThan(bound)@ora"><p>The non-negatives are 2³¹ = 2147483648 values; with bound = 6, 2147483648 mod 6 = 2 values are left over at the top, and 0 and 1 would come out a bit more often. If <code>i</code> falls in that last incomplete piece, <code>i + (bound − 1) − mod</code> exceeds Int.MaxValue and becomes negative (overflow): then one must <b>retry</b> with a new number. Retrying needs the new state, that is <code>flatMap</code>.</p></li>
+    </ol>
+  </figure>
+  <p class="piccolo">Five dice throws (<code>nonNegativeLessThan(6)</code> + 1) from <code>SimpleRNG(42)</code>: 2, 3, 2, 4, 5. Checked.</p>
+  <div class="box domanda-tua" data-tit="Your flatMap">
+    <p>In your file <code>flatMap</code> was copied from the LazyList (<code>foldRight(empty)(…append…)</code>) and does not compile: "Not found: foldRight". On <code>Rand</code> there is no sequence to go through: there is <b>one</b> function to run and then the second generator. Above, the right version.</p>
+    <p>Update (26 Sep): your new version <code>rng =&gt; val (a, rng2) = f(rng)</code> with <code>g(a)(rng2)</code> on the line below compiles and passes tests Ex08.01–03. However <code>g(a)(rng2)</code> sits in the same column as <code>rng =&gt;</code> and seems outside the lambda: better to break the line after <code>=&gt;</code> and indent the two lines, as in the code above.</p>
+  </div>
+  <div class="box domanda-tua" data-tit="Doubt: why isn't it enough to retry while n &lt; bound?">
+    <p>It is your first idea: <code>if n &gt;= bound then nonNegativeLessThan(bound) else unit(n)</code>. If it ends, the result is right (a number &lt; bound), but it almost never ends.</p>
+    <p>With bound = 6 and <code>SimpleRNG(42)</code>: first number 16159453 → it is ≥ 6 → retry. The numbers &lt; 6 are 6 out of 2³¹ = 2147483648: on average about 358 million attempts are needed. Each attempt is a call inside another (<code>flatMap</code> → <code>g</code> → <code>nonNegativeLessThan</code> → <code>flatMap</code> …) and the stack runs out much earlier.</p>
+    <p>The solution: do not discard 16159453, <b>reduce</b> it with the remainder. 16159453 % 6 = <b>1</b>, and the check 16159453 + 5 − 1 ≥ 0 is true → result (1, SimpleRNG(1059025964525)). One retries only in the little piece at the top, almost never.</p>
+  </div>
+  <div class="errori">
+    <div class="errore">
+<pre data-lang="scala">def nonNegativeLessThan(bound: Int): Rand[Int] =
+  flatMap(nonNegativeInt) { n =&gt;
+    if n &gt;= bound then nonNegativeLessThan(bound) else unit(n) }
+
+nonNegativeLessThan(6)(SimpleRNG(42))</pre>
+<pre class="msg">Exception in thread "main" java.lang.StackOverflowError
+	at adpro.state.RNG$.nonNegativeInt(Exercises.scala:32)
+	at adpro.state.RNG$.nonNegativeLessThan$$anonfun$1(Exercises.scala:114)
+	at adpro.state.RNG$.flatMap$$anonfun$1(Exercises.scala:109)
+	…</pre>
+      <div class="fix">Compila, ma esplode a runtime. Nei test: Ex08.04 e Ex08.05 danno "Exception raised on property evaluation … StackOverflowError" (es. bound = 3053). Si sistema usando <code>n % bound</code> invece di scartare ogni n ≥ bound (versione sopra).</div>
+    </div>
+  </div>
+  <figure class="scena" data-scena="flatmapdado" data-titolo="A die without infinite recursions"></figure>
+  <figure class="passi" data-titolo="The check n + (bound − 1) − mod, step by step" data-legenda="dato:number that came out,ora:what changes,ok:accepted,no:retry">
+    <div class="passo"><div class="espr">n      0 1 2 | 3 4 5 | 6 7
+n % 3  0 1 2 | 0 1 2 | <mark class="no">0 1</mark></div><p class="nota">Small example: a generator that gives only 0…7, and bound = 3. The last block is incomplete: 0 and 1 come out 3 times, 2 only 2. The plain <code>%</code> gives a loaded die.</p></div>
+    <div class="passo"><div class="espr"><mark class="dato">n</mark> − mod = primo del suo blocco,   + (bound − 1) = <mark class="ora">ultimo del suo blocco</mark></div><p class="nota">If the last of the block exceeds the maximum, the block is incomplete and one retries.</p></div>
+    <div class="passo"><div class="espr">n = 4:  4 − 1 + 2 = 5 ≤ 7  → <mark class="ok">unit(1)</mark>
+n = 6:  6 − 0 + 2 = 8 &gt; 7  → <mark class="no">riprova</mark>
+n = 7:  7 − 1 + 2 = 8 &gt; 7  → <mark class="no">riprova</mark></div><p class="nota">The block {3, 4, 5} is complete; the block {6, 7, 8} is not, because 8 never comes out.</p></div>
+    <div class="passo"><div class="espr">2147483648 = 6 × 357913941 + <mark class="ora">2</mark>   → ultimo blocco: 2147483646, 2147483647</div><p class="nota">With the real Ints and bound = 6. The maximum is Int.MaxValue: "&gt; Int.MaxValue" cannot be written, because an Int that exceeds it overflows and becomes <b>negative</b>. That is why the code checks <code>&gt;= 0</code>.</p></div>
+    <div class="passo"><div class="espr">n = 2147483645: 2147483645 + 5 − 5 =  2147483645 → <mark class="ok">unit(5)</mark>
+n = 2147483646: 2147483646 + 5 − 0 = <mark class="no">−2147483645</mark> → riprova
+n = 2147483647: 2147483647 + 5 − 1 = <mark class="no">−2147483645</mark> → riprova</div><p class="nota">Values printed by Scala 3.8.4.</p></div>
+    <div class="passo"><div class="espr">Fake(List(2147483647, 16)):  <mark class="no">2147483647</mark> → riprova su rng2 → <mark class="dato">16</mark>, mod 4, 16 + 5 − 4 = 17 ≥ 0 → <mark class="ok">(4, Fake(List()))</mark></div><p class="nota">The "retry" case run for real, with a fake RNG that gives first 2147483647 and then 16. The second attempt runs on the <b>new</b> state: it is the work of <code>flatMap</code>. With <code>map</code> the function should return a number, and "another attempt" is not a number but a generator.</p></div>
+  </figure>
+  <div class="box domanda-tua" data-tit="Doubt: is there a way without %? We have not seen it">
+    <p><code>%</code> is the remainder of the division (17 % 6 = 5, because 17 = 6 × 2 + 5). It is not in the slides, but it is already in the exercise file: <code>nonNegativeEven</code> does <code>i - i % 2</code>. If you do not like it, you can use <code>double</code> of exercise 2, which gives a number in [0, 1):</p>
+    <pre class="cod" data-lang="scala" data-segna="double@dato|(d * bound).toInt@ok">def nonNegativeLessThan(bound: Int): Rand[Int] =
+  flatMap(double) { d =&gt; unit((d * bound).toInt) }</pre>
+    <p><code>d * bound</code> lies in [0, bound); <code>.toInt</code> cuts off the decimals (it does not round), so the result goes from 0 to bound − 1. With <code>SimpleRNG(42)</code>: d = 0.0075…, × 6 = 0.045…, toInt = <b>0</b>. The highest case: 0.99999… × 6 = 5.99999…, toInt = 5, never 6. All 44 tests pass (checked). It never retries, so <code>flatMap</code> is not indispensable here (<code>map</code> would suffice), and it has the same small imbalance as the plain <code>%</code>. Five dice from SimpleRNG(42): 1, 4, 1, 6, 5.</p>
+  </div>
+  <figure class="passi" data-titolo="Why (d * bound).toInt works: the ruler in 6 slices" data-legenda="dato:d,ora:d × 6,ok:slice chosen">
+    <div class="passo"><div class="espr">0 ─── 1/6 ─── 2/6 ─── 3/6 ─── 4/6 ─── 5/6 ─── 1
+  fetta 0  fetta 1  fetta 2  fetta 3  fetta 4  fetta 5</div><p class="nota">The ruler [0, 1) divided into 6 equal slices. <code>double</code> falls on a random point of the ruler: every slice is equally long, so it has the same probability.</p></div>
+    <div class="passo"><div class="espr"><mark class="dato">0.2</mark> × 6 = <mark class="ora">1.2</mark> → toInt → <mark class="ok">1</mark></div><p class="nota">0.2 lies between 1/6 = 0.166… and 2/6 = 0.333…: slice 1. Multiplying by 6 says how many whole slices there are before d; <code>.toInt</code> throws away the piece of slice.</p></div>
+    <div class="passo"><div class="espr"><mark class="dato">0.5</mark> × 6 = <mark class="ora">3.0</mark> → <mark class="ok">3</mark>     <mark class="dato">0.7</mark> × 6 = <mark class="ora">4.19…</mark> → <mark class="ok">4</mark>     <mark class="dato">0.99</mark> × 6 = <mark class="ora">5.94</mark> → <mark class="ok">5</mark></div><p class="nota">The result is always between 0 and 5 because d never reaches 1 (guaranteed by exercise 2). Values printed by Scala 3.8.4.</p></div>
+  </figure>
+  <div class="box domanda-tua" data-tit="Doubt: why double and not nonNegativeInt? And what does exercise 8 ask, in plain words?">
+    <p><b>In plain words:</b> (1) write <code>flatMap</code>, that is a <code>map</code> in which the function returns a <b>generator</b> instead of a value; (2) use it to make a die with <code>bound</code> faces: a random number between 0 and bound − 1. The tests check only that the result is ≥ 0 and &lt; bound.</p>
+    <p><b>double or nonNegativeInt:</b> from the same <code>SimpleRNG(42)</code> come out 16159453 (nonNegativeInt) and 0.0075248… (double), which is 16159453 / 2147483648. They are the same number on two different scales. The trick "× 6 then toInt" works only on the small scale [0, 1). On the large scale: 16159453 × 6 = 96956718, which is not a die, and Int.MaxValue × 6 = −6 (overflow). A large number must be <b>scaled down</b>, and for that <code>%</code> is needed: 16159453 % 6 = 1. So: with nonNegativeInt one uses <code>%</code>, with double one uses <code>× bound</code> and <code>.toInt</code>.</p>
+  </div>
+</section>
+
+</main>
+</body>
+</html>

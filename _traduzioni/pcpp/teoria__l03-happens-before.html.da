@@ -1,0 +1,65 @@
+@@s001 Happens-before: reglerne
+@@s002 dato:handlinger i main,ora:t1,due:t2,no:ingen sti
+@@s003 <p>Hver cirkel er en handling i <code>PossibleReordering</code>. En pil <code>a → b</code> betyder <b>a happens-before b</b>.</p><p>st1 = start(t1), jt1 = join(t1).</p>
+@@s004 <p><b>Program order</b> i main: hver handling i main happens-before den næste.</p>
+@@s005 <p>Program order i <b>t1</b> og i <b>t2</b>: inde i hver tråd er rækkefølgen den i koden.</p>
+@@s006 <p><b>Start-reglen for tråde</b>: <code>start()</code> happens-before den <b>første</b> handling i den startede tråd. Par: <code>m(start(t1)) → t1(1)</code> og <code>m(start(t2)) → t2(3)</code>.</p>
+@@s007 <p><b>Termineringsreglen for tråde</b>: den <b>sidste</b> handling i en tråd happens-before <code>join()</code> på den tråd. Par: <code>t1(2) → m(join(t1))</code> og <code>t2(4) → m(join(t2))</code>.</p>
+@@s008 <p><b>Transitiv regel</b>: hvis der er en pilesti fra a til b, så happens-before a b. For eksempel <code>m(init(b)) → … → m(start(t1)) → t1(1) → t1(2)</code>: initialiseringen af b er synlig for <code>x=b</code>.</p>
+@@s009 <p>Og mellem <code>t1(1)</code> (skriver a) og <code>t2(4)</code> (læser a)? Søg en sti: fra handlingerne i t1 går man kun mod jt1, og derfra kommer man aldrig tilbage til t2. Og omvendt.</p><p><b>Ingen af de to par</b> er i rækkefølgen: de to handlinger er <b>ikke ordnede</b> af happens-before. Adgange til den samme variabel, hvor en af dem er en skrivning: det er en <b>data race</b>.</p>
+@@s010 dato:handling,ok:par i HB,due:par ved transitivitet,no:ikke ordnede
+@@s011 dato:handling a,due:handling b,ok:a happens-before b
+@@s012 dato:main,ora:t1,due:t2,ok:start og termination,no:manglende par
+@@s013 Happens-before: reglerne
+@@s014 Program order ordner handlingerne <b>inde i</b> en tråd. For at vide, om en handling i én tråd med sikkerhed kommer før en handling i <b>en anden</b> tråd (og dermed om den anden ser den første handlings effekt), behøves reglerne for <b>happens-before</b>.
+@@s015 Parrene: hvad <code>a → b</code> betyder
+@@s016 Definition
+@@s017 Givet to handlinger <code>a</code>, <code>b</code> i en udførelse, er <b><code>a</code> happens-before <code>b</code></b> (skrevet <code>a → b</code>), hvis parret fås fra en af reglerne nedenfor. Hvis <code>a → b</code>, er effekten af <code>a</code> <b>synlig</b> for <code>b</code>.
+@@s018 Sådan læses parrene
+@@s019 Samme ting, to skrivninger: a kommer før b, garanteret.
+@@s020 En kæde indeholder også de "oversprungne" par: transitivitet gælder.
+@@s021 Hvis ingen af de to par findes, er handlingerne <b>ikke ordnede</b>: de kan ske i en hvilken som helst rækkefølge, og ingen af dem er garanteret at se den andens effekt.
+@@s022 "Delvis": ikke alle par af handlinger kan sammenlignes. Program order for en tråd er derimod <b>total</b>.
+@@s023 Par, transitivitet, uordnede handlinger
+@@s024 De otte regler
+@@s025 Happens-before mærkes ikke: det <b>bygges</b>, og kun med disse otte regler. Et par (a, b) er i mængden kun, hvis en regel frembringer det. Tre regler virker <b>inde i</b> en tråd eller før alt (program order, default init, final field init). Fire forbinder <b>forskellige tråde</b> og er de eneste, der lader en tråd se en anden tråds skrivninger (monitor, volatile, start, termination). Den sidste, den transitive, limer de andre sammen til kæder. Hvis du mellem to handlinger i forskellige tråde ikke kan bygge en kæde med disse regler, er handlingerne ikke ordnede.
+@@s026 Regel
+@@s027 a → b når…
+@@s028 Eksempel
+@@s029 <b>Program order</b>
+@@s030 a og b er i samme tråd, og a kommer først i koden
+@@s031 <b>Monitor</b>
+@@s032 a er en <code>unlock()</code>, og b er et senere <code>lock()</code> på den <b>samme</b> monitor (lås, semafor, barriere…)
+@@s033 <code>t1(unlock) → t2(lock)</code>
+@@s034 <b>Volatile</b>
+@@s035 a er en skrivning til en volatile-variabel, og b er en senere læsning af den samme variabel
+@@s036 <code>m(v=42) → t(read v)</code>
+@@s037 <b>Default init</b>
+@@s038 standardinitialiseringen (0, false, null) kommer før enhver anden handling
+@@s039 felt <code>int i;</code>
+@@s040 <b>Final field init</b>
+@@s041 initialiseringen af <code>final</code>-felterne (og static) kommer før enhver anden brug, når konstruktøren er færdig
+@@s042 <code>final Object o</code>
+@@s043 <b>Start af tråd</b>
+@@s044 a er <code>start()</code>, og b er den <b>første</b> handling i den startede tråd
+@@s045 <code>m(start(t1)) → t1(1)</code>
+@@s046 <b>Termination af tråd</b>
+@@s047 a er den <b>sidste</b> handling i en tråd, og b er <code>join()</code> på den tråd, fra en hvilken som helst anden tråd
+@@s048 <code>t1(2) → m(join(t1))</code>
+@@s049 <b>Transitiv</b>
+@@s050 kæder
+@@s051 De otte regler, én ad gangen
+@@s052 Grafen, regel for regel
+@@s053 Happens-before i PossibleReordering
+@@s054 Spørgsmål fra slidet: hvilke par giver start og termination?
+@@s055 Start-reglen: <code>m(start(t1)) → t1(1)</code>, <code>m(start(t2)) → t2(3)</code>. Termineringsreglen: <code>t1(2) → m(join(t1))</code>, <code>t2(4) → m(join(t2))</code>. Pas på: start-reglen binder kun <code>start</code> til tradens <b>første</b> handling, termineringsreglen kun den <b>sidste</b>. De andre følger ved transitivitet med program order.
+@@s056 At opbygge mængderne som på slides
+@@s057 Til eksamen skrives grafen som <b>mængder af par</b>: én for hver regel, der gælder (POm, PO1, PO2 for program order, S for start, T for termination, og eventuelt M for monitor og V for volatile). Happens-before er den <b>transitive afslutning</b> af foreningen, angivet med ⁺: man tilføjer alle par, der følger af en kæde. For at afgøre, om to handlinger er ordnede, er det nok at lede efter en sti i grafen, i den ene eller den anden retning.
+@@s058 Mængderne af par i PossibleReordering (slide 27)
+@@s059 Program order for main.
+@@s060 Program order for trådene.
+@@s061 Parrene fra start-reglen.
+@@s062 Parrene fra termination-reglen.
+@@s063 Det fulde happens-before: alle parrene, plus dem der følger ved transitivitet. Her er det det samme i <b>alle</b> udførelser, fordi der kun er én mulig rækkefølge for start og join.
+@@s064 Intet par forbinder handlinger i t1 med handlinger i t2 (bortset fra gennem main i den forkerte retning). Konklusion: data race mellem <code>t1(1)</code> og <code>t2(4)</code> i <b>enhver</b> udførelse.
+@@s065 Fra POm, PO1, PO2, S, T til HB

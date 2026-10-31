@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Stable matching: Gale-Shapley</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+const P = (id,x,y,t,tono) => ({id,tipo:'nodo',x,y,t,r:20,tono});
+const R = (id,x,y,t) => ({id,tipo:'nodo',x,y,t,r:20,forma:'quadrato'});
+const A = (id,da,a,extra) => Object.assign({id,tipo:'arco',da,a,dir:true},extra||{});
+SCENE.gs = {
+  w: 520, h: 270, lato: true,
+  legenda: 'dato:free,ora:proposes now,ok:accepted,no:rejected or left',
+  oggetti: [
+    P('A',60,50,'A'), P('B',60,130,'B'), P('C',60,210,'C'),
+    R('X',440,50,'X'), R('Y',440,130,'Y'), R('Z',440,210,'Z'),
+    A('ax','A','X',{tono:'spento',nascosto:true}), A('bx','B','X',{tono:'spento',nascosto:true}), A('by','B','Y',{tono:'spento',nascosto:true}), A('cx','C','X',{tono:'spento',nascosto:true}), A('ay','A','Y',{tono:'spento',nascosto:true}), A('bz','B','Z',{tono:'spento',nascosto:true}),
+    {id:'c1',tipo:'testo',x:20,y:255,t:'',size:12,bold:true,anchor:'start'}
+  ],
+  passi: [
+    { nota: 'Preferences. Proposers A, B, C; receivers X, Y, Z. A: X ≻ Y ≻ Z. B: Y ≻ X ≻ Z. C: X ≻ Y ≻ Z. X: C ≻ A ≻ B. Y: A ≻ B ≻ C. Z: A ≻ B ≻ C.', set:{A:{tono:'dato'},B:{tono:'dato'},C:{tono:'dato'},X:{tono:'dato'},Y:{tono:'dato'},Z:{tono:'dato'}} },
+    { nota: '<b>A</b> proposes to <b>X</b> (A\'s first choice). X is free: accepts.', set:{ax:{nascosto:false,tono:'ok'},A:{tono:'ora'},X:{tono:'ok'},c1:{t:'A–X'}} },
+    { nota: '<b>B</b> proposes to <b>Y</b>. Y is free: accepts.', set:{by:{nascosto:false,tono:'ok'},B:{tono:'ora'},Y:{tono:'ok'},A:{tono:'dato'},c1:{t:'A–X, B–Y'}} },
+    { nota: '<b>C</b> proposes to <b>X</b>. X prefers C to A (C is first on X\'s list). X leaves A, who becomes free again.', set:{cx:{nascosto:false,tono:'ok'},C:{tono:'ora'},X:{tono:'ok'},ax:{tono:'no'},A:{tono:'dato'},c1:{t:'C–X; A torna libero'}} },
+    { nota: '<b>A</b> proposes to <b>Y</b>. Y prefers A to B: leaves B, who becomes free again.', set:{ay:{nascosto:false,tono:'ok'},A:{tono:'ora'},Y:{tono:'ok'},by:{tono:'no'},B:{tono:'dato'},c1:{t:'A–Y; B torna libero'}} },
+    { nota: '<b>B</b>, left by Y, proposes to the second choice on B\'s list: <b>X</b>. X has C, and prefers C to B: rejects B.', set:{by:{tono:null},bx:{tono:'no'},B:{tono:'ora'},X:{tono:'dato'},c1:{t:'B rifiutato da X'}} },
+    { nota: '<b>B</b> proposes to the third choice on B\'s list: <b>Z</b>. Z is free: accepts. Now A–Y, B–Z, C–X are all paired.', set:{bz:{nascosto:false,tono:'ok'},B:{tono:'ora'},Z:{tono:'ok'},c1:{t:'A–Y, B–Z, C–X: tutti accoppiati',tono:'ok'}} },
+    { nota: 'Nobody is free any more: the matching is complete, and <b>stable</b>. Check: A prefers X to Y, but X prefers C to A. B prefers Y to Z, but Y prefers A to B. No pair prefers each other to its partners.', set:{C:{tono:null},c1:{t:'nessuna coppia instabile',tono:'ok'}} }
+  ]
+};
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Stable matching: Gale-Shapley</h1>
+  <p class="lede">Pairing n proposers with n receivers, each with a list of preferences, without unstable pairs: two people who prefer each other to their partners. The Gale-Shapley algorithm always finds a stable matching.</p>
+</header>
+
+<section>
+  <h2>The problem</h2>
+<p>There are <code>n</code> proposers and <code>n</code> receivers, each with an ordered list of preferences. A <b>matching</b> is a complete pairing. It is <b>unstable</b> if there exist two people who prefer each other to their respective partners. Real examples: students and universities, doctors and hospitals.</p>
+</section>
+<section>
+  <h2>The algorithm</h2>
+<ol>
+  <li>While there is a free proposer <code>p</code>: <code>p</code> proposes to the first receiver on their list to whom they have not yet proposed.</li>
+  <li>If the receiver <code>r</code> is free, accepts.</li>
+  <li>If <code>r</code> is engaged but prefers <code>p</code>, drops the current partner (who becomes free again) and accepts <code>p</code>.</li>
+  <li>Otherwise <code>r</code> rejects <code>p</code>.</li>
+</ol>
+  <figure class="scena" data-scena="gs" data-titolo="Gale-Shapley: proposals, acceptances, departures"></figure>
+</section>
+<section>
+  <h2>Why it terminates and why it is stable</h2>
+<p>A receiver only improves: the one held can only be replaced by one they prefer. A proposer only moves down their list: they never propose again to the same receiver. So proposals are at most <code>n²</code>, and the algorithm terminates.</p>
+<p>When it ends, the matching is stable: if two people <code>p</code> and <code>r</code> preferred each other to their partners, <code>p</code> would have proposed to <code>r</code> before their current partner, and <code>r</code> would have accepted, and would never have left for a better one.</p>
+</section>
+<section>
+  <h2>Who wins</h2>
+<p>The matching is the best possible <b>for the proposers</b>: each proposer gets the highest receiver on their list among all those they can have in a stable matching. For the receivers it is the worst. The result depends on who proposes: swapping the roles changes the matching.</p>
+</section>
+<section>
+  <h2>The code, side by side</h2>
+  <p>This page explains the concept. The Java code that implements it, with a line-by-line explanation and the syntax notes needed, is on the side-by-side page.</p>
+  <p><a href="../codice/stable-matching.html"><b>→ Java code for this topic</b></a></p>
+</section>
+<section>
+  <h2>Implementing it in O(1) per step</h2>
+  <p>The cost O(n²) holds only if each question of the algorithm is answered in constant time. Four questions, four structures:</p>
+  <div class="tab-wrap"><table class="tab"><thead><tr><th>question</th><th>structure</th></tr></thead><tbody>
+    <tr><td>is there a free proposer?</td><td>a queue (<code>ArrayDeque</code>) of the free ones</td></tr>
+    <tr><td>who is asking now, <code>a</code>?</td><td><code>next[a]</code>: the index in a's list</td></tr>
+    <tr><td>is <code>x</code> free, or with whom?</td><td><code>partner[x]</code>, −1 if free</td></tr>
+    <tr><td>does <code>x</code> prefer <code>a</code> to x's partner?</td><td><code>rank[x][a]</code>: the position of <code>a</code> in the list of <code>x</code></td></tr>
+  </tbody></table></div>
+  <p>The list <code>pref[x]</code> says "who is in position k". To know where <code>a</code> is I would have to scan it: cost O(n). So I build the inverse list once, in O(n²): <code>rank[x][pref[x][k]] = k</code>. From there each comparison is a comparison between two numbers: O(1).</p>
+  <p>Total cost: construction O(n²) plus at most n² proposals each O(1), that is O(n²). Without <code>rank</code> each comparison would cost O(n) and the total O(n³).</p>
+</section>
+<section>
+  <h2>Variant: multiple places</h2>
+  <p>It is the "hospitals and residents" (hospital-residents) version of the slides. Each <b>receiver</b> has a <b>capacity</b>: how many places they have (a team with 2 places, a hospital with 5 beds). The <b>proposer</b> is free as long as they still have names on their list and is not already held.</p>
+  <p>What changes compared with the basic Gale-Shapley:</p>
+  <ul>
+    <li>The receiver holds up to <code>q</code> proposers, not just one.</li>
+    <li>When a proposal arrives and the receiver is full, it compares it with the <b>worst</b> of those held: if preferred, it takes the place of the worst, who becomes free again.</li>
+    <li>The proposer who is left without a place goes back to the queue, as before.</li>
+  </ul>
+  <figure class="scena" data-scena="cap" data-titolo="Two places: the worst is replaced"></figure>
+  <p>Careful: the comparison is always with the <b>worst</b> of those held, not with the first. It is the most common mistake when writing this variant.</p>
+</section>
+<section>
+  <h2>At the exam</h2>
+<div class="box esame" data-tit="At the exam">
+<p>Write: <i>"Gale–Shapley runs in O(n²) time: each proposal is made at most once per pair, and each proposal is handled in O(1). The output is a stable perfect matching, optimal for the proposing side."</i></p>
+<p>It is not at the exam as a 5-point integer problem, but it is the model for many assignment questions with preferences.</p>
+</div>
+</section>
+<section>
+  <h2>Quick reference</h2>
+<div class="tab-wrap"><table class="tab"><thead><tr><th>item</th><th>meaning</th><th>note</th></tr></thead><tbody><tr><td>proposer</td><td>proposes in order of preference</td><td>goes down their list</td></tr><tr><td>receiver</td><td>holds the best so far</td><td>only improves</td></tr><tr><td>proposals</td><td>at most n²</td><td>each pair once</td></tr><tr><td>time</td><td>O(n²)</td><td>standard</td></tr></tbody></table></div>
+</section>
+
+</main>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+const ogg = [
+  {id:'T', tipo:'rett', x:40, y:40, w:200, h:36, t:'Squadra T (2 posti)'},
+  {id:'s1', tipo:'rett', x:40, y:96, w:95, h:44, t:'libero'},
+  {id:'s2', tipo:'rett', x:145, y:96, w:95, h:44, t:'libero'},
+  {id:'P1', tipo:'nodo', x:400, y:50, t:'P1', r:20},
+  {id:'P2', tipo:'nodo', x:400, y:120, t:'P2', r:20},
+  {id:'P3', tipo:'nodo', x:400, y:190, t:'P3', r:20},
+  {id:'c', tipo:'testo', x:40, y:240, t:'', size:12, bold:true, anchor:'start'}
+];
+const passi = [
+  {nota:"La squadra <b>T</b> ha <b>2 posti</b>: è il <b>ricevente</b>. I giocatori sono i <b>proponenti</b>. Ordine di T: P1, P3, P2. Tutti partono liberi.", set:{c:{t:'T: P1 > P3 > P2 · posti liberi: 2'}}},
+  {nota:"P1 propone a T. T ha un posto libero: <b>accetta</b>.", set:{s1:{t:'P1', tono:'ok'}, P1:{tono:'ok'}, c:{t:'T: 1 posto libero'}}},
+  {nota:"P2 propone a T. Un posto è ancora libero: accetta. T è <b>piena</b>: 2 su 2.", set:{s2:{t:'P2', tono:'ok'}, P2:{tono:'ok'}, T:{tono:'due'}, c:{t:'T piena: P1 e P2'}}},
+  {nota:"P3 propone a T. T è piena: confronto P3 con il <b>peggiore</b> dei due tenuti, cioè P2. T preferisce P3 a P2.", set:{P3:{tono:'ora'}, P2:{tono:'due'}, c:{t:'P3 contro P2, il peggiore tenuto'}}},
+  {nota:"T preferisce P3: <b>P2 lascia il posto</b> e torna libero. P3 prende il posto. T resta con P1 e P3. P2 proporrà alla prossima squadra della sua lista.", set:{s2:{t:'P3', tono:'ok'}, P3:{tono:'ok'}, P2:{tono:'no'}, T:{tono:'ok'}, c:{t:'T tiene P1 e P3 · P2 torna libero', tono:'ok'}}}
+];
+SCENE.cap = {
+  w: 540, h: 270, lato: true,
+  legenda: 'ok:held,no:goes free,due:worst of those held,ora:proposal arriving',
+  oggetti: ogg, passi
+};
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DP på træer og DAG: pyramiden</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+const N = (id,x,y,t) => ({id,tipo:'nodo',x,y,t,r:18});
+const A = (id,da,a) => ({id,tipo:'arco',da,a,dir:true});
+SCENE.dag = {
+  w: 520, h: 260, lato: true,
+  legenda: 'dato:feltets værdi,ora:OPT beregnet,ok:valgt vej',
+  oggetti: [
+    N('p',260,30,'1'), N('l',170,100,'1'), N('r',350,100,'2'), N('a',110,180,'2'), N('b',260,180,'0'), N('c',410,180,'0'),
+    A('pl','p','l'), A('pr','p','r'), A('la','l','a'), A('lb','l','b'), A('rb','r','b'), A('rc','r','c'),
+    {id:'o',tipo:'testo',x:20,y:240,t:'',size:12,bold:true,anchor:'start'}
+  ],
+  passi: [
+    { nota: 'Pyramide: fra hvert felt går du ned til venstre eller til højre. Det er en DAG: ingen cyklusser, så der findes en naturlig beregningsrækkefølge, fra bunden og op.', set:{} },
+    { nota: 'Sidste række: OPT = feltets værdi. De tre felter nederst er værd 2, 0, 0: OPT = 2, 0, 0.', set:{a:{tono:'dato',sotto:'OPT 2'},b:{tono:'dato',sotto:'OPT 0'},c:{tono:'dato',sotto:'OPT 0'}} },
+    { nota: 'Rækken ovenover: OPT = værdi + max(OPT for børnene). For 2\'eren til højre: 2 + max(0, 0) = 2. For feltet 1 til venstre: 1 + max(2, 0) = 3.', set:{l:{tono:'ora',sotto:'OPT 3'},r:{tono:'ora',sotto:'OPT 2'}} },
+    { nota: 'Øverst: 1 + max(3, 2) = <b>4</b>. For vejen går du ned til barnet med den største OPT: til venstre, så til venstre. Værdi 1 + 1 + 2 = 4.', set:{p:{tono:'ok',sotto:'OPT 4'},pl:{tono:'ok'},la:{tono:'ok'}} }
+  ]
+};
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>DP på træer og DAG: pyramiden</h1>
+  <p class="lede">Når vejen kun kan følges i én retning (en pyramide, en DAG, et træ), beregner DP den bedste værdi nedefra og op. Det er Tower-opgaven fra eksamen.</p>
+</header>
+
+<section>
+  <h2>Problemet</h2>
+<p>En pyramide af felter med tal. Fra hvert felt går du ned til venstre eller til højre til bunden: du vil have vejen med største sum. Der er ingen cyklusser, for man går altid nedad: det er en DAG.</p>
+  <figure class="scena" data-scena="dag" data-titolo="Nedefra og op: OPT for et felt"></figure>
+</section>
+<section>
+  <h2>Rekurrensen</h2>
+<p><code>OPT(i, j) = værdi(i, j) + max( OPT(i+1, j), OPT(i+1, j+1) )</code>, med den sidste række som grundtilfælde. Svaret er <code>OPT(0, 0)</code>. For vejen: gå altid ned til barnet med den største OPT.</p>
+</section>
+<section>
+  <h2>Omkostning og generel form</h2>
+<p>Pyramide med <code>N</code> niveauer: <code>O(N²)</code> tid og plads. Generisk DAG: <code>O(n + m)</code>, beregnet i omvendt topologisk orden. Samme form har Bellman-Ford: tælleren af kanter er tabellens "række".</p>
+</section>
+<section>
+  <h2>Koden side om side</h2>
+  <p>Denne side forklarer begrebet. Java-koden, der implementerer det, med en forklaring linje for linje og de syntaksnoter, der skal bruges, står på den side ved siden af.</p>
+  <p><a href="../codice/dp-dag-piramide.html"><b>→ Java-kode til dette emne</b></a></p>
+</section>
+<section>
+  <h2>Længste vej i en DAG</h2>
+  <p>Punkter på et bjerg, forbundet af pister. Hver pist går fra <code>u</code> til <code>v</code> kun nedad og har en score <code>c</code>. Du kan starte og stoppe, hvor du vil. Du vil have vejen med <b>den højeste sum af scorer</b>.</p>
+  <p>Tre sætninger i teksten bestemmer alt:</p>
+  <ul>
+    <li>«start and end … at any point»: ingen fast start. Hvert punkt kan være begyndelsen, med værdien 0.</li>
+    <li>«maximum sum»: den <i>længste</i> vej, ikke den korteste.</li>
+    <li>«all slopes go downhill» (ingen cyklusser): grafen er en <b>DAG</b> (<i>directed acyclic graph</i>, en orienteret graf uden cyklusser).</li>
+  </ul>
+  <p>Den længste vej i en vilkårlig graf er NP-hård (det ser du med den hamiltonske vej). På en DAG derimod er det dynamisk programmering i polynomisk tid: fraværet af cyklusser giver en beregningsrækkefølge, den <a href="topological-sort.html">topologiske</a>.</p>
+  <p>Jeg definerer <code>OPT(i, v)</code> = scoren for den bedste vej, der når frem til <code>v</code> med <b>højst</b> <code>i</code> pister.</p>
+  <p><code>OPT(0, v) = 0</code> for alle <code>v</code>: uden pister har helikopteren sat dig af i <code>v</code>.</p>
+  <p><code>OPT(i, v) = max( OPT(i−1, v), max over hver pist (u, v, c) af OPT(i−1, u) + c )</code></p>
+  <p>Første led er "jeg bruger ikke en sidste pist". Det andet er "jeg kommer til <code>v</code> med én pist mere, fra punktet <code>u</code>". Svar: maksimum over <code>v</code> af <code>OPT(n−1, v)</code>, fordi en vej med <code>n</code> punkter bruger højst <code>n − 1</code> pister. Tid O(n·m), plads O(n²) med hele tabellen.</p>
+  <div class="tab-wrap"><table class="tab"><thead><tr><th></th><th>knapsack (Walrus)</th><th>Coolest Ski Route</th></tr></thead><tbody>
+    <tr><td>række</td><td><code>i</code>: de første <code>i</code> skiver</td><td><code>i</code>: højst <code>i</code> pister</td></tr>
+    <tr><td>kolonne</td><td>summen</td><td>ankomstpunktet <code>v</code></td></tr>
+    <tr><td>celle</td><td>kan jeg lave denne sum? (boolean)</td><td>hvor meget den bedste vej, der ankommer hertil, er værd (int)</td></tr>
+    <tr><td>række 0</td><td>sand kun i [0][0]</td><td>alle 0: man starter fra et hvilket som helst punkt</td></tr>
+    <tr><td>svar</td><td>sidste række, den tættest på 1000</td><td>sidste række, maksimum</td></tr>
+  </tbody></table></div>
+  <p>Tabellen er den samme som for knapsack: hver række beregnes ved kun at kigge på rækken ovenover, med valget "jeg lægger ikke til" og valget "jeg lægger et stykke til". Kun etiketterne ændrer sig.</p>
+  <div class="box attenzione" data-tit="Fælde: dobbelte pister">To pister mellem de samme punkter kan have forskellige scorer (eksempel 2: 1→2 med score 2 og 1→2 med score 4). Hvis du gemmer dem i en matrix <code>voto[u][v]</code>, overskriver den anden den første, og du beholder den sidst læste, ikke den bedste. Med en liste af buer (fra, til, omkostning) bliver alle pisterne, og <code>max</code> vælger.</div>
+</section>
+<section>
+  <h2>Til eksamen</h2>
+<div class="box esame" data-tit="Til eksamen">
+<p>Bedste vej i en struktur, der kun kan følges i én retning → DP på DAG/pyramide. Sætning: <i>"OPT(v) = value(v) + max{OPT(u) : (v,u) ∈ E}, with OPT(t) = value(t). Time O(n + m) in topological order."</i></p>
+</div>
+</section>
+<section>
+  <h2>Hurtig oversigt</h2>
+<div class="tab-wrap"><table class="tab"><thead><tr><th>struktur</th><th>tid</th><th>eksempel</th></tr></thead><tbody><tr><td>pyramide</td><td>O(N²)</td><td>Tower, Clean the Wall</td></tr><tr><td>DAG</td><td>O(n + m)</td><td>omvendt topologisk orden</td></tr><tr><td>længste vej i en DAG</td><td>DP</td><td>i en generisk graf er det NP-hårdt</td></tr></tbody></table></div>
+</section>
+
+</main>
+</body>
+</html>

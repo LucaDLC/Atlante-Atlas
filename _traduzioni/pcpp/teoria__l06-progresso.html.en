@@ -1,0 +1,94 @@
+@@s001 Wait-free, lock-free, obstruction-free
+@@s002 Wait-free, lock-free, obstruction-free
+@@s003 Lecture 6 (<i>Lock-Free Data Structures</i>), slides 14–17. Without locks no thread stays blocked by another, but "who finishes, and when?" has three different answers: they are the three <b>progress conditions</b> of non-blocking data structures. Herlihy, section 3.8.
+@@s004 Where we start: the problem of locks
+@@s005 With a lock, if the thread that holds it is suspended by the scheduler (or blocks), <b>all</b> the others wait, for a time that does not depend on them. A <b>non-blocking</b> implementation avoids locks and uses the CAS: no thread can hold the others still.
+@@s006 The three conditions say <b>how strong</b> the guarantee that the calls finish is. They are all read with the same question: <i>"for whom</i> is it guaranteed that it finishes in a finite number of steps?"
+@@s007 But do these &quot;free&quot; properties make the code correct in parallel?
+@@s008 <b>No: they are two different questions.</b>
+@@s009 <b>Is the result right?</b> (safety: no lost increments, no duplicates). It is guaranteed by the <b>CAS</b>: it writes only if the value is still the one read, otherwise it writes nothing.
+@@s010 <b>Do the calls finish? Can somebody stay blocked?</b> (progress, that is liveness). This is what wait-free, lock-free and obstruction-free measure.
+@@s011 Even a lock gives a right result. What the lock does <b>not</b> guarantee is progress: if the thread holding it stops, everybody stops.
+@@s012 In practice: T1 is suspended halfway through increment()
+@@s013 dato:T1,due:the other threads,no:blocked,ok:go on
+@@s014 It really happens: end of the time slice, page fault, interrupt, a thread with higher priority.
+@@s015 Nobody can enter until T1 restarts and does <code>unlock()</code>. If T1 dies holding the lock, they wait for ever. It is <b>blocking</b>.
+@@s016 T1 holds nothing: its work "halfway" (it read 5) is only in its local variable, and the others do not see it. Nobody waits for T1.
+@@s017 The value is no longer 5, so the CAS does not overwrite: no lost increment (safety). T1 tries again and finishes. The system never stopped (lock-free).
+@@s018 The three definitions
+@@s019 condition
+@@s020 guarantee (slides)
+@@s021 in words
+@@s022 who finishes
+@@s023 <b>wait-free</b>
+@@s024 every call finishes in a finite number of steps
+@@s025 "<b>my</b> operations finish, whatever the others do"
+@@s026 <mark class="ok">everybody</mark>
+@@s027 <b>lock-free</b>
+@@s028 running the method guarantees that <b>some</b> call (even a concurrent one) finishes in a finite number of steps
+@@s029 "the operations of <b>somebody</b> finish"
+@@s030 <mark class="due">at least one</mark>
+@@s031 <b>obstruction-free</b>
+@@s032 from any point where it runs <b>alone</b> (in isolation), it finishes in a finite number of steps
+@@s033 "my operations finish, <b>if they let me</b> run"
+@@s034 <mark class="ora">whoever stays alone</mark>
+@@s035 The chain (slide 15)
+@@s036 <b>wait-free ⇒ lock-free ⇒ obstruction-free</b>. Each condition implies the one below:
+@@s037 if <b>everybody</b> finishes, then <b>somebody</b> finishes: wait-free ⇒ lock-free;
+@@s038 if somebody always finishes, and I am running <b>alone</b>, that somebody can only be me: lock-free ⇒ obstruction-free.
+@@s039 The converse does not hold: the guarantee weakens going down.
+@@s040 Lock-free: the CAS loop
+@@s041 Slide 17 asks: what condition does <code>addAndGet</code> of <code>AtomicInteger</code> have, written with a CAS loop?
+@@s042 Why it is lock-free
+@@s043 ok:the winner,no:the loser,ora:the key point
+@@s044 Two threads in the same loop, on the same value.
+@@s045 Only one CAS can succeed: the value has changed.
+@@s046 A CAS fails only if another thread has changed the value, that is it has <b>completed</b> its operation. So every failure corresponds to some other thread's progress: the system never stops. It is <b>lock-free</b>.
+@@s047 Nothing prevents T2 from losing every turn, against T1, T3, T4… (starvation). There is no limit to T2's attempts: it is <b>not</b> wait-free.
+@@s048 Most non-blocking structures are lock-free: the Treiber stack, the Michael-Scott queue, <code>ConcurrentSkipListSet</code>, the <code>CasHistogram</code> of exercise 6.1 (<code>increment</code>, <code>getAndClear</code>).
+@@s049 Wait-free and obstruction-free: examples
+@@s050 Wait-free
+@@s051 No loop that depends on the others. <code>getCount(bin)</code> of <code>CasHistogram</code> does a single <code>get()</code>: it finishes in one step, whatever happens. Also <code>getSpan()</code>.
+@@s052 Obstruction-free
+@@s053 Two threads can <b>cancel each other out</b> for ever: each undoes the other's half-done work, and nobody finishes (livelock). Like two people in a corridor who always move to the same side. But if one of the two stays alone, it finishes.
+@@s054 Without locks, who guarantees that the CAS is atomic?
+@@s055 Which lock is it? Does it work on trust?
+@@s056 Neither lock nor trust: the guarantee comes from the <b>processor</b>. The CAS is a <b>single machine instruction</b> (slide 8: modern processors have dedicated instructions, such as compare-and-swap). The comparison and the write happen inside that one instruction, and the hardware prevents another core from touching that memory cell until the instruction is finished (on x86 it is <code>LOCK CMPXCHG</code>).
+@@s057 So there is a "block", but it lasts <b>one instruction</b>, a few nanoseconds, and the hardware manages it. No thread can hold it and then fall asleep: the difference with a <code>lock()</code>, which stays taken for the whole critical section, even while the thread is suspended.
+@@s058 Lock: pessimistic
+@@s059 "Somebody might disturb me, so <b>first</b> I book and close the door, then I work." The others wait outside, even if they would not have touched anything.
+@@s060 CAS: optimistic (slide 17)
+@@s061 "Probably nobody disturbs me: I work on my copy and <b>at the end</b> I check. If somebody has changed the value, I throw my work away and redo it." It is <i>optimistic concurrency</i>.
+@@s062 If you know Git
+@@s063 The CAS loop works like a <code>git push</code>. You work locally (you read the value, compute the new one). Then you push: if in the meantime nobody has pushed, it goes through. If somebody has pushed before, the push is <b>rejected</b> (it does not overwrite the work of others): you pull, redo the computation on the new value, push again. Nobody has ever locked the repository.
+@@s064 The hardware protects one step, not your algorithm
+@@s065 The CAS is indivisible, and no thread can hold the others hostage. But the code around it can still be wrong:
+@@s066 <b>one CAS per field when the invariant ties several fields</b>: <code>NumberRange</code> below ends with lower &gt; upper;
+@@s067 <b>writing with <code>set()</code> instead of the CAS</b>: "read, compute, <code>set</code>" is again a non-atomic read-modify-write, and updates get lost;
+@@s068 <b>using a value different from the one of the CAS</b>: in <code>getAndClear</code> one must return the value that the CAS zeroed, not a re-read done afterwards;
+@@s069 <b>the value comes back the same</b>: the CAS compares only the value, so A → B → A looks "unchanged" (the ABA problem, later in the lecture).
+@@s070 Does the CAS replace locks?
+@@s071 The CAS is only an optimisation, and locks must be used anyway?
+@@s072 <b>No, on both counts.</b> In a lock-free structure there are <b>no</b> locks: <code>CasHistogram</code>, the Treiber stack and <code>ConcurrentSkipListSet</code> are correct without any <code>lock()</code>. The CAS does both jobs by itself: it makes the update atomic (safety) and blocks nobody (progress).
+@@s073 And it is not certain that it is faster: with many threads competing for the same value the CASes often fail and one retries for nothing. Slides 32–33 (random number generator) show that, under high contention, the CAS version can scale <b>worse</b>, and that <b>locality</b> matters more (each thread with its own object, <code>ThreadLocal</code>) than being lock-free. The real advantage of the CAS is the progress guarantee, not the speed.
+@@s074 The limit of the CAS: it acts on <b>one variable</b> at a time. If the invariant ties several fields, two separate CASes are not enough.
+@@s075 NumberRange: the invariant lower ≤ upper (slides 20–22)
+@@s076 no:broken,ok:correct,ora:what changes
+@@s077 Each field is atomic on its own, but the invariant concerns <b>the pair</b>.
+@@s078 Both checks pass, because each looks at the old value of the other field.
+@@s079 Check-then-act on two variables: neither of the two writes is wrong on its own, but together they break the invariant. Goetz: "don't do this".
+@@s080 <code>CasNumberRange</code>: one reads the pair, checks it, creates a <b>new</b> pair and makes <b>one single</b> CAS on the reference. If in the meantime somebody has changed the pair, the CAS fails and one checks again: <mark class="ok">the invariant holds</mark>.
+@@s081 Practical rule: state in <b>one</b> variable (or packable into an immutable object) → the CAS is enough and replaces the lock. State spread over several objects, or one needs to <b>wait</b> for a condition (buffer not empty) → locks and monitors remain the right tool.
+@@s082 Non-blocking does not mean busy-wait
+@@s083 Slides 14 and 16
+@@s084 The <b>busy-wait</b> (<code>while (i &gt; 0) { }</code>) waits for <b>another thread</b> to change something: if that thread stops, the loop runs for ever. In the course it is forbidden: solutions with busy-wait are rejected.
+@@s085 A CAS loop instead does not wait for anybody: it repeats because another thread <b>has gone ahead</b>, and with the three conditions termination is guaranteed (at least in isolation). That is why the CAS loop is allowed, but <b>only</b> for implementations based on CAS.
+@@s086 Model sentence
+@@s087 "The CAS loop in <i>addAndGet</i> is lock-free but not wait-free: a CAS fails only if another thread's CAS succeeded, so some call always completes, but a single thread may keep losing and never finish. Wait-free implies lock-free, which implies obstruction-free."
+@@s088 Test yourself
+@@s089 A method does a CAS loop that fails only when another thread has succeeded. Which condition does it have?
+@@s090 Somebody always finishes (lock-free), but a single thread can lose for ever (not wait-free).
+@@s091 An implementation is wait-free. What can you say?
+@@s092 wait-free ⇒ lock-free ⇒ obstruction-free.
+@@s093 Which one only guarantees that a thread finishes <b>when it runs alone</b>?
+@@s094 With other threads active nobody may finish (livelock).

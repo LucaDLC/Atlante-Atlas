@@ -1,0 +1,31 @@
+@@s001 Lock striping og LongAdder
+@@s002 <span>Uge 9 · Performance</span>
+@@s003 Lock striping og LongAdder
+@@s004 Forelæsningens casestudie: en delt tæller, med ni implementeringer. Det afgørende skridt er at dele en enkelt lås op i mange uafhængige låse, med padding, der holder hver enkelt på sin egen cache-linje.
+@@s005 En tæller, én lås
+@@s006 Casestudiet: en 64-bit <code>long</code>-tæller, delt af flere tråde, med <code>add</code> og <code>longValue</code>. Den første version bruger én enkelt lås (<code>synchronized</code> på et objekt). Den er korrekt, men alle trådene konkurrerer om den samme lås og dens cache-linje: ping-pong'en fra den forrige side.
+@@s007 Lock striping: en lås for hver stripe
+@@s008 <b>Lock striping</b> betyder at dele tilstanden op i flere dele (stripes), hver med sin egen lås. Forskellige tråde tager normalt forskellige låse, så de konkurrerer mindre. Forelæsningens kode bruger 64 stripes.
+@@s009 Striping.java
+@@s010 <code>logS = 6</code>, så <code>stripeCount = 2^6 = 64</code>. <code>stripeMask = 63</code> er det binære tal 111111: med AND bliver hver værdi til et indeks fra 0 til 63.
+@@s011 Konstruktøren opretter et låseobjekt for hver stripe. Hver lås beskytter sit element i arrayet <code>counts</code>.
+@@s012 <code>threadId()</code> giver et tal for hver tråd. AND med <code>stripeMask</code> reducerer det til 0–63: det er som <code>% 64</code>, men hurtigere. Forskellige tråde ender normalt på forskellige stripes.
+@@s013 Tråden tager låsen på <b>sin</b> stripe, og kun den. De andre tråde, på andre stripes, venter ikke på den.
+@@s014 Læsningen af totalen lægger alle stripes sammen. Hver læses under sin egen lås, fordi en anden tråd måske skriver til den.
+@@s015 Fire platformstråde, hver med 100 000 forøgelser af 1. Det korrekte resultat er 400 000.
+@@s016 Én forøgelse. <code>add</code> vælger stripe ud fra den tråd, der kalder den.
+@@s017 Padding: lås og data på forskellige linjer
+@@s018 Selv med 64 stripes ligger tællerne og låsene i arrays: nabo-elementer i et array deler en cache-linje. To nabostripes kan derfor lave false sharing. Forelæsningens løsning er <b>padding</b>: kun indekser, der er multipla af 16, bruges (<code>padding = 16</code>), og de andre elementer forbliver tomme. Så står hver tæller og hver lås på sin egen linje.
+@@s019 Hvordan en tråd vælger sin tæller
+@@s020 dato:tråd,ora:trin i gang,ok:resultat
+@@s021 <code>threadId()</code> er unik for hver tråd.
+@@s022 AND beholder kun de 6 lave bit: resultatet er altid mellem 0 og 63.
+@@s023 Ingen anden tråd bruger stripe 37, medmindre den har samme rest.
+@@s024 Forelæsningens resultater
+@@s025 Forelæsningen sammenligner ni versioner af tælleren, på en Apple M3 Pro-laptop og en AMD EPYC 7313-server. Konklusionerne, fra sliden:
+@@s026 at bruge en lås er ikke i sig selv langsomt, men én enkelt lås skaber <b>konkurrence</b> og meget trafik mellem cachene;
+@@s027 striping forbedrer samtidig kode, men stripes skal ligge på forskellige cache-linjer: padding er nødvendig;
+@@s028 bibliotekets <code>java.util.concurrent.atomic.LongAdder</code> gør alt dette korrekt, og det er det valg, man skal bruge;
+@@s029 konklusionerne gælder for fem CPU-arkitekturer, fra 2014 til 2023.
+@@s030 Praktisk regel
+@@s031 Til en delt tæller bruger man <code>LongAdder</code>. Skriv ikke én enkelt lås, og kopier ikke striping, medmindre du har målt behovet for det.

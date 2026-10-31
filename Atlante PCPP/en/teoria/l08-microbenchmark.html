@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Microbenchmark: from Mark0 to Mark8Setup</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Microbenchmark: from Mark0 to Mark8Setup</h1>
+  <p class="lede">How to measure how long a piece of Java code takes without being fooled by the JVM. The functions <code>Mark0</code>…<code>Mark8Setup</code> of exercise 8 are a ladder: each one fixes an error of the previous one.</p>
+</header>
+
+<section>
+  <h2>Where they come from: they are not standard</h2>
+  <p>The <code>Mark</code> functions <b>are not part of Java</b>: they were written by Peter Sestoft, one of the two lecturers. It shows in the header of <code>Benchmark.java</code> (<code>sestoft@itu.dk * 2013, 2015, 2026</code>) and in the reading indicated in the README of week 8: his note <i>Microbenchmarks in Java, C# and C</i>. <code>Mark0</code>…<code>Mark8</code> are the steps of that note. <code>Timer.java</code> describes itself as "crude wall clock timing utility" (a rough stopwatch).</p>
+  <div class="box idea" data-tit="And outside the course?">
+    <p>The tool used in practice for Java microbenchmarks is <b>JMH</b> (Java Microbenchmark Harness, from OpenJDK). It does professionally the same things as the <code>Mark</code> functions: warm-up, repetitions, mean and standard deviation. The course uses the <code>Mark</code> functions because they are short and can be read line by line. This information about JMH comes from general knowledge, not from the course files.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Why a stopwatch is not enough</h2>
+  <p>The first idea: I take the time, run the code, take the time again and subtract. With Java it gives wrong numbers for three reasons.</p>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>problem</th><th>what happens</th><th>how to avoid it</th></tr></thead>
+    <tbody>
+      <tr><td><b>Warm-up</b></td><td>At first the code is <b>interpreted</b>, then the JIT compiler compiles it. The first executions are much slower.</td><td>repeat until the time settles</td></tr>
+      <tr><td><b>Dead code</b></td><td>If the result is not used for anything, the JIT can remove the calculation and you measure nothing.</td><td>use the result (<code>dummy += …</code>) and return it</td></tr>
+      <tr><td><b>Noise</b></td><td>Other processes, the garbage collector, the CPU frequency: every measurement is a bit different.</td><td>repeat 10 times and give the <b>mean ± standard deviation</b></td></tr>
+    </tbody>
+  </table></div>
+  <p>A real example, measured on this PC (JDK 26.0.2.1): <code>myPoint.hashCode()</code> in the first round costs <b>490 ns</b> (sdev 1164); after 134 million repetitions it costs <b>2.5 ns</b> (sdev 0.09). The code is identical: only the JVM has compiled it in the meantime.</p>
+</section>
+
+<section>
+  <h2>The ladder: each Mark fixes an error</h2>
+  <figure class="passi" data-titolo="From Mark0 to Mark8Setup" data-legenda="no:error,ok:fix,ora:what changes,dato:the measured data">
+    <div class="passo"><div class="espr"><mark class="dato">Mark0</mark>: <mark class="no">una sola chiamata</mark> a multiply(10), cronometrata</div><p class="nota">Useless: it includes the warm-up, and the precision of the stopwatch is not enough for a call of a few nanoseconds.</p></div>
+    <div class="passo"><div class="espr"><mark class="dato">Mark1</mark>: <mark class="ok">100 milioni di chiamate</mark>, ma <mark class="no">il risultato viene buttato</mark></div><p class="nota">The time is divided by 100 million, but the JIT can work out that <code>multiply(i)</code> is useless and remove it: you might be measuring an empty loop.</p></div>
+    <div class="passo"><div class="espr"><mark class="dato">Mark2</mark>: <mark class="ok">dummy += multiply(i)</mark> e si restituisce dummy</div><p class="nota">Now the result is used (<code>dummy</code> comes out of the method): the JIT cannot eliminate the calculation.</p></div>
+    <div class="passo"><div class="espr"><mark class="dato">Mark3</mark>: <mark class="ok">10 ripetizioni</mark>, ognuna stampata</div><p class="nota">You can see the warm-up (the first lines are higher) and the variation between one repetition and the next.</p></div>
+    <div class="passo"><div class="espr"><mark class="dato">Mark4</mark>: <mark class="ok">media ± deviazione standard</mark> delle 10 ripetizioni</div><p class="nota">One number only, with its uncertainty. The formula is in the paragraph below.</p></div>
+    <div class="passo"><div class="espr"><mark class="dato">Mark5</mark>: <mark class="ora">count</mark> raddoppia (2, 4, 8, …) <mark class="ok">finché un giro dura almeno 0,25 s</mark></div><p class="nota">You do not have to guess how many calls are needed: you start from few and double, and stop when the round is long enough to be measured well. It prints one line for each doubling.</p></div>
+    <div class="passo"><div class="espr"><mark class="dato">Mark6</mark>: come Mark5 ma <mark class="ora">generico</mark>: unità, messaggio e funzione <mark class="ora">f</mark> come argomenti</div><p class="nota">You can measure any code: <code>Mark6('n', "hashCode()", i -&gt; myPoint.hashCode())</code>. It still prints one line for each doubling: it serves to see how it settles.</p></div>
+    <div class="passo"><div class="espr"><mark class="dato">Mark7</mark>: come Mark6 ma <mark class="ok">stampa solo l'ultimo giro</mark></div><p class="nota">This is the one to use to report a result: one line per measurement, without the warm-up lines.</p></div>
+    <div class="passo"><div class="espr"><mark class="dato">Mark8</mark>: Mark7 con una colonna <mark class="ora">info</mark> in più</div><p class="nota">It serves to put a parameter in the line, for example the size of the array (<code>String.format("%8d", size)</code>).</p></div>
+    <div class="passo"><div class="espr"><mark class="dato">Mark8Setup</mark>: <mark class="ora">setup.run()</mark> tra <mark class="ora">t.pause()</mark> e <mark class="ora">t.play()</mark></div><p class="nota">It prepares the data <b>without counting its time</b>: for example shuffling the array before each sort.</p></div>
+  </figure>
+</section>
+
+<section>
+  <h2>Mark7 line by line</h2>
+  <figure class="codice" data-titolo="Mark7 (from Benchmark.java)">
+<pre data-lang="java">public static double Mark7(char tunit, String msg, LongToDoubleFunction f) {
+    long n = 10, count = 1, totalCount = 0;
+    double dummy = 0.0, runningTime = 0.0, st = 0.0, sst = 0.0;
+    do {
+      count *= 2;
+      st = sst = 0.0;
+      for (long j=0; j&lt;n; j++) {
+        Timer t = new Timer();
+        for (long i=0; i&lt;count; i++)
+          dummy += f.applyAsDouble(i);
+        runningTime = t.check();
+        double time = runningTime * scale(tunit) / count;
+        st += time;
+        sst += time * time;
+        totalCount += count;
+      }
+    } while (runningTime &lt; 0.25);
+    double mean = st/n, sdev = Math.sqrt((sst - mean*mean*n)/(n-1));
+    System.out.printf("%-25s %15.1f %cs %10.2f %10d%n", msg, mean, tunit, sdev, count);
+    return dummy / totalCount;
+}</pre>
+    <div class="intro"><p>The method receives three things: the <b>time unit</b> (<code>'n'</code> nanoseconds, <code>'u'</code> microseconds, <code>'m'</code> milliseconds), a <b>message</b> to print, and the <b>function to measure</b> <code>f</code>. <code>LongToDoubleFunction</code> is a Java interface with a single method, <code>applyAsDouble(long)</code>: it takes a <code>long</code> and returns a <code>double</code>. That is why one passes a lambda <code>i -&gt; …</code>.</p></div>
+    <ol class="spiega">
+      <li data-righe="2" data-segna="n = 10@dato|count = 1@ora"><p><code>n</code> = how many repetitions of the same round are done, so that a mean can be computed. <code>count</code> = how many times <code>f</code> is called inside a round; it starts at 1 and is doubled immediately, so the first round has 2.</p></li>
+      <li data-righe="3" data-segna="dummy@ok|st@dato|sst@due"><p><code>dummy</code> accumulates all the results of <code>f</code>: so the JIT cannot throw away the calculation. <code>st</code> = sum of the times, <code>sst</code> = sum of the <b>squares</b> of the times: they are needed for the standard deviation.</p></li>
+      <li data-righe="4-5" data-segna="count *= 2@ora"><p>Each round of the <code>do</code> doubles <code>count</code>: 2, 4, 8, … until the round lasts long enough.</p></li>
+      <li data-righe="6" data-segna="st = sst = 0.0@ora"><p>The sums are reset at each doubling: the mean concerns only the 10 repetitions of <b>this</b> <code>count</code>.</p></li>
+      <li data-righe="7-8,11" data-segna="Timer t = new Timer();@dato|t.check()@ok"><p>A new stopwatch for each repetition. <code>new Timer()</code> starts it; <code>t.check()</code> returns the seconds elapsed.</p></li>
+      <li data-righe="9-10" data-segna="dummy += f.applyAsDouble(i);@ora"><p>The measured work: it calls <code>f</code> <code>count</code> times, passing <code>i</code> (0, 1, 2, …). Passing <code>i</code> prevents the JIT from precomputing the result as a constant.</p></li>
+      <li data-righe="12" data-segna="runningTime * scale(tunit) / count@ok"><p>Time of <b>one</b> call: seconds of the round × unit factor (<code>scale('n')</code> = 1e9) ÷ <code>count</code>.</p></li>
+      <li data-righe="13-15" data-segna="time * time@due"><p>Updates the sums: <code>st</code> with the time, <code>sst</code> with its square. <code>totalCount</code> counts all the calls; it only serves for the returned value.</p></li>
+      <li data-righe="17" data-segna="runningTime &lt; 0.25@no"><p>Condition to <b>continue</b>: if the last repetition lasted less than 0.25 s, <code>count</code> is doubled and it is done again. When it lasts at least 0.25 s, the stopwatch is precise enough and one stops.</p></li>
+      <li data-righe="18" data-segna="mean@ok|sdev@due"><p>Mean and standard deviation of the 10 repetitions (formula in the paragraph below).</p></li>
+      <li data-righe="19" data-segna="mean@ok|sdev@due|count@ora"><p>Prints a single line: message, mean, unit, sdev, <code>count</code> of the last round.</p></li>
+      <li data-righe="20" data-segna="dummy / totalCount@ok"><p>Returns something that depends on all the results: the last way to make <code>dummy</code> be used.</p></li>
+    </ol>
+  </figure>
+</section>
+
+<section>
+  <h2>Mean and standard deviation</h2>
+  <p>The <b>standard deviation</b> (sdev) says how much the measurements are spread around the mean. If it is small compared with the mean, the measurement is stable; if it is large, it is not. The line <code>sdev = Math.sqrt((sst - mean*mean*n)/(n-1))</code> uses the two sums that the loop has already accumulated. An example with 4 times (the function uses 10):</p>
+  <figure class="passi" data-titolo="From 4 times to mean ± sdev" data-legenda="dato:the times,due:the squares,ora:the formula,ok:the result">
+    <div class="passo"><div class="espr">tempi: <mark class="dato">9, 10, 10, 11</mark> µs      n = 4</div><p class="nota">Four repetitions of the same round.</p></div>
+    <div class="passo"><div class="espr">st = <mark class="dato">9 + 10 + 10 + 11 = 40</mark></div><p class="nota">Sum of the times.</p></div>
+    <div class="passo"><div class="espr">sst = <mark class="due">81 + 100 + 100 + 121 = 402</mark></div><p class="nota">Sum of the squares of the times.</p></div>
+    <div class="passo"><div class="espr">mean = st / n = 40 / 4 = <mark class="ok">10</mark></div><p class="nota">The mean.</p></div>
+    <div class="passo"><div class="espr">sdev = √( (<mark class="due">sst</mark> − mean²·n) / (n−1) ) = √( (402 − 100·4) / 3 )</div><p class="nota">It divides by n−1 and not by n: this is the formula of the sample standard deviation.</p></div>
+    <div class="passo"><div class="espr">sdev = √(2/3) = <mark class="ok">0,82</mark></div><p class="nota">Check: the deviations from the mean are −1, 0, 0, +1, their squares sum to 2: the same thing, because Σ(t − mean)² = Σt² − n·mean². The advantage is that the loop does not have to remember the single times.</p></div>
+  </figure>
+  <div class="box regola" data-tit="How to read a line of Mark7">
+    <p><code>name mean unit sdev count</code>: for example <code>Thread virt cre strt join 14557,2 ns 864,61 32768</code> means that creating, starting and waiting for a virtual thread costs on average 14 557 ns, with sdev 865 ns (6% of the mean), measured over a round of 32 768 calls. An sdev close to or above the mean means the number is not reliable.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Timer and Mark8Setup: measuring without the setup</h2>
+  <figure class="codice" data-titolo="Timer.java and the heart of Mark8Setup">
+<pre data-lang="java">public class Timer {
+  private long start, spent = 0;
+  public Timer() { play(); }
+  public double check() { return (System.nanoTime()-start+spent)/1e9; }
+  public void pause() { spent += System.nanoTime()-start; }
+  public void play() { start = System.nanoTime(); }
+}
+
+// dentro Mark8Setup, per ogni chiamata:
+t.pause();
+setup.run();
+t.play();
+dummy += f.applyAsDouble(i);</pre>
+    <ol class="spiega">
+      <li data-righe="2" data-segna="start@dato|spent@due"><p><code>start</code> = the instant in which the stopwatch was (re)started; <code>spent</code> = the time already accumulated before a pause.</p></li>
+      <li data-righe="4" data-segna="System.nanoTime()@ora|/1e9@ok"><p><code>System.nanoTime()</code> is Java's clock in nanoseconds (useful only to subtract two instants). The measured time is <i>now − start + spent</i>, divided by 1e9 to have it in seconds.</p></li>
+      <li data-righe="5" data-segna="spent += System.nanoTime()-start@due"><p><code>pause()</code>: adds to <code>spent</code> the time elapsed since the last <code>start</code>. From then on, the time that passes <b>does not count</b> until <code>play()</code> is called again.</p></li>
+      <li data-righe="6" data-segna="start = System.nanoTime()@dato"><p><code>play()</code>: restarts from now. Everything that happened between <code>pause()</code> and <code>play()</code> stays out of <code>check()</code>.</p></li>
+      <li data-righe="10-13" data-segna="t.pause();@ora|setup.run();@due|t.play();@ora|f.applyAsDouble(i)@ok"><p>The stopwatch is stopped, the data is prepared (for example <code>shuffle</code> of the array, which costs 1.1 ms on 100 000 elements), it restarts, and only <code>f</code> is measured. Without this, the sort would also measure the shuffling.</p></li>
+    </ol>
+  </figure>
+</section>
+
+<section>
+  <h2>What exercises 8.1–8.4 measure</h2>
+  <p>The thread of the assignment: <b>how much a thing really costs</b> when in Java it seems free (a library function, a thread, a keyword)? Each exercise measures a different cost with the same <code>Mark</code> functions. The numbers are from this PC (i5-11400H, JDK 26.0.2.1).</p>
+  <figure class="passi" data-titolo="The assignment in 4 steps" data-legenda="dato:what is measured,ok:result,ora:what one learns,no:warning">
+    <div class="passo"><div class="espr"><mark class="dato">8.1</mark> funzioni matematiche (pow, exp, sin…): <mark class="ok">6–23 ns a chiamata</mark></div><p class="nota"><mark class="ora">One learns to use Mark7 and to read the sdev.</mark> In one run <code>tan</code> and <code>asin</code> had sdev ±5 ns, and in the other runs they were normal again: it was noise. <code>Math.sqrt</code> (≈2 ns) is a single CPU instruction; <code>Math.random</code> (≈20–29 ns) uses a shared <code>Random</code> with a CAS. And <code>sqrt(random)</code> is not <code>random + sqrt</code>: the 2 ns of <code>sqrt</code> disappear into the noise.</p></div>
+    <div class="passo"><div class="espr"><mark class="dato">8.2</mark> thread: platform <mark class="ok">≈110 µs</mark> contro virtual <mark class="ok">≈11,6 µs</mark> (crea + avvia + join)</div><p class="nota"><mark class="ora">Cost of the thread = total − work of the thread.</mark> The work (1000 increments) is worth ≈4.7 µs, so the overhead is ≈106 µs against ≈6.9 µs: about 15 times less for the virtual one. A platform thread should not be created for a small job. Careful: <mark class="no">"create + start" without join is not reliable</mark> (very high sdev).</p></div>
+    <div class="passo"><div class="espr"><mark class="dato">8.3</mark> ordinamento di 100 000 interi: quicksort <mark class="ok">7,8 ms</mark>, <code>Arrays.sort</code> <mark class="ok">6,0 ms</mark>, <code>parallelSort</code> <mark class="ok">2,3 ms</mark></div><p class="nota"><mark class="ora">Parallelising pays off only if the work of one thread is worth more than the cost of the thread</mark> (≈7 µs for a virtual one, from the previous step). That is why the parallel quicksort creates a thread only if <code>j - a &gt; 50</code>: below that, sorting costs less than creating the thread.</p></div>
+    <div class="passo"><div class="espr"><mark class="dato">8.4</mark> campo <code>volatile</code>: <code>add</code> <mark class="ok">≈0,3 ns</mark> contro <code>addVolatile</code> <mark class="ok">5,6–8,5 ns</mark></div><p class="nota"><mark class="ora">A <code>volatile</code> field costs about 20 times</mark> already with a single thread: every write has a memory barrier and the JIT cannot keep the field in a register. With two threads on the same object <code>addVolatile</code> reaches ≈31 ns per addition, while <code>add</code> does not change.</p></div>
+  </figure>
+  <div class="box idea" data-tit="The lesson that ties them together">
+    <p>The cost is never "zero" and never "what it seems": a library call, a thread or a keyword can cost from a few ns to hundreds of µs. To decide (thread or not? <code>volatile</code> or not?) one must <b>measure rigorously</b>: warm-up, used result, repetitions, sdev. And that is why the <code>Mark</code> functions exist.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Practical rules</h2>
+  <div class="box attenzione" data-tit="Things that falsify the measurement">
+    <p><b>Never inside an IDE or in debug mode</b> (the text of the exercise says so). Close the other applications; on a laptop connect the power. Always do at least two runs and look at the sdev: a much higher sdev in one run (as with <code>tan</code> at ±5.4 ns in one run out of two) indicates noise, not a property of the function. The value returned by <code>f</code> must <b>depend on the measured work</b>, otherwise the JIT eliminates it.</p>
+  </div>
+  <div class="box basi" data-tit="Terminal commands">
+    <p>From the project folder: <code>gradle -q -PmainClass=exercises08.Benchmark run</code> (change the class for the others: <code>TestTimeThreads</code>, <code>TestTimeSort</code>, <code>TestTimeVolatile</code>). <code>-q</code> prints only the output of the program; to save it add <code>&gt; file.txt</code>. Without Gradle: from the folder <code>app/src/main/java</code>, <code>javac exercises08/*.java</code> and then <code>java exercises08.Benchmark</code>.</p>
+  </div>
+</section>
+
+</main>
+</body>
+</html>

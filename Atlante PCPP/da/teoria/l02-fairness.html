@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Fairness, sult, Mesa</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+SCENE.code = {
+  w: 620, h: 230, lato: false,
+  legenda: 'ora:har låsen,due:venter på betingelsen,dato:lige vækket',
+  oggetti: [
+    { id: 'zE', tipo: 'rett', x: 10, y: 60, w: 190, h: 120 },
+    { id: 'zL', tipo: 'rett', x: 225, y: 60, w: 160, h: 120 },
+    { id: 'zC', tipo: 'rett', x: 410, y: 60, w: 200, h: 120 },
+    { id: 'tE', tipo: 'testo', x: 125, y: 40, t: 'entry queue (per il lock)', size: 12, bold: true },
+    { id: 'tL', tipo: 'testo', x: 305, y: 40, t: 'dentro il monitor', size: 12, bold: true },
+    { id: 'tC', tipo: 'testo', x: 510, y: 40, t: 'condition queue (await)', size: 12, bold: true },
+    { id: 'T1', tipo: 'nodo', x: 55, y: 120, t: 'T1' },
+    { id: 'T2', tipo: 'nodo', x: 105, y: 120, t: 'T2' },
+    { id: 'T3', tipo: 'nodo', x: 155, y: 120, t: 'T3' },
+    { id: 'cod', tipo: 'testo', x: 310, y: 212, t: '', size: 12.5 }
+  ],
+  passi: [
+    { nota: 'Tre tråde vil ind i monitoren og venter på låsen i <b>entry queue</b>. Den kaldes en "kø" af historiske grunde: i virkeligheden er det en mængde uden garanteret rækkefølge.' },
+    { nota: '<b>T2</b> vælges (ikke-deterministisk), tager låsen og udfører en metode.', set: { T2: { x: 305, tono: 'ora' }, cod: { t: 'T2 esegue il metodo' } } },
+    { nota: 'T2 udfører <code>c.await()</code>: den går ind i <b>condition queue</b> og <b>frigiver låsen</b>.', set: { T2: { x: 455, tono: 'due' }, cod: { t: 'T2: c.await()' } } },
+    { nota: '<b>T1</b> vælges, og den laver også <code>await()</code>. (På dette tidspunkt kunne der også komme en <i>spurious wakeup</i> og sende T1 eller T2 tilbage i entry queue uden grund.)', set: { T1: { x: 510, tono: 'due' }, cod: { t: 'T1: c.await()' } } },
+    { nota: '<b>T3</b> er tilbage: den tager låsen og udfører <code>c.signal()</code>.', set: { T3: { x: 305, tono: 'ora' }, cod: { t: 'T3: c.signal()' } } },
+    { nota: '<code>signal()</code> flytter <b>én</b> tråd fra condition queue til <b>entry queue</b>: her T1, valgt tilfældigt. T1 starter ikke straks: den skal tage låsen igen.', set: { T1: { x: 55, tono: 'dato' }, cod: { t: 'T1 torna in entry queue' } } },
+    { nota: 'T3 frigiver låsen og er færdig. T1 kan tage låsen. T2 bliver derimod i condition queue: <b>intet garanterer</b>, at den før eller siden vækkes.', set: { T3: { nascosto: true }, T1: { x: 305, tono: 'ora' }, cod: { t: 'T3 esce, T1 prende il lock' } } },
+    { nota: 'Med <code>signalAll()</code> i stedet for <code>signal()</code> ville T2 også være vendt tilbage til entry queue for at konkurrere om låsen.', set: { T1: { x: 55, tono: 'dato' }, T2: { x: 105, tono: 'dato' }, cod: { t: 'variante: T3 aveva fatto signalAll()' } } }
+  ]
+};
+</script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  const T = (id, x, y, t, extra) => Object.assign({ id, tipo: 'testo', x, y, t, size: 13 }, extra || {});
+  const R = (id, x, y, w, h, t, extra) => Object.assign({ id, tipo: 'rett', x, y, w, h, t }, extra || {});
+  const N = (id, x, y, t, tono, extra) => Object.assign({ id, tipo: 'nodo', x, y, t, tono, r: 18 }, extra || {});
+
+  // 1. entry queue fair o no
+  SCENE.fairlock = {
+    w: 600, h: 230, lato: true,
+    legenda: 'dato:i køen,ora:har låsen,no:forbikøring,ok:går ind den der har ventet længst',
+    oggetti: [
+      R('q', 40, 70, 250, 60, '', { tono: 'spento' }), T('tq', 165, 58, 'entry queue (1 arrivato per primo)', { size: 11 }),
+      R('m', 380, 60, 120, 80, '', { tono: 'spento' }), T('tlk', 440, 48, 'lock', { size: 12, bold: true }),
+      N('a', 250, 100, '1', 'dato'), N('b', 200, 100, '2', 'dato'), N('c', 150, 100, '3', 'dato'),
+      N('x', 440, 100, 'X', 'ora'), N('n', 560, 190, 'N', 'dato', { nascosto: true }),
+      T('s', 300, 200, '', { bold: true, size: 12 })
+    ],
+    passi: [
+      { nota: "X ha il lock; tre thread aspettano nella entry queue, arrivati nell'ordine 1, 2, 3." },
+      { nota: "X rilascia il lock. Proprio in quel momento arriva un thread nuovo, N.", set: { x: { x: 560, y: 60, tono: 'dato' }, n: { nascosto: false } } },
+      { nota: "Con un lock <b>non fair</b> (il default di <code>new ReentrantLock()</code>) N può prendere il lock prima di chi aspetta: un <b>sorpasso</b>. Se succede sempre a sfavore di 1, 1 aspetta per sempre: <b>starvation</b>.", set: { n: { x: 440, y: 100, tono: 'no' }, s: { t: 'non fair: N sorpassa', tono: 'no' } } },
+      { nota: "Con <code>new ReentrantLock(true)</code> la entry queue è <b>fair</b>: entra chi aspetta da più tempo, cioè 1 (slide 29). In questo corso <b>fairness</b> vuol dire proprio assenza di starvation. Attenzione: rende fair solo la coda del lock, non la <i>logica</i> del monitor.", set: { n: { x: 560, y: 190, tono: 'dato' }, a: { x: 440, y: 100, tono: 'ok' }, s: { t: 'fair: entra 1, il più vecchio', tono: 'ok' } } }
+    ]
+  };
+
+  // 2. Mesa contro Hoare
+  SCENE.mesahoare = {
+    w: 600, h: 250, lato: true,
+    legenda: 'dato:læser R1,due:skrivere,ok:betingelse sand,no:betingelse ændret',
+    oggetti: [
+      R('eq', 20, 60, 140, 140, 'entry queue', { tono: 'spento' }), R('mon', 230, 60, 140, 140, 'monitor', { tono: 'spento' }), R('cq', 440, 60, 140, 140, 'condition queue', { tono: 'spento' }),
+      N('r1', 510, 100, 'R1', 'dato'), N('w1', 300, 100, 'W1', 'due'), N('w2', 90, 100, 'W2', 'due'),
+      T('st', 300, 226, 'writer = true', { bold: true, size: 12 })
+    ],
+    passi: [
+      { nota: "R1 aspetta nella condition queue perché c'è uno scrittore (W1). W2, un altro scrittore, aspetta nella entry queue." },
+      { nota: "W1 finisce: writer = false e <code>signalAll()</code>. R1 viene svegliato. Dove va adesso? Dipende dalla <b>semantica</b> del monitor.", set: { w1: { x: 90, y: 170, tono: 'spento' }, st: { t: 'writer = false', tono: 'ok' } } },
+      { nota: "<b>Hoare</b>: chi è svegliato ha la <b>priorità</b> ed entra subito, con la condizione ancora vera. R1 legge in sicurezza.", set: { r1: { x: 300, y: 100, tono: 'ok' } } },
+      { nota: "<b>Mesa</b> (la semantica di <b>Java</b>): R1 torna nella entry queue e compete con W2. Se vince W2, entra prima lui…", set: { r1: { x: 90, y: 150, tono: 'dato' }, w2: { x: 300, y: 100, tono: 'due' } } },
+      { nota: "…e rimette writer = true. Quando R1 finalmente rientra, la condizione che l'aveva svegliato <b>non vale più</b>. Per questo in Java la guardia di <code>await()</code> sta in un <code>while</code>: R1 ricontrolla e torna ad aspettare.", set: { st: { t: 'writer = true di nuovo', tono: 'no' }, r1: { x: 510, y: 100, tono: 'no' } } }
+    ]
+  };
+
+  // 3. starvation degli scrittori
+  const bar = (id, x, w, y, t, tono) => R(id, x, y, w, 22, t, { tono, nascosto: true });
+  SCENE.starvscrittori = {
+    w: 600, h: 250, lato: true,
+    legenda: 'dato:læsere inde,no:skriver blokeret,ok:skriver inde',
+    oggetti: [
+      T('lr', 50, 60, 'lettori', { bold: true, size: 12 }), T('lw', 50, 150, 'W', { bold: true, size: 12 }),
+      bar('r1', 100, 150, 40, 'R1', 'dato'), bar('r2', 200, 150, 66, 'R2', 'dato'), bar('r3', 300, 150, 40, 'R3', 'dato'), bar('r4', 400, 150, 66, 'R4', 'dato'),
+      bar('w', 150, 430, 140, 'W aspetta: readers > 0', 'no'),
+      T('c', 320, 210, '', { bold: true, size: 12 })
+    ],
+    passi: [
+      { nota: "Nel ReadWriteMonitor base un lettore entra se non c'è uno scrittore <b>dentro</b>; uno scrittore entra solo se non c'è <b>nessun</b> lettore." },
+      { nota: "R1 legge. W arriva e aspetta, perché readers &gt; 0.", set: { r1: { nascosto: false }, w: { nascosto: false } } },
+      { nota: "Prima che R1 esca arriva R2: nessuno scrittore è dentro, quindi entra. Poi R1 esce, ma readers vale ancora 1.", set: { r2: { nascosto: false } } },
+      { nota: "E così via: R3, R4… Se i lettori si danno il cambio senza mai lasciare la stanza vuota, readers non torna mai a 0 e <b>W non scrive mai</b>. Mutua esclusione rispettata, assenza di starvation no.", set: { r3: { nascosto: false }, r4: { nascosto: false }, c: { t: 'readers mai a 0: W affamato', tono: 'no' } } },
+      { nota: "Rimedio (FairReadWriteMonitor): lo scrittore <b>prenota</b>, mettendo writer = true <b>prima</b> di aspettare i lettori. I lettori nuovi vedono writer = true e aspettano; quelli già dentro escono, e W entra.", set: { r3: { nascosto: true }, r4: { nascosto: true }, w: { t: 'W prenota, poi scrive', tono: 'ok', x: 350, w: 230 }, c: { t: 'prenotazione: niente starvation', tono: 'ok' } } }
+    ]
+  };
+
+  // 4. busy-wait
+  SCENE.busywait = {
+    w: 600, h: 240, lato: true,
+    legenda: 'no:CPU spildt,ok:blokeret (ingen CPU)',
+    oggetti: [
+      T('l1', 90, 70, 'busy-wait', { bold: true, size: 12 }), T('l2', 90, 150, 'await()', { bold: true, size: 12 }),
+      R('b1', 160, 58, 0, 24, '', { tono: 'no' }), R('b2', 160, 138, 0, 24, '', { tono: 'ok', nascosto: true }),
+      T('c1', 470, 70, '', { size: 12 }), T('c2', 470, 150, '', { size: 12 }), T('c', 300, 214, '', { bold: true, size: 12 })
+    ],
+    passi: [
+      { nota: "Due modi di aspettare che una condizione diventi vera. <b>Busy-wait</b>: un ciclo che ricontrolla in continuazione." },
+      { nota: "Il thread resta <b>running</b>: ogni giro del ciclo consuma CPU per controllare uno stato che non cambia. Magari toglie la CPU proprio al thread che dovrebbe cambiare lo stato.", set: { b1: { w: 240, t: 'controlla, controlla, …' }, c1: { t: 'CPU occupata', tono: 'no' } } },
+      { nota: "Con <code>condition.await()</code> dentro il while, il thread va in <b>blocked</b>: non usa CPU finché qualcuno non chiama <code>signal</code>.", set: { b2: { nascosto: false, w: 240, t: 'bloccato: 0% CPU' }, c2: { t: 'CPU libera per gli altri', tono: 'ok' } } },
+      { nota: "Dalle slide: \"Exercise solutions using busy-wait will not be approved\". Negli assignment ogni attesa va fatta bloccandosi (await, wait, acquire, join).", set: { c: { t: 'busy-wait = soluzione non approvata', tono: 'no' } } }
+    ]
+  };
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Fairness, sult, Mesa</h1>
+  <p class="lede">Når man kører <code>ReadersWriters.java</code>, læser normalt <b>alle</b> læserne først, og først derefter skriver skriverne. Monitoren er korrekt, men <b>uretfærdig</b>. For at forstå hvorfor skal man se, hvor trådene venter: en monitor har <b>to køer</b>.</p>
+</header>
+
+<section>
+  <h2>Fairness i kurset</h2>
+  <p>En korrekt monitor garanterer gensidig udelukkelse, men den kan stadig behandle nogen dårligt: en tråd, der venter og altid bliver overhalet, kommer aldrig ind. For at ræsonnere over det skal der to køer til: <b>lock queue</b> (dem der venter på at komme ind) og <b>condition queue</b> (dem der er kommet ind, har fundet betingelsen falsk og venter på at blive vækket).</p>
+  <div class="box regola" data-tit="Definition">
+    <p>I dette kursus betyder <b>fairness</b> <b>fravær af sult</b>: hvis en tråd er klar til at komme ind i den kritiske sektion, kommer den før eller siden ind.</p>
+  </div>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Kø</th><th>Hvem der er i den</th><th>Hvordan man kommer ind</th></tr></thead>
+    <tbody>
+      <tr><td><b>Lock queue</b> (entry queue)</td><td>tråde der vil ind i monitoren</td><td>ved at kalde <code>lock()</code> med låsen taget, eller efter at være blevet vækket</td></tr>
+      <tr><td><b>Condition queue</b></td><td>tråde der allerede er inde og fandt betingelsen falsk</td><td>ved at kalde <code>await()</code></td></tr>
+    </tbody>
+  </table></div>
+  <figure class="scena" data-scena="fairlock" data-titolo="Fair og ikke-fair lås: forbikøring"></figure>
+</section>
+
+<section>
+  <h2>Hvem der går hvor (slide 28–37)</h2>
+  <figure class="scena" data-scena="code" data-titolo="Tre tråde, én lås, én condition variable"></figure>
+  <div class="box idea" data-tit="Flaget fair">
+    <p><code>new ReentrantLock(true)</code> gør <b>entry queue fair</b>: den tråd, der har ventet længst, kommer ind (slide 29). Alene er det ikke nok til at fjerne sult i en monitor: hvis <i>logikken</i> i monitoren altid sender nogen forrest igen (som læserne nedenfor), hjælper køens rækkefølge ikke.</p>
+    <p class="piccolo">Teknisk note: i slidenes model har heller ikke condition queue en rækkefølge. Den konkrete implementering af <code>ReentrantLock</code> signalerer faktisk trådene i FIFO-orden (dokumentationen for <code>newCondition()</code>); til øvelserne ræsonnerer man med kursets model.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Mesa over for Hoare</h2>
+  <div class="colonne">
+    <div class="carta">
+      <h4>Mesa — Javas semantik</h4>
+      <p>Vakte tråde vender tilbage til <b>entry queue</b> og konkurrerer med dem, der allerede er der. Mellem vækkelsen og det øjeblik, de genoptager, kan en anden tråd have <b>ændret tilstanden</b>: betingelsen, der vækkede dem, gælder muligvis ikke længere.</p>
+    </div>
+    <div class="carta">
+      <h4>Hoare</h4>
+      <p>Tråde der venter på en condition variable har <b>prioritet</b> frem for dem i entry queue: den der vækkes, genoptager straks, med betingelsen stadig sand.</p>
+    </div>
+  </div>
+  <div class="box regola" data-tit="Konsekvens">
+    <p>Da Java er Mesa, skal vagten i et <code>await()</code> altid stå i en <b><code>while</code></b>, aldrig i en <code>if</code>. Eksempel trin for trin på siden <a href="l02-monitor.html">Monitor</a>.</p>
+  </div>
+  <figure class="scena" data-scena="mesahoare" data-titolo="Kommer en vakt tråd straks ind, eller stiller den sig i kø igen?"></figure>
+</section>
+
+<section>
+  <h2>Skrivernes sult</h2>
+  <figure class="passi" data-titolo="Hvorfor en skriver i den almindelige ReadWriteMonitor kan vente for evigt">
+    <div class="passo"><div class="espr">readLock:   while (<mark class="dato">writer</mark>) await();</div><p class="nota">En læser venter kun, hvis der er en skriver <b>inde</b>.</p></div>
+    <div class="passo"><div class="espr">writeLock:  while (<mark class="due">readers &gt; 0</mark> || writer) await();</div><p class="nota">En skriver venter, så længe der er <b>mindst én</b> læser.</p></div>
+    <div class="passo"><div class="espr">R1 dentro · W aspetta · <mark class="no">R2 entra</mark> · R1 esce · <mark class="no">R3 entra</mark> · R2 esce · …</div><p class="nota">Hvis læserne bliver ved med at komme, er der altid mindst én inde: <code>readers</code> vender aldrig tilbage til 0.</p></div>
+    <div class="passo"><div class="espr"><mark class="no">W non scrive mai</mark></div><p class="nota">Gensidig udelukkelse overholdt, fravær af sult ikke.</p></div>
+  </figure>
+  <figure class="codice" data-titolo="FairReadWriteMonitor.java: skriveren reserverer">
+<pre data-lang="java">public void writeLock() {
+    lock.lock();
+    try {
+        while (writer)
+            condition.await();
+        writer = true;
+        while (readers &gt; 0)
+            condition.await();
+    } catch (InterruptedException e) { e.printStackTrace(); }
+    finally { lock.unlock(); }
+}</pre>
+    <ol class="spiega">
+      <li data-righe="4-5" data-segna="while (writer)@due"><p>Først venter den kun, indtil der ikke er en anden skriver.</p></li>
+      <li data-righe="6" data-segna="writer = true;@ora"><p>Derefter <b>reserverer</b> den: den sætter <code>writer = true</code>, selv om der stadig er læsere inde. Fra nu af stopper <code>readLock()</code> de nye læsere.</p></li>
+      <li data-righe="7-8" data-segna="while (readers &gt; 0)@ok"><p>Den venter kun på, at de læsere, <b>der allerede er inde</b>, går ud, og de er et endeligt antal. Derefter skriver den.</p></li>
+    </ol>
+  </figure>
+  <div class="box domanda-tua" data-tit="Spørgsmål fra slidet: så kommer en klar skriver før eller siden til at skrive?">
+    <p>Mod <b>læserne</b> ja: efter reservationen kommer ingen nye læsere ind, og dem der er inde, går før eller siden ud. Der bliver dog konkurrencen <b>mellem skrivere</b>: hvis flere skrivere venter ved <code>while (writer)</code>, garanterer hverken <code>synchronized</code> eller en ikke-fair <code>ReentrantLock</code> (standarden) en rækkefølge, så en uheldig skriver kunne i teorien altid tabe (øvelse 2.1.4). Flaget fair i <code>ReentrantLock</code> tjener netop til at give en orden til dem, der venter. I dit svar på 2.1.2 brugte du, at antallet af tråde er endeligt: det er det rigtige argument.</p>
+  </div>
+  <figure class="scena" data-scena="starvscrittori" data-titolo="Læsere der skiftes til"></figure>
+</section>
+
+<section>
+  <h2>Busy-wait: forbudt</h2>
+  <p>At vente betyder, at en tråd ikke kan fortsætte, før tilstanden ændrer sig. Man kan vente på to meget forskellige måder: ved at blive ved med at kontrollere, eller ved at stoppe, indtil nogen giver besked.</p>
+  <div class="colonne">
+    <div class="carta cattiva">
+      <h4>Busy-wait</h4>
+      <pre class="cod" data-lang="java">while (i &gt; 0) {
+    // non faccio niente, ricontrollo
+}</pre>
+      <p>Tråden forbliver <b>running</b> og bruger CPU til at kontrollere en tilstand, der ikke ændrer sig.</p>
+    </div>
+    <div class="carta buona">
+      <h4>At blokere sig</h4>
+      <pre class="cod" data-lang="java">while (i &gt; 0) {
+    condition.await();
+}</pre>
+      <p>Tråden går i <b>blocked</b> og bruger ingen CPU, før nogen vækker den.</p>
+    </div>
+  </div>
+  <div class="box esame" data-tit="I assignments">
+    <p>Fra slidene: "Exercise solutions using busy-wait will not be approved."</p>
+  </div>
+  <figure class="scena" data-scena="busywait" data-titolo="At kontrollere eller at blokere sig"></figure>
+</section>
+
+</main>
+</body>
+</html>

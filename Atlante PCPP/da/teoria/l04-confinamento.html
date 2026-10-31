@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Indkapsling og sammensatte handlinger</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<link rel="stylesheet" href="../../assets/pcpp.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+<script src="../../assets/pcpp.js" defer></script>
+<script>
+window.PROGRAMMI = window.PROGRAMMI || {};
+PROGRAMMI.addifabsent = {
+  memoria: { l: [] },
+  thread: ['t1', 't2'],
+  locali: { c: false },
+  passi: [
+    { n: 1, codice: 'boolean c = l.contains(1);', fai: (m, l) => { l.c = m.l.includes(1); } },
+    { n: 2, codice: 'if (!c) l.add(1); else l.add(2);', fai: (m, l) => { m.l.push(l.c ? 2 : 1); } }
+  ],
+  esito: m => 'l = [' + m.l.join(', ') + ']',
+  giusto: m => m.l.includes(2)
+};
+PROGRAMMI.addifabsentlock = {
+  memoria: { l: [] },
+  thread: ['t1', 't2'],
+  locali: { c: false },
+  passi: [
+    { n: 1, codice: 'synchronized (l) {', lock: 'l' },
+    { n: 2, codice: '  boolean c = l.contains(1);', fai: (m, l) => { l.c = m.l.includes(1); } },
+    { n: 3, codice: '  if (!c) l.add(1); else l.add(2);', fai: (m, l) => { m.l.push(l.c ? 2 : 1); } },
+    { n: 4, codice: '}', unlock: 'l' }
+  ],
+  esito: m => 'l = [' + m.l.join(', ') + ']',
+  giusto: m => m.l.includes(2)
+};
+</script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  const T = (id, x, y, t, extra) => Object.assign({ id, tipo: 'testo', x, y, t, size: 13 }, extra || {});
+  const R = (id, x, y, w, h, t, extra) => Object.assign({ id, tipo: 'rett', x, y, w, h, t }, extra || {});
+  const N = (id, x, y, t, tono, extra) => Object.assign({ id, tipo: 'nodo', x, y, t, tono, r: 18 }, extra || {});
+  const F = (id, x1, y1, x2, y2, t, extra) => Object.assign({ id, tipo: 'vett', x1, y1, x2, y2, t }, extra || {});
+
+    // instance confinement
+    SCENE.confina = {
+      w: 600, h: 250, lato: true,
+      legenda: 'dato:thread-safe klasse,due:objekt der ikke er thread-safe,ora:tråd,no:adgang der springer låsen over',
+      oggetti: [
+        R('est', 180, 30, 260, 150, '', { tono: 'dato' }), T('et', 310, 50, 'PersonSet (lock di this)', { bold: true, size: 12 }),
+        R('in', 230, 80, 160, 60, 'HashSet mySet', { tono: 'due' }),
+        N('t1', 60, 70, 't1', 'ora'), N('t2', 60, 150, 't2', 'ora'), N('t3', 550, 110, 't3', 'ora', { nascosto: true }),
+        F('f1', 80, 70, 178, 90, 'addPerson', { tx: -70, ty: -14, nascosto: true }), F('f2', 80, 150, 178, 130, 'contains', { tx: -60, ty: 22, nascosto: true }),
+        F('f3', 530, 110, 394, 110, 'l.add(…)', { tx: 40, ty: -12, nascosto: true, tono: 'no' }),
+        T('c', 300, 212, '', { size: 12, bold: true }), T('c2', 300, 236, '', { size: 12 })
+      ],
+      passi: [
+        { nota: "<b>Instance confinement</b>: un oggetto <b>non</b> thread-safe (HashSet) chiuso dentro una classe thread-safe (PersonSet). Il set è <code>private final</code>: non scappa ed è pubblicato in modo sicuro." },
+        { nota: "Ogni accesso al set passa da un metodo <code>synchronized</code> di PersonSet: la porta è una sola, con il lock di this. Mutua esclusione garantita.", set: { f1: { nascosto: false }, f2: { nascosto: false }, c: { t: 'tutti gli accessi passano dal lock di PersonSet', tono: 'ok' } } },
+        { nota: "I metodi restituiscono boolean o niente: il riferimento al set non esce mai. Il set è <b>confinato</b>, PersonSet è thread-safe anche se HashSet non lo è.", set: { c2: { t: 'nessun metodo restituisce mySet' } } },
+        { nota: "Le <b>synchronized collections</b> fanno lo stesso in automatico: <code>Collections.synchronizedList(l)</code> restituisce un involucro con ogni metodo sincronizzato.", set: { et: { t: 'synchronizedList(l)' }, in: { t: 'ArrayList l' }, f1: { t: 'add' }, f2: { t: 'get' }, c: { t: 'involucro: ogni metodo sincronizzato' }, c2: { t: '' } } },
+        { nota: "Ma funziona solo se nessuno tiene un altro riferimento all'oggetto interno. Se t3 continua a usare <code>l</code> direttamente, quegli accessi <b>saltano il lock</b>: data race sulla lista.", set: { t3: { nascosto: false }, f3: { nascosto: false }, in: { tono: 'no' }, c: { t: 'riferimento diretto a l: il confinamento è rotto', tono: 'no' } } }
+      ]
+    };
+  })();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Indkapsling og sammensatte handlinger</h1>
+  <p class="lede">Et objekt, der ikke er thread-safe, kan gøres sikkert ved at lukke det inde i en thread-safe klasse: <b>instance confinement</b>. Men at bruge kun thread-safe klasser er <b>ikke nok</b> til at undgå race conditions: <b>sammensatte handlinger</b> skal beskyttes særskilt.</p>
+</header>
+
+<section>
+  <h2>Instance confinement</h2>
+  <div class="box regola" data-tit="Definition">
+    <p><b>Instance confinement</b>: at indkapsle adgangen til et objekt, der <b>ikke</b> er thread-safe, i en thread-safe klasse. Objektet er "indesluttet": ingen når det andet end gennem klassens metoder.</p>
+  </div>
+  <figure class="codice" data-titolo="PersonSet (Goetz s. 59)">
+<pre data-lang="java">public class PersonSet {
+    private final Set&lt;Person&gt; mySet = new HashSet&lt;Person&gt;();
+
+    public synchronized void addPerson(Person p) {
+        mySet.add(p);
+    }
+
+    public synchronized boolean contains(Person p) {
+        return mySet.contains(p);
+    }
+}</pre>
+    <ol class="spiega">
+      <li data-righe="2" data-segna="HashSet&lt;Person&gt;@no|private final@ok"><p><code>HashSet</code> er ikke thread-safe. Her er den <code>private</code> (den slipper ikke ud) og <code>final</code> (publiceret sikkert).</p></li>
+      <li data-righe="4-10" data-segna="synchronized*@ok"><p>Enhver adgang til mængden går gennem en <code>synchronized</code>-metode: gensidig udelukkelse med låsen på <code>this</code>.</p></li>
+      <li data-righe="8-10" data-segna="boolean@dato"><p>Metoderne returnerer en <code>boolean</code> eller ingenting: mængden forlader aldrig klassen. Mængden er indesluttet, <code>PersonSet</code> er thread-safe.</p></li>
+    </ol>
+  </figure>
+  <div class="box idea" data-tit="Eksempel i Java-biblioteket">
+    <p>De <b>synchronized collections</b>: <code>Collections.synchronizedList(l)</code> returnerer en indpakning, hvor hver metode er synkroniseret, og den oprindelige liste er kun tilgængelig gennem den. Enhver samling kan gøres thread-safe på denne måde (<code>synchronizedSet</code>, <code>synchronizedMap</code>…).</p>
+  </div>
+  <div class="box attenzione" data-tit="Betingelse">
+    <p>Det virker kun, hvis ingen holder en anden reference til det indre objekt. Hvis nogen efter <code>synchronizedList(l)</code> bliver ved med at bruge <code>l</code> direkte, går disse adgange ikke gennem låsen.</p>
+  </div>
+  <figure class="scena" data-scena="confina" data-titolo="Et HashSet indesluttet i en thread-safe klasse"></figure>
+</section>
+
+<section>
+  <h2>Thread-safe klasser ≠ ingen race conditions</h2>
+  <figure class="codice" data-titolo="SynchronizedSetProblem.java (reduceret)">
+<pre data-lang="java">List&lt;Integer&gt; lSync = Collections.synchronizedList(new ArrayList&lt;Integer&gt;());
+new Thread(() -> { add1IfAbsent(lSync); }).start();
+new Thread(() -> { add1IfAbsent(lSync); }).start();
+
+void add1IfAbsent(List&lt;Integer&gt; l) {
+    if (!l.contains(1))
+        l.add(1);
+    else
+        l.add(2);
+}</pre>
+    <ol class="spiega">
+      <li data-righe="1-3" data-segna="Collections.synchronizedList@ok"><p>En thread-safe liste og to tråde, der gør det samme. Til sidst forventer man <code>[1, 2]</code>: den første tilføjer 1, den anden finder 1 og tilføjer 2.</p></li>
+      <li data-righe="6-7" data-segna="l.contains(1)@due|l.add(1)@ora"><p>To separate kald: <b>kontrollér</b>, derefter <b>handl</b> (check-then-act). Hvert kald tager og frigiver listens lås. <b>Mellem de to</b> er låsen fri.</p></li>
+      <li data-righe="1-10" data-segna="add1IfAbsent*@no"><p>Ingen data race: hver adgang til listen er inde i en synkroniseret metode, altså ordnet af happens-before. Men hvis begge tråde kalder <code>contains</code> før nogen <code>add</code>, tilføjer begge 1: <code>[1, 1]</code>. Det er en <b>race condition</b>.</p></li>
+    </ol>
+  </figure>
+  <p>Prøv selv: hvert kald til en metode på den synkroniserede liste er et atomart trin.</p>
+  <figure class="interleaving" data-prog="addifabsent" data-titolo="add1IfAbsent med en synkroniseret liste"></figure>
+  <div class="box attenzione" data-tit="Målt i praksis">
+    <p>Ved at gentage eksperimentet 200 000 gange (JDK 26) kom <code>[1, 1]</code> <b>8 gange</b>. Sjældent, men muligt: derfor beviser en test, der "går igennem", ikke noget.</p>
+  </div>
+  <div class="box regola" data-tit="De to definitioner sammenlignet">
+    <p>Hvis "thread-safe program" betyder <b>uden data race</b> (kursets definition), er dette program thread-safe. Hvis det betød <b>uden race condition</b>, ville det ikke være det. Kommentaren i kursets kode siger det udtrykkeligt: det afhænger af definitionen.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Sammensatte handlinger: udvidelse af en thread-safe klasse</h2>
+  <p>En <b>sammensat handling</b> er en følge af metodekald eller feltadgange, der skal ske helt i en kritisk sektion. Typiske eksempler: <b>check-and-set</b> (kontrollér og derefter ændr), <b>iteration</b>, <b>navigation</b> (for eksempel <code>contains</code> efterfulgt af en handling).</p>
+
+  <h3>Løsning 1: brug samlingens indre lås</h3>
+  <pre class="cod" data-lang="java">public void addIfAbsent(List l, Integer e) {
+    synchronized (l) {
+        if (!l.contains(e)) l.add(e);
+    }
+}</pre>
+  <p>Det virker, fordi listen i <code>synchronizedList</code> bruger <b>sig selv</b> som lås: <code>synchronized (l)</code> tager samme lås som dens metoder, og ingen andre kan komme ind mellem <code>contains</code> og <code>add</code>. Java-dokumentationen beder om det samme for at iterere: <code>synchronized (list) { for (…) … }</code>.</p>
+  <figure class="interleaving" data-prog="addifabsentlock" data-titolo="Med synchronized (l) omkring den sammensatte handling"></figure>
+  <p class="piccolo">Samme eksperiment med 200 000 forsøg og <code>synchronized (l)</code>: <code>[1, 1]</code> kom 0 gange.</p>
+
+  <h3>Løsning 2: en ny metode i den thread-safe klasse</h3>
+  <figure class="codice" data-titolo="ThreadSafeList med addIfAbsent">
+<pre data-lang="java">class ThreadSafeList&lt;T&gt; {
+    private final List&lt;T&gt; l = new ArrayList&lt;&gt;();
+    public synchronized void add(T e) { l.add(e); }
+    public synchronized boolean contains(T e) { return l.contains(e); }
+    public synchronized void addIfAbsent(T e) {
+        if (!l.contains(e)) l.add(e);
+    }
+}</pre>
+    <ol class="spiega">
+      <li data-righe="5-7" data-segna="public synchronized void addIfAbsent@ok"><p>Den sammensatte handling bliver <b>én enkelt synkroniseret metode</b>: kontrol og tilføjelse sker, mens låsen holdes hele tiden.</p></li>
+    </ol>
+  </figure>
+  <p>Pas på: på slide 79 er metoden skrevet <code>public void synchronized</code>. I Java kompilerer det ikke (rigtige meddelelser fra <code>javac</code>):</p>
+  <div class="errori">
+    <div class="errore">
+      <pre data-lang="java">public void synchronized addIfAbsent(T e) { if (!l.contains(e)) l.add(e); }</pre>
+      <pre class="msg">error: &lt;identifier&gt; expected
+error: '(' expected
+error: invalid method declaration; return type required</pre>
+      <div class="fix"><p>Modifikatorerne (<code>public</code>, <code>static</code>, <code>synchronized</code>, <code>final</code>) skal stå <b>før</b> returtypen: <code>public synchronized void addIfAbsent(…)</code>. Hvis du skriver det i hånden til eksamen, så pas på rækkefølgen.</p></div>
+    </div>
+  </div>
+</section>
+
+</main>
+</body>
+</html>

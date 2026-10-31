@@ -1,0 +1,84 @@
+@@s001 Noise, data and generalisation
+@@s002 ok:true f(x) (ground truth),dato:observed data Y,due:learned line,no:outlier and the line pulled
+@@s003 The <b>ground truth</b>: the true function f(x) = 1 + 0.5x. In reality <b>we never see it</b>: here we know it only because I generated the data myself.
+@@s004 What we observe are the data <b>Y = f(x) + N</b>: every measurement is shifted by a little random noise N (here Gaussian, standard deviation 0.5).
+@@s005 The noise is the vertical distance between each point and the true line. It has different signs: on average it is almost 0 (here −0.05).
+@@s006 Least squares on the 10 points gives <b>y = 0.70 + 0.56x</b>: close to the true one but not equal. With noisy data one <b>estimates</b> f, one does not find it exactly.
+@@s007 An <b>outlier</b>: the point at x = 8 is worth 12.6 instead of 4.6 (+8). Only one out of ten.
+@@s008 Redoing least squares the line becomes <b>y = −0.03 + 0.89x</b>: a single point pulls it towards itself. Squares weigh large errors enormously.
+@@s009 ok:true f,dato:random,no:systematic,due:salt and pepper
+@@s010 dato:noise on y,due:noise on x,ok:true line (slope 2),no:estimated line
+@@s011 dato:standard deviation of the mean,no:systematic error (does not go down)
+@@s012 dato:data,ok:median,no:mean
+@@s013 dato:training,due:test (new data),no:polynomial of degree 7,ok:line
+@@s014 Noise, data and generalisation
+@@s015 Lecture 6. A model does not learn from "true" data, but from dirty measurements: noise, outliers, missing data. Here is the model that the course uses to describe the data (Y = f + N), the types of noise, and why the aim is not to remember the training data but to <b>generalise</b>. DW chapter 8.
+@@s016 The data model: Y = f(x) + N(x)
+@@s017 Three pieces
+@@s018 The <b>true function</b> (ground truth, underlying function): the behaviour of the data without disturbances. It is what we would like to learn, and it is never observed directly.
+@@s019 What we measure: the true function plus the <b>noise</b> N, that is everything that disturbs the observation (sensor, light, rounding, transmission).
+@@s020 Plus a possible <b>outlier</b> O: rare (sparsity), large (magnitude), at precise points (localization).
+@@s021 True function, noisy data, one outlier
+@@s022 Data generated with NumPy (fixed seed); lines computed with <code>lstsq</code>.
+@@s023 Types of noise
+@@s024 Type
+@@s025 What it is
+@@s026 Example in the course
+@@s027 <b>random</b> (unstructured, stochastic)
+@@s028 without pattern; it is described by a distribution, often <span class="m">N ~ 𝒩(0, σ²)</span>. Mean 0: it is attenuated by taking averages.
+@@s029 the centre of the pupil that "trembles" by a pixel from one frame to the next
+@@s030 <b>systematic</b> (structured)
+@@s031 it follows a rule, shifts everything in the same direction. If you know it you can subtract it: <span class="m">f = Y − N<sub>s</sub></span>.
+@@s032 head shifted between calibration and test: all the estimates of the line pattern shifted by about −338 px (<a href="w06-assignment1-gaze.html">Assignment 1</a>); the distortion of the lens
+@@s033 <b>additive</b>
+@@s034 it adds to the signal
+@@s035 the model Y = f + N
+@@s036 <b>multiplicative</b>
+@@s037 it grows with the signal
+@@s038 radar, ultrasound
+@@s039 <b>salt and pepper</b> (impulsive)
+@@s040 isolated white or black pixels
+@@s041 faulty sensor, transmission errors
+@@s042 Noise on the output or on the input: why it matters
+@@s043 Least squares measures the <b>vertical</b> distances: it assumes that x is exact and that the error is all in y. With noise only on y, the estimate is right on average.
+@@s044 Simulation with 100 000 points and noise on x as large as the variability of x: the slope is <b>halved</b>, systematically. In the assignment the input (the centre of the pupil) is noisy: this too weighs.
+@@s045 Not all the variability is noise
+@@s046 If the model is too simple, even the part of f that the model cannot represent looks like "noise". Example from the book: data with a wave-like trend, read with a linear model. Before calling it noise, ask whether it is the model that is wrong.
+@@s047 Random, systematic, salt and pepper
+@@s048 Handling noise
+@@s049 <b>Averaging</b>: random noise has mean 0, so averaging many samples reduces it. It is what the assignment does, taking the <b>mean</b> pupil centre for each target.
+@@s050 <b>Filtering</b>: a local average, for example on a signal over time or on an image (week 7).
+@@s051 <b>More data</b>: they attenuate random noise, <b>not</b> systematic noise.
+@@s052 <b>Simpler or regularised models</b>, which cannot chase every oscillation (week 7).
+@@s053 <b>Removing outliers</b>, with caution.
+@@s054 When removing data is a bad idea
+@@s055 An outlier is not necessarily an error: in fiscal or medical data the extreme cases can be exactly the frauds or the diseases of interest. And removing the "awkward" points makes the data look nicer than they are: the model will seem better than it is.
+@@s056 Averaging: σ/√n, but not for the systematic part
+@@s057 Describing the data
+@@s058 A <b>random variable</b> is a quantity whose value depends on a random process: the noise N, the centre of the pupil in a frame, the height of a person taken at random. Its value is not known, but its distribution can be described.
+@@s059 Measure
+@@s060 What it says
+@@s061 For [2, 3, 3, 4, 100]
+@@s062 <b>mean</b> (mean vector, for several variables)
+@@s063 the "centre" of the data
+@@s064 <b>median</b>
+@@s065 the middle value, once sorted
+@@s066 <b>variance</b> / standard deviation
+@@s067 how much the data spread around the mean
+@@s068 <b>covariance</b>
+@@s069 how two variables change together (week 9)
+@@s070 Computed with NumPy (<code>mean</code>, <code>median</code>, <code>var</code>, <code>std</code>, which divide by N). Without the 100, mean and median are both 3: the <b>median</b> is preferred when there are outliers or asymmetric data, because an extreme value does not move it.
+@@s071 Mean and median with an outlier
+@@s072 Learning means generalising
+@@s073 From the aim to the assumptions
+@@s074 Supervised learning: from pairs (x, y) learn a function that gives the right y for <b>new</b> x. A model that memorises the training copies its noise too.
+@@s075 With finite data, infinitely many functions pass through the training points: an assumption is needed to choose. Example in linear regression: "the relation is a line", f(x) = wx. Without an assumption, there are no predictions outside the data seen.
+@@s076 The generalisation error is the difference between the error on new data (test) and the error on the training. A right assumption helps to generalise; one too rigid (a line for curved data) gets it wrong everywhere: underfitting. One too free chases the noise: overfitting (<a href="w07-complessita-modello.html">week 7</a>).
+@@s077 No algorithm recovers information that the data do not contain. In the assignment: if the threshold finds the reflection instead of the pupil, even the best model learns the wrong thing.
+@@s078 Ready sentences for the oral
+@@s079 "We model the observations as <i>Y = f(x) + N(x)</i>: an unknown underlying function plus noise. Learning means estimating <i>f</i>, not memorising <i>Y</i>."
+@@s080 "Random noise averages out; systematic noise does not, so more data cannot fix it."
+@@s081 "Inductive bias is the set of assumptions that lets a model predict outside the training data, for example linearity in linear regression."
+@@s082 Where it is needed at the exam
+@@s083 <b>Q5 (b)</b>: data quality, uncertainty, overfitting and underfitting. <b>Q7 (c–d)</b>: noise, outliers, missing data, data cleaning. <b>Q4 (c)</b>: the sources of error of the assignment. The review questions of week 6 are almost all on this page.
+@@s084 Degree 7 against a line, on new data

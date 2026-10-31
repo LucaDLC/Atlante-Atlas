@@ -1,0 +1,83 @@
+@@s001 Synlighed, omordning, volatile
+@@s002 dato:main (CPU 1),due:t1 (CPU 2),no:gammel værdi,ok:opdateret værdi
+@@s003 ok:afslutter altid (der er happens-before),no:kan måske ikke afslutte
+@@s004 dato:t1,due:t2,no:tabt opdatering
+@@s005 Synlighed, omordning, volatile
+@@s006 To måder, hvorpå den virkelige udførelse forråder intuitionen: en skrivning, som en anden tråd <b>aldrig ser</b> (synlighed), og instruktioner udført <b>i en anden rækkefølge</b> (omordning). Det er ikke "Java-problemer": det sker i ethvert sprog med samtidighed. <code>volatile</code> og låse er svarene.
+@@s007 Synlighed: skrivningen der ikke når frem
+@@s008 NoVisibility1.java
+@@s009 t1 bliver ved med at læse <code>running</code>.
+@@s010 Efter et halvt sekund skriver main <code>false</code>.
+@@s011 Mulige udskrifter: begge afslutter, <b>eller t1 afslutter aldrig</b>. Ingen synkroniseringsoperation binder main's skrivning til t1's læsninger.
+@@s012 <b>Hardware-intuition</b> (slide 51): tråde kan køre på forskellige CPU'er. Uden synkronisering kan CPU'en beholde værdien i sine registre eller i sin cache, som de andre CPU'er ikke ser. Også JIT-compileren kan behandle læsningen som en konstant. Slidene advarer om, at hardware-forklaringen er vejledende: den præcise regel giver <b>Java Memory Model</b> (forelæsning 3).
+@@s013 Reglen at bruge
+@@s014 En skrivning er garanteret synlig for en læsning <b>kun hvis</b> skrivningen <b>happens-before</b> læsningen. Uden en lås, <code>volatile</code>, start/join eller lignende mellem de to er der ingen garanti.
+@@s015 Ved at sætte <code>synchronized(o)</code> omkring læsningen i t1 og skrivningen i main (<code>NoVisibility1Synchronized.java</code>) afslutter programmet altid: main's <code>unlock</code> sker, før t1's efterfølgende <code>lock</code>, og denne rækkefølge gør skrivningen synlig.
+@@s016 To CPU'er, to caches, en skrivning der bliver bagud
+@@s017 Øvelse 2.2: <code>MutableInteger</code>, forklaret ordentligt
+@@s018 Spørgsmål
+@@s019 Svar
+@@s020 Hvorfor (med kursets ordforråd)
+@@s021 2.2.1 Kan den køre for evigt?
+@@s022 ja
+@@s023 skrivningen <code>set(42)</code> og læsningerne <code>get()</code> er ikke ordnet af happens-before: JVM'en må legitimt aldrig lade t se 42 (synlighed)
+@@s024 2.2.2 <code>synchronized</code> på get og set
+@@s025 afslutter altid
+@@s026 begge bruger låsen på <code>mi</code>: unlock i <code>set</code> happens-before lock i den næste <code>get</code> (monitorreglen), så den get ser 42
+@@s027 2.2.3 Kun set synchronized
+@@s028 ikke garanteret
+@@s029 monitorreglen ordner en unlock og en lock <b>på den samme monitor</b>: hvis <code>get</code> ikke tager låsen, binder ingen regel læsningen til skrivningen
+@@s030 2.2.4 Ingen lås, <code>value</code> volatile
+@@s031 afslutter altid
+@@s032 volatile-reglen: en skrivning til en volatile variabel happens-before enhver efterfølgende læsning af den samme variabel
+@@s033 Om dit svar på 2.2.x
+@@s034 Du forklarede med JIT'en, at den "cacher værdien og omskriver løkken". Det er en mulig mekanisme, men til den mundtlige er det bedre at give kursets forklaring: <b>der er ingen happens-before mellem skrivningen og læsningen, så synligheden er ikke garanteret</b>; med <code>synchronized</code> på begge metoder (eller med <code>volatile</code>) findes rækkefølgen, og læsningen ser skrivningen. Så svaret afhænger ikke af, hvad en bestemt compiler gør.
+@@s035 På engelsk (2.2.2)
+@@s036 "Making both get() and set() synchronized makes them use the intrinsic lock of mi. By the monitor rule, the unlock at the end of set(42) happens-before the lock at the beginning of any subsequent get(), so that get() is guaranteed to see the value 42 and the loop in t terminates."
+@@s037 Fire varianter, én happens-before-bue
+@@s038 Omordning: de instruktioner, der bytter plads
+@@s039 Første forsøg som scheduler: hvilke output får du ved at blande trinene? Åbn derefter "Alle mulige interleavings".
+@@s040 Uden synkronisering
+@@s041 Hvorfor (0,0) kan komme ud, selv om ingen interleaving giver det
+@@s042 Ved at blande de 4 trin på alle 6 måder kommer (0,0) aldrig ud.
+@@s043 For at læse begge 0…
+@@s044 …men ifølge program order kommer <code>a=1</code> før <code>x=b</code>, og <code>b=1</code> før <code>y=a</code>: der skulle en cyklus til. Ingen total rækkefølge tillader det.
+@@s045 Mellem <code>a=1</code> og <code>x=b</code> er der hverken dataafhængighed eller synkronisering: <b>CPU'en eller JIT'en kan bytte dem</b>. Omordning ændrer ikke trådens adfærd alene, men mellem forskellige tråde lover den ingenting.
+@@s046 Programmet kan faktisk udskrive det. Det er en udførelse, der er <b>ikke sekventielt konsistent</b> (forelæsning 3).
+@@s047 Med <code>synchronized</code>
+@@s048 De to kroppe inde i synchronized(o)
+@@s049 Version
+@@s050 ingen synkronisering
+@@s051 ja
+@@s052 ja
+@@s053 ja
+@@s054 ja
+@@s055 <code>synchronized (o)</code> i begge
+@@s056 nej
+@@s057 ja
+@@s058 ja
+@@s059 nej
+@@s060 <code>volatile a, b</code>
+@@s061 nej
+@@s062 ja
+@@s063 ja
+@@s064 ja
+@@s065 Med <code>synchronized</code> forsvinder også (1,1): de to kroppe kører den ene efter den anden, og den der går først læser den anden's begyndelsesværdi 0. Ikke fordi låsen forhindrer omordning inde i tråden, men fordi gensidig udelukkelse forhindrer, at kroppene blandes.
+@@s066 <code>volatile</code>
+@@s067 <code>volatile</code> er et nøgleord for felter: <code>volatile boolean running</code>. Det er en <b>svag</b> form for synkronisering (slide 65): den løser synligheds- og omordningsproblemerne på den variabel, uden at blokere nogen. Netop fordi den ikke blokerer, kan den ikke forhindre to tråde i at blande sig i en sammensat operation.
+@@s068 En <code>volatile</code>-variabel bliver ikke gemt skjult i en CPU's registre eller caches: skrivningerne gøres synlige for de andre CPU'er.
+@@s069 Adgange til volatile-variable <b>omordnes ikke</b>.
+@@s070 Læsninger og skrivninger er <b>ikke blokerende</b>.
+@@s071 Den garanterer <b>ikke</b> gensidig udelukkelse: <code>volatile int count; count++</code> er stadig en race condition.
+@@s072 Synlighed
+@@s073 Ingen omordning
+@@s074 Gensidig udelukkelse
+@@s075 <code>volatile</code>
+@@s076 ja
+@@s077 ja
+@@s078 nej
+@@s079 lås / <code>synchronized</code>
+@@s080 ja
+@@s081 ja
+@@s082 ja
+@@s083 volatile count++ taber stadig en forøgelse

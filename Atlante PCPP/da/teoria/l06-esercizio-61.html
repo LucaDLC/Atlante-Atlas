@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Øvelse 6.1: CasHistogram</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Øvelse 6.1: CasHistogram</h1>
+  <p class="lede">Et lock-free histogram lavet af <code>AtomicInteger</code>, der kun bruger <code>get</code> og <code>compareAndSet</code>, og en test der sammenligner det med den sekventielle version. Først hvad et histogram er, derefter klassen, derefter testen.</p>
+</header>
+
+<section>
+  <h2>Hvad et histogram er</h2>
+  <p>En række <b>bins</b>, hver med en <b>tæller</b>: den bruges til at tælle, hvor mange gange hver ting sker. Grænsefladen <code>Histogram</code>:</p>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>metode</th><th>hvad den gør</th></tr></thead>
+    <tbody>
+      <tr><td><code>increment(7)</code></td><td>+1 til bin 7</td></tr>
+      <tr><td><code>getCount(7)</code></td><td>værdien af bin 7</td></tr>
+      <tr><td><code>getSpan()</code></td><td>hvor mange bins der er (i øvelse 30)</td></tr>
+      <tr><td><code>getAndClear(7)</code></td><td>returnerer værdien af bin 7 <b>og</b> sætter den tilbage til 0</td></tr>
+    </tbody>
+  </table></div>
+  <div class="colonne">
+    <div class="carta cattiva"><h4>Histogram1</h4><p><code>int[]</code> og <code>counts[bin] = counts[bin] + 1</code>: læs, derefter skriv. Perfekt med én tråd; med flere tråde taber den forøgelser (race condition). I testen tjener den som <b>reference</b>, brugt af én tråd.</p></div>
+    <div class="carta buona"><h4>CasHistogram</h4><p>Det samme, men hver bin er en <code>AtomicInteger</code>, og forøgelsen er en CAS-løkke: den taber ingenting, selv med mange tråde. Det er klassen <b>under test</b>.</p></div>
+  </div>
+</section>
+
+<section>
+  <h2>6.1.1 · Klassen</h2>
+  <figure class="codice" data-titolo="CasHistogram (kompileret med javac)">
+<pre data-lang="java">class CasHistogram implements Histogram {
+    private final AtomicInteger[] counts;
+
+    public CasHistogram(int span) {
+        this.counts = new AtomicInteger[span];
+        for (int i = 0; i &lt; span; i++) {
+            this.counts[i] = new AtomicInteger(0);
+        }
+    }
+
+    public void increment(int bin) {
+        int oldValue;
+        do {
+            oldValue = counts[bin].get();
+        } while (!counts[bin].compareAndSet(oldValue, oldValue + 1));
+    }
+
+    public int getCount(int bin) { return counts[bin].get(); }
+
+    public int getSpan() { return counts.length; }
+
+    public int getAndClear(int bin) {
+        int oldValue;
+        do {
+            oldValue = counts[bin].get();
+        } while (!counts[bin].compareAndSet(oldValue, 0));
+        return oldValue;
+    }
+}</pre>
+    <ol class="spiega">
+      <li data-righe="2" data-segna="private final@ok"><p><code>private</code>: tilstanden forlader ikke klassen. <code>final</code>: sikker publicering (reglen for final-felter).</p></li>
+      <li data-righe="5-8" data-segna="new AtomicInteger(0)@ora"><p><code>new AtomicInteger[span]</code> opretter <b>tomme</b> positioner (<code>null</code>), ikke nuller: hver position skal fyldes, ellers giver den første <code>increment</code> en <code>NullPointerException</code>.</p></li>
+      <li data-righe="11-15" data-segna="compareAndSet(oldValue, oldValue + 1)@ora"><p>CAS-løkke: jeg læser, prøver at skrive <i>læst + 1</i>; hvis nogen har ændret værdien imens, fejler CAS'en, og jeg prøver igen. Lock-free. Metoder som <code>incrementAndGet</code> eller <code>getAndSet</code> er <b>forbudt</b> af øvelsen: løkken skal skrives i hånden.</p></li>
+      <li data-righe="18-20"><p>Et enkelt læs, eller en værdi der aldrig ændrer sig: ingen løkke (wait-free).</p></li>
+      <li data-righe="22-28" data-segna="return oldValue;@ok"><p>Den samme løkke med den nye værdi 0. Man returnerer den værdi, <b>som CAS'en nulstillede</b>, ikke en genlæsning foretaget bagefter.</p></li>
+    </ol>
+  </figure>
+  <div class="box regola" data-tit="final dækker også det, der er inde i arrayet">
+    <p>Reglen for <code>final</code>-felter gælder ikke kun for referencen <code>counts</code>: en tråd, der ser objektet efter konstruktøren, ser også <b>alt, der kan nås fra det felt</b>, som det var ved konstruktørens afslutning. Den ser altså arrayet og de 30 <code>AtomicInteger</code>, der allerede er oprettet, hver med 0. Senere ændringer er synlige, fordi hver <code>AtomicInteger</code> opfører sig som en <code>volatile</code>.</p>
+    <p><b>Uforanderlige variable:</b> referencen <code>counts</code> (final, aldrig tildelt igen) og i praksis indholdet af arrayet: efter konstruktøren peger <code>counts[i]</code> altid på den samme <code>AtomicInteger</code>. Foranderlige er kun værdierne inde i <code>AtomicInteger</code>'erne: de er histogrammets tilstand.</p>
+  </div>
+  <figure class="passi" data-titolo="i) Hvorfor tilstanden ikke slipper ud: tre døre, alle lukkede" data-legenda="dato:tilstanden,ok:dør lukket">
+    <div class="passo"><div class="espr">stato = <mark class="dato">counts</mark> e i 30 AtomicInteger dentro</div><p class="nota">Tilstanden "slipper ud", hvis et andet objekt får en reference til arrayet eller til en af <code>AtomicInteger</code>'erne: så kunne det ændre dem uden at gå gennem klassens metoder.</p></div>
+    <div class="passo"><div class="espr">1. campo: <mark class="ok">private</mark></div><p class="nota">Ingen anden klasse kan læse <code>counts</code> direkte.</p></div>
+    <div class="passo"><div class="espr">2. metodi: restituiscono solo <mark class="ok">int</mark></div><p class="nota"><code>getCount</code>, <code>getSpan</code> og <code>getAndClear</code> returnerer en <code>int</code>, altså en <b>kopi</b> af tallet, aldrig arrayet eller en <code>AtomicInteger</code>. Ingen metode modtager et array udefra og beholder det.</p></div>
+    <div class="passo"><div class="espr">3. costruttore: <mark class="ok">this non esce</mark></div><p class="nota">Konstruktøren starter ingen tråde og sender <code>this</code> til ingen: ingen kan se objektet halvt bygget.</p></div>
+  </figure>
+  <div class="box inglese" data-tit="Klar besvarelse 6.1.1">
+    <p>i) Ingen escaping: tilstanden er arrayet <code>counts</code> og <code>AtomicInteger</code>-objekterne i det. Feltet er <code>private</code>, ingen metode returnerer arrayet eller en af dets <code>AtomicInteger</code>'er (de returnerer kun <code>int</code>-værdier), og konstruktøren hverken starter tråde eller sender <code>this</code> til andre objekter. ii) Sikker publicering: <code>counts</code> er <code>final</code>, så enhver tråd, der får en reference til objektet efter konstruktionen, ser arrayet og alle <code>AtomicInteger</code>'erne initialiseret til 0. Senere opdateringer er synlige, fordi hver <code>AtomicInteger</code> opfører sig som en volatile variabel. Uforanderlig: referencen <code>counts</code> og i praksis arrayets indhold (hver plads peger altid på den samme <code>AtomicInteger</code>). Kun værdierne inde i <code>AtomicInteger</code>'erne ændrer sig.</p>
+  </div>
+  <div class="box attenzione" data-tit="AtomicIntegerArray passer ikke her">
+    <p>Med <code>AtomicIntegerArray</code> og <code>incrementAndGet</code> / <code>getAndSet</code> er klassen trådsikker, men den overtræder teksten: <code>AtomicInteger</code> kræves, og <b>kun</b> <code>get</code> og <code>compareAndSet</code> må bruges.</p>
+  </div>
+</section>
+
+<section>
+  <h2>6.1.2 · Er getAndClear atomisk?</h2>
+  <p>Metoden gør to ting: <b>get</b> (læser værdien) og <b>clear</b> (sætter den tilbage til 0). Spørgsmålet: kan en anden tråd smutte ind imellem de to og få noget til at gå tabt? Med CAS-løkken: nej.</p>
+  <figure class="passi" data-titolo="getAndClear(7) og increment(7) sammen" data-legenda="dato:læst værdi,ora:CAS,ok:lykkedes,no:mislykkedes">
+    <div class="passo"><div class="espr">bin 7 = 5      T1: getAndClear(7)      T2: increment(7)</div><p class="nota">To tråde på den samme bin.</p></div>
+    <div class="passo"><div class="espr">T1: oldValue = get() = <mark class="dato">5</mark></div><p class="nota">T1 har lavet "get". "clear" er endnu ikke sket.</p></div>
+    <div class="passo"><div class="espr">T2: <mark class="ora">CAS(5 → 6)</mark> <mark class="ok">riesce</mark>      bin 7 = 6</div><p class="nota">T2 smutter netop ind mellem T1's get og clear.</p></div>
+    <div class="passo"><div class="espr">T1: <mark class="ora">CAS(5 → 0)</mark> <mark class="no">fallisce</mark>      bin 7 = 6</div><p class="nota">CAS'en skriver kun 0, hvis binen stadig er 5. Den er ikke 5: den nulstiller intet, og T2's forøgelse bliver stående.</p></div>
+    <div class="passo"><div class="espr">T1: oldValue = <mark class="dato">6</mark>, <mark class="ora">CAS(6 → 0)</mark> <mark class="ok">riesce</mark>, return 6</div><p class="nota">Løkken prøver igen. Den returnerede værdi er <b>præcis</b> den, CAS'en erstattede med 0: get og clear sker sammen, i den lykkedes CAS.</p></div>
+  </figure>
+  <div class="colonne">
+    <div class="carta cattiva"><h4>get, derefter set(0)</h4><p><code>v = c.get(); c.set(0); return v;</code> Hvis T2 forøger mellem de to linjer, sletter <code>set(0)</code> dens forøgelse, og ingen returnerer den: <b>tabt</b>.</p></div>
+    <div class="carta buona"><h4>get, derefter CAS(v, 0)</h4><p>CAS'en nulstiller kun, hvis værdien stadig er <code>v</code>. Ellers prøver den igen. Intet går tabt: det virker, som om get og clear var <b>én atomar operation</b>.</p></div>
+  </div>
+  <div class="box inglese" data-tit="Klar besvarelse">
+    <p>Ja. <code>getAndClear</code> læser værdien og kalder derefter <code>compareAndSet(oldValue, 0)</code>, som kun skriver 0, hvis binen stadig indeholder <code>oldValue</code>. Hvis en anden tråd ændrer binen mellem læsningen og CAS'en, fejler CAS'en, og løkken prøver igen. Så når CAS'en lykkes, er den returnerede værdi præcis den værdi, der blev erstattet med 0, og ingen opdatering kan ske imellem og gå tabt: get og clear træder i kraft samlet i den lykkedes CAS.</p>
+  </div>
+</section>
+
+<section>
+  <h2>6.1.3 · Hvad testen gør</h2>
+  <p><code>countFactors(p)</code> siger, i hvor mange primtal <i>p</i> opløses, og det er <b>binen der skal forøges</b>. Med tallene fra 0 til 9:</p>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>tal</th><th>opløsning</th><th>bin</th></tr></thead>
+    <tbody>
+      <tr><td>0, 1</td><td>ingen</td><td>0</td></tr>
+      <tr><td>2, 3, 5, 7</td><td>er primtal</td><td>1</td></tr>
+      <tr><td>4, 6, 9</td><td>2·2, 2·3, 3·3</td><td>2</td></tr>
+      <tr><td>8</td><td>2·2·2</td><td>3</td></tr>
+    </tbody>
+  </table></div>
+  <p>Resulterende histogram: bin 0 → 2, bin 1 → 4, bin 2 → 3, bin 3 → 1. Testen gør det samme med tallene fra 0 til 4999.</p>
+  <figure class="passi" data-titolo="Testen, trin for trin" data-legenda="dato:Histogram1 (sekventiel),due:CasHistogram (parallel),ok:sammenligning">
+    <div class="passo"><div class="espr"><mark class="dato">expected</mark>: un thread, p = 0…4999, expected.increment(countFactors(p))</div><p class="nota">Ingen race: det er det <b>sande</b> resultat.</p></div>
+    <div class="passo"><div class="espr"><mark class="due">histogram</mark>: 5000 thread, uno per numero, tutti sullo stesso oggetto</div><p class="nota">Tråden for tallet 8 laver <code>increment(3)</code>, den for 9 laver <code>increment(2)</code>… I lambdaen kræves <code>final int num = p;</code>: en lambda bruger kun variable, der ikke ændrer sig, og <code>p</code> ændrer sig ved hver omgang.</p></div>
+    <div class="passo"><div class="espr">barriera da 5000 + 1: partenza insieme, poi main aspetta la fine</div><p class="nota">Skemaet fra uge 5. Bin 1 og 2 er de mest befolkede: der kolliderer de.</p></div>
+    <div class="passo"><div class="espr">per ogni bin 0…29: assertEquals(<mark class="dato">expected</mark>.getCount(bin), <mark class="due">histogram</mark>.getCount(bin))</div><p class="nota">En tabt forøgelse ville efterlade en bin med 1 mindre: <mark class="ok">alle ens</mark> betyder ingen tabt forøgelse i den udførelse.</p></div>
+  </figure>
+  <div class="box attenzione" data-tit="En test der afslører lidt">
+    <p>Prøvet ved at sætte <code>Histogram1</code> (ikke trådsikker) i den parallelle del: den bestod 100 gentagelser ud af 100. Hver tråd laver én enkelt forøgelse, og barrieren vækker de 5000 tråde næsten én ad gangen, så de kolliderer sjældent. Det er testen, øvelsen beder om, men det er et godt eksempel på "en test der består beviser ingenting". Hver gentagelse varer cirka et sekund (oprettelsen af 5000 tråde koster): 20 gentagelser er nok.</p>
+  </div>
+  <div class="box attenzione" data-tit="Hvor filen skal ligge">
+    <p>Testen ligger i <code>app/src/test/java/exercises06/TestHistograms.java</code>, med <code>package exercises06;</code>. I <code>src/main</code> er JUnit ikke tilgængelig (det er en <code>testImplementation</code>-afhængighed), og uden pakken kan <code>Histogram1</code>, som ikke er <code>public</code>, ikke ses.</p>
+  </div>
+</section>
+
+</main>
+</body>
+</html>

@@ -1,0 +1,98 @@
+@@s001 Trådsikre klasser
+@@s002 ora:T1 (med lås),due:T2 (med lås),no:adgang uden lås,ok:løsning
+@@s003 Klassens tilstand er listen <code>a</code>, <code>private</code>. Idéen: man kommer dertil kun ved at gå gennem de <code>synchronized</code>-metoderne, altså med objektets lås.
+@@s004 T1 kalder <code>array.set(0,1)</code>: den tager låsen, skriver i <code>a</code> og frigiver.
+@@s005 T2 kalder <code>array.get()</code>: den tager også låsen, og metoden returnerer <code>a</code>. Men i Java betyder det at returnere et objekt at returnere en <b>reference</b> til det objekt, ikke en kopi.
+@@s006 <code>get()</code> slutter og frigiver låsen. T2 beholder dog referencen: med <code>.set(0,42)</code> skriver den inde i <code>a</code> <b>uden nogen lås</b>. Tilstanden er <b>sluppet ud</b> (escaped).
+@@s007 De to skrivninger på <code>a</code> (T1 med lås, T2 uden) er i konflikt, og ingen regel ordner dem: monitorreglen kræver en lås i <b>begge</b> tråde. Data race på klassens tilstand ⇒ <code>IntArrayList</code> er <b>ikke trådsikker</b>.
+@@s008 Løsning: returnér aldrig tilstanden. <code>get</code> returnerer en <b>kopi</b> (<code>new ArrayList&lt;&gt;(a)</code>) eller et enkelt element (<code>a.get(i)</code>). T2 kan ændre kopien, så meget den vil: den er ikke klassens tilstand.
+@@s009 ok:specifikation,spento:resten af programmet,dato:klassen der analyseres,ora:tråd
+@@s010 dato:klassens felter,ora:tråd,ok:ordnede adgange,no:data race
+@@s011 ora:element du kontrollerer,ok:kontrolleret
+@@s012 dato:klassetilstand for C,due:eksternt objekt (liste),ora:tråd,no:data race
+@@s013 Trådsikre klasser
+@@s014 At analysere et helt samtidigt program med JMM bliver umuligt ud over nogle få linjer. Man analyserer <b>én klasse ad gangen</b>. Denne side giver kursets definition af trådsikker klasse og de to første punkter på tjeklisten: <b>klassetilstand</b> og <b>escaping</b>.
+@@s015 Korrekthed og specifikation
+@@s016 Et program er <b>korrekt</b>, hvis det overholder sin <b>specifikation</b>.
+@@s017 Specifikationen er en præcis sætning om den ønskede adfærd. Eksempler: "flere læsere sammen, én enkelt skriver og kun uden læsere"; "outputtet skal være PEOPLE*antal_tråde".
+@@s018 I kurset forbliver specifikationer sætninger (ingen formel logik).
+@@s019 At ræsonnere over tusindvis af linjer (servere, operativsystemer, GUI'er) er uhåndterligt. I et objektorienteret sprog analyserer man <b>klassen</b>: kun metodekaldene og feltadgangene, der sker samtidigt, står tilbage.
+@@s020 Fra hele programmet til den enkelte klasse
+@@s021 Kursets definition
+@@s022 Trådsikker klasse
+@@s023 "A class is thread-safe if no concurrent execution of method calls or field accesses (read/write) on objects of this class results in <b>data races on the fields of the class</b>."
+@@s024 Med egne ord: uanset hvordan metoderne (eller læsninger/skrivninger af felterne) på et objekt af denne klasse kaldes parallelt, <b>er der aldrig en data race på klassens felter</b>.
+@@s025 Ikke et vagt begreb
+@@s026 I kurset betyder "trådsikker" <b>ikke</b> "ser ud til at virke, når det er samtidigt". Det betyder kun: ingen data race på felterne. Specifikationen for denne definition er derfor "fravær af data races". Den er inspireret af JMM's definition: "a program is correctly synchronized iff none of its executions contains data races".
+@@s027 Den adskiller sig fra Goetz kap. 4, som taler om klasseinvarianter; den minder om Goetz kap. 2, s. 18.
+@@s028 Trådsikkert program
+@@s029 "A concurrent program is thread-safe if and only if it is <b>data race free</b>." Forveksl ikke: en trådsikker klasse angår dens felter, et trådsikkert program angår alle dens delte variable. Goetz definerer ikke trådsikre programmer.
+@@s030 Hvad den garanterer
+@@s031 Ingen data race på klassens felter, ved enhver samtidig brug af dens metoder.
+@@s032 Hvad den ikke garanterer
+@@s033 Ingen race condition. Et program, der kun bruger trådsikre klasser, kan stadig give et forkert resultat: eksempel i <a href="l04-confinamento.html">indkapsling og sammensatte handlinger</a>.
+@@s034 Trådsikker = ingen data race på felterne
+@@s035 Tjeklisten: 5 elementer
+@@s036 For at vise at en klasse er trådsikker, skal man vise, at i enhver samtidig udførelse af feltadgange og metodekald med mindst én skrivning, er handlingerne ordnet af happens-before. I praksis kontrolleres disse elementer altid.
+@@s037 Element
+@@s038 Spørgsmål at stille
+@@s039 Side
+@@s040 <b>Klassetilstand</b>
+@@s041 Hvilke er klassens felter?
+@@s042 nedenfor
+@@s043 <b>Escaping</b>
+@@s044 Kan tilstanden kun nås gennem de offentlige metoder?
+@@s045 nedenfor
+@@s046 <b>Safe publication</b>
+@@s047 Er feltenes startværdier synlige for hver tråd, der bruger objektet?
+@@s048 <a href="l04-pubblicazione.html">publicering</a>
+@@s049 <b>Immutability</b>
+@@s050 Hvilke felter ændrer sig aldrig efter initialiseringen?
+@@s051 <a href="l04-pubblicazione.html">publicering</a>
+@@s052 <b>Gensidig udelukkelse</b>
+@@s053 Sker hver adgang til den foranderlige tilstand med den samme lås?
+@@s054 <a href="l04-pubblicazione.html">publicering</a>
+@@s055 Slidenes regel
+@@s056 "When asked to reason about the thread-safety of a class, you must <b>always cover these elements</b>." Et svar, der kun siger "metoderne er synchronized", er ufuldstændigt. Slidene citerer en sætning (valgfri læsning): disse elementer tilsammen <b>er nok</b> til at garantere trådsikkerhed.
+@@s057 De fem elementer anvendt på Counter
+@@s058 1 · Klassetilstand
+@@s059 En klasses <b>tilstand</b> er dens <b>felter</b>. Det er de delte variable, der skal beskyttes, når klassen bruges af flere tråde.
+@@s060 Definitionen taler <b>kun</b> om klassens felter. Et objekt, der kommer udefra som parameter, er ikke klassens tilstand.
+@@s061 En parameter er ikke klassetilstand (AccessNoState.java)
+@@s062 Tilstanden for <code>C</code> er kun feltet <code>i</code>.
+@@s063 <code>n</code> er <code>synchronized</code> og ændrer listen, der modtages som parameter.
+@@s064 Den første tråd skriver i listen <b>uden lås</b>, den anden går gennem <code>n</code> med låsen på <code>c</code>. De to <code>add</code> er ikke ordnede: <b>data race på listen</b>, programmet er ikke trådsikkert.
+@@s065 Men <code>C</code> <b>forbliver trådsikker</b>: data race'en er på listen, som ikke er et af dets felter. Kursets kode udskriver da også nogle gange lister med færre end 2 elementer.
+@@s066 Moral
+@@s067 Bedre at undgå metoder, der tager objekter som parametre og ændrer dem: klassen kan ikke garantere happens-before for handlingerne på det objekt, fordi andre tråde bruger det, som de vil.
+@@s068 Listen, der sendes som parameter, er ikke C's tilstand
+@@s069 2 · Escaping
+@@s070 Definition
+@@s071 Tilstanden <b>slipper ikke ud</b> (does not escape), hvis den kun kan nås <b>gennem klassens offentlige metoder</b>. Hvis den slipper ud, kan en tråd bruge den uden den tilsigtede synkronisering, og happens-before kan ikke længere garanteres.
+@@s072 Første måde at slippe ud på: et felt der ikke er <code>private</code>
+@@s073 CounterEscape.java
+@@s074 Feltet er ikke <code>private</code>: koden i samme pakke ser det direkte.
+@@s075 Klassen beskytter <code>i</code> med objektets lås, men kun <b>inde i</b> sine metoder.
+@@s076 Den anden tråd omgår metoderne og skriver <code>c.i</code> uden lås.
+@@s077 Hvorfor det er en data race (med JMM)
+@@s078 Program order: t1 har lock, <code>i++</code>, unlock; t2 har kun <code>i++</code>.
+@@s079 De er konflikterende handlinger.
+@@s080 De eneste par mellem forskellige tråde kommer fra start-reglen.
+@@s081 t2 laver ingen låsehandlinger, så monitorreglen skaber ingen par mellem t1 og t2.
+@@s082 Rettelse: <code>private int i</code>. Så går alle adgange gennem de <code>synchronized</code>-metoder, og alle par af adgange ordnes af monitorreglen.
+@@s083 At erklære alle felter af primitiv type som <code>private</code> sikrer, at de kun rør ved af klassens metoder.
+@@s084 Anden måde: at returnere en reference til tilstanden
+@@s085 <code>private</code> er ikke nok, hvis en metode returnerer det objekt, der er en del af tilstanden.
+@@s086 ArrayListEscape.java
+@@s087 Feltet er <code>private</code> og <code>final</code>. <code>final</code> blokerer <b>referencen</b>, ikke listens indhold.
+@@s088 <code>get</code> returnerer referencen til den interne liste. Låsen dækker kun <code>return</code>.
+@@s089 Den der har referencen, ændrer listen, efter låsen er frigivet.
+@@s090 Hvordan tilstanden slipper ud fra get()
+@@s091 Sådan undgås det
+@@s092 Skriv ikke metoder, der returnerer referencer til objekter i tilstanden. Returnér værdier (en <code>int</code>, et uforanderligt element som <code>Integer</code> eller <code>String</code>) eller en kopi.
+@@s093 Modelsætning
+@@s094 "The class state is the field <i>a</i>. It escapes through <i>get()</i>, which returns a reference to the internal list: a thread can then call <i>set</i> on it without holding the lock, so that write and the write in <i>set(…)</i> are not ordered by happens-before. This is a data race on the class state, hence the class is not thread-safe."
+@@s095 Hvorfor består ConcurrentSkipListSet add/remove-testene (øvelse 5.1.4)?
+@@s096 <code>HashSet.add</code> gør "kig om den er der → skriv noden → <code>size++</code>" i tre separate trin: to tråde kan begge kigge, før den ene skriver.
+@@s097 <code>ConcurrentSkipListSet</code> (oven på <code>ConcurrentSkipListMap</code>) gør det afgørende trin med en <b>compare-and-set</b> (CAS): "skriv den nye node <b>kun hvis</b> pegeren stadig har den værdi, jeg læste". Det er én atomar operation i hardwaren: hvis en anden tråd har ændret noget imens, fejler CAS'en, og tråden <b>starter</b> søgningen forfra, og denne gang finder den nøglen allerede til stede → <code>add</code> returnerer <code>false</code>. For <code>remove</code> er det det samme: noden slettes med en CAS på værdien (fra <i>v</i> til <code>null</code>), og kun én tråd vinder.
+@@s098 Tælleren opdateres (<code>addCount(±1)</code>, en trådsikker <code>LongAdder</code>) <b>kun</b> af tråden, der vandt CAS'en: ingen dubletter, ingen dobbelte nedtællinger. Verificeret på kildekoden til JDK 26.

@@ -1,0 +1,140 @@
+@@s001 Øvelse 6.2: read-write lock med CAS
+@@s002 ora:lige ændret,ok:lykkedes,no:afvist
+@@s003 Et enkelt felt, <code>holders</code>, siger, hvem der holder låsen. <code>null</code> = ingen. To læsere (R1, R2) og én skriver (W).
+@@s004 R1 kalder <code>readerTryLock()</code>: den læser <code>null</code>, den er ikke en Writer, så CAS(<code>null</code> → liste [R1]). Det lykkes: <b>true</b>.
+@@s005 R2 kalder <code>readerTryLock()</code>: den læser [R1], som er en liste af læsere, så CAS([R1] → [R2 → R1]). Det lykkes: flere læsere sammen er fint.
+@@s006 W kalder <code>writerTryLock()</code>: CAS(<code>null</code> → Writer(W)). Det fejler, fordi <code>holders</code> ikke er <code>null</code>: <b>false</b>. Den venter ikke, den returnerer med det samme.
+@@s007 R1 kalder <code>readerUnlock()</code>: listen indeholder R1, så CAS([R2 → R1] → [R2]).
+@@s008 R2 kalder <code>readerUnlock()</code>: når R2 fjernes, bliver listen tom, og <b>tom liste = <code>null</code></b>. Låsen er fri igen.
+@@s009 W prøver <code>writerTryLock()</code> igen: CAS(<code>null</code> → Writer(W)) lykkes.
+@@s010 R1 kalder <code>readerTryLock()</code>: den læser en Writer, så <b>false</b>, uden at røre ved noget.
+@@s011 R2 kalder <code>writerUnlock()</code>: der er en Writer, men dens tråd er W, ikke R2. <b>Undtagelse</b>: du kan ikke åbne en lås, der ikke er din.
+@@s012 W kalder <code>writerUnlock()</code>: Writer'en er dens egen, så <code>holders = null</code>. Fri igen.
+@@s013 dato:gammel liste,ora:node under behandling,ok:ny liste,no:fjernet
+@@s014 Listen af læsere: T3 → T2 → T1. Hver node har <code>final</code>-felter: når den er oprettet, <b>ændrer den sig ikke mere</b>. T2 vil gå: <code>remove(T2)</code>.
+@@s015 Første node: T3 ≠ T2. T3 skal blive, men dens <code>next</code> skal ændres, og det kan den ikke (den er final). Derfor skal der bruges en <b>kopi</b> af T3, med <code>next</code> = <code>next.remove(T2)</code>.
+@@s016 Anden node: T2 == T2. Det er den, der skal fjernes: den returnerer sin <code>next</code>, altså noden T1 <b>som den er</b>. Ingen kopi: halen efter T2 deles.
+@@s017 Kopien af T3 peger på T1: den nye liste er T3 → T1. Der kopieres kun noderne <b>før</b> den fjernede.
+@@s018 Den gamle liste er <b>intakt</b>: en tråd, der læser den (for eksempel inde i <code>contains</code>), ser stadig T3 → T2 → T1, aldrig et stykke, der er halvt ændret. Derefter ændrer <code>compareAndSet(h, ny)</code> <code>holders</code> på ét slag.
+@@s019 Øvelse 6.2: read-write lock med CAS
+@@s020 En lås, der kan holdes af mange læsere sammen <b>eller</b> af én enkelt skriver, uden nogensinde at blokere: hver metode forsøger og returnerer med det samme <code>true</code> eller <code>false</code>. Hele tilstanden ligger i én enkelt <code>AtomicReference</code>, der ændres med <code>compareAndSet</code>.
+@@s021 Idéen: ét felt siger, hvem der holder låsen
+@@s022 Et <b>read-write lock</b> skelner mellem, hvem der læser, og hvem der skriver: flere læsere sammen forstyrrer ikke hinanden (ingen ændrer noget), mens en skriver skal være <b>alene</b>. Her er "try"-versionen (<i>try-lock</i>): hvis låsen ikke kan tages, venter metoden ikke, den returnerer <code>false</code>.
+@@s023 <code>holders</code> er
+@@s024 betyder
+@@s025 kan komme ind
+@@s026 <code>null</code>
+@@s027 ingen holder låsen
+@@s028 en læser eller en skriver
+@@s029 en <code>ReaderList</code>
+@@s030 holdes af læserne i listen
+@@s031 andre læsere, ingen skriver
+@@s032 en <code>Writer</code>
+@@s033 holdes af den angivne skriver
+@@s034 ingen
+@@s035 Hele tilstanden er <b>én enkelt reference</b>. Derfor er ét CAS nok til at ændre den: der er aldrig et øjeblik, hvor "halvdelen" af låsen er opdateret.
+@@s036 Hvem der holder låsen, kald for kald
+@@s037 Klasserne, der beskriver, hvem der holder låsen
+@@s038 Feltet holders, ReaderList og Writer (kompileret og testet med Gradle)
+@@s039 <code>AtomicReference&lt;Holders&gt;</code>: en boks, der indeholder en reference til en <code>Holders</code> og tilbyder de atomare <code>get</code>, <code>set</code> og <code>compareAndSet</code>. <code>&lt;&gt;</code> (diamond) får compileren til at udlede typen. Den starter fra <code>null</code>: lås fri. <code>private final</code>: tilstanden forlader ikke klassen, og feltet publiceres sikkert.
+@@s040 <code>abstract</code>: et "rent" <code>Holders</code> oprettes aldrig, kun de to undertyper. Det tjener kun til at give de to tilfælde en fælles type, så de kan være i samme <code>AtomicReference</code>.
+@@s041 En node i listen: en læsertråd og noden efter den. <code>final</code>-felter, ingen metode, der ændrer dem: listen er <b>uforanderlig</b>. <code>next == null</code> markerer slutningen.
+@@s042 <code>contains</code> går gennem noderne: den starter fra <code>this</code>, ved hver runde går den til <code>node.next</code>, og stopper ved <code>null</code>. <code>==</code> sammenligner referencer: er det netop den tråd?
+@@s043 <code>remove</code> returnerer en <b>ny</b> liste uden den første <code>t</code>: hvis noden er <code>t</code>, er svaret resten af listen; ellers kopierer den denne node og fjerner <code>t</code> fra resten (rekursion). <code>a ? b : c</code> = "hvis a, så b, ellers c": hvis der ikke er nogen rest, er resten <code>null</code>. Hvis listen kun indeholdt <code>t</code>, er resultatet <code>null</code>: lås fri.
+@@s044 <code>Writer</code>: kun skrivertråden, <code>final</code>. Den bruges til at vide, <b>hvem</b> der holder låsen, så <code>writerUnlock</code> kan afvise de andre.
+@@s045 remove på en uforanderlig liste
+@@s046 Hvorfor listen skal være uforanderlig
+@@s047 <code>compareAndSet(h, ny)</code> sammenligner <b>referencer</b>, ikke indhold. Hvis en tråd ændrede listen på stedet (for eksempel ved at ændre en <code>next</code>), ville referencen i <code>holders</code> forblive den samme: en anden tråds CAS ville ikke opdage ændringen og ville overskrive den (tabt opdatering). Desuden ville den, der læser listen, se noder, der er halvt ændret. Med uforanderlige noder er hver ændring et <b>nyt objekt</b>, altså en ny reference, og CAS'en ser den. Det er den samme regel som <code>IntPair</code> i <code>CasNumberRange</code> i forelæsningen.
+@@s048 6.2.1 og 6.2.2 · Skriver: writerTryLock og writerUnlock
+@@s049 De to metoder for skriveren
+@@s050 <code>Thread.currentThread()</code> returnerer <code>Thread</code>-objektet for den, der udfører denne linje. Det er den kaldendes identitet.
+@@s051 Kontrollen "er låsen fri?" og tagningen af låsen er <b>ét enkelt atomart trin</b>: CAS'en skriver Writer'en kun, hvis <code>holders</code> stadig er <code>null</code>. Den returnerer <code>true</code>, hvis den har skrevet, og <code>false</code>, hvis nogen allerede var der (læsere eller en skriver, også hvis det er én selv: den er ikke rekursiv). Ingen løkke: wait-free.
+@@s052 <code>h instanceof Writer w</code>: sand, hvis <code>h</code> er en <code>Writer</code> (falsk, hvis den er <code>null</code> eller en liste), og i så fald kalder den den <code>w</code>, allerede af den rigtige type. <code>&amp;&amp;</code> evaluerer højre side kun, hvis venstre er sand, så <code>w</code> findes altid, når den bruges. Så: er det <b>min</b> Writer? <code>holders.get()</code> læses <b>én gang</b> ind i <code>h</code>: kontrol og brug drejer sig om den samme værdi. To separate <code>get()</code>-kald kunne læse forskellige værdier.
+@@s053 Jeg læser, kontrollerer og skriver så: normalt er det en race (check-then-act). Her ikke. Mens <b>jeg</b> holder låsen, kan ingen anden tråd ændre <code>holders</code>. Et andet <code>writerTryLock</code> fejler (den er ikke <code>null</code>), <code>readerTryLock</code> ser en Writer og returnerer <code>false</code>, og de andres unlock kaster en undtagelse. Så mellem mit <code>get</code> og mit <code>set</code> ændrer værdien sig ikke. Det er ræsonnementet bag <code>unlockVariant</code> i <code>SimpleTryLock</code> i forelæsningen.
+@@s054 Låsen fri, holdt af læsere, eller holdt af en anden skriver: undtagelse, som teksten kræver. <code>IllegalStateException</code> ("kaldt i den forkerte tilstand") er <b>unchecked</b> (den udvider <code>RuntimeException</code>): der er ikke brug for at skrive <code>throws</code> i signaturen, og det er godt, for grænsefladen siger kun <code>void writerUnlock()</code>, og man kan ikke tilføje en checked undtagelse.
+@@s055 Hvorfor bruger writerUnlock ikke CAS, når de andre metoder gør?
+@@s056 Spørgsmålet man altid skal stille sig, er: <b>hvem kan ændre tilstanden mellem min læsning og min skrivning?</b>
+@@s057 I <code>readerTryLock</code>: alle (listen deles af mange læsere, og en skriver kan komme ind). CAS er nødvendig. I <code>writerUnlock</code>, efter at have kontrolleret, at Writer'en er min: <b>ingen</b>, for hver metode, der kaldes af en anden tråd, fejler uden at røre <code>holders</code> (<code>writerTryLock</code> → false, <code>readerTryLock</code> → false, de to unlock → undtagelse). Tilstanden "Writer(mig)" kan kun ændres af ejeren. Et simpelt <code>set</code> er nok; <code>compareAndSet(h, null)</code> ville virke på samme måde og ville altid lykkes.
+@@s058 <code>set(null)</code> fungerer også som en <b>frigivelse</b> i hukommelsens forstand: <code>AtomicReference.set</code> er en volatile-skrivning, så alt, skriveren har skrevet før unlock'en, er synligt for den næste tråd, der læser <code>holders</code> og tager låsen (happens-before). Det er det, der gør låsen nyttig til at beskytte data.
+@@s059 Klar besvarelse 6.2.1
+@@s060 <code>writerTryLock</code> kalder <code>holders.compareAndSet(null, new Writer(current))</code>. Låsen er præcis ubesat, når <code>holders</code> er null, så CAS'en kontrollerer, at låsen er fri, og installerer en Writer for den kaldende tråd i ét atomart trin. Hvis to skrivere forsøger samtidig, lykkes kun det første CAS: bagefter er <code>holders</code> ikke længere null, så det andet CAS fejler og returnerer false. Det fejler også, hvis læsere holder låsen (<code>holders</code> er en ReaderList), eller hvis den kaldende allerede holder den, så låsen er ikke rekursiv. Der er ingen løkke og ingen ventetid, så metoden blokerer aldrig. Writer'en gemmer ejertråden, som <code>writerUnlock</code> har brug for.
+@@s061 Klar besvarelse 6.2.2
+@@s062 <code>writerUnlock</code> læser <code>holders</code> én gang og kontrollerer, at det er en Writer, hvis tråd er den kaldende tråd. Ellers (null, en ReaderList eller en anden tråds Writer) kaster den en <code>IllegalStateException</code>. Hvis kontrollen består, frigiver den låsen med <code>holders.set(null)</code>. Denne check-then-act er sikker uden CAS, fordi ingen anden tråd kan ændre <code>holders</code>, mens den kaldende tråd holder skrivelåsen: <code>writerTryLock</code> fejler, fordi <code>holders</code> ikke er null, <code>readerTryLock</code> returnerer false, når den ser en Writer, og <code>writerUnlock</code> og <code>readerUnlock</code>, kaldt af andre tråde, kaster undtagelser. Værdien kan altså ikke ændre sig mellem vores get og vores set. Desuden er <code>set</code> på en <code>AtomicReference</code> en volatile-skrivning, så alt, skriveren gjorde før unlock, sker før (happens-before) den næste tråd, der læser <code>holders</code> og tager låsen.
+@@s063 6.2.3 og 6.2.4 · Læsere: readerTryLock og readerUnlock
+@@s064 De to metoder for læseren
+@@s065 CAS-løkke: man læser tilstanden (<code>h</code>), forbereder den nye og prøver at erstatte den. Der skal en løkke til, fordi andre læsere kan komme ind eller ud på samme tid.
+@@s066 Der er en skriver: <code>false</code> med det samme, uden at vente.
+@@s067 Her er <code>h</code> enten <code>null</code> eller en <code>ReaderList</code> (de eneste andre tilfælde). Castet <code>(ReaderList) h</code> er fint for begge: cast af <code>null</code> giver <code>null</code>. Den nye node går <b>forrest</b>: <code>current</code> efterfulgt af den gamle liste, som forbliver intakt og deles.
+@@s068 CAS'en lykkes kun, hvis <code>holders</code> stadig er præcis <code>h</code>. Hvis en anden læser er kommet ind eller ud i mellemtiden, fejler den, og <code>while</code> prøver igen på den nye værdi. Lock-free.
+@@s069 De tre betingelser i teksten på én linje: <code>h</code> er ikke <code>null</code> og er ikke en Writer (<code>instanceof</code> er falsk på <code>null</code>), og jeg er i listen.
+@@s070 Jeg prøver at lægge listen uden mig. Hvis listen er ændret i mellemtiden (en anden læser er kommet ind eller ud), fejler CAS'en, og jeg prøver igen. Hvis jeg var den sidste, returnerer <code>remove</code> <code>null</code>, og låsen er fri igen.
+@@s071 Ellers: jeg holder ikke en læselås, undtagelse. Ingen løkke her: tilfældet "de er ikke der" kan ikke blive sandt via en anden tråd (kun jeg kan føje mig selv til).
+@@s072 Hvorfor løkken er nødvendig: to læsere kommer ind sammen
+@@s073 dato:læst værdi,ora:CAS,ok:lykkedes,no:fejlede
+@@s074 T1 er allerede inde. To læsere ankommer i samme øjeblik.
+@@s075 De læser den samme værdi. Hver forbereder sin liste: [R2 → T1] og [R3 → T1].
+@@s076 holders er [T1]: CAS'en skriver.
+@@s077 holders er nu [R2 → T1], ikke [T1]. Hvis den skrev, ville R2 forsvinde fra listen, selv om den holder låsen: tabt opdatering. CAS'en forhindrer det.
+@@s078 <code>while</code> læser igen og prøver på den nye værdi. Tre læsere, ingen tabt.
+@@s079 Hvorfor har læseren en løkke, og skriveren ikke?
+@@s080 For skriveren er der <b>kun én</b> god tilstand: <code>null</code>. Hvis CAS'en fejler, er låsen optaget: det rigtige svar er <code>false</code>, med det samme.
+@@s081 For læseren er de gode tilstande <b>mange</b>: <code>null</code>, [R1], [R2 → R1] … Hvis dens CAS fejler, fordi en anden læser er kommet ind eller ud, er låsen <b>stadig</b> ledig for den: at svare <code>false</code> ville være forkert. Så den prøver igen.
+@@s082 Og hvis en skriver er kommet ind i mellemtiden? Læseren læser <code>null</code> og forbereder [R]; W laver CAS(<code>null</code> → Writer(W)) og vinder; læserens CAS (<code>null</code> → [R]) fejler, fordi <code>holders</code> ikke længere er <code>null</code>. Ved næste runde læser læseren Writer'en og returnerer <code>false</code>. Korrekt: CAS'en sammenligner med <b>præcis</b> den tilstand, som læseren traf sin beslutning på.
+@@s083 Klar besvarelse 6.2.3
+@@s084 <code>readerTryLock</code> er en CAS-løkke. Den læser et øjebliksbillede <code>h</code> af <code>holders</code>; hvis <code>h</code> er en Writer, returnerer den false. Ellers er <code>h</code> null eller en ReaderList, og den bygger en ny liste med den kaldende tråd foran <code>h</code> og prøver så <code>holders.compareAndSet(h, newList)</code>. CAS'en lykkes kun, hvis <code>holders</code> stadig er præcis øjebliksbilledet, så beslutningen var baseret på den aktuelle tilstand, og ingen samtidig opdatering overskrives. Hvis det fejler, har en anden tråd ændret <code>holders</code> i mellemtiden. Hvis en anden læser har låst eller låst op, kan låsen stadig være ledig, så metoden prøver igen. Hvis en skriver har taget låsen, ser næste iteration Writer'en og returnerer false. Da en ReaderList er uforanderlig, opretter hver ændring et nyt objekt, så referencesammenligningen i CAS'en opdager hver ændring, og tråde, der læser den gamle liste, påvirkes ikke. Et CAS fejler kun, når en anden tråd er lykkedes, så metoden er lock-free.
+@@s085 Hvilken type fremskridt
+@@s086 <code>writerTryLock</code> og <code>writerUnlock</code>: ingen løkke, de slutter altid på få trin (<b>wait-free</b>). <code>readerTryLock</code> og <code>readerUnlock</code>: CAS-løkke, et CAS fejler kun, hvis en anden tråd har ændret listen, altså har afsluttet sin operation (<b>lock-free</b>). Se <a href="l06-progresso.html">Wait-free, lock-free, obstruction-free</a>.
+@@s087 Princippet: øjebliksbillede, ny kopi, CAS
+@@s088 Alle metoderne i låsen følger den samme opskrift. Den virker kun, hvis der er <b>alle</b> ingredienserne: én enkelt reference, uforanderlige objekter og et CAS, der kontrollerer øjebliksbilledet.
+@@s089 Opskriften, ingrediens for ingrediens
+@@s090 dato:øjebliksbilledet,due:den nye kopi,ora:CAS'en,ok:hvorfor det virker
+@@s091 Hvem der holder låsen (ingen, hvilke læsere, hvilken skriver) ligger helt inde i <b>ét</b> objekt. Et CAS på en reference ændrer hele tilstanden samlet: der er intet øjeblik, hvor den er opdateret halvt.
+@@s092 Jeg læser tilstanden. Objekterne er uforanderlige, så øjebliksbilledet <b>kan ikke ændre sig</b>, mens jeg kigger på det: jeg beslutter på noget, der står stille.
+@@s093 Jeg forbereder den nye tilstand i et nyt objekt, som ingen anden endnu ser. Den gamle tilstand forbliver intakt for den, der læser den.
+@@s094 "Skriv kopien <b>kun hvis</b> tilstanden stadig er mit øjebliksbillede". Sammenligningen og skrivningen er én enkelt instruktion i processoren: ingen kan smutte ind imellem.
+@@s095 Et lykkedes CAS beviser, at ingen har ændret noget mellem min læsning og min skrivning: min beslutning var taget på den sande tilstand.
+@@s096 Mit arbejde var aldrig synligt, så det gør ingen skade at kassere det. Og hvis jeg fejlede, er det fordi en anden tråd lykkedes: systemet går altid fremad (<a href="l06-progresso.html">lock-free</a>).
+@@s097 To separate atomare felter
+@@s098 <code>AtomicInteger readers</code> + <code>AtomicReference&lt;Thread&gt; writer</code>. Læseren ser <code>writer == null</code>; skriveren ser <code>readers == 0</code> og sætter sig selv i <code>writer</code>; læseren laver <code>readers++</code>. <b>Inde i begge.</b> Hver operation er atomar, men reglen "læsere eller skriver" binder <b>to</b> felter, og et CAS beskytter kun ét.
+@@s099 Én enkelt reference
+@@s100 Læsere og skriver ligger i den samme <code>holders</code>. Læseren og skriveren laver CAS på den <b>samme</b> reference: hvis den ene ændrer tilstanden, fejler den andens CAS, og den tjekker igen. Det er løsningen i <code>CasNumberRange</code> i forelæsningen: <code>lower</code> og <code>upper</code> inde i ét enkelt uforanderligt <code>IntPair</code>.
+@@s101 Hvorfor uforanderlighed er uundværlig
+@@s102 CAS sammenligner <b>referencer</b>. "Samme reference" betyder "samme tilstand" kun, hvis objektet ikke kan ændre sig. Hvis en tråd kunne ændre listen på stedet, ville referencen forblive den samme, en anden tråds CAS ville lykkes alligevel og slette ændringen. Desuden ses et objekt med <code>final</code>-felter, publiceret gennem en <code>AtomicReference</code> (der opfører sig som en <code>volatile</code>), komplet af den, der læser det.
+@@s103 6.2.5 · Sekventielle tests
+@@s104 Kun én tråd, ingen samtidighed: man kontrollerer, at låsens regler er rigtige. Hver test opretter sin egen lås, så testene ikke afhænger af hinanden.
+@@s105 TestLocks, sekventiel del
+@@s106 Første regel i teksten. <code>assertTrue(x)</code>: testen fejler, hvis <code>x</code> er falsk. Først sikrer jeg mig, at jeg virkelig har write-låsen, derefter kontrollerer jeg, at read-låsen bliver <b>afvist</b>. Til sidst frigiver jeg.
+@@s107 Anden regel, den modsatte vej: med en read-lås afvises skriveren.
+@@s108 Tredje regel, i de to mulige tilfælde: lås <b>af ingen</b> (linje 20-21) og lås <b>af den anden type</b> (linje 22-27). <code>assertThrows(Type.class, kode)</code> kører koden og består kun, hvis den kaster en undtagelse af den type. <code>lock::writerUnlock</code> (method reference) er en kort måde at skrive <code>() -&gt; lock.writerUnlock()</code>.
+@@s109 Ekstra test: efter hver unlock er låsen virkelig fri (en typisk fejl er at efterlade en tom liste i stedet for <code>null</code>: skriveren ville ikke længere kunne komme ind). Linje 34: den samme tråd tager ikke write-låsen igen, den er ikke rekursiv.
+@@s110 6.2.6 · Parallel test: aldrig to skrivere sammen
+@@s111 Mange tråde prøver at tage write-låsen. Den, der lykkes, markerer det i en delt tæller "hvor mange er inde nu". Hvis den, når den kommer ind, finder en anden der, er det en <b>overlapning</b>. Til sidst, når alle trådene er færdige, skal overlapningerne være 0.
+@@s112 TestLocks, parallel del
+@@s113 En samtidighedsfejl dukker kun op i bestemte sammenflettede forløb: testen gentages.
+@@s114 Måleværktøjerne er <code>AtomicInteger</code>: alle trådene rører dem samtidigt, og en tæller, der ikke er trådsikker, ville forfalske målingen. <code>holding</code> = skrivere inde nu; <code>overlaps</code> = gange, hvor en er kommet ind og har fundet en anden.
+@@s115 Den målte del. Jeg går ind: +1. Hvis værdien efter +1 er over 1, var der allerede nogen: overlapning. Jeg går ud: −1, derefter unlock. −1 kommer <b>før</b> unlock: efter unlock kan en anden tråd lovligt komme ind, og den må ikke finde mig stadig talt med.
+@@s116 Start sammen med barrieren (uge 5), slut med <code>join()</code> på hver tråd. En afvist <code>writerUnlock</code> (linje 28-29) tælles i <code>errors</code>, og får ikke tråden til at dø i stilhed. Hvorfor <code>join</code> og ikke en anden <code>await</code>: se trinnene nedenfor.
+@@s117 Kontrollen udføres <b>efter</b>, at alle trådene er færdige, som teksten kræver. <code>acquisitions &gt; 0</code> undgår en test, der består uden at have prøvet noget (en lås, der altid siger <code>false</code>, ville aldrig have overlapninger).
+@@s118 Med to awaits forbliver testen blokeret med en forkert lås
+@@s119 dato:main,due:tråde,no:problemet,ok:rettelsen
+@@s120 Kontrol og skrivning adskilt: to skrivere kan begge se <code>null</code> og begge komme ind.
+@@s121 Nu indeholder <code>holders</code> Writer(W2).
+@@s122 Writer'en er ikke dens egen. Undtagelsen er ikke blandt dem i trådens <code>catch</code>: tråden <b>dør</b>.
+@@s123 Barrieren venter på THREADS + 1 ankomster, men W1 kommer aldrig. Testen fejler ikke: den <b>blokeres</b>. Faktisk prøvet: Gradle stoppet af timeout.
+@@s124 <code>join()</code> returnerer også, når tråden er død af en undtagelse; desuden tælles undtagelsen i <code>errors</code>. Med denne version får den forkerte lås testen til at fejle i 10 gentagelser ud af 10 (fra 3 til 10 overlapninger hver gang), den rigtige består 10 ud af 10.
+@@s125 Anden rettelse: den anden await i finally
+@@s126 Hvis man vil beholde de to <code>await()</code> i main, skal den anden <code>await()</code> i tråden ind i <code>finally</code>: den udføres <b>altid</b>, også når <code>writerUnlock()</code> kaster <code>IllegalStateException</code>.
+@@s127 <code>finally</code>: blokken udføres både, hvis <code>try</code> slutter normalt, og hvis den afsluttes med en undtagelse, selv om ingen <code>catch</code> fanger den. Så når tråden frem til barrieren, selv når den er ved at dø.
+@@s128 Der skal en <b>anden</b> try/catch inde i <code>finally</code>. Den <code>catch</code> ovenfor beskytter kun den <code>try</code> ovenfor, ikke <code>finally</code>. Og <code>await()</code> kaster <b>checked</b> undtagelser, som kroppen i en <code>Runnable</code>-lambda ikke kan lade slippe ud: <code>run()</code> erklærer ikke <code>throws</code>. Uden denne try giver javac <code>error: unreported exception InterruptedException; must be caught or declared to be thrown</code>.
+@@s129 Med den forkerte lås fortsætter <code>IllegalStateException</code> efter <code>finally</code> med at stige, og tråden dør, men <b>efter</b> at have nået barrieren: main starter igen, og asserten fejler. Prøvet med et program med samme struktur (16 tråde, 1000 forsøg): rigtig lås 0 fejl ud af 50, forkert lås (get derefter set) 50 fejl ud af 50, ingen blokering.
+@@s130 6.2.7 · Udfordring: ingen dobbelt read-lås
+@@s131 readerTryLock, der afviser en anden read-lås fra den samme tråd
+@@s132 Før jeg føjer mig selv til, kontrollerer jeg, at jeg ikke allerede er der. <code>readers != null</code> er nødvendig, fordi man ikke kan kalde en metode på <code>null</code> (<code>NullPointerException</code>).
+@@s133 Kontrol og CAS er to adskilte trin (test-then-set), og alligevel virker det, af to grunde.
+@@s134 Hvorfor test-then-set er sikker her
+@@s135 <b>1.</b> CAS'en lykkes kun, hvis <code>holders</code> stadig er præcis listen <code>h</code>, som jeg lavede <code>contains</code> på, og den liste er uforanderlig: jeg kontrollerede netop den liste, jeg erstatter. Hvis den er ændret i mellemtiden, fejler CAS'en, og jeg kontrollerer igen.
+@@s136 <b>2.</b> Under alle omstændigheder kan kun tråden selv føje sig selv til eller fjerne sig selv fra listen (<code>readerTryLock</code> og <code>readerUnlock</code> bruger altid <code>Thread.currentThread()</code>). De andre tråde kan ændre listen, men ikke svaret på "er <code>current</code> der?".
+@@s137 En test ændres
+@@s138 Med denne version giver en test, der tager to read-låse fra den samme tråd, en undtagelse. Den rigtige test bliver: <code>assertTrue(lock.readerTryLock()); assertThrows(IllegalStateException.class, lock::readerTryLock);</code>
+@@s139 Klar besvarelse
+@@s140 Kontrollen <code>contains(current)</code> og CAS'en er ikke ét atomart trin, men det er sikkert her. For det første lykkes CAS'en kun, hvis <code>holders</code> stadig peger på den samme liste, vi kontrollerede, og lister er uforanderlige, så vi kontrollerer præcis den liste, vi erstatter; ellers fejler CAS'en, og vi kontrollerer igen. For det andet kan kun den kaldende tråd selv føje sig til eller fjerne sig fra læselisten, så andre tråde kan ikke ændre resultatet af <code>contains(current)</code>.

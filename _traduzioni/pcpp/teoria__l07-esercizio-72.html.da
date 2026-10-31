@@ -1,0 +1,28 @@
+@@s001 Øvelse 7.2: Treiber-stakken
+@@s002 Øvelse 7.2: Treiber-stakken
+@@s003 Den lock-frie Treiber-stak: hvor linearisationspunkterne er, hvordan <code>push</code> testes, og hvilke punkter testene virkelig når. Punktet, man oftest tager fejl af, er 7.2.4: to tests er ikke nok.
+@@s004 Stakken og dens linearisationspunkter (7.2.1)
+@@s005 Et <b>linearisationspunkt</b> er det øjeblik, hvor et kald "får effekt" for alle de andre tråde. I Treiber-stakken er hele tilstanden referencen <code>top</code>, så punkterne er de øjeblikke, hvor <code>top</code> ændrer sig, eller hvor den læses for at beslutte noget.
+@@s006 LockFreeStack (øvelsens kode)
+@@s007 Tilstanden: <code>top</code> peger på noden øverst, <code>null</code> hvis stakken er tom.
+@@s008 <b>Punkt 1, push:</b> CAS'en der <b>lykkes</b>. I det øjeblik bliver den nye node toppen for alle. Før ser ingen den; bagefter ser alle den.
+@@s009 <b>Punkt 2, pop på en ikke-tom stak:</b> CAS'en der <b>lykkes</b>. I det øjeblik fjernes toppen.
+@@s010 <b>Punkt 3, pop på en tom stak:</b> læsningen <code>top.get()</code> der returnerer <code>null</code>. Der er ingen CAS: kaldet "får effekt" i det øjeblik, hvor det ser den tomme stak.
+@@s011 7.2.4 · Dækker testene alle punkterne?
+@@s012 "At dække" et linearisationspunkt betyder, at en test får det til at køre <b>samtidigt</b>, med andre tråde der kan kollidere der. Et punkt, som én tråd kører alene, tester ikke noget samtidigt.
+@@s013 Punkt for punkt
+@@s014 ok:dækket,no:ikke dækket
+@@s015 CAS'erne fra push-kaldene kolliderer på <code>top</code>; én vinder, de andre prøver igen.
+@@s016 Stakken har n elementer, og der er n pop: CAS'erne fra pop-kaldene kolliderer.
+@@s017 I 7.2.3 er der <b>præcis</b> n elementer til n pop: i en korrekt udførelse finder intet pop stakken tom. I 7.2.2 tømmes stakken til sidst, men med <b>kun én tråd</b>.
+@@s018 I de to tests overlapper push og pop aldrig: først alle push, derefter alle pop. Kollisionen mellem en push-CAS og en pop-CAS bliver aldrig testet.
+@@s019 &quot;Push kommer altid før pop, så alt er dækket&quot;?
+@@s020 Netop derfor er det <b>ikke</b> alt, der er dækket. Hvis push altid kommer før pop, kolliderer de to slags kald aldrig, og pop finder aldrig den tomme stak, mens andre arbejder. Svaret på 7.2.4 er <b>nej</b>.
+@@s021 Testen der skal tilføjes
+@@s022 <b>Pop på en næsten tom stak:</b> læg m elementer, start derefter n &gt; m tråde, der laver <code>pop</code> sammen. Til sidst: præcis m pop har returneret et element (med en sum lig med den, der blev lagt ind), og n − m har returneret <code>null</code>. Så sker punkt 3 samtidigt, mens andre tråde stadig laver CAS'er.
+@@s023 <b>Valgfri, push og pop sammen:</b> halvdelen af trådene laver push, halvdelen pop, alle sammen. Til sidst: summen tilbage i stakken + summen af de værdier, der er taget ud = summen af de værdier, der er lagt ind.
+@@s024 En enklere variant: hver tråd laver <code>push(x)</code> og straks derefter <code>pop()</code>. Hver tråd har altid lavet et push mere end sine pop, så stakken er aldrig tom, når nogen laver pop: til sidst er summen af de udtagne værdier lig med den for de indlagte, og stakken er tom. Pas på: dette dækker kollisionen push/pop, men <b>ikke</b> pop på en tom stak.
+@@s025 Én runde pr. tråd finder lidt
+@@s026 Målt med 16 tråde, barriere, 1000 gentagelser. Med <b>ét enkelt</b> push+pop pr. tråd findes et bevidst forkert <code>push</code> (<code>get</code> og derefter <code>set</code>) <b>aldrig</b>, et forkert <code>pop</code> 1 gang ud af 1000. Med <b>1000 runder</b> af push+pop pr. tråd: forkert push findes 999 gange ud af 1000, forkert pop 1000 ud af 1000; den korrekte stak består 1000 ud af 1000. Når teksten ikke kræver "én operation pr. tråd", er det bedst at lade hver tråd arbejde i en løkke.
+@@s027 Klar besvarelse 7.2.4
+@@s028 Nej. Push-testen udøver push's linearisationspunkt (den lykkedes CAS) samtidigt, og pop-testen udøver linearisationspunktet for et lykkedes pop (den lykkedes CAS). Men linearisationspunktet for et pop på en tom stak (<code>top.get()</code>, der returnerer null) nås aldrig samtidigt: i pop-testen er der præcis n elementer til n pop, så i en korrekt udførelse finder intet pop stakken tom, og i push-testen tømmes stakken af en enkelt tråd. Desuden kører push og pop aldrig samtidigt. Vi tilføjer derfor en test, hvor n tråde samtidigt laver pop fra en stak med m &lt; n elementer, og kontrollerer, at præcis m pop returnerer elementer, hvis sum er lig med den indlagte sum, og at n − m pop returnerer null.

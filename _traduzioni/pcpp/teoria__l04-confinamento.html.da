@@ -1,0 +1,38 @@
+@@s001 Indkapsling og sammensatte handlinger
+@@s002 dato:thread-safe klasse,due:objekt der ikke er thread-safe,ora:tråd,no:adgang der springer låsen over
+@@s003 Indkapsling og sammensatte handlinger
+@@s004 Et objekt, der ikke er thread-safe, kan gøres sikkert ved at lukke det inde i en thread-safe klasse: <b>instance confinement</b>. Men at bruge kun thread-safe klasser er <b>ikke nok</b> til at undgå race conditions: <b>sammensatte handlinger</b> skal beskyttes særskilt.
+@@s005 Instance confinement
+@@s006 Definition
+@@s007 <b>Instance confinement</b>: at indkapsle adgangen til et objekt, der <b>ikke</b> er thread-safe, i en thread-safe klasse. Objektet er "indesluttet": ingen når det andet end gennem klassens metoder.
+@@s008 PersonSet (Goetz s. 59)
+@@s009 <code>HashSet</code> er ikke thread-safe. Her er den <code>private</code> (den slipper ikke ud) og <code>final</code> (publiceret sikkert).
+@@s010 Enhver adgang til mængden går gennem en <code>synchronized</code>-metode: gensidig udelukkelse med låsen på <code>this</code>.
+@@s011 Metoderne returnerer en <code>boolean</code> eller ingenting: mængden forlader aldrig klassen. Mængden er indesluttet, <code>PersonSet</code> er thread-safe.
+@@s012 Eksempel i Java-biblioteket
+@@s013 De <b>synchronized collections</b>: <code>Collections.synchronizedList(l)</code> returnerer en indpakning, hvor hver metode er synkroniseret, og den oprindelige liste er kun tilgængelig gennem den. Enhver samling kan gøres thread-safe på denne måde (<code>synchronizedSet</code>, <code>synchronizedMap</code>…).
+@@s014 Betingelse
+@@s015 Det virker kun, hvis ingen holder en anden reference til det indre objekt. Hvis nogen efter <code>synchronizedList(l)</code> bliver ved med at bruge <code>l</code> direkte, går disse adgange ikke gennem låsen.
+@@s016 Et HashSet indesluttet i en thread-safe klasse
+@@s017 Thread-safe klasser ≠ ingen race conditions
+@@s018 SynchronizedSetProblem.java (reduceret)
+@@s019 En thread-safe liste og to tråde, der gør det samme. Til sidst forventer man <code>[1, 2]</code>: den første tilføjer 1, den anden finder 1 og tilføjer 2.
+@@s020 To separate kald: <b>kontrollér</b>, derefter <b>handl</b> (check-then-act). Hvert kald tager og frigiver listens lås. <b>Mellem de to</b> er låsen fri.
+@@s021 Ingen data race: hver adgang til listen er inde i en synkroniseret metode, altså ordnet af happens-before. Men hvis begge tråde kalder <code>contains</code> før nogen <code>add</code>, tilføjer begge 1: <code>[1, 1]</code>. Det er en <b>race condition</b>.
+@@s022 Prøv selv: hvert kald til en metode på den synkroniserede liste er et atomart trin.
+@@s023 add1IfAbsent med en synkroniseret liste
+@@s024 Målt i praksis
+@@s025 Ved at gentage eksperimentet 200 000 gange (JDK 26) kom <code>[1, 1]</code> <b>8 gange</b>. Sjældent, men muligt: derfor beviser en test, der "går igennem", ikke noget.
+@@s026 De to definitioner sammenlignet
+@@s027 Hvis "thread-safe program" betyder <b>uden data race</b> (kursets definition), er dette program thread-safe. Hvis det betød <b>uden race condition</b>, ville det ikke være det. Kommentaren i kursets kode siger det udtrykkeligt: det afhænger af definitionen.
+@@s028 Sammensatte handlinger: udvidelse af en thread-safe klasse
+@@s029 En <b>sammensat handling</b> er en følge af metodekald eller feltadgange, der skal ske helt i en kritisk sektion. Typiske eksempler: <b>check-and-set</b> (kontrollér og derefter ændr), <b>iteration</b>, <b>navigation</b> (for eksempel <code>contains</code> efterfulgt af en handling).
+@@s030 Løsning 1: brug samlingens indre lås
+@@s031 Det virker, fordi listen i <code>synchronizedList</code> bruger <b>sig selv</b> som lås: <code>synchronized (l)</code> tager samme lås som dens metoder, og ingen andre kan komme ind mellem <code>contains</code> og <code>add</code>. Java-dokumentationen beder om det samme for at iterere: <code>synchronized (list) { for (…) … }</code>.
+@@s032 Med synchronized (l) omkring den sammensatte handling
+@@s033 Samme eksperiment med 200 000 forsøg og <code>synchronized (l)</code>: <code>[1, 1]</code> kom 0 gange.
+@@s034 Løsning 2: en ny metode i den thread-safe klasse
+@@s035 ThreadSafeList med addIfAbsent
+@@s036 Den sammensatte handling bliver <b>én enkelt synkroniseret metode</b>: kontrol og tilføjelse sker, mens låsen holdes hele tiden.
+@@s037 Pas på: på slide 79 er metoden skrevet <code>public void synchronized</code>. I Java kompilerer det ikke (rigtige meddelelser fra <code>javac</code>):
+@@s038 Modifikatorerne (<code>public</code>, <code>static</code>, <code>synchronized</code>, <code>final</code>) skal stå <b>før</b> returtypen: <code>public synchronized void addIfAbsent(…)</code>. Hvis du skriver det i hånden til eksamen, så pas på rækkefølgen.

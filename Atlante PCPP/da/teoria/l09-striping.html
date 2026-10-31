@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lock striping og LongAdder</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <div class="occhiello"><span>Uge 9 · Performance</span></div>
+  <h1>Lock striping og LongAdder</h1>
+  <p class="lede">Forelæsningens casestudie: en delt tæller, med ni implementeringer. Det afgørende skridt er at dele en enkelt lås op i mange uafhængige låse, med padding, der holder hver enkelt på sin egen cache-linje.</p>
+</header>
+
+<section>
+  <h2>En tæller, én lås</h2>
+  <p>Casestudiet: en 64-bit <code>long</code>-tæller, delt af flere tråde, med <code>add</code> og <code>longValue</code>. Den første version bruger én enkelt lås (<code>synchronized</code> på et objekt). Den er korrekt, men alle trådene konkurrerer om den samme lås og dens cache-linje: ping-pong'en fra den forrige side.</p>
+</section>
+
+<section>
+  <h2>Lock striping: en lås for hver stripe</h2>
+  <p><b>Lock striping</b> betyder at dele tilstanden op i flere dele (stripes), hver med sin egen lås. Forskellige tråde tager normalt forskellige låse, så de konkurrerer mindre. Forelæsningens kode bruger 64 stripes.</p>
+  <figure class="codice" data-titolo="Striping.java">
+<pre data-lang="java">public class Striping {
+    static class SyncLongArrayAdder {
+        private static final int logS = 6, stripeCount = 1 &lt;&lt; logS, stripeMask = stripeCount - 1;
+        private final long[] counts = new long[stripeCount];
+        private final Object[] locks = new Object[stripeCount];
+
+        SyncLongArrayAdder() {
+            for (int s = 0; s &lt; stripeCount; s++)
+                locks[s] = new Object();
+        }
+
+        void add(long delta) {
+            int s = (int) Thread.currentThread().threadId() &amp; stripeMask;
+            synchronized (locks[s]) {
+                counts[s] += delta;
+            }
+        }
+
+        long longValue() {
+            long somma = 0;
+            for (int s = 0; s &lt; stripeCount; s++)
+                synchronized (locks[s]) {
+                    somma += counts[s];
+                }
+            return somma;
+        }
+    }
+
+    public static void main(String[] args) throws InterruptedException {
+        SyncLongArrayAdder adder = new SyncLongArrayAdder();
+        Thread[] threads = new Thread[4];
+        for (int t = 0; t &lt; threads.length; t++) {
+            threads[t] = Thread.ofPlatform().start(() -&gt; {
+                for (int i = 1; i &lt;= 100_000; i++)
+                    adder.add(1);
+            });
+        }
+        for (Thread t : threads)
+            t.join();
+        System.out.println("somma: " + adder.longValue());
+    }
+}</pre>
+    <ol class="spiega">
+      <li data-righe="3" data-segna="stripeMask = stripeCount - 1@ora"><p><code>logS = 6</code>, så <code>stripeCount = 2^6 = 64</code>. <code>stripeMask = 63</code> er det binære tal 111111: med AND bliver hver værdi til et indeks fra 0 til 63.</p></li>
+      <li data-righe="7-9" data-segna="SyncLongArrayAdder()@ora"><p>Konstruktøren opretter et låseobjekt for hver stripe. Hver lås beskytter sit element i arrayet <code>counts</code>.</p></li>
+      <li data-righe="13" data-segna="int s = (int) Thread.currentThread().threadId() &amp; stripeMask@ora"><p><code>threadId()</code> giver et tal for hver tråd. AND med <code>stripeMask</code> reducerer det til 0–63: det er som <code>% 64</code>, men hurtigere. Forskellige tråde ender normalt på forskellige stripes.</p></li>
+      <li data-righe="14-16" data-segna="synchronized (locks[s])@ora"><p>Tråden tager låsen på <b>sin</b> stripe, og kun den. De andre tråde, på andre stripes, venter ikke på den.</p></li>
+      <li data-righe="20" data-segna="long somma = 0@ora"><p>Læsningen af totalen lægger alle stripes sammen. Hver læses under sin egen lås, fordi en anden tråd måske skriver til den.</p></li>
+      <li data-righe="33" data-segna="Thread.ofPlatform().start@ora"><p>Fire platformstråde, hver med 100 000 forøgelser af 1. Det korrekte resultat er 400 000.</p></li>
+      <li data-righe="35" data-segna="adder.add(1)@ok"><p>Én forøgelse. <code>add</code> vælger stripe ud fra den tråd, der kalder den.</p></li>
+    </ol>
+  </figure>
+</section>
+
+<section>
+  <h2>Padding: lås og data på forskellige linjer</h2>
+  <p>Selv med 64 stripes ligger tællerne og låsene i arrays: nabo-elementer i et array deler en cache-linje. To nabostripes kan derfor lave false sharing. Forelæsningens løsning er <b>padding</b>: kun indekser, der er multipla af 16, bruges (<code>padding = 16</code>), og de andre elementer forbliver tomme. Så står hver tæller og hver lås på sin egen linje.</p>
+  <figure class="passi" data-titolo="Hvordan en tråd vælger sin tæller" data-legenda="dato:tråd,ora:trin i gang,ok:resultat">
+    <div class="passo"><div class="espr">Il thread ha un <mark class="dato">id</mark>, per esempio 37</div><p class="nota"><code>threadId()</code> er unik for hver tråd.</p></div>
+    <div class="passo"><div class="espr"><mark class="ora">37 AND 63</mark> = 37: la stripe è la 37</div><p class="nota">AND beholder kun de 6 lave bit: resultatet er altid mellem 0 og 63.</p></div>
+    <div class="passo"><div class="espr">Il thread prende il <mark class="ora">lock della stripe 37</mark> e aggiunge a <mark class="ok">counts[37]</mark></div><p class="nota">Ingen anden tråd bruger stripe 37, medmindre den har samme rest.</p></div>
+  </figure>
+</section>
+
+<section>
+  <h2>Forelæsningens resultater</h2>
+  <p>Forelæsningen sammenligner ni versioner af tælleren, på en Apple M3 Pro-laptop og en AMD EPYC 7313-server. Konklusionerne, fra sliden:</p>
+  <ul>
+    <li>at bruge en lås er ikke i sig selv langsomt, men én enkelt lås skaber <b>konkurrence</b> og meget trafik mellem cachene;</li>
+    <li>striping forbedrer samtidig kode, men stripes skal ligge på forskellige cache-linjer: padding er nødvendig;</li>
+    <li>bibliotekets <code>java.util.concurrent.atomic.LongAdder</code> gør alt dette korrekt, og det er det valg, man skal bruge;</li>
+    <li>konklusionerne gælder for fem CPU-arkitekturer, fra 2014 til 2023.</li>
+  </ul>
+  <div class="box regola" data-tit="Praktisk regel">Til en delt tæller bruger man <code>LongAdder</code>. Skriv ikke én enkelt lås, og kopier ikke striping, medmindre du har målt behovet for det.</div>
+</section>
+
+</main>
+</body>
+</html>

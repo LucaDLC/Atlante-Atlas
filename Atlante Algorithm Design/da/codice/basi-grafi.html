@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Kode: grafer som nabolister</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Kode: grafer som nabolister</h1>
+  <p class="lede">Hvordan man bygger en graf i Java, hvordan man beregner en knudes grad, og hvordan man tjekker en kant. Det er grundkoden, som BFS, DFS og topologisk sortering hviler på.</p>
+</header>
+
+<section>
+  <h2>Læsning af grafen</h2>
+  <p>Grafen kommer som tekst: første linje <code>n m</code>, derefter <code>m</code> linjer med kanterne. Jeg gemmer den som en naboliste: en liste over naboerne for hver knude.</p>
+  <figure class="codice" data-titolo="Læsning af grafen">
+<pre data-lang="java">import java.io.*;
+import java.util.*;
+
+public class Main {
+    public static void main(String[] args) throws IOException {
+        BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
+        StringTokenizer st = new StringTokenizer(in.readLine());
+        int n = Integer.parseInt(st.nextToken());
+        int m = Integer.parseInt(st.nextToken());
+
+        // Lista di adiacenza: una lista di vicini per ogni nodo.
+        List&lt;List&lt;Integer&gt;&gt; adj = new ArrayList&lt;&gt;();
+        for (int i = 0; i &lt; n; i++) {
+            adj.add(new ArrayList&lt;&gt;());
+        }
+        for (int i = 0; i &lt; m; i++) {
+            st = new StringTokenizer(in.readLine());
+            int u = Integer.parseInt(st.nextToken());
+            int v = Integer.parseInt(st.nextToken());
+            adj.get(u).add(v);
+            adj.get(v).add(u);
+        }
+
+        // Grado di ogni nodo = lunghezza della sua lista.
+        StringBuilder out = new StringBuilder();
+        out.append("n = ").append(n).append(", m = ").append(m).append('\n');
+        for (int u = 0; u &lt; n; u++) {
+            out.append("grado(").append(u).append(") = ").append(adj.get(u).size()).append('\n');
+        }
+
+        // Domanda: c'è l'arco u–v? Scorro la lista di u: costa il grado di u.
+        int u = 0, v = 3;
+        boolean c = adj.get(u).contains(v);
+        out.append("arco ").append(u).append('-').append(v).append(": ").append(c).append('\n');
+        System.out.print(out);
+    }
+}</pre>
+    <ol class="spiega">
+    <li data-righe="6"><p><code>BufferedReader</code> læser input én linje ad gangen. Den er hurtigere end <code>Scanner</code> ved store input.</p></li>
+    <li data-righe="8"><p>Jeg læser <code>n</code> (knuder) fra første linje. <code>Integer.parseInt</code> omdanner teksten til en <code>int</code>.</p></li>
+    <li data-righe="12"><p>En liste af lister. <code>adj.get(u)</code> er listen over naboerne til <code>u</code>. De generiske <code>&lt;…&gt;</code> angiver elementernes type.</p></li>
+    <li data-righe="20"><p>Jeg lægger <code>v</code> til naboerne til <code>u</code>.</p></li>
+    <li data-righe="21"><p>Grafen er ikke-orienteret: kanten gælder i begge retninger, så jeg lægger også <code>u</code> til naboerne til <code>v</code>.</p></li>
+    </ol>
+  </figure>
+  <div class="box basi" data-tit="Syntaksnoter"><ul><li><code>import java.io.*;</code> og <code>import java.util.*;</code> importerer alle klasserne i de to pakker.</li><li><code>throws IOException</code>: <code>readLine()</code> kan fejle, og Java kræver, at man angiver det (en <i>checked</i>-undtagelse).</li><li><code>new ArrayList&lt;&gt;()</code>: diamanten <code>&lt;&gt;</code> siger til Java, at den skal udlede typen ud fra konteksten.</li></ul></div>
+</section>
+<section>
+  <h2>Grad og spørgsmålet om kanten</h2>
+  <p>Graden af <code>u</code> er størrelsen af dens liste. At tjekke kanten <code>u–v</code> betyder at lede efter <code>v</code> i listen over <code>u</code>: det koster graden af <code>u</code>.</p>
+  <figure class="codice" data-titolo="Grad og spørgsmålet om kanten">
+<pre data-lang="java">import java.io.*;
+import java.util.*;
+
+public class Main {
+    public static void main(String[] args) throws IOException {
+        BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
+        StringTokenizer st = new StringTokenizer(in.readLine());
+        int n = Integer.parseInt(st.nextToken());
+        int m = Integer.parseInt(st.nextToken());
+
+        // Lista di adiacenza: una lista di vicini per ogni nodo.
+        List&lt;List&lt;Integer&gt;&gt; adj = new ArrayList&lt;&gt;();
+        for (int i = 0; i &lt; n; i++) {
+            adj.add(new ArrayList&lt;&gt;());
+        }
+        for (int i = 0; i &lt; m; i++) {
+            st = new StringTokenizer(in.readLine());
+            int u = Integer.parseInt(st.nextToken());
+            int v = Integer.parseInt(st.nextToken());
+            adj.get(u).add(v);
+            adj.get(v).add(u);
+        }
+
+        // Grado di ogni nodo = lunghezza della sua lista.
+        StringBuilder out = new StringBuilder();
+        out.append("n = ").append(n).append(", m = ").append(m).append('\n');
+        for (int u = 0; u &lt; n; u++) {
+            out.append("grado(").append(u).append(") = ").append(adj.get(u).size()).append('\n');
+        }
+
+        // Domanda: c'è l'arco u–v? Scorro la lista di u: costa il grado di u.
+        int u = 0, v = 3;
+        boolean c = adj.get(u).contains(v);
+        out.append("arco ").append(u).append('-').append(v).append(": ").append(c).append('\n');
+        System.out.print(out);
+    }
+}</pre>
+    <ol class="spiega">
+    <li data-righe="28"><p>Graden er <code>size()</code> af listen. Omkostning <code>O(1)</code>, fordi listen allerede kender sin længde.</p></li>
+    <li data-righe="33"><p><code>contains</code> gennemløber listen: omkostning <code>O(grad(u))</code>. Med en nabomatrix ville det være <code>O(1)</code>, men til pladsen <code>O(n²)</code>.</p></li>
+    </ol>
+  </figure>
+  <div class="box basi" data-tit="Syntaksnoter"><ul><li><code>.size()</code> er antallet af elementer i en liste; <code>.length</code> bruges kun til arrays.</li><li><code>int u = 0, v = 3;</code> erklærer flere variabler af samme type på én linje.</li></ul></div>
+</section>
+<section>
+  <h2>Kør det</h2>
+  <p>Eksempel på input og output (faktisk kompileret og kørt).</p>
+  <pre class="cod">4 4
+0 1
+0 3
+1 2
+2 3
+
+(output)
+n = 4, m = 4
+grado(0) = 2
+grado(1) = 2
+grado(2) = 2
+grado(3) = 2
+arco 0-3: true</pre>
+</section>
+<section>
+  <h2>Teorien side om side</h2>
+  <p><a href="../teoria/basi-grafi.html"><b>← Tilbage til teorien om dette emne</b></a></p>
+</section>
+
+</main>
+</body>
+</html>

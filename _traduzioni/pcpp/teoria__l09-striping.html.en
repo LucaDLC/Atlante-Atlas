@@ -1,0 +1,31 @@
+@@s001 Lock striping and LongAdder
+@@s002 <span>Week 9 · Performance</span>
+@@s003 Lock striping and LongAdder
+@@s004 The lecture's case study: a shared counter, with nine implementations. The key step is to split a single lock into many independent locks, with padding that keeps each one on its own cache line.
+@@s005 One counter, one lock
+@@s006 The case study: a 64-bit <code>long</code> counter, shared by several threads, with <code>add</code> and <code>longValue</code>. The first version uses a single lock (<code>synchronized</code> on an object). It is correct, but all the threads compete for the same lock and its cache line: the ping-pong of the previous page.
+@@s007 Lock striping: one lock for each stripe
+@@s008 <b>Lock striping</b> means splitting the state into several parts (stripes), each with its own lock. Different threads usually take different locks, so they compete less. The code of the lecture uses 64 stripes.
+@@s009 Striping.java
+@@s010 <code>logS = 6</code>, so <code>stripeCount = 2^6 = 64</code>. <code>stripeMask = 63</code> is the binary number 111111: with the AND, each value becomes an index from 0 to 63.
+@@s011 The constructor creates a lock object for each stripe. Each lock protects its element of the <code>counts</code> array.
+@@s012 <code>threadId()</code> gives a number for each thread. The AND with <code>stripeMask</code> reduces it to 0–63: it is like <code>% 64</code>, but faster. Different threads usually end up on different stripes.
+@@s013 The thread takes the lock of <b>its</b> stripe, and only that. The other threads, on different stripes, do not wait for it.
+@@s014 The reading of the total adds up all the stripes. Each one is read under its own lock, because another thread might be writing to it.
+@@s015 Four platform threads, each with 100 000 increments of 1. The correct result is 400 000.
+@@s016 One increment. The <code>add</code> chooses the stripe according to the thread that calls it.
+@@s017 Padding: locks and data on different lines
+@@s018 Even with 64 stripes, the counters and the locks are in arrays: adjacent elements in an array share a cache line. Two neighbouring stripes can therefore do false sharing. The solution of the lecture is <b>padding</b>: only the indices that are multiples of 16 are used (<code>padding = 16</code>), and the other elements stay empty. So each counter and each lock sits on a line of its own.
+@@s019 How a thread chooses its counter
+@@s020 dato:thread,ora:step in progress,ok:result
+@@s021 <code>threadId()</code> is unique for each thread.
+@@s022 The AND keeps only the 6 low bits: the result is always between 0 and 63.
+@@s023 No other thread uses stripe 37, unless it has the same remainder.
+@@s024 The results of the lecture
+@@s025 The lecture compares nine versions of the counter, on an Apple M3 Pro laptop and an AMD EPYC 7313 server. The conclusions, from the slide:
+@@s026 using a lock is not slow in itself, but a single lock creates <b>contention</b> and a lot of traffic between the caches;
+@@s027 striping improves concurrent code, but the stripes must sit on different cache lines: padding is needed;
+@@s028 the library's <code>java.util.concurrent.atomic.LongAdder</code> does all this correctly, and it is the choice to use;
+@@s029 the conclusions hold for five CPU architectures, from 2014 to 2023.
+@@s030 Practical rule
+@@s031 For a shared counter, use <code>LongAdder</code>. Do not write a single lock, and do not copy striping unless you have measured the need for it.

@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cache og koherens: MESI-protokollen</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <div class="occhiello"><span>Uge 9 · Performance</span></div>
+  <h1>Cache og koherens: MESI-protokollen</h1>
+  <p class="lede">CPU'en er hurtigere end RAM'en, og cachen lukker kløften. Med flere kerner har hver cache en kopi af dataene, og kopierne skal være enige: det er MESI-protokollens opgave.</p>
+</header>
+
+<section>
+  <h2>Broen mellem CPU og RAM</h2>
+  <p>CPU'en arbejder meget hurtigere end RAM'en. <b>Cachen</b> er en lille, hurtig hukommelse tæt på CPU'en, der holder kopier af de data, der er brugt for nylig. Den virker godt på grund af <b>lokalitet i adgangen</b>: hvis et datum skal bruges nu, skal det sandsynligvis bruges igen, og data, der ligger tæt i hukommelsen, bruges ofte sammen.</p>
+  <figure class="passi" data-titolo="En læsning fra hukommelsen" data-legenda="dato:den forespurgte adresse,ora:trin i gang,ok:hurtig,no:langsom">
+    <div class="passo"><div class="espr">La CPU chiede un <mark class="dato">indirizzo</mark></div><p class="nota">Det første trin er altid at lede efter den i cachen.</p></div>
+    <div class="passo"><div class="espr">Se è in cache: <mark class="ok">lettura veloce</mark></div><p class="nota">Det er det gode tilfælde: dataene er allerede der, og RAM'en røres ikke.</p></div>
+    <div class="passo"><div class="espr">Se non è in cache: <mark class="no">lettura lenta</mark> dalla RAM, e la <mark class="ora">linea</mark> viene copiata in cache</div><p class="nota">Cachen kopierer en hel blok, ikke en enkelt byte: så de nærliggende data er allerede klar.</p></div>
+  </figure>
+</section>
+
+<section>
+  <h2>Flere kerner, flere caches</h2>
+  <p>Hver kerne har sine egne caches. Den samme hukommelsesadresse kan derfor være i flere caches samtidigt. Hukommelsesblokken, som cachen kopierer, kaldes en <b>cache-linje</b>: normalt 64 byte. Cachene skal blive enige om værdien af hver linje: mekanismen kaldes en <b>koherensprotokol</b>, og i slides er det <b>MESI</b>, opkaldt efter dens fire tilstande.</p>
+</section>
+
+<section>
+  <h2>MESI-tilstandene</h2>
+  <p>Hver cache-linje, i hver kerne, er i en af fire tilstande:</p>
+  <div class="tab-wrap"><table class="tab"><thead><tr><th>tilstand</th><th>betydning</th><th>er RAM'en opdateret?</th></tr></thead><tbody>
+    <tr><td><b>M</b> Modified</td><td>ændret kopi, til stede kun i denne cache</td><td>no: RAM'en har den gamle værdi</td></tr>
+    <tr><td><b>E</b> Exclusive</td><td>uændret kopi, til stede kun her</td><td>ja</td></tr>
+    <tr><td><b>S</b> Shared</td><td>uændret kopi, til stede i flere caches</td><td>ja</td></tr>
+    <tr><td><b>I</b> Invalid</td><td>linjen er ikke gyldig: den skal læses igen</td><td>–</td></tr>
+  </tbody></table></div>
+  <p>For at skrive på en linje i tilstand S skal kernen først sende en <b>invalidate</b>-besked til de andre caches og vente på deres bekræftelse (<i>ack</i>). Først da bliver linjen M.</p>
+</section>
+
+<section>
+  <h2>Hurtig eller langsom</h2>
+  <p>Hastigheden afhænger af, hvad kernen vil gøre, og af linjens tilstand i dens cache. De vigtigste rækker i sliden:</p>
+  <div class="tab-wrap"><table class="tab"><thead><tr><th>aktuel tilstand</th><th>kernen vil</th><th>hastighed</th></tr></thead><tbody>
+    <tr><td>M o E</td><td>læse eller skrive</td><td>hurtig: dataene er allerede dens egne</td></tr>
+    <tr><td>S</td><td>læse</td><td>hurtig: kopien er gyldig</td></tr>
+    <tr><td>I</td><td>læse</td><td>langsom: den skal hentes fra en anden cache eller fra RAM'en</td></tr>
+    <tr><td>S</td><td>skrive</td><td>meget langsom: invalidate til alle de andre kopier</td></tr>
+    <tr><td>I</td><td>skrive</td><td>meget langsom: først læse, derefter invalidate</td></tr>
+  </tbody></table></div>
+  <figure class="passi" data-titolo="To kerner på den samme linje" data-legenda="dato:værdi,ora:hvad der ændrer sig,ok:stabil tilstand,no:høj omkostning">
+    <div class="passo"><div class="espr">Core 0 <mark class="ora">legge</mark> la linea: stato <mark class="dato">E</mark></div><p class="nota">Ingen andre har den: kopien er dens egen, og RAM'en er opdateret.</p></div>
+    <div class="passo"><div class="espr">Core 1 <mark class="ora">legge</mark> la stessa linea: entrambi in <mark class="ok">S</mark></div><p class="nota">To identiske og rene kopier: hurtige læsninger for begge.</p></div>
+    <div class="passo"><div class="espr">Core 0 <mark class="no">scrive</mark>: invalida la copia di core 1 (I), lui passa a <mark class="ora">M</mark></div><p class="nota">At skrive på S koster: invalidate-beskeden skal nå den anden kerne.</p></div>
+    <div class="passo"><div class="espr">Core 1 <mark class="no">rilegge</mark>: la sua copia è I, la prende da core 0 e tutti e due tornano in S</div><p class="nota">Hver udveksling af skrivning og læsning mellem to kerner koster en tur på bussen: ping-pong'en på den næste side.</p></div>
+  </figure>
+</section>
+
+<section>
+  <h2>Hvad det betyder for koden</h2>
+  <div class="box idea" data-tit="Idéen">Omkostningen ligger ikke i beregningen, den ligger i flytningen af linjerne mellem caches. Et datum, der kun skrives af én tråd, bliver i M i dens cache: hurtigt. Et datum, der skrives af flere tråde, går frem og tilbage: langsomt.</div>
+  <div class="box basi" data-tit="Hvis du kommer fra…">Hvis du kun har brugt tråde uden at tænke på hukommelsen, er det den del, der mangler: der findes ikke én enkelt "værdi" i hukommelsen, der findes kopier i flere caches, som skal være enige.</div>
+</section>
+
+</main>
+</body>
+</html>

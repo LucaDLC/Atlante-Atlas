@@ -1,0 +1,105 @@
+@@s001 Safe publication and immutability
+@@s002 dato:default value,ora:written by T1,due:read by T2,no:old value,ok:with final
+@@s003 The shared field <code>u</code> is <code>null</code>. T1 is about to execute <code>u = new UnsafeInitialization()</code>.
+@@s004 The object is created. Before the constructor each field has its <b>default value</b>: for an <code>int</code> it is 0. The default is visible to everybody.
+@@s005 The constructor writes <code>x = 42</code>. The write sits in the cache of T1: nothing forces it to reach memory at once.
+@@s006 T1 assigns the reference: <code>u = object</code>. This write can reach memory <b>before</b> the one on <code>x</code>: the order is not guaranteed (visibility and reordering).
+@@s007 T2 reads <code>u</code>: it is not <code>null</code>, so it calls <code>u.readX()</code>. It reads the <code>x</code> it sees: 0. It prints "x is not equal 42": it has seen an object <b>initialised halfway</b>.
+@@s008 With the JMM: the write <code>x = 42</code> of T1 and the read of <code>x</code> of T2 are in conflict and <b>no rule</b> orders them. It is a problem of <b>safe publication</b>.
+@@s009 With <code>private final int x</code>: "the initialisation of final fields happens-before every other action, after the end of the constructor". Whoever sees the object sees <code>x = 42</code>.
+@@s010 dato:thread that creates,due:thread that uses,ok:happens-before guaranteed,no:may see the default
+@@s011 dato:final field,due:HashSet object,ok:reads only,no:reassigning is forbidden
+@@s012 ora:t1 addStooge,due:t2 isStooge,no:conflicting unordered,ok:monitor rule
+@@s013 ora:lock of Person.class,dato:lock of this,ok:final (without lock),due:threads
+@@s014 Safe publication and immutability
+@@s015 Points 3, 4 and 5 of the <a href="l04-thread-safety.html">checklist</a>: the initial values of the fields must be visible to everybody (<b>safe publication</b>), what does not change must be made immutable (<b>immutability</b>), the rest must be protected (<b>mutual exclusion</b>). At the end, exercise 4.2 (<code>Person</code>) worked out.
+@@s016 Safe publication
+@@s017 Definition
+@@s018 The state of a class is <b>published safely</b> if, after an object has been initialised, the initial values of its fields are visible to <b>any thread</b> that accesses the object.
+@@s019 It requires that the <b>initialisation happens-before the publication</b>. Publishing = making the reference to the object accessible to other threads.
+@@s020 UnsafeInitialization.java (reduced)
+@@s021 Two fields, neither <code>final</code> nor <code>volatile</code>.
+@@s022 The constructor writes them. For the thread that runs the constructor there is no problem: it sees its own values.
+@@s023 T1 creates the object and writes the reference into the shared field <code>u</code>.
+@@s024 T2 can see <code>u</code> not null and yet <code>x == 0</code> or <code>o == null</code>: the writes of the constructor and its reads are not ordered by happens-before.
+@@s025 How T2 sees an object initialised halfway
+@@s026 In practice
+@@s027 The course code repeats the test 10 million times, and the comment warns that on most systems the problem <b>is not observed</b>. The JMM however allows it: at the exam one reasons from the rules, not from what comes out when running.
+@@s028 Do not let this escape from the constructor
+@@s029 If the reference to the object comes out <b>during</b> the constructor (for example by passing <code>this</code> to another thread), the problem is not safe publication, but it must always be avoided.
+@@s030 How to make it safe
+@@s031 The slides give 4 ways for primitive types and 3 for references. Each works only under certain conditions.
+@@s032 Way
+@@s033 Primitives (<code>int</code>…)
+@@s034 References (<code>Object</code>…)
+@@s035 When it can be used
+@@s036 <b>default value</b>
+@@s037 0, <code>false</code>
+@@s038 <code>null</code>
+@@s039 if the default is a good initial value
+@@s040 <code>volatile</code>
+@@s041 yes
+@@s042 only if the field must be volatile: otherwise it costs performance
+@@s043 <code>final</code>
+@@s044 yes
+@@s045 yes: the <b>standard</b> way
+@@s046 if the value no longer changes (for a reference: the reference does not change, the content may)
+@@s047 <code>static</code>
+@@s048 yes
+@@s049 yes
+@@s050 only if the field must belong to the class, not to the object
+@@s051 Why they work: three more happens-before rules
+@@s052 It is the volatile rule you already know.
+@@s053 The defaults are assigned when the class is loaded.
+@@s054 At JVM level: the initial value of a final or static field cannot stay in the cache after the constructor.
+@@s055 These rules are defined by the course starting from the JLS and from Goetz: they can be used in the exercises.
+@@s056 From here on
+@@s057 The slides warn: up to now the initialisation had been ignored "for clarity and simplicity". From this lecture on, it must be considered in the exercises.
+@@s058 final, default, volatile, static
+@@s059 Immutability
+@@s060 An <b>immutable</b> field does not change value after initialisation. Think of it as a constant.
+@@s061 <code>final</code> prevents reassigning the field. But a variable of object type holds a <b>reference</b>: <code>final</code> blocks the reference, not the object it points to.
+@@s062 If it never changes, data races can exist <b>only during the initialisation</b>.
+@@s063 Immutable thread-safe fields: 3 conditions
+@@s064 1) the field cannot be modified after the publication; 2) it is published safely; 3) it does not escape.
+@@s065 ThreeStooges (Goetz p. 47)
+@@s066 <b>Class state</b>: the set <code>stooges</code>. It is <code>private</code> and <code>final</code>.
+@@s067 The set is filled <b>only in the constructor</b>. <code>final</code> guarantees that whoever sees the object sees the set already initialised: <b>safe publication</b>.
+@@s068 The only public method <b>only reads</b>, and returns a <code>boolean</code>, not the set: no write after the publication, no <b>escaping</b>.
+@@s069 So <code>isStooge</code> <b>does not need <code>synchronized</code></b>: concurrent reads are not in conflict (no write). The class is thread-safe.
+@@s070 final blocks the reference, not the content
+@@s071 Mutual exclusion
+@@s072 If the state is <b>mutable</b>, every access must be made with the same lock.
+@@s073 Stooges: one method that writes is enough
+@@s074 <code>addStooge</code> <b>writes</b> into the set: the state becomes mutable.
+@@s075 Now both the write and the read must hold the lock of <code>this</code>. If <code>isStooge</code> stayed without <code>synchronized</code>, <code>contains</code> and <code>add</code> would be in conflict and unordered.
+@@s076 Summary: how to analyse a class
+@@s077 Only the fields, not the parameters of the methods.
+@@s078 <a href="l04-thread-safety.html">Previous page</a>.
+@@s079 So that the initialisation happens-before the publication.
+@@s080 These fields do not need the lock.
+@@s081 The monitor rule orders every pair of accesses.
+@@s082 Mutable state: same lock for reads and writes
+@@s083 Exercise 4.2 worked out: <code>Person</code>
+@@s084 Requirements: <code>id</code> not modifiable; <code>zip</code> and <code>address</code> change together; all fields readable; constructor without parameters (id = previous + 1, the first is 0); constructor with the initial id (used only if it is the first person created).
+@@s085 One solution (verified: 8 threads × 50 000 persons → 400 000 distinct ids)
+@@s086 The counter of the ids is shared by <b>all</b> the persons: <code>static</code> field. It is also needed to know whether a person has already been created.
+@@s087 <code>id</code> never changes: <code>final</code>. It is immutable and published safely.
+@@s088 The other fields change: they are protected by the lock of the object (<code>this</code>). They are not written in the constructor, so they start from the default (<code>null</code>, 0).
+@@s089 The two constructors ask for the id to the same method. <code>-1</code> means "no initial id".
+@@s090 <code>static synchronized</code> uses the lock of <code>Person.class</code>: only one for the whole class. Two constructors in parallel cannot read the same <code>nextId</code>. Without <code>static</code> each would use the lock of its <b>own</b> object and there would be no mutual exclusion.
+@@s091 <code>getId</code> has no lock: <code>id</code> is final, nobody writes it after the constructor.
+@@s092 Every read and write of the mutable fields goes through the lock of <code>this</code>. <code>setZipAndAddress</code> changes them <b>together</b>, in the same block. The getters return <code>String</code> (immutable) and <code>int</code>: no escaping.
+@@s093 4.2.2 · Model answer
+@@s094 "The class state is <i>id</i>, <i>name</i>, <i>zip</i>, <i>address</i>, plus the static fields <i>nextId</i> and <i>firstCreated</i>. All fields are private and the getters only return primitives or immutable Strings, so no state escapes. The static fields are only accessed inside the static synchronized method <i>assignId</i>, which locks on <i>Person.class</i>: concurrent constructor calls are ordered by the monitor rule, so each gets a distinct id. <i>id</i> is final, so its initialization happens-before any access after the constructor finishes: other threads can never see a partially created Person. The other fields keep their default values until set, and every access to them holds the intrinsic lock of the object, so all conflicting accesses are ordered by happens-before. Hence there are no data races on the class state."
+@@s095 <b>4.2.3</b> Run once, the program shows no errors (the version above: 400 000 distinct ids out of 400 000).
+@@s096 <b>4.2.4</b> <b>No.</b> One execution explores just one interleaving out of very many: a test can show the presence of an error, never its absence. Thread-safety is proved by reasoning (checklist + JMM), as in 4.2.2.
+@@s097 A test can hide the error it should find
+@@s098 Measured on this machine, 3 threads × 30 000 persons, with the <code>println</code> <b>inside</b> the loop (one per id, name, zip, address). With <code>synchronized</code> removed from <code>nextId</code>, so with the data race inside: <b>0 duplicate ids</b> in 3 executions out of 3. The test sees nothing.
+@@s099 The reason: <code>System.out.println</code> takes an internal lock on the stream. The threads spend almost all their time queued on that lock, so they execute almost one at a time and two <code>nextId</code> never overlap.
+@@s100 The same code without <code>synchronized</code>, but with the <code>println</code> outside the loop and a single check at the end (<code>new Person().getId()</code> must be 90 000): it comes out <b>52 900 – 58 300</b>, in all 5 executions. With <code>synchronized</code>: 90 000, always.
+@@s101 To quote in <b>4.2.4</b>: the same wrong code "passes" or "fails" depending on a detail that has nothing to do with concurrency. This is why a test does not prove the absence of data races.
+@@s102 On your Assignment 2 (exercise 4.2)
+@@s103 Your <code>People.java</code> is correct: same structure (<code>static synchronized nextId</code>, <code>final id</code>, getter and setter <code>synchronized</code>). <code>Person()</code> calls <code>this(0)</code>: if it is the first person, id = 0, as the text asks.
+@@s104 To fix in the written answers. <b>4.2.2</b>: you wrote "race condition free"; the right word is <b>data race</b>, and the checklist points are missing (escaping, safe publication with <code>final</code>, lock of <code>Person.class</code> for the constructor). The question explicitly asks <b>why the constructor</b> is thread-safe and why no half-built objects are seen: the answer is the <code>final</code> on <code>id</code> and the <code>static synchronized</code> method. <b>4.2.4</b>: the answer must be a clear "no", with the reason (a test does not prove the absence of data races).
+@@s105 Class lock for the ids, lock of this for the rest

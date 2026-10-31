@@ -138,7 +138,7 @@
 
 <header class="testa">
   <div class="occhiello"><span data-t="Università ITU · autunno 2026">ITU University · autumn 2026</span></div>
-  <h1>Atlante Atlas</h1>
+  <h1 data-t="Atlante Atlas">Atlas</h1>
   <p class="lede" data-t="I quattro atlanti del semestre in una pagina: le materie, le scadenze imminenti, gli esami e il calendario di tutti i corsi. Ogni materia si apre con il suo atlante.">The four atlases of the semester on one page: the courses, upcoming deadlines, exams and the calendar of all courses. Each course opens with its own atlas.</p>
   <div class="oggi-riga"><span id="oggi"></span><button class="btn-tema" id="tema" type="button" data-t="◐ Tema">◐ Theme</button><div class="lingue" role="group" aria-label="Language" id="lingue"></div></div>
 </header>
@@ -331,7 +331,12 @@
   const fmtData = d => d.toLocaleDateString(LOC, { weekday: 'short', day: 'numeric', month: 'short' });
   const fmtBreve = d => d.toLocaleDateString(LOC, { day: 'numeric', month: 'short' });
   const fmtLunga = d => d.toLocaleDateString(LOC, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-  const url = (c, h) => encodeURIComponent(c.cartella) + '/' + (h || 'index.html');
+  // copia tradotta della pagina, se esiste (SITO.tradotte, creato da traduci.py); altrimenti quella italiana
+  const url = (c, h = 'index.html') => {
+    const tradotte = (c.sito && c.sito.tradotte && c.sito.tradotte[LINGUA]) || [];
+    const percorso = LINGUA !== 'it' && tradotte.includes(h) ? LINGUA + '/' + h : h;
+    return encodeURIComponent(c.cartella) + '/' + percorso;
+  };
   const sigla = c => (c.sito && c.sito.sigla) || c.classe.toUpperCase();
   const chip = c => `<span class="chip" data-corso="${c.classe}">${esc(sigla(c))}</span>`;
 
@@ -522,6 +527,7 @@
       el.textContent = LINGUA === 'it' ? it : (DIZ[LINGUA] && DIZ[LINGUA][it]) || el.dataset.tEn;
     });
     document.getElementById('tema').textContent = LINGUA === 'it' ? '◐ Tema' : T('◐ Tema');
+    document.title = LINGUA === 'it' ? 'Atlante Atlas · autunno 2026' : LINGUA === 'da' ? 'Atlas · efterår 2026' : 'Atlas · autumn 2026';
   }
 
   /* ---------- montaggio ---------- */

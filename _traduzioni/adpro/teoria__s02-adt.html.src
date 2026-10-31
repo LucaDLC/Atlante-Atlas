@@ -1,0 +1,70 @@
+@@s001 Tipi algebrici (ADT)
+@@s002 <p><code>List(1, 2, 3)</code> chiama <code>apply</code>. Nessuna cella esiste ancora: <code>apply</code> deve arrivare in fondo prima di costruire.</p>
+@@s003 <p><code>apply</code> separa il primo elemento e richiama se stessa sul resto. Ogni chiamata lascia in sospeso un <code>Cons</code>.</p>
+@@s004 <p>Con zero elementi <code>apply</code> restituisce <b>Nil</b>, la lista vuota. È la prima cosa costruita davvero.</p>
+@@s005 <p><code>Cons(3, Nil)</code>: una cella con dentro 3 che punta a Nil.</p>
+@@s006 <p><code>Cons(2, …)</code> mette una cella <b>davanti</b> a quella che esiste già.</p>
+@@s007 <p><code>Cons(1, …)</code>: la lista è completa. Si costruisce da destra, perché ogni cella ha bisogno del resto per esistere.</p>
+@@s008 <p><b>head</b> è il primo elemento: <b>1</b>.</p><p><b>tail</b> è <b>tutto il resto</b>: <code>List(2, 3)</code>, non l'ultimo elemento.</p>
+@@s009 <p><code>val a = List(2, 3)</code>.</p>
+@@s010 <p><code>val b = Cons(1, a)</code>: una sola cella nuova. Il resto di <code>b</code> <b>è</b> <code>a</code>, non una copia.</p>
+@@s011 <p><code>val c = Cons(9, a)</code>: un'altra cella, stesso resto.</p>
+@@s012 <p>Le celle 2 e 3 sono condivise da <code>a</code>, <code>b</code> e <code>c</code>. Per questo <code>tail(b) eq a</code> è <b>true</b>: è lo stesso oggetto in memoria (verificato).</p><p>Condividere è sicuro perché le liste sono immutabili.</p>
+@@s013 dato:Cons (head + tail),spento:Nil,ora:forma che stai guardando
+@@s014 ora:somma (una forma o l’altra),dato:prodotto (tutti gli argomenti insieme)
+@@s015 ora:espressione attuale,ok:risultato
+@@s016 dato:tipi,ok:Nil va bene qui,ora:Nothing (sotto a tutti)
+@@s017 Tipi algebrici (ADT)
+@@s018 Un tipo algebrico elenca <b>tutte le forme</b> che un valore può avere. Una lista è: vuota, oppure un elemento seguito da un'altra lista. Nient'altro. Da questa idea nascono il pattern matching e tutte le funzioni sulle liste.
+@@s019 Due forme, e basta
+@@s020 La lista del corso (02-adt/Exercises.scala)
+@@s021 <code>enum</code> dichiara un tipo con un numero <b>fisso</b> di forme possibili. Ogni forma è un <code>case</code>.
+@@s022 <code>A</code> è il tipo degli elementi: <code>List[Int]</code>, <code>List[String]</code>… Il <code>+</code> (covarianza) lo spiega la <a href="s03-varianza.html">pagina sulla varianza</a>.
+@@s023 Prima forma: <code>Nil</code>, la lista vuota. Non contiene dati.
+@@s024 Seconda forma: <code>Cons</code>, una cella. Contiene un elemento, <code>head</code>…
+@@s025 …e il resto della lista, <code>tail</code>, che è <b>a sua volta una List</b>. Il tipo è definito usando se stesso: è ricorsivo.
+@@s026 Se vieni da Java
+@@s027 È come un'interfaccia <code>sealed</code> con due implementazioni: un record vuoto <code>Nil</code> e un record <code>Cons(A head, List&lt;A&gt; tail)</code>. Il compilatore sa che non esistono altre forme.
+@@s028 Nil e Cons in un valore vero
+@@s029 Costruire <code>List(1, 2, 3)</code>
+@@s030 Dalla chiamata alle celle
+@@s031 Dubbio frequente
+@@s032 <b>Nella lista 1, 2, 3, 4 la coda è 4?</b> No. <code>head</code> è <b>1</b>, <code>tail</code> è <b>2, 3, 4</b>: tutto tranne il primo. L'ultimo elemento non ha un nome speciale e per raggiungerlo devi scorrere tutta la lista.
+@@s033 Perché "algebrico": somme e prodotti
+@@s034 Definizione (slide 3)
+@@s035 Un tipo generato da uno o più <b>costruttori</b>, ciascuno con zero o più argomenti. Le forme dei vari costruttori si <b>sommano</b> (un valore è l'una <i>o</i> l'altra); ogni costruttore è un <b>prodotto</b> dei suoi argomenti (li contiene tutti <i>insieme</i>).
+@@s036 Tipo
+@@s037 Somma: le forme
+@@s038 Prodotto: cosa contiene ogni forma
+@@s039 <code>List[A]</code>
+@@s040 <code>Nil</code> oppure <code>Cons</code>
+@@s041 <code>Cons</code> = un <code>A</code> e una <code>List[A]</code>
+@@s042 <code>Tree[A]</code> (sett. 3)
+@@s043 <code>Leaf</code> oppure <code>Branch</code>
+@@s044 <code>Leaf</code> = un <code>A</code>; <code>Branch</code> = due <code>Tree[A]</code>
+@@s045 <code>Option[A]</code> (sett. 3)
+@@s046 <code>Some</code> oppure <code>None</code>
+@@s047 <code>Some</code> = un <code>A</code>; <code>None</code> = niente
+@@s048 Conseguenza pratica: se un tipo ha due forme, <b>ogni funzione su quel tipo risponde alla domanda "quale delle due ho in mano?"</b>. Per questo le funzioni sulle liste hanno quasi sempre due casi: uno per <code>Nil</code>, uno per <code>Cons</code>.
+@@s049 Somme di forme, prodotti di argomenti
+@@s050 Il companion object: le funzioni della lista
+@@s051 Accanto all'<code>enum</code> c'è un <code>object</code> con lo <b>stesso nome</b>. Si chiama <i>companion object</i> e contiene le funzioni sulla lista (come i metodi <code>static</code> di Java).
+@@s052 sum e apply (slide 4)
+@@s053 Stesso nome dell'<code>enum</code>: è il suo companion. Le funzioni si chiamano <code>List.sum(…)</code>, o solo <code>sum(…)</code> dopo <code>import List.*</code>.
+@@s054 <code>sum</code> guarda la forma della lista (pattern matching, <a href="s02-pattern-matching.html">pagina successiva</a>).
+@@s055 La somma della lista vuota è 0.
+@@s056 Altrimenti: il primo elemento più la somma del resto.
+@@s057 <code>apply</code> ha un nome speciale: <code>List(1, 2, 3)</code> è una scorciatoia per <code>List.apply(1, 2, 3)</code>.
+@@s058 <code>A*</code> vuol dire "quanti argomenti vuoi di tipo A" (varargs, come <code>A...</code> in Java). Dentro, <code>as</code> è una sequenza.
+@@s059 Zero argomenti: la lista vuota.
+@@s060 Altrimenti: una cella con il primo argomento, e come resto la lista degli argomenti rimanenti. <code>as.tail*</code> <b>spacchetta</b> la sequenza di nuovo in argomenti separati, perché <code>apply</code> li vuole così.
+@@s061 List(1, 2, 3) con apply, poi sum
+@@s062 Una coda condivisa
+@@s063 Aggiungere in testa non copia niente: la cella nuova punta alla lista che c'è già.
+@@s064 Tre liste, due celle in comune
+@@s065 Un'unica lista vuota per tutti i tipi
+@@s066 Nella versione della slide 3 con classi, <code>Nil</code> è dichiarato così:
+@@s067 <code>sealed</code>: nessuno può aggiungere forme fuori da questo file. Così il compilatore sa quali casi esistono.
+@@s068 <code>Nothing</code> è il tipo "in fondo a tutti": è sottotipo di ogni tipo. Grazie al <code>+</code>, <code>List[Nothing]</code> è sottotipo di <code>List[Int]</code>, <code>List[String]</code>… Quindi un solo <code>Nil</code> va bene per tutte le liste.
+@@s069 Nel corso si usa la versione con <code>enum</code>, più corta. Le due versioni sono equivalenti.
+@@s070 Nothing e covarianza: un Nil per tutti i tipi

@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Interval scheduling: den første der slutter</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+const J = [['A',0,3],['B',2,5],['C',4,7],['D',1,8],['E',6,9],['F',8,10]];
+const X = t => 40 + t * 40; const ogg = [];
+for (let t = 0; t <= 10; t++) ogg.push({id:'tk'+t,tipo:'testo',x:X(t),y:262,t:String(t),size:11});
+ogg.push({id:'asse',tipo:'linea',x1:X(0),y1:250,x2:X(10),y2:250});
+J.forEach(([n,s,f],i) => ogg.push({id:n,tipo:'rett',x:X(s),y:24+i*34,w:(f-s)*40,h:24,t:n}));
+ogg.push({id:'ul',tipo:'linea',x1:X(0),y1:14,x2:X(0),y2:250,tratt:true,tono:'due',nascosto:true});
+ogg.push({id:'c',tipo:'testo',x:40,y:302,t:'',size:12,bold:true,anchor:'start'});
+const passi = [{nota:'Seks intervaller, <b>A</b> … <b>F</b>. To intervaller er kompatible, hvis de ikke overlapper. Jeg vil have det <b>største antal</b> kompatible intervaller.', set:{}}];
+passi.push({nota:'Jeg sorterer efter stigende <b>sluttidspunkt</b>: A(3), B(5), C(7), D(8), E(9), F(10). Det er den rækkefølge, den grådige kigger på intervallerne i.', set:{c:{t:'ordine per fine: A B C D E F'}}});
+let ultimo = 0; const scelti = [];
+J.forEach(([n,s,f]) => {
+  if (s >= ultimo) { scelti.push(n); ultimo = f;
+    passi.push({nota:`<b>${n}</b> starter kl. ${s}, ikke før slutningen af det sidst valgte: den er kompatibel. <b>Jeg tager den</b>. Nu slutter det sidste kl. ${f}.`, set:{[n]:{tono:'ok'}, ul:{nascosto:false}, c:{t:'preso: '+scelti.join(', ')}}});
+  } else {
+    passi.push({nota:`<b>${n}</b> starter kl. ${s}, før slutningen af ${ultimo}: den overlapper det sidst valgte. <b>Kasseret</b>.`, set:{[n]:{tono:'no'}}});
+  }
+});
+passi.push({nota:`Resultat: <b>${scelti.join(', ')}</b>, ${scelti.length} intervaller. Løkken kigger på hvert interval én gang: efter sorteringen koster den O(n).`, set:{c:{t:'risultato: '+scelti.join(', '),tono:'ok'}}});
+SCENE.int = {
+  w: 540, h: 320, lato: true,
+  legenda: 'ok:taget,no:kasseret,due:slutningen af det sidst valgte',
+  oggetti: ogg, passi
+};
+})();
+</script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+const J = [['A',0,3],['B',1,4],['C',2,6],['D',5,8],['E',6,9]];
+const X = t => 40 + t * 40; const ogg = [];
+for (let t = 0; t <= 9; t++) ogg.push({id:'tk'+t,tipo:'testo',x:X(t),y:262,t:String(t),size:11});
+ogg.push({id:'asse',tipo:'linea',x1:X(0),y1:250,x2:X(9),y2:250});
+J.forEach(([n,s,f],i) => ogg.push({id:n,tipo:'rett',x:X(s),y:24+i*34,w:(f-s)*40,h:24,t:n,nascosto:true}));
+ogg.push({id:'c',tipo:'testo',x:40,y:302,t:'',size:12,bold:true,anchor:'start'});
+const passi = [{nota:'Interval partitioning: jeg tildeler alle intervallerne til <b>lokaler</b>, uden overlap i samme lokale. Hvor mange lokaler skal der mindst bruges?', set:{}}];
+const mostra = [];
+passi.push({nota:'Jeg sorterer efter stigende <b>start</b>. Her er alle intervallerne: A(0–3), B(1–4), C(2–6), D(5–8), E(6–9).', set:Object.fromEntries(J.map(([n])=>[n,{nascosto:false}]))});
+passi.push({nota:'Lokale 1: jeg tager A. B starter kl. 1, A er ikke færdig: der skal bruges et nyt lokale. Lokale 2: B. C starter kl. 2: både lokale 1 og lokale 2 er optaget, jeg åbner lokale 3: C.', set:{A:{tono:'ok'},B:{tono:'due'},C:{tono:'ora'},c:{t:'aule aperte: 3'}}});
+passi.push({nota:'D starter kl. 5: lokale 1 er ledigt (A sluttede kl. 3). D går i lokale 1.', set:{D:{tono:'ok'},A:{tono:'dato'},c:{t:'D nell\'aula 1'}}});
+passi.push({nota:'E starter kl. 6: lokale 2 er ledigt (B sluttede kl. 4). E går i lokale 2. I alt: <b>3 lokaler</b>. Minimum er <b>dybden</b>: det største antal intervaller, der overlapper i samme øjeblik, altså 3 (ved t = 2: A, B, C).', set:{E:{tono:'ok'},c:{t:'aule = profondità = 3',tono:'ok'}}});
+SCENE.part = {w:540,h:320,lato:true,legenda:'ok:tildelt,due:optaget på dette tidspunkt,ora:nyt lokale',oggetti:ogg,passi};
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Interval scheduling: den første der slutter</h1>
+  <p class="lede">Givet en mængde intervaller, vælg det største antal intervaller, der ikke overlapper. Den grådige regel er enkel: tag altid den, der slutter først. At bevise den er den klassiske øvelse i bytteargumentet.</p>
+</header>
+
+<section>
+  <h2>Problemet og reglen</h2>
+<p>Hvert interval har en start <code>s</code> og en slutning <code>f</code>. To intervaller er <b>kompatible</b>, hvis de ikke overlapper: det andet starter ikke før det første slutter. Du vil have det største antal kompatible intervaller.</p>
+<p>Den grådige regel: <b>sortér efter stigende slutning</b> og tag et interval, hvis det er kompatibelt med det sidst valgte. Intuitionen: et interval, der slutter tidligt, efterlader mere ledig tid til de andre.</p>
+  <figure class="scena" data-scena="int" data-titolo="Sortering efter slutning og kompatibelt valg"></figure>
+</section>
+<section>
+  <h2>Hvorfor den er optimal</h2>
+<p>Beviset <b>greedy stays ahead</b>: efter <code>k</code> valg har den grådige det første interval, der slutter ikke senere end nogen anden løsning med <code>k</code> intervaller. Den har altså altid mindst lige så meget plads som en anden løsning til det næste valg.</p>
+<p>Eller <b>bytteargumentet</b>: hvis en optimal løsning vælger et interval, der slutter senere end den grådiges, erstatter du det med den grådiges uden at skabe overlap (den grådige slutter tidligere). Antallet forbliver det samme.</p>
+</section>
+<section>
+  <h2>Omkostningen</h2>
+<p>Sortering koster <code>O(n log n)</code>. Derefter en enkelt gennemgang, <code>O(n)</code>, med én variabel: slutningen af det sidst valgte interval. I alt <code>O(n log n)</code>. Hvis intervallerne allerede er sorteret, er gennemgangen nok: <code>O(n)</code>.</p>
+<div class="box attenzione" data-tit="Hverken efter slutning eller start"><p>Sortering efter <i>varighed</i> går galt: et kort interval kan overlappe to lange, der tilsammen er kompatible. Sortering efter <i>start</i> går galt: et interval, der starter tidligt, kan være meget langt.</p></div>
+</section>
+<section>
+  <h2>Interval partitioning: hvor mange lokaler</h2>
+<p>En anden variant: alle intervallerne skal tildeles, med det <b>mindste antal lokaler</b>. Et lokale indeholder ikke-overlappende intervaller.</p>
+<p>Den grådige: sortér efter stigende <b>start</b>. For hvert interval bruges et ledigt lokale, hvis der er et, ellers åbnes et nyt lokale. Antallet af lokaler er <b>dybden</b> af intervallerne, altså det største antal, der overlapper i samme øjeblik. Den er derfor optimal: ingen løsning kan bruge færre lokaler end dybden.</p>
+  <figure class="scena" data-scena="part" data-titolo="Lokaler: maksimum af overlappende intervaller"></figure>
+</section>
+<section>
+  <h2>Koden side om side</h2>
+  <p>Denne side forklarer begrebet. Java-koden, der implementerer det, med en forklaring linje for linje og de syntaksnoter, der skal bruges, står på den side ved siden af.</p>
+  <p><a href="../codice/interval-scheduling.html"><b>→ Java-kode til dette emne</b></a></p>
+</section>
+<section>
+  <h2>Scheduling med mindste forsinkelse (EDF)</h2>
+  <p>En enkelt maskine, flere job. Hvert job <i>j</i> har en <b>varighed</b> <code>tⱼ</code> og en <b>deadline</b> <code>dⱼ</code>: det tidspunkt, til hvilket det helst skal være færdigt. Hvis <i>j</i> starter til tiden <code>sⱼ</code>, er det færdigt til <code>fⱼ = sⱼ + tⱼ</code>.</p>
+  <p><b>Forsinkelsen</b> (lateness) for et job er <code>ℓⱼ = max(0, fⱼ − dⱼ)</code>. <code>max(0, …)</code> tager det største af nul og tallet: et job, der er færdigt tidligt, har forsinkelse 0, aldrig negativ. Målet er den <b>største forsinkelse</b> <code>L = maxⱼ ℓⱼ</code>, så lille som muligt.</p>
+  <p>To grådige regler, der virker oplagte, er forkerte:</p>
+  <div class="tab-wrap"><table class="tab"><thead><tr><th>regel</th><th>modeksempel</th></tr></thead><tbody>
+    <tr><td>kortest varighed først</td><td>varigheder (1, 10), deadlines (100, 10): det korte job går først, det andet slutter kl. 11 med forsinkelse 1. I den anden rækkefølge er forsinkelsen 0.</td></tr>
+    <tr><td>mindste margen <code>dⱼ − tⱼ</code> først</td><td>varigheder (1, 10), deadlines (2, 10): margener 1 og 0. Det andet først får det første til at overskride med 9; den modsatte rækkefølge giver forsinkelse 1.</td></tr>
+  </tbody></table></div>
+  <p>Reglen der virker er <b>EDF</b> (<i>earliest deadline first</i>, nærmeste deadline først): sortér efter stigende <code>dⱼ</code> og lad maskinen arbejde uden pauser. At lade den stå stille hjælper aldrig, og EDF har heller ikke brug for det.</p>
+  <figure class="scena" data-scena="lat" data-titolo="EDF på to job: rækkefølgen efter deadline"></figure>
+  <div class="box idea" data-tit="Hvorfor EDF er optimal (bytteargumentet)">
+    <ol>
+      <li>En <b>inversion</b> er et par job <i>i</i>, <i>j</i> med <i>i</i> før <i>j</i>, men <code>dᵢ &gt; dⱼ</code>: jobbet med den fjerneste deadline går forrest.</li>
+      <li>En rækkefølge uden inversioner er EDF (lige deadlines kan byttes uden skade).</li>
+      <li>Hvis der er en inversion, er der en mellem to <b>på hinanden følgende</b> job: hvis alle naboerne er i orden, er hele rækken det.</li>
+      <li>Jeg bytter de to på hinanden følgende job. <i>j</i> begynder nu før og er færdigt før <code>fⱼ</code>, så dets forsinkelse vokser ikke. <i>i</i> slutter ved den gamle <code>fⱼ</code>, og dets forsinkelse <code>fⱼ − dᵢ</code> er mindre end <code>fⱼ − dⱼ</code>, som højst er den største forsinkelse <code>L</code>. Så maksimum vokser ikke.</li>
+      <li>Hvert byt fjerner en inversion og skaber ikke nye. Efter højst <code>n(n−1)/2</code> byt er der ingen tilbage. Startende fra et optimum når man frem til EDF uden at forværre den største forsinkelse: EDF er optimal.</li>
+    </ol>
+  </div>
+</section>
+<section>
+  <h2>Til eksamen</h2>
+<div class="box esame" data-tit="Til eksamen">
+<p>Interval scheduling (største antal kompatible aktiviteter) → earliest finish time. Interval partitioning (mindste antal lokaler) → earliest start time, antal lokaler = dybde. Sætning: <i>"Sort the jobs in increasing order of finish time. Take a job if it starts no earlier than the finish of the last job taken. Time O(n log n)."</i></p>
+<p>Med forskellige vægte på jobbene er det ikke længere grådigt: det er weighted interval scheduling (DP).</p>
+</div>
+</section>
+<section>
+  <h2>Hurtig oversigt</h2>
+<div class="tab-wrap"><table class="tab"><thead><tr><th>variant</th><th>regel</th><th>note</th></tr></thead><tbody><tr><td>earliest finish</td><td>sortér efter slutning, tag hvis kompatibel</td><td>største antal, O(n log n)</td></tr><tr><td>earliest start</td><td>sortér efter start, ledigt eller nyt lokale</td><td>mindste antal lokaler = dybde</td></tr><tr><td>med vægte</td><td>ikke grådig</td><td>weighted interval scheduling, DP</td></tr></tbody></table></div>
+</section>
+
+</main>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+const X = t => 40 + t * 60;
+const ogg = [];
+for (let t = 0; t <= 6; t++) ogg.push({id:'tk'+t, tipo:'testo', x:X(t), y:252, t:String(t), size:11});
+ogg.push({id:'asse', tipo:'linea', x1:X(0), y1:242, x2:X(6), y2:242});
+ogg.push({id:'lab1', tipo:'testo', x:40, y:24, t:"Ordine EDF: prima A, poi B", size:12, bold:true, anchor:'start'});
+ogg.push({id:'lab2', tipo:'testo', x:40, y:112, t:"Ordine inverso: prima B, poi A", size:12, bold:true, anchor:'start'});
+ogg.push({id:'a1', tipo:'rett', x:X(0), y:36, w:120, h:30, t:'A (d 3)', nascosto:true});
+ogg.push({id:'b1', tipo:'rett', x:X(2), y:36, w:180, h:30, t:'B (d 4)', nascosto:true});
+ogg.push({id:'r1', tipo:'rett', x:X(4), y:36, w:60, h:30, t:'', tono:'no', nascosto:true});
+ogg.push({id:'b2', tipo:'rett', x:X(0), y:126, w:180, h:30, t:'B (d 4)', nascosto:true});
+ogg.push({id:'a2', tipo:'rett', x:X(3), y:126, w:120, h:30, t:'A (d 3)', tono:'no', nascosto:true});
+ogg.push({id:'c', tipo:'testo', x:40, y:296, t:'', size:12, bold:true, anchor:'start'});
+const passi = [
+  {nota:"Due lavori su una macchina. <b>A</b>: durata 2, scadenza 3. <b>B</b>: durata 3, scadenza 4. L’asse orizzontale è il tempo: ogni barra occupa la macchina per la durata del lavoro.", set:{c:{t:'A: durata 2, scadenza 3 · B: durata 3, scadenza 4'}}},
+  {nota:"Provo l’ordine <b>EDF</b>: prima <b>A</b>, perché la sua scadenza è più vicina. A parte a 0 e finisce a 2, prima della scadenza 3: <b>in orario</b>, ritardo 0.", set:{a1:{nascosto:false, tono:'ok'}, c:{t:'EDF, passo 1: A finisce a 2, ritardo 0'}}},
+  {nota:"Poi <b>B</b>: parte a 2 e finisce a 5. La scadenza è 4, quindi sfora di <b>5 − 4 = 1</b>: è il tratto rosso. Con EDF il ritardo massimo è L = 1.", set:{b1:{nascosto:false, tono:'ora'}, r1:{nascosto:false}, c:{t:'EDF: ritardo massimo L = 1'}}},
+  {nota:"Provo l’altro ordine: <b>B prima</b>. B finisce a 3, in orario (3 ≤ 4). Poi A parte a 3 e finisce a 5: scade a 3, quindi ritardo 2.", set:{a1:{tono:'spento'}, b1:{tono:'spento'}, r1:{nascosto:true}, b2:{nascosto:false, tono:'ok'}, a2:{nascosto:false}, c:{t:'B prima: A finisce a 5, ritardo 2'}}},
+  {nota:"Ritardo massimo: 1 con EDF, 2 con B prima. EDF è il migliore, e l’argomento di scambio dice che lo è sempre.", set:{a1:{tono:'ok'}, b1:{nascosto:false, tono:'dato'}, r1:{nascosto:false}, b2:{tono:'spento'}, a2:{tono:'spento'}, c:{t:'EDF: L = 1 · inverso: L = 2', tono:'ok'}}}
+];
+SCENE.lat = {
+  w: 540, h: 310, lato: true,
+  legenda: 'ok:til tiden,no:forsinket,ora:lige ændret,dato:job B,spento:rækkefølge ikke valgt',
+  oggetti: ogg, passi
+};
+})();
+</script>
+</body>
+</html>

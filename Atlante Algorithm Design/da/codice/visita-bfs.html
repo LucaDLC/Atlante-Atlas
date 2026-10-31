@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Kode: BFS i Java</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Kode: BFS i Java</h1>
+  <p class="lede">Den komplette BFS: afstande fra en kilde i en graf uden vægte. Hver linje forklaret, og de syntaksnoter, der skal til for at skrive den.</p>
+</header>
+
+<section>
+  <h2>BFS med køen</h2>
+  <p>Køen er en <code>ArrayDeque</code>: <code>add</code> sætter bagerst, <code>poll</code> fjerner forrest. <code>dist[v] = -1</code> betyder "ikke set endnu", og knuden markeres, når den kommer i køen.</p>
+  <figure class="codice" data-titolo="BFS med køen">
+<pre data-lang="java">import java.io.*;
+import java.util.*;
+
+public class Main {
+    public static void main(String[] args) throws IOException {
+        // Lettura veloce: BufferedReader legge una riga alla volta.
+        BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
+
+        // Prima riga: n (nodi), m (archi), s (sorgente). I nodi vanno da 0 a n-1.
+        StringTokenizer st = new StringTokenizer(in.readLine());
+        int n = Integer.parseInt(st.nextToken());
+        int m = Integer.parseInt(st.nextToken());
+        int s = Integer.parseInt(st.nextToken());
+
+        // Lista di adiacenza: adj.get(u) contiene i vicini di u.
+        List&lt;List&lt;Integer&gt;&gt; adj = new ArrayList&lt;&gt;();
+        for (int i = 0; i &lt; n; i++) {
+            adj.add(new ArrayList&lt;&gt;());
+        }
+        for (int i = 0; i &lt; m; i++) {
+            st = new StringTokenizer(in.readLine());
+            int u = Integer.parseInt(st.nextToken());
+            int v = Integer.parseInt(st.nextToken());
+            adj.get(u).add(v);
+            adj.get(v).add(u); // grafo non diretto: l'arco vale nei due versi
+        }
+
+        // dist[v] = distanza da s; -1 vuol dire "non ancora visto".
+        int[] dist = new int[n];
+        Arrays.fill(dist, -1);
+
+        // Coda FIFO: add mette in fondo, poll toglie dalla testa.
+        Deque&lt;Integer&gt; coda = new ArrayDeque&lt;&gt;();
+        dist[s] = 0;
+        coda.add(s); // il nodo si segna come visto quando ENTRA in coda
+
+        while (!coda.isEmpty()) {
+            int u = coda.poll();          // Integer -&gt; int: unboxing automatico
+            for (int v : adj.get(u)) {    // for-each sulla lista dei vicini
+                if (dist[v] == -1) {      // primo arrivo: il cammino è il più corto
+                    dist[v] = dist[u] + 1;
+                    coda.add(v);
+                }
+            }
+        }
+
+        // StringBuilder: si accumula l'output e si stampa una volta sola.
+        StringBuilder out = new StringBuilder();
+        for (int i = 0; i &lt; n; i++) {
+            out.append(i).append(' ').append(dist[i]).append('\n');
+        }
+        System.out.print(out);
+    }
+}</pre>
+    <ol class="spiega">
+    <li data-righe="11"><p>Knuderne er nummereret fra 0 til n−1, så jeg kan bruge dem som array-indeks.</p></li>
+    <li data-righe="30"><p>Alle afstande starter fra −1 (ikke set). <code>Arrays.fill</code> udfylder arrayet i ét trin.</p></li>
+    <li data-righe="33"><p>En <code>Deque</code> brugt som FIFO-kø. <code>Integer</code> og ikke <code>int</code>: samlinger indeholder objekter.</p></li>
+    <li data-righe="34"><p>Kilden har afstand 0. Den kommer ind i køen, allerede markeret som set.</p></li>
+    <li data-righe="38"><p>Jeg udtrækker den første knude. <code>poll</code> returnerer <code>null</code>, hvis køen er tom, men <code>while</code> forhindrer det.</p></li>
+    <li data-righe="39"><p>Jeg gennemløber naboerne til <code>u</code> med en <i>for-each</i>: <code>v</code> tager hver værdi i listen.</p></li>
+    <li data-righe="40"><p>Kun de naboer, der ikke er set: den første ankomst er også den korteste vej.</p></li>
+    <li data-righe="41" data-segna="dist[v] = dist[u] + 1@ora"><p>Afstand = afstanden til <code>u</code> plus én.</p></li>
+    <li data-righe="42"><p>Jeg lægger <code>v</code> i køen: den udtrækkes efter de knuder, der allerede er i køen, altså lag for lag.</p></li>
+    </ol>
+  </figure>
+  <div class="box basi" data-tit="Syntaksnoter"><ul><li><code>Integer</code> → <code>int</code> i <code>int u = coda.poll();</code>: den automatiske konvertering kaldes <i>unboxing</i>.</li><li><code>ArrayDeque</code> er hurtigere end <code>LinkedList</code> som kø; den accepterer ikke <code>null</code>.</li><li><code>StringBuilder</code> samler teksten og udskriver den kun én gang: at udskrive linje for linje ved store output er langsomt.</li></ul></div>
+</section>
+<section>
+  <h2>Kør det</h2>
+  <p>Eksempel på input og output (faktisk kompileret og kørt).</p>
+  <pre class="cod">5 6 0
+0 1
+0 2
+1 3
+2 3
+3 4
+1 4
+
+(output: nodo distanza)
+0 0
+1 1
+2 1
+3 2
+4 2</pre>
+</section>
+<section>
+  <h2>Teorien side om side</h2>
+  <p><a href="../teoria/visita-bfs.html"><b>← Tilbage til teorien om dette emne</b></a></p>
+</section>
+
+</main>
+</body>
+</html>

@@ -1,0 +1,70 @@
+@@s001 Nil, None, null: when to use them
+@@s002 <span>Cross-cutting concepts · lists and Option</span>
+@@s003 Nil, None, null: when to use them
+@@s004 Scala has three ways of saying "nothing", and they are not interchangeable. <code>Nil</code> is an empty list, <code>None</code> is an Option without a value, <code>null</code> is Java's empty reference. This page says which one to use, and when not to use it.
+@@s005 The problem: a value is missing
+@@s006 Sometimes a function has no result to return: the search finds nothing, the list has no elements, a datum is missing. There are three different questions, and each has a different type:
+@@s007 is the <b>collection</b> empty? Answer: <code>Nil</code>, which is a list with no elements;
+@@s008 can the <b>result</b> be missing? Answer: <code>Option[A]</code>, with <code>Some(value)</code> or <code>None</code>;
+@@s009 am I talking to a <b>Java library</b> that returns an empty reference? Answer: <code>null</code>, which however must be converted at once.
+@@s010 Three questions, three values
+@@s011 dato:the question,ora:the right value,ok:result
+@@s012 A collection with no elements: <mark class="ora">Nil</mark>.
+@@s013 A function that can fail: <mark class="ora">None</mark> inside an <code>Option</code>.
+@@s014 A reference that can be empty: <mark class="ora">null</mark>, to be converted into an <code>Option</code> as soon as it arrives.
+@@s015 Nil: the empty list
+@@s016 <code>Nil</code> is the list with no elements. It is the <b>base case</b> of the lists built with <code>::</code>: the list <code>1 :: 2 :: Nil</code> is <code>List(1, 2)</code>, and the <code>Nil</code> at the end says where it ends. In pattern matching one writes <code>case Nil =&gt; …</code> for the case of the empty list.
+@@s017 <b>When to use it</b>: to build lists and to recognise the end of a recursive list. An empty list is a <b>valid result</b>: if a function returns "no elements", <code>Nil</code> is the right answer, not <code>None</code>.
+@@s018 Nil at the end of the chain
+@@s019 dato:elements,ora:the tail,ok:end of the list
+@@s020 The <code>::</code> adds an element in front of the list that stands on its right. <code>Nil</code> is the list that stands at the end.
+@@s021 The compact form is the same list. <code>List(1, 2)</code> and <code>1 :: 2 :: Nil</code> are equal.
+@@s022 The pattern <code>Nil</code> recognises the empty list. The case <code>h :: t</code> separates the first element from the rest.
+@@s023 Warning
+@@s024 Do not confuse <code>Nil</code> with <code>None</code>. An empty list is a list: you can still call <code>isEmpty</code>, <code>map</code>, <code>foldLeft</code>. <code>None</code> instead is not a list: it is the absence of a result.
+@@s025 None: the result that may be missing
+@@s026 <code>Option[A]</code> has two shapes: <code>Some(a)</code>, which contains a value, and <code>None</code>, which says "no value". A function that can fail returns an <code>Option</code> instead of throwing an exception or returning <code>null</code>.
+@@s027 <b>When to use it</b>: every time the answer may not exist (a search, a division by zero, an optional field). The caller is forced to handle the <code>None</code> case, because the type is <code>Option</code> and not <code>A</code>.
+@@s028 An Option, two shapes
+@@s029 dato:input,ora:step under way,ok:result,no:no value
+@@s030 The list has a first element: the function gives <mark class="ok">Some(1)</mark>.
+@@s031 The list is empty: the case <code>case Nil =&gt; None</code> gives <mark class="no">None</mark>.
+@@s032 <code>getOrElse</code> gives a fallback value when the result is missing. With <code>Some(3)</code> it would give 3.
+@@s033 Rule
+@@s034 Do not return <code>None</code> to say "empty list": if the function produces a list, the empty list is <code>Nil</code>. Use <code>None</code> only when "no result" is information different from "zero elements".
+@@s035 null: Java's emptiness
+@@s036 <code>null</code> is Java's empty reference. Scala accepts it to talk to Java libraries, and in Scala 3 it is a possible value for almost every reference type, even <code>String</code>. The problem: if you use a <code>null</code> (for example you call <code>.length</code>), the program throws a <code>NullPointerException</code>, and the compiler does not warn you.
+@@s037 <b>When to use it</b>: almost never in Scala. Only when a Java library returns <code>null</code>: at that point you convert at once with <code>Option(x)</code>, which gives <code>None</code> if <code>x</code> is <code>null</code> and <code>Some(x)</code> otherwise.
+@@s038 From null to Option, before it spreads
+@@s039 dato:value that arrives,ora:conversion,ok:safe,no:dangerous
+@@s040 The compiler accepts it: <code>String</code> is a reference type, and <code>null</code> is a value of that type.
+@@s041 Here the program stops with a <code>NullPointerException</code>: there is nothing to ask for the length of.
+@@s042 Convert at once: <code>Option(x)</code> gives <code>None</code> if <code>x</code> is <code>null</code>. From then on one uses only <code>Option</code>.
+@@s043 Warning
+@@s044 The comparison <code>None == null</code> gives <code>false</code>: they are different values. Do not write <code>if x == null</code> in new Scala code: use <code>Option</code> and <code>match</code>.
+@@s045 Which to use
+@@s046 situation
+@@s047 use
+@@s048 example
+@@s049 build or close a list
+@@s050 <code>Nil</code>
+@@s051 <code>1 :: 2 :: Nil</code>
+@@s052 list with no elements as a valid result
+@@s053 <code>Nil</code> (or empty list)
+@@s054 filter and find nothing
+@@s055 result that may not be there
+@@s056 <code>Option</code>, that is <code>Some</code> or <code>None</code>
+@@s057 search for an element
+@@s058 value that arrives from Java and can be <code>null</code>
+@@s059 <code>Option(x)</code> at once
+@@s060 <code>Option(javaCall())</code>
+@@s061 write new Scala code
+@@s062 never <code>null</code>
+@@s063 use <code>Option</code>
+@@s064 At the exam
+@@s065 At the exam
+@@s066 When you write a function that may not find a result, declare the type <code>Option[A]</code> and explain in one sentence why <code>None</code> and not an empty list or an exception. Do not use <code>null</code> in Scala solutions.
+@@s067 Sentence for the exam
+@@s068 Use <code>None</code> when a result may be absent; use <code>Nil</code> for an empty list, which is a valid result; convert Java <code>null</code> to <code>Option</code> at the boundary.
+@@s069 Side-by-side examples
+@@s070 The code of this page, compiled and checked with Scala 3.8.4 and the course options, is in the <a href="../esempi/s03-vuoti.html">examples page</a>.

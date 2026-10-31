@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>synchronized: indre låse</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+SCENE.duelock = {
+  w: 600, h: 260, lato: true,
+  legenda: 'dato:t1,due:t2,no:ubeskyttet adgang,ok:beskyttet',
+  oggetti: [
+    { id: 't1', tipo: 'nodo', x: 60, y: 60, t: 't1', tono: 'dato' },
+    { id: 't2', tipo: 'nodo', x: 60, y: 200, t: 't2', tono: 'due' },
+    { id: 'Lm', tipo: 'rett', x: 170, y: 40, w: 190, h: 40, t: 'lock di m (this)' },
+    { id: 'Lc', tipo: 'rett', x: 170, y: 180, w: 190, h: 40, t: 'lock di Mystery.class' },
+    { id: 'sum', tipo: 'nodo', forma: 'quadrato', r: 30, x: 510, y: 130, t: 'sum' },
+    { id: 'p1', tipo: 'linea', x1: 85, y1: 60, x2: 170, y2: 60, nascosto: true },
+    { id: 'p2', tipo: 'linea', x1: 85, y1: 200, x2: 170, y2: 200, nascosto: true },
+    { id: 'a1', tipo: 'vett', x1: 360, y1: 60, x2: 480, y2: 115, nascosto: true },
+    { id: 'a2', tipo: 'vett', x1: 360, y1: 200, x2: 480, y2: 145, nascosto: true },
+    { id: 'nota', tipo: 'testo', x: 300, y: 130, t: '', size: 12.5, bold: true }
+  ],
+  passi: [
+    { nota: '<p><code>sum</code> er <b>static</b>: én variabel for hele klassen. t1 kalder <code>m.addInstance(1)</code>, t2 kalder <code>Mystery.addStatic(1)</code>.</p>' },
+    { nota: '<p><code>addInstance</code> er <b>instans-</b><code>synchronized</code>: t1 tager låsen på objektet <code>m</code>.</p>', set: { p1: { nascosto: false, tono: 'dato' }, Lm: { tono: 'dato' } } },
+    { nota: '<p><code>addStatic</code> er <code>static synchronized</code>: t2 tager låsen på objektet <code>Mystery.class</code>. Det er en <b>anden</b> lås, og den er fri: t2 <b>blokeres ikke</b>.</p>', set: { p2: { nascosto: false, tono: 'due' }, Lc: { tono: 'due' } } },
+    { nota: '<p>Begge udfører <code>sum += x</code> på samme tid. De to låse udelukker ikke hinanden: <b>data race</b> på <code>sum</code> og tabte forøgelser (verificeret: cirka 1,5–1,7 millioner i stedet for 2).</p>', set: { a1: { nascosto: false, tono: 'no' }, a2: { nascosto: false, tono: 'no' }, sum: { tono: 'no' }, nota: { t: 'due lock ≠ mutua esclusione', tono: 'no' } } },
+    { nota: '<p><b>Rettelse</b> (øvelse 2.3.3): inde i <code>addInstance</code> synkroniserer man på <code>Mystery.class</code>. Nu bruger t1 og t2 den <b>samme</b> lås.</p>', set: { a1: { nascosto: true }, a2: { nascosto: true }, sum: { tono: null }, nota: { t: '' }, p1: { x2: 170, y2: 200, tono: 'dato' }, Lm: { tono: 'spento' }, Lc: { tono: 'dato' } } },
+    { nota: '<p>Hvis t1 har klasselåsen, venter t2, og omvendt: adgangene til <code>sum</code> er i gensidig udelukkelse. Resultatet er altid 2 000 000 (verificeret).</p>', set: { p2: { tono: 'no' }, a1: { nascosto: false, tono: 'ok' }, sum: { tono: 'ok' }, nota: { t: 'stesso lock → un thread alla volta', tono: 'ok' } } }
+  ]
+};
+</script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  const T = (id, x, y, t, extra) => Object.assign({ id, tipo: 'testo', x, y, t, size: 13 }, extra || {});
+  const R = (id, x, y, w, h, t, extra) => Object.assign({ id, tipo: 'rett', x, y, w, h, t }, extra || {});
+  const N = (id, x, y, t, tono, extra) => Object.assign({ id, tipo: 'nodo', x, y, t, tono, r: 18 }, extra || {});
+
+  // 1. blocco synchronized
+  SCENE.syncblock = {
+    w: 600, h: 230, lato: true,
+    legenda: 'dato:tråd,ora:har låsen på o,no:undtagelse,ok:lås frigivet',
+    oggetti: [
+      R('blk', 200, 50, 200, 110, '', { tono: 'spento' }), T('tb', 300, 40, 'synchronized (o) { … }', { bold: true, size: 12 }),
+      R('lk', 460, 70, 120, 36, 'lock di o: libero', { tono: 'ok' }),
+      N('t', 100, 105, 't', 'dato'),
+      T('c', 300, 200, '', { bold: true, size: 12 })
+    ],
+    passi: [
+      { nota: "Ogni oggetto Java ha un <b>lock intrinseco</b>. <code>synchronized (o) { … }</code> lo usa per il blocco." },
+      { nota: "Entrando nel blocco il thread <b>prende</b> il lock di o (se è occupato, aspetta).", set: { t: { x: 300, y: 105, tono: 'ora' }, lk: { t: 'lock di o: di t', tono: 'ora' } } },
+      { nota: "Dentro il blocco viene lanciata un'eccezione.", set: { t: { tono: 'no' }, c: { t: 'throw new RuntimeException()', tono: 'no' } } },
+      { nota: "Uscendo dal blocco, <b>in qualunque modo</b> (fine normale, return, eccezione), il lock si rilascia da solo. È esattamente lock + try/finally, scritto dal compilatore per te (verificato: dopo l'eccezione <code>Thread.holdsLock(o)</code> è false). Ed è rientrante, come ReentrantLock.", set: { t: { x: 520, y: 180, tono: 'dato' }, lk: { t: 'lock di o: libero', tono: 'ok' }, c: { t: 'uscita dal blocco = unlock automatico', tono: 'ok' } } }
+    ]
+  };
+
+  // 2. quale lock
+  SCENE.qualelock = {
+    w: 600, h: 250, lato: true,
+    legenda: 'dato:låsen på objektet c1,due:låsen på objektet c2,ora:klassens lås,no:venter',
+    oggetti: [
+      R('o1', 40, 40, 150, 50, 'oggetto c1 (lock)', { tono: 'dato' }), R('o2', 40, 150, 150, 50, 'oggetto c2 (lock)', { tono: 'due' }),
+      R('cl', 400, 95, 170, 50, 'C.class (lock)', { tono: 'ora' }),
+      N('t1', 260, 65, 't1', null), N('t2', 260, 175, 't2', null),
+      T('c', 300, 232, '', { bold: true, size: 12 })
+    ],
+    passi: [
+      { nota: "Due oggetti della stessa classe C, c1 e c2, e due thread." },
+      { nota: "Metodi d'<b>istanza</b> synchronized: t1 chiama c1.method(), t2 chiama c2.method(). Ognuno prende il lock <b>del suo oggetto</b> (this): due lock diversi, quindi girano <b>insieme</b>.", set: { t1: { x: 212, y: 65, tono: 'dato' }, t2: { x: 212, y: 175, tono: 'due' }, c: { t: 'this: due lock, nessuna attesa' } } },
+      { nota: "Metodi <b>static</b> synchronized: il lock è quello di <b>C.class</b>, l'oggetto che rappresenta la classe. Ce n'è uno solo per tutti.", set: { t1: { x: 485, y: 170, tono: 'ora' }, t2: { x: 330, y: 175, tono: 'no' }, c: { t: 'C.class: un lock, t2 aspetta', tono: 'no' } } },
+      { nota: "Conseguenza (esercizio 2.3, Mystery): un campo <b>static</b> modificato sia da metodi static sia da metodi d'istanza è protetto da <b>due lock diversi</b>, quindi <b>non</b> è protetto. Regola: una variabile condivisa va sempre protetta dallo <b>stesso</b> lock.", set: { c: { t: 'stessa variabile → stesso lock', tono: 'ok' } } }
+    ]
+  };
+
+  // 3. wait e notify tenendo il lock
+  SCENE.waitlock = {
+    w: 600, h: 230, lato: true,
+    legenda: 'no:fejl,ok:korrekt,dato:tråd',
+    oggetti: [
+      R('cod', 30, 40, 250, 40, 'o.wait();', { tono: 'dato' }),
+      T('e', 440, 60, '', { size: 12, bold: true }),
+      R('cod2', 30, 120, 250, 40, 'synchronized (o) { o.wait(); }', { tono: 'ok', nascosto: true }),
+      T('e2', 440, 140, '', { size: 12, bold: true }), T('c', 300, 205, '', { size: 12 })
+    ],
+    passi: [
+      { nota: "<code>wait()</code>, <code>notify()</code>, <code>notifyAll()</code> sono i corrispondenti di await, signal, signalAll per il lock intrinseco. Ma vanno chiamati <b>tenendo</b> il lock di quell'oggetto." },
+      { nota: "Chiamare <code>o.wait()</code> senza essere dentro <code>synchronized (o)</code> fa fallire il programma: <code>java.lang.IllegalMonitorStateException: current thread is not owner</code> (errore vero, JDK 26).", set: { cod: { tono: 'no' }, e: { t: 'IllegalMonitorStateException', tono: 'no' } } },
+      { nota: "Dentro <code>synchronized (o)</code> funziona: wait rilascia il lock di o e aspetta, come await. In un metodo synchronized si scrive <code>this.wait()</code>.", set: { cod2: { nascosto: false }, e2: { t: 'ok: rilascia il lock e aspetta', tono: 'ok' } } },
+      { nota: "Rispetto a ReentrantLock c'è una sola differenza di fondo: ogni oggetto ha <b>una sola</b> condition, mentre un Lock può crearne quante ne servono con <code>newCondition()</code>.", set: { c: { t: 'synchronized: 1 condition per oggetto' } } }
+    ]
+  };
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>synchronized: indre låse</h1>
+  <p class="lede">I Java har <b>hvert objekt</b> allerede en lås med en condition variable indeni: den <b>indre</b> lås (Java-specifikationerne kalder den en monitor). Den bruges med nøgleordet <code>synchronized</code>. Det vigtige punkt er at forstå, <b>hvilket objekt</b> der fungerer som lås.</p>
+</header>
+
+<section>
+  <h2><code>synchronized</code>-blok = lås + try/finally</h2>
+  <p>I Java har hvert objekt allerede en lås, kaldet den <b>indre lås</b> (eller monitor-låsen). Nøgleordet <code>synchronized</code> bruger den uden at skulle oprette en <code>ReentrantLock</code>: den tager låsen, når man går ind i en blok eller en metode, og frigiver den, når man går ud. Det gør det samme som idiomet lås + try/finally, med færre linjer og uden risiko for at glemme unlock.</p>
+  <div class="colonne">
+    <div class="carta">
+      <h4>Med en Lock</h4>
+      <pre class="cod" data-lang="java">Lock l = new ReentrantLock();
+l.lock();
+try {
+    // sezione critica
+} finally {
+    l.unlock();
+}</pre>
+    </div>
+    <div class="carta">
+      <h4>Med den indre lås</h4>
+      <pre class="cod" data-lang="java">Object o = new Object();
+synchronized (o) {
+    // sezione critica
+}</pre>
+      <p>Låsen på <code>o</code> tages, når man går ind i blokken, og frigives, når man går ud, <b>også</b> ved en undtagelse. Og den er reentrant.</p>
+    </div>
+  </div>
+  <figure class="scena" data-scena="syncblock" data-titolo="Låsen frigives også ved en undtagelse"></figure>
+</section>
+
+<section>
+  <h2>På en metode: hvilken lås?</h2>
+  <p><code>synchronized</code> kan også skrives foran en metode. Så er det vigtige spørgsmål: <b>hvilket objekt</b> giver låsen? Det afhænger af, om metoden er instans- eller static, og at give det forkerte svar er fejlen i øvelse 2.3.</p>
+  <figure class="passi" data-titolo="Tre skrivemåder, to forskellige låse">
+    <div class="passo">
+      <div class="espr">class C {
+  public <mark class="dato">synchronized</mark> T method() { … }
+}</div>
+      <p class="nota">Synchronized instansmetode …</p>
+    </div>
+    <div class="passo">
+      <div class="espr">class C {
+  public T method() { <mark class="dato">synchronized (this)</mark> { … } }
+}</div>
+      <p class="nota">…svarer til at synkronisere på <b><code>this</code></b>: låsen på det objekt, du kalder metoden på. To forskellige <code>C</code>-objekter = to forskellige låse.</p>
+    </div>
+    <div class="passo">
+      <div class="espr">class C {
+  public <mark class="due">static synchronized</mark> T method() { … }
+}</div>
+      <p class="nota">Static synchronized metode …</p>
+    </div>
+    <div class="passo">
+      <div class="espr">class C {
+  public static T method() { <mark class="due">synchronized (C.class)</mark> { … } }
+}</div>
+      <p class="nota">…svarer til at synkronisere på <b><code>C.class</code></b>, objektet der repræsenterer klassen. Der er kun ét: alle kaldere bruger den samme lås.</p>
+    </div>
+  </figure>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Skrevet</th><th>Brugt lås</th><th>Eksempel fra slide 44–45</th></tr></thead>
+    <tbody>
+      <tr><td><code>synchronized</code> på en instansmetode</td><td>objektet <code>this</code></td><td>to tråde med forskellige <code>new C()</code>: <b>forskellige låse</b>, ingen venten</td></tr>
+      <tr><td><code>static synchronized</code></td><td>objektet <code>C.class</code></td><td>to tråde med forskellige <code>new C()</code>: <b>samme lås</b></td></tr>
+      <tr><td><code>synchronized (x) { … }</code></td><td>objektet <code>x</code></td><td>du vælger objektet</td></tr>
+    </tbody>
+  </table></div>
+  <figure class="scena" data-scena="qualelock" data-titolo="this mod C.class"></figure>
+</section>
+
+<section>
+  <h2>Øvelse 2.3: klassen <code>Mystery</code></h2>
+  <pre class="cod" data-lang="java">class Mystery {
+    private static double sum = 0;
+    public static synchronized void addStatic(double x) { sum += x; }
+    public synchronized void addInstance(double x)      { sum += x; }
+    public static synchronized double sum()             { return sum; }
+}</pre>
+  <p>Alt er <code>private</code>, og alle metoderne er <code>synchronized</code>: det ser sikkert ud. Det er det ikke.</p>
+  <figure class="scena" data-scena="duelock" data-titolo="To forskellige låse på den samme variabel"></figure>
+  <figure class="codice" data-titolo="Rettelsen uden at ændre static/instans (kompileret og kørt)">
+<pre data-lang="java">class Mystery {
+    private static double sum = 0;
+    public static synchronized void addStatic(double x) { sum += x; }
+    public synchronized void addInstance(double x) {
+        synchronized (Mystery.class) { sum += x; }
+    }
+    public static synchronized double sum() { return sum; }
+}</pre>
+    <ol class="spiega">
+      <li data-righe="3" data-segna="static synchronized@due"><p><code>addStatic</code> bruger låsen på <code>Mystery.class</code>.</p></li>
+      <li data-righe="5" data-segna="synchronized (Mystery.class)@ok"><p>Adgangen til <code>sum</code> i <code>addInstance</code> bruger nu også <code>Mystery.class</code>. Teksten forbyder at ændre modifikatorerne, og denne ændring lader dem være intakte.</p></li>
+      <li data-righe="4" data-segna="synchronized@due"><p>Den resterende instans-<code>synchronized</code> gør ingen skade (den tager også låsen på <code>m</code>), men det er ikke den, der beskytter <code>sum</code>.</p></li>
+    </ol>
+  </figure>
+  <div class="box domanda-tua" data-tit="Øvelse 2.3.4: er synchronized på sum() nødvendig?">
+    <p>I <b>dette</b> program nej: <code>main</code> kalder <code>sum()</code> efter <code>t1.join()</code> og <code>t2.join()</code>. Trådenes sidste skrivninger kommer før join ifølge afslutningsreglen (forelæsning 3), så læsningen ser de endelige værdier uden data race. I en klasse, der bruges af tråde, der læser <b>mens</b> andre skriver, ville den derimod være nødvendig.</p>
+  </div>
+  <div class="box inglese" data-tit="På engelsk (2.3.2)">
+    <p>"A synchronized instance method locks <code>this</code>, the Mystery object, while a static synchronized method locks <code>Mystery.class</code>. Since t1 and t2 hold different locks, their executions of <code>sum += x</code> are not mutually exclusive, and the non-atomic read-modify-write on the static field sum can interleave and lose updates."</p>
+  </div>
+</section>
+
+<section>
+  <h2><code>wait()</code>, <code>notify()</code>, <code>notifyAll()</code></h2>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Med <code>ReentrantLock</code> + <code>Condition</code></th><th>Med <code>synchronized</code></th></tr></thead>
+    <tbody>
+      <tr><td><code>c.await()</code></td><td><code>o.wait()</code></td></tr>
+      <tr><td><code>c.signal()</code></td><td><code>o.notify()</code></td></tr>
+      <tr><td><code>c.signalAll()</code></td><td><code>o.notifyAll()</code></td></tr>
+      <tr><td>flere betingelser pr. lås (<code>newCondition()</code>)</td><td>kun én betingelse pr. objekt</td></tr>
+    </tbody>
+  </table></div>
+  <p>I en <code>synchronized</code>-metode skriver man <code>this.wait()</code>. <code>wait()</code> og <code>notify()</code> skal kaldes <b>mens man holder</b> låsen på det objekt, altså inde i <code>synchronized</code> på det.</p>
+  <figure class="scena" data-scena="waitlock" data-titolo="wait uden låsen: fejlen"></figure>
+</section>
+
+</main>
+</body>
+</html>

@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Del og hersk: metoden</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+SCENE.bin = {
+  w: 540, h: 230, lato: true,
+  legenda: 'ora:mid i dette trin,dato:interval lo..hi,no:skåret fra,ok:fundet',
+  codice: { lang: 'pseudo', testo: `lo = 0, hi = n - 1
+while lo <= hi:
+    mid = (lo + hi) / 2
+    if A[mid] == x: trovato
+    elif A[mid] < x: lo = mid + 1
+    else: hi = mid - 1` },
+  oggetti: [
+    ...[1,3,4,7,9,11,15,18].map((v,i) => ({id:'c'+i,tipo:'rett',x:30+i*60,y:60,w:54,h:36,t:String(v)})),
+    ...[0,1,2,3,4,5,6,7].map(i => ({id:'i'+i,tipo:'testo',x:57+i*60,y:112,t:String(i),size:11})),
+    {id:'lo',tipo:'testo',x:30,y:150,t:'',size:13,bold:true,anchor:'start'}
+  ],
+  passi: [
+    { nota: 'Sorteret array, jeg søger x = 15. Jeg kan ikke læse alt: hvert trin skal <b>kassere halvdelen</b> af intervallet.', set:{} },
+    { nota: '<code>lo = 0, hi = 7</code>. Midten <code>mid = (0 + 7)/2 = 3</code>: A[3] = 7 &lt; 15. Målet ligger til højre: jeg kasserer venstre halvdel, <code>lo = 4</code>.', set:{c3:{tono:'ora'},lo:{t:'lo = 4, hi = 7'}} },
+    { nota: 'Ny midte <code>mid = (4 + 7)/2 = 5</code>: A[5] = 11 &lt; 15. Jeg kasserer igen: <code>lo = 6</code>.', set:{c3:{tono:'no'},c5:{tono:'ora'},lo:{t:'lo = 6, hi = 7'}} },
+    { nota: 'Midten <code>mid = 6</code>: A[6] = 15 = x. <b>Fundet</b> på 3 trin. Med n = 8 er maksimum ⌈log₂ 8⌉ = 3.', set:{c5:{tono:'no'},c6:{tono:'ok'},lo:{t:'trovato: A[6] = 15',tono:'ok'}} }
+  ]
+};
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Del og hersk: metoden</h1>
+  <p class="lede">Del og hersk deler problemet i mindre uafhængige dele af samme type, løser dem rekursivt og sammensætter resultaterne igen. Omkostningen læses af rekurrensen med master-sætningen.</p>
+</header>
+
+<section>
+  <h2>Metoden i seks trin</h2>
+<ol>
+  <li><b>Del</b>: halvdele, kvadranter, venstre og højre for en linje.</li>
+  <li><b>Invariant</b>: hvorfor svaret ligger i den valgte del, eller hvordan du sammensætter delene.</li>
+  <li><b>Grundtilfælde</b>: <code>n ≤ 1</code> (eller <code>n ≤ 2</code>), skrevet eksplicit.</li>
+  <li><b>Omkostning</b> ved at dele og sammensætte: normalt <code>O(n^c)</code>.</li>
+  <li><b>Rekurrens</b>: <code>T(n) = a·T(n/b) + O(n^c)</code>.</li>
+  <li><b>Master-sætningen</b> (grundsætningen): sammenlign <code>c</code> med <code>log_b a</code>.</li>
+</ol>
+</section>
+<section>
+  <h2>Binærsøgning</h2>
+<p>Det enkleste tilfælde: en sorteret følge og det element, der søges. Ved hvert trin kigger du på midten <code>mid</code>: rækkefølgen fortæller dig, i hvilken halvdel svaret kan ligge, og du kasserer den anden. Intervallet halveres, så <code>T(n) = T(n/2) + O(1)</code>, altså <code>O(log n)</code>.</p>
+<p>Signal på eksamen: <b>"faster than linear"</b>: du kan ikke læse alt input, så du skal kassere halvdelen af det ved hvert trin.</p>
+  <figure class="scena" data-scena="bin" data-titolo="Binærsøgning: midten kasserer halvdelen"></figure>
+</section>
+<section>
+  <h2>Master-sætningen</h2>
+<p>Givet <code>T(n) = a·T(n/b) + Θ(n^c)</code> med <code>a ≥ 1</code>, <code>b ≥ 2</code>, sammenlign <code>c</code> med <code>log_b a</code>:</p>
+<ul>
+  <li>hvis <code>c &lt; log_b a</code>: <code>T(n) = Θ(n^(log_b a))</code> (bladene dominerer);</li>
+  <li>hvis <code>c = log_b a</code>: <code>T(n) = Θ(n^c · log n)</code> (hvert niveau vejer lige meget);</li>
+  <li>hvis <code>c &gt; log_b a</code>: <code>T(n) = Θ(n^c)</code> (roden dominerer).</li>
+</ul>
+<div class="box attenzione" data-tit="Hvornår den ikke gælder"><p>Antallet af delproblemer skal være konstant, og det ekstra arbejde skal have formen <code>n^c</code>. Et ekstra arbejde på <code>n log n</code>, eller delproblemer af forskellig størrelse, kræver en anden analyse (udrul rekursionen).</p></div>
+</section>
+<section>
+  <h2>Til eksamen</h2>
+<div class="box esame" data-tit="Til eksamen">
+<p>For tiden af et del og hersk: skriv rekurrensen, derefter master-sætningen. Sætning: <i>"T(n) = a·T(n/b) + O(n^c). Since log_b a = …, by the master theorem T(n) = Θ(…)."</i></p>
+<p>Grundtilfælde: skriv det altid eksplicit. Typisk fejl: at glemme sammensætningsarbejdet.</p>
+</div>
+</section>
+<section>
+  <h2>Hurtig oversigt</h2>
+<div class="tab-wrap"><table class="tab"><thead><tr><th>rekurrens</th><th>løsning</th><th>eksempel</th></tr></thead><tbody><tr><td>T(n) = T(n/2) + O(1)</td><td>O(log n)</td><td>binærsøgning</td></tr><tr><td>T(n) = 2T(n/2) + O(n)</td><td>O(n log n)</td><td>mergesort</td></tr><tr><td>T(n) = 3T(n/2) + O(n)</td><td>O(n^1.585)</td><td>Karatsuba</td></tr><tr><td>T(n) = 4T(n/2) + O(1)</td><td>O(n²)</td><td>stor tabel 2^k × 2^k</td></tr></tbody></table></div>
+</section>
+
+</main>
+</body>
+</html>

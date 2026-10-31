@@ -1,0 +1,112 @@
+@@s001 Lazy foldRight
+@@s002 ora:head just computed,no:0 > 2 false: the rest is needed,ok:found,spento:never computed
+@@s003 <code>from(0).exists(_ &gt; 2)</code>. An infinite list: at the start nothing is computed, there are only "recipes" (the question marks).
+@@s004 Head 0: 0 &gt; 2 is false. <code>false || rest</code> must look at the right part, so it <b>forces</b> the rest.
+@@s005 Head 1: still false, forced again.
+@@s006 Head 2: false.
+@@s007 Head 3: 3 &gt; 2 is <b>true</b>. <code>true || something</code> is true without looking at the something: the rest is <b>never forced</b>.
+@@s008 Result <b>true</b>, only the heads 0, 1, 2, 3 of an infinite list computed (checked by printing the forcings). It works because the second argument of f is by-name.
+@@s009 ok:computed right away,due:recipe (by-name)
+@@s010 ora:foldRight,due:foldLeft,ok:final formula
+@@s011 ok:computed,spento:never computed
+@@s012 ok:kept,no:first that fails: stop,spento:never looked at
+@@s013 dato:this,due:that (at the bottom: it is z),ok:result
+@@s014 ok:computed,spento:never computed,no:computed for nothing
+@@s015 Lazy foldRight
+@@s016 On ordinary lists <code>foldRight</code> always consumes everything. On a LazyList no: the function receives the rest <b>as a recipe</b>, and if it does not use it the fold stops. That is why it works also on infinite lists, and it is the basis of exercises 6–9.
+@@s017 The signature of the course, piece by piece
+@@s018 foldRight on LazyList
+@@s019 The key point: the <b>second</b> argument of <code>f</code> is by-name (<code>=> C</code>). <code>f</code> receives "the result of the rest" without it having been computed.
+@@s020 This expression passes to <code>f</code> as a recipe. It is run only if <code>f</code> uses its second parameter.
+@@s021 The head instead is computed right away, because the first parameter of <code>f</code> is ordinary.
+@@s022 <code>z</code> too is by-name: it is computed only if one really reaches the bottom.
+@@s023 <code>C &gt;: B</code> is a help for the compiler (it is explained in the comment of the file): it allows starting from a value such as <code>None</code> or <code>empty</code> and obtaining a more general type, such as <code>Option[A]</code>.
+@@s024 Head at once, rest as a recipe
+@@s025 <code>foldRight</code> and <code>foldLeft</code>: where <code>z</code> ends up
+@@s026 The file already has both (written by the teacher). To see them, instead of doing sums I print the formula they build.
+@@s027 foldRight on (1, 2, 3)
+@@s028 dato:element,due:suspended rest,ok:z
+@@s029 <code>f</code> receives the head and the <b>recipe</b> of the result on the rest.
+@@s030 If <code>f</code> uses the recipe, one step down.
+@@s031 One more.
+@@s032 Finite list: in place of the rest there is <code>z</code>. It is combined <b>from the bottom</b>. Real output: <code>f(1, f(2, f(3, z)))</code>.
+@@s033 foldLeft on (1, 2, 3)
+@@s034 dato:element,ora:new accumulator,ok:result
+@@s035 No recipe: <code>f(h(), z)</code> becomes the new <code>z</code> and one restarts from the tail.
+@@s036 The accumulator grows while it unrolls.
+@@s037 The recursive call is the last thing that happens: tail recursion.
+@@s038 Real output. Same elements, brackets reversed: <code>1</code> is the first to meet <code>z</code>.
+@@s039 Test (verified)
+@@s040 foldRight
+@@s041 foldLeft
+@@s042 rebuild with <code>(a, acc) => cons(a, acc)</code>
+@@s043 <code>List(1, 2, 3)</code>
+@@s044 <code>List(3, 2, 1)</code>: reversed
+@@s045 on an infinite list
+@@s046 it stops if <code>f</code> does not use <code>acc</code>: <code>naturals.foldRight(false)((a, acc) => a &gt; 3 || acc)</code> → <code>true</code>
+@@s047 never terminates: it always reaches the bottom
+@@s048 Practical rule
+@@s049 On <code>LazyList</code> one starts from <code>foldRight</code>. The comment in the file on <code>foldLeft</code> says so: <i>"Eager; cannot be used to work with infinite lazy lists"</i> and <i>"Even if f does not force z, foldLeft will continue to recurse"</i>. <code>foldLeft</code> is useful on finite lists, when you want constant stack or precisely the reversed order.
+@@s050 The formula built by each fold
+@@s051 <code>exists</code> that stops
+@@s052 from(0).exists(_ &gt; 2)
+@@s053 0 &gt; 2 is false: <code>||</code> must look at the right part, so it forces the rest.
+@@s054 Same for 1.
+@@s055 And for 2.
+@@s056 3 &gt; 2: <code>true ||</code> something is true without looking at the something. The rest is <b>never forced</b>.
+@@s057 Only the heads 0, 1, 2, 3 computed (checked by printing the forcings), on an infinite list.
+@@s058 Only what is needed is computed
+@@s059 <code>headOption</code> with foldRight (exercise 7)
+@@s060 from(0).headOption1
+@@s061 <code>f</code> ignores the rest (<code>_</code>): it does not use it, so it is not computed.
+@@s062 Only one head computed (checked). On Empty the result is <code>z = None</code>.
+@@s063 Doubt: then does the foldRight serve no purpose here?
+@@s064 It is precisely the point of the exercise: to show that foldRight <b>can</b> stop at the first step. On an ordinary List the same code would traverse the whole list before answering.
+@@s065 Only one head computed
+@@s066 <code>takeWhile</code> with foldRight (exercise 6)
+@@s067 Your solution
+@@s068 If the list is finite, the prefix is empty.
+@@s069 <code>a</code> is the element, <code>acc</code> is (the recipe of) the takeWhile of the rest.
+@@s070 If <code>a</code> is fine, I keep it and attach the rest to it. <code>cons</code> is by-name: <code>acc</code> is <b>not</b> forced here.
+@@s071 At the first element that is not fine, I stop: <code>empty</code> without looking at <code>acc</code>.
+@@s072 Stopping at the first that is not fine
+@@s073 map, filter, append, flatMap (exercise 8)
+@@s074 All with <code>foldRight</code>, without explicit recursion. The trick is always the same: build with <code>cons</code>, so that the rest (<code>acc</code>) stays a recipe.
+@@s075 The four functions
+@@s076 <b>Signatures</b>: the file deliberately leaves them wrong (<code>Any</code>), they must be designed. They are copied from those of the lists.
+@@s077 <b>map</b>: each element transformed, in front of the transformed rest. <code>empty[B]</code> tells the compiler what type the empty list is.
+@@s078 <b>filter</b>: I keep or skip. Attention: if <code>p</code> is never true, <code>filter</code> on an infinite list never stops.
+@@s079 <b>append</b>: the text asks it to be <b>non strict</b> in the argument, so <code>that</code> is by-name. <code>B &gt;: A</code>: I can attach a list of a more general type (Int + Double → numbers).
+@@s080 The starting value is <code>that</code>: at the bottom of the first list there is the second. Thanks to the by-name of <code>z</code>, <code>that</code> is computed only if one really reaches the bottom.
+@@s081 <b>flatMap</b>: each element becomes a lazy list, and I attach them one after the other.
+@@s082 Doubt: is A this? And why [B]?
+@@s083 No, they are different things. <code>A</code> is a <b>type</b>: the type of the elements, born in <code>enum LazyList[+A]</code> and valid for all methods. <code>this</code> is a <b>value</b>: the list on which you call the method, of type <code>LazyList[A]</code>. On <code>LazyList(1, 2, 3).map(…)</code>: <code>this</code> = the list (1, 2, 3), <code>A</code> = <code>Int</code>.
+@@s084 <code>B</code> instead does not exist until you declare it in square brackets after the name: <code>def map[B](…)</code>. It is chosen by the <code>f</code> at each call: <code>map(_ * 2)</code> → <code>B = Int</code>, <code>map(_.toString)</code> → <code>B = String</code>.
+@@s085 Doubt: z is the starting value? Then in append does that go first?
+@@s086 With <code>foldRight</code> <code>z</code> ends <b>at the bottom</b>: it is what is there when the list ends. So in <code>append</code> <code>that</code> goes <b>after</b> <code>this</code>:
+@@s087 For <code>map</code>, <code>filter</code> and <code>flatMap</code> "what is there when the list ends" is <code>empty</code>; only for <code>append</code> is it <code>that</code>.
+@@s088 Test case of the text
+@@s089 Result (checked)
+@@s090 <code>naturals.map(_*2).drop(30).take(5).toList</code>
+@@s091 <code>List(62, 64, 66, 68, 70)</code>
+@@s092 <code>naturals.drop(42).filter(_%2 == 0).take(5).toList</code>
+@@s093 <code>List(44, 46, 48, 50, 52)</code>
+@@s094 <code>naturals.take(3).append(naturals).take(6).toList</code>
+@@s095 <code>List(1, 2, 3, 1, 2, 3)</code>
+@@s096 <code>naturals.flatMap(to).take(10).toList</code>
+@@s097 <code>List(1, 0, -1, …, -8)</code>
+@@s098 Why flatMap(to) never reaches 2
+@@s099 <code>to(1)</code> is infinite: 1, 0, −1, … . <code>flatMap</code> attaches <code>to(2)</code> <b>after</b> the end of <code>to(1)</code>, which never arrives. With <code>take(10)</code> you get only pieces of <code>to(1)</code>.
+@@s100 Measured detail: <code>from(0).map(_ * 2)</code>, even without <code>toList</code>, already computes the first head, because <code>foldRight</code> runs <code>h()</code> at once. No tail is touched.
+@@s101 What goes in z: empty, or that
+@@s102 Exercise 9: why <code>find</code> with <code>filter</code> is fine here
+@@s103 On LazyList
+@@s104 <code>from(0).find(_ &gt; 2)</code>: <code>filter</code> builds the result lazily, <code>headOption</code> asks only for the first. Computed 0, 1, 2, 3 and that is all (checked).
+@@s105 On List
+@@s106 <code>List(1, 2, 3, 4).filter(_ &gt; 2).headOption</code>: <code>filter</code> is strict, it checks <b>all</b> 4 elements and builds a whole list, then one of them is used (checked by printing).
+@@s107 Answer in English (the exam may have open questions)
+@@s108 "On a lazy list, filter does not traverse the whole list: it only produces elements when they are demanded. headOption demands just the first one, so find stops as soon as it meets the first element satisfying p. On a strict List, filter would first test every element and build a new list, only to keep its head, which wastes time and memory, and would not terminate on an infinite structure."
+@@s109 Doubt: why Some? Can I write Some(x > 2)?
+@@s110 <code>find</code> may find nothing, so it returns an <code>Option</code>: <code>LazyList(1, 2, 3).find(_ &gt; 10)</code> → <code>None</code>. Inside <code>Some</code> there is <b>the element found</b>, not the condition: <code>find(_ &gt; 2)</code> → <code>Some(3)</code>. <code>Some(x &gt; 2)</code> would be <code>Some(true)</code>: an <code>Option[Boolean]</code>.
+@@s111 It is the <b>first</b> element that satisfies <code>p</code>: <code>LazyList(1, 2, 3, 4).find(_ &gt; 2)</code> → <code>Some(3)</code>, the 4 is not even looked at. If you only need to know whether one exists, there is <code>exists</code>, which gives <code>true</code>/<code>false</code>.
+@@s112 filter + headOption: lazy against strict

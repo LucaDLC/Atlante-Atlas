@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Øvelse 7.2: Treiber-stakken</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Øvelse 7.2: Treiber-stakken</h1>
+  <p class="lede">Den lock-frie Treiber-stak: hvor linearisationspunkterne er, hvordan <code>push</code> testes, og hvilke punkter testene virkelig når. Punktet, man oftest tager fejl af, er 7.2.4: to tests er ikke nok.</p>
+</header>
+
+<section>
+  <h2>Stakken og dens linearisationspunkter (7.2.1)</h2>
+  <p>Et <b>linearisationspunkt</b> er det øjeblik, hvor et kald "får effekt" for alle de andre tråde. I Treiber-stakken er hele tilstanden referencen <code>top</code>, så punkterne er de øjeblikke, hvor <code>top</code> ændrer sig, eller hvor den læses for at beslutte noget.</p>
+  <figure class="codice" data-titolo="LockFreeStack (øvelsens kode)">
+<pre data-lang="java">class LockFreeStack&lt;T&gt; {
+    AtomicReference&lt;Node&lt;T&gt;&gt; top = new AtomicReference&lt;Node&lt;T&gt;&gt;();
+
+    public void push(T value) {
+        Node&lt;T&gt; newHead = new Node&lt;T&gt;(value);
+        Node&lt;T&gt; oldHead;
+        do {
+            oldHead      = top.get();
+            newHead.next = oldHead;
+        } while (!top.compareAndSet(oldHead,newHead));
+    }
+
+    public T pop() {
+        Node&lt;T&gt; newHead;
+        Node&lt;T&gt; oldHead;
+        do {
+            oldHead = top.get();
+            if(oldHead == null) { return null; }
+            newHead = oldHead.next;
+        } while (!top.compareAndSet(oldHead,newHead));
+        return oldHead.value;
+    }
+}</pre>
+    <ol class="spiega">
+      <li data-righe="2" data-segna="top@dato"><p>Tilstanden: <code>top</code> peger på noden øverst, <code>null</code> hvis stakken er tom.</p></li>
+      <li data-righe="7-10" data-segna="top.compareAndSet(oldHead,newHead)@ok"><p><b>Punkt 1, push:</b> CAS'en der <b>lykkes</b>. I det øjeblik bliver den nye node toppen for alle. Før ser ingen den; bagefter ser alle den.</p></li>
+      <li data-righe="16-20" data-segna="top.compareAndSet(oldHead,newHead)@ok"><p><b>Punkt 2, pop på en ikke-tom stak:</b> CAS'en der <b>lykkes</b>. I det øjeblik fjernes toppen.</p></li>
+      <li data-righe="17-18" data-segna="oldHead = top.get()@ora|return null;@no"><p><b>Punkt 3, pop på en tom stak:</b> læsningen <code>top.get()</code> der returnerer <code>null</code>. Der er ingen CAS: kaldet "får effekt" i det øjeblik, hvor det ser den tomme stak.</p></li>
+    </ol>
+  </figure>
+</section>
+
+<section>
+  <h2>7.2.4 · Dækker testene alle punkterne?</h2>
+  <p>"At dække" et linearisationspunkt betyder, at en test får det til at køre <b>samtidigt</b>, med andre tråde der kan kollidere der. Et punkt, som én tråd kører alene, tester ikke noget samtidigt.</p>
+  <figure class="passi" data-titolo="Punkt for punkt" data-legenda="ok:dækket,no:ikke dækket">
+    <div class="passo"><div class="espr">Punto 1 (CAS di push)       →  test 7.2.2: n thread fanno push insieme   <mark class="ok">coperto</mark></div><p class="nota">CAS'erne fra push-kaldene kolliderer på <code>top</code>; én vinder, de andre prøver igen.</p></div>
+    <div class="passo"><div class="espr">Punto 2 (CAS di pop)        →  test 7.2.3: n thread fanno pop insieme    <mark class="ok">coperto</mark></div><p class="nota">Stakken har n elementer, og der er n pop: CAS'erne fra pop-kaldene kolliderer.</p></div>
+    <div class="passo"><div class="espr">Punto 3 (pop su vuoto)      →  nessun test concorrente                  <mark class="no">non coperto</mark></div><p class="nota">I 7.2.3 er der <b>præcis</b> n elementer til n pop: i en korrekt udførelse finder intet pop stakken tom. I 7.2.2 tømmes stakken til sidst, men med <b>kun én tråd</b>.</p></div>
+    <div class="passo"><div class="espr">push e pop insieme          →  mai                                      <mark class="no">non coperto</mark></div><p class="nota">I de to tests overlapper push og pop aldrig: først alle push, derefter alle pop. Kollisionen mellem en push-CAS og en pop-CAS bliver aldrig testet.</p></div>
+  </figure>
+  <div class="box domanda-tua" data-tit="&quot;Push kommer altid før pop, så alt er dækket&quot;?">
+    <p>Netop derfor er det <b>ikke</b> alt, der er dækket. Hvis push altid kommer før pop, kolliderer de to slags kald aldrig, og pop finder aldrig den tomme stak, mens andre arbejder. Svaret på 7.2.4 er <b>nej</b>.</p>
+  </div>
+  <div class="box idea" data-tit="Testen der skal tilføjes">
+    <p><b>Pop på en næsten tom stak:</b> læg m elementer, start derefter n &gt; m tråde, der laver <code>pop</code> sammen. Til sidst: præcis m pop har returneret et element (med en sum lig med den, der blev lagt ind), og n − m har returneret <code>null</code>. Så sker punkt 3 samtidigt, mens andre tråde stadig laver CAS'er.</p>
+    <p><b>Valgfri, push og pop sammen:</b> halvdelen af trådene laver push, halvdelen pop, alle sammen. Til sidst: summen tilbage i stakken + summen af de værdier, der er taget ud = summen af de værdier, der er lagt ind.</p>
+    <p>En enklere variant: hver tråd laver <code>push(x)</code> og straks derefter <code>pop()</code>. Hver tråd har altid lavet et push mere end sine pop, så stakken er aldrig tom, når nogen laver pop: til sidst er summen af de udtagne værdier lig med den for de indlagte, og stakken er tom. Pas på: dette dækker kollisionen push/pop, men <b>ikke</b> pop på en tom stak.</p>
+  </div>
+  <div class="box attenzione" data-tit="Én runde pr. tråd finder lidt">
+    <p>Målt med 16 tråde, barriere, 1000 gentagelser. Med <b>ét enkelt</b> push+pop pr. tråd findes et bevidst forkert <code>push</code> (<code>get</code> og derefter <code>set</code>) <b>aldrig</b>, et forkert <code>pop</code> 1 gang ud af 1000. Med <b>1000 runder</b> af push+pop pr. tråd: forkert push findes 999 gange ud af 1000, forkert pop 1000 ud af 1000; den korrekte stak består 1000 ud af 1000. Når teksten ikke kræver "én operation pr. tråd", er det bedst at lade hver tråd arbejde i en løkke.</p>
+  </div>
+  <div class="box inglese" data-tit="Klar besvarelse 7.2.4">
+    <p>Nej. Push-testen udøver push's linearisationspunkt (den lykkedes CAS) samtidigt, og pop-testen udøver linearisationspunktet for et lykkedes pop (den lykkedes CAS). Men linearisationspunktet for et pop på en tom stak (<code>top.get()</code>, der returnerer null) nås aldrig samtidigt: i pop-testen er der præcis n elementer til n pop, så i en korrekt udførelse finder intet pop stakken tom, og i push-testen tømmes stakken af en enkelt tråd. Desuden kører push og pop aldrig samtidigt. Vi tilføjer derfor en test, hvor n tråde samtidigt laver pop fra en stak med m &lt; n elementer, og kontrollerer, at præcis m pop returnerer elementer, hvis sum er lig med den indlagte sum, og at n − m pop returnerer null.</p>
+  </div>
+</section>
+
+</main>
+</body>
+</html>

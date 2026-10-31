@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Code: DFS in Java</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Code: DFS in Java</h1>
+  <p class="lede">The recursive DFS: visit, visit order, connected components and cycle detection. With the syntax notes on static fields and recursion.</p>
+</header>
+
+<section>
+  <h2>The recursive visit</h2>
+  <p>DFS is a function that calls itself on the unseen neighbours. The system's call stack does the work of the stack.</p>
+  <figure class="codice" data-titolo="The recursive visit">
+<pre data-lang="java">import java.io.*;
+import java.util.*;
+
+public class Main {
+    static List&lt;List&lt;Integer&gt;&gt; adj;
+    static boolean[] visto;
+    static int[] padre;
+    static int[] ordineVisita;
+    static int contatore = 0;
+    static boolean ciclo = false;
+
+    // Visita ricorsiva: va a fondo e torna indietro quando il nodo non ha più vicini nuovi.
+    static void dfs(int u) {
+        visto[u] = true;
+        ordineVisita[u] = ++contatore;
+        for (int v : adj.get(u)) {
+            if (!visto[v]) {
+                padre[v] = u;
+                dfs(v);
+            } else if (v != padre[u]) {
+                ciclo = true; // back edge: v è già visto ed è un antenato di u
+            }
+        }
+    }
+
+    public static void main(String[] args) throws IOException {
+        BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
+        StringTokenizer st = new StringTokenizer(in.readLine());
+        int n = Integer.parseInt(st.nextToken());
+        int m = Integer.parseInt(st.nextToken());
+
+        adj = new ArrayList&lt;&gt;();
+        for (int i = 0; i &lt; n; i++) {
+            adj.add(new ArrayList&lt;&gt;());
+        }
+        for (int i = 0; i &lt; m; i++) {
+            st = new StringTokenizer(in.readLine());
+            int u = Integer.parseInt(st.nextToken());
+            int v = Integer.parseInt(st.nextToken());
+            adj.get(u).add(v);
+            adj.get(v).add(u);
+        }
+
+        visto = new boolean[n];
+        padre = new int[n];
+        Arrays.fill(padre, -1);
+        ordineVisita = new int[n];
+
+        // Una visita per ogni componente connessa: ogni nodo non visto fa partire una DFS.
+        int componenti = 0;
+        for (int s = 0; s &lt; n; s++) {
+            if (!visto[s]) {
+                componenti++;
+                dfs(s);
+            }
+        }
+
+        StringBuilder out = new StringBuilder();
+        out.append("componenti: ").append(componenti).append('\n');
+        out.append("ciclo: ").append(ciclo ? "sì" : "no").append('\n');
+        out.append("ordine di visita: ");
+        for (int i = 0; i &lt; n; i++) {
+            out.append(i).append('=').append(ordineVisita[i]).append(i + 1 &lt; n ? " " : "\n");
+        }
+        System.out.print(out);
+    }
+}</pre>
+    <ol class="spiega">
+    <li data-righe="13"><p>The visit is a <code>static</code> method: it needs no object, it works on the static fields of the class.</p></li>
+    <li data-righe="15"><p><code>++contatore</code> increments <b>before</b> reading: the first node visited gets 1.</p></li>
+    <li data-righe="17"><p>Unseen neighbour: I go down. The <code>!</code> negates the condition.</p></li>
+    <li data-righe="18"><p>I remember where I came from: it is needed so as not to confuse the parent with a cycle.</p></li>
+    <li data-righe="19"><p>Recursive call: at this point the node <code>u</code> waits on the stack.</p></li>
+    <li data-righe="21"><p>A neighbour already seen that is not the parent of <code>u</code>: it is a <b>back edge</b>, that is a cycle.</p></li>
+    </ol>
+  </figure>
+  <div class="box basi" data-tit="Syntax notes"><ul><li><code>static</code>: the field or method belongs to the class, not to the object. Here <code>main</code> is static, so everything it uses is static.</li><li><code>!</code> is negation; a <code>boolean[]</code> is initialised entirely to <code>false</code>.</li><li>In Java the depth of the recursion is limited: on graphs with millions of nodes an explicit stack is needed.</li></ul></div>
+</section>
+<section>
+  <h2>Connected components</h2>
+  <p>The outer loop starts a DFS from each node not yet seen. Each start is a new component.</p>
+  <figure class="codice" data-titolo="Connected components">
+<pre data-lang="java">import java.io.*;
+import java.util.*;
+
+public class Main {
+    static List&lt;List&lt;Integer&gt;&gt; adj;
+    static boolean[] visto;
+    static int[] padre;
+    static int[] ordineVisita;
+    static int contatore = 0;
+    static boolean ciclo = false;
+
+    // Visita ricorsiva: va a fondo e torna indietro quando il nodo non ha più vicini nuovi.
+    static void dfs(int u) {
+        visto[u] = true;
+        ordineVisita[u] = ++contatore;
+        for (int v : adj.get(u)) {
+            if (!visto[v]) {
+                padre[v] = u;
+                dfs(v);
+            } else if (v != padre[u]) {
+                ciclo = true; // back edge: v è già visto ed è un antenato di u
+            }
+        }
+    }
+
+    public static void main(String[] args) throws IOException {
+        BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
+        StringTokenizer st = new StringTokenizer(in.readLine());
+        int n = Integer.parseInt(st.nextToken());
+        int m = Integer.parseInt(st.nextToken());
+
+        adj = new ArrayList&lt;&gt;();
+        for (int i = 0; i &lt; n; i++) {
+            adj.add(new ArrayList&lt;&gt;());
+        }
+        for (int i = 0; i &lt; m; i++) {
+            st = new StringTokenizer(in.readLine());
+            int u = Integer.parseInt(st.nextToken());
+            int v = Integer.parseInt(st.nextToken());
+            adj.get(u).add(v);
+            adj.get(v).add(u);
+        }
+
+        visto = new boolean[n];
+        padre = new int[n];
+        Arrays.fill(padre, -1);
+        ordineVisita = new int[n];
+
+        // Una visita per ogni componente connessa: ogni nodo non visto fa partire una DFS.
+        int componenti = 0;
+        for (int s = 0; s &lt; n; s++) {
+            if (!visto[s]) {
+                componenti++;
+                dfs(s);
+            }
+        }
+
+        StringBuilder out = new StringBuilder();
+        out.append("componenti: ").append(componenti).append('\n');
+        out.append("ciclo: ").append(ciclo ? "sì" : "no").append('\n');
+        out.append("ordine di visita: ");
+        for (int i = 0; i &lt; n; i++) {
+            out.append(i).append('=').append(ordineVisita[i]).append(i + 1 &lt; n ? " " : "\n");
+        }
+        System.out.print(out);
+    }
+}</pre>
+    <ol class="spiega">
+    <li data-righe="50"><p>Counter of the components.</p></li>
+    <li data-righe="53"><p>An unseen node is the start of a new component.</p></li>
+    <li data-righe="54"><p>I visit the whole component of <code>s</code>. When I return, all its nodes are marked.</p></li>
+    </ol>
+  </figure>
+  <div class="box basi" data-tit="Syntax notes"><ul><li><code>componenti++</code> is <code>componenti = componenti + 1</code>.</li></ul></div>
+</section>
+<section>
+  <h2>Running it</h2>
+  <p>Example of input and output (actually compiled and run).</p>
+  <pre class="cod">5 5 0
+0 1
+1 2
+2 3
+3 1
+0 4
+
+(output)
+componenti: 1
+ciclo: sì
+ordine di visita: 0=1 1=2 2=3 3=4 4=5</pre>
+</section>
+<section>
+  <h2>The theory, side by side</h2>
+  <p><a href="../teoria/visita-dfs.html"><b>← Back to the theory of this topic</b></a></p>
+</section>
+
+</main>
+</body>
+</html>

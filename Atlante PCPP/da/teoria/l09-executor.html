@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Task, futures og executor</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <div class="occhiello"><span>Uge 9 · Performance</span></div>
+  <h1>Task, futures og executor</h1>
+  <p class="lede">Til arbejde, der bruger CPU'en, bruger forelæsningen en trådpulje (executoren), der modtager tasks og returnerer futures. Puljen opretter ikke en tråd pr. task: den genbruger et fast antal tråde.</p>
+</header>
+
+<section>
+  <h2>Executoren: opgavekø og workers</h2>
+  <p>En <b>task</b> er et stykke arbejde, der skal laves (en <code>Runnable</code> eller en <code>Callable</code>). En <b>executor</b> modtager tasks og kører dem med en gruppe tråde, <b>puljen</b>. Med <code>Executors.newWorkStealingPool()</code> har puljen cirka en tråd pr. kerne. Hver worker har sin egen kø af tasks: hvis dens kø er tom, stjæler den en task fra en anden workers kø (<i>work stealing</i>).</p>
+  <figure class="passi" data-titolo="Executorens dynamik" data-legenda="dato:task,ora:trin i gang,ok:resultat">
+    <div class="passo"><div class="espr"><code>executor.submit(task)</code>: il task entra in una <mark class="ora">coda</mark></div><p class="nota">Kalderen venter ikke: submit returnerer med det samme.</p></div>
+    <div class="passo"><div class="espr">Un <mark class="ora">worker</mark> prende un task dalla sua coda</div><p class="nota">Hvis dens kø er tom, stjæler den en task fra en anden worker.</p></div>
+    <div class="passo"><div class="espr">Il worker <mark class="dato">esegue</mark> il task</div><p class="nota">Taskens kode kører på en tråd i puljen, ikke på den tråd, der kaldte submit.</p></div>
+    <div class="passo"><div class="espr">Il <mark class="ok">Future</mark> viene completato con il risultato</div><p class="nota"><code>future.get()</code> læser resultatet og venter, hvis tasken ikke er færdig endnu.</p></div>
+  </figure>
+</section>
+
+<section>
+  <h2>Future: resultatet der kommer</h2>
+  <p><code>submit</code> returnerer en <b>Future</b>: en beholder til en værdi, der kommer senere. <code>future.get()</code> blokerer, indtil tasken er færdig, og returnerer resultatet. Med <code>Future&lt;?&gt;</code> returnerer tasken ingenting: den tjener kun til at vente, til den er færdig.</p>
+  <div class="box attenzione" data-tit="Pas på">Hvis tasken kaster en undtagelse, kaster <code>get()</code> den igen, pakket ind i <code>ExecutionException</code>. Ignorer ikke resultatet af <code>get()</code>, ellers forsvinder fejlen.</div>
+</section>
+
+<section>
+  <h2>Eksempel: tæl primtal i otte tasks</h2>
+  <p>Antallet af primtal under 100 000, delt i otte uafhængige stykker. Hver task tæller primtallene i sit stykke og lægger dem i den samme delte <code>LongAdder</code> (uden lås, se siden om striping).</p>
+  <figure class="codice" data-titolo="Esecutore.java">
+<pre data-lang="java">import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.atomic.LongAdder;
+
+public class Esecutore {
+    static boolean isPrime(int n) {
+        if (n &lt; 2) return false;
+        for (int d = 2; (long) d * d &lt;= n; d++)
+            if (n % d == 0) return false;
+        return true;
+    }
+
+    public static void main(String[] args) throws Exception {
+        final int range = 100_000, taskCount = 8;
+        final int perTask = range / taskCount;
+        ExecutorService executor = Executors.newWorkStealingPool();
+        LongAdder conteggio = new LongAdder();
+        List&lt;Future&lt;?&gt;&gt; futures = new ArrayList&lt;&gt;();
+        for (int t = 0; t &lt; taskCount; t++) {
+            final int da = perTask * t, a = perTask * (t + 1);
+            futures.add(executor.submit(() -&gt; {
+                for (int i = da; i &lt; a; i++)
+                    if (isPrime(i)) conteggio.increment();
+            }));
+        }
+        for (Future&lt;?&gt; f : futures)
+            f.get();                            // aspetta il risultato di ogni task
+        executor.shutdown();
+        System.out.println("primi sotto 100000: " + conteggio.sum());
+    }
+}</pre>
+    <ol class="spiega">
+      <li data-righe="9-13" data-segna="isPrime(int n)@ora"><p><code>isPrime</code> prøver divisorerne op til kvadratroden af n: det er nok, for en divisor over roden har en komplementær divisor under den. Castet <code>(long)</code> undgår et overflow i <code>d * d</code>.</p></li>
+      <li data-righe="18" data-segna="range / taskCount@ora"><p>100 000 tal delt med 8 tasks: 12 500 tal hver. Stykkerne er uafhængige, så de kan køre parallelt.</p></li>
+      <li data-righe="19" data-segna="Executors.newWorkStealingPool()@ora"><p>Puljen med work stealing. Antallet af workers afhænger af maskinens kerner, ikke af antallet af tasks.</p></li>
+      <li data-righe="20" data-segna="LongAdder conteggio@due"><p>Delt tæller uden lås: hver task laver <code>increment</code> på de primtal, den finder. Det er emnet for casestudiet om LongAdder.</p></li>
+      <li data-righe="22-23" data-segna="for (int t = 0; t &lt; taskCount; t++)@ora"><p>Løkken forbereder de otte tasks. For hver af dem er intervallet <code>[da, a)</code> (fra da inklusiv til a eksklusiv) dens stykke af tal.</p></li>
+      <li data-righe="24-27" data-segna="executor.submit@ora"><p>Tasken er lambdaen, der tæller primtal i intervallet. <code>submit</code> sætter den i kø og returnerer Future'en, som lægges i listen.</p></li>
+      <li data-righe="29-30" data-segna="f.get()@ora"><p>Venter på resultatet af hver task, en efter en. Efter denne løkke er alle tasks færdige.</p></li>
+      <li data-righe="31" data-segna="executor.shutdown()@ora"><p>Lukker puljen: den accepterer ikke flere tasks, og workerne stopper, når de er færdige.</p></li>
+      <li data-righe="32" data-segna="conteggio.sum()@ok"><p>Summen af bidragene fra alle tråde: 9 592 primtal under 100 000. Resultatet er korrekt, selv om tasks kører parallelt.</p></li>
+    </ol>
+  </figure>
+</section>
+
+<section>
+  <h2>Tasks eller virtuelle tråde?</h2>
+  <p>Forelæsningen sammenligner de to veje på den samme optælling af primtal. Med 1–64 tråde eller tasks: tasks er lidt hurtigere end tråde, mens platformstråde og virtuelle tråde er lige hurtige. Med 2048: tasks forbliver lidt hurtigere end virtuelle tråde, og platformstråde bliver meget langsommere.</p>
+  <div class="tab-wrap"><table class="tab"><thead><tr><th>arbejde</th><th>anbefalet værktøj</th></tr></thead><tbody>
+    <tr><td>venten (I/O, netværk, database)</td><td>virtuelle tråde: én tråd pr. operation</td></tr>
+    <tr><td>CPU-beregning, ydeevne er vigtig</td><td>tasks på en executor: mere kontrol og et fast antal tråde</td></tr>
+    <tr><td>enkelhed</td><td>virtuelle tråde: enklere at skrive</td></tr>
+  </tbody></table></div>
+  <div class="box regola" data-tit="Forelæsningens regel">Opret ikke mange platformstråde. Til I/O: virtuelle tråde; til CPU-bundet arbejde: tasks. Hvis du er i tvivl, vælg virtuelle tråde.</div>
+</section>
+
+</main>
+</body>
+</html>

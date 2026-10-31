@@ -1,0 +1,50 @@
+@@s001 Platformstråde og virtuelle tråde
+@@s002 <span>Uge 9 · Performance</span>
+@@s003 Platformstråde og virtuelle tråde
+@@s004 Forelæsningen den 26. oktober starter her: hvilken tråd man skal bruge, og hvorfor. En virtuel tråd, der venter, optager ikke en systemtråd; en platformstråd gør. Eksempelkoden er kompileret og kørt.
+@@s005 To slags tråde
+@@s006 En <b>platformstråd</b> er en tråd i operativsystemet: tung, og systemet har et begrænset antal af dem. En <b>virtuel tråd</b> er en tråd, der styres af Java: mange kan eksistere samtidigt. Java kører dem på en lille gruppe platformstråde (<i>carriers</i>), kun mens de arbejder. Når en virtuel tråd blokeres (netværk, fil, <code>sleep</code>), bliver den frakoblet, og carrier'en betjener en anden.
+@@s007 De oprettes sådan her: <code>Thread.ofVirtual().start(task)</code> og <code>Thread.ofPlatform().start(task)</code>. <code>Thread.ofVirtual()</code> returnerer en <b>Thread.Builder</b>, altså objektet, der ved, hvordan tråde af den type bygges.
+@@s008 Platform eller virtuelle: hvad sker der, når en tråd venter
+@@s009 dato:tråd,ora:hvad der ændrer sig,ok:konsekvens
+@@s010 Dyrt: at oprette tusindvis af dem bremser systemet, og hver tråd optager en plads i scheduleren.
+@@s011 Java holder dem i hukommelsen og monterer dem på en carrier først, når de kører.
+@@s012 Den frakobles carrier'en, som går videre til en anden virtuel tråd.
+@@s013 Derfor passer virtuelle tråde til opgaver, der bruger tid på at vente.
+@@s014 Hvornår man bruger hvad
+@@s015 Forelæsningens anvisninger, i prioritetsrækkefølge:
+@@s016 situation
+@@s017 valg
+@@s018 du vil have mange platformstråde
+@@s019 no: opret ikke mange af dem
+@@s020 operationer, der venter (I/O, database, netværk)
+@@s021 virtuelle tråde
+@@s022 arbejde, der bruger CPU'en, og ydeevnen tæller
+@@s023 tasks i executoren (næste side)
+@@s024 alt det andet, for enkelhedens skyld
+@@s025 virtuelle tråde til alt
+@@s026 Pas på
+@@s027 En virtuel tråd gør ikke en ren beregning hurtigere. I forelæsningen tager platformstråde og virtuelle tråde op til 64 tråde det samme tid på optællingen af primtal; forskellen ses med 2048 tråde, hvor platformstrådene er meget langsommere.
+@@s028 Eksempel: download af sider parallelt
+@@s029 Forelæsningens kode: én anmodning pr. URL, hver anmodning i en virtuel tråd, derefter venten på alle. Her simuleres anmodningen af et <code>sleep</code> på 100 ms, så eksemplet kører uden netværk.
+@@s030 Virtuali.java
+@@s031 <code>scarica</code> simulerer en webanmodning. <code>Thread.sleep(100)</code> stopper tråden i 100 ms. Tråden arbejder ikke: den venter. Det er det tilfælde, hvor virtuelle tråde er nødvendige.
+@@s032 Fire URL'er i en uforanderlig liste. <code>List.of</code> opretter den allerede fuld: den kan ikke ændres.
+@@s033 Listen over de startede tråde, så man kan vente på dem bagefter.
+@@s034 Starttidspunktet, med <code>System.nanoTime()</code>: den måler i nanosekunder.
+@@s035 En runde pr. URL. <code>url</code> er løkkevariablen: i en for-each er den allerede konstant inde i runden.
+@@s036 Lokal kopi: hver tråd får sin URL i en variabel erklæret <code>final</code>. Lambdaer fanger kun variabler, der ikke ændrer sig; kopien gør tydeligt, at hver tråd har sin egen værdi.
+@@s037 Starter en virtuel tråd med lambdaen <code>() -&gt; scarica(mioUrl)</code>. <code>start</code> returnerer med det samme: tråden arbejder parallelt.
+@@s038 <code>join</code> venter på, at hver tråd er færdig. Uden join kunne programmet udskrive tiden, før anmodningerne er færdige.
+@@s039 Tiden i millisekunder. Med 4 anmodninger på 100 ms parallelt er totalen tæt på 100 ms, ikke 400: kontrollen <code>ms &lt; 300</code> udskriver <code>true</code>.
+@@s040 Tiden parallelt
+@@s041 Fire sider på 100 ms hver
+@@s042 dato:tid for en anmodning,ora:hvornår den starter,ok:slut
+@@s043 Den klassiske løkke, uden tråde: hver anmodning venter på den foregående.
+@@s044 Hver blokeres i 100 ms. Ingen optager en systemtråd, mens den venter.
+@@s045 Den samlede tid er den for den langsomste anmodning, ikke summen af alle.
+@@s046 Praktiske regler
+@@s047 Regel
+@@s048 For operationer, der venter, en virtuel tråd pr. operation. Til tunge beregninger bruges executoren med et fast antal tråde (næste side).
+@@s049 Sætning til mundtlig eksamen
+@@s050 Virtuelle tråde er billige at oprette og blokeres uden at holde en OS-tråd, så de passer til I/O-bundet arbejde; platformstråde er dyre og bør ikke oprettes i stort antal.

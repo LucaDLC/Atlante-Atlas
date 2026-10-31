@@ -1,0 +1,71 @@
+@@s001 Data race og korrekthed
+@@s002 dato:handlinger,ora:happens-before-buer,ok:ordnet par,no:uordnet konflikterende par
+@@s003 PossibleReordering som graf: én knude pr. handling. Buerne der allerede er tegnet, er <b>program order</b> inde i hver tråd.
+@@s004 <b>Start-reglen</b>: start(t) kommer før den første handling i t.
+@@s005 <b>Termineringsreglen</b>: den sidste handling i en tråd kommer før join, og dermed før udskriften (her er join opsummeret i pilen mod 5).
+@@s006 Adgange til x: init skriver, t1(2) skriver, m(5) læser. De er i konflikt men <b>ordnede</b>: init → st1 → 1 → 2 → 5. Ingen data race på x.
+@@s007 Adgange til a: t1(1) skriver, t2(4) læser. Ingen pilesti går fra 1 til 4 eller fra 4 til 1: de er i konflikt og <b>ikke ordnede</b>. Det er en <b>data race</b>, og én er nok.
+@@s008 dato:main,ora:t1,due:t2,no:bryder gensidig udelukkelse,ok:velformet
+@@s009 ora:t1,due:t2,ok:monitorreglen,no:konflikterende adgange
+@@s010 dato:main,ora:t1,due:t2,ok:happens-before-sti,no:skrivning ikke synlig
+@@s011 ora:t1,due:t2,ok:læsning der ser 1
+@@s012 ora:nuværende trin,ok:trin udført
+@@s013 Data race og korrekthed
+@@s014 I JMM er et program korrekt, hvis <b>ingen udførelse har en data race</b>. For at bevise det behøves to ingredienser mere: de <b>konfliktende handlinger</b> og <b>synchronization order</b>. Derefter ser man, hvordan en lås ordner handlingerne, og hvorfor <code>volatile</code> ændrer reglerne.
+@@s015 Synchronization order og velformede udførelser
+@@s016 Synchronization order
+@@s017 Den <b>totale</b> rækkefølge, hvori synkroniseringshandlingerne i en udførelse finder sted. Den skal respektere gensidig udelukkelse (låse rigtigt indlejret) og happens-before. Et program kan have mere end én: enhver udførelse har én.
+@@s018 Velformet udførelse
+@@s019 En udførelse er velformet, hvis den er i overensstemmelse med program order, happens-before og synchronization order. JVM'en producerer <b>kun</b> velformede udførelser.
+@@s020 <code>PossibleReordering</code> har kun én synchronization order: <code>m(start(t1)), m(start(t2)), m(join(t1)), m(join(t2))</code>. Trådene har ingen synkroniseringshandlinger af egen.
+@@s021 Gyldige og ugyldige synchronization orders
+@@s022 Konflikterende handlinger og data race
+@@s023 Konflikterende handlinger
+@@s024 To handlinger er <b>i konflikt</b>, hvis de tilgår den samme <b>ikke-volatile</b> variabel, og mindst én af dem er en skrivning.
+@@s025 Data race (JMM)
+@@s026 Der er en data race mellem <code>a</code> og <code>b</code>, hvis 1) de er i konflikt og 2) de <b>ikke</b> er ordnet af happens-before.
+@@s027 Korrekt synkroniseret
+@@s028 Et program er <b>korrekt synkroniseret</b>, hvis ingen af dets udførelser indeholder en data race. JVM'en garanterer, at alle dens udførelser er <b>sekventielt konsistente</b>: ikke flere paradoksale adfærdsmønstre.
+@@s029 Konflikter i PossibleReordering (slide 25)
+@@s030 Angiv hvem der rører x, og hvordan.
+@@s031 Alle parrene med mindst én skrivning: de er i konflikt.
+@@s032 Men de er ordnede: ingen data race på x.
+@@s033 Dette par er i konflikt <b>og</b> ikke ordnet: data race. Det er nok at finde én i en udførelse for at sige, at programmet <b>ikke</b> er korrekt synkroniseret.
+@@s034 Søgning efter en happens-before-sti
+@@s035 Ret det med en lås, og bevis det
+@@s036 Fra låsen til de to familier af udførelser
+@@s037 Låsen tilføjer fire synkroniseringshandlinger.
+@@s038 Nu er der flere synchronization orders. Bemærk: i ingen af dem står en lås midt i den anden tråds lock/unlock (gensidig udelukkelse).
+@@s039 Monitorreglen: unlock af t1 kommer før lock af t2.
+@@s040 Alle synchronization orders falder i et af disse to tilfælde.
+@@s041 Skrivningen af a (t1(2)) happens-before læsningen (t2(7)).
+@@s042 Her er rækkefølgen den modsatte, men der er stadig én.
+@@s043 Samme ræsonnement gælder for alle de andre konflikterende par: programmet er <b>korrekt synkroniseret</b>.
+@@s044 HB1 og HB2: skrivningen og læsningen af a er altid ordnet
+@@s045 At forudsige værdierne: synlighed
+@@s046 Hvis <code>a → b</code>, er effekten af <code>a</code> synlig for <code>b</code>. Så man kan bevise, hvilke værdier der er mulige.
+@@s047 Kan programmet med låsen udskrive x == 1? (slide 40)
+@@s048 Det vil sige: den sidste skrivning af b før <code>x=b</code> er den fra t2, som skriver 1.
+@@s049 Denne del gælder i <b>alle</b> udførelser: den afhænger ikke af hvem der tager låsen.
+@@s050 Denne del gælder kun i HB<sub>2</sub>.
+@@s051 Samme ræsonnement for de andre variable.
+@@s052 x er 1 kun hvis t2 tager låsen først
+@@s053 Volatile-reglen
+@@s054 Volatile-reglen
+@@s055 Hvis <code>a</code> er en skrivning til en volatile variabel og <code>b</code> en <b>senere</b> læsning af den samme variabel, så er <code>a → b</code>.
+@@s056 Adgange til volatile-variable er synkroniseringshandlinger, men giver <b>ikke</b> gensidig udelukkelse: de øger kraftigt de mulige synchronization orders.
+@@s057 Ifølge definitionen er adgange til volatile-variable <b>aldrig i konflikt</b>. Så de kan ikke give en data race.
+@@s058 Med <code>volatile a, b</code> i <code>PossibleReordering</code> er kun adgangene til x og y stadig i konflikt, allerede ordnet af start- og termineringsreglerne: programmet er korrekt synkroniseret. De mulige udskrifter er (1,0), (0,1), (1,1); (0,0) ikke.
+@@s059 Pas på: i dit svar på 3.1.8 (assignment 2 der endnu skal afleveres)
+@@s060 Du skrev, at der med <code>count</code> volatile er en data race mellem de to skrivninger. Efter kursets definition er det <b>nej</b>: adgange til volatile-variable er ikke i konflikt, så <b>der er ingen data races</b>, og programmet er korrekt synkroniseret. Men <b>race condition'en</b> består: begge tråde kan læse 0 og skrive 1, så <code>count</code> kan være 1. Det er netop sammenligningen, der spørges om i 3.1.9: versionen med låsen udskriver altid 2, den volatile kan udskrive 1. Detaljer i <a href="l03-esercizio-31.html">øvelse 3.1 gennemgået</a>.
+@@s061 Med a og b volatile er (0,0) umuligt
+@@s062 Strategien i 6 trin (slide 48)
+@@s063 Strategien er en mekanisk fremgangsmåde: der er ingen grund til at "gætte", hvor problemet ligger. Man starter fra handlingerne, tilføjer parrene, der gælder <b>altid</b> (program order, start, termination), og ser derefter på, hvad der <b>afhænger af udførelsen</b> (hvem der tager låsen først, hvilken volatile der læses bagefter). Hvert forskelligt tilfælde giver et andet HB-sæt; til sidst løses hvert eksamensspørgsmål (data race? korrekt synkroniseret? hvilke værdier kan den udskrive?) ved at lede efter stier i disse sæt.
+@@s064 Identificér handlingerne, og klassificér dem (variable access, synchronization, other).
+@@s065 Skriv parrene af <b>program order</b>.
+@@s066 Skriv parrene af synkroniseringshandlingerne: <b>start</b>, <b>termination</b>, <b>monitor</b>, <b>volatile</b>.
+@@s067 Opregn de mulige <b>synchronization orders</b>.
+@@s068 Se på hvilke happens-before-par der <b>ændrer sig</b> fra en synchronization order til den anden.
+@@s069 For hver forskel skriv det tilsvarende happens-before-sæt (f.eks. HB<sub>1</sub>, HB<sub>2</sub>).
+@@s070 Med disse sæt kan du: <b>finde</b> data races, <b>bevise</b> at der ikke er nogen (korrekthed), <b>forudsige</b> variablernes værdier.
+@@s071 De seks trin anvendt på eksemplet med låsen

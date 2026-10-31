@@ -1,0 +1,40 @@
+@@s001 Tasks, futures and the executor
+@@s002 <span>Week 9 · Performance</span>
+@@s003 Tasks, futures and the executor
+@@s004 For CPU-bound work the lecture uses a thread pool (the executor) that receives tasks and returns futures. The pool does not create a thread per task: it reuses a fixed number of them.
+@@s005 The executor: task queue and workers
+@@s006 A <b>task</b> is a piece of work to do (a <code>Runnable</code> or a <code>Callable</code>). An <b>executor</b> receives the tasks and runs them with a group of threads, the <b>pool</b>. With <code>Executors.newWorkStealingPool()</code> the pool has about one thread per core. Each worker has its own task queue: if its queue is empty, it steals a task from the queue of another worker (<i>work stealing</i>).
+@@s007 The dynamics of the executor
+@@s008 dato:task,ora:step in progress,ok:result
+@@s009 The caller does not wait: submit returns immediately.
+@@s010 If its queue is empty, it steals one from another worker.
+@@s011 The code of the task runs on a thread of the pool, not on the thread that called submit.
+@@s012 <code>future.get()</code> reads the result, waiting if the task has not finished yet.
+@@s013 Future: the result that will arrive
+@@s014 <code>submit</code> returns a <b>Future</b>: a container for a value that will arrive later. <code>future.get()</code> blocks until the task is finished and returns the result. With <code>Future&lt;?&gt;</code> the task returns nothing: it serves only to wait until it finishes.
+@@s015 Warning
+@@s016 If the task throws an exception, <code>get()</code> rethrows it wrapped in <code>ExecutionException</code>. Do not ignore the result of <code>get()</code>, otherwise the error disappears.
+@@s017 Example: counting the primes in eight tasks
+@@s018 The count of the primes below 100 000, split into eight independent pieces. Each task counts the primes of its piece and adds them into the same shared <code>LongAdder</code> (without locks, see the page on striping).
+@@s019 Esecutore.java
+@@s020 <code>isPrime</code> tries the divisors up to the square root of n: enough, because a divisor beyond the root has a complement below it. The cast <code>(long)</code> avoids an overflow in <code>d * d</code>.
+@@s021 100 000 numbers divided among 8 tasks: 12 500 numbers each. The pieces are independent, so they can run in parallel.
+@@s022 The pool with work stealing. The number of workers depends on the cores of the machine, not on the number of tasks.
+@@s023 Shared counter without locks: each task does <code>increment</code> on the primes it finds. This is the topic of the case study on LongAdder.
+@@s024 The loop prepares the eight tasks. For each one, the interval <code>[da, a)</code> (from da included to a excluded) is its piece of numbers.
+@@s025 The task is the lambda that counts the primes in the interval. <code>submit</code> queues it and returns the Future, which is put in the list.
+@@s026 Waits for the result of each task, one by one. After this loop all the tasks are finished.
+@@s027 Closes the pool: it accepts no other tasks, and the workers stop when they finish.
+@@s028 Sum of the contributions of all the threads: 9 592 primes below 100 000. The result is correct even if the tasks run in parallel.
+@@s029 Tasks or virtual threads?
+@@s030 The lecture compares the two paths on the same count of primes. With 1–64 threads or tasks: tasks are a bit faster than threads, while platform and virtual threads are equally fast. With 2048: tasks remain slightly faster than virtual threads, and platform threads become much slower.
+@@s031 work
+@@s032 recommended tool
+@@s033 waiting (I/O, network, database)
+@@s034 virtual threads: one thread per operation
+@@s035 CPU computation, performance matters
+@@s036 tasks on an executor: more control and a fixed number of threads
+@@s037 simplicity
+@@s038 virtual threads: simpler to write
+@@s039 Rule of the lecture
+@@s040 Do not create many platform threads. For I/O, virtual threads; for CPU-bound work, tasks. If in doubt, choose virtual threads.

@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sekventiel konsistens og linearisérbarhed</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+SCENE.es711 = {
+  w: 640, h: 310, lato: false,
+  legenda: 'dato:tråd A,due:tråd B,ok:gyldig,no:umulig',
+  oggetti: [
+    { id: 'lA', tipo: 'testo', x: 30, y: 65, t: 'A', size: 15, bold: true },
+    { id: 'lB', tipo: 'testo', x: 30, y: 125, t: 'B', size: 15, bold: true },
+    { id: 'tA', tipo: 'linea', x1: 50, y1: 60, x2: 620, y2: 60, tratt: true },
+    { id: 'tB', tipo: 'linea', x1: 50, y1: 120, x2: 620, y2: 120, tratt: true },
+    { id: 'tt', tipo: 'testo', x: 600, y: 150, t: 'tempo reale →', size: 11.5 },
+    { id: 'deq', tipo: 'rett', x: 70, y: 105, w: 120, h: 30, t: 'q.deq(x)', tono: 'due' },
+    { id: 'enqx', tipo: 'rett', x: 270, y: 45, w: 120, h: 30, t: 'q.enq(x)', tono: 'dato' },
+    { id: 'enqy', tipo: 'rett', x: 430, y: 45, w: 120, h: 30, t: 'q.enq(y)', tono: 'dato' },
+    { id: 'ls', tipo: 'testo', x: 30, y: 225, t: 'una alla volta:', size: 12, bold: true, anchor: 'start', nascosto: true },
+    { id: 'pd', tipo: 'punto', x: 130, y: 120, r: 6, nascosto: true },
+    { id: 'px', tipo: 'punto', x: 330, y: 60, r: 6, nascosto: true },
+    { id: 'py', tipo: 'punto', x: 490, y: 60, r: 6, nascosto: true },
+    { id: 'coda', tipo: 'testo', x: 320, y: 285, t: '', size: 12.5 }
+  ],
+  passi: [
+    { nota: 'Udførelsen af øvelse 7.1.1. B kalder <code>q.deq(x)</code> og <b>er færdig</b>, før A begynder <code>q.enq(x)</code>. Derefter kalder A <code>q.enq(y)</code>. Hvert rektangel går fra invokationen (venstre kant) til svaret (højre kant).' },
+    { nota: 'Spørgsmålet om sekventiel konsistens: kan de tre kald sættes <b>op på række, et ad gangen</b>, så (1) inden for hver tråd forbliver rækkefølgen den fra programmet, og (2) resultatet respekterer FIFO? For A: <code>enq(x)</code> før <code>enq(y)</code>, obligatorisk. Mellem A og B: <b>ingen begrænsning</b>.', set: { ls: { nascosto: false } } },
+    { nota: 'Første forsøg: den virkelige tids rækkefølge. <code>deq</code> på en <b>tom</b> kø kan ikke returnere x. Denne række overtræder FIFO-specifikationen.', set: { deq: { x: 160, y: 210, tono: 'no' }, enqx: { x: 300, y: 210 }, enqy: { x: 440, y: 210 }, coda: { t: 'coda: [ ]  →  deq(x)?  impossibile', tono: 'no' } } },
+    { nota: 'Men sekventiel konsistens <b>ser ikke på den virkelige tid mellem forskellige tråde</b>: <code>deq(x)</code> tilhører B, <code>enq(x)</code> tilhører A, så B kan flyttes efter. A\'s rækkefølge (x før y) består. Rækken respekterer FIFO: <b>sequentially consistent</b>.', set: { deq: { x: 300, tono: 'ok' }, enqx: { x: 160, tono: 'ok' }, enqy: { tono: 'ok' }, coda: { t: '[ ] → enq(x) → [x] → deq(x) → [ ] → enq(y) → [y]   ✓', tono: 'ok' } } },
+    { nota: '<code>enq(x), enq(y), deq(x)</code> er også fint: det er nok, at <b>én</b> gyldig række findes.', set: { deq: { x: 440 }, enqy: { x: 300 }, coda: { t: '[ ] → enq(x) → [x] → enq(y) → [x, y] → deq(x) → [y]   ✓' } } },
+    { nota: 'Linearisérbarhed tilføjer én regel: hvert kald får effekt i et <b>øjeblik</b> (linearisationspunkt) <b>inde i</b> sit rektangel. Lad os sætte kaldene tilbage på den virkelige tid.', set: { ls: { nascosto: true }, deq: { x: 70, y: 105, tono: 'due' }, enqx: { x: 270, y: 45, tono: 'dato' }, enqy: { x: 430, y: 45, tono: 'dato' }, coda: { t: '', tono: null } } },
+    { nota: 'Ethvert punkt, man vælger inde i <code>deq(x)</code>, kommer <b>før</b> ethvert punkt inde i <code>enq(x)</code>: rektanglet for <code>deq</code> slutter, før det andet begynder. Så i enhver linearisering står <code>deq(x)</code> før <code>enq(x)</code>, på en tom kø: <b>ikke linearisérbar</b> (øvelse 7.1.2).', set: { pd: { nascosto: false, tono: 'no' }, px: { nascosto: false, tono: 'dato' }, py: { nascosto: false, tono: 'dato' }, deq: { tono: 'no' }, coda: { t: 'deq(x) prima di enq(x) per forza  →  coda vuota  ✗', tono: 'no' } } }
+  ]
+};
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Sekventiel konsistens og linearisérbarhed</h1>
+  <p class="lede">Forelæsning 7 (<i>Linearizability</i>), slide 28–45. To måder at besvare spørgsmålet "er denne samtidige udførelse korrekt?". Forskellen er kun én ting: linearisérbarhed respekterer <b>den virkelige tid</b> også mellem forskellige tråde, sekventiel konsistens gør ikke.</p>
+</header>
+
+<section>
+  <h2>Udgangspunktet: kald der varer</h2>
+  <p>I et sekventielt program er et kald <code>q.enq(x)</code> ét trin. I et samtidigt program <b>varer</b> det: det starter, når det bliver kaldt (<i>invocation</i>), og slutter, når svaret kommer tilbage (<i>response</i>). I mellemtiden laver andre tråde andre kald på det samme objekt. For at afgøre om resultatet er rigtigt, forsøger man at <b>sætte kaldene op på række</b>, et ad gangen, og at sammenligne rækken med den sekventielle specifikation (her: en FIFO-kø).</p>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>symbol</th><th>betyder</th></tr></thead>
+    <tbody>
+      <tr><td><code>A:</code>, <code>B:</code></td><td>trådene, én pr. linje</td></tr>
+      <tr><td><code>---</code></td><td>den virkelige tid, der løber fra venstre mod højre</td></tr>
+      <tr><td><code>|q.enq(x)|</code></td><td>et kald: venstre <code>|</code> = invokation, højre <code>|</code> = svar</td></tr>
+      <tr><td><code>&lt;q.enq(x),q.deq(x)&gt;</code></td><td>en <b>sekventiel</b> udførelse: kaldene på række, i den skrevne rækkefølge</td></tr>
+    </tbody>
+  </table></div>
+  <p>To kald fra <b>samme</b> tråd overlapper aldrig: en tråd gør én ting ad gangen, og rækkefølgen den gør dem i er <b>programrækkefølgen</b> (<i>program order</i>).</p>
+</section>
+
+<section>
+  <h2>Sekventiel konsistens</h2>
+  <p>Definition fra slide 31: en samtidig udførelse er <b>sekventielt konsistent</b>, hvis der <b>findes</b> en sekventiel projektion (kaldene sat på række), hvor:</p>
+  <ol>
+    <li>operationerne sker <b>et ad gangen</b>;</li>
+    <li><b>programrækkefølgen</b> er respekteret <b>for hver tråd</b>;</li>
+    <li>udførelsen respekterer objektets <b>specifikation</b>.</li>
+  </ol>
+  <p>Det, der <b>mangler</b> på listen, er det vigtige punkt: ingen regel siger, at den virkelige tid skal respekteres mellem kald fra <b>forskellige</b> tråde. Hvis et kald fra B er færdigt, før et kald fra A begynder, kan de stadig sættes i omvendt rækkefølge på rækken.</p>
+  <div class="box idea" data-tit="Sådan blander man to kortstokke">
+    <p>Hver tråd er en kortstok, med kortene i programmets rækkefølge. Sekventiel konsistens tillader at <b>sammenflette</b> stokkene, som man vil (en "riffle shuffle"), men uden nogensinde at ændre rækkefølgen inde i en stok. Hvis mindst én blanding giver en række, der respekterer FIFO, er udførelsen sekventielt konsistent.</p>
+  </div>
+  <figure class="scena" data-scena="es711" data-titolo="Øvelse 7.1.1 og 7.1.2: samme udførelse, to svar"></figure>
+  <div class="box domanda-tua" data-tit="Men dequeue'en kommer før enqueue'en: hvordan kan den være konsistent?">
+    <p>Den kommer først <b>i den virkelige tid</b>, og sekventiel konsistens ser ikke på den virkelige tid mellem forskellige tråde. <code>deq(x)</code> tilhører B, <code>enq(x)</code> tilhører A: mellem dem er der ingen programrækkefølge, så i rækken kan B flyttes efter A. Den eneste tvungne rækkefølge er den inde i A: <code>enq(x)</code> før <code>enq(y)</code>.</p>
+    <p>Gyldig række: <code>&lt;q.enq(x),q.deq(x),q.enq(y)&gt;</code> (<code>&lt;q.enq(x),q.enq(y),q.deq(x)&gt;</code> er også fint). Tom kø, x kommer ind, x går ud, y kommer ind: den respekterer FIFO.</p>
+  </div>
+  <div class="box inglese" data-tit="Klar besvarelse 7.1.1">
+    <p>Ja, den er sekventielt konsistent. Sekventiel konsistens kræver kun, at kaldene sker et ad gangen, at programrækkefølgen for hver tråd bevares, og at resultatet opfylder FIFO-specifikationen. Den kræver ikke, at den virkelige tid bevares mellem kald fra forskellige tråde. Den eneste begrænsning i programrækkefølgen er, at A's <code>q.enq(x)</code> kommer før A's <code>q.enq(y)</code>. Da <code>q.deq(x)</code> tilhører tråd B, kan det placeres efter <code>q.enq(x)</code>, hvilket giver den sekventielle udførelse <code>&lt;q.enq(x),q.deq(x),q.enq(y)&gt;</code>, som er en gyldig FIFO-udførelse.</p>
+  </div>
+  <div class="box attenzione" data-tit="Den er ikke kompositionel">
+    <p>Slide 38: to objekter, der hver for sig er sekventielt konsistente, kan sammen give en udførelse, der ikke er det. Derfor kan man ikke ræsonnere om ét objekt ad gangen. Linearisérbarhed derimod er kompositionel.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Linearisérbarhed</h2>
+  <p>Slide 39: linearisérbarhed <b>udvider</b> sekventiel konsistens med én regel mere:</p>
+  <ol start="4">
+    <li>hvert kald skal få effekt <b>i et øjeblik</b>, et tidspunkt <b>mellem sin invokation og sit svar</b>.</li>
+  </ol>
+  <p>Det øjeblik er <b>linearisationspunktet</b> (<i>linearization point</i>). Ved at sætte kaldene på række i rækkefølge efter deres punkter får man linearisationen. Konsekvens: hvis et kald <b>er færdigt, før</b> et andet <b>begynder</b>, også i forskellige tråde, skal det stå før i rækken. Den virkelige tid tæller.</p>
+  <div class="colonne">
+    <div class="carta media"><h4>Sekventielt konsistent</h4><p>Programrækkefølge <b>inde i</b> hver tråd. Mellem forskellige tråde, fuld frihed. Udførelse 7.1.1: <b>ja</b>.</p></div>
+    <div class="carta buona"><h4>Linearisérbar</h4><p>Programrækkefølge <b>plus</b> den virkelige tids rækkefølge mellem kald, der ikke overlapper. Udførelse 7.1.2: <b>nej</b>.</p></div>
+  </div>
+  <div class="box regola" data-tit="Linearisérbar ⇒ sekventielt konsistent">
+    <p>En linearisering er også en gyldig række for sekventiel konsistens: den respekterer programrækkefølgen (kaldene fra én tråd overlapper ikke, så deres punkter er i orden). Det omvendte gælder ikke: 7.1.1 er modeksemplet.</p>
+  </div>
+  <div class="box inglese" data-tit="Klar besvarelse 7.1.2">
+    <p>Nej, den er ikke linearisérbar. I en linearisering skal hvert kald få effekt i et punkt mellem sin invokation og sit svar. <code>q.deq(x)</code> returnerer, før <code>q.enq(x)</code> er kaldt, så hvert linearisationspunkt for <code>q.deq(x)</code> kommer før hvert linearisationspunkt for <code>q.enq(x)</code>. Derfor starter enhver linearisering med <code>q.deq(x)</code> på en tom kø, og den kan ikke returnere x ifølge FIFO-specifikationen.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Overlap: frihed, ikke garanti (7.1.3 og 7.1.4)</h2>
+  <p>Når to kald fra forskellige tråde <b>overlapper</b> i tid, kan deres linearisationspunkter sættes i <b>begge rækkefølger</b>. Overlap giver derfor <b>frihed</b> til at vælge. Men så skal den valgte række respektere FIFO: hvis intet valg gør det, er udførelsen ikke linearisérbar, med eller uden overlap.</p>
+  <figure class="passi" data-titolo="7.1.3: overlappet er nok" data-legenda="dato:enq,due:deq,ok:gyldig">
+    <div class="passo"><div class="espr">A: ---|       <mark class="dato">q.enq(x)</mark>          |-->
+B: ------|<mark class="due">q.deq(x)</mark>|---------------></div><p class="nota"><code>deq(x)</code> ligger helt <b>inde i</b> intervallet for <code>enq(x)</code>: de overlapper.</p></div>
+    <div class="passo"><div class="espr">A: ---|  <mark class="dato">●</mark>    q.enq(x)          |-->
+B: ------|<mark class="due">●</mark>q.deq(x)|---------------></div><p class="nota">Jeg vælger punktet for <code>enq(x)</code> lige efter dets invokation, før <code>deq(x)</code> begynder; punktet for <code>deq(x)</code> efter. Begge ligger inde i deres eget interval.</p></div>
+    <div class="passo"><div class="espr"><mark class="ok">&lt;q.enq(x),q.deq(x)&gt;</mark>     [ ] → [x] → [ ]</div><p class="nota">x kommer ind, x går ud: den respekterer FIFO. <b>Linearisérbar.</b></p></div>
+  </figure>
+  <figure class="passi" data-titolo="7.1.4: overlappet er ikke nok" data-legenda="dato:enq af A,due:deq af B,no:overtræder FIFO">
+    <div class="passo"><div class="espr">A: ---|<mark class="dato">q.enq(x)</mark>|-----|<mark class="dato">q.enq(y)</mark>|-->
+B: --|         <mark class="due">q.deq(y)</mark>          |-></div><p class="nota"><code>deq(y)</code> overlapper <b>begge</b> <code>enq</code>'erne. Inde i A er rækkefølgen fast: <code>enq(x)</code> før <code>enq(y)</code> (og de overlapper ikke). Punktet for <code>deq(y)</code> kan falde på tre steder.</p></div>
+    <div class="passo"><div class="espr">&lt;<mark class="due">q.deq(y)</mark>,q.enq(x),q.enq(y)&gt;     [ ] → deq(y)?   <mark class="no">✗</mark></div><p class="nota">Først af alt: tom kø, den kan ikke returnere y.</p></div>
+    <div class="passo"><div class="espr">&lt;q.enq(x),<mark class="due">q.deq(y)</mark>,q.enq(y)&gt;     [x] → deq restituirebbe x   <mark class="no">✗</mark></div><p class="nota">I midten: køen indeholder kun x, og y er endnu ikke kommet ind.</p></div>
+    <div class="passo"><div class="espr">&lt;q.enq(x),q.enq(y),<mark class="due">q.deq(y)</mark>&gt;     [x, y] → deq restituirebbe x   <mark class="no">✗</mark></div><p class="nota">Til sidst: x er kommet ind <b>før</b> y, så FIFO får x til at gå ud først.</p></div>
+    <div class="passo"><div class="espr"><mark class="no">nessuna posizione funziona → non linearizzabile</mark></div><p class="nota">De tre positioner er alle de mulige valg, og ingen respekterer FIFO. Den er ikke engang sekventielt konsistent: de mulige rækker er de samme tre.</p></div>
+  </figure>
+  <div class="box domanda-tua" data-tit="&quot;De overlapper, så den er linearisérbar&quot;: hvorfor er det ikke nok?">
+    <p>Overlappet siger kun <b>hvilke rækker der er tilladt</b>. For at sige "linearisérbar" skal man <b>vise en tilladt række</b>, der respekterer specifikationen; for at sige "ikke linearisérbar" skal man vise, at <b>ingen</b> tilladt række respekterer den. I 7.1.4 er de tilladte rækker tre, og de fejler alle på grund af FIFO.</p>
+  </div>
+  <div class="box inglese" data-tit="Klar besvarelse 7.1.4">
+    <p>Nej, den er ikke linearisérbar. A's <code>q.enq(x)</code> og <code>q.enq(y)</code> overlapper ikke, så <code>q.enq(x)</code> kommer før <code>q.enq(y)</code> i enhver linearisering. <code>q.deq(y)</code> overlapper begge, så dets linearisationspunkt kan være før, mellem eller efter dem. Før: køen er tom. Mellem: køen indeholder kun x. Efter: køen er [x, y], og da x blev lagt i køen først, returnerer en dequeue x. I intet tilfælde kan <code>q.deq(y)</code> returnere y, så ingen linearisering opfylder FIFO-specifikationen.</p>
+  </div>
+</section>
+
+</main>
+</body>
+</html>

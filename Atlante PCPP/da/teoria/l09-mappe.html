@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Samtidige maps: fra én enkelt lås til ConcurrentHashMap</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <div class="occhiello"><span>Uge 9 · Performance</span></div>
+  <h1>Samtidige maps: fra én enkelt lås til ConcurrentHashMap</h1>
+  <p class="lede">Det andet casestudie: otte implementeringer af et trådsikkert hash-map, fra én enkelt lås til strukturer uden låse. Reglen, der går igennem dem alle, er den samme som for tælleren: hold de data, der skrives, tæt på én enkelt tråd.</p>
+</header>
+
+<section>
+  <h2>De otte maps</h2>
+  <p>Det andet casestudie er et trådsikkert hash-map. Forelæsningen sammenligner otte implementeringer, fra den simpleste til Javas bibliotek:</p>
+  <div class="tab-wrap"><table class="tab"><thead><tr><th>navn</th><th>idé</th></tr></thead><tbody>
+    <tr><td>SynchronizedMap</td><td>én enkelt lås på hele map'et</td></tr>
+    <tr><td>StripedMap</td><td>et array af låse: hver lås beskytter en del af bucket'erne. Sliderne siger 16 låse ét sted og 32 et andet</td></tr>
+    <tr><td>StripedMapPadded</td><td>som ovenfor, med padding mellem låsene</td></tr>
+    <tr><td>StripedWriteMap</td><td>som StripedMap, men listerne af par (nøgle, værdi) er uforanderlige: <b>læsninger</b> tager ingen lås</td></tr>
+    <tr><td>StripedWriteMapPadded</td><td>som ovenfor, med padding</td></tr>
+    <tr><td>StripedLevelWriteMap</td><td>to niveauer: et array af arrays, hver med sin egen lås; under-arrayerne ændrer størrelse hver for sig</td></tr>
+    <tr><td>HashTrieMap</td><td>uden låse: CAS-operationer på et hash array mapped trie (Prokopec, Bagwell)</td></tr>
+    <tr><td>WrapConcHashMap</td><td>Doug Leas <code>java.util.concurrent.ConcurrentHashMap</code>: lås og CAS sammen, med padding</td></tr>
+  </tbody></table></div>
+</section>
+
+<section>
+  <h2>Arbejdsbyrden</h2>
+  <p>For at sammenligne dem bruger forelæsningen det samme arbejdsmønster for alle: N tråde udfører i alt 5 000 000 operationer (hver 5 000 000 / N). Hver operation leder efter en tilfældig nøgle og handler sådan her:</p>
+  <figure class="passi" data-titolo="En operation i arbejdsbyrden" data-legenda="dato:nøgle,ora:beslutning,ok:handling">
+    <div class="passo"><div class="espr"><mark class="dato">Chiave</mark> casuale. Se la mappa <mark class="ora">non la contiene</mark>…</div><p class="nota">Det er det første tjek: <code>containsKey</code>.</p></div>
+    <div class="passo"><div class="espr">…la aggiunge con probabilità <mark class="ora">addProb</mark></div><p class="nota">Hvis det tilfældige tal er under addProb, laves <code>put</code>.</p></div>
+    <div class="passo"><div class="espr">Se la mappa la <mark class="ora">contiene</mark>, la rimuove con probabilità <mark class="ora">removeProb</mark></div><p class="nota">Hvis det tilfældige tal er under removeProb, laves <code>remove</code>.</p></div>
+  </figure>
+  <p>Hvis man ændrer addProb og removeProb, får man forskellige arbejdsbyrder: <b>domineret af læsninger</b> (60 % og 2 %) eller <b>domineret af skrivninger</b> (90 % og 30 %).</p>
+</section>
+
+<section>
+  <h2>Hvad målingerne viser</h2>
+  <ul>
+    <li>Den enkelte lås (<code>SynchronizedMap</code>) skalerer ikke: flere tråde, mere tid. På serveren er den meget værre end på laptoppen.</li>
+    <li>Med en balanceret eller skrivningsdomineret belastning skalerer ingen håndskrevet version godt: bibliotekets <code>ConcurrentHashMap</code> vinder.</li>
+    <li>Med en læsningsdomineret belastning forbliver <code>ConcurrentHashMap</code> den bedste; padding hjælper de versioner med ikke-blokerende læsninger.</li>
+    <li>Ikke-blokerende læsninger (uforanderlige lister) fungerer kun godt, hvis map'et læses meget mere, end det skrives.</li>
+  </ul>
+  <p>De ikke-blokerende versioner har en hukommelsesomkostning: hver skrivning opretter et nyt par, så der skal bruges en garbage collector og omhyggelig styring. Derfor siger forelæsningen, at teknikken ikke er praktisk i C eller C++ uden en GC.</p>
+</section>
+
+<section>
+  <h2>Lektionerne</h2>
+    <figure class="passi" data-titolo="Hvornår en lås er det rigtige valg, og hvornår ikke" data-legenda="dato:situation,ora:ræsonnementstrin,ok:konklusion,no:skal undgås">
+    <div class="passo"><div class="espr">I lock <mark class="ok">possono essere veloci</mark>: un thread bloccato non consuma CPU</div><p class="nota">En lås der venter får ikke CPU'en til at arbejde: det er en fordel.</p></div>
+    <div class="passo"><div class="espr">Più lock (<mark class="ora">lock striping</mark>) possono essere ancora più veloci</div><p class="nota">Men kun hvis de muterbare data, låse inklusive, for det meste bliver lokale for én tråd.</p></div>
+    <div class="passo"><div class="espr">I <mark class="no">CAS</mark> senza lock possono essere molto lenti sotto contesa</div><p class="nota">Trådene prøver igen i en løkke med aktiv venten (busy-wait), og linjerne går M → I → M → I.</p></div>
+    <div class="passo"><div class="espr">Il padding, o <code>@Contended</code>, tiene i dati locali sulla propria linea</div><p class="nota">@Contended er forbeholdt Javas biblioteker: i din kode skal padding laves i hånden.</p></div>
+  </figure>
+</section>
+
+<section>
+  <h2>Sådan vælger man</h2>
+  <div class="box regola" data-tit="I praksis">Skriv ikke et samtidigt map fra bunden: brug <code>ConcurrentHashMap</code>. Skriv din egen version kun for at forstå afvejningen, eller hvis du måler, at biblioteket ikke er nok til et bestemt tilfælde.</div>
+  <div class="box inglese" data-tit="Sætning til mundtlig eksamen">Striped locks og padding holder ofte skrevne data lokale til kernen, så cache-linjerne kan blive i tilstanden Modified; ConcurrentHashMap samler disse idéer i biblioteket.</div>
+</section>
+
+</main>
+</body>
+</html>

@@ -1,0 +1,327 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Strict, by-name, lazy</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+SCENE.strategie = {
+  w: 580, h: 250, lato: false,
+  legenda: 'ora:computed now,ok:result,spento:never computed',
+  oggetti: [
+    { id: 't1', tipo: 'testo', x: 140, y: 22, t: 'if1(true, id(23), id(42))', size: 13, bold: true },
+    { id: 't2', tipo: 'testo', x: 430, y: 22, t: 'if3(true, id(23), id(42))', size: 13, bold: true },
+    { id: 'st', tipo: 'testo', x: 140, y: 42, t: 'strict', size: 12 },
+    { id: 'bn', tipo: 'testo', x: 430, y: 42, t: 'by-name', size: 12 },
+    { id: 'a1', tipo: 'nodo', forma: 'quadrato', r: 26, x: 90, y: 100, t: 'id(23)' },
+    { id: 'b1', tipo: 'nodo', forma: 'quadrato', r: 26, x: 190, y: 100, t: 'id(42)' },
+    { id: 'a2', tipo: 'nodo', forma: 'quadrato', r: 26, x: 380, y: 100, t: 'id(23)' },
+    { id: 'b2', tipo: 'nodo', forma: 'quadrato', r: 26, x: 480, y: 100, t: 'id(42)' },
+    { id: 'o1', tipo: 'testo', x: 140, y: 170, t: 'console:', size: 13 },
+    { id: 'o2', tipo: 'testo', x: 430, y: 170, t: 'console:', size: 13 },
+    { id: 'r1', tipo: 'testo', x: 140, y: 205, t: '', size: 14, bold: true },
+    { id: 'r2', tipo: 'testo', x: 430, y: 205, t: '', size: 14, bold: true }
+  ],
+  passi: [
+    { nota: 'Same call with two kinds of parameter. <code>id</code> prints its argument and returns it, so one sees when it is computed.' },
+    { nota: '<b>Strict</b> (if1): before entering the function Scala computes the arguments. id(23) → prints 23.', set: { a1: { tono: 'ora' }, o1: { t: 'console: 23' } } },
+    { nota: 'And id(42) → prints 42, even if it will not be needed.', set: { a1: { tono: 'ok' }, b1: { tono: 'ora' }, o1: { t: 'console: 23 42' } } },
+    { nota: 'Only now does it enter: if true then 23 else 42 = 23. Output "23 42" (checked).', set: { b1: { tono: 'spento' }, r1: { t: 'risultato 23', tono: 'ok' } } },
+    { nota: '<b>By-name</b> (if3): it enters at once, the arguments are recipes. cond is true: only the chosen branch is computed, id(23) → prints 23.', set: { a2: { tono: 'ora' }, o2: { t: 'console: 23' } } },
+    { nota: 'id(42) is <b>never</b> computed. Output "23". A <code>lazy val</code> would remember the value after the first use, instead of recomputing it.', set: { a2: { tono: 'ok' }, b2: { tono: 'spento' }, r2: { t: 'risultato 23', tono: 'ok' } } }
+  ]
+};
+</script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  const T = (id, x, y, t, extra) => Object.assign({ id, tipo: 'testo', x, y, t, size: 13 }, extra || {});
+  const R = (id, x, y, w, h, t, extra) => Object.assign({ id, tipo: 'rett', x, y, w, h, t }, extra || {});
+  const F = (id, x1, y1, x2, y2, t, extra) => Object.assign({ id, tipo: 'vett', x1, y1, x2, y2, t }, extra || {});
+  const C = (id, x, y, valori, extra) => Object.assign({ id, tipo: 'celle', x, y, cw: 52, ch: 40, valori, indici: false }, extra || {});
+  const toni = (n, tono) => Object.fromEntries(Array.from({ length: n }, (_, i) => [i, tono]));
+
+    SCENE.trabocchetto = {
+      w: 580, h: 210, lato: true,
+      legenda: 'ora:condition,due:recipe run,no:recipe never run,ok:value of res',
+      oggetti: [T('e', 290, 28, 'val res = if2(a < 22, () => println("a"), () => println("b"))', { bold: true, size: 12 }),
+        R('c', 20, 60, 160, 40, '42 < 22', { tono: 'spento' }), R('t', 210, 60, 160, 40, '() => println("a")', { tono: 'spento' }), R('f', 400, 60, 160, 40, '() => println("b")', { tono: 'spento' }),
+        T('out', 290, 140, '', { size: 12 }), T('r', 290, 185, '', { bold: true, size: 15 })],
+      passi: [
+        { nota: "Il sondaggio: <code>if2</code> riceve la condizione e due <b>ricette</b>, una per ramo. a = 42." },
+        { nota: "42 &lt; 22 è <b>falso</b>.", set: { c: { t: 'false', tono: 'ora' } } },
+        { nota: "Quindi si esegue solo la ricetta del ramo falso: stampa \"b\". Quella del ramo vero non viene mai eseguita.", set: { f: { tono: 'due' }, t: { tono: 'no' }, out: { t: 'stampa: b' } } },
+        { nota: "Ma quanto vale <b>res</b>? println restituisce <b>Unit</b>: res = <code>()</code> (verificato). La stampa è un effetto, non il valore: \"b\" non è il risultato.", set: { r: { t: 'res = ()', tono: 'ok' } } }
+      ]
+    };
+
+    SCENE.lazyval = {
+      w: 580, h: 230, lato: true,
+      legenda: 'ora:print,ok:value remembered',
+      oggetti: [T('e', 290, 28, '', { bold: true }), T('s1', 290, 70, '', { size: 12 }), T('s2', 290, 100, '', { size: 12 }), T('s3', 290, 130, '', { size: 12 }), T('r', 290, 180, '', { bold: true }), T('c', 290, 212, '', { size: 12 })],
+      passi: [
+        { nota: "Un parametro by-name si ricalcola a ogni uso. Per calcolarlo una volta sola: <b>lazy val</b>. <code>lazy val pesante = { println(\"&gt;&gt; calcolato!\"); 42 }</code>: definito, nessuna stampa.", set: { e: { t: 'lazy val pesante = { println(">> calcolato!"); 42 }' } } },
+        { nota: "<code>println(\"prima\")</code>: il programma va avanti, pesante non è ancora calcolato.", set: { s1: { t: 'prima' } } },
+        { nota: "Primo uso: <code>println(pesante)</code> calcola: stampa \"&gt;&gt; calcolato!\" e poi 42.", set: { s2: { t: '>> calcolato!   42', tono: 'ora' } } },
+        { nota: "Secondo uso: ricorda, stampa solo 42 (verificato).", set: { s3: { t: '42', tono: 'ok' } } },
+        { nota: "<code>convoluted(a, b)</code> con <code>lazy val cacheB = b; lazy val cacheA = a</code>, poi cacheA; cacheB; cacheA; cacheB: stampa <b>\"AB\"</b>. Conta l'ordine d'<b>uso</b>, non di definizione; senza lazy val stamperebbe \"ABAB\".", set: { r: { t: 'convoluted(print("A"), print("B")) → AB', tono: 'ok' }, c: { t: 'val: subito, 1 volta · lazy val: al primo uso, 1 volta · def: ogni volta' } } }
+      ]
+    };
+
+    SCENE.strategie3 = {
+      w: 580, h: 230, lato: true,
+      legenda: 'ora:computation of x,ok:result',
+      oggetti: [T('e', 290, 26, 'f(x) = x + x,   x = { print("!"); 5 }', { bold: true }),
+        R('v', 20, 50, 170, 44, 'call-by-value', { tono: 'spento' }), R('n', 205, 50, 170, 44, 'call-by-name', { tono: 'spento' }), R('l', 390, 50, 170, 44, 'lazy', { tono: 'spento' }),
+        T('tv', 105, 120, '', { size: 12 }), T('tn', 290, 120, '', { size: 12 }), T('tl', 475, 120, '', { size: 12 }), T('c', 290, 175, '', { size: 12 }), T('c2', 290, 205, '', { size: 12 })],
+      passi: [
+        { nota: "Tre strategie per gli argomenti. Esempio: f usa x due volte, e calcolare x stampa \"!\"." },
+        { nota: "<b>Call-by-value</b>: gli argomenti si calcolano <b>prima</b> della chiamata, una volta. Stampa \"!\" una volta, prima di entrare.", set: { v: { tono: 'ora' }, tv: { t: '! una volta, prima' } } },
+        { nota: "<b>Call-by-name</b> (<code>x: =&gt; Int</code>): si sostituisce l'espressione, calcolata a <b>ogni uso</b>. Stampa \"!\" due volte.", set: { n: { tono: 'ora' }, tn: { t: '! ! a ogni uso' } } },
+        { nota: "<b>Lazy</b> = call-by-name + memoria: calcolata al primo uso, poi ricordata. Una stampa, ma solo se x serve. Il risultato è 10 in tutti e tre: in un programma <b>puro</b> cambiano solo tempo e memoria.", set: { l: { tono: 'ora' }, tl: { t: '! una volta, al 1° uso' }, c: { t: 'risultato 10 in tutti e tre', tono: 'ok' } } },
+        { nota: "<b>Strict</b>: f(x) non termina (o fallisce) quando x non termina. if, &amp;&amp;, || non lo sono: <code>false &amp;&amp; crash()</code> vale false. Con by-name si scrivono nuovi costrutti: <code>whenByName(false) { println(\"By name\") }</code> non stampa niente, la versione by-value sì (verificato). È il trucco di withScope in Apache Spark.", set: { c2: { t: 'whenByValue(false){…} stampa · whenByName(false){…} no' } } }
+      ]
+    };
+
+    SCENE.acosaserve = {
+      w: 580, h: 210, lato: true,
+      legenda: 'ok:computed,spento:never computed',
+      oggetti: [R('u1', 20, 40, 260, 44, '', { tono: 'spento' }), R('u2', 300, 40, 260, 44, '', { tono: 'spento' }), T('c', 290, 130, '', { size: 12 }), T('c2', 290, 170, '', { size: 12 })],
+      passi: [
+        { nota: "Quattro usi della valutazione non strict." },
+        { nota: "<b>Funzioni non strict</b>: <code>getOrElse(default: =&gt; B)</code>. Il default si calcola solo con None.", set: { u1: { t: 'Some(7).getOrElse(costoso)', tono: 'ok' }, u2: { t: 'costoso: mai calcolato', tono: 'spento' } } },
+        { nota: "<b>Dati grandi</b>: descrivi tutto, calcoli solo le parti che servono davvero.", set: { u1: { t: 'take(10) di un miliardo' }, u2: { t: '≈ 50 celle calcolate', tono: 'ok' } } },
+        { nota: "<b>Generatori</b>: liste infinite di naturali, primi, numeri casuali.", set: { u1: { t: 'naturals, fibs, random2' }, u2: { t: 'infinite, ma prendi quanto vuoi', tono: 'ok' } } },
+        { nota: "<b>Separare il cosa dal come</b>: la descrizione del calcolo è un valore; l'esecuzione avviene dopo, e solo del pezzo che ti serve.", set: { u1: { t: 'descrizione (cosa)' }, u2: { t: 'esecuzione, a richiesta (come)', tono: 'ok' }, c: { t: 'laziness: calcolare solo quello che serve, quando serve' } } }
+      ]
+    };
+
+    const E = [['h :: t().toList', 'Found: (h : () => A)  Required: A', 'h() :: t().toList'], ['t.takeWhile(p)', 'value takeWhile is not a member of () => LazyList[A]', 't().takeWhile(p)'], ['case Cons(h: => A, …)', 'val parameters may not be call-by-name', 'case Cons(h: () => A, …)']];
+    SCENE.hcontroh = {
+      w: 600, h: 210, lato: true,
+      legenda: 'no:wrong,ok:correct',
+      oggetti: [T('n', 300, 24, '', { bold: true }), R('s', 20, 40, 270, 40, '', { tono: 'no' }), R('g', 310, 40, 270, 40, '', { tono: 'ok' }), T('m', 300, 120, '', { size: 12, bold: true }), T('c', 300, 180, '', { size: 12 })],
+      passi: [{ nota: "La confusione più frequente della settimana: <b>h</b> è la ricetta, <b>h()</b> è il valore." }].concat(E.map(([s, m, g], i) => ({
+        nota: ['<code>::</code> vuole il <b>valore</b>: h(), non h.', 't è una funzione, e le funzioni non hanno takeWhile. Prima esegui la ricetta: <code>t()</code>.', 'I campi di un case non possono essere by-name: per questo Cons usa <code>() =&gt; A</code>, e cons risolve il problema. Regola: <code>=&gt; A</code> si usa scrivendo il nome, <code>() =&gt; A</code> scrivendo nome().'][i],
+        set: { n: { t: 'errore ' + (i + 1) + ' di 3' }, s: { t: s }, g: { t: g }, m: { t: m, tono: 'no' }, c: { t: i === 2 ? '=> A: scrivi x · () => A: scrivi x()' : '' } }
+      })))
+    };
+  
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Strict, by-name, lazy</h1>
+  <p class="lede">When is the argument of a function computed? <b>Before</b> entering (strict), <b>every time</b> you use it (by-name), or <b>the first time</b> you use it and then no more (lazy). Scala has all three, and the LazyLists of this week rest on the last two.</p>
+</header>
+
+<section>
+  <h2>Three versions of <code>if</code> (Strictness.scala)</h2>
+  <p><code>id</code> prints its argument and returns it: so we see <b>when</b> an argument is computed.</p>
+  <pre class="cod" data-lang="scala">def id[A](a: A): A =
+  println(a)
+  a</pre>
+
+  <figure class="passi" data-titolo="if1: ordinary parameters (strict)">
+    <div class="passo">
+      <div class="espr">def if1[A](cond: Boolean, onTrue: <mark class="dato">A</mark>, onFalse: <mark class="dato">A</mark>): A =
+  if cond then onTrue else onFalse</div>
+      <p class="nota">Ordinary parameters: Scala computes the arguments <b>before</b> entering the function.</p>
+    </div>
+    <div class="passo">
+      <div class="espr">if1(true, <mark class="ora">id(23)</mark>, id(42))      <span class="mano">stampa: 23</span></div>
+      <p class="nota">It computes the first argument.</p>
+    </div>
+    <div class="passo">
+      <div class="espr">if1(true, 23, <mark class="no">id(42)</mark>)          <span class="mano">stampa: 42</span></div>
+      <p class="nota">And also the second, even if it will not be needed.</p>
+    </div>
+    <div class="passo">
+      <div class="espr">if true then 23 else 42   =   <mark class="ok">23</mark>        <span class="mano">output: 23 42</span></div>
+      <p class="nota">Only now does it enter. It has printed <b>both</b> (checked): <code>if1</code> is <b>strict</b>.</p>
+    </div>
+  </figure>
+
+  <figure class="passi" data-titolo="if2: functions without arguments (thunks)">
+    <div class="passo">
+      <div class="espr">def if2[A](cond: Boolean, onTrue: <mark class="due">() => A</mark>, onFalse: <mark class="due">() => A</mark>): A =
+  if cond then onTrue<mark class="ora">()</mark> else onFalse<mark class="ora">()</mark></div>
+      <p class="nota">Each branch is a function that takes nothing: a <b>recipe</b> (thunk). Inside, <code>onTrue()</code> runs it.</p>
+    </div>
+    <div class="passo">
+      <div class="espr">if2(true, <mark class="due">() => id(23)</mark>, <mark class="due">() => id(42)</mark>)</div>
+      <p class="nota">I pass two recipes. Creating a function does not run its body: nothing printed.</p>
+    </div>
+    <div class="passo">
+      <div class="espr">if true then (() => id(23))<mark class="ora">()</mark> else …   <span class="mano">stampa: 23</span></div>
+      <p class="nota">Only the recipe of the chosen branch is run.</p>
+    </div>
+    <div class="passo">
+      <div class="espr"><mark class="ok">23</mark>        <span class="mano">output: 23</span></div>
+      <p class="nota">42 has never been computed (checked). Running a thunk is called <b>forcing</b> it.</p>
+    </div>
+  </figure>
+
+  <figure class="passi" data-titolo="if3: by-name parameters">
+    <div class="passo">
+      <div class="espr">def if3[A](cond: Boolean, onTrue: <mark class="ora">=> A</mark>, onFalse: <mark class="ora">=> A</mark>): A =
+  if cond then onTrue else onFalse</div>
+      <p class="nota"><code>=> A</code> (arrow with nothing on the left): a <b>by-name</b> parameter. Scala creates the recipe for you and runs it each time you write the name. No <code>()</code>.</p>
+    </div>
+    <div class="passo">
+      <div class="espr">if3(true, <mark class="ora">id(23)</mark>, <mark class="ora">id(42)</mark>)</div>
+      <p class="nota">The call looks like that of <code>if1</code>…</p>
+    </div>
+    <div class="passo">
+      <div class="espr"><mark class="ok">23</mark>        <span class="mano">output: 23</span></div>
+      <p class="nota">…but it behaves like <code>if2</code>: it prints only 23 (checked). Same meaning, more convenient syntax.</p>
+    </div>
+  </figure>
+  <figure class="scena" data-scena="strategie" data-titolo="Strict against by-name, with the console"></figure>
+
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Written</th><th>What it is</th><th>How you use it inside</th><th>When it is computed</th></tr></thead>
+    <tbody>
+      <tr><td><code>x: A</code></td><td>ordinary value</td><td><code>x</code></td><td>before the call</td></tr>
+      <tr><td><code>x: () => A</code></td><td>function without arguments (thunk)</td><td><code>x()</code></td><td>each time you write <code>x()</code></td></tr>
+      <tr><td><code>x: => A</code></td><td>by-name parameter</td><td><code>x</code>, without parentheses</td><td>each time you write <code>x</code></td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section>
+  <h2>The trap of the poll</h2>
+  <pre class="cod" data-lang="scala">val a = 42
+val res = if2(a &lt; 22, () => println("a"), () => println("b"))</pre>
+  <p><b>What is <code>res</code> worth?</b> Answer: <b>() — the Unit value</b>. 42 &lt; 22 is false, so the recipe of the false branch is run, which <b>prints</b> "b". But <code>println</code> returns <code>Unit</code>, so <code>res = ()</code> (checked: <i>res = ()</i>). Printing is an effect, not the value.</p>
+  <figure class="scena" data-scena="trabocchetto" data-titolo="Prints b, but res = ()"></figure>
+</section>
+
+<section>
+  <h2><code>lazy val</code>: computes once, then remembers</h2>
+  <p>A by-name parameter is recomputed <b>every time</b> you use it. If you want to compute it only once, put it in a <code>lazy val</code>.</p>
+  <figure class="passi" data-titolo="When it is computed">
+    <div class="passo">
+      <div class="espr">lazy val pesante = { println("&gt;&gt; calcolato!"); 42 }</div>
+      <p class="nota">Defined. It prints nothing: nobody has used it yet.</p>
+    </div>
+    <div class="passo">
+      <div class="espr">println("prima")        <span class="mano">stampa: prima</span></div>
+      <p class="nota">The program goes on. <code>pesante</code> is not yet computed.</p>
+    </div>
+    <div class="passo">
+      <div class="espr">println(<mark class="ora">pesante</mark>)       <span class="mano">stampa: &gt;&gt; calcolato!  42</span></div>
+      <p class="nota">First use: computes.</p>
+    </div>
+    <div class="passo">
+      <div class="espr">println(<mark class="ok">pesante</mark>)       <span class="mano">stampa: 42</span></div>
+      <p class="nota">Second use: remembers the result, does not recompute (checked).</p>
+    </div>
+  </figure>
+  <figure class="passi" data-titolo="convoluted(print(&quot;A&quot;), print(&quot;B&quot;)) — slide 6">
+    <div class="passo">
+      <div class="espr">def convoluted(a: => Unit, b: => Unit): Unit =
+  lazy val cacheB = b
+  lazy val cacheA = a
+  cacheA; cacheB; cacheA; cacheB</div>
+      <p class="nota">Two by-name parameters, put into two <code>lazy val</code>. Then I use each twice.</p>
+    </div>
+    <div class="passo"><div class="espr"><mark class="ora">cacheA</mark>; cacheB; cacheA; cacheB        <span class="mano">stampa: A</span></div><p class="nota">First use of <code>cacheA</code>: forces <code>a</code>. The order of the definitions does not matter, the order of use does.</p></div>
+    <div class="passo"><div class="espr">cacheA; <mark class="ora">cacheB</mark>; cacheA; cacheB        <span class="mano">stampa: B</span></div><p class="nota">First use of <code>cacheB</code>.</p></div>
+    <div class="passo"><div class="espr">cacheA; cacheB; <mark class="ok">cacheA</mark>; <mark class="ok">cacheB</mark>        <span class="mano">niente</span></div><p class="nota">Already in cache.</p></div>
+    <div class="passo"><div class="espr"><mark class="ok">AB</mark></div><p class="nota">Prints "AB" (checked). Without <code>lazy val</code> it would print "ABAB".</p></div>
+  </figure>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Written</th><th>When it is computed</th><th>How many times</th></tr></thead>
+    <tbody>
+      <tr><td><code>val x = …</code></td><td>at once</td><td>1</td></tr>
+      <tr><td><code>lazy val x = …</code></td><td>at first use</td><td>1</td></tr>
+      <tr><td><code>def x = …</code></td><td>at each use</td><td>every time</td></tr>
+    </tbody>
+  </table></div>
+  <figure class="scena" data-scena="lazyval" data-titolo="First use computes, then remembers"></figure>
+</section>
+
+<section>
+  <h2>The three strategies, defined</h2>
+  <div class="box regola" data-tit="Call-by-value (strict)">
+    <p>The arguments are computed <b>before</b> the call; in the body their value is substituted.</p>
+  </div>
+  <div class="box regola" data-tit="Call-by-name">
+    <p>The arguments are <b>not</b> computed: in the body the expression itself is substituted, and it is computed at each use.</p>
+  </div>
+  <div class="box regola" data-tit="Lazy">
+    <p>Lazy = call-by-name + <b>memory</b>: the expression is computed at first use and the result is reused afterwards.</p>
+  </div>
+  <div class="box regola" data-tit="Strict function (slide 4)">
+    <p><span class="m">f(x)</span> is strict if, for every expression <span class="m">x</span> that does not terminate or fails, <span class="m">f(x)</span> also does not terminate or fails. <code>if</code>, <code>&amp;&amp;</code> and <code>||</code> are not strict: <code>false &amp;&amp; crash()</code> is <code>false</code>.</p>
+  </div>
+  <p>In a <b>pure</b> program the three strategies give the same result: only time and memory change. With effects (prints, random numbers) the results become different, which is why laziness is used with pure code.</p>
+  <figure class="passi" data-titolo="when: extending the language with a by-name parameter">
+    <div class="passo">
+      <div class="espr">def whenByValue(cond: Boolean)(body: <mark class="dato">Unit</mark>): Unit = if cond then body
+whenByValue(false) { println("By value") }</div>
+      <p class="nota">The block between braces is the second argument.</p>
+    </div>
+    <div class="passo">
+      <div class="espr"><mark class="no">By value</mark>          <span class="mano">stampato anche se cond è false!</span></div>
+      <p class="nota">Strict: the block is run <b>before</b> entering (checked).</p>
+    </div>
+    <div class="passo">
+      <div class="espr">def whenByName(cond: Boolean)(body: <mark class="ora">=> Unit</mark>): Unit = if cond then body
+whenByName(false) { println("By name") }          <span class="mano">niente</span></div>
+      <p class="nota">By-name: the block runs only if the <code>if</code> reaches it. This is how "new constructs" such as <code>withScope</code> of Apache Spark are written (slides 9–12).</p>
+    </div>
+  </figure>
+  <figure class="scena" data-scena="strategie3" data-titolo="By value, by name, lazy"></figure>
+</section>
+
+<section>
+  <h2>What it is for</h2>
+  <ul>
+    <li><b>Non-strict functions</b>: the default of <code>getOrElse(default: => B)</code> is computed only with <code>None</code>.</li>
+    <li><b>Large data</b>: computing only the parts that are really needed.</li>
+    <li><b>Generators</b>: the infinite list of naturals, of prime numbers, of random numbers (the <a href="s04-lazylist.html">LazyLists</a>).</li>
+    <li><b>Separating what from how</b>: you describe a large calculation and run only the piece you need.</li>
+  </ul>
+  <figure class="scena" data-scena="acosaserve" data-titolo="Four uses of non-strict evaluation"></figure>
+</section>
+
+<section>
+  <h2>Typical errors: <code>h</code> against <code>h()</code></h2>
+  <div class="errori">
+    <div class="errore">
+      <pre data-lang="scala">case Cons(h, t) => h :: t().toList</pre>
+      <pre class="msg">Found:    (h : () => A)
+Required: A</pre>
+      <div class="fix"><code>h</code> è la ricetta, <code>h()</code> è il valore. <code>::</code> vuole il valore: <code>h()</code>.</div>
+    </div>
+    <div class="errore">
+      <pre data-lang="scala">case Cons(h, t) => if p(h()) then cons(h(), t.takeWhile(p)) else empty</pre>
+      <pre class="msg">value takeWhile is not a member of () => LazyList[A]</pre>
+      <div class="fix"><code>t</code> è una funzione, e le funzioni non hanno il metodo <code>takeWhile</code>. Prima esegui la ricetta: <code>t().takeWhile(p)</code>.</div>
+    </div>
+    <div class="errore">
+      <pre data-lang="scala">enum LazyList[+A]:
+  case Cons(h: => A, t: => LazyList[A])</pre>
+      <pre class="msg">val parameters may not be call-by-name</pre>
+      <div class="fix">Ecco perché il <code>Cons</code> del corso usa <code>() => A</code>: i campi di un <code>case</code> non possono essere by-name. Il costruttore comodo <code>cons</code> (<a href="s04-lazylist.html">pagina successiva</a>) risolve il problema.</div>
+    </div>
+  </div>
+  <div class="box regola" data-tit="Rule">
+    <p><code>=> A</code> is used by writing the name. <code>() => A</code> is used by writing <code>name()</code>.</p>
+  </div>
+  <figure class="scena" data-scena="hcontroh" data-titolo="h against h()"></figure>
+</section>
+
+</main>
+</body>
+</html>

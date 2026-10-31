@@ -1,0 +1,45 @@
+@@s001 Tråde, tilstande, scheduler
+@@s002 ora:nuværende tilstand,dato:overgang lige foretaget
+@@s003 <p><code>new Turnstile()</code>: objektet findes, men tråden er ikke startet endnu.</p>
+@@s004 <p><code>start()</code>: tråden bliver <b>enabled</b>, altså klar. Den udfører endnu ikke instruktioner.</p>
+@@s005 <p>Scheduleren <b>vælger</b> den: nu er den <b>running</b> og udfører instruktioner. Hvornår det sker, bestemmer programmet ikke.</p>
+@@s006 <p>Scheduleren <b>suspenderer</b> den når som helst, også midt i <code>counter++</code>, og lader en anden tråd arbejde. Den vender tilbage til enabled.</p>
+@@s007 <p>Valgt igen: running igen.</p>
+@@s008 <p>Tråden laver et <b>blokerende</b> kald (<code>join()</code>, <code>lock()</code> med låsen taget, <code>await()</code>…): den går til <b>blocked</b>. Her er det trådens egen kode, der forårsager overgangen.</p>
+@@s009 <p>Den forventede begivenhed sker (den anden tråd slutter, låsen frigives…). Tråden vender tilbage til <b>enabled</b>, ikke running: den skal vente på scheduleren igen.</p>
+@@s010 <p>Valgt igen, kører den til slutningen af <code>run()</code>.</p>
+@@s011 <p><code>run()</code> er færdig: tråden afslutter. Den, der kaldte <code>join()</code> på den, kan fortsætte.</p>
+@@s012 dato:hovedtråden,due:tornet-tråden,ora:kører,ok:resultat
+@@s013 dato:t1 kører,due:t2 kører
+@@s014 Tråde, tilstande, scheduler
+@@s015 En tråd er ikke altid i udførelse: den skifter mellem nogle tilstande, og den, der afgør hvornår, er <b>scheduleren</b>, på en ikke-deterministisk måde. Af denne frihed opstår interleavings og dermed alle kursets problemer.
+@@s016 Tivoli-tornet
+@@s017 En <b>tråd</b> er et flow af instruktioner, der skrider frem på egen hånd: "an independent sequence of program statements". Hvert Java-program starter med én tråd, <code>main</code>; andre oprettes med <code>new Thread(…)</code> og startes med <code>start()</code>. Alle trådene i et program ser de samme felter i objekterne: det er <b>delt hukommelse</b>, måden de kommunikerer på, og kilden til kursets problemer. <code>join()</code> får en tråd til at vente, til en anden er færdig.
+@@s018 Eksemplet fra forelæsningen: en tråd simulerer 10 000 personer, der går ind gennem et tornet og øger en delt tæller.
+@@s019 CounterThreads.java (forenklet)
+@@s020 <b>Delt hukommelse</b>: <code>counter</code> er et felt, synligt for hovedtråden og for tornet. <code>final</code> på <code>PEOPLE</code> siger, at det aldrig ændrer sig.
+@@s021 Hovedtråden opretter tornet og starter det.
+@@s022 Den venter, til det er færdigt.
+@@s023 Tornets opførsel: 10 000 forøgelser.
+@@s024 Med <b>ét</b> tornet udskriver det altid <code>10000 people entered</code>: ingen anden tråd rører <code>counter</code>, mens det arbejder. Med to tornet ændrer tingene sig: <a href="l01-interleaving.html">næste side</a>.
+@@s025 main og tornet på tidslinjen
+@@s026 Trådens tilstande
+@@s027 Slide 43 bruger en forenklet model med tre tilstande. Maskinen nedenfor følger livet for en tråd.
+@@s028 En tråds liv
+@@s029 Overgang
+@@s030 Hvem der forårsager den
+@@s031 <code>start</code>
+@@s032 programmet, ved at kalde <code>start()</code>
+@@s033 <code>schedule</code> / <code>suspend</code>
+@@s034 systemets scheduler: ikke styrbar, ikke forudsigelig
+@@s035 <code>wait</code>
+@@s036 tråden selv, med et blokerende kald
+@@s037 <code>event</code>
+@@s038 andre enheder: andre tråde, undtagelser, hardware-afbrydelser
+@@s039 Husk til den mundtlige
+@@s040 Fra <b>blocked</b> går man aldrig direkte tilbage til <b>running</b>: man går altid via <b>enabled</b>. Den samme idé finder du i monitorerne: en tråd vækket af <code>signal()</code> skal konkurrere om låsen igen.
+@@s041 Ikke-determinisme
+@@s042 To tråde <code>t1</code> og <code>t2</code>, begge enabled. Scheduleren kan for eksempel producere:
+@@s043 Praktisk konsekvens
+@@s044 <b>Ingen antagelse</b> er lovlig om, hvilken tråd der kører næst. Derfor beviser en test, der går igennem, ikke at et samtidigt program er korrekt: du har set én udførelse ud af uendelig mange. Korrektheden argumenteres ud fra <b>kravene</b> (gensidig udelukkelse, happens-before), ikke ud fra de observerede udførelser.
+@@s045 Tre forskellige udførelser af de samme to tråde

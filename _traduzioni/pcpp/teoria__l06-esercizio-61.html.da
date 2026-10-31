@@ -1,0 +1,72 @@
+@@s001 Øvelse 6.1: CasHistogram
+@@s002 Øvelse 6.1: CasHistogram
+@@s003 Et lock-free histogram lavet af <code>AtomicInteger</code>, der kun bruger <code>get</code> og <code>compareAndSet</code>, og en test der sammenligner det med den sekventielle version. Først hvad et histogram er, derefter klassen, derefter testen.
+@@s004 Hvad et histogram er
+@@s005 En række <b>bins</b>, hver med en <b>tæller</b>: den bruges til at tælle, hvor mange gange hver ting sker. Grænsefladen <code>Histogram</code>:
+@@s006 metode
+@@s007 hvad den gør
+@@s008 <code>increment(7)</code>
+@@s009 +1 til bin 7
+@@s010 <code>getCount(7)</code>
+@@s011 værdien af bin 7
+@@s012 <code>getSpan()</code>
+@@s013 hvor mange bins der er (i øvelse 30)
+@@s014 <code>getAndClear(7)</code>
+@@s015 returnerer værdien af bin 7 <b>og</b> sætter den tilbage til 0
+@@s016 Histogram1
+@@s017 <code>int[]</code> og <code>counts[bin] = counts[bin] + 1</code>: læs, derefter skriv. Perfekt med én tråd; med flere tråde taber den forøgelser (race condition). I testen tjener den som <b>reference</b>, brugt af én tråd.
+@@s018 CasHistogram
+@@s019 Det samme, men hver bin er en <code>AtomicInteger</code>, og forøgelsen er en CAS-løkke: den taber ingenting, selv med mange tråde. Det er klassen <b>under test</b>.
+@@s020 6.1.1 · Klassen
+@@s021 CasHistogram (kompileret med javac)
+@@s022 <code>private</code>: tilstanden forlader ikke klassen. <code>final</code>: sikker publicering (reglen for final-felter).
+@@s023 <code>new AtomicInteger[span]</code> opretter <b>tomme</b> positioner (<code>null</code>), ikke nuller: hver position skal fyldes, ellers giver den første <code>increment</code> en <code>NullPointerException</code>.
+@@s024 CAS-løkke: jeg læser, prøver at skrive <i>læst + 1</i>; hvis nogen har ændret værdien imens, fejler CAS'en, og jeg prøver igen. Lock-free. Metoder som <code>incrementAndGet</code> eller <code>getAndSet</code> er <b>forbudt</b> af øvelsen: løkken skal skrives i hånden.
+@@s025 Et enkelt læs, eller en værdi der aldrig ændrer sig: ingen løkke (wait-free).
+@@s026 Den samme løkke med den nye værdi 0. Man returnerer den værdi, <b>som CAS'en nulstillede</b>, ikke en genlæsning foretaget bagefter.
+@@s027 final dækker også det, der er inde i arrayet
+@@s028 Reglen for <code>final</code>-felter gælder ikke kun for referencen <code>counts</code>: en tråd, der ser objektet efter konstruktøren, ser også <b>alt, der kan nås fra det felt</b>, som det var ved konstruktørens afslutning. Den ser altså arrayet og de 30 <code>AtomicInteger</code>, der allerede er oprettet, hver med 0. Senere ændringer er synlige, fordi hver <code>AtomicInteger</code> opfører sig som en <code>volatile</code>.
+@@s029 <b>Uforanderlige variable:</b> referencen <code>counts</code> (final, aldrig tildelt igen) og i praksis indholdet af arrayet: efter konstruktøren peger <code>counts[i]</code> altid på den samme <code>AtomicInteger</code>. Foranderlige er kun værdierne inde i <code>AtomicInteger</code>'erne: de er histogrammets tilstand.
+@@s030 i) Hvorfor tilstanden ikke slipper ud: tre døre, alle lukkede
+@@s031 dato:tilstanden,ok:dør lukket
+@@s032 Tilstanden "slipper ud", hvis et andet objekt får en reference til arrayet eller til en af <code>AtomicInteger</code>'erne: så kunne det ændre dem uden at gå gennem klassens metoder.
+@@s033 Ingen anden klasse kan læse <code>counts</code> direkte.
+@@s034 <code>getCount</code>, <code>getSpan</code> og <code>getAndClear</code> returnerer en <code>int</code>, altså en <b>kopi</b> af tallet, aldrig arrayet eller en <code>AtomicInteger</code>. Ingen metode modtager et array udefra og beholder det.
+@@s035 Konstruktøren starter ingen tråde og sender <code>this</code> til ingen: ingen kan se objektet halvt bygget.
+@@s036 Klar besvarelse 6.1.1
+@@s037 i) Ingen escaping: tilstanden er arrayet <code>counts</code> og <code>AtomicInteger</code>-objekterne i det. Feltet er <code>private</code>, ingen metode returnerer arrayet eller en af dets <code>AtomicInteger</code>'er (de returnerer kun <code>int</code>-værdier), og konstruktøren hverken starter tråde eller sender <code>this</code> til andre objekter. ii) Sikker publicering: <code>counts</code> er <code>final</code>, så enhver tråd, der får en reference til objektet efter konstruktionen, ser arrayet og alle <code>AtomicInteger</code>'erne initialiseret til 0. Senere opdateringer er synlige, fordi hver <code>AtomicInteger</code> opfører sig som en volatile variabel. Uforanderlig: referencen <code>counts</code> og i praksis arrayets indhold (hver plads peger altid på den samme <code>AtomicInteger</code>). Kun værdierne inde i <code>AtomicInteger</code>'erne ændrer sig.
+@@s038 AtomicIntegerArray passer ikke her
+@@s039 Med <code>AtomicIntegerArray</code> og <code>incrementAndGet</code> / <code>getAndSet</code> er klassen trådsikker, men den overtræder teksten: <code>AtomicInteger</code> kræves, og <b>kun</b> <code>get</code> og <code>compareAndSet</code> må bruges.
+@@s040 6.1.2 · Er getAndClear atomisk?
+@@s041 Metoden gør to ting: <b>get</b> (læser værdien) og <b>clear</b> (sætter den tilbage til 0). Spørgsmålet: kan en anden tråd smutte ind imellem de to og få noget til at gå tabt? Med CAS-løkken: nej.
+@@s042 getAndClear(7) og increment(7) sammen
+@@s043 dato:læst værdi,ora:CAS,ok:lykkedes,no:mislykkedes
+@@s044 To tråde på den samme bin.
+@@s045 T1 har lavet "get". "clear" er endnu ikke sket.
+@@s046 T2 smutter netop ind mellem T1's get og clear.
+@@s047 CAS'en skriver kun 0, hvis binen stadig er 5. Den er ikke 5: den nulstiller intet, og T2's forøgelse bliver stående.
+@@s048 Løkken prøver igen. Den returnerede værdi er <b>præcis</b> den, CAS'en erstattede med 0: get og clear sker sammen, i den lykkedes CAS.
+@@s049 get, derefter set(0)
+@@s050 <code>v = c.get(); c.set(0); return v;</code> Hvis T2 forøger mellem de to linjer, sletter <code>set(0)</code> dens forøgelse, og ingen returnerer den: <b>tabt</b>.
+@@s051 get, derefter CAS(v, 0)
+@@s052 CAS'en nulstiller kun, hvis værdien stadig er <code>v</code>. Ellers prøver den igen. Intet går tabt: det virker, som om get og clear var <b>én atomar operation</b>.
+@@s053 Klar besvarelse
+@@s054 Ja. <code>getAndClear</code> læser værdien og kalder derefter <code>compareAndSet(oldValue, 0)</code>, som kun skriver 0, hvis binen stadig indeholder <code>oldValue</code>. Hvis en anden tråd ændrer binen mellem læsningen og CAS'en, fejler CAS'en, og løkken prøver igen. Så når CAS'en lykkes, er den returnerede værdi præcis den værdi, der blev erstattet med 0, og ingen opdatering kan ske imellem og gå tabt: get og clear træder i kraft samlet i den lykkedes CAS.
+@@s055 6.1.3 · Hvad testen gør
+@@s056 <code>countFactors(p)</code> siger, i hvor mange primtal <i>p</i> opløses, og det er <b>binen der skal forøges</b>. Med tallene fra 0 til 9:
+@@s057 tal
+@@s058 opløsning
+@@s059 bin
+@@s060 ingen
+@@s061 er primtal
+@@s062 Resulterende histogram: bin 0 → 2, bin 1 → 4, bin 2 → 3, bin 3 → 1. Testen gør det samme med tallene fra 0 til 4999.
+@@s063 Testen, trin for trin
+@@s064 dato:Histogram1 (sekventiel),due:CasHistogram (parallel),ok:sammenligning
+@@s065 Ingen race: det er det <b>sande</b> resultat.
+@@s066 Tråden for tallet 8 laver <code>increment(3)</code>, den for 9 laver <code>increment(2)</code>… I lambdaen kræves <code>final int num = p;</code>: en lambda bruger kun variable, der ikke ændrer sig, og <code>p</code> ændrer sig ved hver omgang.
+@@s067 Skemaet fra uge 5. Bin 1 og 2 er de mest befolkede: der kolliderer de.
+@@s068 En tabt forøgelse ville efterlade en bin med 1 mindre: <mark class="ok">alle ens</mark> betyder ingen tabt forøgelse i den udførelse.
+@@s069 En test der afslører lidt
+@@s070 Prøvet ved at sætte <code>Histogram1</code> (ikke trådsikker) i den parallelle del: den bestod 100 gentagelser ud af 100. Hver tråd laver én enkelt forøgelse, og barrieren vækker de 5000 tråde næsten én ad gangen, så de kolliderer sjældent. Det er testen, øvelsen beder om, men det er et godt eksempel på "en test der består beviser ingenting". Hver gentagelse varer cirka et sekund (oprettelsen af 5000 tråde koster): 20 gentagelser er nok.
+@@s071 Hvor filen skal ligge
+@@s072 Testen ligger i <code>app/src/test/java/exercises06/TestHistograms.java</code>, med <code>package exercises06;</code>. I <code>src/main</code> er JUnit ikke tilgængelig (det er en <code>testImplementation</code>-afhængighed), og uden pakken kan <code>Histogram1</code>, som ikke er <code>public</code>, ikke ses.

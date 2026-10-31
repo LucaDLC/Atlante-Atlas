@@ -1,0 +1,95 @@
+@@s001 Property-based testing
+@@s002 dato:input chosen by you,due:random input,ok:passes,no:fails
+@@s003 due:random throw,ok:property true,no:counterexample
+@@s004 no:counterexample,ok:after shrinking
+@@s005 dato:pre-condition,due:post-condition,ok:passes,no:exception
+@@s006 dato:generator,ok:values produced,due:link with week 5
+@@s007 dato:scenario (a Boolean),due:property (forAll),ok:test output
+@@s008 Property-based testing
+@@s009 Week 6, slides 2 and 15–19. Scenario tests prove only the cases you imagined. Property-based testing (PBT) writes a <b>law</b> that must hold for all inputs, then proves it on many inputs generated at random with the ScalaCheck library. The contracts of the <a href="s06-contratti.html">previous page</a> become tests.
+@@s010 Scenarios against properties
+@@s011 The problem (slide 2): a <b>scenario test</b> (unit test) proves only the situations for which you wrote a test case, that is those you had foreseen. To cover a lot one needs many cases written by hand: it costs, and precisely the cases you did not think of remain out.
+@@s012 The solution: generate the test data <b>automatically</b>, at random but in a controlled way (with the generators, which we know how to make since week 5), and write the test as a <b>property</b> that must hold on all those inputs.
+@@s013 Scenario test
+@@s014 Property test (PBT)
+@@s015 what you write
+@@s016 an example: input and expected result
+@@s017 a law: "for every input, … holds"
+@@s018 where it comes from
+@@s019 from the requirements
+@@s020 from pre/post-conditions, invariants, API laws
+@@s021 good for
+@@s022 precise edge cases, bugs already seen (regressions)
+@@s023 cases you did not foresee
+@@s024 tools
+@@s025 JUnit, scalatest, …
+@@s026 QuickCheck, ScalaCheck, …
+@@s027 in ScalaCheck
+@@s028 <code>property("…") = </code>a Boolean
+@@s029 <code>property("…") = forAll { … }</code>
+@@s030 The PBT process (slide 17): <b>1.</b> formulate the laws (thinking about pre, post and invariants helps); <b>2.</b> generate random data; <b>3.</b> test the laws on that data. It is closer to formal verification, but remains easy. It does not replace scenarios: they are used together.
+@@s031 A wrong law: the scenario promotes it, forAll rejects it
+@@s032 forAll: the law proven on 100 inputs
+@@s033 <code>forAll</code> is the "for every" of mathematics (a <b>quantifier</b>). You give it a function that receives the inputs and returns a Boolean; ScalaCheck generates 100 random inputs and calls it on each. If it is always true, the test passes; at the first false it stops and shows you the input that made it fail (the <b>counterexample</b>).
+@@s034 The three laws of map on trees (slide 15, from the tests of week 3)
+@@s035 The inputs are the <b>parameters</b> of the lambda: here a random tree <code>t</code>. The law: map with the identity function changes nothing.
+@@s036 ScalaCheck also generates random <b>functions</b> (<code>f: Int =&gt; Int</code>). The law: map does not change the number of nodes.
+@@s037 map twice = map once with the two functions composed (<code>g compose f</code> = first f, then g). The three laws together are a partial contract of map, with pre true.
+@@s038 Two dice: forAll throws until a double six comes out
+@@s039 Reading the output: counterexample and shrinking
+@@s040 When a property fails, ScalaCheck prints <code>! Falsified after N passed tests.</code> and the arguments that made it fail: <code>ARG_0</code> is the first parameter of the lambda, <code>ARG_1</code> the second, and so on. Before printing them it <b>shrinks</b> them: it tries smaller versions and keeps the smallest that still fails. <code>ARG_0_ORIGINAL</code> is the counterexample as it was before.
+@@s041 Three real outputs (Scala 3.8.4, ScalaCheck 1.19)
+@@s042 no:fails,ok:passes,dato:counterexample
+@@s043 The post-condition of abs, proved on 100 Ints. The Int generator of ScalaCheck tries the extreme values on purpose (0, 1, −1, Int.MinValue, Int.MaxValue): it found the overflow.
+@@s044 The shrinking brought a counterexample from 3 huge numbers to List(0, −1). ScalaCheck 1.19 prints the elements in quotes, but they are Ints.
+@@s045 The right law: running twice brings the list back as it was.
+@@s046 From the huge counterexample to the smallest one
+@@s047 ==&gt;: the pre-condition inside the test
+@@s048 With a scenario test the contract of <code>get</code> is proved like this: choose <code>Some(1)</code>, call <code>get</code>, check that it gives 1. Two defects (slide 18): for another number you must write another test; and the contract is not seen anywhere. With PBT the contract becomes the test:
+@@s049 The contract of get as a property test (slide 18)
+@@s050 The quantifier: "for every Option of Int".
+@@s051 <code>==&gt;</code> is the implication: "if … then …". If the left part is false (here: oa is None), the input is <b>discarded</b>, it counts neither as success nor as failure.
+@@s052 The post-condition, checked only on the inputs that respect the pre. A hundred tests without tables of cases and without loops.
+@@s053 Without ==&gt; it skips None.get; with ==&gt; None is discarded
+@@s054 Generators: Gen and Arbitrary
+@@s055 ScalaCheck has two key types. <b><code>Gen[A]</code></b> is a generator of random values of type A: the same idea as <code>Rand[A]</code> of week 5, and like Rand it has <code>map</code>, <code>flatMap</code> and therefore for/yield. <b><code>Arbitrary[A]</code></b> is the <b>default</b> generator of type A, the one that <code>forAll</code> looks for by itself among the <code>given</code>s when you write <code>forAll { (x: A) =&gt; … }</code>. When you test a new type, you write a generator for it; then you usually write many more tests than generators.
+@@s056 The tree generator (slide 16, from the tests of week 3)
+@@s057 To make trees of A one needs to be able to make As: <code>using</code> asks for an <code>Arbitrary[A]</code> that the compiler finds by itself among the givens (for Int there is already one).
+@@s058 A loaded coin: true 7 times out of 8. It serves to decide leaf or branch.
+@@s059 With true: a leaf. <code>arbA.arbitrary</code> is a <code>Gen[A]</code>; with <code>map</code> it puts the value in a <code>Leaf</code>.
+@@s060 With false: a branch with two subtrees generated in the same way (recursion). Since leaves are 7 out of 8, the trees stay small and the recursion ends.
+@@s061 The <code>given</code> makes the generator the default one for <code>Tree[A]</code>: from here on <code>forAll { (t: Tree[Int]) =&gt; … }</code> works.
+@@s062 Piece of ScalaCheck
+@@s063 What it does
+@@s064 Example (run)
+@@s065 <code>Gen.choose(a, b)</code>
+@@s066 a number between a and b
+@@s067 <code>Gen.choose(1, 6)</code>: 3, 4, 1, 3, 5, 2, …
+@@s068 <code>Gen.frequency(p -&gt; g, …)</code>
+@@s069 chooses with weights
+@@s070 <code>7 -&gt; true, 1 -&gt; false</code>: true 7 times out of 8
+@@s071 <code>Gen.const(x)</code>
+@@s072 always x
+@@s073 used in the file of the exercise for infinite lists
+@@s074 <code>arbitrary[A]</code>
+@@s075 the default Gen of A
+@@s076 <code>arbitrary[Int]</code>: 1, 1664308277, −2147483648, …
+@@s077 <code>g.suchThat(p)</code>
+@@s078 keeps only the values that satisfy p
+@@s079 <code>arbitrary[List[Int]].suchThat(_.nonEmpty)</code>: non-empty lists
+@@s080 <code>g.sample</code>
+@@s081 a sample value (Option)
+@@s082 to look at what a generator produces
+@@s083 From the die to the dice: Gen composes like Rand
+@@s084 What a test file of the course is like
+@@s085 All the <code>Exercises.test.scala</code> files of the past weeks, and the exercise file of this week, are written like this. This week the role is reversed: the code (LazyList) is already there, and you write the test file.
+@@s086 From the exercise file of week 6
+@@s087 An object that extends <code>Properties</code>: it is the container of the tests. <code>"testing"</code> is the prefix that appears in the output.
+@@s088 A <b>scenario test</b>: on the right there is a Boolean. Output: <code>OK, proved property.</code>
+@@s089 Inside the test the default generator for <code>LazyList[Int]</code> is declared: non-empty lists only. It holds only inside this test.
+@@s090 Two properties joined with <code>&amp;&amp;</code>, each with a label <code>:|</code>. If it fails, the output says which of the two: <code>Labels of failing property: …</code>.
+@@s091 Scenario, property, labels: what the output writes
+@@s092 This week's homework, in one line
+@@s093 Write tests for <code>headOption</code>, <code>take</code>, <code>drop</code>, <code>map</code>, <code>append</code> of the LazyList. The autograder runs them on broken versions of the LazyList (the <b>mutants</b>): the more mutants you make fail, the more points. The right version (<code>lazyList00</code>) must pass all your tests, otherwise you lose 35%.
+@@s094 Ready sentences (written exam)
+@@s095 "Property-based testing states laws that must hold for all inputs, generates random inputs, and checks the laws on them; ScalaCheck shrinks a failing input to a minimal counterexample."

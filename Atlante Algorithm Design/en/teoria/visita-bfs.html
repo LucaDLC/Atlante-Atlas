@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>BFS: breadth-first visit</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+const N = (id,x,y,t) => ({id,tipo:'nodo',x,y,t,r:20});
+const A = (id,da,a) => ({id,tipo:'arco',da,a,dir:false});
+const Q = v => ({id:'q',tipo:'celle',x:120,y:218,cw:44,ch:30,valori:v,indici:false});
+SCENE.bfs = {
+  w: 520, h: 270, lato: true,
+  legenda: 'ora:node just extracted,dato:in the queue,ok:visited, with its distance',
+  oggetti: [
+    N('s',60,70,'s'), N('a',170,30,'a'), N('b',170,110,'b'), N('c',280,30,'c'), N('d',280,110,'d'), N('e',390,70,'e'),
+    A('sa','s','a'), A('sb','s','b'), A('ac','a','c'), A('bd','b','d'), A('ce','c','e'), A('de','d','e'),
+    {id:'lab',tipo:'testo',x:20,y:236,t:'coda',size:12,bold:true,anchor:'start'},
+    Q(['s'])
+  ],
+  passi: [
+    { nota: 'Source <b>s</b>. I put s in the queue and mark <code>d(s) = 0</code>. The queue is FIFO: whoever entered first leaves first.', set: { s:{tono:'dato',sotto:'d=0'}, q:{valori:['s'],toni:{0:'dato'}} } },
+    { nota: 'I extract <b>s</b>. The unseen neighbours are <b>a</b> and <b>b</b>: they get <code>d = d(s) + 1 = 1</code> and parent s. I put them in the queue.', set: { s:{tono:'ora',sotto:'d=0'}, a:{tono:'ok',sotto:'d=1'}, b:{tono:'ok',sotto:'d=1'}, sa:{tono:'ok'}, sb:{tono:'ok'}, q:{valori:['a','b'],toni:{0:'dato',1:'dato'}} } },
+    { nota: 'I extract <b>a</b>. The neighbour <b>s</b> is already seen: I skip it. The neighbour <b>c</b> is new: <code>d(c) = 2</code>.', set: { s:{tono:null,sotto:'d=0'}, a:{tono:'ora',sotto:'d=1'}, c:{tono:'ok',sotto:'d=2'}, ac:{tono:'ok'}, q:{valori:['b','c'],toni:{0:'dato',1:'dato'}} } },
+    { nota: 'I extract <b>b</b>. Neighbours: s (seen), <b>d</b> (new, <code>d = 2</code>).', set: { a:{tono:'ok',sotto:'d=1'}, b:{tono:'ora',sotto:'d=1'}, d:{tono:'ok',sotto:'d=2'}, bd:{tono:'ok'}, q:{valori:['c','d'],toni:{0:'dato',1:'dato'}} } },
+    { nota: 'I extract <b>c</b>. Neighbours: a (seen), <b>e</b> (new, <code>d = 3</code>).', set: { b:{tono:'ok',sotto:'d=1'}, c:{tono:'ora',sotto:'d=2'}, e:{tono:'ok',sotto:'d=3'}, ce:{tono:'ok'}, q:{valori:['d','e'],toni:{0:'dato',1:'dato'}} } },
+    { nota: 'I extract <b>d</b>. Its neighbour e is already in the queue with <code>d = 3</code>: the distance from d (2 + 1) is the same, nothing changes.', set: { c:{tono:'ok',sotto:'d=2'}, d:{tono:'ora',sotto:'d=2'}, de:{tono:'ok'}, q:{valori:['e'],toni:{0:'dato'}} } },
+    { nota: 'I extract <b>e</b>: no new neighbours. The queue is empty: the BFS is finished. Distances: s 0, a and b 1, c and d 2, e 3.', set: { d:{tono:'ok',sotto:'d=2'}, e:{tono:'ok',sotto:'d=3'}, q:{valori:['vuota'],toni:{}} } }
+  ]
+};
+})();
+</script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+const N = (id,x,y,t,tono) => ({id,tipo:'nodo',x,y,t,r:20,tono});
+const A = (id,da,a,extra) => Object.assign({id,tipo:'arco',da,a,dir:false},extra||{});
+SCENE.bip = {
+  w: 520, h: 230, lato: true,
+  legenda: 'dato:layer 0,ora:layer 1,no:arc inside a layer (odd cycle)',
+  oggetti: [
+    N('a',120,40,'a'), N('b',60,160,'b'), N('c',180,160,'c'), N('d',330,100,'d'),
+    A('ab','a','b'), A('ac','a','c'), A('bc','b','c',{tono:'no',nascosto:true}), A('ad','a','d'),
+    {id:'t1',tipo:'testo',x:320,y:40,t:'',size:12,bold:true}
+  ],
+  passi: [
+    { nota: 'I do a BFS from <b>a</b>. The layers are: layer 0 = {a}, layer 1 = the neighbours of a.', set: { a:{tono:'dato'} } },
+    { nota: 'Layer 1: <b>b, c, d</b>. Colour them with two alternating colours: the rule is that every arc connects two <b>adjacent</b> layers.', set: { b:{tono:'ora'}, c:{tono:'ora'}, d:{tono:'ora'}, ab:{tono:'ok'}, ac:{tono:'ok'}, ad:{tono:'ok'}, t1:{t:'strati: {a} {b,c,d}'} } },
+    { nota: 'Now the arc <b>b–c</b>: it connects two nodes <b>of the same layer</b>. If I colour them differently, the colour does not come back: there is a cycle of odd length (a, b, c).', set: { bc:{tono:'no',nascosto:false}, t1:{t:'arco nello stesso strato: NON bipartito',tono:'no'} } }
+  ]
+};
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>BFS: breadth-first visit</h1>
+  <p class="lede">The BFS (breadth-first search, visit in breadth) explores the graph by layers: first all the nodes at distance 1, then at distance 2, and so on. It is the right algorithm every time the question is "how many steps at minimum".</p>
+</header>
+
+<section>
+  <h2>The problem and the idea</h2>
+<p>The problem: from a source <code>s</code> I want to know which nodes I can reach and, for each, the <b>minimum number of arcs</b> (the <b>distance</b>, <code>d(v)</code>). The graph has no weights: each arc is worth 1.</p>
+<p>The idea is a <b>FIFO queue</b> (first in, first out). The node that entered first leaves first. So the nodes come out in order of distance: first those at distance 0, then 1, then 2. It is the same as going down by layers from the source.</p>
+  <figure class="scena" data-scena="bfs" data-titolo="BFS from s: the queue and the distances"></figure>
+</section>
+<section>
+  <h2>The steps, one by one</h2>
+<ol>
+  <li>Put <code>s</code> in the queue, <code>d(s) = 0</code>, mark <code>s</code> as seen.</li>
+  <li>Extract the first node <code>u</code> from the queue.</li>
+  <li>For each neighbour <code>v</code> not yet seen: <code>d(v) = d(u) + 1</code>, <code>parent(v) = u</code>, mark <code>v</code> and put it in the queue.</li>
+  <li>Repeat from step 2 until the queue is empty.</li>
+</ol>
+<p>The <b>parent</b> of a node is the node from which you discovered it. Following the parents backwards you rebuild the minimum path.</p>
+<div class="box attenzione" data-tit="Seen at the right moment"><p>A node is marked as seen <b>when it enters the queue</b>, not when it leaves. If you mark it on exit, it can enter the queue several times and the BFS becomes slow, even though the result remains correct.</p></div>
+</section>
+<section>
+  <h2>Why it works</h2>
+<p>The queue makes the nodes come out in non-decreasing order of distance. So the <b>first time</b> you meet a node <code>v</code> you arrive at it by the shortest possible path. Every arc of the undirected graph connects two nodes of layers that differ by at most 1: that is why no shorter path can escape the layers.</p>
+<div class="box idea" data-tit="The reason in one sentence"><p>The queue is always sorted by distance, and a node more distant than one already in the queue plus one step is never added.</p></div>
+</section>
+<section>
+  <h2>Cost and when to use it</h2>
+<p>Every node enters the queue once only, and every arc is looked at at most twice. Cost: <code>O(n + m)</code>, linear in the size of the graph.</p>
+<p>Use the BFS when the question is one of these:</p>
+<ul>
+  <li><b>reachability</b>: "from s can I reach t?", "which nodes can I reach?";</li>
+  <li><b>minimum distance without weights</b>: "the minimum number of moves", "the minimum number of passages";</li>
+  <li><b>connected components</b>: a BFS for each node not yet visited;</li>
+  <li><b>bipartiteness</b>: see the following section.</li>
+</ul>
+<p>With weights different from 1 the BFS is wrong: use Dijkstra (weights ≥ 0) or Bellman-Ford (weights also negative).</p>
+</section>
+<section>
+  <h2>The bipartiteness test</h2>
+<p>A graph is <b>bipartite</b> if its nodes can be coloured with two colours without two adjacent nodes having the same colour. Equivalently: it has no cycles of odd length.</p>
+<p>To check it, do a BFS and colour each layer with a different colour. If an arc connects two nodes of the <b>same layer</b>, you have found an odd cycle and the graph is not bipartite.</p>
+  <figure class="scena" data-scena="bip" data-titolo="An arc inside a layer reveals an odd cycle"></figure>
+</section>
+<section>
+  <h2>The code, side by side</h2>
+  <p>This page explains the concept. The Java code that implements it, with a line-by-line explanation and the syntax notes needed, is on the side-by-side page.</p>
+  <p><a href="../codice/visita-bfs.html"><b>→ Java code for this topic</b></a></p>
+</section>
+<section>
+  <h2>At the exam</h2>
+<div class="box esame" data-tit="At the exam">
+<p>When the question asks for the <b>minimum number of steps</b> (or of moves, or of arcs) on a graph without weights, the answer is BFS. Write: <i>"Run BFS from s. The first time a node is discovered it is reached by a shortest path, because the queue processes nodes in non-decreasing distance. Time O(n + m)."</i></p>
+<p>Typical mistake: writing DFS. The DFS finds <i>a</i> path, not the shortest one.</p>
+</div>
+</section>
+<section>
+  <h2>Quick reference</h2>
+<div class="tab-wrap"><table class="tab"><thead><tr><th>item</th><th>meaning</th><th>note</th></tr></thead><tbody><tr><td>d(v)</td><td>minimum distance from s</td><td>written by the BFS</td></tr><tr><td>parent(v)</td><td>from where you discovered v</td><td>to rebuild the path</td></tr><tr><td>time</td><td>O(n + m)</td><td>each node and arc once</td></tr><tr><td>when</td><td>distances without weights, reachability</td><td>not with weights</td></tr></tbody></table></div>
+</section>
+
+</main>
+</body>
+</html>

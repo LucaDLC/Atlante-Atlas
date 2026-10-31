@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Monoid: combine and have a neutral element</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  const N = (id, x, y, t, extra) => Object.assign({ id, tipo: 'rett', x, y, w: 150, h: 56, t }, extra || {});
+  const P = (id, x, y, t, extra) => Object.assign({ id, tipo: 'nodo', x, y, r: 21, t }, extra || {});
+  const A = (id, da, a, extra) => Object.assign({ id, tipo: 'arco', da, a, dir: true, t: '' }, extra || {});
+  const T = (id, x, y, t, extra) => Object.assign({ id, tipo: 'testo', x, y, t, size: 13, bold: true, anchor: 'start' }, extra || {});
+
+  SCENE.def = {
+    w: 540, h: 180, lato: true,
+    legenda: 'ora:what I explain now,ok:result,dato:example',
+    oggetti: [
+      N('A', 40, 40, 'A = Int'),
+      N('op', 195, 40, '⊕ = +'),
+      N('zero', 350, 40, '0 = zero'),
+      T('ex', 40, 150, '', { size: 14 })
+    ],
+    passi: [
+      { nota: `A <b>monoid</b> is made of a <b>type A</b> and two things about A: a binary operation <b>⊕</b> (in Scala <code>combine</code>) and a <b>neutral element 0</b> (in Scala <code>empty</code>). Here A is Int.`, set: { A: { tono: 'ora' } } },
+      { nota: `<b>⊕</b> takes two values of A and returns one. For Int, ⊕ is the sum <code>+</code>.`, set: { A: { tono: null }, op: { tono: 'ora' } } },
+      { nota: `<b>0</b> is the neutral element: combined with another value it does not change it. For the sum the neutral element is 0, because x + 0 = x.`, set: { op: { tono: null }, zero: { tono: 'ora' } } },
+      { nota: `Example from the slides, (Int, 0, +): 2 + 3 = 5 and 5 + 0 = 5. The neutral element changes nothing.`, set: { zero: { tono: null }, ex: { t: '2 ⊕ 3 = 5 · 5 ⊕ 0 = 5', tono: 'ok' } } },
+      { nota: `The same pattern with the product: (Int, 1, *). The operation changes and so does the neutral element (1, not 0), but the type A stays Int.`, set: { ex: { t: '2 ⊕ 3 = 6 · 6 ⊕ 1 = 6', tono: 'ok' }, op: { t: '⊕ = *', tono: 'ora' }, zero: { t: '1', tono: 'ora' } } }
+    ]
+  };
+
+  SCENE.assoc = {
+    w: 540, h: 290, lato: true,
+    legenda: 'dato:values,ora:pair being combined,ok:partial or final result,spento:grouping not used',
+    oggetti: [
+      P('l1', 60, 200, '1', { tono: null }), P('l2', 180, 200, '2'), P('l3', 300, 200, '3'), P('l4', 420, 200, '4'),
+      P('p12', 120, 120, '3', { nascosto: true }), P('p34', 360, 120, '7', { nascosto: true }),
+      P('root', 240, 40, '10', { nascosto: true }),
+      A('a1', 'l1', 'p12', { nascosto: true }), A('a2', 'l2', 'p12', { nascosto: true }),
+      A('a3', 'l3', 'p34', { nascosto: true }), A('a4', 'l4', 'p34', { nascosto: true }),
+      A('a5', 'p12', 'root', { nascosto: true }), A('a6', 'p34', 'root', { nascosto: true }),
+      T('alt', 40, 262, '', { size: 14 })
+    ],
+    passi: [
+      { nota: `Four values: 1, 2, 3, 4. I want to combine them with ⊕. I can choose which two to combine first.`, set: { l1: { tono: 'dato' }, l2: { tono: 'dato' }, l3: { tono: 'dato' }, l4: { tono: 'dato' } } },
+      { nota: `First half: <b>1 ⊕ 2 = 3</b>. The arrows show which values enter the calculation.`, set: { l1: { tono: 'ora' }, l2: { tono: 'ora' }, a1: { nascosto: false }, a2: { nascosto: false }, p12: { nascosto: false, tono: 'ok' } } },
+      { nota: `Second half: <b>3 ⊕ 4 = 7</b>. The two halves do not depend on each other: they can be computed in <b>parallel</b>.`, set: { l1: { tono: 'dato' }, l2: { tono: 'dato' }, l3: { tono: 'ora' }, l4: { tono: 'ora' }, a3: { nascosto: false }, a4: { nascosto: false }, p34: { nascosto: false, tono: 'ok' } } },
+      { nota: `I recombine the two results: <b>3 ⊕ 7 = 10</b>. The final answer is 10.`, set: { l3: { tono: 'dato' }, l4: { tono: 'dato' }, p12: { tono: 'spento' }, p34: { tono: 'spento' }, a5: { nascosto: false }, a6: { nascosto: false }, root: { nascosto: false, tono: 'ok' } } },
+      { nota: `The same answer grouping on the left: <b>((1 ⊕ 2) ⊕ 3) ⊕ 4 = 10</b>. <b>Associativity</b> guarantees that the grouping does not change the result, so I can choose the most convenient one.`, set: { root: { tono: 'spento' }, p12: { tono: null }, p34: { tono: null }, alt: { t: '((1 ⊕ 2) ⊕ 3) ⊕ 4 = 10', tono: 'ok' } } }
+    ]
+  };
+
+  SCENE.tc = {
+    w: 540, h: 260, lato: true,
+    legenda: 'ora:what comes in now,dato:instances,ok:call with the instance',
+    oggetti: [
+      N('trait', 150, 20, 'trait Monoid[A]', { w: 240, h: 50 }),
+      N('si', 40, 130, 'stringMonoid', { w: 200, h: 50, tono: 'dato', nascosto: true }),
+      N('mi', 300, 130, 'maxMonoid', { w: 200, h: 50, tono: 'dato', nascosto: true }),
+      A('ai', 'si', 'trait', { nascosto: true }), A('am', 'mi', 'trait', { nascosto: true }),
+      N('cc', 120, 200, 'concatenate(lista, istanza)', { w: 300, h: 44, tono: 'ora', nascosto: true })
+    ],
+    passi: [
+      { nota: `<b>trait Monoid[A]</b> describes the interface: <code>combine</code> and <code>empty</code> for a type A. It is a <b>type class</b>: a form to be filled for every type you want to make a monoid.`, set: { trait: { tono: 'ora' } } },
+      { nota: `<b>stringMonoid</b> is a <b>value</b> of type Monoid[String]: the instance that says how String becomes a monoid (concatenation and "").`, set: { trait: { tono: null }, si: { nascosto: false }, ai: { nascosto: false } } },
+      { nota: `<b>maxMonoid</b> is another instance, Monoid[Int]: ⊕ is the maximum and the neutral element is Int.MinValue. The same type Int can have different instances.`, set: { mi: { nascosto: false }, am: { nascosto: false } } },
+      { nota: `<b>concatenate</b> receives the instance as an argument, together with the list. The same code works with different types and operations, because the instance is passed as a value.`, set: { si: { tono: 'dato' }, mi: { tono: 'dato' }, cc: { nascosto: false } } }
+    ]
+  };
+
+  SCENE.omo = {
+    w: 540, h: 290, lato: true,
+    legenda: 'dato:starting values,due:step,ora:calculation just done,ok:result,spento:not yet',
+    oggetti: [
+      T('ml', 40, 22, 'M: stringhe, con concatenazione e ""', { size: 12 }),
+      N('x', 40, 50, '"foo"', { w: 120, h: 50, tono: 'dato' }),
+      N('y', 190, 50, '"bar"', { w: 120, h: 50, tono: 'dato' }),
+      N('xy', 340, 50, '"foobar"', { w: 150, h: 50, tono: 'spento', nascosto: true }),
+      T('nl', 40, 150, 'N: interi, con + e 0', { size: 12 }),
+      N('fx', 40, 180, '3', { w: 120, h: 50, tono: 'spento', nascosto: true }),
+      N('fy', 190, 180, '3', { w: 120, h: 50, tono: 'spento', nascosto: true }),
+      N('fxy', 340, 180, '6', { w: 150, h: 50, tono: 'spento', nascosto: true }),
+      A('f1', 'x', 'fx', { nascosto: true, t: 'f' }), A('f2', 'y', 'fy', { nascosto: true, t: 'f' }),
+      A('f3', 'xy', 'fxy', { nascosto: true, t: 'f' }),
+      T('c', 40, 262, '', { size: 14 })
+    ],
+    passi: [
+      { nota: `A <b>homomorphism</b> f: M → N is a function that <b>respects</b> the two structures. M and N are monoids: here M = strings, N = integers. f = <code>length</code>.`, set: { x: { tono: 'dato' }, y: { tono: 'dato' } } },
+      { nota: `I apply f to each value: f("foo") = 3 and f("bar") = 3.`, set: { f1: { nascosto: false }, f2: { nascosto: false }, fx: { nascosto: false, tono: 'due' }, fy: { nascosto: false, tono: 'due' } } },
+      { nota: `First I combine in M: "foo" ⊕ "bar" = "foobar". Then I apply f: f("foobar") = 6.`, set: { xy: { nascosto: false, tono: 'ora' }, f3: { nascosto: false }, c: { t: '"foo" ⊕ "bar" = "foobar"' } } },
+      { nota: `The rule requires f(x ⊕ y) = f(x) ⊗ f(y). Here 6 = 3 + 3, so it holds. The neutral element must be respected too: f("") = 0.`, set: { fxy: { nascosto: false, tono: 'ok' }, xy: { tono: 'dato' }, fx: { tono: 'dato' }, fy: { tono: 'dato' }, c: { t: 'f(x ⊕ y) = f(x) + f(y): 6 = 3 + 3', tono: 'ok' } } },
+      { nota: `An <b>isomorphism</b> is a homomorphism that can be inverted: f and its inverse are both homomorphisms. Example: String and List[Char] with <code>toList</code> and <code>mkString</code>. Nothing is lost.`, set: { f1: { tono: 'spento' }, f2: { tono: 'spento' }, f3: { tono: 'spento' }, c: { t: 'isomorfismo: String ↔ List[Char]', tono: 'ok' } } }
+    ]
+  };
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <div class="occhiello"><span>Week 9</span></div>
+  <h1>Monoid: combine and have a neutral element</h1>
+  <p class="lede">The first of the four concepts of the week (monoid, foldable, functor, monad). A monoid is the simplest thing that can be reduced in pieces: an operation that combines two values and a value that changes nothing. From here come <a href="s09-foldable.html">folds and parallel reductions</a>.</p>
+</header>
+
+<section>
+  <h2>Definition</h2>
+  <p>A <b>monoid</b> on a type <code>A</code> has two parts:</p>
+  <ul>
+    <li>a <b>binary operation</b> <b>⊕</b>, in Scala <code>combine</code>: it takes two values of A and returns one. The symbol ⊕ means "combine".</li>
+    <li>a <b>neutral element</b> <b>0</b>, in Scala <code>empty</code>: a value of A that, combined with another value, does not change it.</li>
+  </ul>
+  <p>Examples from the slides, written as a triple (type, neutral, operation):</p>
+  <div class="tab-wrap"><table class="tab"><thead><tr><th>type A</th><th>neutral 0</th><th>operation ⊕</th></tr></thead><tbody>
+    <tr><td>Int</td><td>0</td><td>+</td></tr>
+    <tr><td>Int</td><td>1</td><td>*</td></tr>
+    <tr><td>String</td><td>""</td><td>concatenation</td></tr>
+  </tbody></table></div>
+  <figure class="scena" data-scena="def" data-titolo="A monoid is type, neutral and operation"></figure>
+</section>
+
+<section>
+  <h2>The two laws</h2>
+  <p>For the combination to be useful, <code>combine</code> and <code>empty</code> must respect two laws, for every value x, y, z of A:</p>
+  <ul>
+    <li><b>Associativity</b>: <code>(x ⊕ y) ⊕ z = x ⊕ (y ⊕ z)</code>. It does not matter where you put the brackets. This allows splitting a list into two halves and reducing them separately.</li>
+    <li><b>Identity (neutral)</b>: <code>x ⊕ 0 = x</code> and <code>0 ⊕ x = x</code>. The neutral element changes nothing on either side.</li>
+  </ul>
+  <p>The Scala compiler does not check these laws: it accepts any <code>combine</code>. The laws are checked with tests (property-based, see <a href="s06-pbt.html">Property-based testing</a>).</p>
+  <figure class="scena" data-scena="assoc" data-titolo="Four values, two ways of grouping, the same result"></figure>
+  <div class="box attenzione" data-tit="Warning">Associativity does not mean commutativity. The monoid does not require <code>x ⊕ y = y ⊕ x</code>: subtraction is not a monoid because it is not associative: (5 − 3) − 1 ≠ 5 − (3 − 1). Strings with concatenation are a monoid, even though "ab" ≠ "ba".</div>
+</section>
+
+<section>
+  <h2>The type class in Scala</h2>
+  <p>A <b>type class</b> is an interface parameterised on the type. <code>Monoid[A]</code> describes how a type <code>A</code> behaves, without A having to "know" that it is a monoid. Each <b>instance</b> is a value that is passed together with the data.</p>
+  <figure class="codice" data-titolo="trait Monoid[A] (from the slides, simplified)">
+<pre data-lang="scala">trait Monoid[A]:
+  def combine(a1: A, a2: A): A
+  def empty: A
+  object laws:
+    def associative(using Arbitrary[A], Equality[A]): Prop = ...</pre>
+    <ol class="spiega">
+      <li data-righe="1" data-segna="trait@due|Monoid[A]@ora"><p><code>trait</code> defines an interface. <code>[A]</code> is a <b>type parameter</b>: the type that the monoid combines. <code>Monoid</code> alone is not enough: you always need <code>Monoid[something]</code>.</p></li>
+      <li data-righe="2" data-segna="combine@ora"><p><code>def combine(a1: A, a2: A): A</code> is the signature of ⊕: two A as input, one A as output. <code>def</code> introduces a function, <code>a1</code> and <code>a2</code> are the names of the two arguments.</p></li>
+      <li data-righe="3" data-segna="empty@ora"><p><code>def empty: A</code> is the neutral element. It takes no arguments: it is a fixed value for each instance.</p></li>
+      <li data-righe="4-5" data-segna="object laws@due"><p><code>object laws</code> is a nested object: it contains the laws as properties to test. It has access to <code>combine</code> and <code>empty</code> because it is inside the trait.</p></li>
+      <li data-righe="5" data-segna="using Arbitrary[A]@due"><p><code>using</code> indicates an <b>implicit parameter</b>. <code>Arbitrary[A]</code> tells ScalaCheck how to generate values of A for the tests. <code>Equality[A]</code> tells how to compare them.</p></li>
+    </ol>
+  </figure>
+  <h3>Instances: one value for each type</h3>
+  <p>To make <code>String</code> a monoid you write a value of type <code>Monoid[String]</code>. An instance is a value: it is created by instantiating the trait.</p>
+  <figure class="scena" data-scena="tc" data-titolo="The trait, two instances, and a function that receives them"></figure>
+  <div class="box regola" data-tit="How to write an instance">Write <code>val stringMonoid: Monoid[String] = new Monoid[String]: …</code>, with <code>combine</code> and <code>empty</code> inside. The type after the colon says which type is becoming a monoid.</div>
+</section>
+
+<section>
+  <h2>Homomorphisms and isomorphisms</h2>
+  <p>A <b>homomorphism</b> between a monoid <code>(M, ⊕, 0)</code> and a monoid <code>(N, ⊗, 1)</code> is a function <code>f: M → N</code> that respects the structure:</p>
+  <ul>
+    <li>distributivity: <code>f(x ⊕ y) = f(x) ⊗ f(y)</code> for every x, y in M;</li>
+    <li>neutral: <code>f(0) = 1</code>.</li>
+  </ul>
+  <p>So you can combine first and apply f afterwards, or apply f first and combine afterwards: the result is the same. Example from the slides: f(s) = <code>s.size</code> from String (with concatenation and "") to Int (with + and 0). It holds that <code>"foo".size + "bar".size = ("foo" + "bar").size</code>.</p>
+  <figure class="scena" data-scena="omo" data-titolo="The length respects concatenation"></figure>
+  <p>An <b>isomorphism</b> is a homomorphism in both directions: f and its inverse g are both homomorphisms. Examples from the slides:</p>
+  <ul>
+    <li>String and <code>List[Char]</code>, with <code>toList</code> and <code>mkString</code>: one moves from one to the other without losing information;</li>
+    <li><code>(Boolean, false, ||)</code> and <code>(Boolean, true, &amp;&amp;)</code>, with negation: De Morgan's law says <code>¬(x ∨ y) = ¬x ∧ ¬y</code>, and <code>¬false = true</code>.</li>
+  </ul>
+  <div class="box idea" data-tit="Why we care">If two monoids are isomorphic, a calculation done in one can be carried over to the other. This is why a string and a list of characters are treated the same way in calculations in pieces.</div>
+</section>
+
+<section>
+  <h2>Where it is used</h2>
+  <p>The monoid is the minimal condition to reduce a collection <b>in any order and in pieces</b>. On the <a href="s09-foldable.html">next page</a> you will see the <code>fold</code> and <code>foldMap</code> built on a monoid. The code of the concepts is in the <a href="../esempi/s09-monoid.html">side-by-side examples page</a>.</p>
+</section>
+
+</main>
+</body>
+</html>

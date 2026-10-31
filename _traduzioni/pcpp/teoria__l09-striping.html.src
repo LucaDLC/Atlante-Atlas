@@ -1,0 +1,31 @@
+@@s001 Lock striping e LongAdder
+@@s002 <span>Settimana 9 · Performance</span>
+@@s003 Lock striping e LongAdder
+@@s004 Il caso di studio della lezione: un contatore condiviso, con nove implementazioni. Il passo chiave è dividere un lock unico in tanti lock indipendenti, con il padding che tiene ognuno sulla sua linea di cache.
+@@s005 Un contatore, un lock
+@@s006 Il caso di studio: un contatore <code>long</code> a 64 bit, condiviso da più thread, con <code>add</code> e <code>longValue</code>. La prima versione usa un lock solo (<code>synchronized</code> su un oggetto). È corretta, ma tutti i thread si contendono lo stesso lock e la sua linea di cache: il ping-pong della pagina precedente.
+@@s007 Lock striping: un lock per ogni stripe
+@@s008 <b>Lock striping</b> vuol dire dividere lo stato in più parti (stripe), ognuna con il suo lock. Thread diversi di solito prendono lock diversi, quindi si contendono di meno. Il codice della lezione usa 64 stripe.
+@@s009 Striping.java
+@@s010 <code>logS = 6</code>, quindi <code>stripeCount = 2^6 = 64</code>. <code>stripeMask = 63</code> è il numero binario 111111: con l’AND, ogni valore diventa un indice da 0 a 63.
+@@s011 Il costruttore crea un oggetto lock per ogni stripe. Ogni lock protegge il suo elemento dell’array <code>counts</code>.
+@@s012 <code>threadId()</code> dà un numero per ogni thread. L’AND con <code>stripeMask</code> lo riduce a 0–63: è come <code>% 64</code>, più veloce. Thread diversi finiscono di solito su stripe diverse.
+@@s013 Il thread prende il lock della <b>sua</b> stripe, e solo quello. Gli altri thread, con stripe diverse, non lo aspettano.
+@@s014 La lettura del totale somma tutte le stripe. Ognuna si legge sotto il suo lock, perché un altro thread potrebbe scriverci.
+@@s015 Quattro thread di piattaforma, ognuno con 100 000 incrementi di 1. Il risultato corretto è 400 000.
+@@s016 Un incremento. Il <code>add</code> sceglie la stripe in base al thread che lo chiama.
+@@s017 Padding: lock e dati su linee diverse
+@@s018 Anche con 64 stripe, i contatori e i lock sono in array: elementi vicini in un array condividono la linea di cache. Due stripe vicine possono quindi fare false sharing. La soluzione della lezione è il <b>padding</b>: si usano solo gli indici multipli di 16 (<code>padding = 16</code>), e gli altri elementi restano vuoti. Così ogni contatore e ogni lock stanno su una linea propria.
+@@s019 Come un thread sceglie il suo contatore
+@@s020 dato:thread,ora:passo in corso,ok:risultato
+@@s021 <code>threadId()</code> è unico per ogni thread.
+@@s022 L’AND tiene solo i 6 bit bassi: il risultato è sempre fra 0 e 63.
+@@s023 Nessun altro thread usa la stripe 37, se non ne ha lo stesso resto.
+@@s024 I risultati della lezione
+@@s025 La lezione confronta nove versioni del contatore, su un laptop Apple M3 Pro e su un server AMD EPYC 7313. Le conclusioni, dalla slide:
+@@s026 usare un lock non è di per sé lento, ma un lock solo crea <b>contesa</b> e molto traffico tra le cache;
+@@s027 lo striping migliora il codice concorrente, ma le stripe devono stare su linee di cache diverse: il padding serve;
+@@s028 il <code>java.util.concurrent.atomic.LongAdder</code> della libreria fa tutto questo correttamente, ed è la scelta da usare;
+@@s029 le conclusioni valgono per cinque architetture di CPU, dal 2014 al 2023.
+@@s030 Regola pratica
+@@s031 Per un contatore condiviso, usa <code>LongAdder</code>. Non scrivere un lock solo, e non ricopiare lo striping se non ne hai misurato il bisogno.

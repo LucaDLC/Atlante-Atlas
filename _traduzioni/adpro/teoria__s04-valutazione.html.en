@@ -1,0 +1,95 @@
+@@s001 Strict, by-name, lazy
+@@s002 ora:computed now,ok:result,spento:never computed
+@@s003 Same call with two kinds of parameter. <code>id</code> prints its argument and returns it, so one sees when it is computed.
+@@s004 <b>Strict</b> (if1): before entering the function Scala computes the arguments. id(23) → prints 23.
+@@s005 And id(42) → prints 42, even if it will not be needed.
+@@s006 Only now does it enter: if true then 23 else 42 = 23. Output "23 42" (checked).
+@@s007 <b>By-name</b> (if3): it enters at once, the arguments are recipes. cond is true: only the chosen branch is computed, id(23) → prints 23.
+@@s008 id(42) is <b>never</b> computed. Output "23". A <code>lazy val</code> would remember the value after the first use, instead of recomputing it.
+@@s009 ora:condition,due:recipe run,no:recipe never run,ok:value of res
+@@s010 ora:print,ok:value remembered
+@@s011 ora:computation of x,ok:result
+@@s012 ok:computed,spento:never computed
+@@s013 no:wrong,ok:correct
+@@s014 Strict, by-name, lazy
+@@s015 When is the argument of a function computed? <b>Before</b> entering (strict), <b>every time</b> you use it (by-name), or <b>the first time</b> you use it and then no more (lazy). Scala has all three, and the LazyLists of this week rest on the last two.
+@@s016 Three versions of <code>if</code> (Strictness.scala)
+@@s017 <code>id</code> prints its argument and returns it: so we see <b>when</b> an argument is computed.
+@@s018 if1: ordinary parameters (strict)
+@@s019 Ordinary parameters: Scala computes the arguments <b>before</b> entering the function.
+@@s020 It computes the first argument.
+@@s021 And also the second, even if it will not be needed.
+@@s022 Only now does it enter. It has printed <b>both</b> (checked): <code>if1</code> is <b>strict</b>.
+@@s023 if2: functions without arguments (thunks)
+@@s024 Each branch is a function that takes nothing: a <b>recipe</b> (thunk). Inside, <code>onTrue()</code> runs it.
+@@s025 I pass two recipes. Creating a function does not run its body: nothing printed.
+@@s026 Only the recipe of the chosen branch is run.
+@@s027 42 has never been computed (checked). Running a thunk is called <b>forcing</b> it.
+@@s028 if3: by-name parameters
+@@s029 <code>=> A</code> (arrow with nothing on the left): a <b>by-name</b> parameter. Scala creates the recipe for you and runs it each time you write the name. No <code>()</code>.
+@@s030 The call looks like that of <code>if1</code>…
+@@s031 …but it behaves like <code>if2</code>: it prints only 23 (checked). Same meaning, more convenient syntax.
+@@s032 Strict against by-name, with the console
+@@s033 Written
+@@s034 What it is
+@@s035 How you use it inside
+@@s036 When it is computed
+@@s037 ordinary value
+@@s038 before the call
+@@s039 function without arguments (thunk)
+@@s040 each time you write <code>x()</code>
+@@s041 by-name parameter
+@@s042 <code>x</code>, without parentheses
+@@s043 each time you write <code>x</code>
+@@s044 The trap of the poll
+@@s045 <b>What is <code>res</code> worth?</b> Answer: <b>() — the Unit value</b>. 42 &lt; 22 is false, so the recipe of the false branch is run, which <b>prints</b> "b". But <code>println</code> returns <code>Unit</code>, so <code>res = ()</code> (checked: <i>res = ()</i>). Printing is an effect, not the value.
+@@s046 Prints b, but res = ()
+@@s047 <code>lazy val</code>: computes once, then remembers
+@@s048 A by-name parameter is recomputed <b>every time</b> you use it. If you want to compute it only once, put it in a <code>lazy val</code>.
+@@s049 When it is computed
+@@s050 Defined. It prints nothing: nobody has used it yet.
+@@s051 The program goes on. <code>pesante</code> is not yet computed.
+@@s052 First use: computes.
+@@s053 Second use: remembers the result, does not recompute (checked).
+@@s054 convoluted(print(&quot;A&quot;), print(&quot;B&quot;)) — slide 6
+@@s055 Two by-name parameters, put into two <code>lazy val</code>. Then I use each twice.
+@@s056 First use of <code>cacheA</code>: forces <code>a</code>. The order of the definitions does not matter, the order of use does.
+@@s057 First use of <code>cacheB</code>.
+@@s058 Already in cache.
+@@s059 Prints "AB" (checked). Without <code>lazy val</code> it would print "ABAB".
+@@s060 Written
+@@s061 When it is computed
+@@s062 How many times
+@@s063 <code>val x = …</code>
+@@s064 at once
+@@s065 <code>lazy val x = …</code>
+@@s066 at first use
+@@s067 <code>def x = …</code>
+@@s068 at each use
+@@s069 every time
+@@s070 First use computes, then remembers
+@@s071 The three strategies, defined
+@@s072 Call-by-value (strict)
+@@s073 The arguments are computed <b>before</b> the call; in the body their value is substituted.
+@@s074 Call-by-name
+@@s075 The arguments are <b>not</b> computed: in the body the expression itself is substituted, and it is computed at each use.
+@@s076 Lazy
+@@s077 Lazy = call-by-name + <b>memory</b>: the expression is computed at first use and the result is reused afterwards.
+@@s078 Strict function (slide 4)
+@@s079 <span class="m">f(x)</span> is strict if, for every expression <span class="m">x</span> that does not terminate or fails, <span class="m">f(x)</span> also does not terminate or fails. <code>if</code>, <code>&amp;&amp;</code> and <code>||</code> are not strict: <code>false &amp;&amp; crash()</code> is <code>false</code>.
+@@s080 In a <b>pure</b> program the three strategies give the same result: only time and memory change. With effects (prints, random numbers) the results become different, which is why laziness is used with pure code.
+@@s081 when: extending the language with a by-name parameter
+@@s082 The block between braces is the second argument.
+@@s083 Strict: the block is run <b>before</b> entering (checked).
+@@s084 By-name: the block runs only if the <code>if</code> reaches it. This is how "new constructs" such as <code>withScope</code> of Apache Spark are written (slides 9–12).
+@@s085 By value, by name, lazy
+@@s086 What it is for
+@@s087 <b>Non-strict functions</b>: the default of <code>getOrElse(default: => B)</code> is computed only with <code>None</code>.
+@@s088 <b>Large data</b>: computing only the parts that are really needed.
+@@s089 <b>Generators</b>: the infinite list of naturals, of prime numbers, of random numbers (the <a href="s04-lazylist.html">LazyLists</a>).
+@@s090 <b>Separating what from how</b>: you describe a large calculation and run only the piece you need.
+@@s091 Four uses of non-strict evaluation
+@@s092 Typical errors: <code>h</code> against <code>h()</code>
+@@s093 Rule
+@@s094 <code>=> A</code> is used by writing the name. <code>() => A</code> is used by writing <code>name()</code>.
+@@s095 h against h()

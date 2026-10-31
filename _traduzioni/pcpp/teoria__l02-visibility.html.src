@@ -1,0 +1,83 @@
+@@s001 Visibility, reordering, volatile
+@@s002 dato:main (CPU 1),due:t1 (CPU 2),no:valore vecchio,ok:valore aggiornato
+@@s003 ok:termina sempre (c’è happens-before),no:può non terminare
+@@s004 dato:t1,due:t2,no:aggiornamento perso
+@@s005 Visibility, reordering, volatile
+@@s006 Due modi in cui l'esecuzione reale tradisce l'intuizione: una scrittura che un altro thread <b>non vede mai</b> (visibility) e istruzioni eseguite <b>in un altro ordine</b> (reordering). Non sono "problemi di Java": succede in ogni linguaggio con concorrenza. <code>volatile</code> e i lock sono le risposte.
+@@s007 Visibility: la scrittura che non arriva
+@@s008 NoVisibility1.java
+@@s009 t1 continua a leggere <code>running</code>.
+@@s010 Dopo mezzo secondo il main scrive <code>false</code>.
+@@s011 Possibili output: entrambi finiscono, <b>oppure t1 non termina mai</b>. Nessuna operazione di sincronizzazione lega la scrittura del main alle letture di t1.
+@@s012 <b>Intuizione hardware</b> (slide 51): i thread possono girare su CPU diverse. Senza sincronizzazione la CPU può tenere il valore nei suoi registri o nella sua cache, non visibili alle altre CPU. Anche il compilatore JIT può trattare la lettura come costante. Le slide avvertono che la spiegazione hardware è indicativa: la regola precisa la dà il <b>Java Memory Model</b> (lezione 3).
+@@s013 La regola da usare
+@@s014 Una scrittura è garantita visibile a una lettura <b>solo se</b> la scrittura <b>happens-before</b> la lettura. Senza lock, <code>volatile</code>, start/join o simili tra le due, non c'è nessuna garanzia.
+@@s015 Aggiungendo <code>synchronized(o)</code> intorno alla lettura in t1 e alla scrittura nel main (<code>NoVisibility1Synchronized.java</code>) il programma termina sempre: l'<code>unlock</code> del main avviene prima del <code>lock</code> successivo di t1, e questo ordine rende visibile la scrittura.
+@@s016 Due CPU, due cache, una scrittura che resta indietro
+@@s017 Esercizio 2.2: <code>MutableInteger</code>, spiegato bene
+@@s018 Domanda
+@@s019 Risposta
+@@s020 Perché (con il vocabolario del corso)
+@@s021 2.2.1 Può girare per sempre?
+@@s022 sì
+@@s023 la scrittura <code>set(42)</code> e le letture <code>get()</code> non sono ordinate da happens-before: la JVM può legittimamente non far mai vedere 42 a t (visibility)
+@@s024 2.2.2 <code>synchronized</code> su get e set
+@@s025 termina sempre
+@@s026 entrambi usano il lock di <code>mi</code>: l'unlock di <code>set</code> happens-before il lock del <code>get</code> successivo (regola del monitor), quindi quel get vede 42
+@@s027 2.2.3 Solo set synchronized
+@@s028 non garantito
+@@s029 la regola del monitor ordina un unlock e un lock <b>sullo stesso monitor</b>: se <code>get</code> non prende il lock, nessuna regola lega la lettura alla scrittura
+@@s030 2.2.4 Nessun lock, <code>value</code> volatile
+@@s031 termina sempre
+@@s032 regola volatile: una scrittura su una variabile volatile happens-before ogni lettura successiva della stessa variabile
+@@s033 Sulla tua risposta al 2.2.x
+@@s034 Hai spiegato con il JIT che "mette in cache il valore e riscrive il ciclo". È un meccanismo possibile, ma all'orale conviene la spiegazione del corso: <b>non c'è happens-before tra la scrittura e la lettura, quindi la visibilità non è garantita</b>; con <code>synchronized</code> su entrambi i metodi (o con <code>volatile</code>) l'ordine esiste e la lettura vede la scrittura. Così la risposta non dipende da cosa fa un compilatore specifico.
+@@s035 In inglese (2.2.2)
+@@s036 "Making both get() and set() synchronized makes them use the intrinsic lock of mi. By the monitor rule, the unlock at the end of set(42) happens-before the lock at the beginning of any subsequent get(), so that get() is guaranteed to see the value 42 and the loop in t terminates."
+@@s037 Quattro varianti, un arco happens-before
+@@s038 Reordering: le istruzioni che si scambiano
+@@s039 Prima prova da scheduler: quali output ottieni mescolando i passi? Poi apri "Tutti gli interleaving possibili".
+@@s040 Senza sincronizzazione
+@@s041 Perché (0,0) può uscire anche se nessun interleaving lo dà
+@@s042 Mescolando i 4 passi in tutti i 6 modi, (0,0) non esce mai.
+@@s043 Per leggere entrambi 0…
+@@s044 …ma per il program order <code>a=1</code> viene prima di <code>x=b</code> e <code>b=1</code> prima di <code>y=a</code>: servirebbe un ciclo. Nessun ordine totale lo permette.
+@@s045 Tra <code>a=1</code> e <code>x=b</code> non c'è dipendenza di dati né sincronizzazione: <b>CPU o JIT possono scambiarle</b>. Il riordino non cambia il comportamento del thread da solo, ma tra thread diversi non promette niente.
+@@s046 Il programma lo può stampare davvero. È un'esecuzione <b>non sequenzialmente consistente</b> (lezione 3).
+@@s047 Con <code>synchronized</code>
+@@s048 I due corpi dentro synchronized(o)
+@@s049 Versione
+@@s050 nessuna sincronizzazione
+@@s051 sì
+@@s052 sì
+@@s053 sì
+@@s054 sì
+@@s055 <code>synchronized (o)</code> in entrambi
+@@s056 no
+@@s057 sì
+@@s058 sì
+@@s059 no
+@@s060 <code>volatile a, b</code>
+@@s061 no
+@@s062 sì
+@@s063 sì
+@@s064 sì
+@@s065 Con <code>synchronized</code> sparisce anche (1,1): i due corpi vanno uno dopo l'altro, e chi va per primo legge lo 0 iniziale dell'altro. Non perché il lock impedisca il riordino dentro il thread, ma perché la mutua esclusione impedisce di mescolare i corpi.
+@@s066 <code>volatile</code>
+@@s067 <code>volatile</code> è una parola chiave per i campi: <code>volatile boolean running</code>. È una forma <b>debole</b> di sincronizzazione (slide 65): risolve i problemi di visibilità e di riordino su quella variabile, senza bloccare nessuno. Proprio perché non blocca, non può impedire che due thread si mescolino dentro un'operazione composta.
+@@s068 Una variabile <code>volatile</code> non resta nascosta in registri o cache di una CPU: le scritture vengono rese visibili alle altre CPU.
+@@s069 Gli accessi a variabili volatile <b>non vengono riordinati</b>.
+@@s070 Letture e scritture <b>non sono bloccanti</b>.
+@@s071 <b>Non</b> garantisce mutua esclusione: <code>volatile int count; count++</code> resta una race condition.
+@@s072 Visibility
+@@s073 No reordering
+@@s074 Mutua esclusione
+@@s075 <code>volatile</code>
+@@s076 sì
+@@s077 sì
+@@s078 no
+@@s079 lock / <code>synchronized</code>
+@@s080 sì
+@@s081 sì
+@@s082 sì
+@@s083 volatile count++ perde comunque un incremento

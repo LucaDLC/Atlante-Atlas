@@ -1,0 +1,65 @@
+@@s001 Fairness, sult, Mesa
+@@s002 ora:har låsen,due:venter på betingelsen,dato:lige vækket
+@@s003 Tre tråde vil ind i monitoren og venter på låsen i <b>entry queue</b>. Den kaldes en "kø" af historiske grunde: i virkeligheden er det en mængde uden garanteret rækkefølge.
+@@s004 <b>T2</b> vælges (ikke-deterministisk), tager låsen og udfører en metode.
+@@s005 T2 udfører <code>c.await()</code>: den går ind i <b>condition queue</b> og <b>frigiver låsen</b>.
+@@s006 <b>T1</b> vælges, og den laver også <code>await()</code>. (På dette tidspunkt kunne der også komme en <i>spurious wakeup</i> og sende T1 eller T2 tilbage i entry queue uden grund.)
+@@s007 <b>T3</b> er tilbage: den tager låsen og udfører <code>c.signal()</code>.
+@@s008 <code>signal()</code> flytter <b>én</b> tråd fra condition queue til <b>entry queue</b>: her T1, valgt tilfældigt. T1 starter ikke straks: den skal tage låsen igen.
+@@s009 T3 frigiver låsen og er færdig. T1 kan tage låsen. T2 bliver derimod i condition queue: <b>intet garanterer</b>, at den før eller siden vækkes.
+@@s010 Med <code>signalAll()</code> i stedet for <code>signal()</code> ville T2 også være vendt tilbage til entry queue for at konkurrere om låsen.
+@@s011 dato:i køen,ora:har låsen,no:forbikøring,ok:går ind den der har ventet længst
+@@s012 dato:læser R1,due:skrivere,ok:betingelse sand,no:betingelse ændret
+@@s013 dato:læsere inde,no:skriver blokeret,ok:skriver inde
+@@s014 no:CPU spildt,ok:blokeret (ingen CPU)
+@@s015 Fairness, sult, Mesa
+@@s016 Når man kører <code>ReadersWriters.java</code>, læser normalt <b>alle</b> læserne først, og først derefter skriver skriverne. Monitoren er korrekt, men <b>uretfærdig</b>. For at forstå hvorfor skal man se, hvor trådene venter: en monitor har <b>to køer</b>.
+@@s017 Fairness i kurset
+@@s018 En korrekt monitor garanterer gensidig udelukkelse, men den kan stadig behandle nogen dårligt: en tråd, der venter og altid bliver overhalet, kommer aldrig ind. For at ræsonnere over det skal der to køer til: <b>lock queue</b> (dem der venter på at komme ind) og <b>condition queue</b> (dem der er kommet ind, har fundet betingelsen falsk og venter på at blive vækket).
+@@s019 Definition
+@@s020 I dette kursus betyder <b>fairness</b> <b>fravær af sult</b>: hvis en tråd er klar til at komme ind i den kritiske sektion, kommer den før eller siden ind.
+@@s021 Kø
+@@s022 Hvem der er i den
+@@s023 Hvordan man kommer ind
+@@s024 <b>Lock queue</b> (entry queue)
+@@s025 tråde der vil ind i monitoren
+@@s026 ved at kalde <code>lock()</code> med låsen taget, eller efter at være blevet vækket
+@@s027 <b>Condition queue</b>
+@@s028 tråde der allerede er inde og fandt betingelsen falsk
+@@s029 ved at kalde <code>await()</code>
+@@s030 Fair og ikke-fair lås: forbikøring
+@@s031 Hvem der går hvor (slide 28–37)
+@@s032 Tre tråde, én lås, én condition variable
+@@s033 Flaget fair
+@@s034 <code>new ReentrantLock(true)</code> gør <b>entry queue fair</b>: den tråd, der har ventet længst, kommer ind (slide 29). Alene er det ikke nok til at fjerne sult i en monitor: hvis <i>logikken</i> i monitoren altid sender nogen forrest igen (som læserne nedenfor), hjælper køens rækkefølge ikke.
+@@s035 Teknisk note: i slidenes model har heller ikke condition queue en rækkefølge. Den konkrete implementering af <code>ReentrantLock</code> signalerer faktisk trådene i FIFO-orden (dokumentationen for <code>newCondition()</code>); til øvelserne ræsonnerer man med kursets model.
+@@s036 Mesa over for Hoare
+@@s037 Mesa — Javas semantik
+@@s038 Vakte tråde vender tilbage til <b>entry queue</b> og konkurrerer med dem, der allerede er der. Mellem vækkelsen og det øjeblik, de genoptager, kan en anden tråd have <b>ændret tilstanden</b>: betingelsen, der vækkede dem, gælder muligvis ikke længere.
+@@s039 Hoare
+@@s040 Tråde der venter på en condition variable har <b>prioritet</b> frem for dem i entry queue: den der vækkes, genoptager straks, med betingelsen stadig sand.
+@@s041 Konsekvens
+@@s042 Da Java er Mesa, skal vagten i et <code>await()</code> altid stå i en <b><code>while</code></b>, aldrig i en <code>if</code>. Eksempel trin for trin på siden <a href="l02-monitor.html">Monitor</a>.
+@@s043 Kommer en vakt tråd straks ind, eller stiller den sig i kø igen?
+@@s044 Skrivernes sult
+@@s045 Hvorfor en skriver i den almindelige ReadWriteMonitor kan vente for evigt
+@@s046 En læser venter kun, hvis der er en skriver <b>inde</b>.
+@@s047 En skriver venter, så længe der er <b>mindst én</b> læser.
+@@s048 Hvis læserne bliver ved med at komme, er der altid mindst én inde: <code>readers</code> vender aldrig tilbage til 0.
+@@s049 Gensidig udelukkelse overholdt, fravær af sult ikke.
+@@s050 FairReadWriteMonitor.java: skriveren reserverer
+@@s051 Først venter den kun, indtil der ikke er en anden skriver.
+@@s052 Derefter <b>reserverer</b> den: den sætter <code>writer = true</code>, selv om der stadig er læsere inde. Fra nu af stopper <code>readLock()</code> de nye læsere.
+@@s053 Den venter kun på, at de læsere, <b>der allerede er inde</b>, går ud, og de er et endeligt antal. Derefter skriver den.
+@@s054 Spørgsmål fra slidet: så kommer en klar skriver før eller siden til at skrive?
+@@s055 Mod <b>læserne</b> ja: efter reservationen kommer ingen nye læsere ind, og dem der er inde, går før eller siden ud. Der bliver dog konkurrencen <b>mellem skrivere</b>: hvis flere skrivere venter ved <code>while (writer)</code>, garanterer hverken <code>synchronized</code> eller en ikke-fair <code>ReentrantLock</code> (standarden) en rækkefølge, så en uheldig skriver kunne i teorien altid tabe (øvelse 2.1.4). Flaget fair i <code>ReentrantLock</code> tjener netop til at give en orden til dem, der venter. I dit svar på 2.1.2 brugte du, at antallet af tråde er endeligt: det er det rigtige argument.
+@@s056 Læsere der skiftes til
+@@s057 Busy-wait: forbudt
+@@s058 At vente betyder, at en tråd ikke kan fortsætte, før tilstanden ændrer sig. Man kan vente på to meget forskellige måder: ved at blive ved med at kontrollere, eller ved at stoppe, indtil nogen giver besked.
+@@s059 Busy-wait
+@@s060 Tråden forbliver <b>running</b> og bruger CPU til at kontrollere en tilstand, der ikke ændrer sig.
+@@s061 At blokere sig
+@@s062 Tråden går i <b>blocked</b> og bruger ingen CPU, før nogen vækker den.
+@@s063 I assignments
+@@s064 Fra slidene: "Exercise solutions using busy-wait will not be approved."
+@@s065 At kontrollere eller at blokere sig

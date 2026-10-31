@@ -1,0 +1,54 @@
+@@s001 Affine and homogeneous coordinates
+@@s002 spento:starting square,ora:after A,ok:after A and then + t
+@@s003 due:the added 1,ora:the row being computed,ok:result
+@@s004 dato:p = (1, 0),ora:after the first,ok:result
+@@s005 dato:starting points,ok:enough,no:not enough
+@@s006 dato:points in the starting plane,ok:corresponding points,due:a new point
+@@s007 Three points in a plane (for example the floor in the camera image).
+@@s008 We know where they go in the other plane (the map seen from above): three <b>correspondences</b>. They are the training data.
+@@s009 Each correspondence gives <b>2 equations</b> (one for x′, one for y′), linear in the 6 parameters w₁…w₆. Three points = 6 equations: one solves and obtains w = [2, 0.5, 1, 0, 1, −1].
+@@s010 The learned model is applied to <b>new</b> points: (2, 2) → (2·2 + 0.5·2 + 1, 2 − 1) = <b>(6, 1)</b>. This is how the exercise takes the trace of a person from the camera to the map.
+@@s011 dato:points clicked in the camera,no:positions measured on the map (with error)
+@@s012 Affine and homogeneous coordinates
+@@s013 A linear transformation cannot shift the origin. An <b>affine</b> transformation can: it is linear plus a translation. With <b>homogeneous coordinates</b> it becomes a product of matrices again, and its parameters are learned with <a href="w05-minimi-quadrati.html">least squares</a>. It is the basis of the exercise of week 5 and of Assignment 1.
+@@s014 Affine = linear + translation
+@@s015 An <b>affine</b> transformation is <span class="m">p′ = Ap + t</span>: first a linear transformation A (which rotates, scales, shears), then a translation t (which shifts). In the plane A has 4 numbers and t has 2: <b>6 parameters</b>.
+@@s016 It keeps almost everything of the linear ones: straight lines remain straight, parallel lines remain parallel, midpoints remain midpoints. The only thing it loses is that the origin stays still. That is why it is the right model for carrying points from one plane to another, like the floor seen by the camera onto the map seen from above, or the pupil onto the screen.
+@@s017 The regression line y = w₀ + w₁x is the simplest example of an affine function: w₁x is the linear part, w₀ the translation.
+@@s018 First A, then + t
+@@s019 Homogeneous coordinates: one extra 1
+@@s020 The practical problem: Ap + t are two different operations, and with chains of transformations the calculations get complicated. The <b>homogeneous coordinates</b> solve it by adding to every point a fixed component equal to 1: [x, y] becomes [x, y, 1].
+@@s021 From the form Ax + t to the 3 × 3 matrix
+@@s022 A rotates, scales, shears; t shifts. 4 + 2 = 6 parameters.
+@@s023 <b>Homogeneous coordinates</b>: I add a fixed component equal to 1.
+@@s024 The third column multiplies the 1: the translation becomes part of the product. It is the matrix T of the exercise.
+@@s025 Carrying out the product. The last row always gives 1 = 1.
+@@s026 It is the same idea as the column of 1s in the design matrix: adding a constant component allows a constant term to be treated as any other weight.
+@@s027 (1, 2) shifted by (3, −1) with a 3 × 3 matrix
+@@s028 Composing affine transformations
+@@s029 With homogeneous coordinates every affine transformation is a 3 × 3 matrix, and applying several in a row is a product of matrices: "rotate, then shift, then scale" = <span class="m">T₃T₂T₁</span>, with the first applied on the right.
+@@s030 Why it matters
+@@s031 A long chain reduces to <b>one</b> matrix, computed once and then applied to thousands of points. Without homogeneous coordinates the translation would have to be handled separately at each step.
+@@s032 As always with matrices, the order matters. Rotating and then shifting is not the same as shifting and then rotating: the rotation turns around the origin, so a point already moved is taken to a different place.
+@@s033 Rotate then shift, or shift then rotate
+@@s034 How many correspondences are needed
+@@s035 To <b>learn</b> an affine transformation from data one needs <b>correspondences</b>: pairs "this point in the starting plane goes to that other point in the arrival plane". Each correspondence gives 2 equations (for x′ and for y′), and the unknowns are 6: at least <b>3 correspondences</b> are needed.
+@@s036 Not just any 3: the three starting points must be <b>non-collinear</b>. Three points on a line tell what happens along that line, but nothing about what happens to the side: the design matrix loses rank and the solution is not unique. It is the same phenomenon as the zero determinant of week 3.
+@@s037 2 points are not enough, 3 are, but not collinear
+@@s038 Learning w from the correspondences
+@@s039 With the correspondences one builds a design matrix and solves it, exactly as for polynomials. Each correspondence adds two rows.
+@@s040 The design matrix of the exercise (Task 1)
+@@s041 Two rows of the design matrix. The unknowns are the weights w₁…w₆, the data x, y are in the matrix.
+@@s042 b stacks all the x' and y' in the same order as the rows.
+@@s043 With 3 collinear points the equations are not enough to fix the transformation.
+@@s044 Building A and solving (verified: w = [2, 0.5, 1, 0, 1, −1], (2, 2) → (6, 1))
+@@s045 <code>zip</code> runs through the starting and the arrival points together. For each one, two rows and two values of b.
+@@s046 Least squares: with 3 points it is the exact solution, with more points the best approximation. Same code.
+@@s047 I put the 6 weights back in the 3 × 3 homogeneous matrix.
+@@s048 To transform a point: homogeneous coordinates (I add the 1), product, and I read the first two components.
+@@s049 Three correspondences are enough
+@@s050 More correspondences: least squares
+@@s051 With real data the correspondences have error (a click wrong by a few pixels). With exactly 3 points every error ends up in the transformation; with <b>more</b> points the errors compensate. The system becomes overdetermined (2n equations, 6 unknowns) and is solved with least squares, <b>with the same code</b>: <code>lstsq</code> gives the exact solution if it exists and the best approximation otherwise.
+@@s052 Related exam questions
+@@s053 <b>Q2 (c)</b>: "Explain affine transformations, homogeneous coordinates, and the composition of transformations." <b>Q3 (c)</b>: "Learning of affine (multivariate) functions and linear optimization." The chain to be able to tell: correspondences → design matrix → overdetermined system → least squares → matrix T → transform new points.
+@@s054 Five imprecise clicks, a robust estimate

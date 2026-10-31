@@ -1,0 +1,56 @@
+@@s001 Cache e coerenza: il protocollo MESI
+@@s002 <span>Settimana 9 · Performance</span>
+@@s003 Cache e coerenza: il protocollo MESI
+@@s004 La CPU è più veloce della RAM, e la cache colma il divario. Con più core ogni cache ha una copia dei dati, e le copie devono restare d’accordo: è il lavoro del protocollo MESI.
+@@s005 Il ponte tra CPU e RAM
+@@s006 La CPU lavora molto più in fretta della RAM. La <b>cache</b> è una memoria piccola e veloce, vicina alla CPU, che tiene le copie dei dati usati di recente. Funziona bene per la <b>località di accesso</b>: se un dato serve ora, probabilmente servirà ancora, e i dati vicini in memoria servono spesso insieme.
+@@s007 Una lettura da memoria
+@@s008 dato:indirizzo richiesto,ora:passo in corso,ok:veloce,no:lento
+@@s009 Il primo passo è sempre cercarlo in cache.
+@@s010 È il caso buono: il dato è già lì, e la RAM non viene toccata.
+@@s011 La cache copia un blocco intero, non un solo byte: così i dati vicini sono già pronti.
+@@s012 Più core, più cache
+@@s013 Ogni core ha le sue cache. Lo stesso indirizzo di memoria può quindi essere in più cache contemporaneamente. Il blocco di memoria che la cache copia si chiama <b>linea di cache</b>: di solito 64 byte. Le cache devono concordare il valore di ogni linea: il meccanismo si chiama <b>protocollo di coerenza</b>, e nelle slide è il <b>MESI</b>, dal nome dei suoi quattro stati.
+@@s014 Gli stati MESI
+@@s015 Ogni linea di cache, in ogni core, è in uno di quattro stati:
+@@s016 stato
+@@s017 significato
+@@s018 la RAM è aggiornata?
+@@s019 <b>M</b> Modified
+@@s020 copia modificata, presente solo in questa cache
+@@s021 no: la RAM ha il valore vecchio
+@@s022 <b>E</b> Exclusive
+@@s023 copia non modificata, presente solo qui
+@@s024 sì
+@@s025 <b>S</b> Shared
+@@s026 copia non modificata, presente in più cache
+@@s027 sì
+@@s028 <b>I</b> Invalid
+@@s029 la linea non è valida: va riletta
+@@s030 Per scrivere su una linea in stato S, il core deve prima mandare un messaggio <b>invalidate</b> alle altre cache, e aspettare la loro conferma (<i>ack</i>). Solo allora la linea diventa M.
+@@s031 Veloce o lento
+@@s032 La velocità dipende da cosa il core vuole fare e dallo stato della linea nella sua cache. Le righe più importanti della slide:
+@@s033 stato attuale
+@@s034 il core vuole
+@@s035 velocità
+@@s036 leggere o scrivere
+@@s037 veloce: il dato è già suo
+@@s038 leggere
+@@s039 veloce: la copia è valida
+@@s040 leggere
+@@s041 lenta: va presa da un’altra cache o dalla RAM
+@@s042 scrivere
+@@s043 molto lenta: invalidate a tutte le altre copie
+@@s044 scrivere
+@@s045 molto lenta: prima leggere, poi invalidare
+@@s046 Due core sulla stessa linea
+@@s047 dato:valore,ora:cosa cambia,ok:stato stabile,no:costo alto
+@@s048 Nessun altro la ha: la copia è sua e la RAM è aggiornata.
+@@s049 Due copie identiche e pulite: letture veloci per tutti e due.
+@@s050 Scrivere su S costa: il messaggio invalidate deve arrivare all’altro core.
+@@s051 Ogni scambio di scrittura e lettura tra due core costa un giro sul bus: il ping-pong della pagina successiva.
+@@s052 Cosa ne segue per il codice
+@@s053 L’idea
+@@s054 Il costo non è nel calcolo, è nel movimento delle linee tra cache. Un dato scritto solo da un thread resta in M nella sua cache: veloce. Un dato scritto da più thread va avanti e indietro: lento.
+@@s055 Se vieni da…
+@@s056 Se hai usato solo thread senza pensare alla memoria, questa è la parte che ti manca: non esiste un unico "valore" in memoria, esistono copie in più cache che devono restare d’accordo.

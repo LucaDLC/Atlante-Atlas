@@ -1,0 +1,53 @@
+@@s001 Tilfældige tal uden bivirkninger
+@@s002 dato:tilstand (seed),ora:kald i gang,ok:tal produceret,no:tilstanden kan ikke læses igen
+@@s003 En <b>ren</b> generator: en uforanderlig tilstand, <code>SimpleRNG(42)</code>. 42 er seedet, den begyndelsesværdi, "frøet".
+@@s004 <code>r0.nextInt</code> ændrer intet: den <b>returnerer</b> et par, tallet <b>16159453</b> og en ny tilstand <code>r1</code>.
+@@s005 For det næste tal kalder man <code>nextInt</code> på den <b>nye</b> tilstand <code>r1</code>: <b>−1281479697</b> kommer ud og tilstanden <code>r2</code>. Tilstanden skal sendes videre i hånden fra et kald til det næste.
+@@s006 Og hvis man kalder <code>r0.nextInt</code> igen? Igen kommer <b>16159453</b> ud og igen <code>r1</code>. Samme input, samme output: funktionen er <b>referentielt transparent</b>. Med <code>scala.util.Random</code> giver to ens kald derimod forskellige tal.
+@@s007 no:skjult tilstand der ændrer sig,dato:eksplicit tilstand,ok:samme input = samme output
+@@s008 dato:tilstand,ora:generator,ok:resultat
+@@s009 no:fejl,ok:rettelse
+@@s010 Tilfældige tal uden bivirkninger
+@@s011 Uge 5, øvelse 1–4 (kapitel 6 i bogen). En almindelig generator for tilfældige tal har en skjult tilstand, der ændrer sig ved hvert kald: den er ikke ren. Den funktionelle løsning er at gøre tilstanden <b>eksplicit</b>: hvert kald modtager tilstanden og returnerer en ny. Det er første skridt mod <a href="s05-state.html">State-monaden</a>.
+@@s012 Problemet: en skjult tilstand
+@@s013 Hvorfor rollDie ikke er en ren funktion
+@@s014 Samme udtryk, forskellige resultater: det afhænger af <code>rng</code>, en ekstern tilstand, der ændrer sig ved hvert kald (og som alle kan ændre).
+@@s015 Jeg kan ikke erstatte et udtryk med dets værdi: <b>referentiel transparens</b> mangler (uge 1). Test og ræsonnement bliver svære.
+@@s016 Funktionen ændrer ingenting: den returnerer også den næste tilstand, og den, der bruger den, sender den til det næste kald.
+@@s017 Skjult var mod eksplicit tilstand
+@@s018 RNG og SimpleRNG
+@@s019 Fra øvelsesfilen
+@@s020 En <code>trait</code> (et interface) med én enkelt metode. Returtypen er et <b>par</b>: tallet og generatoren, der skal bruges næste gang.
+@@s021 <code>case class</code> er uforanderlig: seedet ændres ikke, der oprettes en ny <code>SimpleRNG</code>.
+@@s022 En lineær kongruensgenerator (den samme som <code>java.util.Random</code>): den multiplicerer, lægger til, og med <code>&amp;</code> (bitvis AND) beholder den kun 48 bit. <code>L</code> betyder Long.
+@@s023 <code>&gt;&gt;&gt;</code> skifter bittene til højre og fylder med nuller; <code>.toInt</code> beholder 32 bit, så tallet kan være negativt. Tallet returneres med den nye tilstand.
+@@s024 At sende tilstanden videre i hånden
+@@s025 Alle tallene er fået ved at køre koden (Scala 3.8.4).
+@@s026 Øvelse 1–4: generatorer i hånden
+@@s027 Løsninger (kursets 27 RNG-tests består)
+@@s028 Øv. 1. Det besværlige tilfælde: <code>Int.MinValue</code> = −2147483648 har ingen modsætning blandt Int (maksimum er 2147483647). Med <code>-(i + 1)</code> går hvert negativt tal over i et ikke-negativt: −1 → 0, MinValue → 2147483647. Med <code>r1</code> fra eksemplet: −1281479697 → 1281479696.
+@@s029 Øv. 2. Man dividerer med MaxValue + 1, ikke med MaxValue: så kommer 1.0 aldrig ud (øvelsen beder om [0, 1)). Fra <code>SimpleRNG(42)</code>: 0.0075…
+@@s030 Øv. 3. Tilstanden sendes videre som en stafetpind: <code>rng</code> til den første generator, <code>r1</code> til den anden, <code>r2</code> til den, der kommer efter. Hvis man brugte <code>rng</code> to gange, ville tallene ikke være uafhængige.
+@@s031 Genbrug: en enkelt generator, derefter bytter jeg rækkefølgen i parret.
+@@s032 Øv. 4. Rekursion: et tal med den aktuelle tilstand, de andre <code>size − 1</code> med den nye tilstand. <code>ints(3)(SimpleRNG(42))</code> = List(16159453, −1281479697, −340305902).
+@@s033 Tvivl: løber Int.MaxValue.toDouble + 1 over?
+@@s034 Nej. <code>.toDouble</code> køres <b>før</b> <code>+</code>: +1 laves af en Double, som går op til omkring 1.8 × 10³⁰⁸. Det løber kun over, hvis +1 laves af en Int, altså hvis man flytter parentesen: <code>(Int.MaxValue + 1).toDouble</code>.
+@@s035 Hvor parentesen står, afgør, hvem der laver +1
+@@s036 dato:Int,ora:konvertering,ok:korrekt,no:overflow
+@@s037 Den største Int: 2³¹ − 1.
+@@s038 Først konverteres der: herfra er det en Double.
+@@s039 +1 mellem Double'er: ingen problemer. Det er divisoren i <code>double</code>.
+@@s040 Uden konvertering laves +1 af en Int: den overskrider maksimum og starter forfra fra minimum (overflow).
+@@s041 At konvertere bagefter hjælper ikke: skaden er allerede sket. Med denne divisor ville <code>double</code> give negative tal (2147483647 / −2147483648.0 = −0.99999…).
+@@s042 Tvivl: er den endelige tilstand i ints den samme som i den første rekursion?
+@@s043 Hvert kald har <b>sine egne</b> variable <code>r1</code> og <code>r2</code> — samme navne, forskellige kasser — men den værdi, der kommer ud, er den samme på alle niveauer: tilstanden, der opstod efter det <b>sidste</b> tal, der blev trukket, og som stiger tilbage op.
+@@s044 Det skal være det sidste: den, der kalder <code>ints(3)</code> og derefter vil have flere tal, skal starte fra efter de tre allerede brugte. At returnere <code>r1</code> ville få det andet tal til at komme ud igen.
+@@s045 Mønsteret, der gentager sig
+@@s046 Alle disse funktioner har formen <span class="m">RNG =&gt; (A, RNG)</span>, og de har alle den samme kedelighed: tag tilstanden, kald, udtræk parret, send den nye tilstand videre. Næste side giver denne form et navn, <code>Rand[A]</code>, og skjuler den: <a href="s05-rand.html">Rand[A]: sammensættelige generatorer</a>.
+@@s047 Tilstanden som stafetpinden i et stafetløb
+@@s048 Fejlene i din fil
+@@s049 Din <code>Exercises.scala</code> for uge 5, som den er nu i repoet (jeg har kun læst den og kompileret den på en kopi): Scala 3.8.4 stopper med 4 fejl.
+@@s050 Variablen hedder <code>num</code>, ikke <code>i</code>: <code>else num</code>.
+@@s051 I samme blok erklæres et navn kun én gang. Den anden værdi er et heltal: kald den <code>numInt</code> og returnér <code>((numDouble, numInt), rand2)</code>. Den anden fejl kommer af den første: parret indeholdt to Double'er, og returtypen ville have (Double, Int).
+@@s052 Det er <code>flatMap</code> fra LazyList i uge 4, men her er <code>f</code> en generator, ikke en liste: der er intet at "folde". Løsningen står på <a href="s05-rand.html">siden om Rand</a>.
+@@s053 De fire fejl og rettelsen

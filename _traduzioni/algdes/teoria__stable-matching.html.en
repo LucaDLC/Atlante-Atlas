@@ -1,0 +1,70 @@
+@@s001 Stable matching: Gale-Shapley
+@@s002 dato:free,ora:proposes now,ok:accepted,no:rejected or left
+@@s003 Preferences. Proposers A, B, C; receivers X, Y, Z. A: X ≻ Y ≻ Z. B: Y ≻ X ≻ Z. C: X ≻ Y ≻ Z. X: C ≻ A ≻ B. Y: A ≻ B ≻ C. Z: A ≻ B ≻ C.
+@@s004 <b>A</b> proposes to <b>X</b> (A's first choice). X is free: accepts.
+@@s005 <b>B</b> proposes to <b>Y</b>. Y is free: accepts.
+@@s006 <b>C</b> proposes to <b>X</b>. X prefers C to A (C is first on X's list). X leaves A, who becomes free again.
+@@s007 <b>A</b> proposes to <b>Y</b>. Y prefers A to B: leaves B, who becomes free again.
+@@s008 <b>B</b>, left by Y, proposes to the second choice on B's list: <b>X</b>. X has C, and prefers C to B: rejects B.
+@@s009 <b>B</b> proposes to the third choice on B's list: <b>Z</b>. Z is free: accepts. Now A–Y, B–Z, C–X are all paired.
+@@s010 Nobody is free any more: the matching is complete, and <b>stable</b>. Check: A prefers X to Y, but X prefers C to A. B prefers Y to Z, but Y prefers A to B. No pair prefers each other to its partners.
+@@s011 Stable matching: Gale-Shapley
+@@s012 Pairing n proposers with n receivers, each with a list of preferences, without unstable pairs: two people who prefer each other to their partners. The Gale-Shapley algorithm always finds a stable matching.
+@@s013 The problem
+@@s014 There are <code>n</code> proposers and <code>n</code> receivers, each with an ordered list of preferences. A <b>matching</b> is a complete pairing. It is <b>unstable</b> if there exist two people who prefer each other to their respective partners. Real examples: students and universities, doctors and hospitals.
+@@s015 The algorithm
+@@s016 While there is a free proposer <code>p</code>: <code>p</code> proposes to the first receiver on their list to whom they have not yet proposed.
+@@s017 If the receiver <code>r</code> is free, accepts.
+@@s018 If <code>r</code> is engaged but prefers <code>p</code>, drops the current partner (who becomes free again) and accepts <code>p</code>.
+@@s019 Otherwise <code>r</code> rejects <code>p</code>.
+@@s020 Gale-Shapley: proposals, acceptances, departures
+@@s021 Why it terminates and why it is stable
+@@s022 A receiver only improves: the one held can only be replaced by one they prefer. A proposer only moves down their list: they never propose again to the same receiver. So proposals are at most <code>n²</code>, and the algorithm terminates.
+@@s023 When it ends, the matching is stable: if two people <code>p</code> and <code>r</code> preferred each other to their partners, <code>p</code> would have proposed to <code>r</code> before their current partner, and <code>r</code> would have accepted, and would never have left for a better one.
+@@s024 Who wins
+@@s025 The matching is the best possible <b>for the proposers</b>: each proposer gets the highest receiver on their list among all those they can have in a stable matching. For the receivers it is the worst. The result depends on who proposes: swapping the roles changes the matching.
+@@s026 The code, side by side
+@@s027 This page explains the concept. The Java code that implements it, with a line-by-line explanation and the syntax notes needed, is on the side-by-side page.
+@@s028 <a href="../codice/stable-matching.html"><b>→ Java code for this topic</b></a>
+@@s029 Implementing it in O(1) per step
+@@s030 The cost O(n²) holds only if each question of the algorithm is answered in constant time. Four questions, four structures:
+@@s031 question
+@@s032 structure
+@@s033 is there a free proposer?
+@@s034 a queue (<code>ArrayDeque</code>) of the free ones
+@@s035 who is asking now, <code>a</code>?
+@@s036 <code>next[a]</code>: the index in a's list
+@@s037 is <code>x</code> free, or with whom?
+@@s038 <code>partner[x]</code>, −1 if free
+@@s039 does <code>x</code> prefer <code>a</code> to x's partner?
+@@s040 <code>rank[x][a]</code>: the position of <code>a</code> in the list of <code>x</code>
+@@s041 The list <code>pref[x]</code> says "who is in position k". To know where <code>a</code> is I would have to scan it: cost O(n). So I build the inverse list once, in O(n²): <code>rank[x][pref[x][k]] = k</code>. From there each comparison is a comparison between two numbers: O(1).
+@@s042 Total cost: construction O(n²) plus at most n² proposals each O(1), that is O(n²). Without <code>rank</code> each comparison would cost O(n) and the total O(n³).
+@@s043 Variant: multiple places
+@@s044 It is the "hospitals and residents" (hospital-residents) version of the slides. Each <b>receiver</b> has a <b>capacity</b>: how many places they have (a team with 2 places, a hospital with 5 beds). The <b>proposer</b> is free as long as they still have names on their list and is not already held.
+@@s045 What changes compared with the basic Gale-Shapley:
+@@s046 The receiver holds up to <code>q</code> proposers, not just one.
+@@s047 When a proposal arrives and the receiver is full, it compares it with the <b>worst</b> of those held: if preferred, it takes the place of the worst, who becomes free again.
+@@s048 The proposer who is left without a place goes back to the queue, as before.
+@@s049 Two places: the worst is replaced
+@@s050 Careful: the comparison is always with the <b>worst</b> of those held, not with the first. It is the most common mistake when writing this variant.
+@@s051 At the exam
+@@s052 At the exam
+@@s053 Write: <i>"Gale–Shapley runs in O(n²) time: each proposal is made at most once per pair, and each proposal is handled in O(1). The output is a stable perfect matching, optimal for the proposing side."</i>
+@@s054 It is not at the exam as a 5-point integer problem, but it is the model for many assignment questions with preferences.
+@@s055 Quick reference
+@@s056 item
+@@s057 meaning
+@@s058 note
+@@s059 proposer
+@@s060 proposes in order of preference
+@@s061 goes down their list
+@@s062 receiver
+@@s063 holds the best so far
+@@s064 only improves
+@@s065 proposals
+@@s066 at most n²
+@@s067 each pair once
+@@s068 time
+@@s069 standard
+@@s070 ok:held,no:goes free,due:worst of those held,ora:proposal arriving

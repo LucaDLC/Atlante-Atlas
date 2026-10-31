@@ -1,0 +1,447 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Test af LazyList</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  const T = (id, x, y, t, extra) => Object.assign({ id, tipo: 'testo', x, y, t, size: 13 }, extra || {});
+  const R = (id, x, y, w, h, t, extra) => Object.assign({ id, tipo: 'rett', x, y, w, h, t }, extra || {});
+  const C = (id, x, y, valori, extra) => Object.assign({ id, tipo: 'celle', x, y, cw: 52, ch: 40, valori, indici: false }, extra || {});
+
+  SCENE.es1 = {
+    w: 580, h: 220, lato: true,
+    legenda: 'ok:test bestået,no:test fejlet,dato:importeret implementering',
+    oggetti: [R('imp', 20, 40, 180, 44, '', { tono: 'spento' }), R('t1', 220, 40, 160, 44, 'Ex01.01', { tono: 'spento' }), R('t2', 400, 40, 160, 44, 'Ex01.02', { tono: 'spento' }),
+      T('c', 290, 130, '', { size: 12 }), T('c2', 290, 165, '', { size: 12 }), T('c3', 290, 200, '', { size: 12 })],
+    passi: [
+      { nota: "Il file dei test importa <b>una</b> implementazione della LazyList in cima: <code>import lazyList00.*</code>. Cambiando l'import si provano gli stessi test su un'altra implementazione. Output veri." },
+      { nota: "<b>lazyList00</b>: la versione del libro, quella giusta. Passa tutti e due i test. Deve passare <b>tutti</b> i tuoi test, altrimenti perdi il 35%.", set: { imp: { t: 'import lazyList00.*', tono: 'dato' }, t1: { tono: 'ok' }, t2: { tono: 'ok' }, c: { t: 'OK, proved property · OK, passed 100 tests' } } },
+      { nota: "<b>lazyList01</b>: <code>headOption</code> su Empty fa <code>???</code>. Ex01.01 salta con <code>NotImplementedError: an implementation is missing</code>. Ex01.02 passa, perché prova solo liste non vuote.", set: { imp: { t: 'import lazyList01.*' }, t1: { tono: 'no' }, t2: { tono: 'ok' }, c: { t: 'Ex01.01: NotImplementedError' }, c2: { t: 'headOption su Empty = ???' } } },
+      { nota: "<b>lazyList02</b>: <code>cons</code> restituisce sempre <code>Empty</code>, quindi ogni lista è vuota. Ex01.01 passa (la lista vuota è vuota lo stesso); Ex01.02 fallisce sul pezzo con l'etichetta <code>singleton</code>: <code>cons(0, empty).headOption</code> dà None invece di Some(0).", set: { imp: { t: 'import lazyList02.*' }, t1: { tono: 'ok' }, t2: { tono: 'no' }, c: { t: 'Ex01.02: Falsified · Labels: singleton · ARG_0: 0' }, c2: { t: 'cons(…) = Empty: ogni lista è vuota' }, c3: { t: 'ogni test uccide un mutante diverso' } } }
+    ]
+  };
+
+  SCENE.bomba = {
+    w: 580, h: 210, lato: true,
+    legenda: 'dato:almindelig celle,no:bombe: eksploderer hvis beregnet,ok:aldrig beregnet',
+    oggetti: [C('l', 20, 40, ['1', 'coda'], { cw: 90, toni: { 0: 'dato', 1: 'spento' } }), T('e', 380, 60, '', { size: 12, bold: true }), T('c', 290, 130, '', { size: 12 }), T('c2', 290, 165, '', { size: 12 }), T('c3', 290, 200, '', { size: 12 })],
+    passi: [
+      { nota: "La <b>bomba</b>: <code>def bomba[A]: A = throw RuntimeException(\"forzato!\")</code>. Ha qualsiasi tipo e, appena qualcuno la calcola, lancia un'eccezione. Il PDF dice esplicitamente che è permesso." },
+      { nota: "<code>cons(1, bomba)</code>: non esplode. <code>cons</code> riceve la coda <b>per nome</b> (<code>tl: =&gt; LazyList[A]</code>) e la tiene in sospeso.", set: { l: { valori: ['1', 'bomba'], toni: { 0: 'dato', 1: 'no' } }, e: { t: 'cons(1, bomba) → nessuna esplosione', tono: 'ok' } } },
+      { nota: "<code>cons(1, bomba).headOption</code> con la LazyList giusta: Some(1), la coda non viene mai toccata.", set: { l: { toni: { 0: 'ok', 1: 'no' } }, e: { t: '.headOption = Some(1)', tono: 'ok' }, c: { t: 'la bomba è rimasta intatta: headOption è pigro' } } },
+      { nota: "Una headOption che guarda la coda (un mutante) fa esplodere la bomba: eccezione → il test fallisce → mutante ucciso. Un'eccezione non catturata conta come test fallito (lo dice il PDF).", set: { e: { t: 'mutante: RuntimeException: forzato!', tono: 'no' }, c2: { t: 'la bomba è un sensore: "qualcuno mi ha calcolato"' }, c3: { t: 'nella testa = "hai forzato la testa" · nella coda = "hai forzato la coda"' } } }
+    ]
+  };
+
+  SCENE.pigrizia = {
+    w: 580, h: 220, lato: true,
+    legenda: 'dato:godt element,no:bombe,ok:læst uden at eksplodere',
+    oggetti: [T('q', 290, 26, '', { bold: true, size: 13 }), C('l', 20, 44, ['', '', '', '', '', ''], { cw: 70 }), T('c', 290, 140, '', { size: 12 }), T('c2', 290, 175, '', { size: 12 })],
+    passi: [
+      { nota: "Tre forme di lista con le bombe, una per esercizio. Ognuna mette le bombe proprio dove la funzione <b>non</b> deve guardare." },
+      { nota: "<b>Es. 3</b>, <code>take</code> non forza niente: una lista infinita di teste-bomba. <code>bombe.take(n)</code> non deve esplodere, basta chiamarlo.", set: { q: { t: 'Es. 3: bombe.take(n)' }, l: { valori: ['bomba', 'bomba', 'bomba', 'bomba', 'bomba', '…'], toni: { 0: 'no', 1: 'no', 2: 'no', 3: 'no', 4: 'no' } }, c: { t: 'take(n) da solo non calcola nessuna testa' } } },
+      { nota: "<b>Es. 4</b>, con n = 3: tre elementi buoni e poi una bomba. <code>take(3).toList</code> calcola i primi 3, ma la quarta testa non deve essere toccata. Risultato List(1, 2, 3).", set: { q: { t: 'Es. 4: buoniPoiBomba(3).take(3).toList' }, l: { valori: ['1', '2', '3', 'bomba', '', ''], toni: { 0: 'ok', 1: 'ok', 2: 'ok', 3: 'no' } }, c: { t: '= List(1, 2, 3): la (n+1)-esima testa è intatta' } } },
+      { nota: "<b>Es. 7</b>, con n = 3: tre bombe e poi 1, 2, 3. <code>drop(3).toList</code> salta le bombe senza calcolarle e calcola il resto: List(1, 2, 3).", set: { q: { t: 'Es. 7: bombePoi(3, LazyList(1, 2, 3)).drop(3).toList' }, l: { valori: ['bomba', 'bomba', 'bomba', '1', '2', '3'], toni: { 0: 'no', 1: 'no', 2: 'no', 3: 'ok', 4: 'ok', 5: 'ok' } }, c: { t: 'drop tocca le code, mai le teste scartate' }, c2: { t: 'Es. 2 (headOption): cons(n, bomba), la bomba nella coda' } } }
+    ]
+  };
+
+  SCENE.leggi = {
+    w: 580, h: 220, lato: true,
+    legenda: 'dato:input,due:Scala-List (orakel),ok:ens,no:forskellige',
+    oggetti: [R('a', 20, 40, 260, 44, '', { tono: 'spento' }), R('b', 300, 40, 260, 44, '', { tono: 'spento' }), T('r', 290, 120, '', { size: 12, bold: true }), T('c', 290, 160, '', { size: 12 }), T('c2', 290, 195, '', { size: 12 })],
+    passi: [
+      { nota: "Le leggi (es. 5, 6, 8) si confrontano sempre con <code>.toList</code>. Prima la trappola." },
+      { nota: "<code>LazyList(1, 2) == LazyList(1, 2)</code> è <b>false</b> (verificato), anche sulla LazyList giusta. Dentro una Cons ci sono funzioni <code>() =&gt; A</code>, e due funzioni diverse non sono mai ==. Un test scritto con == fallisce su lazyList00: −35%.", set: { a: { t: 'LazyList(1, 2)', tono: 'dato' }, b: { t: 'LazyList(1, 2)', tono: 'dato' }, r: { t: '== → false', tono: 'no' } } },
+      { nota: "Con <code>.toList</code> si confrontano i valori: <code>l.take(n).take(n).toList == l.take(n).toList</code> passa 100 test.", set: { a: { t: 'l.take(n).take(n).toList' }, b: { t: 'l.take(n).toList' }, r: { t: 'OK, passed 100 tests', tono: 'ok' } } },
+      { nota: "Un trucco in più: la <b>List di Scala come oracolo</b>. È già corretta, quindi la LazyList deve darle ragione: <code>list2lazyList(la).take(n).toList == la.take(n)</code>. Scopre anche un take che prende un elemento in più.", set: { a: { t: 'list2lazyList(la).take(n).toList', tono: 'dato' }, b: { t: 'la.take(n)', tono: 'due' }, r: { t: 'la List fa da arbitro', tono: 'ok' }, c: { t: 'es. 5 e 6: la legge + l\'oracolo' }, c2: { t: 'es. 8: l.map(identity).toList == l.toList' } } }
+    ]
+  };
+
+  SCENE.infinita = {
+    w: 580, h: 210, lato: true,
+    legenda: 'dato:uendelig liste,ok:dovent map,no:strikt map',
+    oggetti: [C('l', 20, 40, ['1', '2', '3', '4', '5', '…'], { cw: 60, toni: { 0: 'dato', 1: 'dato', 2: 'dato', 3: 'dato', 4: 'dato' } }), T('r', 290, 120, '', { size: 12, bold: true }), T('c', 290, 160, '', { size: 12 }), T('c2', 290, 195, '', { size: 12 })],
+    passi: [
+      { nota: "<b>Es. 9</b>: map deve terminare anche su una lista infinita. L'idea: fai map su una lista infinita, poi prendi un pezzo finito e controllalo." },
+      { nota: "map pigro (quello giusto): <code>l.map(_ + 1).take(3).toList</code> calcola solo 3 elementi: List(2, 3, 4).", set: { l: { valori: ['2', '3', '4', '…', '', ''], toni: { 0: 'ok', 1: 'ok', 2: 'ok' } }, r: { t: 'map pigro: termina', tono: 'ok' } } },
+      { nota: "map stretto (un mutante): prima calcola <b>tutta</b> la coda, poi mette la testa. Su una lista infinita non finisce mai: la ricorsione riempie lo stack. Il test muore con un'eccezione → mutante ucciso (verificato).", set: { l: { valori: ['…', '…', '…', '…', '…', '…'], toni: { 0: 'no', 1: 'no', 2: 'no', 3: 'no', 4: 'no', 5: 'no' } }, r: { t: 'map stretto: StackOverflowError', tono: 'no' }, c: { t: 'liste infinite: infiniteLazyList[Int] (già nel file)' }, c2: { t: 'o LazyList.from(1), preso tramite l\'import in cima' } } }
+    ]
+  };
+
+  SCENE.append = {
+    w: 580, h: 220, lato: true,
+    legenda: 'dato:this,due:that,no:bombe,ok:resultat',
+    oggetti: [C('a', 20, 40, ['1', '2'], { toni: { 0: 'dato', 1: 'dato' } }), C('b', 140, 40, ['bomba'], { cw: 70, toni: { 0: 'no' } }), T('r', 400, 60, '', { size: 12, bold: true }), T('c', 290, 140, '', { size: 12 }), T('c2', 290, 175, '', { size: 12 }), T('c3', 290, 205, '', { size: 12 })],
+    passi: [
+      { nota: "<b>Es. 10</b>: le proprietà di <code>append</code> le scegli tu. <code>append(that: =&gt; LazyList)</code> riceve that per nome: dovrebbe calcolarlo solo quando serve." },
+      { nota: "Con this non vuota: <code>LazyList(1, 2).append(bomba)</code> non esplode. that serve solo dopo il 2.", set: { r: { t: 'nessuna esplosione', tono: 'ok' } } },
+      { nota: "Con this <b>vuota</b>: il risultato <b>è</b> that, quindi anche la versione giusta lo calcola. <code>Empty.append(bomba)</code> esplode su lazyList00 (verificato). Un test \"append non forza that\" su liste anche vuote fallisce sulla versione giusta: −35%.", set: { a: { valori: ['', ''], toni: {} }, r: { t: 'Empty.append(bomba) → esplode anche su lazyList00', tono: 'no' }, c: { t: 'usa genNonEmptyLazyList per questo test' } } },
+      { nota: "Altre proprietà: l'oracolo <code>l1.append(l2).toList == l1.toList ++ l2.toList</code>; una lista infinita con qualsiasi cosa attaccata dietro dà gli stessi primi n elementi.", set: { a: { valori: ['1', '2'], toni: { 0: 'dato', 1: 'dato' } }, r: { t: '' }, c: { t: 'oracolo: append = ++ delle List' }, c2: { t: 'infinita.append(x).take(n) = infinita.take(n)' }, c3: { t: 'pigrizia: solo con this non vuota' } } }
+    ]
+  };
+
+  SCENE.mutanti = {
+    w: 580, h: 210, lato: true,
+    legenda: 'dato:rigtig version,no:ødelagt funktion,ok:mindst ét test fejler,due:ingen test fejler',
+    oggetti: [R('g', 20, 40, 160, 44, 'lazyList00', { tono: 'dato' }), R('m', 210, 40, 170, 44, '', { tono: 'spento' }), R('e', 410, 40, 150, 44, '', { tono: 'spento' }), T('c', 290, 130, '', { size: 12 }), T('c2', 290, 165, '', { size: 12 })],
+    passi: [
+      { nota: "Un <b>mutante</b> è la LazyList giusta con <b>una</b> funzione rotta. Il correttore ne ha tanti; i tuoi test devono accorgersi di ognuno." },
+      { nota: "Esempio: <code>drop</code> che calcola le teste che scarta. Il risultato è giusto, cambia solo la pigrizia.", set: { m: { t: 'drop forza le teste', tono: 'no' } } },
+      { nota: "Lancio i test: Ex07 (la lista con n bombe davanti) esplode. Almeno un test fallisce → mutante <b>ucciso</b> (verificato).", set: { e: { t: 'Ex07 fallisce', tono: 'ok' }, c: { t: 'ucciso = almeno un test fallisce' } } },
+      { nota: "Se nessun test fallisse, il mutante <b>sopravvive</b>: manca un test. Lo si scrive guardando cosa ha rotto il mutante: il risultato (una legge, l'oracolo) o la pigrizia (una bomba).", set: { e: { t: 'nessuno fallisce?', tono: 'due' }, c2: { t: 'sopravvissuto → manca un test su risultato o pigrizia' } } }
+    ]
+  };
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Test af LazyList</h1>
+  <p class="lede">Uge 6, øvelse 1–10. Rollerne er byttet om: LazyList findes allerede, og testfilen skriver du. Bedømmeren kører dine tests på mange ødelagte LazyList'er (<b>mutanterne</b>): hver mutant, du får til at fejle, giver point. Den rigtige LazyList, <code>lazyList00</code>, skal bestå alle dine tests, ellers mister du 35%. Kun <code>Exercises.scala</code> afleveres. Teori: <a href="s06-pbt.html">Property-based testing</a>.</p>
+</header>
+
+<section>
+  <h2>Øvelse 1: tre LazyList'er, to tests</h2>
+  <p>Ingen kode at skrive. Filen har allerede to tests på <code>headOption</code> og i mappen <code>subjects/</code> tre implementeringer af LazyList. Du ændrer, hvilken der importeres, ved at udkommentere/afkommentere linjerne øverst i filen, kører testene og ser, hvilken der fejler.</p>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>import</th><th>Ex01.01 (None på tom)</th><th>Ex01.02 (Some på ikke-tom)</th><th>hvorfor</th></tr></thead>
+    <tbody>
+      <tr><td><code>lazyList00</code></td><td>OK</td><td>OK</td><td>er versionen fra bogen</td></tr>
+      <tr><td><code>lazyList01</code></td><td><b>NotImplementedError</b></td><td>OK</td><td><code>headOption</code> på <code>Empty</code> kører <code>???</code></td></tr>
+      <tr><td><code>lazyList02</code></td><td>OK</td><td><b>Falsified</b>, etiket <code>singleton</code>, ARG_0: 0</td><td><code>cons</code> returnerer altid <code>Empty</code>: enhver liste er tom</td></tr>
+    </tbody>
+  </table></div>
+  <p class="piccolo">Output fået ved at køre filen med Scala 3.8.4 og ScalaCheck 1.19. Når du afleverer, lad <code>import lazyList00.*</code> være aktiv: bedømmeren ændrer den linje selv. Skriv aldrig <code>lazyList00.noget</code> i koden: alt skal gå gennem importen øverst.</p>
+  <figure class="scena" data-scena="es1" data-titolo="De samme tests, tre implementeringer"></figure>
+  <figure class="codice" data-titolo="Øvelsesfilen, linje for linje">
+<pre data-lang="scala">import lazyList00.* // uncomment to test the book laziness solution implementation
+// import lazyList01.* // uncomment to test the broken headOption implementation
+// import lazyList02.* // uncomment to test another version
+
+import LazyList.*
+
+object LazyListSpec
+  extends org.scalacheck.Properties("testing"):
+
+  def list2lazyList[A](la: List[A]): LazyList[A] =
+    LazyList(la*)
+
+  def genNonEmptyLazyList[A](using Arbitrary[A]): Gen[LazyList[A]] =
+    for la &lt;- arbitrary[List[A]].suchThat { _.nonEmpty }
+    yield list2lazyList(la)
+
+  property("Ex01.01: headOption returns None on an empty LazyList") =
+    empty.headOption == None
+
+  property("Ex01.02: headOption returns the head of the stream packaged in Some") =
+    given Arbitrary[LazyList[Int]] = Arbitrary(genNonEmptyLazyList[Int])
+    forAll { (n: Int) =&gt; cons(n,empty).headOption == Some(n) } :| "singleton" &amp;&amp;
+    forAll { (s: LazyList[Int]) =&gt; s.headOption != None }      :| "random"</pre>
+    <ol class="spiega">
+      <li data-righe="1-3" data-segna="import lazyList00.*@ora"><p>Filen ligger i pakken <code>adpro.lazyList</code>, så <code>import lazyList00.*</code> betyder <code>adpro.lazyList.lazyList00.*</code>: mappen <code>subjects/lazyList00</code>. Herfra kommer typen <code>LazyList</code>, som testene ser. For at prøve en anden implementering sætter man <code>//</code> foran denne linje og fjerner det fra en anden. Kun én aktiv ad gangen.</p></li>
+      <li data-righe="5" data-segna="import LazyList.*@due"><p>Henter funktionerne fra det importerede LazyList-companion object ind: <code>empty</code>, <code>cons</code>, <code>from</code>, … Så skriver man <code>cons(1, empty)</code> i stedet for <code>LazyList.cons(1, LazyList.empty)</code>.</p></li>
+      <li data-righe="7-8" data-segna="Properties(&quot;testing&quot;)@dato"><p>Beholderen for testene. <code>"testing"</code> er præfikset, der vises i outputtet: <code>+ testing.Ex01.01: …</code>.</p></li>
+      <li data-righe="10-11" data-segna="la*@due"><p>Omdanner en List til en LazyList. <code>la*</code> "udfolder" listen til argumenterne i <code>LazyList.apply(as: A*)</code>: <code>LazyList(List(1, 2)*)</code> = <code>LazyList(1, 2)</code>.</p></li>
+      <li data-righe="13-15" data-segna="using Arbitrary[A]@dato|suchThat { _.nonEmpty }@ora"><p>Generator af ikke-tomme LazyList'er. <code>using Arbitrary[A]</code>: for at lave lister af A skal man kunne generere A'er (for Int findes der allerede en). Den genererer en tilfældig List, beholder kun de ikke-tomme (<code>suchThat</code>) og omdanner den.</p></li>
+      <li data-righe="17-18" data-segna="empty.headOption == None@dato"><p>Ex01.01, scenarietest: en Boolean. <code>headOption</code> på den tomme liste skal være None.</p></li>
+      <li data-righe="20-23" data-segna="given Arbitrary[LazyList[Int]]@ora|&quot;singleton&quot;@due|&quot;random&quot;@due"><p>Ex01.02. <code>given</code> gælder kun inde i denne test: <code>LazyList[Int]</code> i forAll bliver ikke-tom. To dele forenet med <code>&amp;&amp;</code>: en liste med ét element n skal give Some(n) (etiket <code>singleton</code>); en tilfældig ikke-tom liste må ikke give None (etiket <code>random</code>).</p></li>
+    </ol>
+  </figure>
+  <div class="box domanda-tua" data-tit="Tvivl: hvilke forskelle er der mellem de 3 lister og de 3 kontroller?">
+    <p>De tre mapper er <b>den samme fil</b>, bortset fra ét stykke. <code>lazyList01</code> ændrer kun <code>headOption</code>: den tilføjer <code>case Empty =&gt; ???</code> foran den rigtige version. <code>lazyList02</code> ændrer kun den sidste linje i <code>cons</code>: <code>Empty</code> i stedet for <code>Cons(() =&gt; head, () =&gt; tail)</code>. Kontrollerne er tre, fordi Ex01.02 har to dele (<code>singleton</code> og <code>random</code>). Hvis man skiller dem og kører dem én for én:</p>
+    <div class="tab-wrap"><table class="tab">
+      <thead><tr><th></th><th>Ex01.01<br><code>empty.headOption == None</code></th><th>singleton<br><code>cons(n, empty).headOption == Some(n)</code></th><th>random<br><code>s.headOption != None</code></th></tr></thead>
+      <tbody>
+        <tr><td><code>lazyList00</code></td><td>None == None ✓</td><td>Some(n) == Some(n) ✓</td><td>Some(…) != None ✓</td></tr>
+        <tr><td><code>lazyList01</code></td><td><b>??? → NotImplementedError</b></td><td>✓ (går aldrig gennem Empty)</td><td>✓</td></tr>
+        <tr><td><code>lazyList02</code></td><td>✓ (tom er tom alligevel)</td><td><b>None ≠ Some(0)</b>: Falsified</td><td><b>Falsified, ARG_0: Empty</b></td></tr>
+      </tbody>
+    </table></div>
+    <p>Med <code>lazyList02</code> fejler <b>to</b> dele, men outputtet for Ex01.02 siger kun <code>singleton</code>: med <code>&amp;&amp;</code> rapporterer ScalaCheck etiketten for den første del, der fejler. Delen <code>random</code> fejler med <code>ARG_0: Empty</code>: den "ikke-tomme" liste er tom, fordi også <code>list2lazyList</code> bruger den ødelagte <code>cons</code> (kontrolleret).</p>
+  </div>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>I outputtet</th><th>Betyder</th></tr></thead>
+    <tbody>
+      <tr><td><code>+</code> i begyndelsen af linjen</td><td>test bestået</td></tr>
+      <tr><td><code>!</code> i begyndelsen af linjen</td><td>test fejlet</td></tr>
+      <tr><td><code>OK, proved property.</code></td><td>scenarietest (en Boolean) sand</td></tr>
+      <tr><td><code>OK, passed 100 tests.</code></td><td>forAll sand på 100 tilfældige input</td></tr>
+      <tr><td><code>Exception raised on property evaluation.</code></td><td>testen døde med en undtagelse (fx <code>???</code>, en bombe)</td></tr>
+      <tr><td><code>Falsified after N passed tests.</code></td><td>testen gav false: forkert resultat</td></tr>
+      <tr><td><code>Labels of failing property: singleton</code></td><td>hvilken del (etiket <code>:|</code>) der fejlede</td></tr>
+      <tr><td><code>ARG_0: 0</code></td><td>input'et, der fik den til at fejle, allerede formindsket</td></tr>
+    </tbody>
+  </table></div>
+  <figure class="passi" data-titolo="Hvorfor lazyList01 og lazyList02 falder" data-legenda="dato:input,ora:den ødelagte del,no:test fejlet,ok:test bestået">
+    <div class="passo"><div class="espr">lazyList01:  def headOption = this match { case Empty =&gt; <mark class="ora">???</mark> … }</div><p class="nota">Den ødelagte headOption: på den tomme liste kører den <code>???</code>.</p></div>
+    <div class="passo"><div class="espr">Ex01.01:  <mark class="dato">empty</mark>.headOption  →  ???  →  <mark class="no">NotImplementedError: an implementation is missing</mark></div><p class="nota">Scenarietesten fanger den med det samme. Ex01.02 derimod består: den tester kun ikke-tomme lister, og der virker headOption.</p></div>
+    <div class="passo"><div class="espr">lazyList02:  def cons(hd, tl) = <mark class="ora">Empty</mark></div><p class="nota">Den ødelagte cons: uanset hvad du bygger, får du den tomme liste.</p></div>
+    <div class="passo"><div class="espr">Ex01.02 singleton:  cons(<mark class="dato">0</mark>, empty) = Empty  →  .headOption = None  ≠  Some(0)  →  <mark class="no">Falsified</mark></div><p class="nota">Ægte output: <code>Labels of failing property: singleton</code>, <code>ARG_0: 0</code> (efter shrinking; originalen var −1218911280).</p></div>
+    <div class="passo"><div class="espr">Ex01.01:  empty.headOption = None  →  <mark class="ok">passa</mark></div><p class="nota">Med lazyList02 er den tomme liste tom som altid: denne test kan ikke opdage fejlen. Derfor skal der mange forskellige tests til.</p></div>
+  </figure>
+</section>
+
+<section>
+  <h2>Værktøjerne: bombe, toList, generatorer, orakel</h2>
+  <p>Fire værktøjer skal bruges i næsten alle øvelserne. Læg dem øverst i <code>object</code>'et, efter de generatorer, der allerede findes.</p>
+  <figure class="codice" data-titolo="Værktøjer (i min testfil: 13 tests ud af 13 består på lazyList00)">
+<pre data-lang="scala">def bomba[A]: A = throw RuntimeException("forzato!")
+
+val genN: Gen[Int] = Gen.choose(0, 50)
+
+given Arbitrary[LazyList[Int]] =
+  Arbitrary(arbitrary[List[Int]].map(list2lazyList))</pre>
+    <ol class="spiega">
+      <li data-righe="1" data-segna="throw@no"><p><b>Bomben</b>: en værdi af en hvilken som helst type <code>A</code>, der, så snart den beregnes, kaster en undtagelse. Lagt i en liste, hvor funktionen ikke må kigge, bliver den en sensor: hvis den eksploderer, har funktionen tvunget noget, den ikke skulle.</p></li>
+      <li data-righe="3" data-segna="Gen.choose(0, 50)@dato"><p><code>n</code> og <code>m</code> i øvelserne er ikke-negative. Små (op til 50), så <code>n + m</code> ikke løber over, og testene er hurtige. Det bruges ved at give generatoren til forAll: <code>forAll(genN) { n =&gt; … }</code>.</p></li>
+      <li data-righe="5-6" data-segna="arbitrary[List[Int]].map(list2lazyList)@ok"><p>Standardgenerator for <code>LazyList[Int]</code>: endelige lister, <b>også tomme</b>. Den genererer en almindelig List og omdanner den med <code>list2lazyList</code>, som allerede findes i filen. Filen har også allerede <code>genNonEmptyLazyList[Int]</code> (ikke-tomme) og <code>infiniteLazyList[Int]</code> (uendelige).</p></li>
+    </ol>
+  </figure>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Værktøj</th><th>Hvad det er til</th><th>Øvelser</th></tr></thead>
+    <tbody>
+      <tr><td>bombe</td><td>at finde ud af, om en funktion tvinger hoveder eller haler</td><td>2, 3, 4, 7, 10</td></tr>
+      <tr><td><code>.toList</code> til at sammenligne</td><td>to LazyList'er sammenlignes aldrig med <code>==</code></td><td>alle dem med en lighed</td></tr>
+      <tr><td><code>genN</code>, generatorer af lister</td><td>n ≥ 0; endelige lister, ikke-tomme, uendelige</td><td>alle</td></tr>
+      <tr><td>Scalas List som orakel</td><td>List'en har allerede ret: LazyList'en skal give den ret</td><td>5, 6, 10</td></tr>
+    </tbody>
+  </table></div>
+  <div class="box domanda-tua" data-tit="Tvivl: har Arbitrary nogensinde været forklaret? Er den påkrævet? Anbefalet?">
+    <p><b>Forklaret:</b> lidt. Slide 16: træ-generatoren og <code>given</code>, der gør den til standard, "så forAll finder den"; slide 20: Arbitrary blandt "nøgletyperne", med link til dokumentationen. Filen selv bruger den i Ex01.02. Hvordan den er bygget indeni, er emnet i uge 7. <b>Påkrævet:</b> nej. <b>Anbefalet:</b> PDF'en anbefaler din egen <b>generator</b> af LazyList'er ("probably a good idea"); at gøre den til en <code>given Arbitrary</code> er kun bekvemt.</p>
+    <pre class="cod" data-lang="scala" data-segna="genLazyList*@due">// senza Arbitrary: un Gen, passato a mano a forAll
+val genLazyList: Gen[LazyList[Int]] =
+  arbitrary[List[Int]].map(list2lazyList)
+
+forAll(genLazyList, genNonNegativeInt) { (l, n) =&gt; … }</pre>
+    <p>Forskel: med <code>given</code> skriver du <code>forAll { (l: LazyList[Int]) =&gt; … }</code>, og forAll finder generatoren selv; med <code>Gen</code> giver du den selv med blandt de første parenteser. Begge versioner: 13 tests ud af 13 består på lazyList00, og de 13 mutanter fejler (kontrolleret).</p>
+  </div>
+  <figure class="scena" data-scena="bomba" data-titolo="Bomben: en sensor, der går af, hvis nogen beregner den"></figure>
+</section>
+
+<section>
+  <h2>Dovenhed: øvelse 2, 3, 4, 7</h2>
+  <p>Disse fire øvelser beder dig kontrollere, hvad en funktion <b>ikke</b> beregner. Et rigtigt resultat er ikke nok: man skal bruge en liste med bomber placeret præcis, hvor funktionen ikke må kigge. Hvis testen slutter uden eksplosioner, returnerer den <code>true</code>.</p>
+  <ul>
+    <li><b>Øv. 2</b>: <code>headOption</code> tvinger ikke halen → bombe i <b>halen</b>: <code>cons(n, bomba)</code>.</li>
+    <li><b>Øv. 3</b>: <code>take</code> tvinger hverken hoveder eller haler → en liste med bombe-hoveder og en med bombe-hale; man kalder <code>take(n)</code> uden at kigge på resultatet.</li>
+    <li><b>Øv. 4</b>: <code>take(n)</code> tvinger ikke hoved nummer n+1, heller ikke hvis man tvinger de første n → n gode elementer og så en bombe; <code>take(n).toList</code>.</li>
+    <li><b>Øv. 7</b>: <code>drop(n)</code> tvinger ikke de kasserede hoveder, heller ikke hvis man bagefter tvinger resten → n bomber og så gode elementer; <code>drop(n).toList</code>.</li>
+  </ul>
+  <figure class="passi" data-titolo="Inde i headOption: konvolutten med halen åbnes aldrig" data-legenda="dato:hovedets konvolut,no:halens konvolut (bombe),ora:hvad der sker,ok:resultat">
+    <div class="passo"><div class="espr">case Cons(h: () =&gt; A, t: () =&gt; LazyList[A])</div><p class="nota">En celle i LazyList'en indeholder to <b>lukkede konvolutter</b>: <code>h</code> (hovedet) og <code>t</code> (halen). De er funktioner: indholdet beregnes kun ved at kalde dem, <code>h()</code> og <code>t()</code>. <b>At tvinge</b> = at åbne konvolutten.</p></div>
+    <div class="passo"><div class="espr">cons(7, bomba)  =  Cons(<mark class="dato">[7]</mark>, <mark class="no">[bomba]</mark>)</div><p class="nota">At bygge listen åbner intet: <code>cons</code> modtager hoved og hale ved navn og lukker dem inde i konvolutterne.</p></div>
+    <div class="passo"><div class="espr">headOption  =  foldRight(None)((h, _) =&gt; Some(h))
+foldRight su Cons(h, t)  =  f(<mark class="ora">h()</mark>, ⟨t().foldRight(z)(f)⟩)</div><p class="nota">foldRight åbner hovedets konvolut (<code>h()</code> → 7). Det andet argument til f er <b>ved navn</b> (<code>=> B</code>): ⟨…⟩ forbliver lukket, <code>t()</code> er ikke kaldt endnu.</p></div>
+    <div class="passo"><div class="espr">f(7, ⟨…⟩)  con  f = (h, <mark class="ora">_</mark>) =&gt; Some(h)   →   <mark class="ok">Some(7)</mark></div><p class="nota"><code>_</code> betyder "dette argument kigger jeg ikke på": ⟨…⟩ beregnes aldrig, halens konvolut forbliver lukket, bomben intakt.</p></div>
+    <div class="passo"><div class="espr">mutante:  case Cons(h, t) =&gt; <mark class="no">t()</mark>; Some(h())   →   RuntimeException: forzato!</div><p class="nota">En headOption, der åbner halen, før den svarer, får bomben til at eksplodere: testen fejler, mutanten er dræbt (kontrolleret, både med <code>cons(7, bomba)</code> og med forAll).</p></div>
+  </figure>
+  <div class="box domanda-tua" data-tit="Tvivl: jeg skrev bomben, men testen virker ikke">
+    <p>I din fil var bomben skrevet med <b>4 mellemrum</b> foran, lige under <code>/* The test suite */</code>. I Scala 3 bestemmer indrykningen, hvad der er inde i hvad, som i Python, og en kommentar lukker intet. Den betydningsfulde linje før var <code>Gen.const(loop)</code>, med 4 mellemrum, inde i <code>infiniteLazyList</code>: så endte bomben også <b>inde i</b> <code>infiniteLazyList</code>, usynlig for testene.</p>
+    <pre class="cod" data-lang="pseudo">··def infiniteLazyList…        2 spazi: membro dell'object
+····Gen.const(loop)             4 spazi: dentro infiniteLazyList
+··/* The test suite */          commento: non conta
+····def tailDevelopFinder…      4 spazi: finisce DENTRO infiniteLazyList   ✗
+··def tailDevelopFinder…        2 spazi: membro dell'object, lo vedono i test   ✓</pre>
+    <p>Regel: <code>def</code> og <code>property</code> i object'et står med <b>2 mellemrum</b>, deres krop med 4.</p>
+  </div>
+  <div class="box domanda-tua" data-tit="Tvivl: vil øvelse 3 have, at take ikke tvinger typen Any?">
+    <p>Nej: det er engelsk, ikke Scala. <i>"does not force any heads nor any tails"</i> = "tvinger <b>ingen</b> hoveder og <b>ingen</b> haler". <i>any</i> i en negativ sætning betyder "ingen"; Scalas type <code>Any</code> har intet med det at gøre. Kaldet <code>l.take(n)</code> må ikke åbne en eneste konvolut af listen <code>l</code>: hovederne beregnes kun, når nogen læser resultatet (fx med <code>toList</code>), og det er øvelse 4.</p>
+  </div>
+  <figure class="passi" data-titolo="Øv. 3: hvordan de to lister finder ud af, hvem der åbner hoveder og haler" data-legenda="no:bombe der eksploderer,ok:ingen eksplosion,ora:den ødelagte linje">
+    <div class="passo"><div class="espr">bombe.take(n)          bombe = Cons(⟨bomba⟩, ⟨bombe⟩)
+cons(1, bomba).take(n) = Cons(⟨1⟩, ⟨bomba⟩)
+true</div><p class="nota">Testen kører linjerne i rækkefølge. Hvis en af de to første eksploderer, nås <code>true</code> aldrig, og ScalaCheck skriver <code>Exception raised on property evaluation</code>. Resultatet af take kigges der ikke på.</p></div>
+    <div class="passo"><div class="espr">take giusta:  cons(⟨h()⟩, ⟨t().take(n - 1)⟩)   →  nessuna busta aperta  →  <mark class="ok">OK, passed 100 tests</mark></div><p class="nota"><code>cons</code> modtager hoved og hale ved navn: hverken <code>h()</code> eller <code>t()</code> kaldes.</p></div>
+    <div class="passo"><div class="espr">take rotta A:  <mark class="ora">val x = h()</mark>; cons(x, …)
+  bombe.take(3)           → h() = <mark class="no">bomba</mark>  →  Exception, ARG_0: 3
+  cons(1, bomba).take(3)  → h() = 1, la coda resta chiusa  →  non se ne accorgerebbe</div><p class="nota">Den åbner hovederne: listen med bombe-hovederne fanger den.</p></div>
+    <div class="passo"><div class="espr">take rotta B:  <mark class="ora">val r = t().take(n - 1)</mark>; cons(h(), r)
+  bombe.take(3)           → t() = bombe, che non è una bomba  →  non se ne accorgerebbe
+  cons(1, bomba).take(3)  → t() = <mark class="no">bomba</mark>  →  Exception, ARG_0: 2</div><p class="nota">Den åbner halerne: listen med bombe-halen fanger den. Derfor skal begge bruges.</p></div>
+  </figure>
+  <div class="errori">
+    <div class="errore">
+<pre data-lang="scala">forAll(Gen.choose(0, 50)) { n =&gt;
+  bombe.take(n).toList
+  true }</pre>
+<pre class="msg">! testing.Ex03.X: con toList (sbagliato): Exception raised on property evaluation.
+&gt; ARG_0: 1
+&gt; Exception: java.lang.RuntimeException: forzato!</pre>
+      <div class="fix">Fallisce sulla LazyList <b>giusta</b>: <code>toList</code> legge il risultato e quindi apre le teste, che sono bombe. Nell'es. 3 il risultato di take non va guardato; aprire le teste del risultato è permesso, ed è l'es. 4 a controllare quali.</div>
+    </div>
+  </div>
+  <figure class="passi" data-titolo="Øv. 2 trin for trin: fremgangsmåden for alle øvelserne" data-legenda="dato:element,no:bombe,ora:hvad der ændrer sig,ok:består">
+    <div class="passo"><div class="espr testo">1. Læs sætningen: "headOption does not force the tail of a lazy list".</div><p class="nota">Hvad den må <b>ikke</b> gøre: beregne halen.</p></div>
+    <div class="passo"><div class="espr testo">2. Læg en bombe præcis der: en liste med et godt hoved og en <mark class="no">bombe-hale</mark>.</div><p class="nota">Hvis headOption beregner halen, eksploderer den.</p></div>
+    <div class="passo"><div class="espr">property("Ex02: headOption does not force the tail") =
+  forAll { (n: Int) =&gt; cons(<mark class="dato">n</mark>, <mark class="no">bomba</mark>).headOption == <mark class="ok">Some(n)</mark> }</div><p class="nota">Kontrollér resultatet også: ingen eksplosion <b>og</b> det rigtige hoved.</p></div>
+    <div class="passo"><div class="espr">lazyList00:  foldRight(None)((h, <mark class="ora">_</mark>) =&gt; Some(h))   →   <mark class="ok">OK, passed 100 tests.</mark></div><p class="nota">foldRight sender halen ved navn, og funktionen smider den væk med <code>_</code>: bomben beregnes aldrig. Testen skal bestå på den rigtige version.</p></div>
+    <div class="passo"><div class="espr">mutante:  case Cons(h, t) =&gt; <mark class="ora">t()</mark>; Some(h())   →   <mark class="no">Exception raised … RuntimeException: forzato!</mark></div><p class="nota">En headOption, der beregner halen, får bomben til at eksplodere: mutanten er dræbt (ægte output, <code>ARG_0: 0</code>). Testen skal fejle på den ødelagte version.</p></div>
+  </figure>
+  <figure class="passi" data-titolo="Øv. 4 inde i take: med n = 3 bygges den fjerde celle ikke engang" data-legenda="dato:godt element,no:bombe,ora:den brugte take-sag,ok:resultat">
+    <div class="passo"><div class="espr">headForceFinderAfter(3)  =  <mark class="dato">1</mark>, <mark class="dato">2</mark>, <mark class="dato">3</mark>, <mark class="no">bomba</mark></div><p class="nota">cons(1, …(2, 2)) → cons(2, …(1, 3)) → cons(3, …(0, 4)) → cons(bombe, empty). Også denne rekursion er inde i cons, så den udfoldes kun, når nogen åbner halerne.</p></div>
+    <div class="passo"><div class="espr">take(3) su 1:  <mark class="ora">case Cons(h, t) if n &gt; 1</mark> =&gt; cons(h(), t().take(2))</div><p class="nota">n = 3 &gt; 1: tager hovedet og henviser til resten med n − 1. Intet er åbnet endnu.</p></div>
+    <div class="passo"><div class="espr">toList apre: 1 · poi take(2) su 2: <mark class="ora">n &gt; 1</mark> · 2 · poi take(1) su 3: <mark class="ora">case Cons(h, _) if n == 1</mark> =&gt; cons(h(), empty)</div><p class="nota">Med n = 1 tager take hovedet og sætter <code>empty</code> som hale: halen af den tredje celle (<code>_</code>) kaldes aldrig, så cellen med bomben findes ikke engang.</p></div>
+    <div class="passo"><div class="espr">toList = <mark class="ok">List(1, 2, 3)</mark>  ==  List.range(1, 4) = List(1, 2, 3)</div><p class="nota"><code>List.range(a, b)</code> går fra a til b <b>udelukket</b>: derfor skriver man <code>n + 1</code>.</p></div>
+    <div class="passo"><div class="espr">mutante: case Cons(h, _) if n == 0 =&gt; <mark class="no">h()</mark>; empty   →   ARG_0: 0, Head Forced!</div><p class="nota">Med n = 0 er listen kun bomben; en take, der alligevel kigger på den, eksploderer (ægte output).</p></div>
+  </figure>
+  <details class="soluzione"><summary>Vis løsningen (øv. 2, 3, 4, 7)</summary><div>
+<pre class="cod" data-lang="scala">// liste con le bombe
+def bombe: LazyList[Int] = cons(bomba, bombe)
+
+def buoniPoiBomba(n: Int, i: Int = 1): LazyList[Int] =
+  if n == 0 then cons(bomba, empty) else cons(i, buoniPoiBomba(n - 1, i + 1))
+
+def bombePoi(n: Int, rest: LazyList[Int]): LazyList[Int] =
+  if n == 0 then rest else cons(bomba, bombePoi(n - 1, rest))
+
+property("Ex02: headOption does not force the tail") =
+  forAll { (n: Int) =&gt; cons(n, bomba).headOption == Some(n) }
+
+property("Ex03: take does not force heads nor tails") =
+  forAll(genN) { n =&gt;
+    bombe.take(n)
+    cons(1, bomba).take(n)
+    true }
+
+property("Ex04: take(n) does not force the (n+1)st head") =
+  forAll(genN) { n =&gt; buoniPoiBomba(n).take(n).toList == List.range(1, n + 1) }
+
+property("Ex07: drop(n) does not force dropped heads") =
+  forAll(genN) { n =&gt; bombePoi(n, LazyList(1, 2, 3)).drop(n).toList == List(1, 2, 3) }</pre>
+  </div></details>
+  <figure class="scena" data-scena="pigrizia" data-titolo="Hvor bomberne skal placeres, øvelse for øvelse"></figure>
+</section>
+
+<section>
+  <h2>Læs: øvelse 5, 6, 8</h2>
+  <p>Tre algebraiske love at prøve med <code>forAll</code>: <code>l.take(n).take(n) == l.take(n)</code>, <code>l.drop(n).drop(m) == l.drop(n + m)</code>, <code>l.map(identity) == l</code>. Det <code>==</code>, der står i øvelserne, er matematisk: i koden sammenligner man <code>.toList</code>. For uendelige lister sammenligner man kun et stykke, med <code>take(k).toList</code>.</p>
+  <div class="errori">
+    <div class="errore">
+<pre data-lang="scala">forAll(arbitrary[LazyList[Int]], genN) { (l, n) =&gt;
+  l.take(n).take(n) == l.take(n) }</pre>
+<pre class="msg">! testing.EQ: take(n).take(n) == take(n) con ==: Falsified after 2 passed tests.
+&gt; ARG_0: Cons(adpro.lazyList.lazyList00.LazyList$$$Lambda/…
+&gt; ARG_1: 1</pre>
+      <div class="fix">Fallisce sulla LazyList <b>giusta</b>: dentro una Cons ci sono funzioni, e due funzioni diverse non sono mai uguali (<code>LazyList(1, 2) == LazyList(1, 2)</code> è false). I 2 test passati erano liste vuote (<code>Empty == Empty</code>). Si confronta con <code>.toList</code>.</div>
+    </div>
+  </div>
+  <figure class="passi" data-titolo="Øv. 6: loven og orglet på en drop, der kasserer én mindre" data-legenda="dato:input,ok:ens,no:forskellige,due:orakel">
+    <div class="passo"><div class="espr">l = 1, 2, 3, 4, 5   n = 1   m = 2
+l.drop(1).drop(2) = 4, 5      l.drop(3) = 4, 5   <mark class="ok">uguali</mark></div><p class="nota">Loven: at kassere n og derefter m er som at kassere n + m på én gang.</p></div>
+    <div class="passo"><div class="espr">n = 4   m = 3:   l.drop(4).drop(3) = ()   l.drop(7) = ()   <mark class="ok">uguali</mark></div><p class="nota">Også når man kasserer mere end længden: tom liste fra begge sider.</p></div>
+    <div class="passo"><div class="espr">mutante  case Cons(_, t) if <mark class="no">n &gt; 1</mark>  (scarta uno in meno)
+oracolo:  list2lazyList(List(0)).drop(1).toList = List(0)   ≠   <mark class="due">List(0).drop(1)</mark> = List()</div><p class="nota">Ægte output: <code>Falsified after 8 passed tests</code>, <code>Labels: oracle</code>, <code>ARG_0: List("0")</code>, <code>ARG_1: 1</code>. Orglet fanger den med det mindst mulige eksempel.</p></div>
+  </figure>
+  <div class="errori">
+    <div class="errore">
+<pre data-lang="scala">def headForceFinderAfter(n: Int, i: Int = 1): LazyList[Int] =
+  if n == 0 then cons(headForceFinder, empty) …
+
+forAll(genNonNegativeInt) { n =&gt; … }      // ma il generatore si chiama Genn</pre>
+<pre class="msg">[error] .\Exercises.scala:50:25
+[error] Not found: headForceFinder
+[error] .\Exercises.scala:89:12
+[error] Not found: genNonNegativeInt</pre>
+      <div class="fix">Dal tuo file: si usa un nome che non è definito da nessuna parte. <code>headForceFinder</code> mancava (c'era solo <code>tailForceFinder</code>), e il generatore era definito come <code>Genn</code> ma usato come <code>genNonNegativeInt</code>. Un nome, una definizione: aggiungi <code>def headForceFinder[A]: A = throw RuntimeException("Head Forced!")</code> e usa lo stesso nome del generatore ovunque.</div>
+    </div>
+  </div>
+  <details class="soluzione"><summary>Vis løsningen (øv. 5, 6, 8)</summary><div>
+<pre class="cod" data-lang="scala">property("Ex05: take(n).take(n) == take(n)") =
+  forAll(arbitrary[LazyList[Int]], genN) { (l, n) =&gt;
+    l.take(n).take(n).toList == l.take(n).toList } &amp;&amp;
+  forAll(infiniteLazyList[Int], genN) { (l, n) =&gt;
+    l.take(n).take(n).toList == l.take(n).toList } &amp;&amp;
+  forAll { (la: List[Int]) =&gt; forAll(genN) { n =&gt;
+    list2lazyList(la).take(n).toList == la.take(n) } }
+
+property("Ex06: drop(n).drop(m) == drop(n + m)") =
+  forAll(arbitrary[LazyList[Int]], genN, genN) { (l, n, m) =&gt;
+    l.drop(n).drop(m).toList == l.drop(n + m).toList } &amp;&amp;
+  forAll { (la: List[Int]) =&gt; forAll(genN) { n =&gt;
+    list2lazyList(la).drop(n).toList == la.drop(n) } }
+
+property("Ex08: map(identity) == l") =
+  forAll { (l: LazyList[Int]) =&gt; l.map(identity).toList == l.toList }</pre>
+  </div></details>
+  <figure class="scena" data-scena="leggi" data-titolo="Sammenlign med toList, og brug List'en som dommer"></figure>
+</section>
+
+<section>
+  <h2>Uendelige lister: øvelse 9</h2>
+  <p>"map terminates on infinite lists": kør <code>map</code> på en uendelig liste og tag derefter et endeligt stykke. Hvis <code>map</code> er doven, beregner den kun det stykke; hvis den er strikt, prøver den at beregne hele listen og bliver aldrig færdig (i praksis: <code>StackOverflowError</code>, som tæller som en fejlet test). De uendelige lister leveres af <code>infiniteLazyList[Int]</code>, som allerede findes i filen.</p>
+  <details class="soluzione"><summary>Vis løsningen (øv. 9)</summary><div>
+<pre class="cod" data-lang="scala">property("Ex09: map terminates on infinite lists") =
+  forAll(infiniteLazyList[Int], genN) { (l, n) =&gt;
+    l.map(_ + 1).take(n).toList == l.take(n).toList.map(_ + 1) }</pre>
+  </div></details>
+  <figure class="scena" data-scena="infinita" data-titolo="dovent map mod strikt map på en uendelig liste"></figure>
+</section>
+
+<section>
+  <h2>append: øvelse 10</h2>
+  <p>Her vælger du selv egenskaberne. Tre idéer: <b>orglet</b> (append skal gøre det samme som <code>++</code> på Lists); <b>dovenheden</b> (<code>append</code> modtager <code>that</code> ved navn, så den må ikke beregne den, før den skal bruges); de <b>uendelige lister</b> (det, du hæfter bag en uendelig liste, ses aldrig).</p>
+  <div class="errori">
+    <div class="errore">
+<pre data-lang="scala">property("append does not force its argument") =
+  forAll { (l: LazyList[Int]) =&gt; l.append(bomba); true }</pre>
+<pre class="msg">! testing.Ex10.02: append does not force its argument: Exception raised on property evaluation.
+&gt; ARG_0: Empty
+&gt; Exception: java.lang.RuntimeException: forzato!</pre>
+      <div class="fix">Fallisce sulla LazyList <b>giusta</b>: se <code>l</code> è vuota, <code>l.append(that)</code> <b>è</b> <code>that</code>, e restituirlo vuol dire calcolarlo. La proprietà vale solo per <code>l</code> non vuota: <code>forAll(genNonEmptyLazyList[Int]) { l =&gt; … }</code>. Errore mio, trovato provando il file su lazyList00: prova sempre i tuoi test sulla versione giusta.</div>
+    </div>
+  </div>
+  <details class="soluzione"><summary>Vis løsningen (øv. 10)</summary><div>
+<pre class="cod" data-lang="scala">property("Ex10.01: append = ++ on lists") =
+  forAll { (l1: LazyList[Int], l2: LazyList[Int]) =&gt;
+    l1.append(l2).toList == l1.toList ++ l2.toList }
+
+property("Ex10.02: append does not force its argument (non-empty this)") =
+  forAll(genNonEmptyLazyList[Int]) { l =&gt; l.append(bomba); true }
+
+property("Ex10.03: infinite append anything = infinite") =
+  forAll(infiniteLazyList[Int], genN) { (l, n) =&gt;
+    l.append(bomba).take(n).toList == l.take(n).toList }</pre>
+  </div></details>
+  <figure class="scena" data-scena="append" data-titolo="append: doven kun hvis this ikke er tom"></figure>
+</section>
+
+<section>
+  <h2>Mutanterne: sådan kontrollerer du dine tests</h2>
+  <p>Vi har ikke bedømmerens mutanter, men de kan laves: man kopierer <code>lazyList00</code>, ødelægger <b>én</b> funktion og ser, om mindst ét test fejler. Jeg lavede 13; med løsningen på denne side er de alle dræbt, og lazyList00 består alle 13 tests (kontrolleret).</p>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Mutant (én funktion ødelagt)</th><th>Dræbt af</th></tr></thead>
+    <tbody>
+      <tr><td>headOption beregner halen, før den svarer</td><td>Ex02</td></tr>
+      <tr><td>headOption returnerer det sidste i stedet for det første</td><td>Ex02</td></tr>
+      <tr><td>take beregner hovederne med det samme</td><td>Ex03</td></tr>
+      <tr><td>take beregner halerne med det samme</td><td>Ex03</td></tr>
+      <tr><td>take rører hoved n+1</td><td>Ex03, Ex04</td></tr>
+      <tr><td>take stopper ikke: med n ≥ 1 returnerer den hele resten af listen</td><td>Ex04, Ex05 (på den uendelige liste bliver den aldrig færdig)</td></tr>
+      <tr><td>drop beregner de kasserede hoveder</td><td>Ex07</td></tr>
+      <tr><td>drop kasserer ét element for lidt</td><td>Ex06, Ex07</td></tr>
+      <tr><td>strikt map (beregner hele halen)</td><td>Ex09</td></tr>
+      <tr><td>map taber det første element</td><td>Ex08, Ex09</td></tr>
+      <tr><td>append ignorerer that</td><td>Ex10.01</td></tr>
+      <tr><td>append beregner that med det samme</td><td>Ex10.02, Ex10.03</td></tr>
+      <tr><td>append sætter that foran</td><td>Ex10.01, Ex10.02, Ex10.03</td></tr>
+    </tbody>
+  </table></div>
+  <div class="box regola" data-tit="De to regler, der giver point">
+    <p><b>1.</b> Hver af dine tests skal bestå på <code>lazyList00</code>: en forkert test, der fejler på den rigtige version, koster 35%. <b>2.</b> Hver bedt om funktion (headOption, take, drop, map, append) skal have tests både på <b>resultatet</b> og på <b>dovenheden</b>: mutanterne ødelægger den ene eller den anden.</p>
+  </div>
+  <figure class="scena" data-scena="mutanti" data-titolo="En mutant: dræbt eller overlevet"></figure>
+</section>
+
+</main>
+</body>
+</html>

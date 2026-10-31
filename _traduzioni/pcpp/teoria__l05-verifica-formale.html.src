@@ -1,0 +1,37 @@
+@@s001 Verifica formale e JavaPathFinder
+@@s002 ok:counter = 2 (giusto),no:counter = 1 (incremento perso),ora:il controesempio trovato
+@@s003 Due thread fanno <code>counter++</code> una volta ciascuno. Ogni incremento è una lettura (<b>R</b>: temp = counter) e una scrittura (<b>W</b>: counter = temp + 1). Un model checker parte dallo stato iniziale…
+@@s004 …e prova <b>tutte</b> le scelte dello scheduler: al primo passo può partire t1 (R1) o t2 (R2).
+@@s005 Secondo passo: per ogni ramo, di nuovo tutte le possibilità.
+@@s006 Terzo passo.
+@@s007 Quarto passo: 6 interleaving in tutto. Solo i 2 sequenziali (ai lati) danno counter = <b>2</b>; negli altri 4 tutti e due leggono 0 prima di scrivere, e counter vale <b>1</b>.
+@@s008 Il controesempio alla proprietà "alla fine counter = 2": <b>R1, R2, W1, W2</b>. Un test lo trova solo se capita; il model checker lo trova sempre, perché li visita tutti.
+@@s009 dato:produttore,due:consumatore,no:deadlock,ok:risolto
+@@s010 dato:interleaving da esplorare,no:troppi da visitare
+@@s011 Verifica formale e JavaPathFinder
+@@s012 Lezione 5, ultima parte. I test eseguono il programma e vedono solo gli interleaving che capitano. La <b>verifica formale</b> tratta programma e proprietà come oggetti matematici e controlla <b>tutti</b> gli interleaving. JavaPathFinder (NASA) lo fa per programmi Java con il <b>model checking</b>.
+@@s013 Esplorare tutti gli interleaving
+@@s014 L'albero di due counter++
+@@s015 Albero costruito a mano; i risultati (2 finali giusti su 6) sono confermati da un'esplorazione esaustiva in Python.
+@@s016 Il programma delle slide: CounterAct.java, N = 10 incrementi per thread
+@@s017 La domanda "HARDer" delle slide: il minimo è <b>2</b>, non 10. L'interleaving: t1 legge 0; t2 fa tutti i suoi giri tranne l'ultimo; t1 scrive 1; t2 legge 1; t1 finisce i suoi giri; t2 scrive 2. Costruiscilo tu nella pagina <a href="l01-interleaving.html">Interleaving</a>.
+@@s018 Provarli uno a uno è impossibile: è l'<b>esplosione degli stati</b> (state explosion).
+@@s019 Tanti interleaving portano allo stesso stato (stessi valori di counter, temp e punto del codice): un model checker come JPF li riconosce e non li riesplora (state matching). Per questo il problema diventa trattabile.
+@@s020 Con il minimo a 2, l'asserzione di <code>CounterAct</code> non si viola mai: JPF la <b>dimostra</b> vera. Con <code>counter &gt; 2</code> JPF stamperebbe il controesempio che arriva a 2.
+@@s021 Numeri calcolati con un piccolo esploratore di stati in Python, che fa per questo programma la stessa cosa di un model checker.
+@@s022 Deadlock nel bounded buffer di JPF
+@@s023 L'esempio <code>jpf_examples/deadlock/BoundedBuffer.java</code> usa un solo monitor (<code>synchronized</code>, <code>wait()</code>) con <code>notify()</code> invece di <code>notifyAll()</code>. Produttori e consumatori aspettano nello stesso insieme di attesa, e <code>notify()</code> ne sveglia <b>uno qualsiasi</b>. Uno scenario con buffer da 1, produttori P1, P2 e consumatori C1, C2:
+@@s024 Tutti fermi (scenario rieseguito passo per passo)
+@@s025 I consumatori arrivano prima.
+@@s026 In attesa: [C2, P1, P2].
+@@s027 Il "waiter sbagliato": sveglia un altro consumatore invece di un produttore. In attesa: [P1, P2].
+@@s028 In attesa: <b>[P1, P2, C1, C2]</b>. Nessuno può più notificare nessuno: <mark class="no">deadlock</mark>.
+@@s029 Un produttore sveglio trova spazio e sblocca la situazione. Con i test uno scenario così capita di rado; JPF lo trova esplorando gli stati (configurazione <code>target.args = 2,4,1</code> nel file .jpf).
+@@s030 notify() sveglia il waiter sbagliato
+@@s031 Perché non si usa sempre
+@@s032 <b>Esplosione degli stati</b>: anche programmi piccoli possono avere più stati di quanti se ne possano visitare. Si riduce con astrazioni, approssimazioni, e restringendo il problema.
+@@s033 Strumenti: dimostratori interattivi (Rocq, Isabelle, Lean), model checker, SAT/SMT solver, analisi statica. Esempio della ricerca del docente: trovare data race in grandi basi di codice Java con CodeQL (200 000 righe in meno di 2 minuti).
+@@s034 Nell'industria si usa sempre di più (Intel per l'hardware; la NASA ha usato JPF per parte del rover Curiosity).
+@@s035 All'esame
+@@s036 Test = generatori di interleaving: trovano controesempi ma non dimostrano l'assenza di errori. Verifica formale = tutti gli interleaving, con il costo dell'esplosione degli stati. Sapere dire che tipo di proprietà si sta controllando (<a href="l05-proprieta.html">safety o liveness</a>) e come appare il suo controesempio.
+@@s037 Esplosione degli stati

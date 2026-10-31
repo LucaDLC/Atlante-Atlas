@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Længde og afstand</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  const pl = p => p.concat(p.slice().reverse());
+  // 1. norma in 2D
+  SCENE.norma = {
+    w: 400, h: 300, lato: true,
+    legenda: 'dato:x-komponenten,due:y-komponenten,ok:længden',
+    codice: { lang: 'python', testo: `import numpy as np
+v = np.array([3, 4])
+np.sqrt(np.sum(v**2))    # 5.0
+np.linalg.norm(v)        # 5.0` },
+    oggetti: [
+      { id: 'ax', tipo: 'assi', box: [40, 20, 300, 250], dom: [0, 6, 0, 5], tacche: 1, etX: 'x', etY: 'y' },
+      { id: 'cx', tipo: 'linea', in: 'ax', x1: 0, y1: 0, x2: 3, y2: 0, tono: 'dato', nascosto: true },
+      { id: 'cy', tipo: 'linea', in: 'ax', x1: 3, y1: 0, x2: 3, y2: 4, tono: 'due', nascosto: true },
+      { id: 'v', tipo: 'vett', in: 'ax', x1: 0, y1: 0, x2: 3, y2: 4, t: 'v = [3, 4]' },
+      { id: 't3', tipo: 'testo', in: 'ax', x: 1.5, y: 0.3, t: '3', size: 14, bold: true, tono: 'dato', nascosto: true },
+      { id: 't4', tipo: 'testo', in: 'ax', x: 3.35, y: 2, t: '4', size: 14, bold: true, tono: 'due', nascosto: true },
+      { id: 't5', tipo: 'testo', in: 'ax', x: 1.1, y: 2.4, t: '5', size: 15, bold: true, tono: 'ok', nascosto: true }
+    ],
+    passi: [
+      { nota: 'Vektoren <b>v = [3, 4]</b>: en pil, der starter i origo og ender i punktet (3, 4). Hvor lang er den?', righe: [2] },
+      { nota: 'Flyt <b>3</b> vandret: den første komponent.', set: { cx: { nascosto: false }, t3: { nascosto: false } } },
+      { nota: 'Og <b>4</b> lodret: den anden komponent. De to komponenter og pilen danner en retvinklet trekant, og pilen er hypotenusen.', set: { cy: { nascosto: false }, t4: { nascosto: false } } },
+      { nota: 'Pythagoras\' sætning: længde² = 3² + 4² = 9 + 16 = 25, så længde = √25 = <b>5</b>. Det skrives <b>‖v‖ = 5</b>, med dobbelte lodrette streger.', righe: [3, 4], set: { v: { tono: 'ok' }, t5: { nascosto: false } } }
+    ]
+  };
+
+  // 2. norma in n dimensioni
+  const cc = (id, y, vals, et, extra) => Object.assign({ id, tipo: 'celle', x: 150, y, cw: 60, valori: vals, indici: false, etichette: et }, extra || {});
+  SCENE.norman = {
+    w: 600, h: 260, lato: true,
+    legenda: 'dato:komponenterne,ora:kvadraterne,ok:normen',
+    oggetti: [
+      { id: 'tv', tipo: 'testo', x: 80, y: 57, t: 'v', size: 15, bold: true },
+      cc('v', 40, ['1', '2', '2'], ['v₁', 'v₂', 'v₃'], { toni: { 0: 'dato', 1: 'dato', 2: 'dato' } }),
+      { id: 'tq', tipo: 'testo', x: 80, y: 137, t: 'vᵢ²', size: 15, bold: true, nascosto: true },
+      cc('q', 120, ['1', '4', '4'], null, { nascosto: true }),
+      { id: 's', tipo: 'testo', x: 450, y: 70, t: '', size: 14 },
+      { id: 'r', tipo: 'testo', x: 450, y: 110, t: '', size: 16, bold: true },
+      { id: 'f', tipo: 'testo', x: 300, y: 216, t: '‖v‖ = √(v₁² + v₂² + … + vₙ²)', size: 15, bold: true }
+    ],
+    passi: [
+      { nota: "Un vettore di ℝ³: v = [1, 2, 2]. Non serve disegnarlo: la formula è la stessa del piano, con un termine per ogni componente." },
+      { nota: "<b>Prima</b> ogni componente al quadrato: 1² = 1, 2² = 4, 2² = 4.", set: { tq: { nascosto: false }, q: { nascosto: false, toni: { 0: 'ora', 1: 'ora', 2: 'ora' } } } },
+      { nota: "<b>Poi</b> la somma dei quadrati: 1 + 4 + 4 = 9.", set: { s: { t: 'Σ vᵢ² = 1 + 4 + 4 = 9', tono: 'ora' } } },
+      { nota: "<b>Infine</b> la radice: ‖v‖ = √9 = <b>3</b>. Ordine: quadrati → somma → radice, come nella loss. Con 50 componenti (una posa) la somma ha 50 termini, e basta.", set: { r: { t: '‖v‖ = √9 = 3', tono: 'ok' } } }
+    ]
+  };
+
+  // 3. distanza
+  SCENE.distanza = {
+    w: 600, h: 272, lato: true,
+    legenda: 'dato:de to punkter,ora:differensen,ok:afstanden',
+    codice: { lang: 'python', testo: `p = np.array([1, 1])
+q = np.array([4, 5])
+d = np.linalg.norm(q - p)   # 5.0` },
+    oggetti: [
+      { id: 'ax', tipo: 'assi', box: [40, 20, 300, 230], dom: [0, 6, 0, 6], tacche: 1, etX: 'x', etY: 'y' },
+      { id: 'p', tipo: 'punto', in: 'ax', x: 1, y: 1, t: 'p = (1, 1)', tono: 'dato' },
+      { id: 'q', tipo: 'punto', in: 'ax', x: 4, y: 5, t: 'q = (4, 5)', tono: 'dato', tx: -80 },
+      { id: 'dx', tipo: 'linea', in: 'ax', x1: 1, y1: 1, x2: 4, y2: 1, tono: 'ora', nascosto: true },
+      { id: 'dy', tipo: 'linea', in: 'ax', x1: 4, y1: 1, x2: 4, y2: 5, tono: 'ora', nascosto: true },
+      { id: 'tx', tipo: 'testo', in: 'ax', x: 2.5, y: 0.6, t: '4 − 1 = 3', size: 12, tono: 'ora', nascosto: true },
+      { id: 'ty', tipo: 'testo', in: 'ax', x: 4.9, y: 3, t: '5 − 1 = 4', size: 12, tono: 'ora', nascosto: true },
+      { id: 'pq', tipo: 'linea', in: 'ax', x1: 1, y1: 1, x2: 4, y2: 5, tono: 'ok', nascosto: true },
+      { id: 'd', tipo: 'testo', x: 470, y: 90, t: '', size: 15, bold: true },
+      { id: 'd2', tipo: 'testo', x: 470, y: 124, t: '', size: 13 }
+    ],
+    passi: [
+      { nota: "Due punti, p = (1, 1) e q = (4, 5). Quanto sono lontani?", righe: [1, 2] },
+      { nota: "La <b>differenza</b> q − p = [4 − 1, 5 − 1] = [3, 4] dice di quanto spostarsi da p per arrivare a q.", set: { dx: { nascosto: false }, dy: { nascosto: false }, tx: { nascosto: false }, ty: { nascosto: false }, d2: { t: 'q − p = [3, 4]' } } },
+      { nota: "La <b>distanza</b> è la lunghezza di questa differenza: d(p, q) = ‖q − p‖ = √(3² + 4²) = <b>5</b>.", righe: [3], set: { pq: { nascosto: false }, d: { t: 'd(p, q) = ‖q − p‖ = 5', tono: 'ok' } } },
+      { nota: "Andare da q a p dà p − q = [−3, −4]: stessa lunghezza, perché i quadrati tolgono il segno. La distanza è <b>simmetrica</b>: d(p, q) = d(q, p). Ed è 0 solo se i due punti coincidono.", set: { d2: { t: 'd(q, p) = ‖[−3, −4]‖ = 5' } } }
+    ]
+  };
+
+  // 4. len contro norm
+  SCENE.lenorm = {
+    w: 560, h: 220, lato: true,
+    legenda: 'due:len tæller cellerne,ok:norm måler pilen',
+    oggetti: [
+      { id: 'v', tipo: 'celle', x: 40, y: 50, cw: 60, valori: ['3', '4'], etichette: ['indice 0', 'indice 1'] },
+      { id: 'tl', tipo: 'testo', x: 100, y: 34, t: 'v = np.array([3, 4])', size: 13, bold: true },
+      { id: 'l', tipo: 'testo', x: 360, y: 60, t: '', size: 15, bold: true },
+      { id: 'n', tipo: 'testo', x: 360, y: 100, t: '', size: 15, bold: true },
+      { id: 'c', tipo: 'testo', x: 280, y: 170, t: '', size: 13 }
+    ],
+    passi: [
+      { nota: "In Python ci sono due \"lunghezze\" diverse, e confonderle è un errore frequente (dubbio chiesto in chat)." },
+      { nota: "<code>len(v)</code> conta le <b>componenti</b>: v ha 2 celle, quindi 2. È la dimensione del vettore, non la sua grandezza.", set: { v: { toni: { 0: 'due', 1: 'due' } }, l: { t: 'len(v) = 2', tono: 'due' } } },
+      { nota: "<code>np.linalg.norm(v)</code> è la <b>lunghezza geometrica</b> della freccia: √(9 + 16) = 5.", set: { v: { toni: { 0: 'ok', 1: 'ok' } }, n: { t: 'norm(v) = 5.0', tono: 'ok' } } },
+      { nota: "Quando usare quale: <code>len</code> per controllare che due vettori abbiano la <b>stessa dimensione</b> prima di sommarli o confrontarli; <code>norm</code> per sapere quanto è <b>grande</b> un vettore o quanto sono <b>lontani</b> due dati: <code>np.linalg.norm(a) &gt; np.linalg.norm(b)</code>.", set: { c: { t: 'len: quante componenti · norm: quanto è lunga' } } }
+    ]
+  };
+
+  // 5. altre norme: i "cerchi" di raggio 1
+  const cerchio = [], rombo = [[1, 0], [0, 1], [-1, 0], [0, -1], [1, 0]], quadro = [[1, 1], [-1, 1], [-1, -1], [1, -1], [1, 1]];
+  for (let a = 0; a <= 2 * Math.PI + 0.01; a += 0.1) cerchio.push([Math.cos(a), Math.sin(a)]);
+  SCENE.altrenorme = {
+    w: 600, h: 272, lato: true,
+    legenda: 'ok:L2 (euklidisk),due:L1 (Manhattan),ora:L∞ (maksimum)',
+    oggetti: [
+      { id: 'ax', tipo: 'assi', box: [50, 20, 230, 230], dom: [-1.5, 1.5, -1.5, 1.5], tacche: 0.5, numeri: false, etX: 'x', etY: 'y' },
+      { id: 'c2', tipo: 'poli', in: 'ax', punti: cerchio, tono: 'ok', vuoto: true, nascosto: true },
+      { id: 'c1', tipo: 'poli', in: 'ax', punti: rombo, tono: 'due', vuoto: true, nascosto: true },
+      { id: 'ci', tipo: 'poli', in: 'ax', punti: quadro, tono: 'ora', vuoto: true, nascosto: true },
+      { id: 't1', tipo: 'testo', x: 440, y: 50, t: 'v = [3, 4]', size: 14, bold: true },
+      { id: 'n2', tipo: 'testo', x: 440, y: 84, t: 'L2: √(9 + 16) = 5', size: 13, nascosto: true },
+      { id: 'n1', tipo: 'testo', x: 440, y: 114, t: 'L1: |3| + |4| = 7', size: 13, nascosto: true },
+      { id: 'ni', tipo: 'testo', x: 440, y: 144, t: 'L∞: max(|3|, |4|) = 4', size: 13, nascosto: true },
+      { id: 'cm', tipo: 'testo', x: 440, y: 200, t: '', size: 12 }
+    ],
+    passi: [
+      { nota: "La norma L2 non è l'unico modo di misurare la grandezza. Per confrontarle si disegnano i punti che, per ciascuna, hanno norma esattamente 1." },
+      { nota: "<b>L2</b> (euclidea), √(Σ vᵢ²): la distanza in linea d'aria. I punti a distanza 1 dall'origine formano un <b>cerchio</b>. Per [3, 4] vale 5.", set: { c2: { nascosto: false }, n2: { nascosto: false }, cm: { t: 'norma 1 in L2: un cerchio' } } },
+      { nota: "<b>L1</b> (Manhattan), Σ |vᵢ|: si somma quanto ci si sposta lungo ogni asse, come camminando fra gli isolati di una città. I punti a distanza 1 formano un <b>rombo</b>. Per [3, 4]: 3 + 4 = 7.", set: { c1: { nascosto: false }, n1: { nascosto: false }, cm: { t: 'norma 1 in L1: un rombo' } } },
+      { nota: "<b>L∞</b> (massimo), maxᵢ |vᵢ|: conta solo la componente più grande. I punti a distanza 1 formano un <b>quadrato</b>. Per [3, 4]: 4. Norme diverse danno idee diverse di \"vicino\"; in NumPy: <code>np.linalg.norm(v, 1)</code>, <code>np.linalg.norm(v, np.inf)</code> (valori controllati).", set: { ci: { nascosto: false }, ni: { nascosto: false }, cm: { t: 'norma 1 in L∞: un quadrato' } } }
+    ]
+  };
+
+  // 6. normalizzare
+  const cer = []; for (let a = 0; a <= 2 * Math.PI + 0.01; a += 0.1) cer.push([Math.cos(a), Math.sin(a)]);
+  SCENE.unitario = {
+    w: 600, h: 272, lato: true,
+    legenda: 'dato:oprindelig vektor,ok:enhedsvektor',
+    oggetti: [
+      { id: 'ax', tipo: 'assi', box: [50, 20, 280, 230], dom: [-3, 4, -1.5, 4.5], tacche: 1, etX: 'x', etY: 'y' },
+      { id: 'uc', tipo: 'poli', in: 'ax', punti: cer, tono: 'spento', vuoto: true },
+      { id: 'v', tipo: 'vett', in: 'ax', x1: 0, y1: 0, x2: 3, y2: 4, t: 'v = [3, 4]', tono: 'dato' },
+      { id: 'u', tipo: 'vett', in: 'ax', x1: 0, y1: 0, x2: 0.6, y2: 0.8, t: '[0.6, 0.8]', tx: 10, ty: 6, tono: 'ok', nascosto: true },
+      { id: 'w', tipo: 'vett', in: 'ax', x1: 0, y1: 0, x2: -2, y2: 1, t: 'w = [−2, 1]', tx: -70, ty: -10, tono: 'dato', nascosto: true },
+      { id: 'uw', tipo: 'vett', in: 'ax', x1: 0, y1: 0, x2: -0.894, y2: 0.447, t: '', tono: 'ok', nascosto: true },
+      { id: 'c1', tipo: 'testo', x: 460, y: 60, t: '‖v‖ = 5', size: 14, bold: true },
+      { id: 'c2', tipo: 'testo', x: 460, y: 92, t: '', size: 14 },
+      { id: 'c3', tipo: 'testo', x: 460, y: 140, t: '', size: 13 },
+      { id: 'c4', tipo: 'testo', x: 460, y: 170, t: '', size: 13 }
+    ],
+    passi: [
+      { nota: "Il cerchio grigio contiene i vettori di lunghezza 1, detti <b>unitari</b>. v = [3, 4] è lungo 5." },
+      { nota: "<b>Normalizzare</b> v: dividerlo per la sua norma. v / ‖v‖ = [3/5, 4/5] = [0.6, 0.8]. Stessa direzione, lunghezza 1: cade sul cerchio.", set: { u: { nascosto: false }, c2: { t: 'v / ‖v‖ = [0.6, 0.8]', tono: 'ok' } } },
+      { nota: "Con w = [−2, 1]: ‖w‖ = √5 ≈ 2.236, e w / ‖w‖ ≈ [−0.894, 0.447]. Anche lui sul cerchio.", set: { w: { nascosto: false }, uw: { nascosto: false }, c3: { t: '‖w‖ = √5 ≈ 2.236' }, c4: { t: 'w / ‖w‖ ≈ [−0.894, 0.447]', tono: 'ok' } } },
+      { nota: "Normalizzare <b>toglie la grandezza e tiene la direzione</b>. Serve quando conta solo \"dove punta\" un vettore, per esempio per confrontare direzioni con il coseno (<a href=\"w02-prodotto-interno.html\">prodotto interno</a>). Non si può normalizzare il vettore nullo: la norma è 0." }
+    ]
+  };
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Længde og afstand</h1>
+  <p class="lede">Når et data er en vektor, er det første spørgsmål "hvor stor er den?" og det andet "hvor langt er den fra en anden?". Svarene er <b>normen</b> og <b>afstanden</b>. De bruges til at sammenligne positurer, måle fejl og senere i enhver loss.</p>
+</header>
+
+<section>
+  <h2>Normen: hvor lang en vektor er</h2>
+  <p><b>Normen</b> for en vektor v skrives <span class="m">‖v‖</span>, med dobbelte lodrette streger, og den siger, hvor lang dens pil er. Den siger ikke, i hvilken retning den peger: kun hvor stor den er.</p>
+  <p>I 2D findes den med Pythagoras' sætning. De to komponenter er kateterne i en retvinklet trekant, og pilen er hypotenusen: <span class="m">‖v‖ = √(v₁² + v₂²)</span>. For v = [3, 4]: √(9 + 16) = √25 = 5.</p>
+  <p>I NumPy skriver man <code>np.linalg.norm(v)</code>, eller i hånden <code>np.sqrt(np.sum(v**2))</code>: kvadrater, sum, rod.</p>
+  <div class="box domanda-tua" data-tit="Du spurgte: hvad bruges ‖v‖ til, med v = [3, 4]?">
+    <p>‖v‖ = 5 siger, <b>hvor stor</b> v er, uanset retningen. I ML bruges den til: <b>afstanden</b> mellem to data (‖a − b‖, hvor ens to positurer er), <b>størrelsen af en fejl</b> (‖forudsagt − sand‖) og til at <b>normalisere</b> (v / ‖v‖ = [0.6, 0.8] har længde 1 og samme retning som v).</p>
+  </div>
+  <figure class="scena" data-scena="norma" data-titolo="v = [3, 4]: Pythagoras"></figure>
+</section>
+
+<section>
+  <h2>Normen i n dimensioner</h2>
+  <p>Formlen ændrer sig ikke med antallet af komponenter: der tilføjes ét led for hver.</p>
+  <div class="mblock"><span class="m">‖v‖ = √( v₁² + v₂² + … + vₙ² ) = √( Σᵢ vᵢ² )</span></div>
+  <p>Den kaldes <b>L2</b>- eller <b>euklidisk</b> norm. Rækkefølgen af operationerne er den samme som i loss: først <b>hvert</b> kvadrat, derefter summen, derefter roden. Roden kan ikke "fordeles": √(9 + 16) = 5, mens √9 + √16 = 7.</p>
+  <p>En forbindelse, der går igen ofte: summen af komponenternes kvadrater er vektorens indre produkt med sig selv, så <span class="m">‖v‖ = √(v · v)</span> (<a href="w02-prodotto-interno.html">indre produkt</a>).</p>
+  <figure class="scena" data-scena="norman" data-titolo="‖[1, 2, 2]‖, uden at tegne ℝ³"></figure>
+</section>
+
+<section>
+  <h2>Afstand mellem to punkter</h2>
+  <p>Den <b>euklidiske afstand</b> mellem a og b er normen af deres differens:</p>
+  <div class="box regola" data-tit="Definition">
+    <p><span class="m">d(a, b) = ‖a − b‖ = √( Σᵢ (aᵢ − bᵢ)² )</span>. Den er 0 kun, hvis a = b, og den er symmetrisk: d(a, b) = d(b, a).</p>
+  </div>
+  <p>Hvorfor differensen: a − b er vektoren, der går fra b til a, og dens længde er netop, hvor langt de er fra hinanden. Med to data beskrevet af featurevektorer er afstanden den enkleste måde at måle, hvor meget de <b>ligner</b> hinanden: lille = ens. Det er målet "calculate the Euclidean distance in n-dimensional spaces and explain its relation to the inner product" i uge 1.</p>
+  <figure class="codice" data-titolo="Afstand mellem to positurer (vektorer med 50 komponenter)">
+<pre data-lang="python">import numpy as np
+poses = np.load('poses.npy')          # forma (18, 50)
+diff = poses[0] - poses[1]            # componente per componente
+d = np.linalg.norm(diff)              # un solo numero
+d_manuale = np.sqrt(np.sum(diff**2))  # la stessa cosa, a mano</pre>
+    <ol class="spiega">
+      <li data-righe="2" data-segna="(18, 50)@dato"><p>18 positurer, hver en vektor med 50 tal (25 punkter × 2 koordinater).</p></li>
+      <li data-righe="3" data-segna="poses[0] - poses[1]@ora"><p>Differensen mellem to NumPy-vektorer er <b>element for element</b>: en ny vektor med 50 tal.</p></li>
+      <li data-righe="4" data-segna="np.linalg.norm(diff)@ok"><p>Dens norm: hvor langt de to positurer er fra hinanden (3.949 mellem positur 0 og 1). Lille = ens positurer.</p></li>
+      <li data-righe="5" data-segna="diff**2@due|np.sum@due|np.sqrt@ok"><p>Samme resultat skrevet med formlen: kvadrater, sum, rod.</p></li>
+    </ol>
+  </figure>
+  <figure class="scena" data-scena="distanza" data-titolo="d(p, q) = ‖q − p‖"></figure>
+</section>
+
+<section>
+  <h2>len mod norm: to "længder" i Python</h2>
+  <p>På dansk siger vi "længde" om to forskellige ting, og i Python er det to forskellige funktioner.</p>
+  <p><code>len(v)</code> returnerer <b>antallet af komponenter</b>: for [3, 4] er den 2. Det er vektorens dimension. Den bruges til at kontrollere, at to vektorer har samme dimension, før man adderer, subtraherer eller tager deres indre produkt.</p>
+  <p><code>np.linalg.norm(v)</code> returnerer <b>den geometriske længde</b>: for [3, 4] er den 5. For at vide, hvilken af to vektorer der er "længst" i geometrisk forstand, sammenligner man normerne, ikke <code>len</code>.</p>
+  <div class="box domanda-tua" data-tit="Du spurgte: sammenligne længden af to arrays i Python">
+    <p>For dimensionen: <code>len(a) == len(b)</code>. For størrelsen: <code>np.linalg.norm(a) &gt; np.linalg.norm(b)</code>.</p>
+  </div>
+  <figure class="scena" data-scena="lenorm" data-titolo="To længder for det samme array"></figure>
+</section>
+
+<section>
+  <h2>Andre normer: L1 og L∞</h2>
+  <p>Den euklidiske norm er ikke den eneste. Alle måler, "hvor stor" en vektor er, men de vægter komponenterne forskelligt.</p>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Norm</th><th>Formel</th><th>For v = [3, 4]</th><th>NumPy</th></tr></thead>
+    <tbody>
+      <tr><td><b>L2</b> (euklidisk)</td><td><span class="m">√(Σ vᵢ²)</span></td><td>5</td><td><code>np.linalg.norm(v)</code></td></tr>
+      <tr><td><b>L1</b> (Manhattan)</td><td><span class="m">Σ |vᵢ|</span></td><td>7</td><td><code>np.linalg.norm(v, 1)</code></td></tr>
+      <tr><td><b>L∞</b> (maksimum)</td><td><span class="m">maxᵢ |vᵢ|</span></td><td>4</td><td><code>np.linalg.norm(v, np.inf)</code></td></tr>
+    </tbody>
+  </table></div>
+  <p>De enkelte lodrette streger |vᵢ| betegner <b>den absolutte værdi</b>: tallet uden fortegn. L1 er "kvarterruten" (3 til højre + 4 op, uden at skære diagonalt); L∞ ser kun på den største komponent. Forskellige normer giver forskellige idéer om "nær": valget har betydning ved evaluering af modeller (uge 11, hvor gennemsnittet af fejlene i L1 kaldes MAE) og ved regularisering.</p>
+  <p class="piccolo">Værdier beregnet med NumPy.</p>
+  <figure class="scena" data-scena="altrenorme" data-titolo="Punkterne i afstand 1: cirkel, rhombe, kvadrat"></figure>
+</section>
+
+<section>
+  <h2>Enhedsvektor og normalisering</h2>
+  <p>En vektor med norm 1 kaldes <b>enhedsvektor</b> (<i>unit vector</i>). Enhver vektor, der ikke er nul, <b>normaliseres</b> ved at dele den med sin norm: <span class="m">v̂ = v / ‖v‖</span>. Hatten på v angiver den normerede version.</p>
+  <p>Hvis man deler hver komponent med det samme positive tal, ændres retningen ikke, kun længden, som bliver 1. For [3, 4]: [3/5, 4/5] = [0.6, 0.8], og netop 0.36 + 0.64 = 1.</p>
+  <p>Det bruges, når kun <b>retningen</b> betyder noget: for eksempel til at måle vinklen mellem to vektorer, eller til at sammenligne to data uden at deres skala betyder noget. Pas på ikke at forveksle det med "normaliseringen" af data i uge 7, som skalerer <b>features</b> (søjlerne) og ikke de enkelte vektorer.</p>
+  <figure class="scena" data-scena="unitario" data-titolo="v / ‖v‖ ender på enhedscirklen"></figure>
+</section>
+
+</main>
+</body>
+</html>

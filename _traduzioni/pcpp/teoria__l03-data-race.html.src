@@ -1,0 +1,71 @@
+@@s001 Data race e correttezza
+@@s002 dato:azioni,ora:archi di happens-before,ok:coppia ordinata,no:coppia in conflitto non ordinata
+@@s003 PossibleReordering come grafo: un nodo per azione. Gli archi già disegnati sono il <b>program order</b> dentro ogni thread.
+@@s004 <b>Start rule</b>: start(t) viene prima della prima azione di t.
+@@s005 <b>Termination rule</b>: l'ultima azione di un thread viene prima del join, e quindi della stampa (qui il join è riassunto nella freccia verso 5).
+@@s006 Accessi a x: init scrive, t1(2) scrive, m(5) legge. Sono in conflitto ma <b>ordinati</b>: init → st1 → 1 → 2 → 5. Nessuna data race su x.
+@@s007 Accessi ad a: t1(1) scrive, t2(4) legge. Nessun cammino di frecce va da 1 a 4 o da 4 a 1: in conflitto e <b>non ordinati</b>. È una <b>data race</b>, e ne basta una.
+@@s008 dato:main,ora:t1,due:t2,no:viola la mutua esclusione,ok:ben formato
+@@s009 ora:t1,due:t2,ok:regola del monitor,no:accessi in conflitto
+@@s010 dato:main,ora:t1,due:t2,ok:percorso happens-before,no:scrittura non visibile
+@@s011 ora:t1,due:t2,ok:lettura che vede 1
+@@s012 ora:passo attuale,ok:passo fatto
+@@s013 Data race e correttezza
+@@s014 Nel JMM un programma è corretto se <b>nessuna esecuzione ha data race</b>. Per dimostrarlo servono ancora due ingredienti: le <b>azioni in conflitto</b> e i <b>synchronization order</b>. Poi si vede come un lock ordina le azioni, e perché <code>volatile</code> cambia le regole.
+@@s015 Synchronization order ed esecuzioni ben formate
+@@s016 Synchronization order
+@@s017 L'ordine <b>totale</b> in cui avvengono le azioni di sincronizzazione di un'esecuzione. Deve rispettare la mutua esclusione (lock annidati correttamente) e l'happens-before. Un programma può averne più di uno: ogni esecuzione ne ha uno.
+@@s018 Esecuzione ben formata (well-formed)
+@@s019 Un'esecuzione è ben formata se è coerente con program order, happens-before e synchronization order. La JVM produce <b>solo</b> esecuzioni ben formate.
+@@s020 <code>PossibleReordering</code> ha un solo synchronization order: <code>m(start(t1)), m(start(t2)), m(join(t1)), m(join(t2))</code>. I thread non hanno azioni di sincronizzazione proprie.
+@@s021 Ordini di sincronizzazione validi e non validi
+@@s022 Azioni in conflitto e data race
+@@s023 Conflicting actions
+@@s024 Due azioni sono <b>in conflitto</b> se accedono alla stessa variabile <b>non volatile</b> e almeno una è una scrittura.
+@@s025 Data race (JMM)
+@@s026 C'è una data race tra <code>a</code> e <code>b</code> se 1) sono in conflitto e 2) <b>non</b> sono ordinate da happens-before.
+@@s027 Correctly synchronized
+@@s028 Un programma è <b>correttamente sincronizzato</b> se nessuna delle sue esecuzioni contiene data race. La JVM garantisce che tutte le sue esecuzioni sono <b>sequenzialmente consistenti</b>: niente più comportamenti paradossali.
+@@s029 Conflitti in PossibleReordering (slide 25)
+@@s030 Elenco chi tocca x e come.
+@@s031 Tutte le coppie con almeno una scrittura: sono in conflitto.
+@@s032 Ma sono ordinate: nessuna data race su x.
+@@s033 Questa coppia è in conflitto <b>e</b> non ordinata: data race. Basta trovarne una in un'esecuzione per dire che il programma <b>non</b> è correttamente sincronizzato.
+@@s034 Cercare un cammino di happens-before
+@@s035 Sistemare con un lock, e dimostrarlo
+@@s036 Dal lock alle due famiglie di esecuzioni
+@@s037 Il lock aggiunge quattro azioni di sincronizzazione.
+@@s038 Ora ci sono più synchronization order. Nota: in nessuno un lock sta in mezzo a un lock/unlock dell'altro thread (mutua esclusione).
+@@s039 Regola del monitor: l'unlock di t1 viene prima del lock di t2.
+@@s040 Tutti i synchronization order ricadono in uno di questi due casi.
+@@s041 La scrittura di a (t1(2)) happens-before la lettura (t2(7)).
+@@s042 Qui l'ordine è al contrario, ma c'è comunque.
+@@s043 Lo stesso ragionamento vale per tutte le altre coppie in conflitto: il programma è <b>correttamente sincronizzato</b>.
+@@s044 HB1 e HB2: la scrittura e la lettura di a sono sempre ordinate
+@@s045 Prevedere i valori: la visibilità
+@@s046 Se <code>a → b</code>, l'effetto di <code>a</code> è visibile a <code>b</code>. Quindi si può dimostrare quali valori sono possibili.
+@@s047 Il programma con lock può stampare x == 1? (slide 40)
+@@s048 Cioè: l'ultima scrittura di b prima di <code>x=b</code> è quella di t2, che scrive 1.
+@@s049 Questa parte vale in <b>tutte</b> le esecuzioni: non dipende da chi prende il lock.
+@@s050 Questa parte vale solo in HB<sub>2</sub>.
+@@s051 Stesso ragionamento per le altre variabili.
+@@s052 x vale 1 solo se t2 prende il lock per primo
+@@s053 La regola volatile
+@@s054 Volatile rule
+@@s055 Se <code>a</code> è una scrittura su una variabile volatile e <code>b</code> una lettura <b>successiva</b> della stessa variabile, allora <code>a → b</code>.
+@@s056 Gli accessi a variabili volatile sono azioni di sincronizzazione ma <b>non</b> danno mutua esclusione: aumentano molto i synchronization order possibili.
+@@s057 Per definizione gli accessi a variabili volatile <b>non sono mai in conflitto</b>. Quindi non possono dare data race.
+@@s058 Con <code>volatile a, b</code> in <code>PossibleReordering</code> restano in conflitto solo gli accessi a x e y, già ordinati da start e termination rule: il programma è correttamente sincronizzato. Gli output possibili sono (1,0), (0,1), (1,1); (0,0) no.
+@@s059 Attenzione: nella tua risposta al 3.1.8 (assignment 2 ancora da consegnare)
+@@s060 Hai scritto che con <code>count</code> volatile c'è una data race tra le due scritture. Per la definizione del corso <b>no</b>: gli accessi a variabili volatile non sono in conflitto, quindi <b>non ci sono data race</b> e il programma è correttamente sincronizzato. Però la <b>race condition</b> resta: entrambi i thread possono leggere 0 e scrivere 1, quindi <code>count</code> può valere 1. È proprio il confronto chiesto dal 3.1.9: la versione con lock stampa sempre 2, quella volatile può stampare 1. Dettagli nell'<a href="l03-esercizio-31.html">esercizio 3.1 svolto</a>.
+@@s061 Con a e b volatile, (0,0) è impossibile
+@@s062 La strategia in 6 passi (slide 48)
+@@s063 La strategia è un procedimento meccanico: non serve "intuire" dove sta il problema. Si parte dalle azioni, si aggiungono le coppie che valgono <b>sempre</b> (program order, start, termination), poi si guarda cosa <b>dipende dall'esecuzione</b> (chi prende per primo il lock, quale volatile viene letto dopo). Ogni caso diverso dà un insieme HB diverso; alla fine ogni domanda d'esame (data race? correttamente sincronizzato? che valori può stampare?) si risolve cercando percorsi in quegli insiemi.
+@@s064 Identifica le azioni e classificale (variable access, synchronization, other).
+@@s065 Scrivi le coppie del <b>program order</b>.
+@@s066 Scrivi le coppie delle azioni di sincronizzazione: <b>start</b>, <b>termination</b>, <b>monitor</b>, <b>volatile</b>.
+@@s067 Elenca i possibili <b>synchronization order</b>.
+@@s068 Guarda quali coppie di happens-before <b>cambiano</b> tra un synchronization order e l'altro.
+@@s069 Per ogni differenza, scrivi l'insieme happens-before corrispondente (come HB<sub>1</sub>, HB<sub>2</sub>).
+@@s070 Con quegli insiemi puoi: <b>trovare</b> data race, <b>dimostrare</b> che non ci sono (correttezza), <b>prevedere</b> i valori delle variabili.
+@@s071 I sei passi applicati all’esempio con il lock

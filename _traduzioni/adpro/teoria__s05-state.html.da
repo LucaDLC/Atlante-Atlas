@@ -1,0 +1,92 @@
+@@s001 State[S, A]: det generelle mønster
+@@s002 Tilstand <b>${stato}</b>: <code>run(${stato})</code> = ("${out[k]}", ${prossimo}). Værdien "${out[k]}" går i listen, tilstanden ${prossimo} bruges til det næste trin.
+@@s003 ora:nuværende tilstand og overgang,ok:værdi lige produceret,dato:tilstande
+@@s004 En automat med tre tilstande. <code>abc</code> er en <code>State[Int, String]</code>: for hver tilstand siger den, hvad der skal produceres, og hvor den skal hen. Fra 1 produceres "a", og den går til 2, og så videre.
+@@s005 Og man starter forfra: listen er uendelig, men <code>cons</code> er doven, så hvert element beregnes kun, når det er nødvendigt. <code>take(7).toList</code> beder om 7 af dem: <b>List(a, b, c, a, b, c, a)</b> (kontrolleret).
+@@s006 ora:tilstand,ok:værdi produceret,dato:funktion fra filen
+@@s007 dato:tilstand,ok:værdi udsendt,spento:endnu ikke beregnet
+@@s008 dato:tilstand,ora:automat,ok:resultat
+@@s009 State[S, A]: det generelle mønster
+@@s010 Uge 5, øvelse 9–11 og slides. Intet af det, vi gjorde med <a href="s05-rand.html">Rand</a>, afhænger af, at tilstanden er en talgenerator: det gælder for <b>enhver</b> tilstand. <code>State[S, A]</code> er en overgang: fra en tilstand S producerer den en værdi A og den næste tilstand. Det er en monade, ligesom Option og LazyList.
+@@s011 Fra Rand til State
+@@s012 Én type til alle beregninger med tilstand
+@@s013 Rand fra forrige side: tilstanden er en generator.
+@@s014 Samme mønster med en hvilken som helst tilstand: en websession, en database, en protokol, en tæller.
+@@s015 Man "pakker" funktionen ind i en klasse for at give den metoder (map, flatMap). Sliderne foreslår at læse <code>State</code> som "automat" eller "overgang" og <code>run</code> som "trin".
+@@s016 Rand bliver et specialtilfælde.
+@@s017 Automaten fra sliderne og dens lazy list (øvelse 10)
+@@s018 Det andet eksempel fra sliderne: tælleren
+@@s019 Imperativt: tilstanden er variablen x, som ændres ved hver omgang.
+@@s020 Funktionelt: ud fra x produceres x, og det siger, at den næste tilstand er x + 1. Intet ændres.
+@@s021 Kontrolleret: det er testen <code>Ex10.02</code> ("an increment automaton generates a list of naturals").
+@@s022 API'en for State (øvelse 9)
+@@s023 flatMap, map, map2 i klassen; sequence i objektet (44 tests ud af 44)
+@@s024 Det samme <code>flatMap</code> som Rand, med <code>S</code> i stedet for RNG: man laver sit trin, derefter kører man det trin af automaten, som <code>f</code> vælger, på den nye tilstand. <code>abc.flatMap(a =&gt; abc.map(b =&gt; a + b)).run(1)</code> = ("ab", 3).
+@@s025 <code>map</code> skrevet med <code>flatMap</code>: det andet trin er en automat, der ikke ændrer tilstanden og returnerer <code>f(a)</code>. (Testen <code>Ex09.06</code> kontrollerer netop denne lighed.)
+@@s026 Med for/yield (uge 3), som Scala oversætter til <code>flatMap</code> og <code>map</code>. <code>abc.map2(abc)(_ + _).run(2)</code> = ("bc", 1).
+@@s027 Som for Rand. I filen står metoden i objektet <code>State</code> (anden del af øvelse 9). <code>sequence(List(abc, abc, abc)).run(1)</code> = (List(a, b, c), 1).
+@@s028 Med almindelige ord: hvad øvelse 9 beder om
+@@s029 Du har allerede skrevet <code>map</code>, <code>map2</code>, <code>flatMap</code>, <code>sequence</code> for <code>Rand</code> (tilstand = RNG). Skriv dem <b>ens</b> om for en hvilken som helst tilstand <code>S</code>. Kun to ting ændrer sig: funktionen står nu i en kasse, så man <b>bygger</b> den med <code>State { s =&gt; … }</code> og <b>kører</b> den med <code>.run(s)</code>.
+@@s030 Billede: billetautomaten i turen (den samme som øv. 10–11). Displayet er tilstanden; <code>run</code> = man river en billet af, og displayet går videre. Hele øvelse 9 er én regel: <b>den, der kommer efter, starter fra det display, den, der kom før, efterlod</b>.
+@@s031 Variant skrevet som din øv. 7 (alle 44 tests består også sådan):
+@@s032 Tre personer, én automat: f(a).run(s1) mod f(a).run(s)
+@@s033 dato:display,ora:billet,ok:rigtigt,no:forkert
+@@s034 Tre personer river en billet af den samme automat, som starter fra 0.
+@@s035 Hver starter fra det display, den forrige efterlod.
+@@s036 Tre forskellige billetter, endeligt display 3.
+@@s037 Hvis det andet trin starter forfra fra den gamle tilstand <code>s</code>, læser alle displayet 0: tre personer med samme billet, og displayet går aldrig videre. Værdier udskrevet af Scala 3.8.4 med de to flatMap.
+@@s038 Samme fejl på et mindre eksempel: rigtigt 0·10 + 1 = 1 med display 2; forkert 0·10 + 0 = 0 med display fastlåst på 0.
+@@s039 Rand (øv. 5–8)
+@@s040 State (øv. 9)
+@@s041 typen
+@@s042 <code>RNG =&gt; (A, RNG)</code>, ren funktion
+@@s043 <code>State[S, A](run: S =&gt; (A, S))</code>, funktion i kassen
+@@s044 at bygge
+@@s045 <code>rng =&gt; …</code>
+@@s046 <code>State { s =&gt; … }</code>
+@@s047 at køre
+@@s048 <code>f(rng)</code>, <code>g(a)(rng2)</code>
+@@s049 <code>run(s)</code>, <code>f(a).run(s1)</code>
+@@s050 map2, sequence
+@@s051 <code>map2(h, …)(…)</code>
+@@s052 <code>h.map2(…)(…)</code>, det er en metode
+@@s053 Funktion i filen
+@@s054 Hvad den gør
+@@s055 Eksempel (kontrolleret)
+@@s056 <code>get</code>
+@@s057 læser tilstanden og returnerer den som en værdi
+@@s058 <code>get.run(7)</code> = (7, 7)
+@@s059 <code>set(s)</code>
+@@s060 erstatter tilstanden
+@@s061 <code>set(5).run(7)</code> = ((), 5)
+@@s062 <code>modify(f)</code>
+@@s063 get, derefter set af f(tilstand)
+@@s064 <code>modify(_ * 10).run(4)</code> = ((), 40)
+@@s065 Med get, set, modify og for/yield ser koden med State ud til at være imperativ ("læs tilstanden, skift den"), men den er stadig ren: det er blot beskrivelsen af en overgang, som starter, når <code>run</code> kaldes.
+@@s066 flatMap, map, map2, get, set, modify
+@@s067 At komponere automater: map, flatMap, map2 (slide 11–13)
+@@s068 State er en <b>monade</b>: den har de samme nøgleoperationer som List, Option og LazyList. Hvis man tænker på en State som en automat, tjener disse operationer til at <b>bygge nye automater ud fra eksisterende</b>, uden at skrive overgivelsen af tilstanden i hånden.
+@@s069 <b>map</b> ændrer de producerede værdier og lader overgangen være: <code>val even: Rand[Int] = int.map(n =&gt; n * 2)</code> er en generator af lige tal. <b>flatMap</b> bruger den producerede værdi til at <b>vælge</b> den næste automat: <code>int.flatMap(n =&gt; ints(n))</code> genererer en liste med tilfældig længde, og længden trækkes med en anden tilstand end tallene, fordi flatMap sender den nye tilstand videre. <b>map2</b> "zipper" to automater på samme tilstandsrum: med <code>C = (A, B)</code> er det <b>produktautomaten</b>, som får to beregninger til at gå synkront. <b>sequence</b> stiller en liste af automater op i række.
+@@s070 Slide 8 opsummerer, hvorfor det er nødvendigt: alt, der har en tilstand, skrives med dette mønster. En generator af tilfældige tal (tilstand: seedet), et site med en session (tilstand: sessionen), et program med en database (tilstand: databasen), en kommunikationsprotokol (tilstand: protokollens fase). Og man komponerer altid med de samme fire værktøjer.
+@@s071 map, flatMap, map2 og sequence på automater
+@@s072 Tilstande og lazy lister (øvelse 10–11)
+@@s073 Fra automaten til dens spor
+@@s074 Ét trin, og resten af listen er "den samme automat fra den næste tilstand". Uden basistilfælde: det virker kun, fordi <code>cons</code> ikke beregner halen, før den er nødvendig (uge 4). Med en almindelig List ville det være en uendelig løkke.
+@@s075 Øv. 11: heltalsgeneratoren er en automat; dens spor er en uendelig liste af tilfældige tal.
+@@s076 Ti tal på en linje: 16159453, −1281479697, −340305902, −2015756020, 1770001318, … Abstraktionerne komponeres: automat → lazy liste → take → liste.
+@@s077 Med almindelige ord: hvad øvelse 10 og 11 beder om
+@@s078 <b>Øv. 10:</b> du har en automat (en <code>State</code>) og en starttilstand. Kør den uendeligt og stil de værdier, der kommer ud, op i en <code>LazyList</code>. <b>Øv. 11:</b> generatoren af tilfældige tal er også en automat (tilstand = RNG, trin = nextInt): læg den i en <code>State</code>, giv den til øv. 10 → uendelig liste af tilfældige tal; tag derefter 10 af dem i en almindelig List.
+@@s079 Billede: billetautomaten i turen. Tilstanden er tallet på displayet; <code>run</code> = man river en billet af: den giver tallet, og displayet går videre. <code>LazyList</code> er rullen: en billet udskrives først, når nogen river den af (<code>take</code>).
+@@s080 stateToLazyList(counter)(0).take(3).toList
+@@s081 dato:tilstand,ora:værdi udsendt,due:tilstand efter,ok:resultat
+@@s082 Automaten: returnerer tallet på displayet og fører det et trin frem.
+@@s083 Ét trin af automaten fra starttilstanden.
+@@s084 ⟨ ⟩ = halen endnu ikke beregnet. <code>cons</code> modtager den "efter navn" (<code>tl: =&gt; LazyList[A]</code>) og holder den suspenderet.
+@@s085 Først nu beregnes halen: endnu et trin, fra tilstanden efter.
+@@s086 Endnu et trin.
+@@s087 Intet basistilfælde og ingen uendelig løkke: det er den, der læser, der stopper, ikke den, der skriver. Kontrolleret (Scala 3.8.4).
+@@s088 Testfilen for denne uge kompilerer ikke
+@@s089 <code>Exercises.test.scala</code> begynder med <code>package adpro.state.solution</code>, mens løsningerne står i <code>package adpro.state</code>: fra pakken "solution" er <code>RNG</code> ikke synlig, og kompileringen stopper med <code>Not found: RNG</code> (kontrolleret). I min kopi ændrede jeg den linje til <code>package adpro.state</code>, og alle 44 tests består. Hvis det sker for dig, er det ikke din kodes skyld: ændr første linje i testfilen, eller spørg TA'erne.
+@@s090 Færdige sætninger (skriftlig eksamen)
+@@s091 "State[S, A] wraps a state transition S =&gt; (A, S); flatMap threads the state from one transition to the next, so the state stays explicit but invisible to the user."
+@@s092 At udfolde en automat til en lazy liste

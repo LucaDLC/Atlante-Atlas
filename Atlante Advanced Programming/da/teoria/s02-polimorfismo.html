@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Polymorfi og map</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+SCENE.mappa = {
+  w: 540, h: 230, lato: false,
+  legenda: 'dato:liste af A,ora:f i gang,ok:liste af B',
+  oggetti: [
+    { id: 'L', tipo: 'celle', x: 40, y: 50, cw: 60, ch: 42, valori: ['1', '−2', '3'] },
+    { id: 'f', tipo: 'nodo', forma: 'quadrato', r: 32, x: 290, y: 70, t: 'abs' },
+    { id: 'R', tipo: 'celle', x: 360, y: 50, cw: 60, ch: 42, valori: ['', '', ''] },
+    { id: 'tipi', tipo: 'testo', x: 270, y: 160, t: 'A = Int,  B = Int', size: 14, bold: true },
+    { id: 'n', tipo: 'testo', x: 270, y: 205, t: '', size: 14, bold: true }
+  ],
+  passi: [
+    { nota: '<code>map[A, B](l: List[A])(f: A =&gt; B): List[B]</code>. I definitionen er f et hul: hvad den gør, bestemmes af den, der kalder. Her er <code>f = abs</code>, så A = Int og B = Int.' },
+    { nota: 'Første celle: abs(1) = 1.', set: { L: { toni: { 0: 'dato' } }, f: { tono: 'ora' }, R: { valori: ['1', '', ''], toni: { 0: 'ok' } } } },
+    { nota: 'abs(−2) = 2.', set: { L: { toni: { 1: 'dato' } }, R: { valori: ['1', '2', ''], toni: { 1: 'ok' } } } },
+    { nota: 'abs(3) = 3. Samme længde, samme rækkefølge: map ændrer værdierne, aldrig formen.', set: { L: { toni: { 2: 'dato' } }, R: { valori: ['1', '2', '3'], toni: { 2: 'ok' } }, n: { t: 'map(List(1, −2, 3))(abs) = List(1, 2, 3)', tono: 'ok' } } },
+    { nota: 'Samme map, en anden f: <code>_.toString</code>. Nu er B = String: fra List[Int] kommer List[String] ud. Koden i map er ikke ændret.', set: { f: { t: '_.toString' }, R: { valori: ['"1"', '"-2"', '"3"'], toni: { 0: 'ok', 1: 'ok', 2: 'ok' } }, tipi: { t: 'A = Int,  B = String', tono: 'ora' }, n: { t: 'List("1", "-2", "3")', tono: 'ok' } } }
+  ]
+};
+</script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  const T = (id, x, y, t, extra) => Object.assign({ id, tipo: 'testo', x, y, t, size: 13 }, extra || {});
+  const R = (id, x, y, w, h, t, extra) => Object.assign({ id, tipo: 'rett', x, y, w, h, t }, extra || {});
+  const N = (id, x, y, t, tono, extra) => Object.assign({ id, tipo: 'nodo', x, y, t, tono, r: 20 }, extra || {});
+  const F = (id, x1, y1, x2, y2, t, extra) => Object.assign({ id, tipo: 'vett', x1, y1, x2, y2, t }, extra || {});
+  const C = (id, x, y, valori, extra) => Object.assign({ id, tipo: 'celle', x, y, cw: 52, ch: 40, valori, indici: false }, extra || {});
+
+    SCENE.generalizza = {
+      w: 580, h: 230, lato: true,
+      legenda: 'no:fast type,dato:pladsholder A,due:pladsholder B,ok:brug med forskellige typer',
+      oggetti: [
+        T('s', 290, 30, 'def map(a: List[Int])(f: Int => Int): List[Int]', { bold: true, size: 13, tono: 'no' }),
+        T('b', 290, 70, 'corpo: case Cons(h, tail) => Cons(f(h), map(tail)(f))', { size: 12 }),
+        T('u1', 290, 140, '', { size: 12 }), T('u2', 290, 170, '', { size: 12 }), T('c', 290, 214, '', { size: 12, bold: true })
+      ],
+      passi: [
+        { nota: "Una map <b>monomorfica</b>: funziona solo con liste di interi." },
+        { nota: "Ma il corpo non fa niente di specifico con gli interi: non somma, non confronta. Chiama solo f.", set: { b: { tono: 'ok' } } },
+        { nota: "Allora sostituisco i tipi con <b>segnaposto</b>: A per gli elementi di partenza, B per quelli di arrivo. Il corpo resta identico.", set: { s: { t: 'def map[A, B](a: List[A])(f: A => B): List[B]', tono: 'dato' } } },
+        { nota: "Stessa funzione, tipi diversi: Int → String, String → Int. A e B possono anche essere uguali.", set: { u1: { t: 'map[Int, String](List(1, 2))(_.toString) → List("1", "2")', tono: 'ok' }, u2: { t: 'map[String, Int](List("ciao", "a"))(_.length) → List(4, 1)', tono: 'ok' } } },
+        { nota: "È il <b>polimorfismo parametrico</b> (generics). Il polimorfismo delle classi, con il metodo scelto a runtime, è un'altra cosa: il dispatch dinamico della settimana 3.", set: { c: { t: 'polimorfismo parametrico = segnaposto di tipo' } } }
+      ]
+    };
+
+    const og = [N('b', 150, 50, 'Br', 'spento', { r: 18 }), N('l1', 90, 130, '1', 'dato'), N('l2', 210, 130, '2', 'dato'), { id: 'e1', tipo: 'arco', da: 'b', a: 'l1' }, { id: 'e2', tipo: 'arco', da: 'b', a: 'l2' },
+      R('f', 320, 30, 230, 40, 'f = ?', { tono: 'ora' }), T('c', 435, 110, '', { size: 12 }), T('c2', 290, 200, '', { size: 12, bold: true })];
+    SCENE.buco = {
+      w: 580, h: 230, lato: true,
+      legenda: 'ora:f (hullet),dato:blade før,ok:blade efter',
+      oggetti: og,
+      passi: [
+        { nota: "Dentro la definizione di map sugli alberi, <code>f</code> è solo un <b>nome</b>: un buco. Non sappiamo cosa farà." },
+        { nota: "La chiamata <code>map(Branch(Leaf(1), Leaf(2)))(_.toString)</code> riempie il buco: f = x =&gt; x.toString, quindi A = Int e B = String.", set: { f: { t: 'f = _.toString' }, c: { t: 'A = Int, B = String' } } },
+        { nota: "È un Branch: la <b>stessa</b> f viene passata ai due rami.", set: { b: { tono: 'ora' } } },
+        { nota: "Nelle foglie f(value) diventa value.toString: Branch(Leaf(\"1\"), Leaf(\"2\")).", set: { b: { tono: 'spento' }, l1: { t: '"1"', tono: 'ok' }, l2: { t: '"2"', tono: 'ok' }, c2: { t: 'Branch(Leaf("1"), Leaf("2"))', tono: 'ok' } } },
+        { nota: "Un'altra chiamata, <code>map(albero)(_ * 10)</code>: la stessa definizione fa tutt'altro. <b>Cosa fa f lo decide chi chiama.</b>", set: { f: { t: 'f = _ * 10' }, c: { t: 'A = Int, B = Int' }, l1: { t: '10' }, l2: { t: '20' }, c2: { t: 'Branch(Leaf(10), Leaf(20))' } } }
+      ]
+    };
+
+    const M = [['map(_ * 2)', ['1', '2', '3'], ['2', '4', '6']], ['filter(_ > 1)', ['1', '2', '3'], ['2', '3']], ['flatMap(x => List(x, x))', ['1', '2'], ['1', '1', '2', '2']], ['take(2)', ['1', '2', '3'], ['1', '2']], ['takeWhile(_ < 3)', ['1', '2', '5', '1'], ['1', '2']], ['forall(_ % 2 == 0)', ['2', '4'], ['true']], ['exists(_ % 2 == 0)', ['1', '3'], ['false']]];
+    SCENE.libreria = {
+      w: 580, h: 200, lato: true,
+      legenda: 'dato:startliste,ok:resultat',
+      oggetti: [T('m', 290, 24, '', { bold: true }), C('a', 40, 50, ['', '', '', ''], { toni: {} }), T('fr', 290, 120, '↓', { size: 18 }), C('r', 40, 140, ['', '', '', ''], { toni: {} })],
+      passi: [{ nota: "Dalla settimana 3 si usano le liste della <b>libreria</b>, dove queste funzioni sono metodi: si chiamano con il punto. (Nella settimana 2 invece solo la lista del corso.)" }].concat(M.map(([m, a, r], i) => ({
+        nota: '<code>' + m + '</code>: ' + ['<b>trasforma</b> ogni elemento con f; stessa lunghezza.', 'tiene gli elementi per cui p è <b>vero</b>.', 'f dà una <b>lista</b> per ogni elemento, poi le unisce in una sola.', 'i primi <b>n</b> elementi.', 'il <b>prefisso</b> finché p vale: al 5 si ferma, e l’1 finale non conta.', 'p vale per <b>tutti</b>? Un Boolean.', 'p vale per <b>almeno uno</b>? Nessun pari: false.'][i],
+        set: { m: { t: 'List(' + a.join(', ') + ').' + m }, a: { valori: a.concat(['', '', '', '']).slice(0, 4), toni: Object.fromEntries(a.map((_, i) => [i, 'dato'])) }, r: { valori: r.concat(['', '', '', '']).slice(0, 4), toni: Object.fromEntries(r.map((_, i) => [i, 'ok'])) } }
+      })))
+    };
+  
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Polymorfi og map</h1>
+  <p class="lede"><code>map</code> anvender en funktion på hvert element i en liste og returnerer listen af resultaterne. At skrive den <b>kun én gang for alle typer</b> kaldes parametrisk polymorfi: <code>[A, B]</code> er typer, som den, der kalder, vælger.</p>
+</header>
+
+<section>
+  <h2>Fra en <code>map</code> for Int til én for alle</h2>
+  <figure class="passi" data-titolo="At fjerne Int fra signaturen (slide 8)">
+    <div class="passo">
+      <div class="espr">def map(a: List[<mark class="dato">Int</mark>])(f: <mark class="dato">Int</mark> => <mark class="dato">Int</mark>): List[<mark class="dato">Int</mark>] = a match
+  case Nil => Nil
+  case Cons(h, tail) => Cons(f(h), map(tail)(f))</div>
+      <p class="nota">En <b>monomorf</b> <code>map</code>: den virker kun med lister af heltal.</p>
+    </div>
+    <div class="passo">
+      <div class="espr">  case Cons(h, tail) => Cons(<mark class="ora">f(h)</mark>, map(tail)(f))</div>
+      <p class="nota">Men kroppen gør <b>intet</b> specifikt med heltallene: den lægger ikke sammen, den sammenligner ikke. Den kalder kun <code>f</code>.</p>
+    </div>
+    <div class="passo">
+      <div class="espr">def map<mark class="due">[A, B]</mark>(a: List[<mark class="dato">A</mark>])(f: <mark class="dato">A</mark> => <mark class="ok">B</mark>): List[<mark class="ok">B</mark>] = a match
+  case Nil => Nil
+  case Cons(h, tail) => Cons(f(h), map(tail)(f))</div>
+      <p class="nota">Så erstatter jeg typerne med pladsholdere: <code>A</code> for de oprindelige elementer, <code>B</code> for dem, der kommer ud. Kroppen er uændret.</p>
+    </div>
+    <div class="passo">
+      <div class="espr">map[Int, String](List(1, 2))(_.toString)      →   List("1", "2")
+map[String, Int](List("ciao", "a"))(_.length) →   List(4, 1)</div>
+      <p class="nota">Samme funktion, forskellige typer. A og B kan også være ens.</p>
+    </div>
+  </figure>
+  <div class="box attenzione" data-tit="Forveksl ikke">
+    <p>Dette er <b>parametrisk</b> polymorfi (generics). Klassernes polymorfi, hvor en overskrevet metode vælges under kørslen, er noget andet: det kaldes <b>dynamisk dispatch</b> (<a href="s03-classi-dispatch.html">uge 3</a>).</p>
+  </div>
+  <figure class="scena" data-scena="generalizza" data-titolo="Fra Int til pladsholderne A og B"></figure>
+</section>
+
+<section>
+  <h2><code>map</code> trin for trin</h2>
+  <figure class="passi" data-titolo="map(List(1, -2, 3))(abs)">
+    <div class="passo"><div class="espr">map(Cons(<mark class="dato">1</mark>, Cons(-2, Cons(3, Nil))))(<mark class="ora">abs</mark>)</div><p class="nota"><code>f</code> = <code>abs</code>. Listen har én celle.</p></div>
+    <div class="passo"><div class="espr">Cons(<mark class="ora">abs(1)</mark>, map(Cons(<mark class="dato">-2</mark>, Cons(3, Nil)))(abs))</div><p class="nota"><code>Cons</code>-tilfældet: ny celle med <code>f(h)</code>, og som resten <code>map</code> af resten.</p></div>
+    <div class="passo"><div class="espr">Cons(1, Cons(<mark class="ora">abs(-2)</mark>, map(Cons(<mark class="dato">3</mark>, Nil))(abs)))</div><p class="nota">Det samme på den anden celle.</p></div>
+    <div class="passo"><div class="espr">Cons(1, Cons(2, Cons(<mark class="ora">abs(3)</mark>, map(<mark class="dato">Nil</mark>)(abs))))</div><p class="nota">Tredje celle.</p></div>
+    <div class="passo"><div class="espr">Cons(1, Cons(2, Cons(3, <mark class="ok">Nil</mark>)))</div><p class="nota"><code>map</code> af den tomme liste er den tomme liste.</p></div>
+    <div class="passo"><div class="espr"><mark class="ok">List(1, 2, 3)</mark></div><p class="nota">Samme længde, samme rækkefølge, værdierne transformeret. Den oprindelige liste er ikke ændret.</p></div>
+  </figure>
+  <figure class="scena" data-scena="mappa" data-titolo="Hullet f, udfyldt to gange"></figure>
+</section>
+
+<section>
+  <h2>"f: A => B betyder alt og intet": hvor bestemmes det, hvad f gør?</h2>
+  <p>Rigtigt: inde i definitionen af <code>map</code> er <code>f</code> et <b>hul</b>. Det udfyldes <b>i øjeblikket for kaldet</b>. Følg farven på <code>f</code>.</p>
+  <figure class="passi" data-titolo="Hullet f udfyldes ved kaldet">
+    <div class="passo">
+      <div class="espr">def map[A, B](t: Tree[A])(<mark class="ora">f</mark>: A => B): Tree[B] = t match
+  case Leaf(value)         => Leaf(<mark class="ora">f</mark>(value))
+  case Branch(left, right) => Branch(map(left)(<mark class="ora">f</mark>), map(right)(<mark class="ora">f</mark>))</div>
+      <p class="nota">I definitionen (øvelse 4, uge 3) er <code>f</code> bare et navn. Vi ved ikke, hvad den vil gøre.</p>
+    </div>
+    <div class="passo">
+      <div class="espr">map(<mark class="dato">Branch(Leaf(1), Leaf(2))</mark>)(<mark class="ora">_.toString</mark>)</div>
+      <p class="nota"><b>Her</b> bestemmer du: <code>f</code> = <code>_.toString</code>, altså <code>x => x.toString</code>. Så A = Int og B = String.</p>
+    </div>
+    <div class="passo">
+      <div class="espr">Branch(map(Leaf(1))(<mark class="ora">_.toString</mark>), map(Leaf(2))(<mark class="ora">_.toString</mark>))</div>
+      <p class="nota">Det er en <code>Branch</code>: den samme <code>f</code> sendes til de to grene.</p>
+    </div>
+    <div class="passo">
+      <div class="espr">Branch(Leaf(<mark class="ora">1.toString</mark>), Leaf(<mark class="ora">2.toString</mark>))</div>
+      <p class="nota">I bladene bliver <code>f(value)</code> til <code>value.toString</code>.</p>
+    </div>
+    <div class="passo">
+      <div class="espr"><mark class="ok">Branch(Leaf("1"), Leaf("2"))</mark></div>
+      <p class="nota">Med et andet kald, for eksempel <code>map(albero)(_ * 10)</code>, ville den samme definition gøre noget helt andet.</p>
+    </div>
+  </figure>
+  <figure class="scena" data-scena="buco" data-titolo="f udfyldes i øjeblikket for kaldet"></figure>
+</section>
+
+<section>
+  <h2>Bibliotekets færdige funktioner</h2>
+  <p>Fra uge 3 bruges listerne i standardbiblioteket, hvor disse funktioner er <b>metoder</b>: de kaldes med punktum.</p>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Metode</th><th>Gør</th><th>Eksempel</th><th>Resultat</th></tr></thead>
+    <tbody>
+      <tr><td><code>map(f)</code></td><td>transformerer hvert element</td><td><code>List(1,2,3).map(_ * 2)</code></td><td><code>List(2,4,6)</code></td></tr>
+      <tr><td><code>filter(p)</code></td><td>beholder elementerne, hvor p er sand</td><td><code>List(1,2,3).filter(_ &gt; 1)</code></td><td><code>List(2,3)</code></td></tr>
+      <tr><td><code>flatMap(f)</code></td><td>f giver en liste pr. element, derefter samles de</td><td><code>List(1,2).flatMap(x => List(x, x))</code></td><td><code>List(1,1,2,2)</code></td></tr>
+      <tr><td><code>take(n)</code></td><td>de første n</td><td><code>List(1,2,3).take(2)</code></td><td><code>List(1,2)</code></td></tr>
+      <tr><td><code>takeWhile(p)</code></td><td>præfikset, så længe p gælder</td><td><code>List(1,2,5,1).takeWhile(_ &lt; 3)</code></td><td><code>List(1,2)</code></td></tr>
+      <tr><td><code>forall(p)</code></td><td>gælder p for alle?</td><td><code>List(2,4).forall(_ % 2 == 0)</code></td><td><code>true</code></td></tr>
+      <tr><td><code>exists(p)</code></td><td>gælder p for mindst én?</td><td><code>List(1,3).exists(_ % 2 == 0)</code></td><td><code>false</code></td></tr>
+    </tbody>
+  </table></div>
+  <div class="box attenzione" data-tit="Uge 2">
+    <p>I øvelserne i uge 2 bruges <b>kursets</b> liste, ikke bibliotekets. Teksten advarer: slå ikke funktionerne op i den online dokumentation, de er forskellige. Du må kun bruge dem øverst i <code>Exercises.scala</code> og dem, der er skrevet i de foregående øvelser.</p>
+  </div>
+  <figure class="scena" data-scena="libreria" data-titolo="map, filter, flatMap, take, takeWhile, forall, exists"></figure>
+</section>
+
+</main>
+</body>
+</html>

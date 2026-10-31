@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{{t|s001|}}</title>
+<link rel="stylesheet" href="../assets/atlas.css">
+<link rel="stylesheet" href="../assets/tema.css">
+<script src="../assets/sito.js"></script>
+<script src="../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  const DATI = {"px":[0.0,0.101,0.202,0.303,0.404,0.505,0.606,0.707,0.808,0.909,1.01,1.111,1.212,1.313,1.414,1.515,1.616,1.717,1.818,1.919,2.02,2.121,2.222,2.323,2.424,2.525,2.626,2.727,2.828,2.929,3.03,3.131,3.232,3.333,3.434,3.535,3.636,3.737,3.838,3.939,4.04,4.141,4.242,4.343,4.444,4.545,4.646,4.747,4.848,4.949,5.051,5.152,5.253,5.354,5.455,5.556,5.657,5.758,5.859,5.96,6.061,6.162,6.263,6.364,6.465,6.566,6.667,6.768,6.869,6.97,7.071,7.172,7.273,7.374,7.475,7.576,7.677,7.778,7.879,7.98,8.081,8.182,8.283,8.384,8.485,8.586,8.687,8.788,8.889,8.99,9.091,9.192,9.293,9.394,9.495,9.596,9.697,9.798,9.899,10.0],"py":[0.7,0.21,1.15,2.18,0.57,0.72,2.69,2.03,0.94,2.11,1.25,1.4,2.26,0.26,0.6,1.91,1.61,3.09,2.02,1.67,4.7,3.16,3.6,2.26,3.29,4.1,2.99,4.67,3.84,4.3,4.14,6.75,5.03,4.14,6.17,4.28,5.86,3.85,4.63,6.31,7.0,6.58,6.45,6.41,5.39,6.3,6.71,8.38,7.82,5.86,8.1,7.54,7.4,8.84,9.41,9.46,7.85,8.53,9.32,10.11,8.81,9.26,8.49,8.55,10.71,11.4,10.13,11.36,10.86,10.01,11.17,12.5,11.07,12.83,8.79,12.39,11.8,11.57,12.11,10.18,12.1,12.83,14.1,12.26,12.12,12.58,14.15,13.71,13.0,14.2,13.93,14.96,13.44,13.96,14.05,13.13,15.04,15.16,15.05,14.97],"c1":[0.02,0.4,0.78,1.15,1.53,1.91,2.29,2.67,3.05,3.42,3.8,4.18,4.56,4.94,5.32,5.69,6.07,6.45,6.83,7.21,7.58,7.96,8.34,8.72,9.1,9.48,9.85,10.23,10.61,10.99,11.37,11.75,12.12,12.5,12.88,13.26,13.64,14.02,14.39,14.77,15.15],"c3":[0.81,0.96,1.14,1.35,1.59,1.85,2.14,2.45,2.78,3.12,3.49,3.87,4.26,4.66,5.07,5.49,5.91,6.34,6.77,7.2,7.62,8.05,8.47,8.88,9.28,9.68,10.06,10.43,10.78,11.11,11.42,11.72,11.99,12.23,12.45,12.64,12.8,12.93,13.02,13.08,13.1],"c6":[1.06,1.08,1.14,1.26,1.45,1.69,2.0,2.35,2.73,3.14,3.56,3.98,4.4,4.81,5.2,5.59,5.96,6.34,6.71,7.1,7.5,7.92,8.36,8.82,9.29,9.74,10.16,10.49,10.68,10.65,10.29,9.48,8.07,5.87,2.64,-1.87,-7.97,-16.04,-26.47,-39.75,-56.41],"xs":[0.0,0.25,0.5,0.75,1.0,1.25,1.5,1.75,2.0,2.25,2.5,2.75,3.0,3.25,3.5,3.75,4.0,4.25,4.5,4.75,5.0,5.25,5.5,5.75,6.0,6.25,6.5,6.75,7.0,7.25,7.5,7.75,8.0,8.25,8.5,8.75,9.0,9.25,9.5,9.75,10.0]};
+  const Y0 = -2, Y1 = 22;
+  const ogg = [{ id: 'ax', tipo: 'assi', box: [45, 15, 350, 240], dom: [-0.3, 10.3, Y0, Y1], tacche: 2, etX: 'anni', etY: 'metri' }];
+  ogg.push({ id: 'sep', tipo: 'linea', in: 'ax', x1: 7.02, y1: Y0, x2: 7.02, y2: Y1, tratt: true, tono: 'spento' });
+  ogg.push({ id: 'ttr', tipo: 'testo', in: 'ax', x: 3.5, y: 20.5, t: 'training', size: 12, tono: 'dato' });
+  ogg.push({ id: 'tte', tipo: 'testo', in: 'ax', x: 8.6, y: 20.5, t: 'test', size: 12, tono: 'due' });
+  DATI.px.forEach((x, i) => ogg.push({ id: 'p' + i, tipo: 'punto', in: 'ax', x, y: DATI.py[i], r: 2.6, tono: i < 70 ? 'dato' : 'due' }));
+  const curva = (id, ys, tono) => DATI.xs.slice(0, -1).forEach((x, k) => {
+    const a = ys[k], b = ys[k + 1];
+    if (a >= Y0 && a <= Y1 && b >= Y0 && b <= Y1) ogg.push({ id: id + k, tipo: 'linea', in: 'ax', x1: x, y1: a, x2: DATI.xs[k + 1], y2: b, tono, nascosto: true });
+  });
+  curva('g1_', DATI.c1, 'ok'); curva('g3_', DATI.c3, 'ora'); curva('g6_', DATI.c6, 'no');
+  ogg.push({ id: 'vero', tipo: 'linea', in: 'ax', x1: 0, y1: 0.2, x2: 10, y2: 15.2, tratt: true, tono: 'ok', nascosto: true });
+  ogg.push({ id: 'n', tipo: 'testo', x: 220, y: 292, t: '', size: 13, bold: true });
+  const mostra = (pref, v) => Object.fromEntries(ogg.filter(o => o.id.startsWith(pref)).map(o => [o.id, { nascosto: !v }]));
+  SCENE.gradi = {
+    w: 420, h: 300, lato: true,
+    legenda: '{{j|s002|'}}',
+    oggetti: ogg,
+    passi: [
+      { nota: '{{j|s003|'}}' },
+      { nota: '{{j|s004|'}}', set: Object.assign(mostra('g1_', true), { n: { t: 'grado 1: train 0.797  test 0.857', tono: 'ok' } }) },
+      { nota: '{{j|s005|'}}', set: Object.assign(mostra('g1_', false), mostra('g3_', true), { n: { t: 'grado 3: train 0.731  test 1.609', tono: 'ora' } }) },
+      { nota: '{{j|s006|'}}', set: Object.assign(mostra('g3_', false), mostra('g6_', true), { n: { t: 'grado 6: train 0.720  test 808.6', tono: 'no' } }) },
+      { nota: '{{j|s007|'}}', set: Object.assign(mostra('g6_', false), mostra('g1_', true), { vero: { nascosto: false }, n: { t: 'vera: 1.5x + 0.2', tono: 'ok' } }) }
+    ]
+  };
+})();
+</script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  const D = {"tr": [[0.086, 0.428], [0.094, 0.357], [0.114, 0.338], [0.16, 0.726], [0.237, 1.141], [0.391, 0.56], [0.433, 0.695], [0.479, 0.071], [0.517, -0.098], [0.582, -0.03], [0.735, -0.832], [0.801, -1.1]], "te": [[0.107, 0.826], [0.151, -0.037], [0.234, 1.301], [0.353, 0.508], [0.423, -0.035], [0.504, 0.055], [0.537, -0.018], [0.558, -0.492], [0.592, -0.867], [0.639, -0.759], [0.724, -1.002], [0.752, -0.578]], "c1": [[0.086, 0.795], [0.098, 0.771], [0.11, 0.747], [0.121, 0.722], [0.133, 0.698], [0.145, 0.674], [0.157, 0.65], [0.169, 0.626], [0.181, 0.602], [0.193, 0.578], [0.205, 0.554], [0.217, 0.53], [0.229, 0.505], [0.241, 0.481], [0.253, 0.457], [0.265, 0.433], [0.276, 0.409], [0.288, 0.385], [0.3, 0.361], [0.312, 0.337], [0.324, 0.313], [0.336, 0.288], [0.348, 0.264], [0.36, 0.24], [0.372, 0.216], [0.384, 0.192], [0.396, 0.168], [0.408, 0.144], [0.42, 0.12], [0.432, 0.095], [0.443, 0.071], [0.455, 0.047], [0.467, 0.023], [0.479, -0.001], [0.491, -0.025], [0.503, -0.049], [0.515, -0.073], [0.527, -0.097], [0.539, -0.122], [0.551, -0.146], [0.563, -0.17], [0.575, -0.194], [0.587, -0.218], [0.599, -0.242], [0.61, -0.266], [0.622, -0.29], [0.634, -0.315], [0.646, -0.339], [0.658, -0.363], [0.67, -0.387], [0.682, -0.411], [0.694, -0.435], [0.706, -0.459], [0.718, -0.483], [0.73, -0.507], [0.742, -0.532], [0.754, -0.556], [0.765, -0.58], [0.777, -0.604], [0.789, -0.628], [0.801, -0.652]], "m1": [0.146, 0.185], "c3": [[0.086, 0.311], [0.098, 0.403], [0.11, 0.487], [0.121, 0.563], [0.133, 0.631], [0.145, 0.693], [0.157, 0.747], [0.169, 0.794], [0.181, 0.834], [0.193, 0.868], [0.205, 0.896], [0.217, 0.917], [0.229, 0.933], [0.241, 0.943], [0.253, 0.947], [0.265, 0.946], [0.276, 0.941], [0.288, 0.93], [0.3, 0.915], [0.312, 0.895], [0.324, 0.872], [0.336, 0.844], [0.348, 0.813], [0.36, 0.778], [0.372, 0.74], [0.384, 0.698], [0.396, 0.654], [0.408, 0.607], [0.42, 0.558], [0.432, 0.506], [0.443, 0.453], [0.455, 0.397], [0.467, 0.34], [0.479, 0.282], [0.491, 0.222], [0.503, 0.162], [0.515, 0.1], [0.527, 0.039], [0.539, -0.023], [0.551, -0.086], [0.563, -0.148], [0.575, -0.21], [0.587, -0.271], [0.599, -0.331], [0.61, -0.391], [0.622, -0.449], [0.634, -0.506], [0.646, -0.561], [0.658, -0.615], [0.67, -0.666], [0.682, -0.716], [0.694, -0.762], [0.706, -0.806], [0.718, -0.848], [0.73, -0.886], [0.742, -0.92], [0.754, -0.952], [0.765, -0.979], [0.777, -1.003], [0.789, -1.022], [0.801, -1.037]], "m3": [0.023, 0.16], "c9": [[0.086, 0.425], [0.098, 0.348], [0.11, 0.323], [0.121, 0.356], [0.133, 0.442], [0.145, 0.564], [0.157, 0.705], [0.169, 0.846], [0.181, 0.971], [0.193, 1.069], [0.205, 1.134], [0.217, 1.162], [0.229, 1.156], [0.241, 1.118], [0.253, 1.056], [0.265, 0.979], [0.276, 0.894], [0.288, 0.81], [0.3, 0.734], [0.312, 0.671], [0.324, 0.625], [0.336, 0.596], [0.348, 0.584], [0.36, 0.585], [0.372, 0.595], [0.384, 0.609], [0.396, 0.619], [0.408, 0.619], [0.42, 0.605], [0.432, 0.57], [0.443, 0.513], [0.455, 0.433], [0.467, 0.331], [0.479, 0.213], [0.491, 0.086], [0.503, -0.041], [0.515, -0.157], [0.527, -0.248], [0.539, -0.301], [0.551, -0.306], [0.563, -0.251], [0.575, -0.131], [0.587, 0.057], [0.599, 0.309], [0.61, 0.614], [0.622, 0.953], [0.634, 1.298], [0.646, 1.616], [0.658, 1.865], [0.67, 1.999], [0.682, 1.971], [0.694, 1.737], [0.706, 1.268], [0.718, 0.55], [0.73, -0.395], [0.742, -1.5], [0.754, -2.4], [0.765, -2.4], [0.777, -2.4], [0.789, -2.4], [0.801, -1.1]], "m9": [0.004, 1.003], "r0.0": [[0.086, 0.425], [0.098, 0.348], [0.11, 0.323], [0.121, 0.356], [0.133, 0.442], [0.145, 0.564], [0.157, 0.705], [0.169, 0.846], [0.181, 0.971], [0.193, 1.069], [0.205, 1.134], [0.217, 1.162], [0.229, 1.156], [0.241, 1.118], [0.253, 1.056], [0.265, 0.979], [0.276, 0.894], [0.288, 0.81], [0.3, 0.734], [0.312, 0.671], [0.324, 0.625], [0.336, 0.596], [0.348, 0.584], [0.36, 0.585], [0.372, 0.595], [0.384, 0.609], [0.396, 0.619], [0.408, 0.619], [0.42, 0.605], [0.432, 0.57], [0.443, 0.513], [0.455, 0.433], [0.467, 0.331], [0.479, 0.213], [0.491, 0.086], [0.503, -0.041], [0.515, -0.157], [0.527, -0.248], [0.539, -0.301], [0.551, -0.306], [0.563, -0.251], [0.575, -0.131], [0.587, 0.057], [0.599, 0.309], [0.61, 0.614], [0.622, 0.953], [0.634, 1.298], [0.646, 1.616], [0.658, 1.865], [0.67, 1.999], [0.682, 1.971], [0.694, 1.737], [0.706, 1.268], [0.718, 0.55], [0.73, -0.395], [0.742, -1.5], [0.754, -2.4], [0.765, -2.4], [0.777, -2.4], [0.789, -2.4], [0.801, -1.1]], "rn0.0": 6131134.5, "rm0.0": [0.004, 1.003], "r0.001": [[0.086, 0.449], [0.098, 0.486], [0.11, 0.52], [0.121, 0.553], [0.133, 0.582], [0.145, 0.61], [0.157, 0.635], [0.169, 0.658], [0.181, 0.678], [0.193, 0.695], [0.205, 0.71], [0.217, 0.723], [0.229, 0.733], [0.241, 0.74], [0.253, 0.744], [0.265, 0.746], [0.276, 0.745], [0.288, 0.742], [0.3, 0.735], [0.312, 0.726], [0.324, 0.714], [0.336, 0.7], [0.348, 0.682], [0.36, 0.662], [0.372, 0.639], [0.384, 0.614], [0.396, 0.586], [0.408, 0.555], [0.42, 0.521], [0.432, 0.485], [0.443, 0.447], [0.455, 0.406], [0.467, 0.363], [0.479, 0.317], [0.491, 0.269], [0.503, 0.219], [0.515, 0.167], [0.527, 0.113], [0.539, 0.058], [0.551, 0.001], [0.563, -0.058], [0.575, -0.118], [0.587, -0.179], [0.599, -0.24], [0.61, -0.302], [0.622, -0.365], [0.634, -0.427], [0.646, -0.489], [0.658, -0.55], [0.67, -0.611], [0.682, -0.67], [0.694, -0.727], [0.706, -0.782], [0.718, -0.834], [0.73, -0.883], [0.742, -0.928], [0.754, -0.968], [0.765, -1.004], [0.777, -1.033], [0.789, -1.056], [0.801, -1.072]], "rn0.001": 9.7, "rm0.001": [0.035, 0.177], "r1.0": [[0.086, 0.444], [0.098, 0.439], [0.11, 0.434], [0.121, 0.428], [0.133, 0.423], [0.145, 0.417], [0.157, 0.411], [0.169, 0.405], [0.181, 0.399], [0.193, 0.393], [0.205, 0.386], [0.217, 0.379], [0.229, 0.372], [0.241, 0.365], [0.253, 0.357], [0.265, 0.349], [0.276, 0.341], [0.288, 0.332], [0.3, 0.324], [0.312, 0.315], [0.324, 0.305], [0.336, 0.295], [0.348, 0.285], [0.36, 0.275], [0.372, 0.264], [0.384, 0.253], [0.396, 0.241], [0.408, 0.229], [0.42, 0.217], [0.432, 0.204], [0.443, 0.19], [0.455, 0.176], [0.467, 0.162], [0.479, 0.147], [0.491, 0.131], [0.503, 0.115], [0.515, 0.098], [0.527, 0.081], [0.539, 0.062], [0.551, 0.043], [0.563, 0.024], [0.575, 0.003], [0.587, -0.019], [0.599, -0.041], [0.61, -0.064], [0.622, -0.088], [0.634, -0.114], [0.646, -0.14], [0.658, -0.168], [0.67, -0.196], [0.682, -0.226], [0.694, -0.258], [0.706, -0.291], [0.718, -0.325], [0.73, -0.361], [0.742, -0.398], [0.754, -0.437], [0.765, -0.478], [0.777, -0.521], [0.789, -0.566], [0.801, -0.614]], "rn1.0": 1.0, "rm1.0": [0.129, 0.266], "seg": [0.187, 0.048, 0.278, -0.051, -0.231, 0.146, 0.146, -0.054, -0.196, 0.057, -0.623, 0.173, 0.123, -0.41, 0.015, -0.241, 0.189, -0.509, -0.229, 0.177, 1.289, 0.46, 0.875, 1.082, 0.848, 1.398, 0.702, 1.089, 0.738, 1.351, 0.995, 0.907, 0.57, 1.42, 1.188, 1.188, 1.284, 1.087, 0.84, 0.8], "ma3": [0.078, 0.171, 0.092, -0.002, -0.046, 0.02, 0.079, -0.035, -0.064, -0.254, -0.131, -0.109, -0.038, -0.091, -0.212, -0.012, -0.187, -0.183, -0.187, 0.413, 0.642, 0.875, 0.806, 0.935, 1.109, 0.983, 1.063, 0.843, 1.059, 1.028, 1.084, 0.824, 0.966, 1.06, 1.266, 1.22, 1.187, 1.071, 0.909, 0.547], "ma9": [0.026, 0.042, 0.058, 0.052, 0.03, 0.016, -0.059, -0.07, -0.051, -0.071, -0.085, -0.128, -0.101, -0.136, -0.168, -0.079, 0.045, 0.083, 0.225, 0.344, 0.465, 0.599, 0.734, 0.88, 0.942, 0.949, 1.009, 1.012, 0.955, 1.019, 0.996, 1.05, 1.071, 1.11, 1.053, 1.032, 0.931, 0.868, 0.71, 0.578], "std_rum": [0.254, 0.098, 0.047], "conv": [0, 0, 4, 0, 0], "corr": [0, 0, -4, 0, 0], "full": [1.0, 2.0, 5.0, 5.0, 5.0, 4.0, 5.0, 6.0, 4.0, 2.0], "valid": [5.0, 5.0, 5.0, 4.0, 5.0, 6.0], "img": [[0.0, 0.0, 0.0, 9.0, 9.0], [0.0, 0.0, 0.0, 9.0, 9.0], [0.0, 0.0, 0.0, 9.0, 9.0], [0.0, 0.0, 0.0, 9.0, 9.0], [0.0, 0.0, 0.0, 9.0, 9.0]], "f_media": [0.0, 0.0, 3.0, 6.0, 9.0], "f_sharp": [0.0, 0.0, -27.0, 36.0, 9.0], "f_sobel": [0.0, 0.0, 36.0, 36.0, 0.0]};
+  const T = (id, x, y, t, extra) => Object.assign({ id, tipo: 'testo', x, y, t, size: 13 }, extra || {});
+  const R = (id, x, y, w, h, t, extra) => Object.assign({ id, tipo: 'rett', x, y, w, h, t }, extra || {});
+  const P = (id, x, y, t, extra) => Object.assign({ id, tipo: 'punto', in: 'ax', x, y, t }, extra || {});
+  const L = (id, x1, y1, x2, y2, extra) => Object.assign({ id, tipo: 'linea', in: 'ax', x1, y1, x2, y2 }, extra || {});
+  const C = (id, x, y, valori, extra) => Object.assign({ id, tipo: 'celle', x, y, cw: 52, ch: 36, valori, indici: false }, extra || {});
+  const pl = p => p.concat(p.slice().reverse());
+  const curva = (id, pts, tono, extra) => Object.assign({ id, tipo: 'poli', in: 'ax', punti: pl(pts), tono, vuoto: true }, extra || {});
+
+    const og = [{ id: 'ax', tipo: 'assi', box: [40, 20, 380, 230], dom: [0, 1, -2.4, 2.4], tacche: [0.2, 1], etX: 'x', etY: 'y' },
+      curva('c1', D.c1, 'no', { nascosto: true }), curva('c3', D.c3, 'ok', { nascosto: true }), curva('c9', D.c9, 'due', { nascosto: true })]
+      .concat(D.tr.map(([x, y], i) => P('t' + i, x, y, '', { tono: 'dato' })), D.te.map(([x, y], i) => P('v' + i, x, y, '', { tono: 'ora', r: 4, nascosto: true })),
+        [T('c', 545, 50, '', { size: 12, bold: true }), T('c2', 545, 80, '', { size: 12 }), T('c3', 545, 105, '', { size: 12 }), T('c4', 545, 150, '', { size: 12 })]);
+    const err = g => ({ c2: { t: 'MSE training ' + D['m' + g][0] }, c3: { t: 'MSE test ' + D['m' + g][1] } });
+    const testv = Object.fromEntries(D.te.map((_, i) => ['v' + i, { nascosto: false }]));
+    SCENE.underover = {
+      w: 660, h: 280, lato: true,
+      legenda: '{{j|s008|'}}',
+      oggetti: og,
+      passi: [
+        { nota: "12 punti di training da sin(2πx) più rumore (σ = 0.3), e 12 punti di test nuovi. Tre polinomi di complessità diversa (calcolati con NumPy)." },
+        { nota: "<b>Grado 1</b>: una retta non può seguire un'onda. Errore alto sul training <b>e</b> sul test: <b>underfitting</b>.", set: Object.assign({ c1: { nascosto: false }, c: { t: 'grado 1: underfitting', tono: 'no' } }, testv, err(1)) },
+        { nota: "<b>Grado 3</b>: coglie l'andamento e lascia fuori il rumore. Errori bassi e vicini fra loro: generalizza.", set: Object.assign({ c1: { nascosto: true }, c3: { nascosto: false }, c: { t: 'grado 3: giusto', tono: 'ok' } }, err(3)) },
+        { nota: "<b>Grado 9</b>: insegue ogni punto. Training quasi 0, test molto più alto: <b>overfitting</b>. Ha imparato i dati, rumore compreso.", set: Object.assign({ c3: { nascosto: true }, c9: { nascosto: false }, c: { t: 'grado 9: overfitting', tono: 'due' } }, err(9)) },
+        { nota: "Come leggere i numeri: training alto e test alto → underfitting; training basso e test molto più alto → overfitting (il divario è l'errore di generalizzazione); tutti e due bassi e vicini → il modello generalizza.", set: { c4: { t: 'conta il divario train/test' } } }
+      ]
+    };
+
+    const ord = [1, 3, 5, 6, 9, 12, 14, 18], trn = [22334, 21669, 21353, 21353, 21238, 21196, 20890, 20873], tst = [23322, 23002, 22421, 22421, 22556, 22806, 23481, 23477];
+    const ogw = [{ id: 'ax', tipo: 'assi', box: [60, 20, 380, 220], dom: [0, 19, 20.6, 23.7], tacche: 1, etX: 'ordine', etY: 'RMSE (migliaia $)' }];
+    ord.forEach((o, i) => ogw.push(P('a' + i, o, trn[i] / 1000, '', { tono: 'dato', nascosto: true }), P('b' + i, o, tst[i] / 1000, '', { tono: 'ora', nascosto: true })));
+    ogw.push(curva('la', ord.map((o, i) => [o, trn[i] / 1000]), 'dato', { nascosto: true }), curva('lb', ord.map((o, i) => [o, tst[i] / 1000]), 'ora', { nascosto: true }), L('min', 5.5, 20.6, 5.5, 23.7, { tratt: true, tono: 'ok', nascosto: true }));
+    ogw.push(T('c', 545, 60, '', { size: 12 }), T('c2', 545, 90, '', { size: 12 }), T('c3', 545, 130, '', { size: 12 }));
+    const vedi = (pref, v) => Object.fromEntries(ord.map((_, i) => [pref + i, Object.assign({ nascosto: false }, v || {})]));
+    SCENE.windsor = {
+      w: 660, h: 270, lato: true,
+      legenda: '{{j|s009|'}}',
+      oggetti: ogw,
+      passi: [
+        { nota: "Case di Windsor: prezzo in funzione della superficie del lotto, split 80/20, polinomi di ordine crescente. Valori dalla tabella (calcolati con i dati del notebook)." },
+        { nota: "<b>Training</b>: scende sempre (22 334 → 20 873). Un modello più grande contiene quello più piccolo, quindi non può sbagliare di più sui dati che vede.", set: Object.assign(vedi('a'), { la: { nascosto: false }, c: { t: 'training: scende sempre' } }) },
+        { nota: "<b>Test</b>: scende fino agli ordini 5–6, poi risale. È la <b>curva a U</b> della complessità.", set: Object.assign(vedi('b'), { lb: { nascosto: false }, c2: { t: 'test: minimo a 5–6, poi risale' } }) },
+        { nota: "Si sceglie il minimo del test (meglio: del validation). Le differenze sono piccole rispetto a 22 000 $: il lotto spiega solo una parte del prezzo. Attenzione ai conti: senza normalizzare x, x¹¹ ≈ 2 · 10⁴⁶ e il condizionamento esplode (ordine 7: 10³²), e il training sbaglia <b>di più</b> (22 489 → 47 295): un problema numerico, non del modello.", set: { min: { nascosto: false }, c3: { t: 'scelta: ordine 5–6', tono: 'ok' } } }
+      ]
+    };
+
+    const B = [[1, 0.209, 0.014, 0.313], [3, 0.006, 0.025, 0.121], [5, 0.0, 0.038, 0.128], [9, 0.0, 0.118, 0.207]];
+    const K = 900, x0 = 90, ogb = [];
+    B.forEach(([g, b, v], i) => {
+      const y = 40 + i * 50;
+      ogb.push(T('g' + i, 70, y + 20, 'grado ' + g, { anchor: 'end', size: 12 }), R('b' + i, x0, y, b * K, 30, '', { tono: 'no', nascosto: true }), R('v' + i, x0 + b * K, y, v * K, 30, '', { tono: 'due', nascosto: true }), R('s' + i, x0 + (b + v) * K, y, 0.09 * K, 30, '', { tono: 'spento', nascosto: true }), T('t' + i, x0 + (b + v + 0.09) * K + 8, y + 20, '', { size: 12, anchor: 'start' }));
+    });
+    ogb.push(T('c', 320, 248, '', { size: 12 }));
+    const tutti = (p, extra) => Object.fromEntries(B.map((_, i) => [p + i, Object.assign({ nascosto: false }, extra || {})]));
+    SCENE.biasvar = {
+      w: 640, h: 260, lato: true,
+      legenda: '{{j|s010|'}}',
+      oggetti: ogb,
+      passi: [
+        { nota: "L'errore su dati nuovi si divide in tre pezzi. Simulazione con NumPy: sin(2πx), 12 punti, σ = 0.3, ripetuta con 5000 campioni di rumore diversi." },
+        { nota: "<b>Bias²</b>: quanto la previsione <b>media</b> sta lontana dalla funzione vera. Errore sistematico: il grado 1 ne ha tanto (0.209), dal grado 5 in su è 0. Nel bersaglio: colpi vicini fra loro ma fuori centro.", set: tutti('b') },
+        { nota: "<b>Varianza</b>: quanto cambia il modello cambiando i dati di training. Cresce con il grado: 0.014 → 0.118. Nel bersaglio: colpi sparsi.", set: tutti('v') },
+        { nota: "<b>σ²</b> = 0.09: il rumore dei dati, che nessun modello toglie. La somma dei tre coincide con l'errore misurato su dati nuovi: 0.313, 0.121, 0.128, 0.207. Minimo al grado 3: il compromesso fra bias e varianza.", set: Object.assign(tutti('s'), Object.fromEntries(B.map(([, , , t], i) => ['t' + i, { t: 'totale ' + t }])), { c: { t: 'errore su dati nuovi = bias² + varianza + σ²' } }) }
+      ]
+    };
+
+    SCENE.occam = {
+      w: 600, h: 230, lato: true,
+      legenda: '{{j|s011|'}}',
+      oggetti: [T('h1', 150, 24, 'grado', { bold: true }), T('h2', 310, 24, 'MSE training', { bold: true }), T('h3', 470, 24, 'MSE test', { bold: true }),
+        R('r1', 100, 40, 440, 34, '', { tono: 'spento' }), T('a1', 150, 62, '1'), T('b1', 310, 62, '16.3'), T('d1', 470, 62, '567.6'),
+        R('r2', 100, 84, 440, 34, '', { tono: 'spento' }), T('a2', 150, 106, '2'), T('b2', 310, 106, '0.747'), T('d2', 470, 106, '2.925'),
+        R('r3', 100, 128, 440, 34, '', { tono: 'spento' }), T('a3', 150, 150, '3'), T('b3', 310, 150, '0.731'), T('d3', 470, 150, '1.609'),
+        T('c', 300, 200, '', { size: 12 })],
+      passi: [
+        { nota: "<b>Rasoio di Occam</b>: tra modelli che spiegano i dati <b>altrettanto bene</b>, scegli il più semplice. Non vuol dire \"scegli sempre il più semplice\". Task 5: dati che crescono come una parabola." },
+        { nota: "Grado 1: la retta non può seguire una parabola. Training 16.3, test 567.6: underfitting. Il più semplice di tutti qui è sbagliato.", set: { r1: { tono: 'no' } } },
+        { nota: "Grado 2: il più semplice che spiega i dati (training 0.747). È la scelta di Occam.", set: { r2: { tono: 'ok' } } },
+        { nota: "Grado 3: test più basso (1.609), ma con un solo split di 30 punti, tutti nel futuro, la differenza può essere caso. Per decidere in modo affidabile serve la <b>cross-validation</b>.", set: { r3: { tono: 'due' }, c: { t: 'un solo split non basta per scegliere fra 2 e 3' } } }
+      ]
+    };
+  
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>{{s|s012|}}</h1>
+  <p class="lede">{{s|s013|}}</p>
+</header>
+
+<section>
+  <h2>{{s|s014|}}</h2>
+  <p>{{s|s015|}}</p>
+  <figure class="scena" data-scena="gradi" data-titolo="{{a|s016|}}"></figure>
+  <p class="piccolo">{{s|s017|}}</p>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>{{s|s018|}}</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th></tr></thead>
+    <tbody>
+      <tr><td>{{s|s019|}}</td><td>0.797</td><td>0.747</td><td>0.731</td><td>0.726</td><td>0.726</td><td>0.720</td></tr>
+      <tr><td>{{s|s020|}}</td><td><b>0.857</b></td><td>2.925</td><td>1.609</td><td>7.981</td><td>3.227</td><td>808.6</td></tr>
+    </tbody>
+  </table></div>
+  <div class="box regola" data-tit="{{a|s021|}}">
+    <p>{{s|s022|}}</p>
+  </div>
+</section>
+
+<section>
+  <h2>{{s|s023|}}</h2>
+  <div class="colonne">
+    <div class="carta cattiva">
+      <h4>{{s|s024|}}</h4>
+      <p>{{s|s025|}}</p>
+    </div>
+    <div class="carta buona">
+      <h4>{{s|s026|}}</h4>
+      <p>{{s|s027|}}</p>
+    </div>
+    <div class="carta cattiva">
+      <h4>{{s|s028|}}</h4>
+      <p>{{s|s029|}}</p>
+    </div>
+  </div>
+  <figure class="passi" data-titolo="{{a|s030|}}">
+    <div class="passo"><div class="espr">training <mark class="no">alto</mark>, test <mark class="no">alto</mark></div><p class="nota">{{s|s031|}}</p></div>
+    <div class="passo"><div class="espr">training <mark class="ok">basso</mark>, test <mark class="no">molto più alto</mark></div><p class="nota">{{s|s032|}}</p></div>
+    <div class="passo"><div class="espr">training <mark class="ok">basso</mark>, test <mark class="ok">basso e vicino</mark></div><p class="nota">{{s|s033|}}</p></div>
+  </figure>
+  <figure class="scena" data-scena="underover" data-titolo="{{a|s034|}}"></figure>
+</section>
+
+<section>
+  <h2>{{s|s035|}}</h2>
+  <p>{{s|s036|}}</p>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>{{s|s037|}}</th><th>1</th><th>3</th><th>5</th><th>6</th><th>9</th><th>12</th><th>14</th><th>18</th></tr></thead>
+    <tbody>
+      <tr><td>{{s|s038|}}</td><td>22 334</td><td>21 669</td><td>21 353</td><td>21 353</td><td>21 238</td><td>21 196</td><td>20 890</td><td>20 873</td></tr>
+      <tr><td>{{s|s039|}}</td><td>23 322</td><td>23 002</td><td><b>22 421</b></td><td><b>22 421</b></td><td>22 556</td><td>22 806</td><td>23 481</td><td>23 477</td></tr>
+    </tbody>
+  </table></div>
+  <p class="piccolo">{{s|s040|}}</p>
+  <figure class="passi" data-titolo="{{a|s041|}}">
+    <div class="passo"><div class="espr">lotto fino a 16 200  ⇒  x¹¹ ≈ <mark class="no">2 · 10⁴⁶</mark></div><p class="nota">{{s|s042|}}</p></div>
+    <div class="passo"><div class="espr">numero di condizionamento: ordine 7 → <mark class="no">1.1 · 10³²</mark>,  ordine 11 → <mark class="no">5.6 · 10⁴⁷</mark></div><p class="nota">{{s|s043|}}</p></div>
+    <div class="passo"><div class="espr">senza normalizzare, RMSE training: ordine 4 → 22 489,  ordine 7 → <mark class="no">47 295</mark></div><p class="nota">{{s|s044|}}</p></div>
+    <div class="passo"><div class="espr">x normalizzato in [0, 1]:  condizionamento ordine 7 → <mark class="ok">2.8 · 10⁵</mark></div><p class="nota">{{s|s045|}}</p></div>
+  </figure>
+  <figure class="scena" data-scena="windsor" data-titolo="{{a|s046|}}"></figure>
+</section>
+
+<section>
+  <h2>{{s|s047|}}</h2>
+  <figure class="passi" data-titolo="{{a|s048|}}">
+    <div class="passo"><div class="espr"><mark class="ora">Bias²</mark>: quanto la previsione <b>media</b> sta lontana dalla funzione vera</div><p class="nota">{{s|s049|}}</p></div>
+    <div class="passo"><div class="espr"><mark class="due">Varianza</mark>: quanto cambia il modello se cambi i dati di training</div><p class="nota">{{s|s050|}}</p></div>
+    <div class="passo"><div class="espr"><mark class="no">σ²</mark>: rumore irriducibile</div><p class="nota">{{s|s051|}}</p></div>
+  </figure>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>{{s|s052|}}</th><th>{{s|s053|}}</th><th>{{s|s054|}}</th><th>{{s|s055|}}</th><th>σ²</th><th>{{s|s056|}}</th><th>{{s|s057|}}</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>0.328</td><td><b>0.209</b></td><td>0.014</td><td>0.090</td><td>0.313</td><td>0.313</td></tr>
+      <tr><td>3</td><td>0.067</td><td>0.006</td><td>0.025</td><td>0.090</td><td><b>0.121</b></td><td><b>0.121</b></td></tr>
+      <tr><td>5</td><td>0.045</td><td>0.000</td><td>0.038</td><td>0.090</td><td>0.128</td><td>0.128</td></tr>
+      <tr><td>9</td><td>0.015</td><td>0.000</td><td><b>0.118</b></td><td>0.090</td><td>0.208</td><td>0.207</td></tr>
+    </tbody>
+  </table></div>
+  <p class="piccolo">{{s|s058|}}</p>
+  <figure class="scena" data-scena="biasvar" data-titolo="{{a|s059|}}"></figure>
+</section>
+
+<section>
+  <h2>{{s|s060|}}</h2>
+  <p>{{s|s061|}}</p>
+  <figure class="passi" data-titolo="{{a|s062|}}">
+    <div class="passo"><div class="espr">grado 1:  training <mark class="no">16.3</mark>,  test <mark class="no">567.6</mark></div><p class="nota">{{s|s063|}}</p></div>
+    <div class="passo"><div class="espr">grado 2:  training <mark class="ok">0.747</mark>,  test 2.925</div><p class="nota">{{s|s064|}}</p></div>
+    <div class="passo"><div class="espr">grado 3:  training 0.731,  test <mark class="ora">1.609</mark></div><p class="nota">{{s|s065|}}</p></div>
+  </figure>
+  <div class="box esame" data-tit="{{a|s066|}}">
+    <p>{{s|s067|}}</p>
+  </div>
+  <div class="box inglese" data-tit="{{a|s068|}}">
+    <p>{{s|s069|}}</p>
+    <p>{{s|s070|}}</p>
+  </div>
+  <figure class="scena" data-scena="occam" data-titolo="{{a|s071|}}"></figure>
+</section>
+
+</main>
+</body>
+</html>

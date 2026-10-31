@@ -1,0 +1,78 @@
+@@s001 Fra løkke til rekursion
+@@s002 Samme spørgsmål, <b>factorial(5)</b>, med de to versioner. Hvert rektangel er et kald, der stadig er åbent (en ramme i stakken).
+@@s003 Til venstre kan kaldet ikke lukke: det skal vente på <code>factorial(4)</code> for at lave multiplikationen. Til højre overlader <code>f</code> det allerede udførte arbejde til akkumulatoren og <b>venter ikke på noget</b>: det nye kald tager det gamle kalds plads.
+@@s004 Til venstre vokser stakken. Til højre bliver der kun én ramme: <code>acc</code> er allerede 5 × 4 = 20.
+@@s005 Det fortsætter på samme måde.
+@@s006 Femte kald til venstre. Til højre er <code>acc</code> 120: resultatet er allerede klar.
+@@s007 Basistilfældet i begge. Til højre <b>er jeg færdig</b>: jeg returnerer 120. Til venstre har jeg kun det første tal: nu skal jeg gå tilbage og lave alle de multiplikationer, der er sat på pause.
+@@s008 Ét kald lukkes ad gangen: 2 × 1.
+@@s009 3 × 2.
+@@s010 4 × 6.
+@@s011 5 × 24 = 120. Samme resultat, men den normale version har holdt op til <b>n</b> kald åbne: med n = 100 000 løber stakken tør (<code>StackOverflowError</code>). Halevarianten bruger altid <b>ét</b>.
+@@s012 dato:variablernes tilstand (while),ora:kaldets argumenter,ok:resultat
+@@s013 due:multiplikation på pause,ok:beregnet værdi
+@@s014 no:gentaget beregning,dato:curr,ora:next,ok:resultat
+@@s015 ora:par (i, i+1) kontrolleret,ok:par i orden,no:par ude af orden
+@@s016 Fra løkke til rekursion
+@@s017 Uden <code>var</code> og uden <code>for</code> gentager du en beregning med en funktion, der <b>kalder sig selv</b> på et mindre problem. Her omdanner du en løkke til rekursion ét trin ad gangen, og ser hvornår rekursionen er "i hale".
+@@s018 Opskriften: fra <code>while</code> til rekursion
+@@s019 Det er filen <code>01-intro/Purification.scala</code>. Man starter fra en imperativ fakultet og "renser" den. Følg farverne: hver variabel bliver en parameter.
+@@s020 At rense en løkke
+@@s021 dato:variable der ændrer sig,ora:hvad jeg transformerer nu,ok:ren version
+@@s022 Udgangspunktet. To variable ændrer sig ved hver omgang: <code>result</code> og <code>x</code>.
+@@s023 <b>1.</b> Hver variabel, der ændrer sig, bliver en <b>parameter</b> i en arbejdsfunktion. Returtypen bliver <code>Int</code>.
+@@s024 <b>2.</b> Betingelsen i <code>while</code> bliver til et <code>if</code>: "skal jeg lave endnu en omgang, eller er jeg færdig?"
+@@s025 <b>3.</b> Løkkens krop beregnede de <b>nye værdier</b> for variablene. I stedet for at tildele dem sender jeg dem videre til det næste kald.
+@@s026 <b>4.</b> Efter løkken stod der <code>return result</code>: det bliver grenen <code>else</code>, uden <code>return</code>.
+@@s027 <b>5.</b> Jeg skjuler <code>doWork</code> inde i <code>factorial</code> og kalder den med variablenes <b>startværdier</b>: <code>result = 1</code>, <code>x = n</code>.
+@@s028 Variable der ændrer sig → argumenter til kaldet
+@@s029 Den enkleste version, og hvordan den udfoldes
+@@s030 Til fakultet findes der også en direkte rekursion, kopieret fra den matematiske definition <span class="m">n! = n · (n − 1)!</span>:
+@@s031 factorial(4), idet hvert kald erstattes
+@@s032 4 er ikke ≤ 1: grenen <code>else</code>.
+@@s033 Multiplikationen med 4 <b>forbliver på pause</b>: først skal <code>factorial(3)</code> bruges.
+@@s034 Endnu en multiplikation på pause.
+@@s035 Og endnu en.
+@@s036 Basistilfælde: 1 ≤ 1, det er 1.
+@@s037 Nu lukkes multiplikationerne, fra inde og ud.
+@@s038 Antallet af ting på pause vokser med <code>n</code>: stakken bruger plads proportional med <code>n</code>.
+@@s039 factorial(4): stakken vokser, og lukkes så
+@@s040 Haledrekursion
+@@s041 Definition
+@@s042 Et kald er <b>i hale</b> (i <i>tail position</i>), når den kaldende returnerer sit resultat med det samme, <b>uden at gøre andet med det</b>.
+@@s043 Ikke i hale
+@@s044 Efter kaldet skal der stadig ganges med <code>n</code>.
+@@s045 I hale
+@@s046 Kaldets resultat <b>er</b> resultatet. Multiplikationen er allerede lavet, i argumentet <code>acc</code>.
+@@s047 Tricket til at gå fra det ene til det andet har et navn: <b>akkumulatorparameteren</b>. I stedet for at kombinere resultaterne, mens du går tilbage, kombinerer du dem, mens du går frem, og bærer det delvise resultat med dig.
+@@s048 Kaldenes stak: normal mod hale
+@@s049 Compileren omdanner en haledrekursion til en løkke med konstant plads. Med <code>@annotation.tailrec</code> beder du den <b>kontrollere</b>, at det virkelig er hale: hvis ikke, kompilerer det ikke.
+@@s050 I kurset
+@@s051 Opgavearket siger det tydeligt: insister ikke på haledrekursion, hvis det ikke kræves. Kurset foretrækker enkelhed. Den er nødvendig, når der er reel risiko for at løbe tør for stak.
+@@s052 Fibonacci: hvorfor <code>@tailrec</code> ikke accepterede din version
+@@s053 I den første version af opgave 3 var der <b>to</b> rekursive kald lagt sammen. Compileren afviser den:
+@@s054 Løsningen: for at beregne det næste tal behøver du <b>kun de sidste to</b>. Bær dem med dig som parametre og gå videre.
+@@s055 fib med et vindue af to værdier
+@@s056 <code>curr</code> er det aktuelle Fibonacci-tal, <code>next</code> det, der kommer lige efter. De er vinduet, der glider.
+@@s057 Man starter fra F1 = 0 og F2 = 1, som opgaveteksten siger.
+@@s058 Hvert trin flytter vinduet ét: den nye <code>curr</code> er den gamle <code>next</code>, den nye <code>next</code> er summen af de to. <code>n</code> tæller, hvor mange flytninger der mangler.
+@@s059 Når der ikke mangler flytninger, er <code>curr</code> svaret. Kaldet i det foregående trin er i hale: <code>@tailrec</code> er opfyldt.
+@@s060 fib(6): vinduet, der glider
+@@s061 Start: curr = 0, next = 1.
+@@s062 curr tager 1 (den gamle next), next = 1 + 0.
+@@s063 next = 1 + 1.
+@@s064 next = 2 + 1.
+@@s065 next = 3 + 2.
+@@s066 n ≤ 1: jeg returnerer curr. Følgen var 0, 1, 1, 2, 3, <b>5</b>: det sjette tal.
+@@s067 To kald lagt sammen mod et vindue, der glider
+@@s068 En løkke over indekserne: <code>isSorted</code>
+@@s069 Opgave 4: lav med rekursion det, du ville gøre med et <code>for</code> over indeksene. Det er din løsning.
+@@s070 isSorted, opgave 4 i uge 1
+@@s071 Arbejdsfunktionen har kun én parameter: indekset <code>i</code>, som i et <code>for</code> ville være løkkevariablen.
+@@s072 Hvis der ikke er et par <code>(i, i+1)</code> at kontrollere, er arrayet sorteret. Det gælder også for tomme arrays og arrays med ét element.
+@@s073 Jeg sammenligner elementet med det næste ved hjælp af den modtagne funktion. Hvis parret ikke overholder rækkefølgen, svarer jeg straks <code>false</code>.
+@@s074 Ellers går jeg videre til det næste par. Kaldet er i hale.
+@@s075 Løkken starter fra indeks 0.
+@@s076 Hyppigt spørgsmål
+@@s077 <b>Hvorfor er det nok at sammenligne de nabostillede par?</b> Hvis <code>as(0) ≤ as(1)</code> og <code>as(1) ≤ as(2)</code>, så gælder også <code>as(0) ≤ as(2)</code>: rækkefølgen spreder sig. At kontrollere alle par ville være unødvendigt.
+@@s078 go(i): for over indekserne som rekursion

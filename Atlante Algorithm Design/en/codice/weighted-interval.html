@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Code: weighted interval scheduling in Java</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Code: weighted interval scheduling in Java</h1>
+  <p class="lede">Jobs with values: sorting by end, p(j) with binary search, and the recurrence take or skip.</p>
+</header>
+
+<section>
+  <h2>Sorting and finding p(j)</h2>
+  <p>For each job I need the number of compatible jobs that come before it. After sorting by end, the answer is found with a binary search.</p>
+  <figure class="codice" data-titolo="Sorting and finding p(j)">
+<pre data-lang="java">import java.io.*;
+import java.util.*;
+
+public class Main {
+    public static void main(String[] args) throws IOException {
+        BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
+        int n = Integer.parseInt(in.readLine().trim());
+
+        // Job come {inizio, fine, valore}.
+        int[][] job = new int[n][3];
+        for (int i = 0; i &lt; n; i++) {
+            StringTokenizer st = new StringTokenizer(in.readLine());
+            job[i][0] = Integer.parseInt(st.nextToken());
+            job[i][1] = Integer.parseInt(st.nextToken());
+            job[i][2] = Integer.parseInt(st.nextToken());
+        }
+        // Ordino per fine: così OPT(j) dipende solo da job precedenti.
+        Arrays.sort(job, (x, y) -&gt; Integer.compare(x[1], y[1]));
+
+        // p[j] = numero di job (nell'ordine) compatibili con j, cioè che finiscono prima dell'inizio di j.
+        int[] fine = new int[n];
+        for (int i = 0; i &lt; n; i++) {
+            fine[i] = job[i][1];
+        }
+        int[] p = new int[n];
+        for (int j = 0; j &lt; n; j++) {
+            int lo = 0, hi = j;                    // ricerca binaria: ultimo job con fine &lt;= inizio di j
+            while (lo &lt; hi) {
+                int mid = (lo + hi + 1) / 2;
+                if (fine[mid - 1] &lt;= job[j][0]) {
+                    lo = mid;
+                } else {
+                    hi = mid - 1;
+                }
+            }
+            p[j] = lo;                              // numero di job compatibili (indici 0..lo-1)
+        }
+
+        // opt[j] = valore massimo con i primi j job; opt[0] = 0.
+        long[] opt = new long[n + 1];
+        for (int j = 1; j &lt;= n; j++) {
+            long prendo = job[j - 1][2] + opt[p[j - 1]];
+            opt[j] = Math.max(prendo, opt[j - 1]);   // prendo il job j, oppure lo salto
+        }
+        System.out.println("valore massimo " + opt[n]);
+    }
+}</pre>
+    <ol class="spiega">
+    <li data-righe="18"><p>I sort by end: this way the recurrence goes through the jobs in time order.</p></li>
+    <li data-righe="27"><p>Binary search over the previous jobs: I look for how many finish before the start of j.</p></li>
+    <li data-righe="30"><p>The job with index mid − 1 is compatible with j: I search further to the right.</p></li>
+    </ol>
+  </figure>
+  <div class="box basi" data-tit="Syntax notes"><ul><li><code>long</code> for the values: the sum of the values can exceed <code>int</code>.</li></ul></div>
+</section>
+<section>
+  <h2>The recurrence</h2>
+  <p><code>opt[j]</code> is the maximum between taking job j (its value plus the best of the compatible ones) and skipping it.</p>
+  <figure class="codice" data-titolo="The recurrence">
+<pre data-lang="java">import java.io.*;
+import java.util.*;
+
+public class Main {
+    public static void main(String[] args) throws IOException {
+        BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
+        int n = Integer.parseInt(in.readLine().trim());
+
+        // Job come {inizio, fine, valore}.
+        int[][] job = new int[n][3];
+        for (int i = 0; i &lt; n; i++) {
+            StringTokenizer st = new StringTokenizer(in.readLine());
+            job[i][0] = Integer.parseInt(st.nextToken());
+            job[i][1] = Integer.parseInt(st.nextToken());
+            job[i][2] = Integer.parseInt(st.nextToken());
+        }
+        // Ordino per fine: così OPT(j) dipende solo da job precedenti.
+        Arrays.sort(job, (x, y) -&gt; Integer.compare(x[1], y[1]));
+
+        // p[j] = numero di job (nell'ordine) compatibili con j, cioè che finiscono prima dell'inizio di j.
+        int[] fine = new int[n];
+        for (int i = 0; i &lt; n; i++) {
+            fine[i] = job[i][1];
+        }
+        int[] p = new int[n];
+        for (int j = 0; j &lt; n; j++) {
+            int lo = 0, hi = j;                    // ricerca binaria: ultimo job con fine &lt;= inizio di j
+            while (lo &lt; hi) {
+                int mid = (lo + hi + 1) / 2;
+                if (fine[mid - 1] &lt;= job[j][0]) {
+                    lo = mid;
+                } else {
+                    hi = mid - 1;
+                }
+            }
+            p[j] = lo;                              // numero di job compatibili (indici 0..lo-1)
+        }
+
+        // opt[j] = valore massimo con i primi j job; opt[0] = 0.
+        long[] opt = new long[n + 1];
+        for (int j = 1; j &lt;= n; j++) {
+            long prendo = job[j - 1][2] + opt[p[j - 1]];
+            opt[j] = Math.max(prendo, opt[j - 1]);   // prendo il job j, oppure lo salto
+        }
+        System.out.println("valore massimo " + opt[n]);
+    }
+}</pre>
+    <ol class="spiega">
+    <li data-righe="42"><p>I take job j: its value plus <code>opt</code> of the compatible jobs, that is <code>opt[p(j)]</code>.</p></li>
+    <li data-righe="43"><p>The maximum between taking it and skipping it.</p></li>
+    </ol>
+  </figure>
+  <div class="box basi" data-tit="Syntax notes"><ul><li><code>job[j - 1][2]</code>: the value is in the third column. The indices of <code>opt</code> start from 1 because <code>opt[0] = 0</code> is the base case.</li></ul></div>
+</section>
+<section>
+  <h2>Running it</h2>
+  <p>Example of input and output (actually compiled and run).</p>
+  <pre class="cod">5
+1 3 2
+2 5 4
+4 7 4
+6 9 7
+8 10 2
+
+(output)
+valore massimo 11</pre>
+</section>
+<section>
+  <h2>The theory, side by side</h2>
+  <p><a href="../teoria/weighted-interval.html"><b>← Back to the theory of this topic</b></a></p>
+</section>
+
+</main>
+</body>
+</html>

@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Divide and conquer: the method</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+SCENE.bin = {
+  w: 540, h: 230, lato: true,
+  legenda: 'ora:mid of this step,dato:interval lo..hi,no:part discarded,ok:found',
+  codice: { lang: 'pseudo', testo: `lo = 0, hi = n - 1
+while lo <= hi:
+    mid = (lo + hi) / 2
+    if A[mid] == x: trovato
+    elif A[mid] < x: lo = mid + 1
+    else: hi = mid - 1` },
+  oggetti: [
+    ...[1,3,4,7,9,11,15,18].map((v,i) => ({id:'c'+i,tipo:'rett',x:30+i*60,y:60,w:54,h:36,t:String(v)})),
+    ...[0,1,2,3,4,5,6,7].map(i => ({id:'i'+i,tipo:'testo',x:57+i*60,y:112,t:String(i),size:11})),
+    {id:'lo',tipo:'testo',x:30,y:150,t:'',size:13,bold:true,anchor:'start'}
+  ],
+  passi: [
+    { nota: 'Sorted array, I search for x = 15. I cannot read everything: each step must <b>discard half</b> of the interval.', set:{} },
+    { nota: '<code>lo = 0, hi = 7</code>. Centre <code>mid = (0 + 7)/2 = 3</code>: A[3] = 7 &lt; 15. The target is on the right: I discard the left half, <code>lo = 4</code>.', set:{c3:{tono:'ora'},lo:{t:'lo = 4, hi = 7'}} },
+    { nota: 'New centre <code>mid = (4 + 7)/2 = 5</code>: A[5] = 11 &lt; 15. I discard again: <code>lo = 6</code>.', set:{c3:{tono:'no'},c5:{tono:'ora'},lo:{t:'lo = 6, hi = 7'}} },
+    { nota: 'Centre <code>mid = 6</code>: A[6] = 15 = x. <b>Found</b> in 3 steps. With n = 8 the maximum is ⌈log₂ 8⌉ = 3.', set:{c5:{tono:'no'},c6:{tono:'ok'},lo:{t:'trovato: A[6] = 15',tono:'ok'}} }
+  ]
+};
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Divide and conquer: the method</h1>
+  <p class="lede">Divide and conquer (divide and conquer) splits the problem into smaller independent parts of the same type, solves them recursively and recombines the results. The cost is read from the recurrence with the master theorem.</p>
+</header>
+
+<section>
+  <h2>The method in six steps</h2>
+<ol>
+  <li><b>Divide</b>: halves, quadrants, left and right of a line.</li>
+  <li><b>Invariant</b>: why the answer lies in the chosen part, or how you recombine the parts.</li>
+  <li><b>Base case</b>: <code>n ≤ 1</code> (or <code>n ≤ 2</code>), written explicitly.</li>
+  <li><b>Cost</b> of dividing and recombining: usually <code>O(n^c)</code>.</li>
+  <li><b>Recurrence</b>: <code>T(n) = a·T(n/b) + O(n^c)</code>.</li>
+  <li><b>Master theorem</b> (fundamental theorem): compare <code>c</code> with <code>log_b a</code>.</li>
+</ol>
+</section>
+<section>
+  <h2>Binary search</h2>
+<p>The simplest case: a sorted sequence, and the element to search for. At each step you look at the centre <code>mid</code>: the order tells you in which half the answer can lie, and you discard the other. The interval halves, so <code>T(n) = T(n/2) + O(1)</code>, that is <code>O(log n)</code>.</p>
+<p>Signal in the exams: <b>"faster than linear"</b>: you cannot read all the input, so you must discard half of it at each step.</p>
+  <figure class="scena" data-scena="bin" data-titolo="Binary search: the centre discards half"></figure>
+</section>
+<section>
+  <h2>The master theorem</h2>
+<p>Given <code>T(n) = a·T(n/b) + Θ(n^c)</code> with <code>a ≥ 1</code>, <code>b ≥ 2</code>, compare <code>c</code> with <code>log_b a</code>:</p>
+<ul>
+  <li>if <code>c &lt; log_b a</code>: <code>T(n) = Θ(n^(log_b a))</code> (the leaves dominate);</li>
+  <li>if <code>c = log_b a</code>: <code>T(n) = Θ(n^c · log n)</code> (each level weighs the same);</li>
+  <li>if <code>c &gt; log_b a</code>: <code>T(n) = Θ(n^c)</code> (the root dominates).</li>
+</ul>
+<div class="box attenzione" data-tit="When it does not apply"><p>The number of subproblems must be constant, and the extra work must be of the form <code>n^c</code>. An extra work of <code>n log n</code>, or subproblems of different size, require another analysis (unroll the recursion).</p></div>
+</section>
+<section>
+  <h2>At the exam</h2>
+<div class="box esame" data-tit="At the exam">
+<p>For the time of a divide and conquer: write the recurrence, then the master theorem. Phrase: <i>"T(n) = a·T(n/b) + O(n^c). Since log_b a = …, by the master theorem T(n) = Θ(…)."</i></p>
+<p>Base case: always write it explicitly. Common mistake: forgetting the recombination work.</p>
+</div>
+</section>
+<section>
+  <h2>Quick reference</h2>
+<div class="tab-wrap"><table class="tab"><thead><tr><th>recurrence</th><th>solution</th><th>example</th></tr></thead><tbody><tr><td>T(n) = T(n/2) + O(1)</td><td>O(log n)</td><td>binary search</td></tr><tr><td>T(n) = 2T(n/2) + O(n)</td><td>O(n log n)</td><td>mergesort</td></tr><tr><td>T(n) = 3T(n/2) + O(n)</td><td>O(n^1.585)</td><td>Karatsuba</td></tr><tr><td>T(n) = 4T(n/2) + O(1)</td><td>O(n²)</td><td>large table 2^k × 2^k</td></tr></tbody></table></div>
+</section>
+
+</main>
+</body>
+</html>

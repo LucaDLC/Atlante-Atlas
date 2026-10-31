@@ -1,0 +1,89 @@
+@@s001 Critical section and lock
+@@s002 dato:t1,due:t2,ora:inside the critical section,no:section too big
+@@s003 ok:property respected,no:property violated,dato:t1,due:t2
+@@s004 dato:steps of t1,due:steps of t2,ora:constraint,no:contradiction
+@@s005 dato:t1,due:t2,no:lock never released,ok:released in finally
+@@s006 dato:t1,due:t2,no:rule violated,ok:rule respected
+@@s007 ora:the step happening now,ok:already said
+@@s008 Critical section and lock
+@@s009 To remove the race condition it is enough to prevent two threads from executing <b>together</b> the part that touches the shared memory. That part is the <b>critical section</b>; the tool to protect it is the <b>lock</b>.
+@@s010 The critical section
+@@s011 Definition
+@@s012 A <b>critical section</b> is a part of the concurrent program in which concurrent access must be limited. It must cover the parts of code that use the shared memory.
+@@s013 Where it starts and where it ends
+@@s014 Only these two lines touch <code>counter</code>, the shared variable: they are the critical section.
+@@s015 <code>i</code> is a <b>local</b> variable: each thread has its own. There is no need to protect it.
+@@s016 Question from the slide: should the critical section not start before the for?
+@@s017 No. It would work, but then one thread would do <b>all</b> its loops while the other waits: the program would become sequential and you would lose all the advantage of the threads. The critical section must be kept <b>as small as possible</b>: only the accesses to the shared memory (exercise 1.1.5).
+@@s018 A room for one thread at a time
+@@s019 Mutual exclusion: the three properties (Dijkstra)
+@@s020 The mutual exclusion problem (<i>mutual exclusion problem</i>) is: how to coordinate several threads so that a critical section is executed by one at a time? Dijkstra fixed the three properties that an ideal solution must have. They serve to judge any solution, including the ones you write in the exercises.
+@@s021 Property
+@@s022 What it guarantees
+@@s023 <b>Mutual exclusion</b>
+@@s024 at most one thread at a time executes the critical section
+@@s025 <b>Absence of deadlock</b>
+@@s026 threads sooner or later leave the critical section, letting the others in
+@@s027 <b>Absence of starvation</b>
+@@s028 if a thread is ready to enter, it sooner or later enters (in practice it is not always possible to guarantee it)
+@@s029 The three properties, and how they are violated
+@@s030 Java locks
+@@s031 <code>lock()</code>
+@@s032 Takes the lock if it is free. If it belongs to another thread, the caller <b>blocks</b> until it is released. It is blocking.
+@@s033 <code>unlock()</code>
+@@s034 If there are threads waiting it wakes one, otherwise it frees the lock. In any case the caller <b>continues</b>. It is not blocking.
+@@s035 They are <b>synchronization operations</b>: they establish an order between operations of different threads. <code>Lock</code> is an interface; in the course the implementation <code>ReentrantLock</code> is used.
+@@s036 Without locks
+@@s037 4 steps per thread, no protection
+@@s038 With locks
+@@s039 The same steps, with lock() and unlock()
+@@s040 What changes (open "All the interleavings" in the two constructors)
+@@s041 All the ways of mixing 4 steps of t1 with 4 steps of t2. Many lose an update.
+@@s042 As soon as a thread does <code>lock()</code>, the steps of the other stay blocked until <code>unlock()</code>.
+@@s043 Only these two remain. Both give <code>counter = 2</code>.
+@@s044 The lock does not make <code>counter++</code> atomic for the hardware: it prevents another thread from executing <b>its</b> critical section in the middle.
+@@s045 Is this interleaving possible? (slides 59–60)
+@@s046 Typical question: prove that an interleaving cannot exist. One reasons <b>by contradiction</b>, without running anything.
+@@s047 …, t1(2), …, t2(2), …, t1(3), …, t2(3), …
+@@s048 <b>Assume</b> that the interleaving exists (it is the one that would give the lost update).
+@@s049 t2(2) requires that t2 has taken the lock: <b>t2(1) before t2(2)</b>. And t2 can take the lock only if t1 has released it: <b>t1(4) before t2(1)</b>.
+@@s050 But by the program order of t1, <b>t1(3) comes before t1(4)</b>. So t1(3) would have to be both before and after t2(2).
+@@s051 In the constructor above you can check it with "Try a sequence".
+@@s052 A cycle of constraints: impossible
+@@s053 Deadlock and the try/finally idiom
+@@s054 Lock taken twice
+@@s055 With a non-reentrant lock the thread waits for itself. Real bugs of this kind exist in the Linux kernel.
+@@s056 Exception with the lock in hand
+@@s057 The thread exits without freeing the lock: all the others stay blocked forever.
+@@s058 The idiom to always use
+@@s059 <code>lock()</code> <b>before</b> the <code>try</code>: if it failed, you must not unlock a lock never taken.
+@@s060 The critical section is in the <code>try</code>.
+@@s061 <code>finally</code> is executed <b>always</b>, even if an exception occurs in the try: the lock is always freed.
+@@s062 For the assignments
+@@s063 The slides: solutions that do not use this idiom "cannot be deemed as free from deadlocks (note for assignments)". Use it every time.
+@@s064 ReentrantLock: taking again the lock you already have
+@@s065 The thread takes the lock.
+@@s066 Same thread: a <b>reentrant</b> lock lets it pass and counts how many times it has taken it.
+@@s067 One unlock is not enough.
+@@s068 You need as many unlocks as locks.
+@@s069 Exception with the lock in hand
+@@s070 Check-then-act: the Covid turnstile (exercise 1.3)
+@@s071 At most 15 000 people. The check and the increment must be <b>in the same</b> critical section.
+@@s072 Wrong
+@@s073 Two threads can both read 14 999, pass the check and both enter: 15 001.
+@@s074 Right
+@@s075 Between the check and the increment no other thread can change <code>counter</code>.
+@@s076 14 999 seen twice
+@@s077 How to explain that the solution is correct (exercise 1.1.4)
+@@s078 The outline of the answer
+@@s079 <mark class="dato">1. The problem</mark>: <code>count = count + 1</code> is not atomic; there are interleavings in which a thread reads an old value and an increment is lost (race condition).
+@@s080 Name the problem with the course vocabulary.
+@@s081 <mark class="ora">2. The critical section</mark>: reading and writing of <code>count</code>, protected by <code>lock()</code> / <code>unlock()</code> on the <b>same</b> ReentrantLock, with try/finally.
+@@s082 Say what you have protected and with what.
+@@s083 <mark class="due">3. Why it works</mark>: by mutual exclusion the steps of the critical section of one thread cannot be mixed with those of the other; only interleavings remain in which each increment reads the value written by the previous one.
+@@s084 The core: which interleavings have been eliminated.
+@@s085 <mark class="ok">4. Why no other output</mark>: each of the 2 × 10 000 000 increments adds exactly 1, so the result is always 20 000 000.
+@@s086 Close with the result and the reason why it is the only one.
+@@s087 Model answer
+@@s088 "The increment <code>count = count + 1</code> is not atomic: it is a read followed by a write, so without synchronization some interleavings let a thread read a stale value and lose an update (a race condition). We made the read and the write a critical section protected by the same ReentrantLock, using the lock/try/finally idiom. Mutual exclusion guarantees that the operations of one thread's critical section cannot be interleaved with the other thread's, so every increment reads the value written by the previous one. Hence each of the 20 million increments adds exactly one, and the only possible output is 20,000,000."
+@@s089 The answer in four pieces

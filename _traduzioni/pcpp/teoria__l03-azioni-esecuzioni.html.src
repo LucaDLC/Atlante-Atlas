@@ -1,0 +1,59 @@
+@@s001 Azioni ed esecuzioni
+@@s002 dato:azione del main,ora:azione appena eseguita,ok:già eseguita
+@@s003 Tre thread: il main m, t1 e t2. Un'esecuzione è una sequenza di azioni, una per colonna, da sinistra a destra.
+@@s004 Il main inizializza le variabili (le quattro init, qui riunite) e avvia i due thread.
+@@s005 t1(1): a = 1.
+@@s006 t2(3): b = 1. I passi dei due thread si mescolano: è uno degli interleaving possibili.
+@@s007 t1(2): x = b, e b vale già 1.
+@@s008 t2(4): y = a = 1.
+@@s009 Il main aspetta i due thread (join) e stampa: questa esecuzione stampa <b>(1,1)</b>. Con un altro ordine delle quattro azioni centrali uscirebbe (0,1) o (1,0).
+@@s010 ok:sequenzialmente consistente,no:non SC (riordino)
+@@s011 dato:accesso a variabile,ora:sincronizzazione,due:altro
+@@s012 dato:program order del main,ora:di t1,due:di t2,no:nessun ordine
+@@s013 Azioni ed esecuzioni
+@@s014 Visibility e reordering rendono il comportamento reale difficile da prevedere guardando l'hardware. Il <b>Java Memory Model</b> (JMM) dà regole a livello di linguaggio per dire quali esecuzioni sono valide. Si parte da tre parole: <b>azione</b>, <b>esecuzione</b>, <b>program order</b>.
+@@s015 Perché serve un memory model
+@@s016 L'hardware cambia da un computer all'altro: istruzioni diverse, gestione della memoria diversa.
+@@s017 Compilatori, runtime e CPU fanno ottimizzazioni (riordino, riscrittura del codice) che producono risultati "paradossali": il ciclo che non termina, l'output (0,0).
+@@s018 Il JMM è un insieme di regole: la JVM genera solo esecuzioni valide per quelle regole, <b>su qualsiasi hardware</b>. Così il programmatore può prevedere cosa succede.
+@@s019 Sequential consistency (Lamport)
+@@s020 Il comportamento "normale" che ti aspetti. Un'esecuzione concorrente è <b>sequenzialmente consistente</b> se 1) rispetta l'ordine delle istruzioni dentro ogni thread e 2) le operazioni sembrano avvenire in un istante, una alla volta. L'output (0,0) di <code>PossibleReordering</code> <b>non</b> è sequenzialmente consistente.
+@@s021 Garantirla per ogni programma costerebbe tutte le ottimizzazioni. Il JMM la garantisce solo per i programmi <b>correctly synchronized</b> (<a href="l03-data-race.html">pagina sui data race</a>).
+@@s022 Output sequenzialmente consistenti, e (0,0)
+@@s023 Azioni: "chi fa cosa"
+@@s024 Definizione
+@@s025 Un'<b>azione</b> è una coppia <code>t(o)</code>: <code>t</code> è il thread, <code>o</code> l'operazione. Per esempio <code>t1(1)</code> = il thread t1 esegue l'operazione numerata (1).
+@@s026 Tipo
+@@s027 Esempi
+@@s028 <b>Variable access</b>
+@@s029 lettura o scrittura di una variabile del programma: <code>a=1</code> (scrittura di a), <code>x=b</code> (lettura di b e scrittura di x)
+@@s030 <b>Synchronization</b>
+@@s031 primitive di sincronizzazione: <code>lock()</code>, <code>unlock()</code>, <code>start()</code>, <code>join()</code>…
+@@s032 <b>Other</b>
+@@s033 tutto il resto (creare un oggetto, stampare…)
+@@s034 Dare un nome a ogni operazione (slide 13)
+@@s035 Il main (thread <code>m</code>) inizializza le variabili: azioni <code>m(init(x))</code>… Sono <b>variable access</b> (scritture).
+@@s036 Le operazioni di <code>one</code>, che chiamiamo t1: <code>t1(1)</code> scrive <code>a</code>, <code>t1(2)</code> legge <code>b</code> e scrive <code>x</code>.
+@@s037 Quelle di <code>other</code> (t2): <code>t2(3)</code>, <code>t2(4)</code>.
+@@s038 <b>Synchronization</b>: <code>m(start(t1))</code>, <code>m(start(t2))</code>, <code>m(join(t1))</code>, <code>m(join(t2))</code>.
+@@s039 <code>m(5)</code> legge <code>x</code> e <code>y</code>.
+@@s040 Tre tipi di azioni
+@@s041 Esecuzioni
+@@s042 Definizione
+@@s043 Un'<b>esecuzione</b> è una sequenza di azioni <span class="m">σ = α<sub>1</sub>, α<sub>2</sub>, α<sub>3</sub>, …</span>
+@@s044 Domanda della slide: scrivi un'esecuzione possibile
+@@s045 Il main inizializza.
+@@s046 Avvia i due thread.
+@@s047 I passi dei thread, mescolati in uno dei modi possibili.
+@@s048 Il main aspetta e stampa. Questa esecuzione stampa (1,1).
+@@s049 Un'esecuzione, azione per azione
+@@s050 Program order
+@@s051 Definizione
+@@s052 Date due azioni <code>a</code>, <code>b</code> dello <b>stesso</b> thread, <code>a</code> viene prima di <code>b</code> nel <b>program order</b> se, eseguendo quel thread da solo, <code>a</code> verrebbe eseguita prima di <code>b</code>. È definito sul codice: i riordini di compilatore o CPU non contano.
+@@s053 Per ogni thread è un <b>ordine totale</b>: presa qualsiasi coppia di sue azioni, una delle due viene prima.
+@@s054 Scrivere il program order come coppie
+@@s055 Per il main: ogni azione e quella <b>subito dopo</b>.
+@@s056 Si può scrivere come una catena. È una scorciatoia: <code>a → b → c</code> vuol dire le coppie <b>(a,b), (b,c) e anche (a,c)</b>.
+@@s057 Il program order di t1 e di t2.
+@@s058 Il program order <b>non dice niente</b> su coppie di thread diversi. Per quelle servono le regole di happens-before: <a href="l03-happens-before.html">pagina successiva</a>.
+@@s059 Catene dentro ogni thread, niente fra thread

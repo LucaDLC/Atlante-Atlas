@@ -1,0 +1,59 @@
+@@s001 Handlinger og udførelser
+@@s002 dato:main's handling,ora:handling lige udført,ok:allerede udført
+@@s003 Tre tråde: main m, t1 og t2. En udførelse er en følge af handlinger, én pr. kolonne, fra venstre mod højre.
+@@s004 Main initialiserer variablerne (de fire init, samlet her) og starter de to tråde.
+@@s005 t1(1): a = 1.
+@@s006 t2(3): b = 1. Trinene fra de to tråde blandes: det er en af de mulige interleavings.
+@@s007 t1(2): x = b, og b er allerede 1.
+@@s008 t2(4): y = a = 1.
+@@s009 Main venter på de to tråde (join) og udskriver: denne udførelse udskriver <b>(1,1)</b>. Med en anden rækkefølge af de fire centrale handlinger ville den udskrive (0,1) eller (1,0).
+@@s010 ok:sekventielt konsistent,no:ikke SC (omordning)
+@@s011 dato:adgang til variabel,ora:synkronisering,due:andet
+@@s012 dato:main's program order,ora:t1's,due:t2's,no:ingen rækkefølge
+@@s013 Handlinger og udførelser
+@@s014 Synlighed og omordning gør den reelle adfærd svær at forudsige, hvis man kigger på hardwaren. <b>Java Memory Model</b> (JMM) giver regler på sprogniveau for at sige, hvilke udførelser der er gyldige. Man starter med tre ord: <b>handling</b>, <b>udførelse</b>, <b>program order</b>.
+@@s015 Hvorfor der skal en memory model til
+@@s016 Hardwaren skifter fra én computer til en anden: andre instruktioner, anden hukommelsesstyring.
+@@s017 Compilere, runtime og CPU'er laver optimeringer (omordning, omskrivning af koden), der giver "paradoksale" resultater: løkken der ikke ender, udskriften (0,0).
+@@s018 JMM er et sæt regler: JVM'en genererer kun udførelser, der er gyldige efter reglerne, <b>på enhver hardware</b>. Så programmøren kan forudsige, hvad der sker.
+@@s019 Sekventiel konsistens (Lamport)
+@@s020 Den "normale" adfærd, man forventer. En samtidig udførelse er <b>sekventielt konsistent</b>, hvis 1) den respekterer rækkefølgen af instruktionerne i hver tråd, og 2) operationerne ser ud til at ske på et øjeblik, én ad gangen. Udskriften (0,0) fra <code>PossibleReordering</code> er <b>ikke</b> sekventielt konsistent.
+@@s021 At garantere det for alle programmer ville koste alle optimeringerne. JMM garanterer det kun for <b>korrekt synkroniserede</b> programmer (<a href="l03-data-race.html">siden om data race</a>).
+@@s022 Sekventielt konsistente udskrifter, og (0,0)
+@@s023 Handlinger: "hvem gør hvad"
+@@s024 Definition
+@@s025 En <b>handling</b> er et par <code>t(o)</code>: <code>t</code> er tråden, <code>o</code> operationen. For eksempel er <code>t1(1)</code> = tråden t1 udfører den nummererede operation (1).
+@@s026 Type
+@@s027 Eksempler
+@@s028 <b>Variable access</b>
+@@s029 læsning eller skrivning af en variabel i programmet: <code>a=1</code> (skrivning af a), <code>x=b</code> (læsning af b og skrivning af x)
+@@s030 <b>Synchronization</b>
+@@s031 synkroniseringsprimitiver: <code>lock()</code>, <code>unlock()</code>, <code>start()</code>, <code>join()</code>…
+@@s032 <b>Other</b>
+@@s033 alt det andet (oprette et objekt, udskrive…)
+@@s034 At give et navn til hver operation (slide 13)
+@@s035 Main (tråden <code>m</code>) initialiserer variablerne: handlinger <code>m(init(x))</code>… De er <b>variable access</b> (skrivninger).
+@@s036 Operationerne i <code>one</code>, som vi kalder t1: <code>t1(1)</code> skriver <code>a</code>, <code>t1(2)</code> læser <code>b</code> og skriver <code>x</code>.
+@@s037 Dem i <code>other</code> (t2): <code>t2(3)</code>, <code>t2(4)</code>.
+@@s038 <b>Synchronization</b>: <code>m(start(t1))</code>, <code>m(start(t2))</code>, <code>m(join(t1))</code>, <code>m(join(t2))</code>.
+@@s039 <code>m(5)</code> læser <code>x</code> og <code>y</code>.
+@@s040 Tre typer handlinger
+@@s041 Udførelser
+@@s042 Definition
+@@s043 En <b>udførelse</b> er en følge af handlinger <span class="m">σ = α<sub>1</sub>, α<sub>2</sub>, α<sub>3</sub>, …</span>
+@@s044 Spørgsmål fra slidet: skriv en mulig udførelse
+@@s045 Main initialiserer.
+@@s046 Den starter de to tråde.
+@@s047 Trådenes trin, blandet på en af de mulige måder.
+@@s048 Main venter og udskriver. Denne udførelse udskriver (1,1).
+@@s049 En udførelse, handling for handling
+@@s050 Program order
+@@s051 Definition
+@@s052 Givet to handlinger <code>a</code>, <code>b</code> fra <b>samme</b> tråd, kommer <code>a</code> før <code>b</code> i <b>program order</b>, hvis <code>a</code> ville blive udført før <code>b</code>, når den tråd kører alene. Den er defineret ud fra koden: omordninger fra compiler eller CPU tæller ikke.
+@@s053 For hver tråd er det en <b>total orden</b>: uanset hvilket par af dens handlinger man tager, kommer den ene først.
+@@s054 At skrive program order som par
+@@s055 For main: hver handling og den <b>lige efter</b>.
+@@s056 Den kan skrives som en kæde. Det er en genvej: <code>a → b → c</code> betyder parrene <b>(a,b), (b,c) og også (a,c)</b>.
+@@s057 Program order for t1 og for t2.
+@@s058 Program order <b>siger ingenting</b> om par af forskellige tråde. Til dem behøves happens-before-reglerne: <a href="l03-happens-before.html">næste side</a>.
+@@s059 Kæder inde i hver tråd, intet mellem trådene

@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Traits og mixins</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+SCENE.strati = {
+  w: 580, h: 290, lato: false,
+  legenda: 'dato:objektets lag,ora:laget der svarer,ok:resultat',
+  oggetti: [
+    { id: 'an', tipo: 'nodo', forma: 'quadrato', r: 24, x: 120, y: 240, t: 'Animal', sotto: 'name', nascosto: true },
+    { id: 'hl', tipo: 'nodo', forma: 'quadrato', r: 24, x: 120, y: 185, t: 'HasLegs', sopra: 'run, jump', nascosto: true },
+    { id: 'au', tipo: 'nodo', forma: 'quadrato', r: 24, x: 250, y: 185, t: 'Audible', sopra: 'makeNoise (astratto)', nascosto: true },
+    { id: 'fr', tipo: 'nodo', forma: 'quadrato', r: 24, x: 185, y: 110, t: 'Frog', sopra: 'makeNoise = croak!', nascosto: true },
+    { id: 're', tipo: 'nodo', forma: 'quadrato', r: 24, x: 185, y: 45, t: 'Registered', sopra: 'var id', nascosto: true },
+    { id: 'q', tipo: 'testo', x: 440, y: 120, t: '', size: 14, bold: true },
+    { id: 'r', tipo: 'testo', x: 440, y: 160, t: '', size: 14, bold: true }
+  ],
+  passi: [
+    { nota: '<code>new Frog("Kaj") with Registered</code> bygger et objekt i lag. Ved basis står den abstrakte klasse <b>Animal</b>, med feltet name.', set: { an: { nascosto: false, tono: 'dato' } } },
+    { nota: 'Frog tilføjer traits\'ene <b>HasLegs</b> (run, jump allerede skrevet) og <b>Audible</b> (makeNoise kun erklæret).', set: { hl: { nascosto: false, tono: 'dato' }, au: { nascosto: false, tono: 'dato' } } },
+    { nota: 'Klassen <b>Frog</b> skriver den metode, der manglede: makeNoise = "croak!".', set: { fr: { nascosto: false, tono: 'dato' } } },
+    { nota: 'Ved oprettelsen blandes <b>Registered</b> også ind: feltet id kommer kun til dette objekt, ikke til alle frøer.', set: { re: { nascosto: false, tono: 'dato' } } },
+    { nota: '<code>f.makeNoise()</code>: laget Frog svarer.', set: { fr: { tono: 'ora' }, q: { t: 'f.makeNoise()' }, r: { t: '"croak!"', tono: 'ok' } } },
+    { nota: '<code>f.run()</code>: Frog definerer den ikke igen, HasLegs svarer. Og <code>f.id = 42</code> skriver i feltet i Registered.', set: { fr: { tono: 'dato' }, hl: { tono: 'ora' }, re: { tono: 'ora' }, q: { t: 'f.run();  f.id = 42' }, r: { t: '"after you!"', tono: 'ok' } } }
+  ]
+};
+</script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  const T = (id, x, y, t, extra) => Object.assign({ id, tipo: 'testo', x, y, t, size: 13 }, extra || {});
+  const R = (id, x, y, w, h, t, extra) => Object.assign({ id, tipo: 'rett', x, y, w, h, t }, extra || {});
+  const N = (id, x, y, t, tono, extra) => Object.assign({ id, tipo: 'nodo', x, y, t, tono, r: 20 }, extra || {});
+  const F = (id, x1, y1, x2, y2, t, extra) => Object.assign({ id, tipo: 'vett', x1, y1, x2, y2, t }, extra || {});
+  const C = (id, x, y, valori, extra) => Object.assign({ id, tipo: 'celle', x, y, cw: 52, ch: 40, valori, indici: false }, extra || {});
+
+    SCENE.gerarchia = {
+      w: 580, h: 240, lato: true,
+      legenda: 'dato:klasse,due:interface / trait,ok:arver kode',
+      oggetti: [
+        T('hj', 145, 22, 'Java', { bold: true }), T('hs', 435, 22, 'Scala', { bold: true }),
+        R('jp', 20, 40, 110, 36, 'Animale', { tono: 'dato' }), R('ji1', 160, 40, 110, 36, 'Salta', { tono: 'due' }),
+        R('jc', 80, 150, 130, 40, 'Rana', { tono: 'dato' }), F('j1', 110, 148, 80, 78, ''), F('j2', 180, 148, 210, 78, '', { tratt: true }),
+        R('sp', 310, 40, 110, 36, 'Animale', { tono: 'dato', nascosto: true }), R('st1', 450, 40, 110, 36, 'Salta', { tono: 'due', nascosto: true }),
+        R('sc', 370, 150, 130, 40, 'Rana', { tono: 'dato', nascosto: true }), F('s1', 400, 148, 370, 78, '', { nascosto: true }), F('s2', 470, 148, 500, 78, '', { nascosto: true }),
+        T('c', 290, 222, '', { size: 12 })
+      ],
+      passi: [
+        { nota: "In Java una classe ha <b>un solo genitore</b>, ma può implementare più interfacce. Le interfacce (classiche) danno solo firme: il codice lo scrivi nella classe." },
+        { nota: "Un <b>trait</b> Scala è come un'interfaccia che può contenere anche <b>codice e campi</b>. Una classe può mescolarne quanti vuole: <code>class Rana extends Animale, Salta</code>.", set: { sp: { nascosto: false }, st1: { nascosto: false, t: 'trait Salta' }, sc: { nascosto: false }, s1: { nascosto: false }, s2: { nascosto: false, tono: 'ok' } } },
+        { nota: "Dal trait la Rana eredita <b>metodi già scritti</b>: salta() funziona senza riscriverlo. Il trait può anche avere metodi astratti, da completare.", set: { st1: { t: 'def salta = …' }, c: { t: 'trait: più genitori, campi, metodi scritti e astratti' } } },
+        { nota: "Cosa un trait (nella regola del corso) <b>non</b> ha: argomenti del costruttore. Quelli restano delle classi.", set: { c: { t: 'argomenti del costruttore: solo le classi' } } }
+      ]
+    };
+
+    SCENE.orderedpoint = {
+      w: 560, h: 160,
+      codice: { lang: 'scala', testo: `trait OrderedPoint extends scala.math.Ordered[java.awt.Point]:
+  this: java.awt.Point =>
+  override def compare(that: java.awt.Point): Int =
+    if this.x != that.x then if this.x < that.x then -1 else 1
+    else if this.y == that.y then 0 else if this.y < that.y then -1 else 1` },
+      legenda: 'dato:p = (0, 1),due:q = (0, 2),ok:resultat',
+      oggetti: [R('p', 40, 40, 140, 40, 'p = (0, 1)', { tono: 'dato' }), R('q', 380, 40, 140, 40, 'q = (0, 2)', { tono: 'due' }), T('e', 280, 60, 'p < q', { bold: true, size: 15 }), T('c', 280, 130, '', { size: 12 })],
+      passi: [
+        { nota: "<code>p &lt; q</code>: il metodo &lt; viene da <b>Ordered</b>, che lo definisce come <code>p.compare(q) &lt; 0</code>. Io ho scritto solo compare.", righe: [1], set: { e: { t: 'p.compare(q) < 0' } } },
+        { nota: "Il <b>self-type</b> <code>this: java.awt.Point =&gt;</code> dice: questo trait vive dentro un Point. Per questo posso usare this.x e this.y.", righe: [2] },
+        { nota: "Prima le x: 0 != 0 è falso, le x sono uguali. Si passa al ramo else.", righe: [4], set: { c: { t: 'this.x != that.x → 0 != 0 → false' } } },
+        { nota: "Decide la y: 1 == 2 no, 1 &lt; 2 sì: compare = −1.", righe: [5], set: { c: { t: 'this.y < that.y → 1 < 2 → -1' } } },
+        { nota: "−1 &lt; 0: <b>p &lt; q è vero</b>. Ordine lessicografico, come nel dizionario: prima x, poi y.", righe: [5], set: { e: { t: '-1 < 0 → true', tono: 'ok' }, c: { t: 'p < q', tono: 'ok' } } }
+      ]
+    };
+
+    SCENE.linearizza = {
+      w: 580, h: 230, lato: true,
+      legenda: 'ora:metoden der svarer,dato:i rækken,ok:resultat',
+      oggetti: [
+        T('h', 290, 24, 'class X extends A, B', { bold: true, size: 14 }),
+        R('x', 20, 60, 100, 40, 'X', { tono: 'dato' }), R('b', 160, 60, 100, 40, 'B', { tono: 'dato' }), R('a', 300, 60, 100, 40, 'A', { tono: 'dato' }), R('base', 440, 60, 110, 40, 'Base', { tono: 'dato' }),
+        F('f1', 122, 80, 156, 80, ''), F('f2', 262, 80, 296, 80, ''), F('f3', 402, 80, 436, 80, ''),
+        T('r', 290, 150, '', { bold: true, size: 15 }), T('c', 290, 200, '', { size: 12 })
+      ],
+      passi: [
+        { nota: "A e B ridefiniscono entrambi <code>saluta</code>. Scala mette le classi <b>in fila</b>: parte da X, poi il trait più a destra (B), poi A, poi Base." },
+        { nota: "X non ridefinisce saluta: risponde il primo nella fila che lo fa, <b>B</b>: \"B&gt;\" + super.saluta. Il super di B è il <b>successivo nella fila</b>, cioè A (non Base!).", set: { b: { tono: 'ora' }, r: { t: '"B>" + super.saluta' } } },
+        { nota: "A risponde \"A&gt;\" + super.saluta, e il suo super è Base.", set: { b: { tono: 'dato' }, a: { tono: 'ora' }, r: { t: '"B>" + "A>" + super.saluta' } } },
+        { nota: "Base dà \"Base\". Risultato: <b>\"B&gt;A&gt;Base\"</b>. Con <code>class Y extends B, A</code> la fila si rovescia: \"A&gt;B&gt;Base\". Regola del corso: vince il più a destra.", set: { a: { tono: 'dato' }, base: { tono: 'ora' }, r: { t: '"B>A>Base"', tono: 'ok' }, c: { t: 'Y extends B, A  →  "A>B>Base"' } } }
+      ]
+    };
+  
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Traits og mixins</h1>
+  <p class="lede">En <b>trait</b> er et stykke klasse, du kan tilføje til flere klasser: den kan have metoder, der allerede er skrevet, metoder der skal udfyldes, og felter. En klasse kan "blande" så mange, den vil. I øvelse 1 i uge 3 bruger du den til at tilføje <code>&lt;</code> til en Java-klasse.</p>
+</header>
+
+<section>
+  <h2>Fra Java til Scala</h2>
+  <p>I Java har en klasse <b>kun én</b> forælder, men den kan implementere flere interfaces. En trait er som et Java-interface, der også kan indeholde kode og felter.</p>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Kan have…</th><th>konkret klasse</th><th>abstrakt klasse</th><th>trait</th></tr></thead>
+    <tbody>
+      <tr><td>flere forældre af samme type</td><td class="t-no">nej</td><td class="t-no">nej</td><td class="t-ok">ja</td></tr>
+      <tr><td>felter (data)</td><td class="t-ok">ja</td><td class="t-ok">ja</td><td class="t-ok">ja</td></tr>
+      <tr><td>metoder der allerede er skrevet</td><td class="t-ok">ja</td><td class="t-ok">ja</td><td class="t-ok">ja</td></tr>
+      <tr><td>metoder der skal udfyldes (abstrakte)</td><td class="t-no">nej</td><td class="t-ok">ja</td><td class="t-ok">ja</td></tr>
+      <tr><td>konstruktørens argumenter</td><td class="t-ok">ja</td><td class="t-ok">ja</td><td class="t-no">nej</td></tr>
+    </tbody>
+  </table></div>
+  <p class="piccolo">Tabellen fra slide 8 i uge 1. Bemærk: i Scala 3 kan traits have parametre, men i kurset bruges tabellens regel.</p>
+  <figure class="scena" data-scena="gerarchia" data-titolo="Én forælder og flere interfaces, eller flere traits med kode"></figure>
+</section>
+
+<section>
+  <h2>Eksemplet fra forelæsningen: frøen</h2>
+  <figure class="codice" data-titolo="Klasser og traits blandet sammen">
+<pre data-lang="scala">abstract class Animal(val name: String)
+
+trait HasLegs:
+  def run(): String = "after you!"
+  def jump(): String = "hop!"
+
+trait Audible:
+  def makeNoise(): String
+
+trait Registered:
+  var id: Int = 0
+
+class Frog(name: String) extends Animal(name), HasLegs, Audible:
+  def makeNoise(): String = "croak!"
+
+val f = new Frog("Kaj") with Registered
+f.id = 42
+println(s"My name is ${f.name}")</pre>
+    <ol class="spiega">
+      <li data-righe="1" data-segna="abstract@due|(val name: String)@dato"><p>En abstrakt klasse med en konstruktørparameter. <code>val</code> foran parameteren gør den til et felt, der kan læses udefra: <code>f.name</code>.</p></li>
+      <li data-righe="3-5" data-segna="trait HasLegs@ora"><p>En trait med to metoder, der er <b>skrevet allerede</b>. Den, der blander den ind, modtager dem færdige.</p></li>
+      <li data-righe="7-8" data-segna="def makeNoise(): String@ora"><p>En trait med en metode <b>uden krop</b>: den er abstrakt. Den, der blander den ind, skal skrive den.</p></li>
+      <li data-righe="10-11" data-segna="var id: Int = 0@due"><p>En trait kan have et felt. (Her er det en <code>var</code>: det er et eksempel om traits, ikke funktionel kode.)</p></li>
+      <li data-righe="13" data-segna="extends Animal(name)@dato|HasLegs@ora|Audible@ora"><p><code>Frog</code> udvider en klasse og blander to traits ind, adskilt af kommaer. Navnet, der sendes til konstruktøren, går til <code>Animal</code>.</p></li>
+      <li data-righe="14" data-segna="def makeNoise(): String = &quot;croak!&quot;@ok"><p>Den fuldender den metode, som <code>Audible</code> lod stå tilbage. Uden denne linje kompilerer <code>Frog</code> ikke.</p></li>
+      <li data-righe="16" data-segna="with Registered@ora"><p><b>Mixin ved oprettelsen</b>: jeg tilføjer en trait til et enkelt objekt, mens jeg opretter det, selv om klassen <code>Frog</code> ikke havde forudset den.</p></li>
+      <li data-righe="17-18" data-segna="f.id@ok|f.name@ok"><p>Objektet har alt: feltet fra <code>Registered</code>, navnet fra <code>Animal</code>, metoderne fra <code>HasLegs</code>.</p></li>
+    </ol>
+  </figure>
+  <figure class="scena" data-scena="strati" data-titolo="Et objekt bygget i lag"></figure>
+  <div class="errori">
+    <div class="errore">
+      <pre data-lang="scala">trait Audible:
+  def makeNoise(): String
+class Frog extends Audible</pre>
+      <pre class="msg">class Frog needs to be abstract, since def makeNoise(): String in trait Audible is not defined</pre>
+      <div class="fix">Hai mescolato un trait con un metodo astratto e non l'hai scritto. Aggiungi <code>def makeNoise(): String = …</code> dentro <code>Frog</code>.</div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Øvelse 1, uge 3: <code>OrderedPoint</code></h2>
+  <p>Mål: at kunne skrive <code>p &lt; q</code> mellem to <code>java.awt.Point</code>, en Java-klasse, som du ikke kan ændre. Scala-biblioteket har allerede traiten <code>Ordered[T]</code>: hvis du skriver metoden <code>compare</code>, giver den dig <code>&lt;</code>, <code>&gt;</code>, <code>&lt;=</code>, <code>&gt;=</code>.</p>
+  <figure class="codice" data-titolo="Din løsning, linje for linje">
+<pre data-lang="scala">trait OrderedPoint extends scala.math.Ordered[java.awt.Point]:
+
+  this: java.awt.Point =>
+
+  override def compare(that: java.awt.Point): Int =
+    if this.x != that.x then if this.x &lt; that.x then -1 else 1
+    else if this.y == that.y then 0 else if this.y &lt; that.y then -1 else 1</pre>
+    <ol class="spiega">
+      <li data-righe="1" data-segna="trait OrderedPoint@ora|scala.math.Ordered[java.awt.Point]@dato"><p>Mit trait udvider <code>Ordered[Point]</code>: "jeg kan sammenligne mig selv med et Point". <code>Ordered</code> har kun én abstrakt metode, <code>compare</code>.</p></li>
+      <li data-righe="3" data-segna="this: java.awt.Point =>@due"><p><b>Self-type</b>. Den læses: "denne trait kan kun blandes ind i et <code>java.awt.Point</code>". Til gengæld kan jeg bruge <code>this.x</code> og <code>this.y</code>. Det er ikke arv: det er et krav.</p></li>
+      <li data-righe="5" data-segna="override def compare(that: java.awt.Point): Int@ora"><p>Jeg skriver den manglende metode. Kontrakt: et negativt tal hvis <code>this</code> er mindre, 0 hvis de er ens, positivt hvis den er større.</p></li>
+      <li data-righe="6" data-segna="this.x != that.x@dato|-1@ok|else 1@ok"><p><b>Leksikografisk</b> orden, som i ordbogen: først sammenligner jeg <code>x</code>'erne. Hvis de er forskellige, afgør <code>x</code>'en.</p></li>
+      <li data-righe="7" data-segna="this.y == that.y@due|0@ok"><p>Kun hvis <code>x</code>'erne er ens, kigger jeg på <code>y</code>'erne. Hvis de også er ens, er punkterne ens: 0.</p></li>
+    </ol>
+  </figure>
+
+  <figure class="passi" data-titolo="p < q med p = (0, 1) og q = (0, 2)">
+    <div class="passo">
+      <div class="espr">val p = new java.awt.Point(0, 1) <mark class="ora">with OrderedPoint</mark>
+val q = new java.awt.Point(0, 2) with OrderedPoint</div>
+      <p class="nota">Jeg opretter punkterne ved at blande traiten ind, når de oprettes.</p>
+    </div>
+    <div class="passo">
+      <div class="espr">p &lt; q   =   <mark class="ora">p.compare(q)</mark> &lt; 0</div>
+      <p class="nota"><code>&lt;</code> kommer fra <code>Ordered</code>, som definerer den ved hjælp af min <code>compare</code>.</p>
+    </div>
+    <div class="passo">
+      <div class="espr">this.x != that.x   →   <mark class="dato">0</mark> != <mark class="dato">0</mark>   →   <mark class="no">false</mark></div>
+      <p class="nota"><code>x</code>'erne er ens: jeg går til grenen <code>else</code>.</p>
+    </div>
+    <div class="passo">
+      <div class="espr">this.y == that.y   →   <mark class="due">1</mark> == <mark class="due">2</mark>   →   false
+this.y &lt; that.y    →   1 &lt; 2    →   <mark class="ok">-1</mark></div>
+      <p class="nota"><code>y</code> afgør: <code>p</code> er mindre.</p>
+    </div>
+    <div class="passo">
+      <div class="espr">-1 &lt; 0   →   <mark class="ok">true</mark></div>
+      <p class="nota"><code>p &lt; q</code> er sand (kontrolleret ved kompilering).</p>
+    </div>
+  </figure>
+
+  <div class="errori">
+    <div class="errore">
+      <pre data-lang="scala">trait OrderedPoint extends scala.math.Ordered[java.awt.Point]:
+  override def compare(that: java.awt.Point): Int =
+    if this.x &lt; that.x then -1 else 1</pre>
+      <pre class="msg">value x is not a member of OrderedPoint</pre>
+      <div class="fix">Senza <code>this: java.awt.Point =></code> il trait non sa di essere dentro un Point, quindi <code>this.x</code> non esiste.</div>
+    </div>
+  </div>
+
+  <div class="box attenzione" data-tit="Grænsen for denne løsning">
+    <p>Den virker kun, hvis <b>du opretter</b> objektet selv, for du skal skrive <code>with OrderedPoint</code>. Et Point, der kommer til dig færdigt fra et bibliotek, har ikke traiten. Øvelsesarket annoncerer, at <b>type classes</b> vil blive gennemgået senere, og de løser netop dette.</p>
+  </div>
+  <figure class="scena" data-scena="orderedpoint" data-titolo="p < q med Ordered og compare"></figure>
+</section>
+
+<section>
+  <h2>To traits med samme metode: hvem vinder?</h2>
+  <p>Hvis to traits definerer den samme metode igen, sætter Scala dem i en række: <b>den yderst til højre vinder</b>, og <code>super</code> går videre til den næste i rækken.</p>
+  <pre class="cod" data-lang="scala">trait Base:
+  def saluta: String = "Base"
+trait A extends Base:
+  override def saluta: String = "A>" + super.saluta
+trait B extends Base:
+  override def saluta: String = "B>" + super.saluta
+
+class X extends A, B     // X().saluta == "B>A>Base"
+class Y extends B, A     // Y().saluta == "A>B>Base"</pre>
+  <p class="piccolo">Resultater kontrolleret ved kompilering. I kurset er det nok at kende reglen "den yderst til højre vinder".</p>
+  <figure class="scena" data-scena="linearizza" data-titolo="Rækken af traits: den yderst til højre vinder"></figure>
+</section>
+
+</main>
+</body>
+</html>

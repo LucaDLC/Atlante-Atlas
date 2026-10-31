@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Bellman-Ford: shortest paths with negative weights</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+const N = (id,x,y,t) => ({id,tipo:'nodo',x,y,t,r:20});
+const A = (id,da,a,t,extra) => Object.assign({id,tipo:'arco',da,a,dir:true,t},extra||{});
+SCENE.bf = {
+  w: 520, h: 250, lato: true,
+  legenda: 'ora:distance updated in this round,dato:distance,no:negative weight',
+  oggetti: [
+    N('s',60,120,'s'), N('a',230,50,'a'), N('b',230,190,'b'), N('c',400,120,'c'),
+    A('sa','s','a','4'), A('sb','s','b','5'), A('ab','a','b','−3',{tono:'no'}), A('ac','a','c','2'), A('bc','b','c','6'),
+    {id:'c1',tipo:'testo',x:20,y:240,t:'',size:12,bold:true,anchor:'start'}
+  ],
+  passi: [
+    { nota: 'Bellman-Ford: shortest paths also with <b>negative</b> weights (there are no negative cycles). Distances: <code>d(s) = 0</code>, others ∞.', set:{s:{tono:'dato',sotto:'0'},a:{sotto:'∞'},b:{sotto:'∞'},c:{sotto:'∞'}} },
+    { nota: 'Round 1: I relax all the edges. s→a: d(a) = 4. s→b: d(b) = 5. a→b with weight −3: 4 − 3 = 1 &lt; 5, so d(b) = 1. A negative weight can improve a distance that is already fixed.', set:{a:{tono:'ora',sotto:'4'},b:{tono:'ora',sotto:'1'},c1:{t:'giro 1: a=4, b=1'}} },
+    { nota: 'Round 2 and the following: the edges reviewed again no longer improve anything. With n nodes <b>n − 1 rounds</b> are enough: every simple path has at most n − 1 edges.', set:{c:{tono:'ok',sotto:'6'},a:{tono:'dato',sotto:'4'},b:{tono:'dato',sotto:'1'},ac:{tono:'ok'},bc:{tono:'ok'},c1:{t:'d: s 0 · a 4 · b 1 · c 6',tono:'ok'}} },
+    { nota: 'The cost is <code>O(n·m)</code> (n − 1 rounds over m edges). A reachable negative cycle is detected with one more round: if a distance still improves, the shortest path does not exist.', set:{c1:{t:'O(n·m); un giro in più scopre i cicli negativi'}} }
+  ]
+};
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Bellman-Ford: shortest paths with negative weights</h1>
+  <p class="lede">Bellman-Ford finds the minimum cost from a source even with edges of negative weight. It is the same DP for paths in a DAG, with a counter of edges.</p>
+</header>
+
+<section>
+  <h2>The idea: relax all the edges, n − 1 times</h2>
+<p>A simple shortest path has at most <code>n − 1</code> edges. So it is enough to repeat <code>n − 1</code> times: relax <i>all</i> the edges. Each round fixes paths one edge longer. Equivalent DP: <code>OPT(i, v)</code> = minimum cost from <code>s</code> to <code>v</code> with at most <code>i</code> edges.</p>
+  <figure class="scena" data-scena="bf" data-titolo="A negative edge improves an already fixed distance"></figure>
+</section>
+<section>
+  <h2>Negative cycles</h2>
+<p>If a reachable cycle has negative total cost, the shortest path does not exist: every round lowers it again. Bellman-Ford detects it with one more round: if a distance still improves, there is a negative cycle.</p>
+</section>
+<section>
+  <h2>The cost</h2>
+<p><code>O(n·m)</code> time, <code>O(n)</code> space. Slower than Dijkstra, but it works with negative weights, which Dijkstra does not handle.</p>
+</section>
+<section>
+  <h2>The code, side by side</h2>
+  <p>This page explains the concept. The Java code that implements it, with a line-by-line explanation and the syntax notes needed, is on the side-by-side page.</p>
+  <p><a href="../codice/bellman-ford.html"><b>→ Java code for this topic</b></a></p>
+</section>
+<section>
+  <h2>At the exam</h2>
+<div class="box esame" data-tit="At the exam">
+<p>Negative weights → Bellman-Ford; negative cycles → detect them with one more round. Phrase: <i>"Relax all edges n−1 times; then one more pass detects a negative cycle. Time O(mn)."</i></p>
+</div>
+</section>
+<section>
+  <h2>Quick reference</h2>
+<div class="tab-wrap"><table class="tab"><thead><tr><th>algorithm</th><th>weights</th><th>time</th></tr></thead><tbody><tr><td>Dijkstra</td><td>weights ≥ 0</td><td>O(m log n)</td></tr><tr><td>Bellman-Ford</td><td>weights also negative</td><td>O(mn)</td></tr><tr><td>negative cycle</td><td>one more round improves</td><td>the minimum does not exist</td></tr></tbody></table></div>
+</section>
+
+</main>
+</body>
+</html>

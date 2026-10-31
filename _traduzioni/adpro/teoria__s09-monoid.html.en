@@ -1,0 +1,74 @@
+@@s001 Monoid: combine and have a neutral element
+@@s002 ora:what I explain now,ok:result,dato:example
+@@s003 A <b>monoid</b> is made of a <b>type A</b> and two things about A: a binary operation <b>⊕</b> (in Scala <code>combine</code>) and a <b>neutral element 0</b> (in Scala <code>empty</code>). Here A is Int.
+@@s004 <b>⊕</b> takes two values of A and returns one. For Int, ⊕ is the sum <code>+</code>.
+@@s005 <b>0</b> is the neutral element: combined with another value it does not change it. For the sum the neutral element is 0, because x + 0 = x.
+@@s006 Example from the slides, (Int, 0, +): 2 + 3 = 5 and 5 + 0 = 5. The neutral element changes nothing.
+@@s007 The same pattern with the product: (Int, 1, *). The operation changes and so does the neutral element (1, not 0), but the type A stays Int.
+@@s008 dato:values,ora:pair being combined,ok:partial or final result,spento:grouping not used
+@@s009 Four values: 1, 2, 3, 4. I want to combine them with ⊕. I can choose which two to combine first.
+@@s010 First half: <b>1 ⊕ 2 = 3</b>. The arrows show which values enter the calculation.
+@@s011 Second half: <b>3 ⊕ 4 = 7</b>. The two halves do not depend on each other: they can be computed in <b>parallel</b>.
+@@s012 I recombine the two results: <b>3 ⊕ 7 = 10</b>. The final answer is 10.
+@@s013 The same answer grouping on the left: <b>((1 ⊕ 2) ⊕ 3) ⊕ 4 = 10</b>. <b>Associativity</b> guarantees that the grouping does not change the result, so I can choose the most convenient one.
+@@s014 ora:what comes in now,dato:instances,ok:call with the instance
+@@s015 <b>trait Monoid[A]</b> describes the interface: <code>combine</code> and <code>empty</code> for a type A. It is a <b>type class</b>: a form to be filled for every type you want to make a monoid.
+@@s016 <b>stringMonoid</b> is a <b>value</b> of type Monoid[String]: the instance that says how String becomes a monoid (concatenation and "").
+@@s017 <b>maxMonoid</b> is another instance, Monoid[Int]: ⊕ is the maximum and the neutral element is Int.MinValue. The same type Int can have different instances.
+@@s018 <b>concatenate</b> receives the instance as an argument, together with the list. The same code works with different types and operations, because the instance is passed as a value.
+@@s019 dato:starting values,due:step,ora:calculation just done,ok:result,spento:not yet
+@@s020 A <b>homomorphism</b> f: M → N is a function that <b>respects</b> the two structures. M and N are monoids: here M = strings, N = integers. f = <code>length</code>.
+@@s021 I apply f to each value: f("foo") = 3 and f("bar") = 3.
+@@s022 First I combine in M: "foo" ⊕ "bar" = "foobar". Then I apply f: f("foobar") = 6.
+@@s023 The rule requires f(x ⊕ y) = f(x) ⊗ f(y). Here 6 = 3 + 3, so it holds. The neutral element must be respected too: f("") = 0.
+@@s024 An <b>isomorphism</b> is a homomorphism that can be inverted: f and its inverse are both homomorphisms. Example: String and List[Char] with <code>toList</code> and <code>mkString</code>. Nothing is lost.
+@@s025 <span>Week 9</span>
+@@s026 Monoid: combine and have a neutral element
+@@s027 The first of the four concepts of the week (monoid, foldable, functor, monad). A monoid is the simplest thing that can be reduced in pieces: an operation that combines two values and a value that changes nothing. From here come <a href="s09-foldable.html">folds and parallel reductions</a>.
+@@s028 Definition
+@@s029 A <b>monoid</b> on a type <code>A</code> has two parts:
+@@s030 a <b>binary operation</b> <b>⊕</b>, in Scala <code>combine</code>: it takes two values of A and returns one. The symbol ⊕ means "combine".
+@@s031 a <b>neutral element</b> <b>0</b>, in Scala <code>empty</code>: a value of A that, combined with another value, does not change it.
+@@s032 Examples from the slides, written as a triple (type, neutral, operation):
+@@s033 type A
+@@s034 neutral 0
+@@s035 operation ⊕
+@@s036 Int
+@@s037 Int
+@@s038 String
+@@s039 concatenation
+@@s040 A monoid is type, neutral and operation
+@@s041 The two laws
+@@s042 For the combination to be useful, <code>combine</code> and <code>empty</code> must respect two laws, for every value x, y, z of A:
+@@s043 <b>Associativity</b>: <code>(x ⊕ y) ⊕ z = x ⊕ (y ⊕ z)</code>. It does not matter where you put the brackets. This allows splitting a list into two halves and reducing them separately.
+@@s044 <b>Identity (neutral)</b>: <code>x ⊕ 0 = x</code> and <code>0 ⊕ x = x</code>. The neutral element changes nothing on either side.
+@@s045 The Scala compiler does not check these laws: it accepts any <code>combine</code>. The laws are checked with tests (property-based, see <a href="s06-pbt.html">Property-based testing</a>).
+@@s046 Four values, two ways of grouping, the same result
+@@s047 Warning
+@@s048 Associativity does not mean commutativity. The monoid does not require <code>x ⊕ y = y ⊕ x</code>: subtraction is not a monoid because it is not associative: (5 − 3) − 1 ≠ 5 − (3 − 1). Strings with concatenation are a monoid, even though "ab" ≠ "ba".
+@@s049 The type class in Scala
+@@s050 A <b>type class</b> is an interface parameterised on the type. <code>Monoid[A]</code> describes how a type <code>A</code> behaves, without A having to "know" that it is a monoid. Each <b>instance</b> is a value that is passed together with the data.
+@@s051 trait Monoid[A] (from the slides, simplified)
+@@s052 <code>trait</code> defines an interface. <code>[A]</code> is a <b>type parameter</b>: the type that the monoid combines. <code>Monoid</code> alone is not enough: you always need <code>Monoid[something]</code>.
+@@s053 <code>def combine(a1: A, a2: A): A</code> is the signature of ⊕: two A as input, one A as output. <code>def</code> introduces a function, <code>a1</code> and <code>a2</code> are the names of the two arguments.
+@@s054 <code>def empty: A</code> is the neutral element. It takes no arguments: it is a fixed value for each instance.
+@@s055 <code>object laws</code> is a nested object: it contains the laws as properties to test. It has access to <code>combine</code> and <code>empty</code> because it is inside the trait.
+@@s056 <code>using</code> indicates an <b>implicit parameter</b>. <code>Arbitrary[A]</code> tells ScalaCheck how to generate values of A for the tests. <code>Equality[A]</code> tells how to compare them.
+@@s057 Instances: one value for each type
+@@s058 To make <code>String</code> a monoid you write a value of type <code>Monoid[String]</code>. An instance is a value: it is created by instantiating the trait.
+@@s059 The trait, two instances, and a function that receives them
+@@s060 How to write an instance
+@@s061 Write <code>val stringMonoid: Monoid[String] = new Monoid[String]: …</code>, with <code>combine</code> and <code>empty</code> inside. The type after the colon says which type is becoming a monoid.
+@@s062 Homomorphisms and isomorphisms
+@@s063 A <b>homomorphism</b> between a monoid <code>(M, ⊕, 0)</code> and a monoid <code>(N, ⊗, 1)</code> is a function <code>f: M → N</code> that respects the structure:
+@@s064 distributivity: <code>f(x ⊕ y) = f(x) ⊗ f(y)</code> for every x, y in M;
+@@s065 neutral: <code>f(0) = 1</code>.
+@@s066 So you can combine first and apply f afterwards, or apply f first and combine afterwards: the result is the same. Example from the slides: f(s) = <code>s.size</code> from String (with concatenation and "") to Int (with + and 0). It holds that <code>"foo".size + "bar".size = ("foo" + "bar").size</code>.
+@@s067 The length respects concatenation
+@@s068 An <b>isomorphism</b> is a homomorphism in both directions: f and its inverse g are both homomorphisms. Examples from the slides:
+@@s069 String and <code>List[Char]</code>, with <code>toList</code> and <code>mkString</code>: one moves from one to the other without losing information;
+@@s070 <code>(Boolean, false, ||)</code> and <code>(Boolean, true, &amp;&amp;)</code>, with negation: De Morgan's law says <code>¬(x ∨ y) = ¬x ∧ ¬y</code>, and <code>¬false = true</code>.
+@@s071 Why we care
+@@s072 If two monoids are isomorphic, a calculation done in one can be carried over to the other. This is why a string and a list of characters are treated the same way in calculations in pieces.
+@@s073 Where it is used
+@@s074 The monoid is the minimal condition to reduce a collection <b>in any order and in pieces</b>. On the <a href="s09-foldable.html">next page</a> you will see the <code>fold</code> and <code>foldMap</code> built on a monoid. The code of the concepts is in the <a href="../esempi/s09-monoid.html">side-by-side examples page</a>.

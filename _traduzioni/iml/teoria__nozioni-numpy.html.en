@@ -1,0 +1,67 @@
+@@s001 NumPy: shapes, axes, errors
+@@s002 ora:axis=0 (along the rows),due:axis=1 (inside each row),ok:result,dato:the row of means
+@@s003 M has 3 rows (the data) and 2 columns (the features). <code>axis</code> says in which direction to "squash" the matrix when one takes a mean or a sum.
+@@s004 <b>axis=0</b>: I go down the rows. Column 1: (1 + 3 + 5) / 3 = <b>3</b>.
+@@s005 Column 2: (2 + 4 + 6) / 3 = <b>4</b>. Result [3, 4]: <b>one mean per column</b>, that is per feature. The shape goes from (3, 2) to (2,): dimension 0, that of the rows, disappears.
+@@s006 <b>axis=1</b>: I stay inside each row and run through the columns. (1 + 2) / 2 = 1.5, (3 + 4) / 2 = 3.5, (5 + 6) / 2 = 5.5: <b>one mean per row</b>, that is per datum. Shape (3,).
+@@s007 <b>Centring</b> the data: M − M.mean(axis=0). NumPy subtracts the row [3, 4] from <b>every</b> row of M (it is the <i>broadcasting</i>, below). Now every column has mean 0: it is the first step of covariance and PCA.
+@@s008 dato:1D array (n,),ok:column (n, 1),due:row (1, n)
+@@s009 dato:y (column),due:pred (1D),no:matrix of differences,ok:the right loss
+@@s010 dato:a,ok:result on arrays,no:careful
+@@s011 dato:the xs,due:the column of 1s,ok:design matrix,no:vector in a row
+@@s012 dato:the names,ok:the data in memory,no:the surprise
+@@s013 dato:6 elements,no:cells that do not match,ok:possible shape
+@@s014 NumPy: shapes, axes, errors
+@@s015 Almost all the problems with NumPy are problems of <b>shape</b>: a vector that was meant to be a column, a mean taken on the wrong axis, a subtraction that produces a matrix instead of a vector. Here the rules, with real output and errors (NumPy 2.4).
+@@s016 The shape: (n,), (n, 1), (1, n)
+@@s017 Every NumPy array has a <b>shape</b> (<code>.shape</code>): a tuple with the length of each dimension. The same three numbers can be in three different shapes, and NumPy treats them differently in the calculations. Knowing how to tell them apart avoids half of the errors.
+@@s018 Three different objects with the same three numbers
+@@s019 A 1D array has shape <code>(3,)</code>: a single dimension. The comma is there because the shape is always a tuple. It is neither row nor column.
+@@s020 Transposing a 1D array <b>does nothing</b>: there are no two dimensions to swap.
+@@s021 To have a true <b>column</b> (3 × 1): <code>reshape(-1, 1)</code> (the −1 means "you compute how many rows") or <code>[:, None]</code>, which adds an axis.
+@@s022 A true <b>row</b> (1 × 3).
+@@s023 Taking a column with a number removes the dimension: a 1D comes out. With a list <code>[0]</code> the dimension remains: a column (3, 1) comes out.
+@@s024 When in doubt
+@@s025 Print <code>.shape</code>. Before every product or subtraction check the shapes, as in the page <a href="nozioni-dimensioni.html">Dimensions in products between matrices</a>.
+@@s026 Same numbers, three shapes
+@@s027 axis: in which direction one squashes
+@@s028 mean on axis=0 and axis=1
+@@s029 The rule in one line
+@@s030 <code>axis=k</code> makes <b>dimension k disappear</b>. With the data in the form (data × features): <code>axis=0</code> gives one number per <b>feature</b> (means, standard deviations of the columns); <code>axis=1</code> one number per <b>datum</b>. Without <code>axis</code> everything is squashed into a single number (<code>M.mean()</code> = 3.5).
+@@s031 Broadcasting: convenient and dangerous
+@@s032 When two arrays have different shapes, NumPy tries to "widen" the smaller one. To centre the data it is convenient. But sometimes NumPy widens when you did not want it, and <b>it gives no error</b>.
+@@s033 The rule: the shapes are compared from the right
+@@s034 Last dimensions equal (2 and 2). On the left, the second is missing a dimension: the row [3, 4] is repeated for each row. It is the centring of the scene.
+@@s035 3 and 2 are different and neither is 1: <code>ValueError: operands could not be broadcast together with shapes (2,3) (2,2)</code>.
+@@s036 A 1 widens to any size. The column is repeated over 3 columns, the vector over 3 rows: a 3 × 3 matrix of all the crossed differences comes out.
+@@s037 No error, but the loss is <b>wrong</b>: the right one is (0² + 1² + 0²) / 3 = <b>0.333</b>. It happens when y is read as a column and the prediction <code>X @ w</code> is 1D. Remedy: make both 1D, <code>y.ravel()</code> (or <code>y[:, 0]</code>), and check that <code>(y - pred).shape</code> is <code>(3,)</code>.
+@@s038 y column minus pred 1D: the wrong loss
+@@s039 Operators that seem equal
+@@s040 I write
+@@s041 On NumPy arrays
+@@s042 Example (verified)
+@@s043 element by element
+@@s044 inner product / matrix product
+@@s045 power, element by element
+@@s046 division with the decimal point
+@@s047 integer division (truncated)
+@@s048 Python lists ≠ NumPy arrays
+@@s049 On <b>lists</b> the same symbols do something else: <code>[1, 2, 3] * 2</code> → <code>[1, 2, 3, 1, 2, 3]</code> (repeats) and <code>[1, 2] + [3, 4]</code> → <code>[1, 2, 3, 4]</code> (joins). With <code>np.array</code>: <code>[2, 4, 6]</code> and <code>[4, 6]</code>. To do calculations, first <code>np.array(...)</code>.
+@@s050 * @ / // on an array, and * on a list
+@@s051 Building the design matrix
+@@s052 The design matrix of a line has a column of 1s next to the column of the xs. NumPy has several functions to "put together" arrays, and not all of them put the vectors as columns.
+@@s053 The column of 1s next to the column of the xs
+@@s054 Both put the vectors <b>as columns</b> one next to the other: the 3 × 2 design matrix of a line comes out, rows [1, xᵢ] (see <a href="w04-polinomi.html">polynomials</a>).
+@@s055 With 1D vectors <code>hstack</code> <b>joins them in a row</b>: a single vector of 6 numbers. No error, but it is not a matrix.
+@@s056 np.c_ versus np.hstack
+@@s057 Other silent traps
+@@s058 The worst traps are those without an error message: the code runs, the result is wrong. Two classics: assigning an array to another name does not copy it, and an array of integers truncates the decimals.
+@@s059 <code>c = b</code> does not copy: it gives a second name <b>to the same array</b>. For an independent copy: <code>c = b.copy()</code>.
+@@s060 The array is of integers (<code>dtype int64</code>), so 2.7 is <b>truncated</b> to 2. If decimals will go in, create it with decimals: <code>np.array([1., 2., 3.])</code> or <code>dtype=float</code>.
+@@s061 A 3 × 3 covariance for 2 features makes no sense: <code>np.cov</code> by default treats the <b>rows</b> as variables. With the data by rows: <code>np.cov(X, rowvar=False)</code> → [[4, 9], [9, 21]]. That one divides by <b>N − 1</b>; the course notes (DW) divide by <b>N</b>: <code>np.cov(X, rowvar=False, bias=True)</code> → [[2.67, 6], [6, 14]], equal to <code>Xc.T @ Xc / N</code> with the centred data.
+@@s062 Two names for the same array
+@@s063 Errors with a message
+@@s064 These at least stop with a message. The message already says what is wrong: "Singular matrix" means determinant zero, "cannot reshape" means that the number of cells does not match.
+@@s065 The second row is twice the first: determinant 0, the inverse does not exist (<a href="w03-sistemi-lineari.html">linear systems</a>). In least squares it happens when two columns of the design matrix are dependent. <code>np.linalg.lstsq</code> still gives a solution.
+@@s066 6 numbers do not fill 4 × 2 = 8 cells. The product of the new dimensions must equal the number of elements: <code>reshape(2, 3)</code> or <code>reshape(3, 2)</code>.
+@@s067 6 numbers do not fill 4 × 2

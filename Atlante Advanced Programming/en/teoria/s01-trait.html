@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Traits and mixins</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+SCENE.strati = {
+  w: 580, h: 290, lato: false,
+  legenda: 'dato:layer of the object,ora:layer that answers,ok:result',
+  oggetti: [
+    { id: 'an', tipo: 'nodo', forma: 'quadrato', r: 24, x: 120, y: 240, t: 'Animal', sotto: 'name', nascosto: true },
+    { id: 'hl', tipo: 'nodo', forma: 'quadrato', r: 24, x: 120, y: 185, t: 'HasLegs', sopra: 'run, jump', nascosto: true },
+    { id: 'au', tipo: 'nodo', forma: 'quadrato', r: 24, x: 250, y: 185, t: 'Audible', sopra: 'makeNoise (astratto)', nascosto: true },
+    { id: 'fr', tipo: 'nodo', forma: 'quadrato', r: 24, x: 185, y: 110, t: 'Frog', sopra: 'makeNoise = croak!', nascosto: true },
+    { id: 're', tipo: 'nodo', forma: 'quadrato', r: 24, x: 185, y: 45, t: 'Registered', sopra: 'var id', nascosto: true },
+    { id: 'q', tipo: 'testo', x: 440, y: 120, t: '', size: 14, bold: true },
+    { id: 'r', tipo: 'testo', x: 440, y: 160, t: '', size: 14, bold: true }
+  ],
+  passi: [
+    { nota: '<code>new Frog("Kaj") with Registered</code> builds a layered object. At the base the abstract class <b>Animal</b>, with the field name.', set: { an: { nascosto: false, tono: 'dato' } } },
+    { nota: 'Frog adds the traits <b>HasLegs</b> (run, jump already written) and <b>Audible</b> (makeNoise only declared).', set: { hl: { nascosto: false, tono: 'dato' }, au: { nascosto: false, tono: 'dato' } } },
+    { nota: 'The class <b>Frog</b> writes the method that was missing: makeNoise = "croak!".', set: { fr: { nascosto: false, tono: 'dato' } } },
+    { nota: 'At the moment of creation <b>Registered</b> is also mixed in: the field id arrives only to this object, not to all frogs.', set: { re: { nascosto: false, tono: 'dato' } } },
+    { nota: '<code>f.makeNoise()</code>: the Frog layer answers.', set: { fr: { tono: 'ora' }, q: { t: 'f.makeNoise()' }, r: { t: '"croak!"', tono: 'ok' } } },
+    { nota: '<code>f.run()</code>: Frog does not redefine it, HasLegs answers. And <code>f.id = 42</code> writes into the field of Registered.', set: { fr: { tono: 'dato' }, hl: { tono: 'ora' }, re: { tono: 'ora' }, q: { t: 'f.run();  f.id = 42' }, r: { t: '"after you!"', tono: 'ok' } } }
+  ]
+};
+</script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  const T = (id, x, y, t, extra) => Object.assign({ id, tipo: 'testo', x, y, t, size: 13 }, extra || {});
+  const R = (id, x, y, w, h, t, extra) => Object.assign({ id, tipo: 'rett', x, y, w, h, t }, extra || {});
+  const N = (id, x, y, t, tono, extra) => Object.assign({ id, tipo: 'nodo', x, y, t, tono, r: 20 }, extra || {});
+  const F = (id, x1, y1, x2, y2, t, extra) => Object.assign({ id, tipo: 'vett', x1, y1, x2, y2, t }, extra || {});
+  const C = (id, x, y, valori, extra) => Object.assign({ id, tipo: 'celle', x, y, cw: 52, ch: 40, valori, indici: false }, extra || {});
+
+    SCENE.gerarchia = {
+      w: 580, h: 240, lato: true,
+      legenda: 'dato:class,due:interface / trait,ok:inherits code',
+      oggetti: [
+        T('hj', 145, 22, 'Java', { bold: true }), T('hs', 435, 22, 'Scala', { bold: true }),
+        R('jp', 20, 40, 110, 36, 'Animale', { tono: 'dato' }), R('ji1', 160, 40, 110, 36, 'Salta', { tono: 'due' }),
+        R('jc', 80, 150, 130, 40, 'Rana', { tono: 'dato' }), F('j1', 110, 148, 80, 78, ''), F('j2', 180, 148, 210, 78, '', { tratt: true }),
+        R('sp', 310, 40, 110, 36, 'Animale', { tono: 'dato', nascosto: true }), R('st1', 450, 40, 110, 36, 'Salta', { tono: 'due', nascosto: true }),
+        R('sc', 370, 150, 130, 40, 'Rana', { tono: 'dato', nascosto: true }), F('s1', 400, 148, 370, 78, '', { nascosto: true }), F('s2', 470, 148, 500, 78, '', { nascosto: true }),
+        T('c', 290, 222, '', { size: 12 })
+      ],
+      passi: [
+        { nota: "In Java una classe ha <b>un solo genitore</b>, ma può implementare più interfacce. Le interfacce (classiche) danno solo firme: il codice lo scrivi nella classe." },
+        { nota: "Un <b>trait</b> Scala è come un'interfaccia che può contenere anche <b>codice e campi</b>. Una classe può mescolarne quanti vuole: <code>class Rana extends Animale, Salta</code>.", set: { sp: { nascosto: false }, st1: { nascosto: false, t: 'trait Salta' }, sc: { nascosto: false }, s1: { nascosto: false }, s2: { nascosto: false, tono: 'ok' } } },
+        { nota: "Dal trait la Rana eredita <b>metodi già scritti</b>: salta() funziona senza riscriverlo. Il trait può anche avere metodi astratti, da completare.", set: { st1: { t: 'def salta = …' }, c: { t: 'trait: più genitori, campi, metodi scritti e astratti' } } },
+        { nota: "Cosa un trait (nella regola del corso) <b>non</b> ha: argomenti del costruttore. Quelli restano delle classi.", set: { c: { t: 'argomenti del costruttore: solo le classi' } } }
+      ]
+    };
+
+    SCENE.orderedpoint = {
+      w: 560, h: 160,
+      codice: { lang: 'scala', testo: `trait OrderedPoint extends scala.math.Ordered[java.awt.Point]:
+  this: java.awt.Point =>
+  override def compare(that: java.awt.Point): Int =
+    if this.x != that.x then if this.x < that.x then -1 else 1
+    else if this.y == that.y then 0 else if this.y < that.y then -1 else 1` },
+      legenda: 'dato:p = (0, 1),due:q = (0, 2),ok:result',
+      oggetti: [R('p', 40, 40, 140, 40, 'p = (0, 1)', { tono: 'dato' }), R('q', 380, 40, 140, 40, 'q = (0, 2)', { tono: 'due' }), T('e', 280, 60, 'p < q', { bold: true, size: 15 }), T('c', 280, 130, '', { size: 12 })],
+      passi: [
+        { nota: "<code>p &lt; q</code>: il metodo &lt; viene da <b>Ordered</b>, che lo definisce come <code>p.compare(q) &lt; 0</code>. Io ho scritto solo compare.", righe: [1], set: { e: { t: 'p.compare(q) < 0' } } },
+        { nota: "Il <b>self-type</b> <code>this: java.awt.Point =&gt;</code> dice: questo trait vive dentro un Point. Per questo posso usare this.x e this.y.", righe: [2] },
+        { nota: "Prima le x: 0 != 0 è falso, le x sono uguali. Si passa al ramo else.", righe: [4], set: { c: { t: 'this.x != that.x → 0 != 0 → false' } } },
+        { nota: "Decide la y: 1 == 2 no, 1 &lt; 2 sì: compare = −1.", righe: [5], set: { c: { t: 'this.y < that.y → 1 < 2 → -1' } } },
+        { nota: "−1 &lt; 0: <b>p &lt; q è vero</b>. Ordine lessicografico, come nel dizionario: prima x, poi y.", righe: [5], set: { e: { t: '-1 < 0 → true', tono: 'ok' }, c: { t: 'p < q', tono: 'ok' } } }
+      ]
+    };
+
+    SCENE.linearizza = {
+      w: 580, h: 230, lato: true,
+      legenda: 'ora:method that is answering,dato:in the row,ok:result',
+      oggetti: [
+        T('h', 290, 24, 'class X extends A, B', { bold: true, size: 14 }),
+        R('x', 20, 60, 100, 40, 'X', { tono: 'dato' }), R('b', 160, 60, 100, 40, 'B', { tono: 'dato' }), R('a', 300, 60, 100, 40, 'A', { tono: 'dato' }), R('base', 440, 60, 110, 40, 'Base', { tono: 'dato' }),
+        F('f1', 122, 80, 156, 80, ''), F('f2', 262, 80, 296, 80, ''), F('f3', 402, 80, 436, 80, ''),
+        T('r', 290, 150, '', { bold: true, size: 15 }), T('c', 290, 200, '', { size: 12 })
+      ],
+      passi: [
+        { nota: "A e B ridefiniscono entrambi <code>saluta</code>. Scala mette le classi <b>in fila</b>: parte da X, poi il trait più a destra (B), poi A, poi Base." },
+        { nota: "X non ridefinisce saluta: risponde il primo nella fila che lo fa, <b>B</b>: \"B&gt;\" + super.saluta. Il super di B è il <b>successivo nella fila</b>, cioè A (non Base!).", set: { b: { tono: 'ora' }, r: { t: '"B>" + super.saluta' } } },
+        { nota: "A risponde \"A&gt;\" + super.saluta, e il suo super è Base.", set: { b: { tono: 'dato' }, a: { tono: 'ora' }, r: { t: '"B>" + "A>" + super.saluta' } } },
+        { nota: "Base dà \"Base\". Risultato: <b>\"B&gt;A&gt;Base\"</b>. Con <code>class Y extends B, A</code> la fila si rovescia: \"A&gt;B&gt;Base\". Regola del corso: vince il più a destra.", set: { a: { tono: 'dato' }, base: { tono: 'ora' }, r: { t: '"B>A>Base"', tono: 'ok' }, c: { t: 'Y extends B, A  →  "A>B>Base"' } } }
+      ]
+    };
+  
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Traits and mixins</h1>
+  <p class="lede">A <b>trait</b> is a piece of class that you can add to several classes: it can have methods already written, methods to complete, and fields. A class can "mix in" as many as it wants. In exercise 1 of week 3 you use it to add <code>&lt;</code> to a Java class.</p>
+</header>
+
+<section>
+  <h2>From Java to Scala</h2>
+  <p>In Java a class has <b>only one</b> parent, but it can implement several interfaces. A trait is like a Java interface that can also contain code and fields.</p>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Can have…</th><th>concrete class</th><th>abstract class</th><th>trait</th></tr></thead>
+    <tbody>
+      <tr><td>several parents of the same type</td><td class="t-no">no</td><td class="t-no">no</td><td class="t-ok">yes</td></tr>
+      <tr><td>fields (data)</td><td class="t-ok">yes</td><td class="t-ok">yes</td><td class="t-ok">yes</td></tr>
+      <tr><td>methods already written</td><td class="t-ok">yes</td><td class="t-ok">yes</td><td class="t-ok">yes</td></tr>
+      <tr><td>methods to complete (abstract)</td><td class="t-no">no</td><td class="t-ok">yes</td><td class="t-ok">yes</td></tr>
+      <tr><td>constructor arguments</td><td class="t-ok">yes</td><td class="t-ok">yes</td><td class="t-no">no</td></tr>
+    </tbody>
+  </table></div>
+  <p class="piccolo">Table of slide 8 of week 1. Note: in Scala 3 traits can have parameters, but in the course the rule of the table is used.</p>
+  <figure class="scena" data-scena="gerarchia" data-titolo="One parent and several interfaces, or several traits with code"></figure>
+</section>
+
+<section>
+  <h2>The example of the lecture: the frog</h2>
+  <figure class="codice" data-titolo="Classes and traits mixed together">
+<pre data-lang="scala">abstract class Animal(val name: String)
+
+trait HasLegs:
+  def run(): String = "after you!"
+  def jump(): String = "hop!"
+
+trait Audible:
+  def makeNoise(): String
+
+trait Registered:
+  var id: Int = 0
+
+class Frog(name: String) extends Animal(name), HasLegs, Audible:
+  def makeNoise(): String = "croak!"
+
+val f = new Frog("Kaj") with Registered
+f.id = 42
+println(s"My name is ${f.name}")</pre>
+    <ol class="spiega">
+      <li data-righe="1" data-segna="abstract@due|(val name: String)@dato"><p>An abstract class with a constructor parameter. <code>val</code> in front of the parameter turns it into a field readable from outside: <code>f.name</code>.</p></li>
+      <li data-righe="3-5" data-segna="trait HasLegs@ora"><p>A trait with two methods <b>already written</b>. Whoever mixes it in receives them ready.</p></li>
+      <li data-righe="7-8" data-segna="def makeNoise(): String@ora"><p>A trait with a method <b>without a body</b>: it is abstract. Whoever mixes it in must write it.</p></li>
+      <li data-righe="10-11" data-segna="var id: Int = 0@due"><p>A trait can have a field. (Here it is a <code>var</code>: it is an example about traits, not functional code.)</p></li>
+      <li data-righe="13" data-segna="extends Animal(name)@dato|HasLegs@ora|Audible@ora"><p><code>Frog</code> extends a class and mixes in two traits, separated by commas. The name passed to the constructor goes to <code>Animal</code>.</p></li>
+      <li data-righe="14" data-segna="def makeNoise(): String = &quot;croak!&quot;@ok"><p>It completes the method that <code>Audible</code> left to write. Without this line <code>Frog</code> does not compile.</p></li>
+      <li data-righe="16" data-segna="with Registered@ora"><p><b>Mixin at creation</b>: I add a trait to a single object while I create it, even if the class <code>Frog</code> did not foresee it.</p></li>
+      <li data-righe="17-18" data-segna="f.id@ok|f.name@ok"><p>The object has everything: the field of <code>Registered</code>, the name of <code>Animal</code>, the methods of <code>HasLegs</code>.</p></li>
+    </ol>
+  </figure>
+  <figure class="scena" data-scena="strati" data-titolo="An object made of layers"></figure>
+  <div class="errori">
+    <div class="errore">
+      <pre data-lang="scala">trait Audible:
+  def makeNoise(): String
+class Frog extends Audible</pre>
+      <pre class="msg">class Frog needs to be abstract, since def makeNoise(): String in trait Audible is not defined</pre>
+      <div class="fix">Hai mescolato un trait con un metodo astratto e non l'hai scritto. Aggiungi <code>def makeNoise(): String = …</code> dentro <code>Frog</code>.</div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Exercise 1, week 3: <code>OrderedPoint</code></h2>
+  <p>Goal: to be able to write <code>p &lt; q</code> between two <code>java.awt.Point</code>, a Java class that you cannot modify. The Scala library already has the trait <code>Ordered[T]</code>: if you write the method <code>compare</code>, it gives you <code>&lt;</code>, <code>&gt;</code>, <code>&lt;=</code>, <code>&gt;=</code>.</p>
+  <figure class="codice" data-titolo="Your solution, line by line">
+<pre data-lang="scala">trait OrderedPoint extends scala.math.Ordered[java.awt.Point]:
+
+  this: java.awt.Point =>
+
+  override def compare(that: java.awt.Point): Int =
+    if this.x != that.x then if this.x &lt; that.x then -1 else 1
+    else if this.y == that.y then 0 else if this.y &lt; that.y then -1 else 1</pre>
+    <ol class="spiega">
+      <li data-righe="1" data-segna="trait OrderedPoint@ora|scala.math.Ordered[java.awt.Point]@dato"><p>My trait extends <code>Ordered[Point]</code>: "I know how to compare myself with a Point". <code>Ordered</code> has only one abstract method, <code>compare</code>.</p></li>
+      <li data-righe="3" data-segna="this: java.awt.Point =>@due"><p><b>Self-type</b>. It reads: "this trait can be mixed in only inside a <code>java.awt.Point</code>". In exchange I can use <code>this.x</code> and <code>this.y</code>. It is not inheritance: it is a requirement.</p></li>
+      <li data-righe="5" data-segna="override def compare(that: java.awt.Point): Int@ora"><p>I write the missing method. Contract: negative number if <code>this</code> is smaller, 0 if equal, positive if larger.</p></li>
+      <li data-righe="6" data-segna="this.x != that.x@dato|-1@ok|else 1@ok"><p><b>Lexicographic</b> order, as in the dictionary: first I compare the <code>x</code>. If they are different, the <code>x</code> decides.</p></li>
+      <li data-righe="7" data-segna="this.y == that.y@due|0@ok"><p>Only if the <code>x</code> are equal do I look at the <code>y</code>. If those are equal too, the points are equal: 0.</p></li>
+    </ol>
+  </figure>
+
+  <figure class="passi" data-titolo="p < q with p = (0, 1) and q = (0, 2)">
+    <div class="passo">
+      <div class="espr">val p = new java.awt.Point(0, 1) <mark class="ora">with OrderedPoint</mark>
+val q = new java.awt.Point(0, 2) with OrderedPoint</div>
+      <p class="nota">I create the points by mixing the trait in at creation time.</p>
+    </div>
+    <div class="passo">
+      <div class="espr">p &lt; q   =   <mark class="ora">p.compare(q)</mark> &lt; 0</div>
+      <p class="nota"><code>&lt;</code> comes from <code>Ordered</code>, which defines it using my <code>compare</code>.</p>
+    </div>
+    <div class="passo">
+      <div class="espr">this.x != that.x   →   <mark class="dato">0</mark> != <mark class="dato">0</mark>   →   <mark class="no">false</mark></div>
+      <p class="nota">The <code>x</code> are equal: I pass to the <code>else</code> branch.</p>
+    </div>
+    <div class="passo">
+      <div class="espr">this.y == that.y   →   <mark class="due">1</mark> == <mark class="due">2</mark>   →   false
+this.y &lt; that.y    →   1 &lt; 2    →   <mark class="ok">-1</mark></div>
+      <p class="nota">The <code>y</code> decides: <code>p</code> is smaller.</p>
+    </div>
+    <div class="passo">
+      <div class="espr">-1 &lt; 0   →   <mark class="ok">true</mark></div>
+      <p class="nota"><code>p &lt; q</code> is true (checked by compiling).</p>
+    </div>
+  </figure>
+
+  <div class="errori">
+    <div class="errore">
+      <pre data-lang="scala">trait OrderedPoint extends scala.math.Ordered[java.awt.Point]:
+  override def compare(that: java.awt.Point): Int =
+    if this.x &lt; that.x then -1 else 1</pre>
+      <pre class="msg">value x is not a member of OrderedPoint</pre>
+      <div class="fix">Senza <code>this: java.awt.Point =></code> il trait non sa di essere dentro un Point, quindi <code>this.x</code> non esiste.</div>
+    </div>
+  </div>
+
+  <div class="box attenzione" data-tit="The limit of this solution">
+    <p>It works only if <b>you create</b> the object yourself, because you must write <code>with OrderedPoint</code>. A Point that reaches you already made by a library does not have the trait. The exercise sheet announces that later the <b>type classes</b> will be seen, which solve exactly this.</p>
+  </div>
+  <figure class="scena" data-scena="orderedpoint" data-titolo="p < q with Ordered and compare"></figure>
+</section>
+
+<section>
+  <h2>Two traits with the same method: who wins?</h2>
+  <p>If two traits redefine the same method, Scala puts them in a row: <b>the one on the right wins</b>, and <code>super</code> passes to the next one in the row.</p>
+  <pre class="cod" data-lang="scala">trait Base:
+  def saluta: String = "Base"
+trait A extends Base:
+  override def saluta: String = "A>" + super.saluta
+trait B extends Base:
+  override def saluta: String = "B>" + super.saluta
+
+class X extends A, B     // X().saluta == "B>A>Base"
+class Y extends B, A     // Y().saluta == "A>B>Base"</pre>
+  <p class="piccolo">Results checked by compiling. In the course it is enough to know the rule "the rightmost wins".</p>
+  <figure class="scena" data-scena="linearizza" data-titolo="The row of traits: the rightmost wins"></figure>
+</section>
+
+</main>
+</body>
+</html>

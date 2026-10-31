@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Ordbog over symbolerne</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  const Y = 132, H = 36;
+  const cella = (id, x, t, y) => ({ id, tipo: 'rett', x, y: y ?? Y, w: 60, h: H, t, nascosto: true });
+  SCENE.cons = {
+    w: 600, h: 280, lato: true,
+    legenda: 'ora:celle oprettet nu,due:delte celler,ok:resultat',
+    codice: { lang: 'scala', testo: `val xs = 2 :: 3 :: Nil
+val ys = 1 :: xs
+val zs = 9 :: xs` },
+    oggetti: [
+      { id: 'e1', tipo: 'testo', x: 300, y: 22, t: 'xs = 2 :: 3 :: Nil', size: 15, bold: true },
+      { id: 'e2', tipo: 'testo', x: 300, y: 48, t: '= 2 :: (3 :: Nil)', size: 15, nascosto: true },
+      { id: 'e3', tipo: 'testo', x: 300, y: 74, t: '= Nil.::(3).::(2)', size: 15, nascosto: true },
+      { id: 'cur', tipo: 'testo', x: 300, y: 100, t: '', tono: 'ora' },
+      { id: 'Nil', tipo: 'rett', x: 490, y: Y, w: 70, h: H, t: 'Nil', nascosto: true },
+      cella('c3', 370, '3'), cella('c2', 250, '2'), cella('c1', 130, '1'), cella('c9', 130, '9', 202),
+      { id: 'a3', tipo: 'vett', x1: 432, y1: 150, x2: 488, y2: 150, nascosto: true },
+      { id: 'a2', tipo: 'vett', x1: 312, y1: 150, x2: 368, y2: 150, nascosto: true },
+      { id: 'a1', tipo: 'vett', x1: 192, y1: 150, x2: 248, y2: 150, nascosto: true },
+      { id: 'a9', tipo: 'vett', x1: 192, y1: 214, x2: 262, y2: 171, nascosto: true },
+      { id: 'nxs', tipo: 'testo', x: 280, y: 118, t: 'xs ↓', size: 12, bold: true, nascosto: true },
+      { id: 'nys', tipo: 'testo', x: 160, y: 118, t: 'ys ↓', size: 12, bold: true, nascosto: true },
+      { id: 'nzs', tipo: 'testo', x: 118, y: 220, t: 'zs →', size: 12, bold: true, anchor: 'end', nascosto: true },
+      { id: 'ris', tipo: 'testo', x: 300, y: 262, t: '', size: 14, bold: true }
+    ],
+    passi: [
+      { nota: "Prima riga: <code>2 :: 3 :: Nil</code>. Due <code>::</code> di fila: quale si calcola prima?", righe: [1] },
+      { nota: "Un operatore che <b>finisce con i due punti</b> si raggruppa da <b>destra</b>: prima <code>3 :: Nil</code>, poi <code>2 :: (…)</code>.", righe: [1], set: { e2: { nascosto: false } } },
+      { nota: "E il metodo appartiene al valore a <b>destra</b>: <code>3 :: Nil</code> è la chiamata <code>Nil.::(3)</code>; sul risultato si chiama <code>.::(2)</code>.", righe: [1], set: { e3: { nascosto: false } } },
+      { nota: "<code>Nil.::(3)</code> crea <b>una cella</b>: testa 3, coda Nil (la freccia).", righe: [1], set: { Nil: { nascosto: false }, c3: { nascosto: false, tono: 'ora' }, a3: { nascosto: false }, cur: { t: 'adesso: Nil.::(3)' } } },
+      { nota: "<code>.::(2)</code> crea una nuova cella con testa 2 che <b>punta</b> alla lista di prima. La cella 3 non viene copiata né modificata. Questa lista è <code>xs</code>.", righe: [1], set: { c3: { tono: null }, c2: { nascosto: false, tono: 'ora' }, a2: { nascosto: false }, nxs: { nascosto: false }, cur: { t: 'adesso: .::(2)' } } },
+      { nota: "<code>1 :: xs</code> = <code>xs.::(1)</code>: <b>una</b> cella nuova che punta a xs. Costa <i>O(1)</i>, qualunque sia la lunghezza di xs.", righe: [2], set: { c2: { tono: null }, c1: { nascosto: false, tono: 'ora' }, a1: { nascosto: false }, nys: { nascosto: false }, cur: { t: 'adesso: xs.::(1)' } } },
+      { nota: "<code>9 :: xs</code>: un'altra cella, che punta alla <b>stessa</b> xs. ys e zs condividono le celle 2 e 3. Si può fare perché le liste sono immutabili: nessuno può cambiare xs sotto i piedi di ys.", righe: [3], set: { c1: { tono: null }, c9: { nascosto: false, tono: 'ora' }, a9: { nascosto: false }, nzs: { nascosto: false }, c2: { tono: 'due' }, c3: { tono: 'due' }, cur: { t: 'adesso: xs.::(9)' } } },
+      { nota: "ys = List(1, 2, 3) e zs = List(9, 2, 3) con <b>4 celle</b> in tutto, invece di 8 se ogni lista avesse la sua copia. Verificato in Scala 3.8: <code>ys.tail eq xs</code> e <code>zs.tail eq xs</code> danno <code>true</code> (<code>eq</code> confronta l'indirizzo in memoria, non il contenuto).", set: { c9: { tono: null }, cur: { t: '' }, ris: { t: 'ys = List(1, 2, 3)    zs = List(9, 2, 3)', tono: 'ok' } } }
+    ]
+  };
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Ordbog over symbolerne</h1>
+  <p class="lede">Hvert symbol, du finder i øvelserne, med hvad det betyder på en linje, og hvor det forklares trin for trin. Hold den åben, mens du skriver kode.</p>
+</header>
+
+<section>
+  <h2>Typer</h2>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Skrevet</th><th>Betyder</th><th>Eksempel</th><th>Forklaret i</th></tr></thead>
+    <tbody>
+      <tr><td><code>x: Int</code></td><td><code>x</code> har typen <code>Int</code>. Først navnet, derefter typen.</td><td><code>def abs(n: Int): Int</code></td><td><a href="basi-firma.html">Signatur</a></td></tr>
+      <tr><td><code>[A]</code></td><td>En pladsholder for en type, valgt af den, der kalder.</td><td><code>def head[A](l: List[A]): A</code></td><td><a href="basi-firma.html">Signatur</a></td></tr>
+      <tr><td><code>List[Int]</code></td><td>En generisk type udfyldt: en liste af heltal.</td><td><code>val l: List[Int]</code></td><td><a href="s02-polimorfismo.html">Polymorfi</a></td></tr>
+      <tr><td><code>+A</code></td><td>Kovariant: hvis Gatto er Animale, er <code>T[Gatto]</code> også <code>T[Animale]</code>.</td><td><code>enum List[+A]</code></td><td><a href="s03-varianza.html">Varians</a></td></tr>
+      <tr><td><code>-A</code></td><td>Kontravariant: relationen vendes om.</td><td><code>class Cell[-T]</code></td><td><a href="s03-varianza.html">Varians</a></td></tr>
+      <tr><td><code>A &lt;: B</code></td><td>A er en undertype af B.</td><td><code>Nil &lt;: List[Int]</code></td><td><a href="s03-varianza.html">Varians</a></td></tr>
+      <tr><td><code>B &gt;: A</code></td><td>B er A eller en mere generel type end A.</td><td><code>def getOrElse[B &gt;: A]</code></td><td><a href="s03-option.html">Option</a></td></tr>
+      <tr><td><code>Nothing</code></td><td>Typen uden værdier, undertype af alle.</td><td><code>None: Option[Nothing]</code></td><td><a href="s02-adt.html">ADT</a></td></tr>
+      <tr><td><code>Unit</code></td><td>"Intet nyttigt resultat", ligesom <code>void</code>. Eneste værdi: <code>()</code>.</td><td><code>def main: Unit</code></td><td><a href="s01-scala-base.html">Scala-grundlag</a></td></tr>
+      <tr><td><code>(A, B)</code></td><td>Parret (tuple) som type.</td><td><code>List[(String, Int)]</code></td><td><a href="s03-for-yield.html">for/yield</a></td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section>
+  <h2>Funktioner og pile</h2>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Skrevet</th><th>Betyder</th><th>Eksempel</th><th>Forklaret i</th></tr></thead>
+    <tbody>
+      <tr><td><code>A => B</code></td><td>Funktionstype: A kommer ind, B kommer ud.</td><td><code>f: Int => String</code></td><td><a href="basi-firma.html">Signatur</a></td></tr>
+      <tr><td><code>x => x + 1</code></td><td>Funktion skrevet på stedet (lambda).</td><td><code>l.map(x => x + 1)</code></td><td><a href="s01-funzioni.html">Funktioner</a></td></tr>
+      <tr><td><code>_ + 1</code></td><td>Genvej: hver <code>_</code> er en ny parameter.</td><td><code>l.map(_ + 1)</code></td><td><a href="s01-funzioni.html">Funktioner</a></td></tr>
+      <tr><td><code>f(x)(y)</code></td><td>Kald med to lister af argumenter.</td><td><code>map(t)(f)</code></td><td><a href="basi-firma.html">Signatur</a></td></tr>
+      <tr><td><code>() => A</code></td><td>Funktion uden argumenter: en "opskrift" (thunk). Den bruges med <code>h()</code>.</td><td><code>Cons(h: () => A, …)</code></td><td><a href="s04-valutazione.html">Evaluering</a></td></tr>
+      <tr><td><code>x: => A</code></td><td>By-name-parameter: beregnes kun, når du bruger den. Den bruges ved at skrive <code>x</code>.</td><td><code>getOrElse(default: => B)</code></td><td><a href="s04-valutazione.html">Evaluering</a></td></tr>
+      <tr><td><code>identity</code></td><td>Funktionen, der returnerer argumentet, som det er.</td><td><code>fold(t)(_ max _)(identity)</code></td><td><a href="s03-alberi.html">Træer</a></td></tr>
+      <tr><td><code>@annotation.tailrec</code></td><td>Beder compileren kontrollere halerekursion.</td><td>over en <code>def</code></td><td><a href="s01-ricorsione.html">Rekursion</a></td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section>
+  <h2>Lister og mønstre</h2>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Skrevet</th><th>Betyder</th><th>Eksempel</th><th>Forklaret i</th></tr></thead>
+    <tbody>
+      <tr><td><code>x match</code></td><td>"Hvilken form har x?" Efterfulgt af en liste af <code>case</code>.</td><td><code>l match</code></td><td><a href="s02-pattern-matching.html">Pattern matching</a></td></tr>
+      <tr><td><code>case Cons(h, t) =></code></td><td>Hvis det er en Cons, kalder man <code>h</code> hovedet og <code>t</code> halen.</td><td><code>case Cons(h, _) => h</code></td><td><a href="s02-pattern-matching.html">Pattern matching</a></td></tr>
+      <tr><td><code>_</code> efter case</td><td>Der er noget her, men jeg har ikke brug for det: jeg kasserer det.</td><td><code>case Leaf(_) => 1</code></td><td><a href="s02-pattern-matching.html">Pattern matching</a></td></tr>
+      <tr><td><code>case x if c</code></td><td>Tilfældet gælder kun, hvis betingelsen <code>c</code> er sand.</td><td><code>case Some(a) if p(a)</code></td><td><a href="s02-pattern-matching.html">Pattern matching</a></td></tr>
+      <tr><td><code>x :: xs</code></td><td>Liste med <code>x</code> foran <code>xs</code> (bibliotekets Cons).</td><td><code>1 :: 2 :: Nil</code></td><td><a href="s03-map2-sequence.html">map2 og sequence</a></td></tr>
+      <tr><td><code>Nil</code></td><td>Den tomme liste.</td><td><code>case Nil => 0</code></td><td><a href="s02-adt.html">ADT</a></td></tr>
+      <tr><td><code>A*</code></td><td>Variabelt antal argumenter (varargs).</td><td><code>def apply[A](as: A*)</code></td><td><a href="s02-adt.html">ADT</a></td></tr>
+      <tr><td><code>xs*</code></td><td>"Pakker ud" en følge til separate argumenter.</td><td><code>apply(as.tail*)</code></td><td><a href="s02-adt.html">ADT</a></td></tr>
+      <tr><td><code>p._1</code>, <code>p._2</code></td><td>Første og andet stykke af et par. Man tæller fra 1.</td><td><code>("Alice", 12)._2</code> → 12</td><td><a href="s03-for-yield.html">for/yield</a></td></tr>
+      <tr><td><code>cons(h, t)</code></td><td>Bygger en LazyList uden at beregne h og t.</td><td><code>cons(1, ones)</code></td><td><a href="s04-lazylist.html">LazyList</a></td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section>
+  <h2>Værdier, blokke, comprehensions</h2>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Skrevet</th><th>Betyder</th><th>Eksempel</th><th>Forklaret i</th></tr></thead>
+    <tbody>
+      <tr><td><code>val</code></td><td>Navn til en værdi, fastlagt én gang. Brug den altid.</td><td><code>val x = 42</code></td><td><a href="s01-scala-base.html">Scala-grundlag</a></td></tr>
+      <tr><td><code>var</code></td><td>Variabel, der kan ændres. <b>Forbudt</b> i øvelserne.</td><td><code>var i = 0</code></td><td><a href="../esame/regole.html">Regler</a></td></tr>
+      <tr><td><code>lazy val</code></td><td>Beregnet ved første brug, derefter husket.</td><td><code>lazy val head = hd</code></td><td><a href="s04-valutazione.html">Evaluering</a></td></tr>
+      <tr><td><code>def</code></td><td>Definerer en funktion (genberegnes ved hvert kald).</td><td><code>def square(n: Int)</code></td><td><a href="s01-scala-base.html">Scala-grundlag</a></td></tr>
+      <tr><td><code>if c then a else b</code></td><td>Et udtryk med en værdi, som <code>c ? a : b</code> i Java.</td><td><code>if n &lt; 0 then -n else n</code></td><td><a href="s01-scala-base.html">Scala-grundlag</a></td></tr>
+      <tr><td><code>s"… ${x} …"</code></td><td>Streng med værdier indeni (interpolation).</td><td><code>s"abs is ${abs(x)}"</code></td><td><a href="s01-scala-base.html">Scala-grundlag</a></td></tr>
+      <tr><td><code>x &lt;- e</code></td><td>Inde i en <code>for</code>: "tag x fra e" (bliver til flatMap eller map).</td><td><code>a &lt;- ao</code></td><td><a href="s03-for-yield.html">for/yield</a></td></tr>
+      <tr><td><code>yield</code></td><td>Værdien produceret af en <code>for</code> (bliver til map).</td><td><code>yield a + b</code></td><td><a href="s03-for-yield.html">for/yield</a></td></tr>
+      <tr><td><code>???</code></td><td>"Skal skrives". Den kompilerer, men hvis den køres, kaster den <code>NotImplementedError</code>.</td><td><code>def fib(n: Int): Int = ???</code></td><td><a href="../esame/homework.html">Homework</a></td></tr>
+      <tr><td><code>this</code></td><td>Objektet, som metoden blev kaldt på.</td><td><code>this match</code></td><td><a href="basi-firma.html">Signatur</a></td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section>
+  <h2>Operatorer, der er metoder</h2>
+  <p>I Scala er også <code>+</code> og <code>::</code> metoder. To regler er nok til at læse dem.</p>
+  <figure class="passi" data-titolo="Hvem ejer metoden?">
+    <div class="passo">
+      <div class="espr"><mark class="dato">magic</mark> <mark class="ora">-</mark> 84    =    <mark class="dato">magic</mark>.<mark class="ora">-</mark>(84)</div>
+      <p class="nota">En metode med ét argument kan skrives i midten, uden punktum og parenteser. Metoden tilhører værdien til <b>venstre</b>.</p>
+    </div>
+    <div class="passo">
+      <div class="espr"><mark class="dato">a</mark> max b    =    <mark class="dato">a</mark>.max(b)</div>
+      <p class="nota">Det gælder for enhver metode med ét argument, ikke kun for symboler.</p>
+    </div>
+    <div class="passo">
+      <div class="espr">1 <mark class="ora">::</mark> <mark class="due">xs</mark>    =    <mark class="due">xs</mark>.<mark class="ora">::</mark>(1)</div>
+      <p class="nota">Undtagelse: hvis operatoren <b>slutter med et kolon</b>, tilhører metoden værdien til <b>højre</b>.</p>
+    </div>
+    <div class="passo">
+      <div class="espr">1 :: 2 :: 3 :: Nil    =    1 :: (2 :: (<mark class="ora">3 :: Nil</mark>))    =    <mark class="ok">List(1, 2, 3)</mark></div>
+      <p class="nota">Af samme grund beregnes flere <code>::</code> i træk fra højre: først <code>3 :: Nil</code>.</p>
+    </div>
+  </figure>
+  <figure class="scena" data-scena="cons" data-titolo="1 :: xs i hukommelsen: en ny celle, den delte hale"></figure>
+</section>
+
+</main>
+</body>
+</html>

@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Træer og fold på træer</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  const nodi = [
+    { id: 'R', tipo: 'nodo', forma: 'quadrato', r: 20, x: 250, y: 45, t: 'B' },
+    { id: 'L', tipo: 'nodo', forma: 'quadrato', r: 20, x: 150, y: 130, t: 'B' },
+    { id: 'f3', tipo: 'nodo', x: 350, y: 130, t: '3' },
+    { id: 'f1', tipo: 'nodo', x: 90, y: 215, t: '1' },
+    { id: 'f5', tipo: 'nodo', x: 210, y: 215, t: '5' },
+    { id: 'eRL', tipo: 'arco', da: 'R', a: 'L' },
+    { id: 'eR3', tipo: 'arco', da: 'R', a: 'f3' },
+    { id: 'eL1', tipo: 'arco', da: 'L', a: 'f1' },
+    { id: 'eL5', tipo: 'arco', da: 'L', a: 'f5' }
+  ];
+  SCENE.size = {
+    w: 440, h: 260,
+    codice: { lang: 'scala', testo: `def size[A](t: Tree[A]): Int = t match
+  case Leaf(_) => 1
+  case Branch(left, right) =>
+    1 + size(left) + size(right)` },
+    oggetti: nodi,
+    passi: [
+      { nota: '<p>Træet <code>Branch(Branch(Leaf(1), Leaf(5)), Leaf(3))</code>. Kvadraterne B er <code>Branch</code>, cirklerne er <code>Leaf</code>. <code>size</code> tæller <b>alle</b> noderne.</p>', righe: [1] },
+      { nota: '<p>Roden er en Branch: for at svare har den brug for <code>size(left)</code> og <code>size(right)</code>. Jeg går ned til venstre.</p>', righe: [3, 4], set: { R: { tono: 'due', sopra: 'aspetta' } } },
+      { nota: '<p>Også denne er en Branch: jeg går ned igen.</p>', righe: [3, 4], set: { L: { tono: 'due', sotto: 'aspetta' } } },
+      { nota: '<p>Et blad: <code>case Leaf(_) => 1</code>. Værdien 1 inde i bladet tæller ikke, jeg kasserer den med <code>_</code>.</p>', righe: [2], set: { f1: { tono: 'ok', sotto: 'size 1' } } },
+      { nota: '<p>Det andet blad: 1.</p>', righe: [2], set: { f5: { tono: 'ok', sotto: 'size 1' } } },
+      { nota: '<p>Nu har den venstre Branch de to svar: <b>1 + 1 + 1 = 3</b>. Den ekstra <b>1</b> er selve Branch\'en.</p>', righe: [4], set: { L: { tono: 'ok', sotto: 'size 3' } } },
+      { nota: '<p>Roddens højre gren er et blad: 1.</p>', righe: [2], set: { f3: { tono: 'ok', sotto: 'size 1' } } },
+      { nota: '<p>Roden: <b>1 + 3 + 1 = 5</b>. Der er 5 noder: 2 Branch og 3 Leaf (kontrolleret).</p>', righe: [4], set: { R: { tono: 'ok', sopra: 'size 5' } } }
+    ]
+  };
+  SCENE.maximum = {
+    w: 440, h: 260,
+    codice: { lang: 'scala', testo: `def maximum(t: Tree[Int]): Int = t match
+  case Leaf(value) => value
+  case Branch(left, right) =>
+    maximum(left).max(maximum(right))` },
+    oggetti: nodi,
+    passi: [
+      { nota: '<p>Samme træ, et andet spørgsmål: den største værdi.</p>', righe: [1] },
+      { nota: '<p>Blad 1: <code>case Leaf(value) => value</code>. Her er værdien <b>nødvendig</b>, så jeg giver den et navn.</p>', righe: [2], set: { f1: { tono: 'dato', sotto: 'max 1' } } },
+      { nota: '<p>Blad 5: 5.</p>', righe: [2], set: { f5: { tono: 'dato', sotto: 'max 5' } } },
+      { nota: '<p>Venstre Branch: <code>1.max(5)</code> = 5.</p>', righe: [4], set: { L: { tono: 'ora', sotto: 'max 5' }, f1: { tono: 'spento' } } },
+      { nota: '<p>Blad 3: 3.</p>', righe: [2], set: { f3: { tono: 'dato', sotto: 'max 3' } } },
+      { nota: '<p>Rod: <code>5.max(3)</code> = <b>5</b>.</p>', righe: [4], set: { R: { tono: 'ok', sopra: 'max 5' }, f3: { tono: 'spento' } } }
+    ]
+  };
+})();
+</script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  const T = (id, x, y, t, extra) => Object.assign({ id, tipo: 'testo', x, y, t, size: 13 }, extra || {});
+  const R = (id, x, y, w, h, t, extra) => Object.assign({ id, tipo: 'rett', x, y, w, h, t }, extra || {});
+  const N = (id, x, y, t, tono, extra) => Object.assign({ id, tipo: 'nodo', x, y, t, tono, r: 20 }, extra || {});
+  const C = (id, x, y, valori, extra) => Object.assign({ id, tipo: 'celle', x, y, cw: 52, ch: 40, valori, indici: false }, extra || {});
+  const A = (id, da, a, extra) => Object.assign({ id, tipo: 'arco', da, a }, extra || {});
+
+    SCENE.tipoalbero = {
+      w: 560, h: 240, lato: true,
+      legenda: 'dato:Leaf (en værdi),due:Branch (to træer),no:findes ikke',
+      oggetti: [
+        N('b1', 200, 40, 'Br', 'due', { forma: 'quadrato', r: 18, nascosto: true }), N('l1', 120, 120, '1', 'dato', { nascosto: true }), N('b2', 280, 120, 'Br', 'due', { forma: 'quadrato', r: 18, nascosto: true }),
+        N('l2', 220, 200, '2', 'dato', { nascosto: true }), N('l3', 340, 200, '3', 'dato', { nascosto: true }),
+        A('e1', 'b1', 'l1', { nascosto: true }), A('e2', 'b1', 'b2', { nascosto: true }), A('e3', 'b2', 'l2', { nascosto: true }), A('e4', 'b2', 'l3', { nascosto: true }),
+        T('c', 440, 100, '', { size: 12 }), T('c2', 440, 130, '', { size: 12 })
+      ],
+      passi: [
+        { nota: "<code>enum Tree[+A]</code>: due forme. <b>Leaf(value)</b>, una foglia, contiene un valore.", set: { l2: { nascosto: false }, c: { t: 'Leaf(2)' } } },
+        { nota: "<b>Branch(left, right)</b>, un ramo, contiene due alberi e <b>nessun valore</b>.", set: { l3: { nascosto: false }, b2: { nascosto: false }, e3: { nascosto: false }, e4: { nascosto: false }, c: { t: 'Branch(Leaf(2), Leaf(3))' } } },
+        { nota: "Anche un ramo può essere figlio di un ramo: il tipo è ricorsivo. Questo è <code>Branch(Leaf(1), Branch(Leaf(2), Leaf(3)))</code>.", set: { b1: { nascosto: false }, l1: { nascosto: false }, e1: { nascosto: false }, e2: { nascosto: false }, c: { t: 'Branch(Leaf(1),' }, c2: { t: '  Branch(Leaf(2), Leaf(3)))' } } },
+        { nota: "Non esiste un albero vuoto e non esiste null: un ramo ha <b>sempre</b> due figli. Non si scrive t.left != null: si chiede la forma con match. Per questo maximum ha sempre una risposta, senza Option.", set: { c: { t: 'niente vuoto, niente null', tono: 'no' }, c2: { t: 'Leaf: valore · Branch: 2 figli' } } }
+      ]
+    };
+
+    SCENE.maptree = {
+      w: 560, h: 150,
+      codice: { lang: 'scala', testo: `def map[A, B](t: Tree[A])(f: A => B): Tree[B] = t match
+  case Leaf(value) => Leaf(f(value))
+  case Branch(left, right) => Branch(map(left)(f), map(right)(f))` },
+      legenda: 'due:gren,dato:blad før,ok:blad efter,no:fejl',
+      oggetti: [N('b', 140, 30, 'Br', 'due', { forma: 'quadrato', r: 16 }), N('l1', 80, 100, '1', 'dato'), N('l2', 200, 100, '2', 'dato'), A('e1', 'b', 'l1'), A('e2', 'b', 'l2'), T('c', 400, 60, 'map(t)(_ * 10)', { bold: true }), T('c2', 400, 100, '', { size: 12 })],
+      passi: [
+        { nota: "<code>map(Branch(Leaf(1), Leaf(2)))(_ * 10)</code>: stessa forma, valori trasformati.", righe: [1] },
+        { nota: "È un Branch: il ramo <b>resta un ramo</b>, e la map scende nei due figli con la stessa f.", righe: [3], set: { b: { tono: 'ora' } } },
+        { nota: "Nelle foglie si applica f e si rimette il risultato <b>in una Leaf</b>: Leaf(10), Leaf(20).", righe: [2], set: { b: { tono: 'due' }, l1: { t: '10', tono: 'ok' }, l2: { t: '20', tono: 'ok' }, c: { t: 'Branch(Leaf(10), Leaf(20))', tono: 'ok' } } },
+        { nota: "Errore tipico: <code>case Leaf(value) =&gt; value.toString()</code> → Found: String, Required: Tree[B]. Due problemi: non sai che f è toString (scrivi f(value)), e il risultato va rimesso in una foglia: <code>Leaf(f(value))</code>.", righe: [2], set: { c2: { t: 'Found String, Required Tree[B]', tono: 'no' } } }
+      ]
+    };
+
+    const og = [N('b', 140, 40, 'Br', 'due', { forma: 'quadrato', r: 16 }), N('l1', 80, 120, '7', 'dato'), N('l2', 200, 120, '9', 'dato'), A('e1', 'b', 'l1'), A('e2', 'b', 'l2'),
+      T('fn', 420, 30, '', { bold: true, size: 12 }), T('g', 420, 70, '', { size: 12 }), T('f', 420, 100, '', { size: 12 }),
+      T('r1', 80, 170, '', { size: 12, tono: 'ok' }), T('r2', 200, 170, '', { size: 12, tono: 'ok' }), T('rb', 140, 210, '', { bold: true, tono: 'ok' })];
+    const caso = (nome, g, f, v1, v2, vb) => ({ fn: { t: nome }, g: { t: 'g (foglia): ' + g }, f: { t: 'f (ramo): ' + f }, r1: { t: v1 }, r2: { t: v2 }, rb: { t: vb } });
+    SCENE.foldtree = {
+      w: 580, h: 230, lato: true,
+      legenda: 'dato:blad (bruger g),due:gren (bruger f),ok:resultat',
+      oggetti: og,
+      passi: [
+        { nota: "size, maximum e map fanno tutte due cose: qualcosa con le <b>foglie</b> (g: A =&gt; B) e qualcosa per <b>combinare</b> i due risultati di un ramo (f: (B, B) =&gt; B). <code>fold</code> prende proprio quelle due funzioni. Albero: Branch(Leaf(7), Leaf(9))." },
+        { nota: "<b>size</b>: g = _ =&gt; 1 (conta 1, ignora il valore); f = (l, r) =&gt; 1 + l + r. Foglie: 1 e 1. Ramo: 1 + 1 + 1 = 3.", set: caso('size', '_ => 1', '(l, r) => 1 + l + r', '1', '1', '3') },
+        { nota: "<b>maximum</b>: g = identity (il valore stesso); f = _ max _. Foglie: 7 e 9. Ramo: 7 max 9 = 9.", set: caso('maximum', 'identity', '_ max _', '7', '9', '9') },
+        { nota: "<b>map</b> (con f' = _ * 10): g = a =&gt; Leaf(f'(a)); f = Branch(_, _), che rimette i due alberi in un ramo. Risultato: Branch(Leaf(70), Leaf(90)).", set: caso('map(_ * 10)', 'a => Leaf(a * 10)', 'Branch(_, _)', 'Leaf(70)', 'Leaf(90)', 'Branch(Leaf(70), Leaf(90))') },
+        { nota: "Una definizione, tre funzioni: cambiano solo g e f. Foglia → g, ramo → f dei due fold dei figli.", set: { fn: { t: 'fold(t)(f)(g)' }, g: { t: 'Leaf(v) => g(v)' }, f: { t: 'Branch(l, r) => f(fold(l), fold(r))' } } }
+      ]
+    };
+
+    SCENE.trattini = {
+      w: 580, h: 220, lato: true,
+      legenda: 'spento:kassering (værdi smidt væk),ora:pladsholder (ny parameter),ok:den funktion, der kommer ud',
+      oggetti: [T('e', 290, 40, '', { bold: true, size: 15 }), T('s', 290, 80, '', { size: 12 }), T('p', 290, 130, '', { size: 13 }), T('c', 290, 190, '', { size: 12 })],
+      passi: [
+        { nota: "Tre pezzi di sintassi di questa pagina. Primo: <code>identity</code>, la funzione che restituisce il suo argomento. identity(42) = 42. In maximum il valore della foglia è già il risultato.", set: { e: { t: 'identity  =  v => v' }, s: { t: 'identity(42) = 42' } } },
+        { nota: "Il trattino basso ha tre usi. Dopo <code>case</code>: il valore c'è, ma lo <b>butto</b>.", set: { e: { t: 'case Leaf(_) => 1', tono: 'spento' }, s: { t: 'scarto: il valore non serve' } } },
+        { nota: "Prima di una freccia: un parametro che arriva e che <b>ignoro</b>.", set: { e: { t: '_ => 1', tono: 'spento' }, s: { t: 'parametro ignorato' } } },
+        { nota: "Dentro un'espressione, senza freccia: <b>segnaposto</b>. Ogni _ diventa un parametro, in ordine: Scala costruisce una funzione.", set: { e: { t: 'Branch(_, _)', tono: 'ora' }, s: { t: 'segnaposto' }, p: { t: '= (x, y) => Branch(x, y)', tono: 'ok' } } },
+        { nota: "Test: sostituisci _ con x. Se ha senso così, era uno scarto; se devi aggiungere x =&gt; davanti, era un segnaposto. Terzo pezzo: <code>fold[A, Tree[B]]</code>, tipi scritti a mano, perché senza Scala deduce Tree[Any].", set: { e: { t: 'fold[A, Tree[B]](t)(Branch(_, _))(a => Leaf(f(a)))', tono: null }, s: { t: 'senza [A, Tree[B]]: Found Tree[Any], Required Tree[B]' }, p: { t: '' }, c: { t: 'tipi a mano quando Scala deduce troppo generico' } } }
+      ]
+    };
+  
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Træer og fold på træer</h1>
+  <p class="lede">Øvelse 2–5 i uge 3. Et træ er en anden algebraisk type: et blad med en værdi, eller en gren med to undertræer. Du skriver <code>size</code>, <code>maximum</code> og <code>map</code>, og så opdager du, at de er den samme funktion: <code>fold</code>.</p>
+</header>
+
+<section>
+  <h2>Typen</h2>
+  <figure class="codice" data-titolo="Tree">
+<pre data-lang="scala">enum Tree[+A]:
+  case Leaf(value: A)
+  case Branch(left: Tree[A], right: Tree[A])</pre>
+    <ol class="spiega">
+      <li data-righe="2" data-segna="Leaf(value: A)@dato"><p>Et <b>blad</b> indeholder en værdi.</p></li>
+      <li data-righe="3" data-segna="Branch(left: Tree[A], right: Tree[A])@due"><p>En <b>gren</b> indeholder to træer. Den indeholder ikke en værdi.</p></li>
+      <li data-righe="1-3"><p>Der findes ikke noget "tomt træ", og der findes ikke <code>null</code>: en gren har <b>altid</b> to børn. Derfor har <code>maximum</code> altid et svar, og <code>Option</code> er ikke nødvendig.</p></li>
+    </ol>
+  </figure>
+  <div class="box domanda-tua" data-tit="Hyppigt spørgsmål: og hvis en gren kun har det højre barn?">
+    <p>Det kan ikke ske. Man skriver ikke <code>t.left != null</code>: man spørger om formen med <code>match</code>. Hvis det er en <code>Leaf</code>, har du værdien, hvis det er en <code>Branch</code>, har du begge børn.</p>
+  </div>
+  <figure class="scena" data-scena="tipoalbero" data-titolo="Blade med en værdi, grene med to børn"></figure>
+</section>
+
+<section>
+  <h2><code>size</code>: at tælle noderne</h2>
+  <figure class="scena" data-scena="size" data-titolo="size stiger op fra bladene til roden"></figure>
+</section>
+
+<section>
+  <h2><code>maximum</code>: den største værdi</h2>
+  <figure class="scena" data-scena="maximum" data-titolo="maximum på samme træ"></figure>
+  <div class="box attenzione" data-tit="Fejl set i øvelserne">
+    <p><code>case Branch(left, right) => size(left).max(size(right))</code> sammenligner <b>størrelserne</b> af undertræerne, ikke værdierne. Den skal kalde <code>maximum</code> på begge.</p>
+  </div>
+</section>
+
+<section>
+  <h2><code>map</code>: samme form, værdier transformeret</h2>
+  <pre class="cod" data-lang="scala">def map[A, B](t: Tree[A])(f: A => B): Tree[B] = t match
+  case Leaf(value) => Leaf(f(value))
+  case Branch(left, right) => Branch(map(left)(f), map(right)(f))</pre>
+  <figure class="passi" data-titolo="map(Branch(Leaf(1), Leaf(2)))(_ * 10)">
+    <div class="passo"><div class="espr">map(<mark class="dato">Branch(Leaf(1), Leaf(2))</mark>)(<mark class="ora">_ * 10</mark>)</div><p class="nota">Det er en Branch.</p></div>
+    <div class="passo"><div class="espr">Branch(map(<mark class="dato">Leaf(1)</mark>)(<mark class="ora">_ * 10</mark>), map(<mark class="dato">Leaf(2)</mark>)(<mark class="ora">_ * 10</mark>))</div><p class="nota">Grenen forbliver en gren; <code>map</code> går ned i de to børn med samme <code>f</code>.</p></div>
+    <div class="passo"><div class="espr">Branch(Leaf(<mark class="ora">1 * 10</mark>), Leaf(<mark class="ora">2 * 10</mark>))</div><p class="nota">I bladene anvendes <code>f</code> på værdien, og den <b>lægges tilbage i en Leaf</b>.</p></div>
+    <div class="passo"><div class="espr"><mark class="ok">Branch(Leaf(10), Leaf(20))</mark></div><p class="nota">Samme form som før.</p></div>
+  </figure>
+  <div class="errori">
+    <div class="errore">
+      <pre data-lang="scala">case Leaf(value) => value.toString()</pre>
+      <pre class="msg">Found:    String
+Required: Tree[B]</pre>
+      <div class="fix">Due problemi. 1) Non sai che <code>f</code> è <code>toString</code>: lo decide chi chiama, tu scrivi <code>f(value)</code>. 2) Il risultato va rimesso in una foglia: <code>Leaf(f(value))</code>.</div>
+    </div>
+  </div>
+  <figure class="scena" data-scena="maptree" data-titolo="map(t)(_ * 10) og toString-fejlen"></figure>
+</section>
+
+<section>
+  <h2><code>fold</code>: funktionen, der indeholder dem alle</h2>
+  <p>Se hvad <code>size</code>, <code>maximum</code> og <code>map</code> har til fælles: de gør alle noget med bladene og noget for at kombinere de to resultater fra en gren. Kun <b>hvad</b> der ændrer sig.</p>
+  <figure class="codice" data-titolo="Øvelse 5">
+<pre data-lang="scala">def fold[A, B](t: Tree[A])(f: (B, B) => B)(g: A => B): B = t match
+  case Leaf(value) => g(value)
+  case Branch(left, right) => f(fold(left)(f)(g), fold(right)(f)(g))</pre>
+    <ol class="spiega">
+      <li data-righe="1" data-segna="[A, B]@due"><p><code>A</code> er det, der er i bladene, <code>B</code> er det, jeg vil have.</p></li>
+      <li data-righe="1" data-segna="(g: A => B)@dato"><p><code>g</code>: hvad der skal gøres med <b>et blad</b>. Den omdanner dens værdi A til et resultat B.</p></li>
+      <li data-righe="1" data-segna="(f: (B, B) => B)@ora"><p><code>f</code>: hvordan de to resultater fra en grens børn <b>kombineres</b>.</p></li>
+      <li data-righe="2" data-segna="g(value)@dato"><p>Blad: jeg bruger <code>g</code>.</p></li>
+      <li data-righe="3" data-segna="f(@ora"><p>Gren: jeg folder de to børn og kombinerer med <code>f</code>.</p></li>
+    </ol>
+  </figure>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Funktion</th><th>g (blad)</th><th>f (gren)</th><th>Kode</th></tr></thead>
+    <tbody>
+      <tr><td><code>size1</code></td><td>tæller 1, ignorerer værdien</td><td>1 + venstre + højre</td><td><code>fold[A, Int](t)((l, r) => 1 + l + r)(_ => 1)</code></td></tr>
+      <tr><td><code>maximum1</code></td><td>selve værdien</td><td>den største af de to</td><td><code>fold[Int, Int](t)(_ max _)(identity)</code></td></tr>
+      <tr><td><code>map1</code></td><td>læg f(value) tilbage i et blad</td><td>læg de to træer tilbage i en gren</td><td><code>fold[A, Tree[B]](t)(Branch(_, _))(a => Leaf(f(a)))</code></td></tr>
+    </tbody>
+  </table></div>
+  <figure class="passi" data-titolo="size1(Branch(Leaf(7), Leaf(9))) med fold">
+    <div class="passo"><div class="espr">fold(<mark class="dato">Branch(Leaf(7), Leaf(9))</mark>)(<mark class="ora">(l, r) => 1 + l + r</mark>)(<mark class="due">_ => 1</mark>)</div><p class="nota">Det er en gren: jeg bruger <code>f</code>.</p></div>
+    <div class="passo"><div class="espr"><mark class="ora">f</mark>(fold(Leaf(7))(f)(g), fold(Leaf(9))(f)(g))</div><p class="nota">Først de to børn.</p></div>
+    <div class="passo"><div class="espr"><mark class="ora">f</mark>(<mark class="due">g(7)</mark>, <mark class="due">g(9)</mark>)  =  f(<mark class="due">1</mark>, <mark class="due">1</mark>)</div><p class="nota">Blade: <code>g</code> giver 1, uanset værdien.</p></div>
+    <div class="passo"><div class="espr">1 + 1 + 1  =  <mark class="ok">3</mark></div><p class="nota">Én gren og to blade.</p></div>
+  </figure>
+  <figure class="scena" data-scena="foldtree" data-titolo="size, maximum og map som fold"></figure>
+</section>
+
+<section>
+  <h2>Tre stykker syntaks, der dukker op her</h2>
+  <h3><code>identity</code></h3>
+  <p>Det er funktionen, der returnerer sit argument, som det er: <code>identity(42)</code> er værd 42. Den findes allerede i Scala, den skal ikke importeres. I <code>maximum1</code> er værdien af et blad allerede resultatet, så <code>g</code> skal ikke gøre noget: <code>identity</code> er som at skrive <code>v => v</code>.</p>
+  <h3><code>Branch(_, _)</code>: pladsholdere</h3>
+  <figure class="passi" data-titolo="Kassering eller pladsholder?">
+    <div class="passo"><div class="espr">case Leaf(<mark class="no">_</mark>) => 1</div><p class="nota">Efter <code>case</code>: værdien er der, men jeg <b>smider den væk</b>.</p></div>
+    <div class="passo"><div class="espr">(<mark class="no">_</mark>) => 1   <span class="mano">// cioè  _ => 1</span></div><p class="nota">Før en pil: en parameter, der kommer ind, og som jeg ignorerer.</p></div>
+    <div class="passo"><div class="espr">Branch(<mark class="ora">_</mark>, <mark class="due">_</mark>)</div><p class="nota">Inde i et udtryk, uden pil: de er <b>pladsholdere</b>. Scala bygger en funktion.</p></div>
+    <div class="passo"><div class="espr">Branch(<mark class="ora">_</mark>, <mark class="due">_</mark>)   =   (<mark class="ora">x</mark>, <mark class="due">y</mark>) => Branch(<mark class="ora">x</mark>, <mark class="due">y</mark>)</div><p class="nota">Hver <code>_</code> bliver til en parameter, i rækkefølge. Det er <code>f</code> i <code>map1</code>: den tager to træer og lægger dem tilbage i en gren.</p></div>
+  </figure>
+  <div class="box regola" data-tit="Et trick til at skelne dem">
+    <p>Prøv at erstatte <code>_</code> med <code>x</code>. Hvis koden giver mening, som den er, var det en <b>kassering</b>. Hvis du skal tilføje <code>x =></code> foran for at give mening, var det en <b>pladsholder</b>.</p>
+  </div>
+  <h3><code>fold[A, Tree[B]]</code>: typer skrevet i hånden</h3>
+  <p>Nogle gange kan Scala ikke gætte <code>B</code>, og den skal skrives i firkantede parenteser. Øvelsesarket anbefaler det, og her er det virkelig nødvendigt:</p>
+  <div class="errori">
+    <div class="errore">
+      <pre data-lang="scala">def map1[A, B](t: Tree[A])(f: A => B): Tree[B] =
+  fold(t)(Branch(_, _))(a => Leaf(f(a)))</pre>
+      <pre class="msg">Found:    Tree[Any]
+Required: Tree[B]</pre>
+      <div class="fix">Senza tipi, Scala deduce un <code>B</code> troppo generico (<code>Tree[Any]</code>). Scrivi <code>fold[A, Tree[B]](t)(…)(…)</code> (verificato: così compila).</div>
+    </div>
+  </div>
+  <figure class="scena" data-scena="trattini" data-titolo="identity, de tre brug af _, typer i hånden"></figure>
+</section>
+
+</main>
+</body>
+</html>

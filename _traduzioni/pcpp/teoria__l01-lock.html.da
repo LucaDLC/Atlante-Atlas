@@ -1,0 +1,89 @@
+@@s001 Kritisk sektion og lås
+@@s002 dato:t1,due:t2,ora:inde i den kritiske sektion,no:sektionen for stor
+@@s003 ok:egenskab overholdt,no:egenskab overtrådt,dato:t1,due:t2
+@@s004 dato:trin af t1,due:trin af t2,ora:krav,no:modstrid
+@@s005 dato:t1,due:t2,no:lås aldrig frigivet,ok:frigivet i finally
+@@s006 dato:t1,due:t2,no:regel overtrådt,ok:regel overholdt
+@@s007 ora:trinet der sker nu,ok:allerede sagt
+@@s008 Kritisk sektion og lås
+@@s009 For at fjerne race condition'en er det nok at forhindre, at to tråde udfører <b>sammen</b> den del, der rører den delte hukommelse. Den del er den <b>kritiske sektion</b>; redskabet til at beskytte den er <b>låsen</b>.
+@@s010 Den kritiske sektion
+@@s011 Definition
+@@s012 En <b>kritisk sektion</b> er en del af det samtidige program, hvor samtidig adgang skal begrænses. Den skal dække de dele af koden, der bruger den delte hukommelse.
+@@s013 Hvor den starter og hvor den slutter
+@@s014 Kun disse to linjer rører <code>counter</code>, den delte variabel: de er den kritiske sektion.
+@@s015 <code>i</code> er en <b>lokal</b> variabel: hver tråd har sin egen. Den skal ikke beskyttes.
+@@s016 Spørgsmål fra slidet: skulle den kritiske sektion ikke starte før for-løkken?
+@@s017 Nej. Det ville virke, men så ville en tråd lave <b>alle</b> sine gennemløb, mens den anden venter: programmet ville blive sekventielt, og du ville miste al fordelen ved trådene. Den kritiske sektion skal holdes <b>så lille som muligt</b>: kun adgangene til den delte hukommelse (øvelse 1.1.5).
+@@s018 Et rum for én tråd ad gangen
+@@s019 Gensidig udelukkelse: de tre egenskaber (Dijkstra)
+@@s020 Problemet med gensidig udelukkelse (<i>mutual exclusion problem</i>) er: hvordan koordinerer man flere tråde, så en kritisk sektion udføres af én ad gangen? Dijkstra fastlagde de tre egenskaber, en ideel løsning skal have. De bruges til at vurdere enhver løsning, også dem du skriver i øvelserne.
+@@s021 Egenskab
+@@s022 Hvad den garanterer
+@@s023 <b>Gensidig udelukkelse</b>
+@@s024 højst én tråd ad gangen udfører den kritiske sektion
+@@s025 <b>Fravær af deadlock</b>
+@@s026 trådene forlader før eller siden den kritiske sektion og lader de andre komme ind
+@@s027 <b>Fravær af sult</b>
+@@s028 hvis en tråd er klar til at komme ind, kommer den før eller siden ind (i praksis er det ikke altid muligt at garantere det)
+@@s029 De tre egenskaber, og hvordan de overtrædes
+@@s030 Javas låse
+@@s031 <code>lock()</code>
+@@s032 Tager låsen, hvis den er fri. Hvis den tilhører en anden tråd, <b>blokeres</b> den, der kalder, indtil den frigives. Den er blokerende.
+@@s033 <code>unlock()</code>
+@@s034 Hvis der venter tråde, vækker den én, ellers frigiver den låsen. I alle tilfælde <b>fortsætter</b> den, der kalder. Den er ikke blokerende.
+@@s035 De er <b>synkroniseringsoperationer</b>: de fastlægger en rækkefølge mellem operationer fra forskellige tråde. <code>Lock</code> er en grænseflade; i kurset bruges implementeringen <code>ReentrantLock</code>.
+@@s036 Uden låse
+@@s037 4 trin pr. tråd, ingen beskyttelse
+@@s038 Med låse
+@@s039 De samme trin, med lock() og unlock()
+@@s040 Hvad der ændrer sig (åbn "Alle interleavings" i de to konstruktører)
+@@s041 Alle måder at blande 4 trin af t1 med 4 trin af t2 på. Mange taber en opdatering.
+@@s042 Så snart en tråd laver <code>lock()</code>, bliver den andens trin stående, indtil <code>unlock()</code>.
+@@s043 Kun disse to er tilbage. Begge giver <code>counter = 2</code>.
+@@s044 Låsen gør ikke <code>counter++</code> atomisk for hardwaren: den forhindrer, at en anden tråd udfører <b>sin</b> kritiske sektion midt i.
+@@s045 Er denne interleaving mulig? (slide 59–60)
+@@s046 Typisk spørgsmål: bevis, at en interleaving ikke kan eksistere. Man ræsonnerer <b>ved modstrid</b>, uden at køre noget.
+@@s047 …, t1(2), …, t2(2), …, t1(3), …, t2(3), …
+@@s048 <b>Antag</b>, at interleavingen findes (det er den, der ville give den tabte opdatering).
+@@s049 t2(2) kræver, at t2 har taget låsen: <b>t2(1) før t2(2)</b>. Og t2 kan kun tage låsen, hvis t1 har frigivet den: <b>t1(4) før t2(1)</b>.
+@@s050 Men efter t1's program order kommer <b>t1(3) før t1(4)</b>. Så t1(3) skulle være både før og efter t2(2).
+@@s051 I konstruktøren ovenfor kan du kontrollere det med "Prøv en følge".
+@@s052 En cyklus af krav: umulig
+@@s053 Deadlock og try/finally-idiomet
+@@s054 Lås taget to gange
+@@s055 Med en lås der ikke er reentrant venter tråden på sig selv. Rigtige fejl af denne slags findes i Linux-kernen.
+@@s056 Undtagelse med låsen i hånden
+@@s057 Tråden forlader uden at frigive låsen: alle de andre bliver blokeret for evigt.
+@@s058 Idiomet man altid skal bruge
+@@s059 <code>lock()</code> <b>før</b> <code>try</code>: hvis det fejlede, skulle man ikke frigive en lås, der aldrig er taget.
+@@s060 Den kritiske sektion står i <code>try</code>.
+@@s061 <code>finally</code> udføres <b>altid</b>, også hvis der opstår en undtagelse i try: låsen frigives altid.
+@@s062 Til assignments
+@@s063 Slidene: løsninger, der ikke bruger dette idiom, "cannot be deemed as free from deadlocks (note for assignments)". Brug det hver gang.
+@@s064 ReentrantLock: at tage den lås igen, du allerede har
+@@s065 Tråden tager låsen.
+@@s066 Samme tråd: en <b>reentrant</b> lås lader den passere og tæller, hvor mange gange den har taget den.
+@@s067 Ét unlock er ikke nok.
+@@s068 Der skal lige så mange unlock som lock.
+@@s069 Undtagelse med låsen i hånden
+@@s070 Kontrollér-derefter-handl: Covid-tornet (øvelse 1.3)
+@@s071 Højst 15 000 personer. Kontrollen og forøgelsen skal være <b>i den samme</b> kritiske sektion.
+@@s072 Forkert
+@@s073 To tråde kan begge læse 14 999, bestå kontrollen og begge komme ind: 15 001.
+@@s074 Rigtigt
+@@s075 Mellem kontrollen og forøgelsen kan ingen anden tråd ændre <code>counter</code>.
+@@s076 14 999 set to gange
+@@s077 Sådan forklarer man, at løsningen er korrekt (øvelse 1.1.4)
+@@s078 Skemaet for svaret
+@@s079 <mark class="dato">1. Problemet</mark>: <code>count = count + 1</code> er ikke atomisk; der findes interleavings, hvor en tråd læser en gammel værdi, og en forøgelse går tabt (race condition).
+@@s080 Nævn problemet med kursets ordforråd.
+@@s081 <mark class="ora">2. Den kritiske sektion</mark>: læsning og skrivning af <code>count</code>, beskyttet af <code>lock()</code> / <code>unlock()</code> på <b>samme</b> ReentrantLock, med try/finally.
+@@s082 Sig, hvad du har beskyttet, og med hvad.
+@@s083 <mark class="due">3. Hvorfor det virker</mark>: ved gensidig udelukkelse kan trinene i en tråds kritiske sektion ikke blandes med den andens; kun interleavings bliver tilbage, hvor hver forøgelse læser den værdi, den forrige skrev.
+@@s084 Kernen: hvilke interleavings der er elimineret.
+@@s085 <mark class="ok">4. Hvorfor intet andet output</mark>: hver af de 2 × 10 000 000 forøgelser lægger præcis 1 til, så resultatet er altid 20 000 000.
+@@s086 Afslut med resultatet og grunden til, at det er det eneste.
+@@s087 Modelsvar
+@@s088 "The increment <code>count = count + 1</code> is not atomic: it is a read followed by a write, so without synchronization some interleavings let a thread read a stale value and lose an update (a race condition). We made the read and the write a critical section protected by the same ReentrantLock, using the lock/try/finally idiom. Mutual exclusion guarantees that the operations of one thread's critical section cannot be interleaved with the other thread's, so every increment reads the value written by the previous one. Hence each of the 20 million increments adds exactly one, and the only possible output is 20,000,000."
+@@s089 Svaret i fire stykker

@@ -1,0 +1,53 @@
+@@s001 Functor: map su ogni contenitore
+@@s002 dato:contenitore di partenza,ora:f in azione,ok:risultato,no:nessun valore da trasformare
+@@s003 <code>map</code> applica f a ciò che c'è dentro e lascia la <b>forma</b> com'è. Qui f = x · 2 e il contenitore è una lista di tre valori.
+@@s004 Ogni elemento si trasforma: 1 → 2, 2 → 4, 3 → 6. La lista resta lunga tre.
+@@s005 <b>Some(3)</b>: f si applica al valore dentro. Il risultato è <b>Some(6)</b>, ancora un Option.
+@@s006 <b>None</b> non ha valori: map non fa niente e restituisce None. La forma è la stessa di prima, un contenitore.
+@@s007 dato:input,ok:uguale all’input,ora:composizione
+@@s008 <b>Legge di identità</b>: <code>fa.map(identity) === fa</code>. <code>identity</code> è la funzione x ↦ x, che non cambia niente. Il risultato deve essere uguale all'input: la struttura non si tocca.
+@@s009 Applico map(identity) a List(1, 2, 3): ottengo List(1, 2, 3). Uguale all'input: la legge vale.
+@@s010 <b>Legge di composizione</b>: due <code>map</code> in fila danno lo stesso risultato di un solo <code>map</code> con la composizione delle funzioni. Con x + 1 e poi x · 2, è come x ↦ (x + 1) · 2. Entrambi danno List(4, 6, 8).
+@@s011 dato:coppie di partenza,ora:proiezione in corso,ok:risultato
+@@s012 <b>distribute</b> prende un F di coppie e restituisce una coppia di F: una lista di (nome, età) diventa (lista dei nomi, lista delle età).
+@@s013 <code>fab.map(_._1)</code> prende il primo elemento di ogni coppia: la lista dei nomi.
+@@s014 <code>fab.map(_._2)</code> prende il secondo elemento: la lista delle età.
+@@s015 Il risultato è una coppia di liste. Stessa definizione per List, LazyList, Gen e Par: usa solo <code>map</code>, quindi vale per ogni functor.
+@@s016 dato:contenitori,ora:combinazione,ok:risultato,no:risultato None
+@@s017 <b>map2</b> combina due contenitori con una funzione f(a, b). Per combinarli servono <b>entrambi</b> i valori. Un <code>map</code> solo, su un contenitore, non basta.
+@@s018 Se fa è Some(a) e fb è Some(b), il risultato è Some(f(a, b)). Qui f unisce nome ed età in una stringa.
+@@s019 Risultato: <b>Some("John (35)")</b>. Il risultato resta un Option: map2 non esce dal contenitore.
+@@s020 Se uno dei due è <b>None</b>, il risultato è None: non c'è niente da combinare. Nella slide map2 si scrive con <code>flatMap</code>, che è il tema della pagina sulla monad.
+@@s021 <span>Settimana 9</span>
+@@s022 Functor: map su ogni contenitore
+@@s023 Liste, option, generatori, parser, alberi: tutti hanno un <code>map</code> con la stessa forma. Il functor è il nome di questa interfaccia comune, e la sua legge dice che <code>map</code> non cambia la struttura.
+@@s024 La stessa forma, ovunque
+@@s025 Nelle settimane precedenti hai scritto più volte <code>map</code>. Le firme sono quasi identiche:
+@@s026 contenitore
+@@s027 firma di map
+@@s028 Gen
+@@s029 <code>def map[A,B](ga: Gen[A])(f: A =&gt; B): Gen[B]</code>
+@@s030 List
+@@s031 <code>def map[A,B](la: List[A])(f: A =&gt; B): List[B]</code>
+@@s032 Option
+@@s033 <code>def map[A,B](oa: Option[A])(f: A =&gt; B): Option[B]</code>
+@@s034 Anche <code>State</code>, <code>Par</code>, <code>Parser</code> e <code>Tree</code> seguono lo stesso schema. Quindi si può scrivere una sola interfaccia. Il nome <i>Functor</i> è quello della tradizione (le slide ammettono che <i>Mappable</i> sarebbe più chiaro).
+@@s035 map: la forma resta, i valori cambiano
+@@s036 Il trait Functor e la sua legge
+@@s037 Il trait ha un tipo costruttore <code>F[_]</code> (come nel foldable) e un’estensione <code>map</code>:
+@@s038 <code>trait Functor[F[_]]</code> con <code>extension [A](fa: F[A]) def map[B](f: A =&gt; B): F[B]</code>. Il <code>map</code> prende un <code>F[A]</code>, applica f a ciò che c'è dentro e restituisce un <code>F[B]</code>.
+@@s039 La <b>legge</b> di identità (dalle slide): <code>fa.map(identity) === fa</code>. Con <code>identity</code> non si cambia nulla, quindi la struttura non deve cambiare. La legge di composizione è la stessa idea con due funzioni: due map in fila equivalgono a un map della composizione.
+@@s040 La legge: map(identity) non cambia niente
+@@s041 Attenzione
+@@s042 Il compilatore non verifica la legge. Un <code>map</code> che fa cose strane (per esempio scarta elementi) compila lo stesso, ma non è un functor.
+@@s043 distribute: un unzipper generale
+@@s044 <code>distribute</code> prende un <code>F[(A, B)]</code> e restituisce una coppia <code>(F[A], F[B])</code>: separa le componenti. Con una lista di coppie è uno unzip. La definizione usa solo <code>map</code>:
+@@s045 <code>(fab.map { _._1 }, fab.map { _._2 })</code>.
+@@s046 Una lista di coppie diventa due liste
+@@s047 map2: combinare due contenitori
+@@s048 Con un solo <code>map</code> non puoi combinare due contenitori: ti serve <code>map2</code>, che prende <code>F[A]</code> e <code>F[B]</code> e una funzione <code>f(a, b)</code>. Nelle slide è definito con <code>flatMap</code> per Option, List e Gen:
+@@s049 <code>fa.flatMap(a =&gt; fb.map(b =&gt; f(a, b)))</code>
+@@s050 È il "zip" generalizzato (una specie di <code>zipWith</code>). Per Option il comportamento è chiaro: se un valore manca, manca il risultato. Per liste e generatori il significato cambia, e per questo la slide avverte che ogni tipo ha una sua intuizione.
+@@s051 map2 con due Option: serve che ci siano entrambi
+@@s052 Dove si usa
+@@s053 Il codice di <code>map</code>, <code>distribute</code> e <code>map2</code> sui tipi del corso è nella <a href="../esempi/s09-functor.html">pagina di esempi affiancata</a>. La <code>map2</code> sui generatori e sul parser, e la sua forma generale con <code>flatMap</code>, sono la <a href="s09-monad.html">pagina sulla monad</a>.

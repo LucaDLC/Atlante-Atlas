@@ -1,0 +1,386 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>foldRight and foldLeft</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+SCENE.foldleft = {
+  w: 520, h: 200,
+  codice: { lang: 'scala', testo: `def foldLeft[A, B](l: List[A], z: B, f: (B, A) => B): B =
+  l match
+    case Nil => z
+    case Cons(a, as) => foldLeft(as, f(z, a), f)` },
+  legenda: 'ora:element entering now,dato:accumulator,ok:result',
+  oggetti: [
+    { id: 'lista', tipo: 'celle', x: 30, y: 40, cw: 56, ch: 44, valori: ['1', '2', '3', '4'], indici: false },
+    { id: 'tl', tipo: 'testo', x: 142, y: 22, t: 'la lista', size: 12 },
+    { id: 'acc', tipo: 'rett', x: 330, y: 40, w: 160, h: 44, t: 'acc = 0', tono: 'dato' },
+    { id: 'ta', tipo: 'testo', x: 410, y: 22, t: 'accumulatore', size: 12 },
+    { id: 'expr', tipo: 'testo', x: 260, y: 150, t: '0', size: 17, bold: true }
+  ],
+  passi: [
+    { nota: '<p><code>foldLeft(List(1, 2, 3, 4), 0, _ + _)</code>. The accumulator starts from <code>z = 0</code>.</p>', righe: [1] },
+    { nota: '<p>First element: I calculate <b>right away</b> <code>f(acc, 1)</code> = 0 + 1 and pass the result to the next call.</p>', righe: [4],
+      set: { lista: { toni: { 0: 'ora' } }, acc: { t: 'acc = 1' }, expr: { t: '(0 + 1)' } } },
+    { nota: '<p>Second: 1 + 2. The accumulator already contains the result of everything I have seen.</p>', righe: [4],
+      set: { lista: { toni: { 0: 'spento', 1: 'ora' } }, acc: { t: 'acc = 3' }, expr: { t: '((0 + 1) + 2)' } } },
+    { nota: '<p>Third: 3 + 3.</p>', righe: [4],
+      set: { lista: { toni: { 0: 'spento', 1: 'spento', 2: 'ora' } }, acc: { t: 'acc = 6' }, expr: { t: '(((0 + 1) + 2) + 3)' } } },
+    { nota: '<p>Fourth: 6 + 4.</p>', righe: [4],
+      set: { lista: { toni: { 0: 'spento', 1: 'spento', 2: 'spento', 3: 'ora' } }, acc: { t: 'acc = 10' }, expr: { t: '((((0 + 1) + 2) + 3) + 4)' } } },
+    { nota: '<p>List finished: I return the accumulator. No operation was left pending: the call is in tail position, constant space. The brackets open <b>on the left</b>.</p>', righe: [3],
+      set: { lista: { toni: { 0: 'spento', 1: 'spento', 2: 'spento', 3: 'spento' } }, acc: { t: 'risultato 10', tono: 'ok' }, expr: { tono: 'ok' } } }
+  ]
+};
+SCENE.foldright = {
+  w: 520, h: 300,
+  codice: { lang: 'scala', testo: `def foldRight[A, B](l: List[A], z: B, f: (A, B) => B): B =
+  l match
+    case Nil => z
+    case Cons(a, as) => f(a, foldRight(as, z, f))` },
+  legenda: 'ora:element visited,due:operation pending,ok:operation closed',
+  oggetti: [
+    { id: 'lista', tipo: 'celle', x: 30, y: 40, cw: 56, ch: 44, valori: ['1', '2', '3', '4'], indici: false },
+    { id: 'tl', tipo: 'testo', x: 142, y: 22, t: 'la lista', size: 12 },
+    { id: 'tp', tipo: 'testo', x: 410, y: 22, t: 'in sospeso (pila)', size: 12 },
+    { id: 'p1', tipo: 'rett', x: 330, y: 230, w: 160, h: 38, t: '1 + ?', nascosto: true },
+    { id: 'p2', tipo: 'rett', x: 330, y: 184, w: 160, h: 38, t: '2 + ?', nascosto: true },
+    { id: 'p3', tipo: 'rett', x: 330, y: 138, w: 160, h: 38, t: '3 + ?', nascosto: true },
+    { id: 'p4', tipo: 'rett', x: 330, y: 92, w: 160, h: 38, t: '4 + ?', nascosto: true },
+    { id: 'z', tipo: 'rett', x: 330, y: 46, w: 160, h: 38, t: 'z = 0', nascosto: true },
+    { id: 'expr', tipo: 'testo', x: 145, y: 170, t: '', size: 15, bold: true }
+  ],
+  passi: [
+    { nota: '<p><code>foldRight(List(1, 2, 3, 4), 0, _ + _)</code>.</p>', righe: [1] },
+    { nota: '<p>First element: <code>f(1, foldRight(rest))</code>. To add 1 I need the result of the rest, which I <b>do not have yet</b>. The operation stays pending.</p>', righe: [4],
+      set: { lista: { toni: { 0: 'ora' } }, p1: { nascosto: false, tono: 'due' }, expr: { t: '1 + (…)' } } },
+    { nota: '<p>Same thing for 2: another pending operation.</p>', righe: [4],
+      set: { lista: { toni: { 0: 'spento', 1: 'ora' } }, p2: { nascosto: false, tono: 'due' }, expr: { t: '1 + (2 + (…))' } } },
+    { nota: '<p>And for 3.</p>', righe: [4],
+      set: { lista: { toni: { 0: 'spento', 1: 'spento', 2: 'ora' } }, p3: { nascosto: false, tono: 'due' }, expr: { t: '1 + (2 + (3 + (…)))' } } },
+    { nota: '<p>And for 4. The stack contains 4 open operations.</p>', righe: [4],
+      set: { lista: { toni: { 0: 'spento', 1: 'spento', 2: 'spento', 3: 'ora' } }, p4: { nascosto: false, tono: 'due' }, expr: { t: '1 + (2 + (3 + (4 + …)))' } } },
+    { nota: '<p>List finished: <code>case Nil => z</code>. Now I have the first real value: 0.</p>', righe: [3],
+      set: { lista: { toni: { 0: 'spento', 1: 'spento', 2: 'spento', 3: 'spento' } }, z: { nascosto: false, tono: 'ok' }, expr: { t: '1 + (2 + (3 + (4 + 0)))' } } },
+    { nota: '<p>The operations are closed <b>from the last</b>: 4 + 0 = 4.</p>', righe: [4],
+      set: { z: { nascosto: true }, p4: { t: '4 + 0 = 4', tono: 'ok' }, expr: { t: '1 + (2 + (3 + 4))' } } },
+    { nota: '<p>3 + 4 = 7.</p>', righe: [4],
+      set: { p4: { nascosto: true }, p3: { t: '3 + 4 = 7', tono: 'ok' }, expr: { t: '1 + (2 + 7)' } } },
+    { nota: '<p>2 + 7 = 9.</p>', righe: [4],
+      set: { p3: { nascosto: true }, p2: { t: '2 + 7 = 9', tono: 'ok' }, expr: { t: '1 + 9' } } },
+    { nota: '<p>1 + 9 = <b>10</b>. It is the sequence "10 9 7 4 0" of slide 10. The brackets open <b>on the right</b>, and the stack has reached n operations: it is not in tail position.</p>', righe: [4],
+      set: { p2: { nascosto: true }, p1: { t: '1 + 9 = 10', tono: 'ok' }, expr: { t: '10', tono: 'ok' } } }
+  ]
+};
+</script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  const T = (id, x, y, t, extra) => Object.assign({ id, tipo: 'testo', x, y, t, size: 13 }, extra || {});
+  const R = (id, x, y, w, h, t, extra) => Object.assign({ id, tipo: 'rett', x, y, w, h, t }, extra || {});
+  const F = (id, x1, y1, x2, y2, t, extra) => Object.assign({ id, tipo: 'vett', x1, y1, x2, y2, t }, extra || {});
+  const C = (id, x, y, valori, extra) => Object.assign({ id, tipo: 'celle', x, y, cw: 52, ch: 40, valori, indici: false }, extra || {});
+
+    const K = [['la lista', 'l'], ['int acc = 0;', 'z (partenza)'], ['acc = acc + x;', 'f (come combinare)'], ['for (x : l)', 'il fold stesso']];
+    const og = [T('hj', 150, 22, 'Java', { bold: true }), T('hf', 440, 22, 'fold', { bold: true })];
+    K.forEach(([j, f], i) => og.push(R('j' + i, 40, 36 + i * 44, 220, 34, j, { tono: 'spento' }), R('f' + i, 330, 36 + i * 44, 220, 34, f, { tono: 'spento' }), F('a' + i, 262, 53 + i * 44, 326, 53 + i * 44, '', { nascosto: true })));
+    og.push(T('c', 295, 228, '', { size: 12 }));
+    const acc = i => ({ ['j' + i]: { tono: 'dato' }, ['f' + i]: { tono: 'ora' }, ['a' + i]: { nascosto: false } });
+    SCENE.ingredienti = {
+      w: 590, h: 240, lato: true,
+      legenda: 'dato:piece of the Java loop,ora:piece of the fold',
+      oggetti: og,
+      passi: [
+        { nota: "Sommare una lista in Java: una variabile che parte da 0, un ciclo, un +=. Un fold ha gli <b>stessi pezzi</b>, ma senza variabile." },
+        { nota: "La lista da scorrere è l'argomento <code>l</code>.", set: acc(0) },
+        { nota: "Il valore iniziale della variabile diventa <code>z</code>: per la somma, 0.", set: acc(1) },
+        { nota: "L'aggiornamento dentro il ciclo diventa la funzione <code>f</code>: per la somma <code>_ + _</code>.", set: acc(2) },
+        { nota: "Il ciclo stesso è il fold (foldLeft o foldRight). Come scegliere z: \"quanto vale il fold di una lista vuota?\" Somma 0, prodotto 1, lunghezza 0, lista costruita Nil.", set: Object.assign(acc(3), { c: { t: 'z = risultato sulla lista vuota: somma 0, prodotto 1, lista Nil' } }) }
+      ]
+    };
+
+    SCENE.sottrazione = {
+      w: 590, h: 250, lato: true,
+      legenda: 'ora:foldRight (brackets on the right),due:foldLeft (brackets on the left),ok:result',
+      oggetti: [
+        T('hr', 150, 24, 'foldRight(List(1,2,3,4), 0, _ - _)', { bold: true, size: 12 }), T('hl', 440, 24, 'foldLeft(List(1,2,3,4), 0, _ - _)', { bold: true, size: 12 }),
+        T('r0', 150, 60, '1 - (2 - (3 - (4 - 0)))', { tono: 'ora' }), T('l0', 440, 60, '(((0 - 1) - 2) - 3) - 4', { tono: 'due' }),
+        T('r1', 150, 100, '', { tono: 'ora' }), T('l1', 440, 100, '', { tono: 'due' }), T('r2', 150, 140, '', { tono: 'ora' }), T('l2', 440, 140, '', { tono: 'due' }),
+        T('r3', 150, 180, '', { tono: 'ora' }), T('l3', 440, 180, '', { tono: 'due' }), T('c', 295, 230, '', { size: 12, bold: true })
+      ],
+      passi: [
+        { nota: "Con + l'ordine delle parentesi non conta. Con − sì. Stessa lista, stessa z, stessa f: le parentesi sono messe in modo opposto." },
+        { nota: "foldRight parte dalla parentesi più interna, a destra: 4 − 0 = 4. foldLeft parte da z, a sinistra: 0 − 1 = −1.", set: { r1: { t: '1 - (2 - (3 - 4))' }, l1: { t: '((-1 - 2) - 3) - 4' } } },
+        { nota: "Poi 3 − 4 = −1 a destra; −1 − 2 = −3 a sinistra.", set: { r2: { t: '1 - (2 - (-1))  =  1 - 3' }, l2: { t: '(-3 - 3) - 4  =  -6 - 4' } } },
+        { nota: "Risultati: foldRight <b>−2</b>, foldLeft <b>−10</b> (verificati). Per operazioni non associative i due fold danno risultati diversi.", set: { r3: { t: '-2', tono: 'ok' }, l3: { t: '-10', tono: 'ok' }, c: { t: '−2 ≠ −10: le parentesi contano' } } }
+      ]
+    };
+
+    SCENE.firme = {
+      w: 560, h: 120,
+      codice: { lang: 'scala', testo: `def foldRight[A, B](l: List[A], z: B, f: (A, B) => B): B = l match
+  case Nil => z
+  case Cons(a, as) => f(a, foldRight(as, z, f))
+@annotation.tailrec
+def foldLeft[A, B](l: List[A], z: B, f: (B, A) => B): B = l match
+  case Nil => z
+  case Cons(a, as) => foldLeft(as, f(z, a), f)` },
+      legenda: 'ora:what to compare',
+      oggetti: [T('c', 280, 40, '', { size: 13, bold: true }), T('c2', 280, 80, '', { size: 12 })],
+      passi: [
+        { nota: "Due tipi: A per gli elementi, B per il risultato. Possono essere diversi: da una List[String] puoi ottenere un Int.", righe: [1, 5], set: { c: { t: 'A = elementi, B = risultato' } } },
+        { nota: "L'ordine degli argomenti di f è <b>rovesciato</b>: foldRight vuole (elemento, risultato del resto), foldLeft (accumulatore, elemento). Attenzione quando scrivi la lambda.", righe: [1, 5], set: { c: { t: 'foldRight: (A, B) => B   ·   foldLeft: (B, A) => B' } } },
+        { nota: "Sulla lista vuota entrambi danno z.", righe: [2, 6], set: { c: { t: 'case Nil => z, in tutti e due' } } },
+        { nota: "foldRight chiama f <b>dopo</b> aver ottenuto il resto: la chiamata ricorsiva sta dentro f, non in coda. foldLeft calcola f(z, a) prima e lo passa come nuovo z: in coda, e @tailrec lo conferma.", righe: [3, 7], set: { c: { t: 'f(a, foldRight(…)): non in coda' }, c2: { t: 'foldLeft(as, f(z, a), f): in coda' } } }
+      ]
+    };
+
+    SCENE.treesempi = {
+      w: 580, h: 230, lato: true,
+      legenda: 'ora:element,dato:accumulator,ok:result',
+      oggetti: [T('h', 290, 24, 'length1: foldLeft(as, 0, (acc, _) => acc + 1)', { bold: true, size: 12 }), C('l', 40, 50, ['a', 'b', 'c']), R('acc', 260, 50, 280, 40, 'acc = 0', { tono: 'dato' }), T('c', 290, 150, '', { size: 12 }), T('c2', 290, 190, '', { size: 12 })],
+      passi: [
+        { nota: "Procedimento fisso: 1) cosa vale sulla lista vuota → z; 2) dato accumulatore ed elemento, come aggiorno → f. Lunghezza: z = 0; f conta 1 per elemento e <b>scarta</b> l'elemento con _." },
+        { nota: "a: acc = 1. b: 2. c: 3. È in coda, al contrario della length ricorsiva.", set: { l: { toni: { 0: 'ok', 1: 'ok', 2: 'ok' } }, acc: { t: 'acc = 3', tono: 'ok' } } },
+        { nota: "Invertire: z = Nil, f = <code>(acc, a) =&gt; Cons(a, acc)</code>. Ogni elemento va <b>davanti</b> all'accumulatore.", set: { h: { t: 'foldLeft(List(1, 2, 3), Nil, (acc, a) => Cons(a, acc))' }, l: { valori: ['1', '2', '3'], toni: {} }, acc: { t: 'acc = Nil', tono: 'dato' } } },
+        { nota: "1 davanti a Nil, poi 2 davanti a 1, poi 3 davanti a tutti: List(3, 2, 1). Il primo visitato finisce in fondo.", set: { l: { toni: { 0: 'ok', 1: 'ok', 2: 'ok' } }, acc: { t: 'Cons(3, Cons(2, Cons(1, Nil)))', tono: 'ok' } } },
+        { nota: "Prodotto: z = 1, <b>mai 0</b>, altrimenti ogni prodotto vale 0. map con foldRight: z = Nil, f = (a, z) =&gt; Cons(f(a), z), che mantiene l'ordine.", set: { c: { t: 'product: foldLeft(as, 1, _ * _)' }, c2: { t: 'map: foldRight(l, Nil, (a, z) => Cons(f(a), z))' } } }
+      ]
+    };
+
+    SCENE.scegli = {
+      w: 590, h: 250, lato: true,
+      legenda: 'ora:foldRight,due:foldLeft',
+      oggetti: [
+        T('hr', 150, 24, 'foldRight', { bold: true, tono: 'ora' }), T('hl', 440, 24, 'foldLeft', { bold: true, tono: 'due' }),
+        T('d', 295, 60, '', { size: 12, bold: true }),
+        T('r', 150, 100, '', { size: 12 }), T('l', 440, 100, '', { size: 12 }), T('r2', 150, 130, '', { size: 12 }), T('l2', 440, 130, '', { size: 12 }),
+        T('c', 295, 220, '', { size: 12 })
+      ],
+      passi: [
+        { nota: "Cinque domande per scegliere. <b>Parentesi</b>: a destra o a sinistra?", set: { d: { t: 'parentesi' }, r: { t: 'f(a1, f(a2, f(a3, z)))' }, l: { t: 'f(f(f(z, a1), a2), a3)' } } },
+        { nota: "<b>Pila</b>: foldRight tiene in sospeso un'operazione per elemento (può esaurirsi); foldLeft è in coda, spazio costante.", set: { d: { t: 'pila usata' }, r: { t: '∝ lunghezza' }, l: { t: 'costante (in coda)' } } },
+        { nota: "<b>Costruire con Cons</b>: foldRight dà la stessa lista, foldLeft la lista invertita.", set: { d: { t: 'costruire con Cons' }, r: { t: 'stesso ordine' }, l: { t: 'lista invertita' } } },
+        { nota: "<b>Argomenti di f</b>: (elemento, risultato) contro (accumulatore, elemento).", set: { d: { t: 'argomenti di f' }, r: { t: '(elemento, risultato)' }, l: { t: '(accumulatore, elemento)' } } },
+        { nota: "<b>Liste pigre</b> (settimana 4): foldRight può fermarsi prima, foldLeft consuma sempre tutto. E la regola del foglio: prima una funzione dedicata (map, filter…), poi un fold, la ricorsione a mano solo se serve.", set: { d: { t: 'liste pigre' }, r: { t: 'può fermarsi prima' }, l: { t: 'consuma tutto' }, c: { t: 'funzione dedicata > fold > ricorsione a mano' } } }
+      ]
+    };
+
+    SCENE.errorifold = {
+      w: 580, h: 210, lato: true,
+      legenda: 'no:wrong,ok:correct',
+      oggetti: [R('s', 20, 30, 540, 40, 'foldLeft(as, 0, f(acc, _) => acc + 1)', { tono: 'no' }), T('m', 290, 94, 'not a legal formal parameter for a function literal', { size: 12 }), R('g', 20, 120, 540, 40, '', { tono: 'ok', nascosto: true }), T('c', 290, 190, '', { size: 12 })],
+      passi: [
+        { nota: "Primo errore: a sinistra della freccia di una lambda vanno <b>solo i nomi</b> dei parametri. <code>f(acc, _)</code> non è un nome." },
+        { nota: "Corretto: <code>(acc, _) =&gt; acc + 1</code>.", set: { g: { nascosto: false, t: 'foldLeft(as, 0, (acc, _) => acc + 1)' } } },
+        { nota: "Secondo errore: i <code>case</code> scritti senza <code>l match</code>. Scala legge dei case da soli come una funzione anonima (x$1 =&gt; x$1 match …) e protesta: \"Missing parameter type\".", set: { s: { t: 'def foldLeft(…): B =  case Nil => z' }, m: { t: 'Missing parameter type … x$1' }, g: { nascosto: true } } },
+        { nota: "Corretto: <code>= l match</code> prima dei case. Messaggio strano, causa semplice.", set: { g: { nascosto: false, t: 'def foldLeft(…): B = l match  case Nil => z' }, c: { t: 'i case vanno sempre dopo un x match' } } }
+      ]
+    };
+  
+})();
+</script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  const T = (id, x, y, t, extra) => Object.assign({ id, tipo: 'testo', x, y, t, size: 13 }, extra || {});
+  const R = (id, x, y, w, h, t, extra) => Object.assign({ id, tipo: 'rett', x, y, w, h, t }, extra || {});
+  const F = (id, x1, y1, x2, y2, t, extra) => Object.assign({ id, tipo: 'vett', x1, y1, x2, y2, t }, extra || {});
+  const C = (id, x, y, valori, extra) => Object.assign({ id, tipo: 'celle', x, y, cw: 52, ch: 40, valori, indici: false }, extra || {});
+
+    const S = [['var (variabili)', 'val (valori)'], ['assegnamenti', 'legami di valori'], ['return', 'valore dell’espressione'], ['Any / Object', 'polimorfismo parametrico'], ['cicli → ricorsione in coda → ricorsione', 'fold → funzioni dedicate'], ['if', 'pattern matching → API dedicata'], ['eccezioni', 'Option o Either']];
+    const og = [T('h1', 150, 22, 'condannato (fail)', { bold: true, size: 12, tono: 'no' }), T('h2', 440, 22, 'illuminato (voto alto)', { bold: true, size: 12, tono: 'ok' })];
+    S.forEach(([a, b], i) => og.push(R('a' + i, 20, 34 + i * 30, 260, 26, a, { tono: 'spento', nascosto: true }), R('b' + i, 310, 34 + i * 30, 260, 26, b, { tono: 'spento', nascosto: true }), F('f' + i, 282, 47 + i * 30, 306, 47 + i * 30, '', { nascosto: true })));
+    const riga = i => ({ ['a' + i]: { nascosto: false, tono: 'no' }, ['b' + i]: { nascosto: false, tono: 'ok' }, ['f' + i]: { nascosto: false } });
+    SCENE.stile = {
+      w: 590, h: 250, lato: true,
+      legenda: 'no:to avoid,ok:preferred',
+      oggetti: og,
+      passi: [
+        { nota: "La slide 11 della settimana 2: per ogni esercizio scegli lo stile migliore che sai usare. A sinistra ciò che fa fallire, a destra ciò che dà il voto alto." },
+        { nota: "<b>Dati</b>: valori (val) invece di variabili; legami di valori invece di assegnamenti; il valore dell'espressione invece di return.", set: Object.assign(riga(0), riga(1), riga(2)) },
+        { nota: "<b>Tipi</b>: polimorfismo parametrico ([A]) invece di Any/Object.", set: riga(3) },
+        { nota: "<b>Iterare</b>: cicli &lt; ricorsione in coda &lt; ricorsione semplice &lt; fold &lt; funzioni dedicate di ordine superiore (map, filter…). La ricorsione in coda e il fold vanno bene se richiesti o se conta la memoria.", set: riga(4) },
+        { nota: "<b>Decidere</b>: if &lt; pattern matching &lt; API dedicata. <b>Errori</b>: eccezioni &lt; Option o Either.", set: Object.assign(riga(5), riga(6)) }
+      ]
+    };
+  
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>foldRight and foldLeft</h1>
+  <p class="lede">A <b>fold</b> reduces a list to a single value: you start from an initial value <code>z</code> and combine the elements one at a time with a function <code>f</code>. It is the <code>for</code> loop of functional programming. The two folds differ only in the <b>direction</b> in which they put the brackets.</p>
+</header>
+
+<section>
+  <h2>The ingredients</h2>
+  <p>Think of how you would sum a list in Java: a variable starting from 0, a loop, a <code>+=</code>. A fold has the same pieces, but without a variable.</p>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>In Java</th><th>In the fold</th><th>For the sum</th></tr></thead>
+    <tbody>
+      <tr><td>the list to go through</td><td><code>l</code></td><td><code>List(1, 2, 3, 4)</code></td></tr>
+      <tr><td><code>int acc = 0;</code></td><td><code>z</code>, the starting value</td><td><code>0</code></td></tr>
+      <tr><td><code>acc = acc + x;</code></td><td><code>f</code>, how to combine</td><td><code>_ + _</code></td></tr>
+      <tr><td>the <code>for</code></td><td>the fold itself</td><td><code>foldLeft</code> or <code>foldRight</code></td></tr>
+    </tbody>
+  </table></div>
+  <div class="box regola" data-tit="Z is the result of the empty list">
+    <p>Choose <code>z</code> by asking yourself: "what must the fold of an <b>empty</b> list be worth?" Sum → 0. Product → 1. Length → 0. Constructed list → <code>Nil</code>.</p>
+  </div>
+  <figure class="scena" data-scena="ingredienti" data-titolo="From the Java loop to the pieces of the fold"></figure>
+</section>
+
+<section>
+  <h2>foldLeft: the accumulator goes forward</h2>
+  <figure class="scena" data-scena="foldleft" data-titolo="foldLeft(List(1, 2, 3, 4), 0, _ + _)"></figure>
+</section>
+
+<section>
+  <h2>foldRight: the operations wait</h2>
+  <figure class="scena" data-scena="foldright" data-titolo="foldRight(List(1, 2, 3, 4), 0, _ + _)"></figure>
+</section>
+
+<section>
+  <h2>With subtraction the result changes</h2>
+  <p>With <code>+</code> the order of the brackets does not matter. With <code>-</code> it does: that is why the two folds are really different.</p>
+  <figure class="passi" data-titolo="foldRight(List(1, 2, 3, 4), 0, _ - _)">
+    <div class="passo"><div class="espr">1 - (2 - (3 - (<mark class="ora">4 - 0</mark>)))</div><p class="nota">Brackets on the right. One starts from the innermost.</p></div>
+    <div class="passo"><div class="espr">1 - (2 - (<mark class="ora">3 - 4</mark>))</div><p class="nota">4 − 0 = 4.</p></div>
+    <div class="passo"><div class="espr">1 - (<mark class="ora">2 - (-1)</mark>)</div><p class="nota">3 − 4 = −1.</p></div>
+    <div class="passo"><div class="espr"><mark class="ora">1 - 3</mark></div><p class="nota">2 − (−1) = 3.</p></div>
+    <div class="passo"><div class="espr"><mark class="ok">-2</mark></div><p class="nota">Result of foldRight (checked).</p></div>
+  </figure>
+  <figure class="passi" data-titolo="foldLeft(List(1, 2, 3, 4), 0, _ - _)">
+    <div class="passo"><div class="espr">(((<mark class="ora">0 - 1</mark>) - 2) - 3) - 4</div><p class="nota">Brackets on the left. One starts from <code>z</code>.</p></div>
+    <div class="passo"><div class="espr">((<mark class="ora">-1 - 2</mark>) - 3) - 4</div><p class="nota">0 − 1 = −1.</p></div>
+    <div class="passo"><div class="espr">(<mark class="ora">-3 - 3</mark>) - 4</div><p class="nota">…</p></div>
+    <div class="passo"><div class="espr"><mark class="ora">-6 - 4</mark></div><p class="nota">…</p></div>
+    <div class="passo"><div class="espr"><mark class="ok">-10</mark></div><p class="nota">Result of foldLeft (checked). Different from −2.</p></div>
+  </figure>
+  <figure class="scena" data-scena="sottrazione" data-titolo="Brackets on the right, brackets on the left"></figure>
+</section>
+
+<section>
+  <h2>The two signatures, compared</h2>
+  <figure class="codice" data-titolo="foldRight and foldLeft of the course">
+<pre data-lang="scala">def foldRight[A, B](l: List[A], z: B, f: (A, B) => B): B = l match
+  case Nil => z
+  case Cons(a, as) => f(a, foldRight(as, z, f))
+
+@annotation.tailrec
+def foldLeft[A, B](l: List[A], z: B, f: (B, A) => B): B = l match
+  case Nil => z
+  case Cons(a, as) => foldLeft(as, f(z, a), f)</pre>
+    <ol class="spiega">
+      <li data-righe="1,6" data-segna="[A, B]*@due"><p>Two types: <code>A</code> the elements, <code>B</code> the result. They can be different: from a <code>List[String]</code> you can obtain an <code>Int</code>.</p></li>
+      <li data-righe="1" data-segna="(A, B) => B@ora"><p>In <code>foldRight</code>, <code>f</code> receives <b>first the element</b>, then the result of the rest.</p></li>
+      <li data-righe="6" data-segna="(B, A) => B@ora"><p>In <code>foldLeft</code>, <code>f</code> receives <b>first the accumulator</b>, then the element. The order is reversed: be careful when you write the lambda.</p></li>
+      <li data-righe="2,7" data-segna="=> z*@ok"><p>In both, on the empty list the result is <code>z</code>.</p></li>
+      <li data-righe="3" data-segna="f(a, foldRight(as, z, f))@due"><p><code>foldRight</code> calls <code>f</code> <b>after</b> having obtained the result of the rest: the recursive call is inside <code>f</code>, not in tail position.</p></li>
+      <li data-righe="8" data-segna="f(z, a)@ora|foldLeft(as, @ok"><p><code>foldLeft</code> computes <code>f(z, a)</code> <b>first</b> and passes it as the new <code>z</code>. The call is in tail position: <code>@tailrec</code> confirms it.</p></li>
+    </ol>
+  </figure>
+  <figure class="scena" data-scena="firme" data-titolo="Order of the arguments of f and position of the recursion"></figure>
+</section>
+
+<section>
+  <h2>What do I put as arguments? Three examples</h2>
+  <p>The procedure is always the same: 1) what is worth on the empty list → <code>z</code>; 2) given the accumulator and an element, how do I update → <code>f</code>.</p>
+  <figure class="passi" data-titolo="length with foldLeft (exercise 8)">
+    <div class="passo">
+      <div class="espr">def length1[A](as: List[A]): Int =
+  foldLeft(as, <mark class="ok">0</mark>, ???)</div>
+      <p class="nota">The length of the empty list is 0: <code>z = 0</code>.</p>
+    </div>
+    <div class="passo">
+      <div class="espr">f: (<mark class="dato">B</mark>, <mark class="due">A</mark>) => B   con B = Int
+f(<mark class="dato">acc</mark>, <mark class="due">elemento</mark>) = ?</div>
+      <p class="nota"><code>f</code> receives the accumulator (how many I have counted) and the element.</p>
+    </div>
+    <div class="passo">
+      <div class="espr">(<mark class="dato">acc</mark>, <mark class="due">_</mark>) => <mark class="ora">acc + 1</mark></div>
+      <p class="nota">To count I am not interested in <b>what</b> is in the element: I discard it with <code>_</code> and add 1.</p>
+    </div>
+    <div class="passo">
+      <div class="espr">def length1[A](as: List[A]): Int =
+  foldLeft(as, 0, <mark class="ok">(acc, _) => acc + 1</mark>)</div>
+      <p class="nota">Done. And it is in tail position, unlike the recursive <code>length</code>.</p>
+    </div>
+  </figure>
+  <figure class="passi" data-titolo="reverse with foldLeft (exercise 9)">
+    <div class="passo">
+      <div class="espr">foldLeft(List(1, 2, 3), <mark class="dato">Nil</mark>, (acc, a) => Cons(a, acc))</div>
+      <p class="nota">The reverse of the empty list is the empty list. <code>f</code> puts the element <b>in front</b> of the accumulator.</p>
+    </div>
+    <div class="passo"><div class="espr">acc = Cons(<mark class="ora">1</mark>, Nil)</div><p class="nota">First element in front of Nil.</p></div>
+    <div class="passo"><div class="espr">acc = Cons(<mark class="ora">2</mark>, Cons(1, Nil))</div><p class="nota">The second goes <b>in front</b> of the first.</p></div>
+    <div class="passo"><div class="espr">acc = Cons(<mark class="ora">3</mark>, Cons(2, Cons(1, Nil)))</div><p class="nota">The third in front of everyone.</p></div>
+    <div class="passo"><div class="espr"><mark class="ok">List(3, 2, 1)</mark></div><p class="nota">The reversal is not a trick: I visit from the left and always add at the head, so the first visited ends up at the bottom.</p></div>
+  </figure>
+  <pre class="cod" data-lang="scala">def product(as: List[Int]): Int = foldLeft(as, 1, _ * _)       // z = 1, mai 0
+def map[A, B](l: List[A], f: A => B): List[B] =
+  foldRight[A, List[B]](l, Nil, (a, z) => Cons(f(a), z))       // dalla testa del file</pre>
+  <figure class="scena" data-scena="treesempi" data-titolo="length, reverse, product"></figure>
+</section>
+
+<section>
+  <h2>Which to choose</h2>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Question</th><th>foldRight</th><th>foldLeft</th></tr></thead>
+    <tbody>
+      <tr><td>Brackets</td><td><code>f(a1, f(a2, f(a3, z)))</code></td><td><code>f(f(f(z, a1), a2), a3)</code></td></tr>
+      <tr><td>Stack used</td><td>∝ length (can run out)</td><td>constant, it is in tail position</td></tr>
+      <tr><td>Building with <code>Cons</code> gives…</td><td>the same list, same order</td><td>the reversed list</td></tr>
+      <tr><td>Arguments of <code>f</code></td><td><code>(element, result)</code></td><td><code>(accumulator, element)</code></td></tr>
+      <tr><td>On lazy lists (week 4)</td><td>can stop earlier</td><td>always consumes everything</td></tr>
+    </tbody>
+  </table></div>
+  <div class="box esame" data-tit="Style, from week 2">
+    <p>The exercise sheet: "from now on explicit recursion is a bad smell". Use a dedicated function (<code>map</code>, <code>filter</code>…) if it exists; a fold only if those are not enough; hand-written recursion only for non-standard iterations.</p>
+  </div>
+  <figure class="scena" data-scena="scegli" data-titolo="Five questions to choose the fold"></figure>
+</section>
+
+<section>
+  <h2>The course's preferred style (slide 11)</h2>
+  <p>For each exercise the course asks for the best style you know how to use. The slide puts in a row, from "condemned" (makes you fail) to "enlightened" (high grade): variables against values, assignments against value bindings, <code>return</code> against the value of the expression, Any/Object against parametric polymorphism, exceptions against Option or Either.</p>
+  <p>For iteration the scale is long: loops, then tail recursion, then simple recursion, then fold, then dedicated higher-order functions composed together (map, filter, flatMap…). To decide: if, then pattern matching, then a dedicated API. Tail recursion and fold remain right when the exercise asks for them explicitly or when memory (the stack) matters. It is the same rule as the exercise sheet: "from now on explicit recursion is a bad smell".</p>
+  <figure class="scena" data-scena="stile" data-titolo="From condemned to enlightened, line by line"></figure>
+</section>
+
+<section>
+  <h2>Typical errors</h2>
+  <div class="errori">
+    <div class="errore">
+      <pre data-lang="scala">foldLeft(as, 0, f(acc, _) => acc + 1)</pre>
+      <pre class="msg">not a legal formal parameter for a function literal
+Not found: acc</pre>
+      <div class="fix">A sinistra della freccia vanno solo i nomi dei parametri tra parentesi, senza <code>f</code> davanti: <code>(acc, _) => acc + 1</code>.</div>
+    </div>
+    <div class="errore">
+      <pre data-lang="scala">def foldLeft[A, B](l: List[A], z: B, f: (B, A) => B): B =
+  case Nil => z</pre>
+      <pre class="msg">Missing parameter type
+
+I could not infer the type of the parameter x$1
+in expanded function:
+  x$1 => x$1 match { case Nil => z … }</pre>
+      <div class="fix">Messaggio strano, causa semplice: manca <code>l match</code>. Dei <code>case</code> scritti da soli Scala li legge come una <b>funzione anonima</b> (<code>x$1 => x$1 match …</code>) e non capisce il tipo del suo parametro. Scrivi <code>= l match</code> prima dei <code>case</code>.</div>
+    </div>
+  </div>
+  <figure class="scena" data-scena="errorifold" data-titolo="Lambda parameters and missing match"></figure>
+</section>
+
+</main>
+</body>
+</html>

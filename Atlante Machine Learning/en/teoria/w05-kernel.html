@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Kernel and feature transformations</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  const T = (id, x, y, t, extra) => Object.assign({ id, tipo: 'testo', x, y, t, size: 14 }, extra || {});
+  const G = (id, x, y, vals, extra) => Object.assign({ id, tipo: 'griglia', x, y, cw: 44, ch: 30, valori: vals }, extra || {});
+  const R = (id, x, y, w, h, t, extra) => Object.assign({ id, tipo: 'rett', x, y, w, h, t }, extra || {});
+  const pl = p => p.concat(p.slice().reverse());
+
+  // 1. l'idea (scena originale)
+  const X = [-2, -1, 0, 1, 2], f = x => 1 + 0.5 * x * x;
+  const ogg = [{ id: 'ax', tipo: 'assi', box: [40, 15, 350, 175], dom: [-2.5, 4.5, 0, 3.5], tacche: 1 }];
+  X.forEach((x, i) => ogg.push({ id: 'p' + i, tipo: 'punto', in: 'ax', x, y: f(x), tono: 'dato' }));
+  const xs = []; for (let x = -2.2; x <= 2.21; x += 0.2) xs.push(+x.toFixed(2));
+  xs.slice(0, -1).forEach((x, k) => ogg.push({ id: 'c' + k, tipo: 'linea', in: 'ax', x1: x, y1: f(x), x2: xs[k + 1], y2: f(xs[k + 1]), tono: 'spento', nascosto: true }));
+  ogg.push({ id: 'retta', tipo: 'linea', in: 'ax', x1: -0.2, y1: 0.9, x2: 4.4, y2: 3.2, tono: 'ok', nascosto: true });
+  ogg.push({ id: 'ex', tipo: 'testo', x: 380, y: 170, t: 'x', size: 14, bold: true });
+  ogg.push({ id: 'n', tipo: 'testo', x: 215, y: 222, t: '', size: 13, bold: true });
+  const curva = v => Object.fromEntries(xs.slice(0, -1).map((_, k) => ['c' + k, { nascosto: !v }]));
+  const sposta = Object.fromEntries(X.map((x, i) => ['p' + i, { x: x * x, tono: 'ora' }]));
+  SCENE.feature = {
+    w: 420, h: 235, lato: true,
+    legenda: 'dato:data in the original space,ora:the same data in the feature space,ok:linear model in the new space',
+    oggetti: ogg,
+    passi: [
+      { nota: 'Five points (x, y). A line y = w₀ + w₁x does not describe them: they rise on both sides.' },
+      { nota: 'They lie on a parabola, y = 1 + 0.5x². Curved in x.', set: Object.assign(curva(true), { n: { t: 'y = 1 + 0.5 x²' } }) },
+      { nota: '<b>Feature mapping</b>: instead of x I use the new feature z = φ(x) = x². I move every point horizontally from x to x²: (−2, 3) goes to (4, 3), (1, 1.5) stays at (1, 1.5)…', set: Object.assign(curva(false), sposta, { ex: { t: 'z = x²' }, n: { t: '' } }) },
+      { nota: 'In the new space the points lie on a <b>line</b>: y = 1 + 0.5z. The model is linear in the weights and is learned with the same least squares as always. Going back to x it is a parabola.', set: { retta: { nascosto: false }, n: { t: 'y = w₀ + w₁ z   con z = x²', tono: 'ok' } } }
+    ]
+  };
+
+  // 2. φ: da un numero a un vettore
+  const giro = (x, v) => ({ xi: { t: 'x = ' + x }, out: { valori: v.map(String), toni: { 0: 'ora', 1: 'ora', 2: 'ora' } } });
+  SCENE.phi = {
+    w: 600, h: 220, lato: true,
+    legenda: 'dato:the input,ora:the feature vector',
+    oggetti: [
+      R('xi', 20, 70, 90, 44, 'x = −1', { tono: 'dato' }),
+      { id: 'a1', tipo: 'vett', x1: 112, y1: 92, x2: 168, y2: 92, t: '' },
+      R('ph', 170, 60, 150, 64, 'φ(x) = [1, x, x²]', { tono: 'ora' }),
+      { id: 'a2', tipo: 'vett', x1: 322, y1: 92, x2: 368, y2: 92, t: '' },
+      { id: 'out', tipo: 'celle', x: 370, y: 75, cw: 60, valori: ['', '', ''], etichette: ['1', 'x', 'x²'] },
+      T('c', 300, 180, '', { size: 13 })
+    ],
+    passi: [
+      { nota: "Un <b>kernel</b> in questo corso (o <i>feature mapping</i>) è una funzione φ (phi) che trasforma l'ingresso in un <b>vettore di feature</b>. Qui φ(x) = [1, x, x²]." },
+      Object.assign({ nota: "x = −1: φ(−1) = [1, −1, 1]." }, { set: giro(-1, [1, -1, 1]) }),
+      Object.assign({ nota: "x = 2: φ(2) = [1, 2, 4]." }, { set: giro(2, [1, 2, 4]) }),
+      Object.assign({ nota: "x = 3: φ(3) = [1, 3, 9]. Un numero è diventato tre numeri: ogni dato ora vive in uno spazio a 3 dimensioni, lo <b>spazio delle feature</b>. Il modello y = w · φ(x) è lineare in w.", }, { set: Object.assign(giro(3, [1, 3, 9]), { c: { t: 'da ℝ a ℝ³: lo spazio delle feature' } }) })
+    ]
+  };
+
+  // 3. la design matrix Φ
+  const vuote = [['', '', ''], ['', '', ''], ['', '', ''], ['', '', ''], ['', '', '']];
+  const Phi = [['1', '−2', '4'], ['1', '−1', '1'], ['1', '0', '0'], ['1', '1', '1'], ['1', '2', '4']];
+  const fino = k => Phi.map((r, i) => i < k ? r : ['', '', '']);
+  SCENE.phimat = {
+    w: 600, h: 262, lato: true,
+    legenda: 'dato:the data x,ora:the row φ(xᵢ),ok:the weights',
+    oggetti: [
+      T('tx', 70, 28, 'x', { bold: true, size: 13 }), G('x', 48, 40, [['−2'], ['−1'], ['0'], ['1'], ['2']], { toni: { '0,0': 'dato', '1,0': 'dato', '2,0': 'dato', '3,0': 'dato', '4,0': 'dato' } }),
+      T('tp', 220, 28, 'Φ', { bold: true, size: 13 }), G('P', 150, 40, vuote, { intC: ['1', 'x', 'x²'] }),
+      T('c1', 460, 70, '', { size: 13 }), T('c2', 460, 110, '', { size: 13 }), T('c3', 460, 160, '', { bold: true })
+    ],
+    passi: [
+      { nota: "Cinque dati x. Si applica φ a <b>ogni</b> dato e si mette il risultato in riga: la design matrix diventa <b>Φ</b> (Phi maiuscola)." },
+      { nota: "Prima riga: φ(−2) = [1, −2, 4].", set: { P: { valori: fino(1), toni: { '0,0': 'ora', '0,1': 'ora', '0,2': 'ora' } } } },
+      { nota: "Tutte le righe, una per dato.", set: { P: { valori: Phi, toni: {} }, c1: { t: 'Φ: 5 × 3' } } },
+      { nota: "Poi tutto come prima: <b>Φw ≈ y</b>, risolto con i minimi quadrati, w = Φ⁺y. Con le y della parabola si ottiene w = [1, 0, 0.5] (verificato con <code>lstsq</code>). Stessa pseudoinversa, stessa formula chiusa: cambiano solo le colonne.", set: { c2: { t: 'Φ w ≈ y  →  w = Φ⁺ y' }, c3: { t: 'w = [1, 0, 0.5]', tono: 'ok' } } }
+    ]
+  };
+
+  // 4. kernel in 2D
+  SCENE.quad2d = {
+    w: 600, h: 230, lato: true,
+    legenda: 'dato:the input (x, y),due:linear terms,ora:quadratic terms,ok:parameters',
+    oggetti: [
+      R('xi', 20, 80, 100, 44, '(x, y) = (2, 3)', { tono: 'dato' }),
+      { id: 'a1', tipo: 'vett', x1: 122, y1: 102, x2: 158, y2: 102, t: '' },
+      { id: 'out', tipo: 'celle', x: 160, y: 85, cw: 62, valori: ['', '', '', '', '', ''], etichette: ['1', 'x', 'y', 'x²', 'xy', 'y²'] },
+      T('c1', 300, 40, '', { size: 13 }), T('c2', 300, 175, '', { size: 13 }), T('c3', 300, 205, '', { size: 13, bold: true })
+    ],
+    passi: [
+      { nota: "Con due ingressi (per esempio la posizione della pupilla, x e y) il polinomio completo di grado 2 ha <b>6</b> termini." },
+      { nota: "Il termine costante e i due termini lineari: 1, x = 2, y = 3. Con solo questi il modello è <b>affine</b>.", set: { out: { valori: ['1', '2', '3', '', '', ''], toni: { 0: 'due', 1: 'due', 2: 'due' } }, c1: { t: 'affine: [1, x, y]' } } },
+      { nota: "I tre termini quadratici: x² = 4, xy = 6, y² = 9. Il termine misto xy conta: permette al modello di \"piegarsi\" in diagonale.", set: { out: { valori: ['1', '2', '3', '4', '6', '9'], toni: { 0: 'due', 1: 'due', 2: 'due', 3: 'ora', 4: 'ora', 5: 'ora' } }, c1: { t: 'quadratico: [1, x, y, x², xy, y²]' } } },
+      { nota: "6 feature = 6 parametri <b>per ogni uscita</b>. Nell'Assignment 1 lo schermo ha due coordinate, quindi 12 parametri in tutto, e servono almeno 6 punti di calibrazione. L'ordine delle colonne deve essere lo stesso in training e in predizione: una colonna scambiata dà previsioni sbagliate senza nessun errore visibile.", set: { c2: { t: 'per ogni coordinata dello schermo: 6 pesi' }, c3: { t: 'ordine delle colonne sempre uguale!', tono: 'no' } } }
+    ]
+  };
+
+  // 5. seni e coseni
+  const tt = [0.0, 0.55, 1.09, 1.64, 2.18, 2.73, 3.27, 3.82, 4.36, 4.91, 5.45, 6.0];
+  const yt = [1.92, 1.98, 1.88, 1.48, 0.95, 0.3, -0.11, -0.17, 0.26, 0.87, 1.33, 1.7];
+  const og5 = [{ id: 'ax', tipo: 'assi', box: [40, 20, 330, 210], dom: [0, 6.3, -0.5, 2.5], tacche: 1, etX: 't', etY: 'y' }];
+  tt.forEach((t, i) => og5.push({ id: 'p' + i, tipo: 'punto', in: 'ax', x: t, y: yt[i], t: '', tono: 'dato' }));
+  const fit = []; for (let t = 0; t <= 6.3; t += 0.1) fit.push([t, 0.997 + 0.482 * Math.sin(t) + 0.957 * Math.cos(t)]);
+  og5.push({ id: 'ret', tipo: 'linea', in: 'ax', x1: 0, y1: 1.4, x2: 6.3, y2: 0.3, tono: 'no', nascosto: true });
+  og5.push({ id: 'cu', tipo: 'poli', in: 'ax', punti: pl(fit), tono: 'ok', nascosto: true });
+  og5.push(T('c1', 480, 60, '', { size: 13 }), T('c2', 480, 100, '', { size: 13 }), T('c3', 480, 140, '', { size: 13, bold: true }), T('c4', 480, 180, '', { size: 12 }));
+  SCENE.seni = {
+    w: 620, h: 262, lato: true,
+    legenda: 'dato:measurements over time,no:a line,ok:model with sines and cosines',
+    oggetti: og5,
+    passi: [
+      { nota: "Misure che <b>oscillano</b> nel tempo (una temperatura nell'arco della giornata, un movimento periodico). Dati simulati con un po' di rumore." },
+      { nota: "Una retta non ha speranza: le misure salgono e scendono.", set: { ret: { nascosto: false }, c1: { t: 'retta: sbaglia ovunque', tono: 'no' } } },
+      { nota: "Kernel scelto per il problema: <b>φ(t) = [1, sin t, cos t]</b>. Le colonne della design matrix sono le funzioni che \"sanno\" oscillare.", set: { c2: { t: 'φ(t) = [1, sin t, cos t]' } } },
+      { nota: "I minimi quadrati danno w = [0.997, 0.482, 0.957] (i valori veri usati per simulare erano [1, 0.5, 1]). Il modello y = w₀ + w₁ sin t + w₂ cos t segue l'oscillazione. Scegliere φ è il vero lavoro: il kernel porta dentro il modello ciò che sappiamo del problema (calcolato con NumPy).", set: { ret: { nascosto: true }, cu: { nascosto: false }, c1: { t: '' }, c3: { t: 'w = [0.997, 0.482, 0.957]', tono: 'ok' }, c4: { t: 'veri: [1, 0.5, 1]' } } }
+    ]
+  };
+
+  // 6. il prezzo: overfitting
+  const X6 = [0.0, 0.111, 0.222, 0.333, 0.444, 0.556, 0.667, 0.778, 0.889, 1.0], Y6 = [0.01, 0.91, 1.23, 0.76, 0.28, -0.45, -0.75, -1.0, -0.49, -0.37];
+  const g = i => i * 0.025;
+  const C = {
+    1: [0.82, 0.78, 0.74, 0.7, 0.66, 0.62, 0.58, 0.54, 0.5, 0.46, 0.42, 0.38, 0.34, 0.3, 0.26, 0.22, 0.17, 0.13, 0.09, 0.05, 0.01, -0.03, -0.07, -0.11, -0.15, -0.19, -0.23, -0.27, -0.31, -0.35, -0.39, -0.43, -0.47, -0.51, -0.55, -0.59, -0.63, -0.67, -0.71, -0.75, -0.8],
+    3: [0.11, 0.33, 0.52, 0.68, 0.81, 0.9, 0.97, 1.01, 1.03, 1.03, 1.0, 0.96, 0.9, 0.83, 0.74, 0.64, 0.53, 0.42, 0.29, 0.17, 0.04, -0.09, -0.21, -0.34, -0.46, -0.57, -0.67, -0.76, -0.84, -0.91, -0.96, -0.99, -1.0, -0.99, -0.96, -0.9, -0.81, -0.7, -0.55, -0.38, -0.16],
+    9: [0.01, -0.73, -0.47, 0.12, 0.7, 1.12, 1.33, 1.39, 1.33, 1.22, 1.09, 0.97, 0.87, 0.79, 0.71, 0.62, 0.52, 0.4, 0.24, 0.08, -0.1, -0.27, -0.42, -0.54, -0.63, -0.69, -0.73, -0.76, -0.79, -0.84, -0.91, -0.99, -1.06, -1.06, -0.97, -0.71, -0.28, 0.28, 0.77, 0.81, -0.37]
+  };
+  const cur = d => pl(C[d].map((v, i) => [g(i), v]));
+  const og6 = [{ id: 'ax', tipo: 'assi', box: [40, 20, 300, 220], dom: [0, 1, -1.5, 1.6], tacche: 0.5, numeri: false, etX: 'x', etY: 'y' }];
+  X6.forEach((x, i) => og6.push({ id: 'p' + i, tipo: 'punto', in: 'ax', x, y: Y6[i], t: '', tono: 'dato' }));
+  og6.push({ id: 'cu', tipo: 'poli', in: 'ax', punti: cur(1), tono: 'ok', nascosto: true });
+  og6.push(T('d', 470, 50, '', { bold: true }), T('tr', 470, 90, '', { size: 13 }), T('va', 470, 120, '', { size: 13 }), T('c', 470, 170, '', { size: 12 }));
+  const gr = (d, tr, va, tono, extra) => Object.assign({ cu: { nascosto: false, punti: cur(d), tono }, d: { t: 'grado ' + d + ': ' + (d + 1) + ' parametri' }, tr: { t: 'errore di training: ' + tr }, va: { t: 'errore su dati nuovi: ' + va, tono } }, extra || {});
+  SCENE.prezzo = {
+    w: 600, h: 262, lato: true,
+    legenda: 'dato:10 noisy points,ok:model that generalises,no:model that memorises',
+    oggetti: og6,
+    passi: [
+      { nota: "Dieci punti rumorosi (dati simulati da un'onda). Kernel polinomiali di grado crescente: ogni grado in più è una feature in più, cioè un parametro in più." },
+      { nota: "Grado 1 (retta): troppo rigido. Sbaglia sia sui dati di training sia su dati nuovi.", set: gr(1, '0.248', '0.203', 'no') },
+      { nota: "Grado 3: segue la forma dell'onda. Errore basso sui dati <b>e</b> su dati nuovi.", set: gr(3, '0.028', '0.024', 'ok') },
+      { nota: "Grado 9: 10 parametri per 10 punti. Passa esattamente per tutti (errore di training 0), ma si contorce fra un punto e l'altro: su dati nuovi l'errore sale a 0.363, peggio della retta. È l'<b>overfitting</b>: il modello ha imparato il rumore (numeri calcolati con <code>np.polyfit</code>; i \"dati nuovi\" sono 5 punti della funzione vera).", set: gr(9, '0.000', '0.363', 'no', { c: { t: 'più feature ≠ modello migliore', tono: 'no' } }) }
+    ]
+  };
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Kernel and feature transformations</h1>
+  <p class="lede">The lecture of week 5: how to obtain <b>non-linear</b> models while still using linear algebra. The trick is to transform the inputs with a function φ (in this course it is called the <b>kernel</b> or <i>feature mapping</i>) and then do least squares on the new features. Here: the idea, the function φ, the design matrix Φ, the two-input case of Assignment 1, a kernel different from polynomials, and the price to pay.</p>
+</header>
+
+<section>
+  <h2>The idea: a curve becomes a line</h2>
+  <p>Many data follow curved relations, and a line does not describe them. Instead of inventing a new method for each curve, one <b>transforms the data</b>: one builds new features (for example x²) so that, in the new space, the relation becomes linear. Then one uses the usual method, least squares.</p>
+  <p>In the example the points lie on the parabola y = 1 + 0.5x². With the new feature z = x² the relation becomes y = 1 + 0.5z: a line in the space (z, y). The line is learned with linear algebra, and going back to x one has the parabola.</p>
+  <p>It is the goal "understand how feature transformations extend linear models" of week 5: the non-linearity lies entirely in the features, the weights remain linear.</p>
+  <figure class="scena" data-scena="feature" data-titolo="A parabola becomes a line"></figure>
+</section>
+
+<section>
+  <h2>The kernel φ: from a number to a vector</h2>
+  <div class="box regola" data-tit="Kernel (feature mapping) in this course">
+    <p>A function <span class="m">φ(x)</span> that transforms the input into a feature vector. The model is <span class="m">y = w · φ(x)</span>: <b>non-linear in x</b>, <b>linear in w</b>. For the polynomial of degree 2: <span class="m">φ(x) = [1, x, x²]</span>.</p>
+  </div>
+  <p>φ is read "fi". It takes an input (even a single number) and returns a vector, usually longer: the datum passes into a <b>feature space</b> (<i>feature space</i>) with more dimensions. The choice of φ is a choice of model: it says which shapes of curve the model will be able to represent.</p>
+  <p>Watch the name: later "kernel" also means the <i>kernel trick</i> of SVMs (week 10), and in the filters one prefers to say "filter" precisely to avoid confusion (week 8).</p>
+  <figure class="scena" data-scena="phi" data-titolo="φ(x) = [1, x, x²] on three inputs"></figure>
+</section>
+
+<section>
+  <h2>The design matrix Φ</h2>
+  <p>With a kernel the design matrix is built in the same way, only each row is <b>φ(xᵢ)</b> instead of [1, xᵢ]. It is called Φ (capital Phi).</p>
+  <figure class="passi" data-titolo="From x to φ(x), row by row">
+    <div class="passo"><div class="espr">modello lineare: riga i = [<mark class="dato">1, xᵢ</mark>]</div><p class="nota">The line of the <a href="w05-minimi-quadrati.html">least squares page</a>.</p></div>
+    <div class="passo"><div class="espr">con il kernel: riga i = <mark class="ora">φ(xᵢ)</mark> = [<mark class="ora">1, xᵢ, xᵢ²</mark>]</div><p class="nota">Each datum is transformed and put in a row. The rest does not change.</p></div>
+    <div class="passo"><div class="espr"><mark class="ora">Φ</mark> w ≈ y   ⇒   w = <mark class="ok">Φ⁺ y</mark></div><p class="nota">Same least squares, same pseudoinverse, same closed formula: the matrix only has different columns.</p></div>
+    <div class="passo"><div class="espr">numero di feature = numero di parametri = <mark class="no">punti minimi</mark></div><p class="nota">Each column of Φ is a weight to learn: at least as many rows (data) as columns are needed.</p></div>
+  </figure>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Input</th><th>Kernel φ</th><th>Features</th><th>Model</th></tr></thead>
+    <tbody>
+      <tr><td>x (1D)</td><td>polynomial of degree 2</td><td>[1, x, x²]</td><td>parabola</td></tr>
+      <tr><td>x (1D)</td><td>polynomial of degree d</td><td>[1, x, …, xᵈ]</td><td>curve of degree d (d + 1 parameters)</td></tr>
+      <tr><td>(x, y) (2D)</td><td>polynomial of degree 2</td><td>[1, x, y, x², xy, y²]</td><td>quadratic surface (6 parameters)</td></tr>
+      <tr><td>t (time)</td><td>sines and cosines</td><td>[1, sin t, cos t]</td><td>oscillation</td></tr>
+      <tr><td>(x, y)</td><td>affine</td><td>[x, y, 1] (twice, for x' and y')</td><td>affine transformation (<a href="w05-affine-omogenee.html">page</a>)</td></tr>
+    </tbody>
+  </table></div>
+  <figure class="scena" data-scena="phimat" data-titolo="Φ row by row"></figure>
+</section>
+
+<section>
+  <h2>Two inputs: the quadratic kernel of Assignment 1</h2>
+  <p>With two inputs (x, y) the complete polynomial of degree 2 has <b>6</b> terms: 1 constant, 2 linear (x, y), 3 quadratic (x², xy, y²). The mixed term xy is the one most often forgotten, and it is the one that lets the model bend along the diagonal.</p>
+  <p>In Assignment 1 (gaze estimation) one starts from an affine model, x′ = ax + by + c, and then improves it precisely with this kernel: f(x, y) = a·x² + b·y² + c·xy + d·x + e·y + f, with <b>6 parameters for each coordinate</b> of the screen, so 12 in all. At least 6 calibration points are needed, and better many more.</p>
+  <div class="box attenzione" data-tit="The same order of the columns, always">
+    <p>The function that builds Φ must be used <b>identical</b> in training and in prediction. If at one point the columns are [x², y², xy, …] and at another [x², xy, y², …], the weights get multiplied by the wrong features: no Python error, only wrong predictions.</p>
+  </div>
+  <figure class="scena" data-scena="quad2d" data-titolo="(2, 3) becomes six features"></figure>
+</section>
+
+<section>
+  <h2>Not only polynomials: sines and cosines</h2>
+  <p>The kernel does not have to be a polynomial. Any set of known functions can serve as columns: the only condition is that the model be "weights for known functions, then sum". For data that <b>oscillate</b> over time the natural kernel is φ(t) = [1, sin t, cos t].</p>
+  <p>It is here that the meaning of "kernel = hypothesis about the problem" is seen: a high-degree polynomial could also chase the wave on the data seen, but it would diverge as soon as one goes outside; sines and cosines oscillate by themselves, even where there are no data. Choosing φ well is worth more than adding features at random.</p>
+  <figure class="scena" data-scena="seni" data-titolo="An oscillation learned with least squares"></figure>
+</section>
+
+<section>
+  <h2>The price: more features, more data, overfitting</h2>
+  <p>Going into a larger feature space has three advantages: a non-linear problem becomes linear, flexibility is gained, and the solution remains in <b>closed form</b> (no iterative optimisation).</p>
+  <p>The price: each feature is one more parameter, so more data are needed; and a model too flexible for the data also fits the <b>noise</b>. The error on the training data keeps going down, while that on new data at some point goes up again. This is <b>overfitting</b>, and choosing the right complexity is the theme of week 7 (<a href="w07-complessita-modello.html">model complexity</a>).</p>
+  <div class="box esame" data-tit="Related exam questions">
+    <p><b>Q3 (b)</b>: "linear least squares problems for model fitting (design matrix, kernel, lines, polynomials, affine…)". <b>Q5 (a)</b>, same theme, linked to model complexity. The review questions of week 5 are a good outline: what a kernel is, why one goes into a larger space, how the design matrix changes, the kernel of the polynomial of degree 2, why the number of features fixes the minimum of data.</p>
+  </div>
+  <figure class="scena" data-scena="prezzo" data-titolo="Degrees 1, 3 and 9 on the same 10 points"></figure>
+</section>
+
+</main>
+</body>
+</html>

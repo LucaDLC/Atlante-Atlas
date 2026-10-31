@@ -1,0 +1,318 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Dimensioner i produkter mellem matricer</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+SCENE.destra = {
+  w: 560, h: 270, lato: false,
+  legenda: 'ora:række der bruges,dato:vektoren,ok:resultatcelle',
+  oggetti: [
+    { id: 'A', tipo: 'griglia', x: 40, y: 70, cw: 44, ch: 40, valori: [['1', '2', '3'], ['4', '5', '6']] },
+    { id: 'tA', tipo: 'testo', x: 106, y: 52, t: 'A   (2 × 3)', size: 14, bold: true },
+    { id: 'per', tipo: 'testo', x: 196, y: 110, t: '·', size: 26, bold: true },
+    { id: 'v', tipo: 'griglia', x: 220, y: 50, cw: 50, ch: 40, valori: [['−1'], ['−2'], ['−3']] },
+    { id: 'tv', tipo: 'testo', x: 245, y: 32, t: 'v   (3)', size: 14, bold: true },
+    { id: 'eq', tipo: 'testo', x: 305, y: 110, t: '=', size: 22, bold: true },
+    { id: 'r', tipo: 'griglia', x: 330, y: 70, cw: 60, ch: 40, valori: [[''], ['']] },
+    { id: 'tr', tipo: 'testo', x: 360, y: 52, t: 'Av   (2)', size: 14, bold: true },
+    { id: 'c1', tipo: 'testo', x: 280, y: 200, t: '', size: 14 },
+    { id: 'c2', tipo: 'testo', x: 280, y: 226, t: '', size: 14 },
+    { id: 'n', tipo: 'testo', x: 280, y: 256, t: '', size: 14, bold: true }
+  ],
+  passi: [
+    { nota: 'A har <b>2 rækker og 3 søjler</b>. v er en søjle med <b>3 tal</b>. Før jeg beregner noget, kontrollerer jeg dimensionerne.' },
+    { nota: 'Søjler i A = <b>3</b>, længde af v = <b>3</b>: de passer sammen, produktet findes. Resultatet får lige så mange tal, som A har <b>rækker</b>: 2.', set: { A: { toni: { '0,2': 'ora', '1,2': 'ora' } }, v: { toni: { '2,0': 'dato' } }, n: { t: '(2 × 3) · (3 × 1): 3 = 3 ✓  →  risultato 2 × 1', tono: 'ok' } } },
+    { nota: '<b>Række 1</b> i A gange v, parvis: 1·(−1) + 2·(−2) + 3·(−3) = −1 − 4 − 9 = <b>−14</b>. Det bliver første celle i resultatet.', set: { A: { toni: { '0,0': 'ora', '0,1': 'ora', '0,2': 'ora' } }, v: { toni: { '0,0': 'dato', '1,0': 'dato', '2,0': 'dato' } }, r: { valori: [['−14'], ['']], toni: { '0,0': 'ok' } }, c1: { t: 'riga 1:  1·(−1) + 2·(−2) + 3·(−3) = −14', tono: 'ok' }, n: { t: '' } } },
+    { nota: '<b>Række 2</b> gange v: 4·(−1) + 5·(−2) + 6·(−3) = −4 − 10 − 18 = <b>−32</b>. Anden celle. Summen fra før røres ikke: hver række har sin egen.', set: { A: { toni: { '1,0': 'ora', '1,1': 'ora', '1,2': 'ora' } }, r: { valori: [['−14'], ['−32']], toni: { '0,0': 'ok', '1,0': 'ok' } }, c1: { tono: null }, c2: { t: 'riga 2:  4·(−1) + 5·(−2) + 6·(−3) = −32', tono: 'ok' } } },
+    { nota: 'Resultat <b>(−14, −32)</b>: ét tal pr. række i A. Man lægger ikke −14 og −32 sammen: det er to forskellige celler.', set: { A: { toni: {} }, v: { toni: {} }, c2: { tono: null }, n: { t: 'Av = (−14, −32)', tono: 'ok' } } }
+  ]
+};
+SCENE.sinistra = {
+  w: 560, h: 250, lato: false,
+  legenda: 'dato:rækkevektoren,ora:søjle jeg bruger,ok:resultatcelle',
+  oggetti: [
+    { id: 'u', tipo: 'griglia', x: 30, y: 80, cw: 44, ch: 40, valori: [['1', '2']] },
+    { id: 'tu', tipo: 'testo', x: 74, y: 62, t: 'r   (1 × 2)', size: 14, bold: true },
+    { id: 'per', tipo: 'testo', x: 142, y: 100, t: '·', size: 26, bold: true },
+    { id: 'M', tipo: 'griglia', x: 164, y: 60, cw: 44, ch: 40, valori: [['1', '0', '2'], ['0', '1', '3']] },
+    { id: 'tM', tipo: 'testo', x: 230, y: 42, t: 'M   (2 × 3)', size: 14, bold: true },
+    { id: 'eq', tipo: 'testo', x: 322, y: 104, t: '=', size: 22, bold: true },
+    { id: 'r', tipo: 'griglia', x: 344, y: 80, cw: 52, ch: 40, valori: [['', '', '']] },
+    { id: 'tr', tipo: 'testo', x: 422, y: 62, t: 'rM   (1 × 3)', size: 14, bold: true },
+    { id: 'c', tipo: 'testo', x: 280, y: 180, t: '', size: 14 },
+    { id: 'n', tipo: 'testo', x: 280, y: 222, t: '', size: 14, bold: true }
+  ],
+  passi: [
+    { nota: 'Nu står vektoren til <b>venstre</b>: den er en <b>række</b> med 2 tal, altså 1 × 2. M er 2 × 3.' },
+    { nota: 'Samme regel som for tallene i midten: (1 × <b>2</b>) · (<b>2</b> × 3). 2 = 2, det kan gøres. Resultatet er 1 × 3: en række med lige så mange tal, som M har <b>søjler</b>.', set: { n: { t: '(1 × 2) · (2 × 3): 2 = 2 ✓  →  risultato 1 × 3', tono: 'ok' } } },
+    { nota: 'Nu bruger man r med M\'s <b>søjler</b>. Søjle 1: 1·1 + 2·0 = <b>1</b>.', set: { u: { toni: { '0,0': 'dato', '0,1': 'dato' } }, M: { toni: { '0,0': 'ora', '1,0': 'ora' } }, r: { valori: [['1', '', '']], toni: { '0,0': 'ok' } }, c: { t: 'colonna 1:  1·1 + 2·0 = 1', tono: 'ok' }, n: { t: '' } } },
+    { nota: 'Søjle 2: 1·0 + 2·1 = <b>2</b>.', set: { M: { toni: { '0,1': 'ora', '1,1': 'ora' } }, r: { valori: [['1', '2', '']], toni: { '0,0': 'ok', '0,1': 'ok' } }, c: { t: 'colonna 2:  1·0 + 2·1 = 2' } } },
+    { nota: 'Søjle 3: 1·2 + 2·3 = 2 + 6 = <b>8</b>.', set: { M: { toni: { '0,2': 'ora', '1,2': 'ora' } }, r: { valori: [['1', '2', '8']], toni: { '0,0': 'ok', '0,1': 'ok', '0,2': 'ok' } }, c: { t: 'colonna 3:  1·2 + 2·3 = 8' } } },
+    { nota: 'Resultat <b>[1, 2, 8]</b>: ét tal pr. søjle i M. Vektor til højre → man bruger rækkerne; vektor til venstre → man bruger søjlerne.', set: { u: { toni: {} }, M: { toni: {} }, c: { t: '', tono: null }, n: { t: 'rM = [1, 2, 8]', tono: 'ok' } } }
+  ]
+};
+</script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  const T = (id, x, y, t, extra) => Object.assign({ id, tipo: 'testo', x, y, t, size: 14 }, extra || {});
+  const B = (id, x, y, w, h, t, tono, extra) => Object.assign({ id, tipo: 'rett', x, y, w, h, t, tono }, extra || {});
+
+  // 1. la regola base, con i blocchi
+  SCENE.regola = {
+    w: 600, h: 250, lato: true,
+    legenda: 'dato:første faktor,due:anden faktor,ora:tallene i midten,ok:resultat,no:ikke defineret',
+    oggetti: [
+      T('f1', 110, 40, '(2 × 3)', { bold: true, size: 18, tono: 'dato' }), T('dot', 180, 40, '·', { size: 20, bold: true }),
+      T('f2', 250, 40, '(3 × 1)', { bold: true, size: 18, tono: 'due' }),
+      T('m', 180, 90, '', { size: 14, bold: true }), T('r', 180, 130, '', { size: 16, bold: true }),
+      T('ch', 300, 196, '', { size: 16, bold: true }), T('ch2', 300, 226, '', { size: 13 }),
+      T('x1', 440, 40, '', { size: 13 }), T('x2', 440, 70, '', { size: 13 })
+    ],
+    passi: [
+      { nota: "Due fattori: una matrice 2 × 3 e una 3 × 1. Si scrivono le dimensioni una accanto all'altra, sempre <b>righe × colonne</b>." },
+      { nota: "Si guardano i due numeri <b>in mezzo</b>: le colonne del primo (3) e le righe del secondo (3). Sono uguali: il prodotto <b>esiste</b>.", set: { m: { t: 'in mezzo: 3 = 3 ✓', tono: 'ora' } } },
+      { nota: "Si guardano i due numeri <b>fuori</b>: 2 e 1. Il risultato è <b>2 × 1</b>. I numeri in mezzo \"si cancellano\".", set: { r: { t: 'fuori: 2 × 1', tono: 'ok' } } },
+      { nota: "Con (2 × 3)·(2 × 1): in mezzo 3 e 2, diversi. Una riga ha 3 numeri, una colonna 2: non si possono accoppiare. <b>Non definito</b>, e ci si ferma.", set: { f2: { t: '(2 × 1)', tono: 'no' }, m: { t: 'in mezzo: 3 ≠ 2 ✗', tono: 'no' }, r: { t: 'non definito', tono: 'no' } } },
+      { nota: "Con più fattori si cancellano le coppie in mezzo una alla volta: (2 × 3)(3 × 4)(4 × 1) → 2 × 1.", set: { f2: { t: '(3 × 1)', tono: 'due' }, m: { t: '' }, r: { t: '' }, ch: { t: '(2 × 3)(3 × 4)(4 × 1)' }, ch2: { t: '3 = 3 ✓   4 = 4 ✓   →   2 × 1', tono: 'ok' } } }
+    ]
+  };
+
+  // 2. cosa si può fare
+  const riga = (id, y) => T(id, 300, y, '', { size: 14 });
+  const prova = (i, testo, tono) => ({ ['o' + i]: { t: testo, tono } });
+  SCENE.tabella = {
+    w: 600, h: 260, lato: true,
+    legenda: 'ok:det kan gøres,no:ikke defineret',
+    oggetti: [
+      T('d', 300, 26, 'A: 2 × 3    B: 2 × 3    C: 3 × 2    v: 3', { bold: true, size: 14 }),
+      riga('o0', 70), riga('o1', 100), riga('o2', 130), riga('o3', 160), riga('o4', 190), riga('o5', 220)
+    ],
+    passi: [
+      { nota: "Quattro oggetti con forme diverse. Per ogni operazione si applica la regola della sua riga nella tabella della pagina." },
+      { nota: "<b>A + B</b>: somma casella per casella, servono forme <b>identiche</b>. 2 × 3 e 2 × 3: sì, risultato 2 × 3.", set: prova(0, 'A + B: 2 × 3 ✓', 'ok') },
+      { nota: "<b>A + C</b>: 2 × 3 e 3 × 2 hanno le stesse caselle in totale, ma forme diverse: <b>no</b>. Non si traspone niente di nascosto.", set: prova(1, 'A + C: forme diverse ✗', 'no') },
+      { nota: "<b>A · C</b>: (2 × 3)(3 × 2), in mezzo 3 = 3: sì, risultato 2 × 2.", set: prova(2, 'A · C: (2 × 3)(3 × 2) → 2 × 2 ✓', 'ok') },
+      { nota: "<b>C · A</b>: (3 × 2)(2 × 3), in mezzo 2 = 2: sì, ma il risultato è <b>3 × 3</b>. Stessi fattori, ordine diverso, forma diversa.", set: prova(3, 'C · A: (3 × 2)(2 × 3) → 3 × 3 ✓', 'ok') },
+      { nota: "<b>A · v</b>: v a destra è una colonna, (2 × 3)(3): sì, un vettore di 2.", set: prova(4, 'A · v: (2 × 3)(3) → 2 ✓', 'ok') },
+      { nota: "<b>v · A</b>: v a sinistra è una riga, (1 × 3)(2 × 3): in mezzo 3 ≠ 2, <b>no</b>. Invece v · C = (1 × 3)(3 × 2) → 2 funziona.", set: prova(5, 'v · A: (1 × 3)(2 × 3) ✗', 'no') }
+    ]
+  };
+
+  // 3. l'errore tipico
+  const G = (id, x, y, vals, extra) => Object.assign({ id, tipo: 'griglia', x, y, cw: 46, ch: 36, valori: vals }, extra || {});
+  SCENE.errore8 = {
+    w: 600, h: 250, lato: true,
+    legenda: 'ora:rækken der beregnes,dato:vektoren,ok:rigtigt resultat,no:forkert sum',
+    oggetti: [
+      G('A', 40, 40, [['4', '−4'], ['4', '−1']]), G('v', 150, 40, [['4'], ['2']], { toni: { '0,0': 'dato', '1,0': 'dato' } }),
+      T('e', 215, 76, '=', { size: 20, bold: true }), G('r', 235, 40, [[''], ['']]),
+      T('c1', 440, 50, '', { size: 13 }), T('c2', 440, 80, '', { size: 13 }), T('c3', 440, 130, '', { bold: true }), T('c4', 440, 180, '', { size: 13 }), T('c5', 440, 210, '', { size: 13 })
+    ],
+    passi: [
+      { nota: "[[4, −4], [4, −1]] · (4, 2): matrice 2 × 2 per vettore di 2. Il risultato deve essere un <b>vettore di 2</b>." },
+      { nota: "Riga 1 per il vettore: 4·4 + (−4)·2 = 16 − 8 = 8. La somma sta <b>dentro</b> la riga: è un prodotto interno.", set: { A: { toni: { '0,0': 'ora', '0,1': 'ora' } }, r: { valori: [['8'], ['']], toni: { '0,0': 'ok' } }, c1: { t: 'riga 1: 16 − 8 = 8' } } },
+      { nota: "Riga 2: 4·4 + (−1)·2 = 16 − 2 = 14. Una casella separata.", set: { A: { toni: { '1,0': 'ora', '1,1': 'ora' } }, r: { valori: [['8'], ['14']], toni: { '0,0': 'ok', '1,0': 'ok' } }, c2: { t: 'riga 2: 16 − 2 = 14' } } },
+      { nota: "Risultato: <b>(8, 14)</b>.", set: { A: { toni: {} }, c3: { t: 'risultato: (8, 14)', tono: 'ok' } } },
+      { nota: "L'errore tipico: sommare anche i risultati delle due righe, 8 + 14 = 22. <b>Mai sommare fra righe diverse</b>: ogni riga produce la sua casella. Un numero solo esce solo dal prodotto interno di due vettori.", set: { c4: { t: '8 + 14 = 22 ✗', tono: 'no' }, c5: { t: 'mai sommare tra righe diverse' } } }
+    ]
+  };
+
+  // 4. forme in NumPy
+  SCENE.numpyforme = {
+    w: 600, h: 240, lato: true,
+    legenda: 'dato:former,ok:det virker,no:fejl',
+    codice: { lang: 'python', testo: `A = np.array([[1, 2, 3], [4, 5, 6]])   # (2, 3)
+v = np.array([-1, -2, -3])             # (3,)
+A @ v                                  # array([-14, -32])
+v @ A                                  # ValueError
+np.array([1, 2]) @ A                   # array([ 9, 12, 15])` },
+    oggetti: [T('c1', 300, 50, '', { size: 14 }), T('c2', 300, 100, '', { size: 14 }), T('c3', 300, 150, '', { size: 13 }), T('c4', 300, 200, '', { size: 14 })],
+    passi: [
+      { nota: "In NumPy la prima cosa da guardare è sempre <code>.shape</code>. A ha forma (2, 3); v, un array 1D, ha forma (3,).", righe: [1, 2], set: { c1: { t: 'A: (2, 3)    v: (3,)', tono: 'dato' } } },
+      { nota: "<code>A @ v</code>: v a destra fa da colonna, (2 × 3)(3) → 2 numeri: [−14, −32].", righe: [3], set: { c2: { t: 'A @ v → [−14, −32]', tono: 'ok' } } },
+      { nota: "<code>v @ A</code>: v a sinistra fa da riga, (3)(2 × 3): in mezzo 3 ≠ 2. NumPy si ferma con <code>ValueError: matmul: … (size 2 is different from 3)</code>: è proprio il controllo dei numeri in mezzo (errore vero, riprodotto).", righe: [4], set: { c3: { t: 'v @ A → ValueError (2 ≠ 3)', tono: 'no' } } },
+      { nota: "Un vettore di 2 a sinistra invece funziona: (2)(2 × 3) → 3 numeri, [9, 12, 15].", righe: [5], set: { c4: { t: '[1, 2] @ A → [9, 12, 15]', tono: 'ok' } } }
+    ]
+  };
+
+  // 5. la catena della formula dei minimi quadrati
+  SCENE.catenaforme = {
+    w: 600, h: 250, lato: true,
+    legenda: 'dato:X og y,ora:mellemprodukt,ok:w',
+    oggetti: [
+      B('xt', 20, 70, 110, 36, 'Xᵀ: 3 × 4', 'dato'), B('x', 140, 50, 50, 76, 'X: 4 × 3', 'dato'),
+      B('y', 200, 50, 40, 76, 'y: 4', 'dato', { nascosto: true }),
+      T('c1', 420, 50, '', { size: 13 }), T('c2', 420, 80, '', { size: 13 }), T('c3', 420, 110, '', { size: 13 }), T('c4', 420, 150, '', { size: 14, bold: true }),
+      T('s', 300, 210, 'w = (XᵀX)⁻¹ Xᵀ y', { bold: true, size: 15 })
+    ],
+    passi: [
+      { nota: "La formula dei minimi quadrati con 4 punti e 3 parametri (un polinomio di grado 2): X è 4 × 3, y ha 4 numeri." },
+      { nota: "XᵀX: (3 × 4)(4 × 3) → <b>3 × 3</b>. Quadrata: si può provare a invertire.", set: { c1: { t: 'XᵀX: (3×4)(4×3) → 3 × 3', tono: 'ora' } } },
+      { nota: "Xᵀy: (3 × 4)(4) → <b>3</b>. Un numero per parametro.", set: { y: { nascosto: false }, c2: { t: 'Xᵀy: (3×4)(4) → 3', tono: 'ora' } } },
+      { nota: "(XᵀX)⁻¹ ha la stessa forma di XᵀX, 3 × 3; per Xᵀy: (3 × 3)(3) → 3.", set: { c3: { t: '(XᵀX)⁻¹ Xᵀy: (3×3)(3) → 3' } } },
+      { nota: "Escono <b>3 pesi</b>, uno per colonna di X: le forme tornano. Controllare le forme passo passo è il modo più rapido per ricordare (e verificare) una formula lunga.", set: { c4: { t: 'w: 3 pesi ✓', tono: 'ok' } } }
+    ]
+  };
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Dimensioner i produkter mellem matricer</h1>
+  <p class="lede">Før du ganger, skal du kontrollere dimensionerne: fem sekunder er nok. Det er den hyppigste fejl i håndregning, og den hyppigste <code>ValueError</code> i NumPy.</p>
+</header>
+
+<section>
+  <h2>Grundreglen</h2>
+  <div class="box domanda-tua" data-tit="Dine noter, samlet her">
+    <p>Et produkt <span class="m">(m × n) · (p × q)</span> er kun defineret, hvis <b>n = p</b>, altså hvis de to tal "i midten" er ens. Resultatet har dimensionerne af de to <b>ydre</b> tal: <b>m × q</b>.</p>
+    <p>(2 × 3) · (3 × 1) ✅ → resultat 2 × 1 · (2 × 3) · (2 × 1) ❌ → ikke defineret.</p>
+    <p>I praksis: <b>søjler i den første = rækker i den anden</b>.</p>
+  </div>
+  <figure class="passi" data-titolo="Kontrollen i tre trin">
+    <div class="passo"><div class="espr">(2 × <mark class="ora">3</mark>) · (<mark class="ora">3</mark> × 1)</div><p class="nota">Jeg skriver dimensionerne ved siden af hinanden, altid i rækkefølgen <b>rækker × søjler</b>.</p></div>
+    <div class="passo"><div class="espr">in mezzo:  <mark class="ora">3</mark> = <mark class="ora">3</mark>   <mark class="ok">✓ il prodotto esiste</mark></div><p class="nota">Hver celle i resultatet er en række i den første gange en søjle i den anden, <b>parvis</b>. En række i den første har n tal, en søjle i den anden har p: for at danne parrene skal n = p.</p></div>
+    <div class="passo"><div class="espr">fuori:  <mark class="dato">2</mark> × <mark class="dato">1</mark>   ⇒  risultato <mark class="ok">2 × 1</mark></div><p class="nota">Én celle for hvert par (række i den første, søjle i den anden): 2 rækker × 1 søjle.</p></div>
+    <div class="passo"><div class="espr">(2 × <mark class="no">3</mark>) · (<mark class="no">2</mark> × 1):  3 ≠ 2  ⇒  <mark class="no">non definito</mark></div><p class="nota">En række har 3 tal, en søjle har 2: de kan ikke parres. Man stopper her og svarer "ikke defineret".</p></div>
+  </figure>
+  <div class="box idea" data-tit="Tricket med dimensionerne der forsvinder">
+    <p>Skriv dimensionerne under hver faktor og slet parrene i midten: <span class="m">(m × <s>n</s>)(<s>n</s> × q) → m × q</span>. Det virker også med flere faktorer: <span class="m">(2 × <s>3</s>)(<s>3</s> × <s>4</s>)(<s>4</s> × 1) → 2 × 1</span>.</p>
+  </div>
+  <figure class="scena" data-scena="regola" data-titolo="Tallene i midten og tallene udenfor"></figure>
+</section>
+
+<section>
+  <h2>Vektor til højre: matrix · vektor</h2>
+  <p>Vektoren er en <b>søjle</b>. Dens længde skal være lig med antallet af <b>søjler</b> i matricen. Resultatet har lige så mange elementer, som matricen har <b>rækker</b>: <b>ét tal pr. række</b>.</p>
+  <figure class="scena" data-scena="destra" data-titolo="[[1, 2, 3], [4, 5, 6]] · (−1, −2, −3)"></figure>
+</section>
+
+<section>
+  <h2>Vektor til venstre: vektor · matrix</h2>
+  <p>Vektoren er en <b>række</b>. Dens længde skal være lig med antallet af <b>rækker</b> i matricen. Det er altid reglen om tallene i midten: <span class="m">(1 × <b>2</b>) · (<b>2</b> × 3) ✅ → 1 × 3</span>. Resultatet har <b>ét tal pr. søjle</b>.</p>
+  <figure class="scena" data-scena="sinistra" data-titolo="[1, 2] · [[1, 0, 2], [0, 1, 3]]"></figure>
+</section>
+
+<section>
+  <h2>Alle operationerne i en tabel</h2>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Operation</th><th>Hvornår den kan gøres</th><th>Dimension af resultatet</th></tr></thead>
+    <tbody>
+      <tr><td><b>A + B</b>, <b>A − B</b></td><td><b>identiske dimensioner</b> (samme rækker og samme søjler)</td><td>den samme</td></tr>
+      <tr><td><b>c · A</b> (tal gange matrix)</td><td>altid</td><td>den samme som A</td></tr>
+      <tr><td><b>A · B</b></td><td>søjler i A = rækker i B</td><td>rækker i A × søjler i B</td></tr>
+      <tr><td><b>A · v</b> (vektor til højre)</td><td>søjler i A = længde af v</td><td>længde = rækker i A</td></tr>
+      <tr><td><b>v · A</b> (vektor til venstre)</td><td>længde af v = rækker i A</td><td>længde = søjler i A</td></tr>
+      <tr><td><b>u · w</b> (indre produkt)</td><td>samme længde</td><td>et tal</td></tr>
+      <tr><td><b>Aᵀ</b> (transponeret)</td><td>altid</td><td>m × n bliver til n × m</td></tr>
+    </tbody>
+  </table></div>
+  <p class="piccolo">Addition og subtraktion kræver identiske dimensioner, fordi man opererer <b>celle for celle</b>: hver celle i A har brug for sin makker i B.</p>
+  <div class="box attenzione" data-tit="Addition er ikke produktreglen plus en begrænsning">
+    <p>Det er to <b>uafhængige</b> regler. Med <span class="m">A: n × m</span> og <span class="m">B: p × q</span>: addition kræver <b>n = p og m = q</b>; produktet kræver kun <b>m = p</b>. Det samme par kan bestå den ene kontrol og fejle den anden:</p>
+    <div class="tab-wrap"><table class="tab">
+      <thead><tr><th>Former</th><th>A + B</th><th>A · B</th></tr></thead>
+      <tbody>
+        <tr><td>(2 × 3) e (2 × 3)</td><td>✅ identiske former</td><td>❌ i midten 3 ≠ 2</td></tr>
+        <tr><td>(2 × 3) e (3 × 2)</td><td>❌ forskellige former</td><td>✅ i midten 3 = 3 → 2 × 2</td></tr>
+      </tbody>
+    </table></div>
+    <p><b>Husk det sådan</b>: ved addition sættes de to former den ene <b>over</b> den anden, og begge skal stemme overens; ved produktet sættes de den ved <b>siden af</b> den anden, og kun tallene <b>i midten</b> skal stemme overens.</p>
+  </div>
+  <div class="box domanda-tua" data-tit="Hvis en matrix er n × m, skal søjlerne i n så være lig med rækkerne i m?">
+    <p><span class="m">n × m</span> er formen for <b>én enkelt</b> matrix: n rækker og m søjler. Gangetegnet × læses "gange", men det ganger ikke to matricer. For at tale om to matricer skal man bruge fire tal, to for hver. Begrænsningen "søjler i den første = rækker i den anden" gælder kun for <b>produktet</b>. Addition og subtraktion udvider den ikke: de kræver kun identiske former.</p>
+  </div>
+  <p class="piccolo">De fire kombinationer er kontrolleret med NumPy: <code>A + B</code> → <code>(2, 3)</code>, <code>A @ C</code> → <code>(2, 2)</code>; <code>A @ B</code> og <code>A + C</code> → <code>ValueError</code>.</p>
+  <div class="box attenzione" data-tit="Hvad man IKKE gør">
+    <p>Man tilføjer aldrig rækker, søjler eller nuller for at få dimensionerne til at passe: så ville man ændre problemet. Hvis tallene i midten ikke er ens, er svaret <b>"ikke defineret"</b>.</p>
+    <p>Det samme gælder for <b>transponeringen</b>: med A 2 × 3 og C 3 × 2 er <span class="m">A + C</span> ikke defineret. <span class="m">A + Cᵀ</span> kan derimod gøres (Cᵀ er 2 × 3), men det er en <b>anden operation</b>, med andre tal. Man transponerer kun, hvis opgaveteksten beder om det.</p>
+  </div>
+  <div class="box domanda-tua" data-tit="Efter T skal jeg så lægge op og ned?">
+    <p>Nej. Addition har ingen retning: den parrer efter <b>position</b> (samme række, samme søjle). Cᵀ er, når den først er skrevet, en almindelig matrix og læses som de andre. Intuitionen er kun rigtig i forhold til den <b>oprindelige</b> C: række i i A hører sammen med søjle i i C, altså <span class="m">A<sub>ij</sub> + C<sub>ji</sub></span>. To veje, samme resultat: skriv Cᵀ og læg normalt sammen (anbefalet), eller par rækken i A med søjlen i C. "Retningen" række → / søjle ↓ findes kun i <b>produktet</b>.</p>
+  </div>
+  <div class="box domanda-tua" data-tit="Og hvis jeg bruger T på den anden matrix?">
+    <p>Addition bliver mulig: <span class="m">A = [[1, 2, 3], [4, 5, 6]]</span>, <span class="m">C = [[1, 4], [2, 5], [3, 6]]</span>, <span class="m">A + Cᵀ = [[2, 4, 6], [8, 10, 12]]</span>. Men du har beregnet <span class="m">A + Cᵀ</span>, ikke <span class="m">A + C</span>. Hvis spørgsmålet er <span class="m">A + C</span>, er svaret stadig "ikke defineret". (Kontrolleret med NumPy.)</p>
+  </div>
+  <figure class="scena" data-scena="tabella" data-titolo="A, B, C og v: hvad kan gøres"></figure>
+</section>
+
+<section>
+  <h2>Den typiske fejl</h2>
+  <p>Man lægger sammen <b>inde i</b> ét enkelt række × søjle (det er det indre produkt), <b>aldrig mellem forskellige rækker</b>: hver række giver en særskilt celle i resultatet.</p>
+  <div class="colonne">
+    <div class="carta buona">
+      <h4>Rigtigt: (8, 14)</h4>
+      <p><span class="m">[[4, −4], [4, −1]] · (4, 2)</span></p>
+      <p>række 1: 4·4 + (−4)·2 = 16 − 8 = <b>8</b><br>række 2: 4·4 + (−1)·2 = 16 − 2 = <b>14</b></p>
+      <p>Matrix 2 × 2 gange vektor med 2 → vektor med 2.</p>
+    </div>
+    <div class="carta cattiva">
+      <h4>Forkert: 22</h4>
+      <p>8 + 14 = 22 lægger resultaterne af <b>to forskellige rækker</b> sammen.</p>
+      <p>Et enkelt tal kommer kun ud af det indre produkt af to vektorer. Fra en matrix gange en vektor kommer altid en <b>vektor</b> ud.</p>
+    </div>
+  </div>
+  <figure class="scena" data-scena="errore8" data-titolo="(8, 14), ikke 22"></figure>
+</section>
+
+<section>
+  <h2>I NumPy</h2>
+  <p>NumPy anvender præcis de samme regler, med to særheder. Matrixproduktet skrives <code>@</code> (aldrig <code>*</code>, som ganger celle for celle). Og et 1D-array, med form <code>(n,)</code>, er hverken række eller søjle: NumPy behandler det som en søjle, hvis det står til højre for <code>@</code>, og som en række, hvis det står til venstre. Når noget ikke stemmer, er det første man tjekker altid <code>.shape</code> for hver faktor.</p>
+  <figure class="codice" data-titolo="De samme regler, og de rigtige fejl (NumPy 2.4)">
+<pre data-lang="python">import numpy as np
+A = np.array([[1, 2, 3], [4, 5, 6]])
+v = np.array([-1, -2, -3])
+A.shape, v.shape             # ((2, 3), (3,))
+A @ v                        # array([-14, -32])
+v @ A                        # ValueError: matmul: ... (size 2 is different from 3)
+A + np.array([[1, 2], [3, 4]])
+# ValueError: operands could not be broadcast together with shapes (2,3) (2,2)
+np.array([1, 2]) @ A         # array([ 9, 12, 15])</pre>
+    <ol class="spiega">
+      <li data-righe="2-4" data-segna="(2, 3)@ora|(3,)@dato"><p><code>.shape</code> giver dimensionerne som (rækker, søjler). Et 1D-array har formen <code>(3,)</code>: én enkelt dimension, hverken række eller søjle.</p></li>
+      <li data-righe="5" data-segna="A @ v@ok|array([-14, -32])@ok"><p><code>@</code> er matrixproduktet. (2 × 3) · (3) → 2: de samme −14 og −32 som i eksemplet.</p></li>
+      <li data-righe="6" data-segna="v @ A@no|(size 2 is different from 3)@no"><p>Her står v til venstre, så den virker som en række: (1 × 3) · (2 × 3). I midten 3 ≠ 2. "size 2 is different from 3" er netop kontrollen af tallene i midten.</p></li>
+      <li data-righe="7-8" data-segna="shapes (2,3) (2,2)@no"><p>Addition mellem forskellige former: NumPy nægter. (Med kompatible former "udvider" NumPy en af de to, <i>broadcasting</i>: se siden om NumPy.)</p></li>
+      <li data-righe="9" data-segna="np.array([1, 2]) @ A@ok"><p>En 1D-vektor af længde 2 til venstre virker som en række: (1 × 2) · (2 × 3) → 3 tal, [1·1 + 2·4, 1·2 + 2·5, 1·3 + 2·6] = [9, 12, 15].</p></li>
+    </ol>
+  </figure>
+  <p class="piccolo">Alle resultaterne og fejlmeddelelserne er fået ved at køre koden (NumPy 2.4.6).</p>
+  <figure class="scena" data-scena="numpyforme" data-titolo="Formerne i NumPy"></figure>
+</section>
+
+<section>
+  <h2>Hvor du har brug for det i kurset</h2>
+  <p>Hver formel i kurset med matricer og vektorer kan kontrolleres med formerne, uden at huske den udenad: hvis dimensionerne ikke passer i et trin, er formlen skrevet forkert. Med N træningspunkter og d parametre er X altid N × d, w har d tal, og y har N. Den trinvise kontrol af formlen for mindste kvadrater:</p>
+  <figure class="passi" data-titolo="Dimensionskontrol i w = (XᵀX)⁻¹Xᵀy">
+    <div class="passo"><div class="espr"><mark class="dato">X</mark>: N × d     <mark class="ora">w</mark>: d     <mark class="ok">y</mark>: N</div><p class="nota">N træningspunkter, d parametre. I eksemplet med <a href="w04-polinomi.html">polynomierne</a> med 4 punkter: X er 4 × 3.</p></div>
+    <div class="passo"><div class="espr"><mark class="dato">X</mark><mark class="ora">w</mark>: (N × <s>d</s>)(<s>d</s>) → <mark class="ok">N</mark></div><p class="nota">Én forudsigelse for hvert punkt: den kommer tilbage med y.</p></div>
+    <div class="passo"><div class="espr">XᵀX: (d × <s>N</s>)(<s>N</s> × d) → <mark class="ora">d × d</mark></div><p class="nota">Xᵀ har dimensionerne byttet om. Resultatet er kvadratisk: derfor kan man prøve at invertere det.</p></div>
+    <div class="passo"><div class="espr">Xᵀy: (d × <s>N</s>)(<s>N</s>) → <mark class="ora">d</mark></div><p class="nota">Ét tal for hver parameter.</p></div>
+    <div class="passo"><div class="espr">(XᵀX)⁻¹ Xᵀy: (d × <s>d</s>)(<s>d</s>) → <mark class="ok">d</mark>  ✓</div><p class="nota">Der kommer en vektor af d tal ud: vægtene. Med de 4 punkter fra polynomierne: 3 vægte, [0.9, 0.9, 0.5] (kontrolleret med NumPy).</p></div>
+  </figure>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Hvor</th><th>Produkt</th><th>Dimensioner</th></tr></thead>
+    <tbody>
+      <tr><td>lineær model på dataene</td><td>Xw</td><td>(N × d)(d) → N</td></tr>
+      <tr><td>affin transformation i homogene koordinater</td><td>T · [x, y, 1]</td><td>(3 × 3)(3) → 3</td></tr>
+      <tr><td>kovarians af de centrerede data (uge 9)</td><td>XᵀX / N</td><td>(d × N)(N × d) → d × d</td></tr>
+      <tr><td>PCA: koordinater i den nye basis (uge 12)</td><td>Φᵀ(x − μ)</td><td>(k × d)(d) → k</td></tr>
+      <tr><td>lag i et neuralt netværk (uge 14)</td><td>Wx + b</td><td>(udgange × indgange)(indgange) → udgange</td></tr>
+    </tbody>
+  </table></div>
+  <figure class="scena" data-scena="catenaforme" data-titolo="Formerne i w = (XᵀX)⁻¹Xᵀy"></figure>
+</section>
+
+</main>
+</body>
+</html>

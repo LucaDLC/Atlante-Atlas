@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Functor: map on every container</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  const B = (id, x, y, w, t, extra) => Object.assign({ id, tipo: 'rett', x, y, w, h: 44, t }, extra || {});
+  const T = (id, x, y, t, extra) => Object.assign({ id, tipo: 'testo', x, y, t, size: 13, bold: true, anchor: 'start' }, extra || {});
+
+  SCENE.map = {
+    w: 540, h: 270, lato: true,
+    legenda: 'dato:starting container,ora:f at work,ok:result,no:no value to transform',
+    oggetti: [
+      B('l1', 40, 30, 60, '1', { tono: null }), B('l2', 120, 30, 60, '2'), B('l3', 200, 30, 60, '3'),
+      B('r1', 40, 110, 60, '2', { nascosto: true }), B('r2', 120, 110, 60, '4', { nascosto: true }), B('r3', 200, 110, 60, '6', { nascosto: true }),
+      B('po', 40, 180, 120, 'Some(3)', { nascosto: false }),
+      B('pr', 240, 180, 120, 'Some(6)', { nascosto: true }),
+      B('pn', 400, 180, 110, 'None', { nascosto: false }),
+      T('c', 40, 255, '', { size: 12 })
+    ],
+    passi: [
+      { nota: `<code>map</code> applies f to what is inside and leaves the <b>shape</b> as it is. Here f = x · 2 and the container is a list of three values.`, set: { l1: { tono: 'dato' }, l2: { tono: 'dato' }, l3: { tono: 'dato' } } },
+      { nota: `Each element is transformed: 1 → 2, 2 → 4, 3 → 6. The list stays three long.`, set: { l1: { tono: null }, l2: { tono: null }, l3: { tono: null }, r1: { nascosto: false, tono: 'ok' }, r2: { nascosto: false, tono: 'ok' }, r3: { nascosto: false, tono: 'ok' }, c: { t: 'List(1, 2, 3).map(f) = List(2, 4, 6)' } } },
+      { nota: `<b>Some(3)</b>: f is applied to the value inside. The result is <b>Some(6)</b>, still an Option.`, set: { po: { tono: 'dato' }, pr: { nascosto: false, tono: 'ok' }, c: { t: 'Some(3).map(f) = Some(6)' } } },
+      { nota: `<b>None</b> has no values: map does nothing and returns None. The shape is the same as before, a container.`, set: { po: { tono: null }, pn: { tono: 'no' }, c: { t: 'None.map(f) = None' } } }
+    ]
+  };
+
+  SCENE.legge = {
+    w: 540, h: 250, lato: true,
+    legenda: 'dato:input,ok:same as the input,ora:composition',
+    oggetti: [
+      B('fa', 40, 30, 240, 'fa = List(1, 2, 3)', { tono: 'dato' }),
+      B('res', 40, 100, 240, 'fa.map(identity) = List(1, 2, 3)', { nascosto: true }),
+      B('f1', 40, 170, 240, 'fa.map(x + 1).map(x * 2)', { nascosto: true }),
+      B('f2', 290, 170, 230, 'fa.map(x => (x + 1) * 2)', { nascosto: true }),
+      T('c', 40, 240, '', { size: 12 })
+    ],
+    passi: [
+      { nota: `<b>Identity law</b>: <code>fa.map(identity) === fa</code>. <code>identity</code> is the function x ↦ x, which changes nothing. The result must be equal to the input: the structure is not touched.`, set: { fa: { tono: 'dato' } } },
+      { nota: `I apply map(identity) to List(1, 2, 3): I get List(1, 2, 3). Equal to the input: the law holds.`, set: { res: { nascosto: false, tono: 'ok' }, c: { t: 'uguali: la legge vale', tono: 'ok' } } },
+      { nota: `<b>Composition law</b>: two <code>map</code>s in a row give the same result as a single <code>map</code> with the composition of the functions. With x + 1 and then x · 2, it is like x ↦ (x + 1) · 2. Both give List(4, 6, 8).`, set: { f1: { nascosto: false, tono: 'ora' }, f2: { nascosto: false, tono: 'ok' }, c: { t: 'due map = un map con la composizione' } } }
+    ]
+  };
+
+  SCENE.distr = {
+    w: 540, h: 260, lato: true,
+    legenda: 'dato:starting pairs,ora:projection under way,ok:result',
+    oggetti: [
+      B('p1', 40, 30, 150, '(John, 35)', { tono: 'dato' }),
+      B('p2', 200, 30, 150, '(Andrzej, 39)', { tono: 'dato' }),
+      B('p3', 360, 30, 150, '(Stefan, 18)', { tono: 'dato' }),
+      B('nomi', 40, 120, 240, 'List(John, Andrzej, Stefan)', { nascosto: true }),
+      B('eta', 300, 120, 210, 'List(35, 39, 18)', { nascosto: true }),
+      T('c', 40, 215, '', { size: 13 })
+    ],
+    passi: [
+      { nota: `<b>distribute</b> takes an F of pairs and returns a pair of F: a list of (name, age) becomes (list of names, list of ages).`, set: {} },
+      { nota: `<code>fab.map(_._1)</code> takes the first element of each pair: the list of names.`, set: { p1: { tono: 'ora' }, p2: { tono: 'ora' }, p3: { tono: 'ora' }, nomi: { nascosto: false, tono: 'ok' } } },
+      { nota: `<code>fab.map(_._2)</code> takes the second element: the list of ages.`, set: { p1: { tono: 'dato' }, p2: { tono: 'dato' }, p3: { tono: 'dato' }, nomi: { tono: null }, eta: { nascosto: false, tono: 'ok' } } },
+      { nota: `The result is a pair of lists. The same definition for List, LazyList, Gen and Par: it uses only <code>map</code>, so it holds for every functor.`, set: { eta: { tono: null }, c: { t: '(List(John, Andrzej, Stefan), List(35, 39, 18))', tono: 'ok' } } }
+    ]
+  };
+
+  SCENE.map2 = {
+    w: 540, h: 250, lato: true,
+    legenda: 'dato:containers,ora:combination,ok:result,no:result None',
+    oggetti: [
+      B('fa', 40, 30, 200, 'fa = Some("John")', { tono: 'dato' }),
+      B('fb', 300, 30, 200, 'fb = Some(35)', { tono: 'dato' }),
+      B('comb', 120, 110, 300, 'f(a, b) = "John (35)"', { nascosto: true, tono: 'ora' }),
+      B('res', 120, 180, 300, 'Some("John (35)")', { nascosto: true, tono: 'ok' }),
+      T('c', 40, 240, '', { size: 12 })
+    ],
+    passi: [
+      { nota: `<b>map2</b> combines two containers with a function f(a, b). To combine them <b>both</b> values are needed. A single <code>map</code>, on one container, is not enough.`, set: {} },
+      { nota: `If fa is Some(a) and fb is Some(b), the result is Some(f(a, b)). Here f joins name and age into a string.`, set: { comb: { nascosto: false } } },
+      { nota: `Result: <b>Some("John (35)")</b>. The result stays an Option: map2 does not leave the container.`, set: { comb: { tono: 'dato' }, res: { nascosto: false, tono: 'ok' }, c: { t: 'map2 restituisce un Option' } } },
+      { nota: `If one of the two is <b>None</b>, the result is None: there is nothing to combine. On the slide map2 is written with <code>flatMap</code>, which is the topic of the monad page.`, set: { fb: { t: 'fb = None', tono: 'no' }, res: { t: 'None', tono: 'no' }, c: { t: 'con None: risultato None' } } }
+    ]
+  };
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <div class="occhiello"><span>Week 9</span></div>
+  <h1>Functor: map on every container</h1>
+  <p class="lede">Lists, options, generators, parsers, trees: they all have a <code>map</code> with the same shape. The functor is the name of this common interface, and its law says that <code>map</code> does not change the structure.</p>
+</header>
+
+<section>
+  <h2>The same shape, everywhere</h2>
+  <p>In the previous weeks you wrote <code>map</code> several times. The signatures are almost identical:</p>
+  <div class="tab-wrap"><table class="tab"><thead><tr><th>container</th><th>signature of map</th></tr></thead><tbody>
+    <tr><td>Gen</td><td><code>def map[A,B](ga: Gen[A])(f: A =&gt; B): Gen[B]</code></td></tr>
+    <tr><td>List</td><td><code>def map[A,B](la: List[A])(f: A =&gt; B): List[B]</code></td></tr>
+    <tr><td>Option</td><td><code>def map[A,B](oa: Option[A])(f: A =&gt; B): Option[B]</code></td></tr>
+  </tbody></table></div>
+  <p><code>State</code>, <code>Par</code>, <code>Parser</code> and <code>Tree</code> follow the same pattern too. So one single interface can be written. The name <i>Functor</i> is the traditional one (the slides admit that <i>Mappable</i> would be clearer).</p>
+  <figure class="scena" data-scena="map" data-titolo="map: the shape stays, the values change"></figure>
+</section>
+
+<section>
+  <h2>The Functor trait and its law</h2>
+  <p>The trait has a type constructor <code>F[_]</code> (as in the foldable) and an extension <code>map</code>:</p>
+  <p><code>trait Functor[F[_]]</code> with <code>extension [A](fa: F[A]) def map[B](f: A =&gt; B): F[B]</code>. The <code>map</code> takes an <code>F[A]</code>, applies f to what is inside and returns an <code>F[B]</code>.</p>
+  <p>The identity <b>law</b> (from the slides): <code>fa.map(identity) === fa</code>. With <code>identity</code> nothing changes, so the structure must not change. The composition law is the same idea with two functions: two maps in a row are equivalent to one map of the composition.</p>
+  <figure class="scena" data-scena="legge" data-titolo="The law: map(identity) changes nothing"></figure>
+  <div class="box attenzione" data-tit="Warning">The compiler does not check the law. A <code>map</code> that does strange things (for example discards elements) compiles anyway, but it is not a functor.</div>
+</section>
+
+<section>
+  <h2>distribute: a general unzipper</h2>
+  <p><code>distribute</code> takes an <code>F[(A, B)]</code> and returns a pair <code>(F[A], F[B])</code>: it separates the components. With a list of pairs it is an unzip. The definition uses only <code>map</code>:</p>
+  <p><code>(fab.map { _._1 }, fab.map { _._2 })</code>.</p>
+  <figure class="scena" data-scena="distr" data-titolo="A list of pairs becomes two lists"></figure>
+</section>
+
+<section>
+  <h2>map2: combining two containers</h2>
+  <p>With a single <code>map</code> you cannot combine two containers: you need <code>map2</code>, which takes <code>F[A]</code> and <code>F[B]</code> and a function <code>f(a, b)</code>. On the slides it is defined with <code>flatMap</code> for Option, List and Gen:</p>
+  <p><code>fa.flatMap(a =&gt; fb.map(b =&gt; f(a, b)))</code></p>
+  <p>It is the generalised "zip" (a kind of <code>zipWith</code>). For Option the behaviour is clear: if a value is missing, the result is missing. For lists and generators the meaning changes, and that is why the slide warns that each type has its own intuition.</p>
+  <figure class="scena" data-scena="map2" data-titolo="map2 with two Options: both must be there"></figure>
+</section>
+
+<section>
+  <h2>Where it is used</h2>
+  <p>The code of <code>map</code>, <code>distribute</code> and <code>map2</code> on the course types is in the <a href="../esempi/s09-functor.html">side-by-side examples page</a>. The <code>map2</code> on generators and on the parser, and its general form with <code>flatMap</code>, are in the <a href="s09-monad.html">monad page</a>.</p>
+</section>
+
+</main>
+</body>
+</html>

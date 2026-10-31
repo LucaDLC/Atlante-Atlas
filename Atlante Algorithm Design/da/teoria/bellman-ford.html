@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Bellman-Ford: korteste veje med negative vægte</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+const N = (id,x,y,t) => ({id,tipo:'nodo',x,y,t,r:20});
+const A = (id,da,a,t,extra) => Object.assign({id,tipo:'arco',da,a,dir:true,t},extra||{});
+SCENE.bf = {
+  w: 520, h: 250, lato: true,
+  legenda: 'ora:afstand opdateret i denne runde,dato:afstand,no:negativ vægt',
+  oggetti: [
+    N('s',60,120,'s'), N('a',230,50,'a'), N('b',230,190,'b'), N('c',400,120,'c'),
+    A('sa','s','a','4'), A('sb','s','b','5'), A('ab','a','b','−3',{tono:'no'}), A('ac','a','c','2'), A('bc','b','c','6'),
+    {id:'c1',tipo:'testo',x:20,y:240,t:'',size:12,bold:true,anchor:'start'}
+  ],
+  passi: [
+    { nota: 'Bellman-Ford: korteste veje også med <b>negative</b> vægte (der er ingen negative kredse). Afstande: <code>d(s) = 0</code>, andre ∞.', set:{s:{tono:'dato',sotto:'0'},a:{sotto:'∞'},b:{sotto:'∞'},c:{sotto:'∞'}} },
+    { nota: 'Runde 1: jeg relakserer alle kanterne. s→a: d(a) = 4. s→b: d(b) = 5. a→b med vægt −3: 4 − 3 = 1 &lt; 5, altså d(b) = 1. En negativ vægt kan forbedre en afstand, der allerede er fastlagt.', set:{a:{tono:'ora',sotto:'4'},b:{tono:'ora',sotto:'1'},c1:{t:'giro 1: a=4, b=1'}} },
+    { nota: 'Runde 2 og de følgende: kanterne, der gennemgås igen, forbedrer ikke længere noget. Med n knuder er <b>n − 1 runder</b> nok: hver simpel vej har højst n − 1 kanter.', set:{c:{tono:'ok',sotto:'6'},a:{tono:'dato',sotto:'4'},b:{tono:'dato',sotto:'1'},ac:{tono:'ok'},bc:{tono:'ok'},c1:{t:'d: s 0 · a 4 · b 1 · c 6',tono:'ok'}} },
+    { nota: 'Omkostningen er <code>O(n·m)</code> (n − 1 runder over m kanter). En nåelig negativ kreds opdages med en runde mere: hvis en afstand stadig forbedres, findes den korteste vej ikke.', set:{c1:{t:'O(n·m); un giro in più scopre i cicli negativi'}} }
+  ]
+};
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Bellman-Ford: korteste veje med negative vægte</h1>
+  <p class="lede">Bellman-Ford finder den mindste omkostning fra en kilde, selv med kanter med negativ vægt. Det er den samme DP for veje i en DAG, med en tæller for kanterne.</p>
+</header>
+
+<section>
+  <h2>Idéen: relakser alle kanterne, n − 1 gange</h2>
+<p>En simpel korteste vej har højst <code>n − 1</code> kanter. Så det er nok at gentage <code>n − 1</code> gange: relakser <i>alle</i> kanterne. Hver runde fastlægger veje, der er en kant længere. Tilsvarende DP: <code>OPT(i, v)</code> = mindste omkostning fra <code>s</code> til <code>v</code> med højst <code>i</code> kanter.</p>
+  <figure class="scena" data-scena="bf" data-titolo="En negativ kant forbedrer en allerede fastlagt afstand"></figure>
+</section>
+<section>
+  <h2>Negative kredse</h2>
+<p>Hvis en nåelig kreds har negativ samlet omkostning, findes den korteste vej ikke: hver runde sænker den igen. Bellman-Ford opdager det med en runde mere: hvis en afstand stadig forbedres, er der en negativ kreds.</p>
+</section>
+<section>
+  <h2>Omkostningen</h2>
+<p><code>O(n·m)</code> tid, <code>O(n)</code> plads. Langsommere end Dijkstra, men den virker med negative vægte, som Dijkstra ikke håndterer.</p>
+</section>
+<section>
+  <h2>Koden side om side</h2>
+  <p>Denne side forklarer begrebet. Java-koden, der implementerer det, med en forklaring linje for linje og de syntaksnoter, der skal bruges, står på den side ved siden af.</p>
+  <p><a href="../codice/bellman-ford.html"><b>→ Java-kode til dette emne</b></a></p>
+</section>
+<section>
+  <h2>Til eksamen</h2>
+<div class="box esame" data-tit="Til eksamen">
+<p>Negative vægte → Bellman-Ford; negative kredse → find dem med en runde mere. Sætning: <i>"Relax all edges n−1 times; then one more pass detects a negative cycle. Time O(mn)."</i></p>
+</div>
+</section>
+<section>
+  <h2>Hurtig oversigt</h2>
+<div class="tab-wrap"><table class="tab"><thead><tr><th>algoritme</th><th>vægte</th><th>tid</th></tr></thead><tbody><tr><td>Dijkstra</td><td>vægte ≥ 0</td><td>O(m log n)</td></tr><tr><td>Bellman-Ford</td><td>vægte også negative</td><td>O(mn)</td></tr><tr><td>negativ kreds</td><td>en runde mere forbedrer</td><td>minimum findes ikke</td></tr></tbody></table></div>
+</section>
+
+</main>
+</body>
+</html>

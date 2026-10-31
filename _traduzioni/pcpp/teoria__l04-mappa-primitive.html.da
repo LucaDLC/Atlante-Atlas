@@ -1,0 +1,102 @@
+@@s001 Kort over primitiverne
+@@s002 ora:spørgsmål lige nu,no:svar nej: gå ned,ok:den valgte primitiv
+@@s003 Man starter fra det, der er brug for, ikke fra primitiven. Tilfældet: flere tråde laver <code>count++</code> på den samme tæller.
+@@s004 Værdien ændrer sig: final er ikke nok.
+@@s005 Det er ikke et flag skrevet én gang: count++ er <b>læs-og-så-skriv</b>. volatile ville give synlighed, men ikke atomicitet (øvelse 3.1.8).
+@@s006 Læs-og-så-skriv: <b>lås</b> (synchronized hvis det er nok; ReentrantLock for fairness, flere conditions eller tryLock).
+@@s007 De andre spørgsmål tjener andre tilfælde: at vente på en betingelse (bounded buffer) → monitor med while; at begrænse til c tråde → Semaphore; at vente på alle → CyclicBarrier.
+@@s008 ora:inde / har tilladelsen,no:blokeret,ok:ser den sidste skrivning,dato:tråd
+@@s009 ora:linje tilføjet,ok:ja,no:nej,due:afhænger,dato:regel
+@@s010 no:forkert,ok:rigtigt
+@@s011 Kort over primitiverne
+@@s012 Alle synkroniseringsværktøjerne set til og med forelæsning 4, samlet ét sted: hvad de garanterer, hvilken happens-before-regel de giver, og hvornår de skal bruges.
+@@s013 Du havde spurgt (10. september)
+@@s014 "Forklar mig de forskellige slags låse, vi har brugt, jeg husker ikke de forskellige kategorier." Denne side er svaret, opdateret til og med forelæsning 4.
+@@s015 Tre familier
+@@s016 1 · Lås
+@@s017 Én tråd ad gangen i den kritiske sektion: <b>gensidig udelukkelse</b>. <code>synchronized</code>, <code>ReentrantLock</code>.
+@@s018 2 · At vente på en betingelse
+@@s019 En tråd venter, til tilstanden ændrer sig: <b>monitor</b> (lås + condition variable), <code>Semaphore</code>, <code>CyclicBarrier</code>.
+@@s020 3 · Kun synlighed
+@@s021 Ingen gensidig udelukkelse, kun "den der læser, ser den sidste skrivning": <code>volatile</code>, <code>final</code>.
+@@s022 Lås, at vente på en betingelse, kun synlighed
+@@s023 Tabellen
+@@s024 Primitiv
+@@s025 Hvordan den skrives
+@@s026 Gensidig udelukkelse
+@@s027 Happens-before
+@@s028 Ejer / reentrant
+@@s029 Fairness
+@@s030 <b>Indre lås</b> (monitor-lås)
+@@s031 <code>synchronized (o) { … }</code>, <code>synchronized</code>-metode (lås på <code>this</code>), <code>static synchronized</code> (lås på <code>X.class</code>)
+@@s032 ja
+@@s033 monitorreglen: unlock → næste lock på det samme objekt
+@@s034 ja / ja
+@@s035 ingen garanti, ikke konfigurerbar
+@@s036 <b><code>ReentrantLock</code></b>
+@@s037 <code>l.lock(); try { … } finally { l.unlock(); }</code>
+@@s038 ja
+@@s039 som monitoren
+@@s040 ja / ja
+@@s041 <code>new ReentrantLock(true)</code>: favoriserer den tråd, der har ventet længst
+@@s042 <b>Condition</b> (af en <code>ReentrantLock</code>)
+@@s043 <code>c = l.newCondition()</code>; <code>while (!ok) c.await();</code> · <code>c.signal()</code> / <code>c.signalAll()</code>
+@@s044 bruges mens man holder låsen
+@@s045 går gennem låsen: <code>await()</code> frigiver den og tager den igen
+@@s046 hvem der vækkes, er generelt ikke specificeret
+@@s047 <b><code>wait</code>/<code>notifyAll</code></b>
+@@s048 inde i <code>synchronized</code>: <code>while (!ok) wait();</code> · <code>notifyAll()</code>
+@@s049 bruges mens man holder den indre lås
+@@s050 går gennem den indre lås
+@@s051 kun én condition pr. objekt
+@@s052 <b><code>Semaphore</code></b>
+@@s053 <code>s.acquire(); try { … } finally { s.release(); }</code>
+@@s054 kun hvis c = 1 (mutex)
+@@s055 <code>release()</code> → en vellykket <code>acquire()</code> i en anden tråd
+@@s056 <b>nej</b> / <b>nej</b>
+@@s057 <code>new Semaphore(c, true)</code>
+@@s058 <b><code>CyclicBarrier</code></b>
+@@s059 <code>cb.await()</code>
+@@s060 nej
+@@s061 handlinger før <code>await()</code> → handlinger efter returen fra <code>await()</code> i de andre tråde
+@@s062 <b><code>volatile</code></b>
+@@s063 <code>volatile int x;</code>
+@@s064 <b>nej</b>
+@@s065 volatile-reglen: skrivning → senere læsninger; volatile-adgange aldrig i konflikt
+@@s066 <b><code>final</code></b>
+@@s067 <code>final int x;</code>
+@@s068 nej
+@@s069 initialisering → enhver handling efter konstruktøren
+@@s070 <b><code>start</code>/<code>join</code></b>
+@@s071 <code>t.start()</code>, <code>t.join()</code>
+@@s072 nej
+@@s073 start → første handling i t; sidste handling i t → join
+@@s074 Garantierne for happens-before for <code>Semaphore</code> og <code>CyclicBarrier</code> er skrevet i Java-dokumentationen ("memory consistency effects"). De andre er reglerne fra forelæsningen.
+@@s075 Gensidig udelukkelse og oprindelsen til happens-before
+@@s076 Hvilken skal man bruge?
+@@s077 Start fra det, du har brug for
+@@s078 Ingen lås nødvendig for at læse den. <a href="l04-pubblicazione.html">Uforanderlighed</a>.
+@@s079 Eksempel: <code>while (!stop)</code>, der skal se <code>stop = true</code>. Det er ikke nok, hvis skrivningen afhænger af en læsning (<code>count++</code>).
+@@s080 <code>synchronized</code> hvis det er nok; <code>ReentrantLock</code> hvis du har brug for fairness, flere conditions eller <code>tryLock</code>.
+@@s081 Lås + condition, altid med <code>while</code>. <a href="l02-monitor.html">Monitor</a>.
+@@s082 <a href="l04-semafori.html">Semaforer</a> og bounded buffer.
+@@s083 For eksempel: alle har initialiseret deres del af arrayet.
+@@s084 At vælge primitiven, ét spørgsmål ad gangen
+@@s085 De klassiske fejl
+@@s086 Fejl
+@@s087 Hvorfor den er forkert
+@@s088 <code>volatile int count</code> til en delt tæller
+@@s089 ingen data race, men <code>count++</code> er stadig en race condition (<a href="l03-esercizio-31.html">øvelse 3.1.8</a>)
+@@s090 instans-<code>synchronized</code> til at beskytte et <code>static</code>-felt
+@@s091 forskellige objekter, forskellige låse: ingen gensidig udelukkelse (<a href="l02-synchronized.html">synchronized</a>)
+@@s092 <code>lock()</code> uden <code>try/finally</code>
+@@s093 en undtagelse i den kritiske sektion efterlader låsen taget for altid
+@@s094 <code>if (!ok) c.await();</code>
+@@s095 efter vækkelsen kan betingelsen være falsk igen (spurious wakeup, andre tråde): man skal bruge <code>while</code>
+@@s096 aktiv venten: <code>while (!ok) { }</code>
+@@s097 busy-wait, forbudt i kursets øvelser: den bruger CPU i stedet for at blokere
+@@s098 mutex før <code>spaces.acquire()</code>
+@@s099 at blokere mens man holder mutex: deadlock (<a href="l04-semafori.html">bounded buffer</a>)
+@@s100 <code>release()</code> på en semafor af en tråd, der ikke har lavet <code>acquire()</code>
+@@s101 Java tillader det: tilladelserne vokser ud over kapaciteten
+@@s102 Forkert → rigtigt, ét ad gangen

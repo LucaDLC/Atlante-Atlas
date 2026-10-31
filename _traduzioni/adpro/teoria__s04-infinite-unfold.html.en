@@ -1,0 +1,100 @@
+@@s001 Infinite lists and unfold
+@@s002 dato:state,ora:f at work,ok:value emitted,no:None = end
+@@s003 <code>unfold(0)(f)</code>: one starts from the <b>state</b> 0. At each step f looks at the state and says what to emit and what the state will be afterwards.
+@@s004 f(0) = Some((0, 1)): it emits <b>0</b>, new state 1.
+@@s005 f(1) = Some((10, 2)): it emits <b>10</b>.
+@@s006 f(2) = Some((20, 3)): it emits <b>20</b>.
+@@s007 f(3) = <b>None</b>: the list ends. <code>.toList</code> = List(0, 10, 20). The state serves to remember, the value is what comes out.
+@@s008 ok:cell built,due:tail not yet forced
+@@s009 ok:emitted,dato:a,ora:b
+@@s010 ora:print,no:extra computation
+@@s011 dato:state (list, k),ok:emitted,no:end
+@@s012 Infinite lists and unfold
+@@s013 Exercises 1, 10–13. An infinite list is defined by a function that <b>calls itself in the tail</b>: thanks to <code>cons</code> the call does not start until it is needed. <code>unfold</code> generalises the idea: from an initial state and a rule "next value and next state" it generates the whole list.
+@@s014 <code>ones</code>, <code>from</code>, <code>to</code>, <code>naturals</code>
+@@s015 Exercise 1 and the example of the slide
+@@s016 An infinite list of 1s that points to <b>itself</b>. It works because the second argument of <code>cons</code> is by-name: <code>ones</code> is not read now.
+@@s017 <code>from(n)</code>: the head is <code>n</code>, the tail is "from n + 1 on". The recursive call is inside <code>cons</code>, so it does not start.
+@@s018 <code>to(n)</code>: the same, going down. This too is infinite (towards the negatives).
+@@s019 The naturals are <code>from(1)</code>: the course test <code>Ex01.06</code> wants the head to be <b>1</b> (with <code>from(0)</code> it fails: <code>Falsified after 0 passed tests</code>). <code>lazy val</code> in the companion object: computed at first use.
+@@s020 A recursive function without a base case?
+@@s021 On ordinary lists it would be an infinite loop. Here not: each call builds <b>one</b> cell and stops. The next cell is born only when someone forces the tail. <code>naturals.toList</code> instead never terminates: it wants everything.
+@@s022 Infinite lists: one cell at a time
+@@s023 <code>fibs</code>: infinite Fibonacci (exercise 10)
+@@s024 Same idea as week 1: for the next number the last two are enough. Here however I do not return a number: I produce the list of all of them.
+@@s025 fibs.take(6).toList
+@@s026 I emit <code>a</code>, then the window slides.
+@@s027 b becomes a, a + b becomes b.
+@@s028 Checked. The type, which the file leaves as <code>Any</code>, is <code>LazyList[Int]</code>.
+@@s029 go(a, b): the window that emits
+@@s030 <code>unfold</code>: the general generator (exercise 11)
+@@s031 Reading the signature
+@@s032 <code>S</code> is the type of the <b>state</b>: what I must remember between one step and the next. <code>z</code> is the initial state.
+@@s033 <code>f</code> looks at the state and answers with a <b>pair</b>: the next value to emit (<code>A</code>) and the new state (<code>S</code>).
+@@s034 It is inside an Option: <code>None</code> means "the list ends here".
+@@s035 The result is the list of the emitted values, one per step.
+@@s036 Without pattern matching: map and getOrElse of week 3
+@@s037 I ask <code>f</code> what to do with the current state: I get an <code>Option[(A, S)]</code>.
+@@s038 If there is a pair, I open it: <code>a</code> the value, <code>s</code> the new state. (Scala 3 allows writing <code>(a, s) =></code> for a function that receives a pair.)
+@@s039 I emit <code>a</code> and, as a lazy tail, the <code>unfold</code> from the new state.
+@@s040 If <code>f</code> said <code>None</code>, the list is empty. The result of <code>map</code> is an <code>Option[LazyList[A]]</code>: <code>getOrElse</code> "opens" it.
+@@s041 unfold(0)(n => if n < 3 then Some((n * 10, n + 1)) else None).toList
+@@s042 Emits 0, new state 1.
+@@s043 Emits 10.
+@@s044 Emits 20.
+@@s045 End.
+@@s046 The state serves to remember; the value is what comes out.
+@@s047 State after state
+@@s048 Why <code>unfold</code>?
+@@s049 It does the same thing as the recursion written by hand, but the recursion is written by it: you describe <b>one step only</b>.
+@@s050 By hand
+@@s051 With unfold
+@@s052 Two things change: where you wrote <code>cons(valore, &lt;ricorsione&gt;)</code> you write <code>Some((valore, nuovoStato))</code>; where you wrote <code>empty</code> you write <code>None</code>. <code>cons</code> and the recursive call are put by <code>unfold</code>, in its last line: <code>case Some((a, s)) => cons(a, unfold(s)(f))</code>.
+@@s053 The twin of fold
+@@s054 <code>foldRight</code> <b>consumes</b> a list and gives a value (exercise 8). <code>unfold</code> starts from a value (the state) and <b>builds</b> a list (exercise 13). In both cases you do not write the recursion: in the course's style scale it is the step from <i>forgivable</i> to <i>enlightened</i>.
+@@s055 Doubt: is unfold official like cons?
+@@s056 No. In the file the teacher wrote <code>empty</code>, <code>cons</code>, <code>apply</code> (companion) and <code>headOption</code>, <code>tail</code>, <code>foldRight</code>, <code>foldLeft</code>, <code>find</code> (in the enum). <code>unfold</code> you wrote it in exercise 11. The standard library's <code>LazyList</code>, which the course does <b>not</b> use, has one of its own: <code>scala.collection.immutable.LazyList.unfold(1)(n => if n &gt; 4 then None else Some((n, n * 2)))</code> → <code>List(1, 2, 4)</code> (checked).
+@@s057 Measured: unfold is one step ahead
+@@s058 ora:computed before necessary
+@@s059 I print inside the user's f and ask for 2 elements out of 3: <code>.map(…)</code> against <code>.mapUnfold(…)</code>, then <code>.take(2).toList</code>.
+@@s060 Same list, same function.
+@@s061 <code>unfold</code> must call <code>f</code> <b>first</b>, to know whether the answer is <code>None</code> (finite list) or <code>Some</code>. <code>foldRight</code> + <code>cons</code> instead keeps the head suspended too. Real output.
+@@s062 map against mapUnfold: who computes first
+@@s063 Everything with <code>unfold</code> (exercises 12–13)
+@@s064 Function
+@@s065 State
+@@s066 Rule
+@@s067 <code>from(n)</code>
+@@s068 the current number
+@@s069 <code>unfold(n)(k => Some((k, k + 1)))</code>
+@@s070 <code>fibsUnfold</code>
+@@s071 the pair (a, b)
+@@s072 <code>unfold((0, 1))((a, b) => Some((a, (b, a + b))))</code>
+@@s073 <code>mapUnfold(f)</code>
+@@s074 the remaining list
+@@s075 if it is a Cons, emit <code>f(h())</code> and pass to <code>t()</code>
+@@s076 <code>takeUnfold(n)</code>
+@@s077 (list, how many missing)
+@@s078 if there is a cell and more than 0 are missing, emit and decrease by 1
+@@s079 <code>zipWith</code>
+@@s080 (list 1, list 2)
+@@s081 if both have a cell, emit <code>ope(h1(), h2())</code>
+@@s082 The versions with unfold (checked)
+@@s083 The state is the window (a, b). I emit <code>a</code>, the new state is <code>(b, a + b)</code>. <code>fibsUnfold.take(100).toList == fibs.take(100).toList</code> is true.
+@@s084 The state is "the part of the list I still have to read". The braces with some <code>case</code>s are a function that does pattern matching on its argument.
+@@s085 The state is a pair: the list and how many elements are missing. Write the double brackets <code>unfold((this, n))</code>: it is seen to be <b>one</b> argument, the state.
+@@s086 Where does <code>k</code> come from? You do not declare it: it is born in the pattern, when the <code>case</code> takes the pair apart. <code>n</code> stays fixed (it is the parameter of the method); what goes down is the counter <b>inside the state</b>.
+@@s087 <code>case _</code> collects the two ways of ending: empty list <b>or</b> counter at 0. It goes <b>last</b>: the cases are tried from the top.
+@@s088 <code>takeWhileUnfold</code>: like <code>mapUnfold</code>, but the guard decides whether to continue. Predicate false → one falls into <code>case _</code> → end.
+@@s089 The text chooses a non-strict operation: <code>ope</code> can ignore an argument without computing it (useful with <code>||</code> and <code>&amp;&amp;</code>).
+@@s090 The state is the two lists. It stops as soon as one ends.
+@@s091 Test case of the text
+@@s092 Result (checked)
+@@s093 <code>naturals.zipWith[Int, Int](_+_)(naturals).take(2000000000).take(5).toList</code>
+@@s094 <code>List(2, 4, 6, 8, 10)</code>
+@@s095 <code>naturals.map(_%2==0).zipWith[Boolean, Boolean](_||_)(naturals.map(_%2==1)).take(4).toList</code>
+@@s096 <code>List(true, true, true, true)</code>
+@@s097 The second: every number is even <b>or</b> odd, so always <code>true</code>. Think about it before running, as the text asks.
+@@s098 Exercise 13: what the two test cases must give
+@@s099 "naturals.zipWith(_ + _)(naturals) adds each number to itself, so it gives the even numbers 2, 4, 6, …; take(2000000000) costs nothing, because it builds one node at a time. The Boolean one gives only true: every number is either even or odd. Since ope takes its operands by name, || never evaluates the second one once the first is true."
+@@s100 The state (list, k) of takeUnfold

@@ -1,0 +1,105 @@
+@@s001 Sikker publicering og uforanderlighed
+@@s002 dato:standardværdi,ora:skrevet af T1,due:læst af T2,no:gammel værdi,ok:med final
+@@s003 Det delte felt <code>u</code> er <code>null</code>. T1 er ved at udføre <code>u = new UnsafeInitialization()</code>.
+@@s004 Objektet oprettes. Før konstruktøren har hvert felt sin <b>standardværdi</b>: for en <code>int</code> er den 0. Standardværdien er synlig for alle.
+@@s005 Konstruktøren skriver <code>x = 42</code>. Skrivningen ligger i T1's cache: intet tvinger den til at nå hukommelsen med det samme.
+@@s006 T1 tildeler referencen: <code>u = objekt</code>. Denne skrivning kan nå hukommelsen <b>før</b> den på <code>x</code>: rækkefølgen er ikke garanteret (synlighed og omordning).
+@@s007 T2 læser <code>u</code>: den er ikke <code>null</code>, så den kalder <code>u.readX()</code>. Den læser den <code>x</code>, den ser: 0. Den udskriver "x is not equal 42": den har set et objekt <b>initialiseret halvt</b>.
+@@s008 Med JMM: skrivningen <code>x = 42</code> fra T1 og læsningen af <code>x</code> fra T2 er i konflikt, og <b>ingen regel</b> ordner dem. Det er et problem med <b>safe publication</b>.
+@@s009 Med <code>private final int x</code>: "initialiseringen af final-felter happens-before enhver anden handling, efter konstruktøren er færdig". Den der ser objektet, ser <code>x = 42</code>.
+@@s010 dato:tråden der opretter,due:tråden der bruger,ok:happens-before garanteret,no:kan se standardværdien
+@@s011 dato:final-felt,due:HashSet-objekt,ok:kun læsninger,no:genallokering er forbudt
+@@s012 ora:t1 addStooge,due:t2 isStooge,no:i konflikt og uordnet,ok:monitorreglen
+@@s013 ora:lås på Person.class,dato:lås på this,ok:final (uden lås),due:tråde
+@@s014 Sikker publicering og uforanderlighed
+@@s015 Punkt 3, 4 og 5 af <a href="l04-thread-safety.html">tjeklisten</a>: feltets startværdier skal være synlige for alle (<b>safe publication</b>), det der ikke ændrer sig, skal gøres uforanderligt (<b>immutability</b>), resten skal beskyttes (<b>gensidig udelukkelse</b>). Til sidst øvelse 4.2 (<code>Person</code>) gennemgået.
+@@s016 Safe publication
+@@s017 Definition
+@@s018 Tilstanden i en klasse er <b>publiceret sikkert</b>, hvis feltets startværdier, efter at et objekt er initialiseret, er synlige for <b>enhver tråd</b>, der tilgår objektet.
+@@s019 Det kræver, at <b>initialiseringen happens-before publiceringen</b>. Publicere = gøre referencen til objektet tilgængelig for andre tråde.
+@@s020 UnsafeInitialization.java (reduceret)
+@@s021 To felter, hverken <code>final</code> eller <code>volatile</code>.
+@@s022 Konstruktøren skriver dem. For den tråd, der kører konstruktøren, er der intet problem: den ser sine egne værdier.
+@@s023 T1 opretter objektet og skriver referencen ind i det delte felt <code>u</code>.
+@@s024 T2 kan se <code>u</code> ikke-null og alligevel <code>x == 0</code> eller <code>o == null</code>: skrivningerne fra konstruktøren og dens læsninger er ikke ordnet af happens-before.
+@@s025 Hvordan T2 ser et objekt initialiseret halvt
+@@s026 I praksis
+@@s027 Kursets kode gentager testen 10 millioner gange, og kommentaren advarer om, at problemet på de fleste systemer <b>ikke ses</b>. JMM tillader det dog: til eksamen ræsonnerer man ud fra reglerne, ikke ud fra det, der kommer ud, når man kører.
+@@s028 Lad ikke this slippe ud fra konstruktøren
+@@s029 Hvis referencen til objektet kommer ud <b>under</b> konstruktøren (f.eks. ved at sende <code>this</code> til en anden tråd), er problemet ikke safe publication, men det skal altid undgås.
+@@s030 Hvordan den gøres sikker
+@@s031 Slidene giver 4 måder for primitive typer og 3 for referencer. Hver virker kun under visse betingelser.
+@@s032 Måde
+@@s033 Primitive (<code>int</code>…)
+@@s034 Referencer (<code>Object</code>…)
+@@s035 Hvornår den kan bruges
+@@s036 <b>standardværdi</b>
+@@s037 0, <code>false</code>
+@@s038 <code>null</code>
+@@s039 hvis standarden er en god startværdi
+@@s040 <code>volatile</code>
+@@s041 ja
+@@s042 kun hvis feltet skal være volatile: ellers koster det ydeevne
+@@s043 <code>final</code>
+@@s044 ja
+@@s045 ja: den <b>standard</b> måde
+@@s046 hvis værdien ikke længere ændrer sig (for en reference: referencen ændrer sig ikke, indholdet kan gøre det)
+@@s047 <code>static</code>
+@@s048 ja
+@@s049 ja
+@@s050 kun hvis feltet skal tilhøre klassen, ikke objektet
+@@s051 Hvorfor de virker: tre ekstra happens-before-regler
+@@s052 Det er volatile-reglen, du allerede kender.
+@@s053 Standardværdierne tildeles, når klassen indlæses.
+@@s054 På JVM-niveau: startværdien af et final- eller static-felt kan ikke blive i cachen efter konstruktøren.
+@@s055 Disse regler er defineret af kurset ud fra JLS og Goetz: de må bruges i øvelserne.
+@@s056 Fra nu af
+@@s057 Slidene advarer: indtil nu var initialiseringen blevet ignoreret "for clarity and simplicity". Fra denne forelæsning af skal den tages i betragtning i øvelserne.
+@@s058 final, standard, volatile, static
+@@s059 Uforanderlighed
+@@s060 Et <b>uforanderligt</b> felt ændrer ikke værdi efter initialiseringen. Tænk på det som en konstant.
+@@s061 <code>final</code> forhindrer at tildele feltet igen. Men en variabel af objekttype indeholder en <b>reference</b>: <code>final</code> blokerer referencen, ikke det objekt, den peger på.
+@@s062 Hvis det aldrig ændrer sig, kan data races kun findes <b>under initialiseringen</b>.
+@@s063 Uforanderlige trådsikre felter: 3 betingelser
+@@s064 1) feltet kan ikke ændres efter publiceringen; 2) det er publiceret sikkert; 3) det slipper ikke ud.
+@@s065 ThreeStooges (Goetz s. 47)
+@@s066 <b>Klassens tilstand</b>: mængden <code>stooges</code>. Den er <code>private</code> og <code>final</code>.
+@@s067 Mængden fyldes <b>kun i konstruktøren</b>. <code>final</code> garanterer, at den der ser objektet, ser mængden allerede initialiseret: <b>safe publication</b>.
+@@s068 Den eneste offentlige metode <b>læser kun</b>, og returnerer en <code>boolean</code>, ikke mængden: ingen skrivning efter publiceringen, ingen <b>escaping</b>.
+@@s069 Så <code>isStooge</code> <b>har ikke brug for <code>synchronized</code></b>: samtidige læsninger er ikke i konflikt (der er ingen skrivning). Klassen er trådsikker.
+@@s070 final blokerer referencen, ikke indholdet
+@@s071 Gensidig udelukkelse
+@@s072 Hvis tilstanden er <b>foranderlig</b>, skal hver adgang ske med den samme lås.
+@@s073 Stooges: én metode der skriver er nok
+@@s074 <code>addStooge</code> <b>skriver</b> i mængden: tilstanden bliver foranderlig.
+@@s075 Nu skal både skrivningen og læsningen have låsen på <code>this</code>. Hvis <code>isStooge</code> blev stående uden <code>synchronized</code>, ville <code>contains</code> og <code>add</code> være i konflikt og uordnede.
+@@s076 Resumé: sådan analyserer man en klasse
+@@s077 Kun felterne, ikke metodernes parametre.
+@@s078 <a href="l04-thread-safety.html">Forrige side</a>.
+@@s079 Så initialiseringen happens-before publiceringen.
+@@s080 Disse felter har ikke brug for låsen.
+@@s081 Monitorreglen ordner ethvert par af adgange.
+@@s082 Foranderlig tilstand: samme lås til læsninger og skrivninger
+@@s083 Øvelse 4.2 gennemgået: <code>Person</code>
+@@s084 Krav: <code>id</code> kan ikke ændres; <code>zip</code> og <code>address</code> ændres sammen; alle felter kan læses; konstruktør uden parametre (id = forrige + 1, den første er 0); konstruktør med startid (bruges kun, hvis det er den første person, der oprettes).
+@@s085 En løsning (verificeret: 8 tråde × 50 000 personer → 400 000 forskellige id'er)
+@@s086 Tælleren af id'er deles af <b>alle</b> personer: <code>static</code>-felt. Det skal også vides, om en person allerede er oprettet.
+@@s087 <code>id</code> ændrer sig aldrig: <code>final</code>. Det er uforanderligt og publiceret sikkert.
+@@s088 De andre felter ændrer sig: de beskyttes af objektets lås (<code>this</code>). De skrives ikke i konstruktøren, så de starter med standarden (<code>null</code>, 0).
+@@s089 De to konstruktører beder den samme metode om id'et. <code>-1</code> betyder "intet startid".
+@@s090 <code>static synchronized</code> bruger låsen på <code>Person.class</code>: kun én for hele klassen. To konstruktører parallelt kan ikke læse den samme <code>nextId</code>. Uden <code>static</code> ville hver bruge låsen på sit <b>eget</b> objekt, og der ville ikke være gensidig udelukkelse.
+@@s091 <code>getId</code> har ingen lås: <code>id</code> er final, ingen skriver det efter konstruktøren.
+@@s092 Hver læsning og skrivning af de foranderlige felter går gennem låsen på <code>this</code>. <code>setZipAndAddress</code> ændrer dem <b>sammen</b>, i den samme blok. Getterne returnerer <code>String</code> (uforanderlig) og <code>int</code>: ingen escaping.
+@@s093 4.2.2 · Modelsvar
+@@s094 "The class state is <i>id</i>, <i>name</i>, <i>zip</i>, <i>address</i>, plus the static fields <i>nextId</i> and <i>firstCreated</i>. All fields are private and the getters only return primitives or immutable Strings, so no state escapes. The static fields are only accessed inside the static synchronized method <i>assignId</i>, which locks on <i>Person.class</i>: concurrent constructor calls are ordered by the monitor rule, so each gets a distinct id. <i>id</i> is final, so its initialization happens-before any access after the constructor finishes: other threads can never see a partially created Person. The other fields keep their default values until set, and every access to them holds the intrinsic lock of the object, so all conflicting accesses are ordered by happens-before. Hence there are no data races on the class state."
+@@s095 <b>4.2.3</b> Kørt én gang viser programmet ingen fejl (versionen ovenfor: 400 000 forskellige id'er ud af 400 000).
+@@s096 <b>4.2.4</b> <b>Nej.</b> En udførelse udforsker kun én interleaving ud af meget mange: en test kan vise tilstedeværelsen af en fejl, aldrig fraværet af den. Trådsikkerhed bevises ved ræsonnement (tjekliste + JMM), som i 4.2.2.
+@@s097 En test kan skjule den fejl, den burde finde
+@@s098 Målt på denne maskine, 3 tråde × 30 000 personer, med <code>println</code> <b>inde i</b> løkken (én pr. id, navn, zip, address). Med <code>synchronized</code> fjernet fra <code>nextId</code>, altså med data race'en inde: <b>0 dublerede id'er</b> i 3 udførelser ud af 3. Testen ser ingenting.
+@@s099 Grunden: <code>System.out.println</code> tager en intern lås på strømmen. Trådene bruger næsten al deres tid i kø på den lås, så de udføres næsten én ad gangen, og to <code>nextId</code> overlapper aldrig.
+@@s100 Den samme kode uden <code>synchronized</code>, men med <code>println</code> uden for løkken og en enkelt kontrol til sidst (<code>new Person().getId()</code> skal være 90 000): den giver <b>52 900 – 58 300</b>, i alle 5 udførelser. Med <code>synchronized</code>: 90 000, altid.
+@@s101 Det skal nævnes i <b>4.2.4</b>: den samme forkerte kode "går igennem" eller "fejler" afhængigt af en detalje, der intet har med samtidighed at gøre. Derfor beviser en test ikke fraværet af data races.
+@@s102 På dit Assignment 2 (øvelse 4.2)
+@@s103 Din <code>People.java</code> er korrekt: samme struktur (<code>static synchronized nextId</code>, <code>final id</code>, getter og setter <code>synchronized</code>). <code>Person()</code> kalder <code>this(0)</code>: hvis det er den første person, er id = 0, som teksten beder om.
+@@s104 Skal rettes i de skriftlige svar. <b>4.2.2</b>: du skrev "race condition free"; det rigtige ord er <b>data race</b>, og punkterne fra tjeklisten mangler (escaping, safe publication med <code>final</code>, lås på <code>Person.class</code> for konstruktøren). Spørgsmålet spørger udtrykkeligt <b>hvorfor konstruktøren</b> er trådsikker, og hvorfor man ikke ser halvt byggede objekter: svaret er <code>final</code> på <code>id</code> og metoden <code>static synchronized</code>. <b>4.2.4</b>: svaret skal være et klart "nej", med begrundelsen (en test beviser ikke fraværet af data races).
+@@s105 Klassens lås til id'erne, lås på this til resten

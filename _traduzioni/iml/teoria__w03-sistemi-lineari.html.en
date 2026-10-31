@@ -1,0 +1,86 @@
+@@s001 Linear systems, inverse, determinant
+@@s002 dato:coefficients,ora:unknowns,ok:constant terms
+@@s003 dato:first equation,due:second equation,ok:solution
+@@s004 dato:first equation,due:second equation,ok:solution,no:no solution
+@@s005 Two equations in two unknowns: two lines. Three things can happen.
+@@s006 <b>One solution</b>: the lines meet at one point, (1, 2). The determinant of [[2, 1], [1, 3]] is 5 ≠ 0.
+@@s007 <b>No solution</b>: x + 2y = 3 and 2x + 4y = 10 are <b>parallel</b> (same slope, different lines). The determinant of [[1, 2], [2, 4]] is 0.
+@@s008 <b>Infinitely many solutions</b>: x + 2y = 3 and 2x + 4y = 6 are the <b>same line</b> (the second is the first times 2). Every point of the line is a solution. Determinant always 0.
+@@s009 due:columns of A,ora:weighted columns,ok:b
+@@s010 due:columns,spento:column space,ok:b reachable,no:b outside
+@@s011 spento:unit square,ok:its image,no:zero area
+@@s012 dato:A,ora:the move,ok:A⁻¹
+@@s013 ok:result,due:rounding,no:error
+@@s014 dato:the points,ora:unknowns (weights),ok:the model
+@@s015 Linear systems, inverse, determinant
+@@s016 Learning a linear model means finding the weights that make many equations true together: a <b>linear system</b>. Here: how it is written with matrices, the two views (rows and columns), when it has one, no or infinitely many solutions, the column span, what the determinant measures, how the inverse is computed, and how it is solved in NumPy. Slides 51–65 of lecture 2.
+@@s017 From the system to the matrix: Ax = b
+@@s018 A <b>linear system</b> is a group of linear equations that must hold <b>at the same time</b>. The example of slide 51: two species that eat different quantities of two foods, and one asks how many there are knowing the total consumption. Each constraint is an equation.
+@@s019 It is written in compact form by gathering the numbers into three objects: the matrix of <b>coefficients</b> A (one row per equation), the vector of the <b>unknowns</b> x, the vector of the <b>constant terms</b> b. Then the whole system is <span class="m">Ax = b</span>.
+@@s020 Three ways of writing the same system
+@@s021 Two linear equations: each unknown multiplied by a number, then summed.
+@@s022 Each equation is an inner product ("linear equations are those that can be represented by an inner product").
+@@s023 The coefficients in a matrix, the unknowns in a vector, the constant terms in another.
+@@s024 Every number in its place
+@@s025 The row view: lines that cross
+@@s026 In the <b>row picture</b> (<i>row picture</i>) each equation is a geometric object: with two unknowns a line, with three a plane, with n a hyperplane (<a href="w02-iperpiani.html">hyperplanes</a>). Every point of the object makes that equation true.
+@@s027 The solution of the system is the point that makes <b>all</b> the equations true together: the <b>intersection</b> of all the lines. With 2x + y = 4 and x + 3y = 7 the two lines meet at (1, 2), and substituting one checks that both equations hold.
+@@s028 This view makes clear why one needs as many equations as unknowns: with one line alone the possible points are infinitely many; the second line chooses one.
+@@s029 Two equations, two lines, one crossing
+@@s030 One, no or infinitely many solutions
+@@s031 Two lines in the plane can be in only three ways, so a 2 × 2 system has only three possible outcomes (slide 53).
+@@s032 <b>One solution</b>: the lines cross at one point. <b>No solution</b>: the lines are <b>parallel</b> and distinct, they never meet (the equations contradict each other: x + 2y should be worth 3 and also 5). <b>Infinitely many solutions</b>: the lines <b>coincide</b>, because one equation is a multiple of the other and adds no information.
+@@s033 In the last two cases the rows of A are multiples of each other (linearly dependent) and the <b>determinant is 0</b>. If det ≠ 0 there is always one and only one solution, whatever b.
+@@s034 One, no or infinitely many solutions
+@@s035 The column view: combining the columns
+@@s036 The same system can also be read by columns (slide 61, <i>column picture</i>): <span class="m">Ax = x·a₁ + y·a₂</span>, where a₁ and a₂ are the columns of A. Solving Ax = b means finding <b>how much</b> of each column is needed to build b.
+@@s037 The solution is the same as in the row view, but the question is different and more useful in ML: "can the vector b be obtained by combining the columns?". If yes, the weights of the combination are the solution. If no, the system has no solution.
+@@s038 How much of a₁ and how much of a₂ to reach b
+@@s039 The column space and the span
+@@s040 The set of <b>all</b> the linear combinations of the columns of A is called the <b>column space</b> (<i>column space</i>), or the <b>span</b> of the columns. It is the set of the b for which Ax = b has a solution.
+@@s041 If the columns point in different directions, in 2D their span is the whole plane: every b is reached. If instead one column is a multiple of the other, the span shrinks to a <b>line</b>: the b on the line are reached in infinitely many ways, those outside never. Hence the sentence of slide 64: "vectors should span the space to have an inverse".
+@@s042 The number of really different directions among the columns is called the <b>rank</b> (<i>rank</i>): for [[1, 2], [2, 4]] it is 1. Span and rank return in week 6 (bases) and in least squares, where b usually does <b>not</b> lie in the column space and one looks for the nearest point.
+@@s043 Parallel columns: the span is a line
+@@s044 The determinant
+@@s045 For a 2 × 2 matrix the <b>determinant</b> is <span class="m">det [[a, b], [c, d]] = ad − bc</span>: product of the main diagonal minus product of the other diagonal. For [[2, 1], [1, 3]]: 2·3 − 1·1 = 5. For [[1, 2], [2, 4]]: 4 − 4 = 0.
+@@s046 Geometric meaning: |det A| is the factor by which A multiplies the <b>areas</b>. The unit square becomes the parallelogram formed by the columns, and its area is |det A|. The sign says whether A flips the orientation (like a mirror).
+@@s047 What the determinant says
+@@s048 <b>det ≠ 0</b>: A squashes nothing, the system <span class="m">Ax = b</span> has <b>one single</b> solution for every b, and A is invertible (also called <i>non-singular</i>). <b>det = 0</b>: A squashes the plane onto a line (or a point), the columns are dependent, the solutions are none or infinitely many, and A is not invertible (<i>singular</i>).
+@@s049 The determinant is an area factor
+@@s050 The inverse
+@@s051 The <b>inverse</b> of a square matrix A is the matrix <span class="m">A⁻¹</span> that "undoes" it: <span class="m">A⁻¹A = AA⁻¹ = I</span>. It exists only if det A ≠ 0 (slide 65: <i>invertible</i> = <i>non-singular</i>).
+@@s052 It serves to solve the system with the same move as a balance: both sides of Ax = b are multiplied, <b>on the left</b>, by A⁻¹. On the left remains A⁻¹Ax = Ix = x, so <span class="m">x = A⁻¹b</span>. "On the left" matters: the product of matrices is not commutative, and bA⁻¹ would not even have the right shapes.
+@@s053 The inverse of a 2 × 2
+@@s054 Swap the diagonal, change the sign of the rest, divide by the determinant.
+@@s055 For A = [[2, 1], [1, 3]].
+@@s056 The same solution found with the lines.
+@@s057 Three moves for the inverse of a 2 × 2
+@@s058 Solving a system in NumPy
+@@s059 In practice systems are solved with NumPy (slide 63: "solving the equation in python"). The functions are in the module <code>np.linalg</code> (linear algebra).
+@@s060 In NumPy (verified)
+@@s061 The determinant computed in floating point: 5 with a small rounding error. Normal: to check "det = 0" a tolerance is used, not <code>==</code>.
+@@s062 Inverse and then product: the formula of the theory.
+@@s063 In practice <code>solve</code> is used: it solves the system without computing the inverse, faster and more precise.
+@@s064 det, solve and the error of singular matrices
+@@s065 Learning a model = solving a system
+@@s066 The link with ML (slide 52: "meaning of solving for model parameters in linear models"). In a linear model the <b>unknowns are the weights</b>; the data (x, y) are known numbers. Each measured point gives a linear equation in the weights, and the set of points gives a system.
+@@s067 A line through two points
+@@s068 Two parameters to find.
+@@s069 Each point gives an equation. The unknowns are the <b>weights</b>, not x.
+@@s070 The first column of 1s is for w₀ (the constant term of the model), the second contains the x values.
+@@s071 Check: 1 + 2·1 = 3 ✓, 1 + 2·3 = 7 ✓.
+@@s072 Points (equations) versus parameters
+@@s073 System
+@@s074 What happens
+@@s075 as many as
+@@s076 square
+@@s077 usually one solution: the model passes exactly through the points
+@@s078 <b>more</b> points than parameters
+@@s079 <b>overdetermined</b>
+@@s080 with real data (noise) no exact solution: the best one is sought, with <a href="w05-minimi-quadrati.html">least squares</a>
+@@s081 <b>fewer</b> points than parameters
+@@s082 underdetermined
+@@s083 infinitely many solutions: the data are not enough to decide the model
+@@s084 Exam question Q1 (c)
+@@s085 "Explain how systems of linear equations are represented using matrices. Discuss when such systems have no solution, one solution, or multiple solutions, and relate this to model learning." This is the page: the matrix of coefficients, the three cases with the determinant, and the link "points = equations, weights = unknowns".
+@@s086 Two points, two equations in the weights, one line

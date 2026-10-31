@@ -1,0 +1,43 @@
+@@s001 Filtrare il segnale dello sguardo
+@@s002 dato:segnale grezzo,ok:segnale liscio (σ = 2),ora:|derivata|,no:saccadi trovate
+@@s003 La coordinata x della pupilla, frame dopo frame: griglia di test_subject_1, 384 frame. <b>9 gradini</b> = i 9 target guardati (fissazioni); tra un gradino e l'altro un <b>salto</b> = saccade. Dentro ogni gradino il segnale trema: è rumore (deviazione standard 1.2–1.4 px).
+@@s004 <b>Filtro gaussiano</b> con σ = 2 (<code>gaussian_filter1d</code>): il tremolio si attenua, i gradini restano.
+@@s005 Derivata del segnale liscio con il filtro [−1, 1], in valore assoluto. Durante le fissazioni è vicina a 0; alle saccadi fa un <b>picco</b>. Ai picchi alti corrispondono i salti grandi (fine riga, +33 px).
+@@s006 Soglia <b>3</b>, come nel notebook: la superano solo <b>4 picchi su 8</b> (3.99, 6.57, 3.36, 6.58). Gli altri si fermano tra 2.77 e 3.0: lo smoothing ha abbassato i salti più piccoli.
+@@s007 Con soglia <b>1</b> i picchi sono esattamente <b>8</b>, ai cambi di target (frame 43, 86, 128, 170, 212, 255, 298, 341, letti dai nomi dei file). σ e soglia vanno scelti <b>insieme</b>.
+@@s008 dato:coordinata x della pupilla,no:derivata senza smoothing,ok:derivata dopo σ = 2,ora:soglia 1
+@@s009 dato:picco più alto della derivata,ora:soglia 3,no:soglia 1
+@@s010 dato:segnale (schema),ok:dopo fixation filtering
+@@s011 Filtrare il segnale dello sguardo
+@@s012 Esercizio della settimana 8 (<i>data cleaning</i>): si prende la posizione della pupilla nel tempo, si toglie il rumore con un filtro gaussiano e si usano le derivate per trovare <b>fissazioni</b> (occhio fermo su un punto) e <b>saccadi</b> (salti tra due punti). È il punto di partenza concreto della domanda <b>Q6</b>. Tutti i numeri qui vengono dai dati veri di test_subject_1, presenti nel repo del corso.
+@@s013 Dal segnale alle saccadi
+@@s014 test_subject_1, pattern grid: 384 frame
+@@s015 Calcolato con <code>gaussian_filter1d</code> e <code>np.convolve(…, [-1, 1], "valid")</code> su <code>pupil_coordinates.csv</code> (griglia, 384 frame, 9 gruppi da 42–43 frame).
+@@s016 Il codice dell'esercizio
+@@s017 Smoothing, derivata, soglia
+@@s018 Filtro gaussiano 1D: ogni campione diventa una media pesata dei vicini, con pesi a campana. σ è la larghezza della campana.
+@@s019 Derivata come <a href="w08-derivate-bordi.html">filtro</a>. Il valore assoluto perché interessa quanto cambia, non in che verso (il segno, con la convoluzione, sarebbe comunque capovolto). <code>mode="valid"</code> è importante: vedi l'errore sotto.
+@@s020 Gli indici dove la derivata supera la soglia: i frame "in movimento". Una saccade occupa qualche frame di fila (per esempio 39–45), non uno solo.
+@@s021 La modalità di default è <code>"full"</code>: fuori dal segnale NumPy mette degli <b>zeri</b>. Al bordo la "derivata" diventa il salto da 0 a 318, cioè la coordinata stessa. Nessun messaggio d'errore, ma la soglia li scambia per movimenti. Con <code>mode="valid"</code> si tengono solo le differenze tra campioni veri.
+@@s022 Smoothing, derivata, soglia
+@@s023 σ e soglia: quanti eventi si trovano
+@@s024 Smoothing
+@@s025 picco più alto
+@@s026 eventi con soglia 3
+@@s027 eventi con soglia 1
+@@s028 nessuno
+@@s029 10 (2 falsi)
+@@s030 <b>44</b> (il rumore supera la soglia)
+@@s031 Eventi = gruppi di frame consecutivi sopra la soglia, derivata di px. Le saccadi vere sono 8.
+@@s032 Come si legge (Task 3–4 e 7)
+@@s033 Senza smoothing il tremolio da un frame all'altro supera 1 di continuo: 44 "saccadi".
+@@s034 La derivata misura il salto <b>per frame</b>: se lo stesso salto è diviso su più frame, ogni differenza è più piccola. Con σ = 5 nessun picco arriva a 3.
+@@s035 È il compromesso dei <a href="w07-filtri.html">filtri</a>: meno rumore, meno dettaglio. Per lo sguardo il "dettaglio" è la velocità delle saccadi.
+@@s036 Picchi e numero di eventi
+@@s037 Il resto dell'esercizio
+@@s038 <b>Fixation filtering</b> (Task 10): nei frame segnati come saccade si rimette l'ultimo valore di fissazione. Assunzione: durante una fissazione l'occhio è fermo, e ogni variazione è rumore. Limite: il valore "congelato" è un campione solo, rumoroso anche lui; alternative: la media o la mediana di tutta la fissazione (robusta agli outlier).
+@@s039 <b>Frame grouping</b> (Task 13): i tratti tra due saccadi sono i gruppi di frame di ogni target. Così si costruiscono in automatico le coppie (pupilla media, target) che nell'<a href="w06-assignment1-gaze.html">Assignment 1</a> si leggevano a occhio dallo scatter. Il notebook riporta un'accuratezza di 0.992 a livello di frame.
+@@s040 <b>Segnale combinato</b> (Task 17): la grandezza del gradiente √((∂x)² + (∂y)²) usa tutte e due le coordinate. Con σ = 2 e soglia 2 trova esattamente gli 8 eventi (verificato): anche i cambi di riga, dove si muovono sia x sia y.
+@@s041 Q6 e Q7 (d)
+@@s042 Per Q6 questo esercizio è l'esempio concreto: smoothing gaussiano (Q6 a) e derivate per trovare eventi (Q6 b). Per Q7 (d) è un caso di <i>data cleaning</i>: separare segnale e rumore, scegliere parametri, e riconoscere che le scelte fatte su un soggetto possono non valere per un altro (Task 16: riusare gli stessi parametri sui tuoi dati).
+@@s043 Fixation filtering, frame grouping, segnale combinato

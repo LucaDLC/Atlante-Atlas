@@ -1,0 +1,63 @@
+@@s001 synchronized: indre låse
+@@s002 dato:t1,due:t2,no:ubeskyttet adgang,ok:beskyttet
+@@s003 <p><code>sum</code> er <b>static</b>: én variabel for hele klassen. t1 kalder <code>m.addInstance(1)</code>, t2 kalder <code>Mystery.addStatic(1)</code>.</p>
+@@s004 <p><code>addInstance</code> er <b>instans-</b><code>synchronized</code>: t1 tager låsen på objektet <code>m</code>.</p>
+@@s005 <p><code>addStatic</code> er <code>static synchronized</code>: t2 tager låsen på objektet <code>Mystery.class</code>. Det er en <b>anden</b> lås, og den er fri: t2 <b>blokeres ikke</b>.</p>
+@@s006 <p>Begge udfører <code>sum += x</code> på samme tid. De to låse udelukker ikke hinanden: <b>data race</b> på <code>sum</code> og tabte forøgelser (verificeret: cirka 1,5–1,7 millioner i stedet for 2).</p>
+@@s007 <p><b>Rettelse</b> (øvelse 2.3.3): inde i <code>addInstance</code> synkroniserer man på <code>Mystery.class</code>. Nu bruger t1 og t2 den <b>samme</b> lås.</p>
+@@s008 <p>Hvis t1 har klasselåsen, venter t2, og omvendt: adgangene til <code>sum</code> er i gensidig udelukkelse. Resultatet er altid 2 000 000 (verificeret).</p>
+@@s009 dato:tråd,ora:har låsen på o,no:undtagelse,ok:lås frigivet
+@@s010 dato:låsen på objektet c1,due:låsen på objektet c2,ora:klassens lås,no:venter
+@@s011 no:fejl,ok:korrekt,dato:tråd
+@@s012 synchronized: indre låse
+@@s013 I Java har <b>hvert objekt</b> allerede en lås med en condition variable indeni: den <b>indre</b> lås (Java-specifikationerne kalder den en monitor). Den bruges med nøgleordet <code>synchronized</code>. Det vigtige punkt er at forstå, <b>hvilket objekt</b> der fungerer som lås.
+@@s014 <code>synchronized</code>-blok = lås + try/finally
+@@s015 I Java har hvert objekt allerede en lås, kaldet den <b>indre lås</b> (eller monitor-låsen). Nøgleordet <code>synchronized</code> bruger den uden at skulle oprette en <code>ReentrantLock</code>: den tager låsen, når man går ind i en blok eller en metode, og frigiver den, når man går ud. Det gør det samme som idiomet lås + try/finally, med færre linjer og uden risiko for at glemme unlock.
+@@s016 Med en Lock
+@@s017 Med den indre lås
+@@s018 Låsen på <code>o</code> tages, når man går ind i blokken, og frigives, når man går ud, <b>også</b> ved en undtagelse. Og den er reentrant.
+@@s019 Låsen frigives også ved en undtagelse
+@@s020 På en metode: hvilken lås?
+@@s021 <code>synchronized</code> kan også skrives foran en metode. Så er det vigtige spørgsmål: <b>hvilket objekt</b> giver låsen? Det afhænger af, om metoden er instans- eller static, og at give det forkerte svar er fejlen i øvelse 2.3.
+@@s022 Tre skrivemåder, to forskellige låse
+@@s023 Synchronized instansmetode …
+@@s024 …svarer til at synkronisere på <b><code>this</code></b>: låsen på det objekt, du kalder metoden på. To forskellige <code>C</code>-objekter = to forskellige låse.
+@@s025 Static synchronized metode …
+@@s026 …svarer til at synkronisere på <b><code>C.class</code></b>, objektet der repræsenterer klassen. Der er kun ét: alle kaldere bruger den samme lås.
+@@s027 Skrevet
+@@s028 Brugt lås
+@@s029 Eksempel fra slide 44–45
+@@s030 <code>synchronized</code> på en instansmetode
+@@s031 objektet <code>this</code>
+@@s032 to tråde med forskellige <code>new C()</code>: <b>forskellige låse</b>, ingen venten
+@@s033 <code>static synchronized</code>
+@@s034 objektet <code>C.class</code>
+@@s035 to tråde med forskellige <code>new C()</code>: <b>samme lås</b>
+@@s036 <code>synchronized (x) { … }</code>
+@@s037 objektet <code>x</code>
+@@s038 du vælger objektet
+@@s039 this mod C.class
+@@s040 Øvelse 2.3: klassen <code>Mystery</code>
+@@s041 Alt er <code>private</code>, og alle metoderne er <code>synchronized</code>: det ser sikkert ud. Det er det ikke.
+@@s042 To forskellige låse på den samme variabel
+@@s043 Rettelsen uden at ændre static/instans (kompileret og kørt)
+@@s044 <code>addStatic</code> bruger låsen på <code>Mystery.class</code>.
+@@s045 Adgangen til <code>sum</code> i <code>addInstance</code> bruger nu også <code>Mystery.class</code>. Teksten forbyder at ændre modifikatorerne, og denne ændring lader dem være intakte.
+@@s046 Den resterende instans-<code>synchronized</code> gør ingen skade (den tager også låsen på <code>m</code>), men det er ikke den, der beskytter <code>sum</code>.
+@@s047 Øvelse 2.3.4: er synchronized på sum() nødvendig?
+@@s048 I <b>dette</b> program nej: <code>main</code> kalder <code>sum()</code> efter <code>t1.join()</code> og <code>t2.join()</code>. Trådenes sidste skrivninger kommer før join ifølge afslutningsreglen (forelæsning 3), så læsningen ser de endelige værdier uden data race. I en klasse, der bruges af tråde, der læser <b>mens</b> andre skriver, ville den derimod være nødvendig.
+@@s049 På engelsk (2.3.2)
+@@s050 "A synchronized instance method locks <code>this</code>, the Mystery object, while a static synchronized method locks <code>Mystery.class</code>. Since t1 and t2 hold different locks, their executions of <code>sum += x</code> are not mutually exclusive, and the non-atomic read-modify-write on the static field sum can interleave and lose updates."
+@@s051 <code>wait()</code>, <code>notify()</code>, <code>notifyAll()</code>
+@@s052 Med <code>ReentrantLock</code> + <code>Condition</code>
+@@s053 Med <code>synchronized</code>
+@@s054 <code>c.await()</code>
+@@s055 <code>o.wait()</code>
+@@s056 <code>c.signal()</code>
+@@s057 <code>o.notify()</code>
+@@s058 <code>c.signalAll()</code>
+@@s059 <code>o.notifyAll()</code>
+@@s060 flere betingelser pr. lås (<code>newCondition()</code>)
+@@s061 kun én betingelse pr. objekt
+@@s062 I en <code>synchronized</code>-metode skriver man <code>this.wait()</code>. <code>wait()</code> og <code>notify()</code> skal kaldes <b>mens man holder</b> låsen på det objekt, altså inde i <code>synchronized</code> på det.
+@@s063 wait uden låsen: fejlen

@@ -1,0 +1,38 @@
+@@s001 Confinement and compound actions
+@@s002 dato:thread-safe class,due:non thread-safe object,ora:thread,no:access that skips the lock
+@@s003 Confinement and compound actions
+@@s004 An object that is not thread-safe can be made safe by enclosing it in a thread-safe class: <b>instance confinement</b>. But using only thread-safe classes is <b>not enough</b> to avoid race conditions: <b>compound actions</b> must be protected separately.
+@@s005 Instance confinement
+@@s006 Definition
+@@s007 <b>Instance confinement</b>: encapsulating access to an object that is <b>not</b> thread-safe inside a thread-safe class. The object is "confined": nobody reaches it except through the methods of the class.
+@@s008 PersonSet (Goetz p. 59)
+@@s009 <code>HashSet</code> is not thread-safe. Here it is <code>private</code> (it does not escape) and <code>final</code> (published safely).
+@@s010 Every access to the set goes through a <code>synchronized</code> method: mutual exclusion with the lock of <code>this</code>.
+@@s011 The methods return a <code>boolean</code> or nothing: the set never leaves. The set is confined, <code>PersonSet</code> is thread-safe.
+@@s012 Example in the Java library
+@@s013 The <b>synchronized collections</b>: <code>Collections.synchronizedList(l)</code> returns a wrapper in which every method is synchronized, and the original list is accessible only through it. Any collection can be made thread-safe this way (<code>synchronizedSet</code>, <code>synchronizedMap</code>…).
+@@s014 Condition
+@@s015 It works only if nobody keeps another reference to the inner object. If after <code>synchronizedList(l)</code> someone keeps using <code>l</code> directly, those accesses do not go through the lock.
+@@s016 A HashSet enclosed in a thread-safe class
+@@s017 Thread-safe classes ≠ no race conditions
+@@s018 SynchronizedSetProblem.java (reduced)
+@@s019 A thread-safe list and two threads doing the same thing. At the end one expects <code>[1, 2]</code>: the first adds 1, the second finds 1 and adds 2.
+@@s020 Two separate calls: <b>check</b>, then <b>act</b> (check-then-act). Each takes and releases the lock of the list. <b>Between the two</b> the lock is free.
+@@s021 No data race: every access to the list is inside a synchronized method, so ordered by happens-before. But if both threads do <code>contains</code> before any <code>add</code>, both add 1: <code>[1, 1]</code>. It is a <b>race condition</b>.
+@@s022 Try it yourself: every call to a method of the synchronized list is an atomic step.
+@@s023 add1IfAbsent with a synchronized list
+@@s024 Measured for real
+@@s025 Repeating the experiment 200 000 times (JDK 26), <code>[1, 1]</code> came out <b>8 times</b>. Rare, but possible: for this reason a test that "passes" proves nothing.
+@@s026 The two definitions compared
+@@s027 If "thread-safe program" means <b>without data race</b> (the course definition), this program is thread-safe. If it meant <b>without race condition</b>, it would not be. The comment in the course code says it explicitly: it depends on the definition.
+@@s028 Compound actions: extending a thread-safe class
+@@s029 A <b>compound action</b> is a sequence of method calls or field accesses that must happen all together in a critical section. Typical examples: <b>check-and-set</b> (check and then modify), <b>iteration</b>, <b>navigation</b> (for example <code>contains</code> followed by an action).
+@@s030 Solution 1: use the intrinsic lock of the collection
+@@s031 It works because the list of <code>synchronizedList</code> uses <b>itself</b> as lock: <code>synchronized (l)</code> takes the same lock as its methods, and nobody else can enter between <code>contains</code> and <code>add</code>. The Java documentation asks for the same thing to iterate: <code>synchronized (list) { for (…) … }</code>.
+@@s032 With synchronized (l) around the compound action
+@@s033 Same experiment with 200 000 trials and <code>synchronized (l)</code>: <code>[1, 1]</code> came out 0 times.
+@@s034 Solution 2: a new method in the thread-safe class
+@@s035 ThreadSafeList with addIfAbsent
+@@s036 The compound action becomes <b>a single synchronized method</b>: check and add happen with the lock held the whole time.
+@@s037 Careful: on slide 79 the method is written <code>public void synchronized</code>. In Java it does not compile (real messages of <code>javac</code>):
+@@s038 The modifiers (<code>public</code>, <code>static</code>, <code>synchronized</code>, <code>final</code>) go <b>before</b> the return type: <code>public synchronized void addIfAbsent(…)</code>. If you write it by hand at the exam, watch the order.

@@ -1,0 +1,84 @@
+@@s001 Microbenchmark: fra Mark0 til Mark8Setup
+@@s002 Microbenchmark: fra Mark0 til Mark8Setup
+@@s003 Sådan måler man, hvor lang tid et stykke Java-kode tager, uden at blive narret af JVM'en. Funktionerne <code>Mark0</code>…<code>Mark8Setup</code> i øvelse 8 er en stige: hver af dem retter en fejl fra den forrige.
+@@s004 Hvor de kommer fra: de er ikke standard
+@@s005 Funktionerne <code>Mark</code> <b>er ikke en del af Java</b>: de er skrevet af Peter Sestoft, en af de to undervisere. Det ses i headeren af <code>Benchmark.java</code> (<code>sestoft@itu.dk * 2013, 2015, 2026</code>) og i læsningen, der står i README'en for uge 8: hans noter <i>Microbenchmarks in Java, C# and C</i>. <code>Mark0</code>…<code>Mark8</code> er trinene i de noter. <code>Timer.java</code> kalder sig selv "crude wall clock timing utility" (et groft stopur).
+@@s006 Og uden for kurset?
+@@s007 Værktøjet, der bruges i praksis til Java-microbenchmarks, er <b>JMH</b> (Java Microbenchmark Harness, fra OpenJDK). Det gør professionelt de samme ting som <code>Mark</code>-funktionerne: opvarmning, gentagelser, gennemsnit og standardafvigelse. Kurset bruger <code>Mark</code>-funktionerne, fordi de er korte og kan læses linje for linje. Denne information om JMH stammer fra almen viden, ikke fra kursets filer.
+@@s008 Hvorfor et stopur ikke er nok
+@@s009 Den første idé: jeg tager tiden, kører koden, tager tiden igen og trækker fra. I Java giver det forkerte tal af tre grunde.
+@@s010 problem
+@@s011 hvad der sker
+@@s012 hvordan man undgår det
+@@s013 <b>Opvarmning</b> (warm-up)
+@@s014 I starten er koden <b>fortolket</b>, og derefter kompilerer JIT-compileren den. De første kørsler er meget langsommere.
+@@s015 gentag, indtil tiden stabiliserer sig
+@@s016 <b>Død kode</b> (dead code)
+@@s017 Hvis resultatet ikke bruges til noget, kan JIT'en fjerne beregningen, og du måler ingenting.
+@@s018 brug resultatet (<code>dummy += …</code>) og returnér det
+@@s019 <b>Støj</b>
+@@s020 Andre processer, garbage collectoren, CPU'ens frekvens: hver måling er lidt anderledes.
+@@s021 gentag 10 gange og giv <b>middelværdi ± standardafvigelse</b>
+@@s022 Et virkeligt eksempel, målt på denne pc (JDK 26.0.2.1): <code>myPoint.hashCode()</code> i første runde koster <b>490 ns</b> (sdev 1164); efter 134 millioner gentagelser koster det <b>2,5 ns</b> (sdev 0,09). Koden er identisk: det eneste, der er ændret, er, at JVM'en i mellemtiden har kompileret den.
+@@s023 Stigen: hver Mark retter en fejl
+@@s024 Fra Mark0 til Mark8Setup
+@@s025 no:fejl,ok:rettelse,ora:hvad der ændrer sig,dato:de målte data
+@@s026 Ubrugelig: den inkluderer opvarmningen, og stopurets præcision er ikke nok til et kald på få nanosekunder.
+@@s027 Tiden deles med 100 millioner, men JIT'en kan regne ud, at <code>multiply(i)</code> ikke bruges til noget, og fjerne det: du måler måske en tom løkke.
+@@s028 Nu bruges resultatet (<code>dummy</code> kommer ud af metoden): JIT'en kan ikke fjerne beregningen.
+@@s029 Man kan se opvarmningen (de første linjer er højere) og variationen mellem en gentagelse og den næste.
+@@s030 Ét tal, med dets usikkerhed. Formlen står i afsnittet nedenfor.
+@@s031 Man skal ikke gætte, hvor mange kald der skal til: man starter med få og fordobler, og stopper, når runden er lang nok til at blive målt godt. Den udskriver en linje for hver fordobling.
+@@s032 Man kan måle al slags kode: <code>Mark6('n', "hashCode()", i -&gt; myPoint.hashCode())</code>. Den udskriver stadig en linje for hver fordobling: det tjener til at se, hvordan den stabiliserer sig.
+@@s033 Det er den, man skal bruge til at rapportere et resultat: én linje pr. måling, uden linjerne fra opvarmningen.
+@@s034 Den bruges til at putte en parameter i linjen, for eksempel størrelsen af arrayet (<code>String.format("%8d", size)</code>).
+@@s035 Den forbereder data <b>uden at tælle tiden for det</b>: for eksempel at blande arrayet, inden hver sortering.
+@@s036 Mark7 linje for linje
+@@s037 Mark7 (fra Benchmark.java)
+@@s038 Metoden modtager tre ting: <b>tidsenheden</b> (<code>'n'</code> nanosekunder, <code>'u'</code> mikrosekunder, <code>'m'</code> millisekunder), en <b>besked</b> at udskrive og <b>funktionen, der skal måles</b> <code>f</code>. <code>LongToDoubleFunction</code> er et Java-interface med én metode, <code>applyAsDouble(long)</code>: den tager en <code>long</code> og returnerer en <code>double</code>. Derfor sender man en lambda <code>i -&gt; …</code>.
+@@s039 <code>n</code> = hvor mange gentagelser af den samme runde der laves, så der kan beregnes et gennemsnit. <code>count</code> = hvor mange gange <code>f</code> kaldes i en runde; den starter på 1 og fordobles straks, så den første runde har 2.
+@@s040 <code>dummy</code> samler alle resultaterne af <code>f</code>, så JIT'en ikke kan kassere beregningen. <code>st</code> = summen af tiderne, <code>sst</code> = summen af tidernes <b>kvadrater</b>: de skal bruges til standardafvigelsen.
+@@s041 Hver runde i <code>do</code> fordobler <code>count</code>: 2, 4, 8, … indtil runden varer længe nok.
+@@s042 Summerne nulstilles ved hver fordobling: gennemsnittet handler kun om de 10 gentagelser af <b>denne</b> <code>count</code>.
+@@s043 Et nyt stopur for hver gentagelse. <code>new Timer()</code> starter det; <code>t.check()</code> returnerer de forløbne sekunder.
+@@s044 Det målte arbejde: det kalder <code>f</code> <code>count</code> gange og sender <code>i</code> med (0, 1, 2, …). At sende <code>i</code> forhindrer JIT'en i at beregne resultatet på forhånd som en konstant.
+@@s045 Tiden for <b>ét</b> kald: sekunderne i runden × enhedens faktor (<code>scale('n')</code> = 1e9) ÷ <code>count</code>.
+@@s046 Opdaterer summerne: <code>st</code> med tiden, <code>sst</code> med dens kvadrat. <code>totalCount</code> tæller alle kald; den tjener kun til den returnerede værdi.
+@@s047 Betingelse for at <b>fortsætte</b>: hvis den sidste gentagelse varede mindre end 0,25 s, fordobles <code>count</code>, og det gøres om. Når den varer mindst 0,25 s, er stopuret præcist nok, og man stopper.
+@@s048 Gennemsnit og standardafvigelse for de 10 gentagelser (formlen står i afsnittet nedenfor).
+@@s049 Udskriver én enkelt linje: besked, gennemsnit, enhed, sdev, <code>count</code> for den sidste runde.
+@@s050 Returnerer noget, der afhænger af alle resultaterne: den sidste måde at få <code>dummy</code> brugt på.
+@@s051 Gennemsnit og standardafvigelse
+@@s052 <b>Standardafvigelsen</b> (sdev) siger, hvor meget målingerne er spredt omkring gennemsnittet. Hvis den er lille i forhold til gennemsnittet, er målingen stabil; hvis den er stor, er den ikke det. Linjen <code>sdev = Math.sqrt((sst - mean*mean*n)/(n-1))</code> bruger de to summer, som løkken allerede har akkumuleret. Et eksempel med 4 tider (funktionen bruger 10):
+@@s053 Fra 4 tider til gennemsnit ± sdev
+@@s054 dato:tiderne,due:kvadraterne,ora:formlen,ok:resultatet
+@@s055 Fire gentagelser af den samme runde.
+@@s056 Summen af tiderne.
+@@s057 Summen af tidernes kvadrater.
+@@s058 Gennemsnittet.
+@@s059 Der divideres med n−1 og ikke med n: det er formlen for den stikprøvebaserede standardafvigelse.
+@@s060 Kontrol: afvigelserne fra gennemsnittet er −1, 0, 0, +1, og deres kvadrater giver 2 i alt: det samme, fordi Σ(t − gennemsnit)² = Σt² − n·gennemsnit². Fordelen er, at løkken ikke skal huske de enkelte tider.
+@@s061 Sådan læser man en linje fra Mark7
+@@s062 <code>navn gennemsnit enhed sdev count</code>: for eksempel betyder <code>Thread virt cre strt join 14557,2 ns 864,61 32768</code>, at det i gennemsnit koster 14 557 ns at oprette, starte og vente på en virtuel tråd, med sdev 865 ns (6 % af gennemsnittet), målt over en runde på 32 768 kald. En sdev tæt på eller over gennemsnittet betyder, at tallet ikke er pålideligt.
+@@s063 Timer og Mark8Setup: måling uden opsætningen
+@@s064 Timer.java og hjertet i Mark8Setup
+@@s065 <code>start</code> = det øjeblik, stopuret blev (gen)startet; <code>spent</code> = den tid, der allerede er akkumuleret før en pause.
+@@s066 <code>System.nanoTime()</code> er Javas ur i nanosekunder (nyttigt kun til at trække to øjeblikke fra hinanden). Den målte tid er <i>nu − start + spent</i>, divideret med 1e9 for at få den i sekunder.
+@@s067 <code>pause()</code>: lægger den tid, der er gået siden det sidste <code>start</code>, til <code>spent</code>. Fra da tæller den tid, der går, <b>ikke</b>, før <code>play()</code> kaldes igen.
+@@s068 <code>play()</code>: starter igen fra nu af. Alt, der er sket mellem <code>pause()</code> og <code>play()</code>, bliver udenfor <code>check()</code>.
+@@s069 Stopuret stoppes, dataene forberedes (for eksempel <code>shuffle</code> af arrayet, som koster 1,1 ms på 100 000 elementer), det startes igen, og kun <code>f</code> måles. Uden dette ville sorteringen også måle omblandingen.
+@@s070 Hvad øvelserne 8.1–8.4 måler
+@@s071 Opgavens tråd: <b>hvor meget en ting virkelig koster</b>, når den i Java ser gratis ud (en biblioteksfunktion, en tråd, et nøgleord)? Hver øvelse måler en anden omkostning med de samme <code>Mark</code>-funktioner. Tallene er fra denne pc (i5-11400H, JDK 26.0.2.1).
+@@s072 Opgaven i 4 trin
+@@s073 dato:hvad der måles,ok:resultat,ora:hvad man lærer,no:advarsel
+@@s074 <mark class="ora">Man lærer at bruge Mark7 og at læse sdev.</mark> I én kørsel havde <code>tan</code> og <code>asin</code> sdev ±5 ns, og i de andre kørsler blev de normale igen: det var støj. <code>Math.sqrt</code> (≈2 ns) er en enkelt CPU-instruktion; <code>Math.random</code> (≈20–29 ns) bruger en delt <code>Random</code> med en CAS. Og <code>sqrt(random)</code> er ikke <code>random + sqrt</code>: de 2 ns af <code>sqrt</code> forsvinder i støjen.
+@@s075 <mark class="ora">Trådens omkostning = total − trådens arbejde.</mark> Arbejdet (1000 inkrementeringer) er værd ≈4,7 µs, så overhead er ≈106 µs mod ≈6,9 µs: cirka 15 gange mindre for den virtuelle. En platformstråd bør ikke oprettes til et lille arbejde. Pas på: <mark class="no">"opret + start" uden join er ikke pålideligt</mark> (meget høj sdev).
+@@s076 <mark class="ora">Parallelisering betaler sig kun, hvis arbejdet for en tråd er mere værd end trådens omkostning</mark> (≈7 µs for en virtuel, fra det forrige trin). Derfor opretter den parallelle quicksort kun en tråd, hvis <code>j - a &gt; 50</code>: under det koster sortering mindre end at oprette tråden.
+@@s077 <mark class="ora">Et <code>volatile</code>-felt koster cirka 20 gange</mark> allerede med én tråd: hver skrivning har en hukommelsesbarriere, og JIT'en kan ikke holde feltet i et register. Med to tråde på det samme objekt når <code>addVolatile</code> ≈31 ns pr. addition, mens <code>add</code> ikke ændrer sig.
+@@s078 Lektionen der binder dem sammen
+@@s079 Omkostningen er aldrig "nul", og den er aldrig "det, den ser ud til": et bibliotekskald, en tråd eller et nøgleord kan koste fra få ns til hundredvis af µs. For at beslutte (tråd ja eller nej? <code>volatile</code> ja eller nej?) skal man <b>måle grundigt</b>: opvarmning, brugt resultat, gentagelser, sdev. Og det er derfor, <code>Mark</code>-funktionerne findes.
+@@s080 Praktiske regler
+@@s081 Ting der forfalsker målingen
+@@s082 <b>Aldrig i en IDE eller i debug-tilstand</b> (det står i opgavens tekst). Luk de andre programmer; på en bærbar computer skal strømforsyningen tilsluttes. Lav altid mindst to kørsler og kig på sdev: en meget højere sdev i én kørsel (som <code>tan</code> med ±5,4 ns i én kørsel ud af to) angiver støj, ikke en egenskab ved funktionen. Værdien, som <code>f</code> returnerer, skal <b>afhænge af det målte arbejde</b>, ellers fjerner JIT'en den.
+@@s083 Kommandoer i terminalen
+@@s084 Fra projektmappen: <code>gradle -q -PmainClass=exercises08.Benchmark run</code> (skift klassen for de andre: <code>TestTimeThreads</code>, <code>TestTimeSort</code>, <code>TestTimeVolatile</code>). <code>-q</code> udskriver kun programmets output; for at gemme det tilføjes <code>&gt; file.txt</code>. Uden Gradle: fra mappen <code>app/src/main/java</code>, <code>javac exercises08/*.java</code> og derefter <code>java exercises08.Benchmark</code>.

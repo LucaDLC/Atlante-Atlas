@@ -1,0 +1,43 @@
+@@s001 Filtering the gaze signal
+@@s002 dato:raw signal,ok:smooth signal (σ = 2),ora:|derivative|,no:saccades found
+@@s003 The x coordinate of the pupil, frame after frame: grid of test_subject_1, 384 frames. <b>9 steps</b> = the 9 targets looked at (fixations); between one step and the next a <b>jump</b> = saccade. Inside each step the signal trembles: it is noise (standard deviation 1.2–1.4 px).
+@@s004 <b>Gaussian filter</b> with σ = 2 (<code>gaussian_filter1d</code>): the trembling is attenuated, the steps remain.
+@@s005 Derivative of the smooth signal with the filter [−1, 1], in absolute value. During the fixations it is close to 0; at the saccades it makes a <b>peak</b>. High peaks correspond to the large jumps (end of a row, +33 px).
+@@s006 Threshold <b>3</b>, as in the notebook: only <b>4 peaks out of 8</b> exceed it (3.99, 6.57, 3.36, 6.58). The others stop between 2.77 and 3.0: the smoothing lowered the smaller jumps.
+@@s007 With threshold <b>1</b> the peaks are exactly <b>8</b>, at the changes of target (frames 43, 86, 128, 170, 212, 255, 298, 341, read from the file names). σ and threshold must be chosen <b>together</b>.
+@@s008 dato:x coordinate of the pupil,no:derivative without smoothing,ok:derivative after σ = 2,ora:threshold 1
+@@s009 dato:highest peak of the derivative,ora:threshold 3,no:threshold 1
+@@s010 dato:signal (sketch),ok:after fixation filtering
+@@s011 Filtering the gaze signal
+@@s012 Exercise of week 8 (<i>data cleaning</i>): one takes the position of the pupil over time, removes the noise with a Gaussian filter and uses the derivatives to find <b>fixations</b> (eye still on a point) and <b>saccades</b> (jumps between two points). It is the concrete starting point of question <b>Q6</b>. All the numbers here come from the real data of test_subject_1, present in the course repo.
+@@s013 From the signal to the saccades
+@@s014 test_subject_1, grid pattern: 384 frames
+@@s015 Computed with <code>gaussian_filter1d</code> and <code>np.convolve(…, [-1, 1], "valid")</code> on <code>pupil_coordinates.csv</code> (grid, 384 frames, 9 groups of 42–43 frames).
+@@s016 The code of the exercise
+@@s017 Smoothing, derivative, threshold
+@@s018 1D Gaussian filter: each sample becomes a weighted average of its neighbours, with bell-shaped weights. σ is the width of the bell.
+@@s019 Derivative as a <a href="w08-derivate-bordi.html">filter</a>. The absolute value because what matters is how much it changes, not in which direction (the sign, with convolution, would be flipped anyway). <code>mode="valid"</code> is important: see the error below.
+@@s020 The indices where the derivative exceeds the threshold: the "moving" frames. A saccade occupies a few consecutive frames (for example 39–45), not just one.
+@@s021 The default mode is <code>"full"</code>: outside the signal NumPy puts <b>zeros</b>. At the edge the "derivative" becomes the jump from 0 to 318, that is the coordinate itself. No error message, but the threshold takes them for movements. With <code>mode="valid"</code> only the differences between real samples are kept.
+@@s022 Smoothing, derivative, threshold
+@@s023 σ and threshold: how many events one finds
+@@s024 Smoothing
+@@s025 highest peak
+@@s026 events with threshold 3
+@@s027 events with threshold 1
+@@s028 none
+@@s029 10 (2 false)
+@@s030 <b>44</b> (the noise exceeds the threshold)
+@@s031 Events = groups of consecutive frames above the threshold, derivative of px. The real saccades are 8.
+@@s032 How to read it (Tasks 3–4 and 7)
+@@s033 Without smoothing the trembling from one frame to the next keeps exceeding 1: 44 "saccades".
+@@s034 The derivative measures the jump <b>per frame</b>: if the same jump is split over several frames, each difference is smaller. With σ = 5 no peak reaches 3.
+@@s035 It is the compromise of the <a href="w07-filtri.html">filters</a>: less noise, less detail. For the gaze the "detail" is the speed of the saccades.
+@@s036 Peaks and number of events
+@@s037 The rest of the exercise
+@@s038 <b>Fixation filtering</b> (Task 10): in the frames marked as saccade the last fixation value is put back. Assumption: during a fixation the eye is still, and every variation is noise. Limit: the "frozen" value is a single sample, noisy too; alternatives: the mean or the median of the whole fixation (robust to outliers).
+@@s039 <b>Frame grouping</b> (Task 13): the stretches between two saccades are the groups of frames of each target. In this way the pairs (mean pupil, target) that in the <a href="w06-assignment1-gaze.html">Assignment 1</a> were read by eye from the scatter are built automatically. The notebook reports an accuracy of 0.992 at frame level.
+@@s040 <b>Combined signal</b> (Task 17): the magnitude of the gradient √((∂x)² + (∂y)²) uses both coordinates. With σ = 2 and threshold 2 it finds exactly the 8 events (verified): also the changes of row, where both x and y move.
+@@s041 Q6 and Q7 (d)
+@@s042 For Q6 this exercise is the concrete example: Gaussian smoothing (Q6 a) and derivatives to find events (Q6 b). For Q7 (d) it is a case of <i>data cleaning</i>: separating signal and noise, choosing parameters, and recognising that the choices made on one subject may not hold for another (Task 16: reusing the same parameters on your data).
+@@s043 Fixation filtering, frame grouping, combined signal

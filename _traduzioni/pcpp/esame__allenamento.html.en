@@ -1,0 +1,100 @@
+@@s001 Oral questions and model answers
+@@s002 <span>Exam</span>
+@@s003 Oral questions and model answers
+@@s004 The typical oral questions, each with its <b>model answer in English</b>, already written out. Many come from the blue boxes of the slides. It grows with every lecture.
+@@s005 How each answer is built
+@@s006 Every model answer follows the same pattern: definition, example, conclusion, limit. The pattern is explained in <a href="come-rispondere.html">how to answer</a>.
+@@s007 Lecture 1 · Concurrency and mutual exclusion
+@@s008 1 · What kind of concurrency is requesting a web page from a server?
+@@s009 Blue box, lecture 1.
+@@s010 Model answer
+@@s011 "It depends on the point of view. For the client it is <b>inherent</b> concurrency: the browser must stay responsive to the user while it waits for the network. For the server it is <b>hidden</b> concurrency, because many requests share the same machine and each behaves as if it had the server for itself, and <b>exploitation</b> if the server uses several cores to serve more requests."
+@@s012 The categories are not mutually exclusive: what counts is the reason. <a href="../teoria/l01-perche-concorrenza.html">Why concurrency</a>.
+@@s013 2 · Two threads each execute counter++ 3 times without locks. What is the minimum value the program can print?
+@@s014 Blue box "HARDer", exercise 1.1.8.
+@@s015 Model answer
+@@s016 "<b>2</b>, not 3. t1 reads 0 and is paused. t2 does two full increments. t1 writes 1, overwriting t2's work. t2 then reads 1 and is paused. t1 finishes its remaining increments. t2 finally writes 2, overwriting everything t1 did. So the last write is 2."
+@@s017 Checked by enumerating all the interleavings: <a href="../teoria/l01-interleaving.html">interleavings</a>.
+@@s018 3 · What is a race condition? What is a critical section?
+@@s019 Model answer
+@@s020 "A <b>race condition</b> occurs when the result of a program depends on the interleaving of the threads, for example when two threads increment a shared counter and one update is lost. A <b>critical section</b> is the part of the code that accesses shared state and must be executed by at most one thread at a time. <b>Mutual exclusion</b> is the property that no two threads are in the critical section at the same time, and we ensure it with locks."
+@@s021 4 · Why do we call unlock() in a finally block?
+@@s022 Model answer
+@@s023 "If the critical section throws an exception, the code after it is skipped. Without finally the lock would never be released, and every other thread calling lock() would block forever. The finally block runs in every case, so the lock is always released."
+@@s024 5 · A thread holding a ReentrantLock calls lock() on it again. What happens?
+@@s025 Model answer
+@@s026 "It succeeds immediately, because the lock is reentrant: the lock records its owner and a hold count, which goes to 2. The thread must call unlock() twice before other threads can acquire it. Intrinsic locks (synchronized) are reentrant too; a semaphore is not."
+@@s027 Lecture 2 · Monitors, fairness, visibility
+@@s028 6 · Why must await() be called in a while loop and not in an if?
+@@s029 Model answer
+@@s030 "Java monitors follow Mesa semantics: a signalled thread is only moved back to compete for the lock, it does not run immediately. By the time it reacquires the lock, another thread may have changed the state, so the condition may be false again. Threads can also wake up spuriously. The while loop re-checks the condition after every wake-up."
+@@s031 <a href="../teoria/l02-fairness.html">Mesa and Hoare</a>.
+@@s032 7 · Is the readers-writers monitor fair towards writers? How do you fix it?
+@@s033 Exercise 2.1.2.
+@@s034 Model answer
+@@s035 "No. A writer waits until there are no readers, but new readers can keep entering while others are still reading, so the number of readers may never reach zero and the writer starves. The fix is a flag set by a waiting writer: new readers must wait while the flag is set, so the current readers eventually leave and the writer enters."
+@@s036 Limit to state: the choice of who takes the lock stays arbitrary if the lock is not fair. <a href="../teoria/l02-fairness.html">Fairness</a>.
+@@s037 8 · Why do visibility problems occur?
+@@s038 Blue box, lecture 2.
+@@s039 Model answer
+@@s040 "Each core has caches and registers, and a write may stay there for a while before reaching main memory; compilers and CPUs may also reorder instructions. Without synchronization, nothing forces a write of one thread to become visible to another thread, so a thread may keep reading a stale value, for example looping forever on a flag."
+@@s041 <a href="../teoria/l02-visibility.html">Visibility</a>.
+@@s042 9 · What are the possible outputs of PossibleReordering?
+@@s043 Blue box, lecture 2. t1: <code>a = 1; x = b;</code> · t2: <code>b = 1; y = a;</code>
+@@s044 Model answer
+@@s045 "(0,1), (1,0) and (1,1) come from interleavings. (0,0) is also possible: it is not produced by any interleaving, but by reordering or visibility effects, since the writes and reads are not ordered by happens-before."
+@@s046 10 · Mystery: all methods are synchronized, so why is there a race condition?
+@@s047 Exercise 2.3.
+@@s048 Model answer
+@@s049 "A synchronized instance method locks <i>this</i>, a static synchronized method locks the class object. They are two different locks, so an instance method and a static method can update the static field <i>sum</i> at the same time: there is no mutual exclusion between them."
+@@s050 <a href="../teoria/l02-synchronized.html">synchronized</a>.
+@@s051 Lecture 3 · Java Memory Model
+@@s052 11 · Why do we need a memory model?
+@@s053 Blue box, lecture 3.
+@@s054 Model answer
+@@s055 "Hardware differs between machines, and compilers, runtimes and CPUs optimise code in ways that produce non-sequentially-consistent results. The Java memory model is a set of rules defining which executions are valid on any hardware, so programmers can predict the behaviour of their programs. It guarantees sequential consistency for correctly synchronized programs."
+@@s056 12 · Name the happens-before rules.
+@@s057 Model answer
+@@s058 "Program order within a thread; the monitor rule (an unlock happens-before every subsequent lock on the same monitor); the volatile rule (a write to a volatile variable happens-before every subsequent read of it); the thread start rule (start() happens-before the first action of the started thread); the thread termination rule (the last action of a thread happens-before a join() on it); and transitivity. The lecture notes list the complete set with the default initialization rule."
+@@s059 <a href="../teoria/l03-happens-before.html">The eight rules</a>.
+@@s060 13 · When does a program contain a data race?
+@@s061 Model answer
+@@s062 "When an execution contains two conflicting actions, that is, two accesses to the same non-volatile variable from different threads, at least one of them a write, that are not ordered by happens-before. A program is correctly synchronized if none of its executions contains a data race."
+@@s063 14 · If count is volatile, does CountingThreads have a data race? Does it always print 2?
+@@s064 Exercises 3.1.8 and 3.1.9.
+@@s065 Model answer
+@@s066 "No data race: by definition, accesses to volatile variables are never conflicting. But it may print 1: both threads can read 0 before either writes. Volatile gives visibility, not mutual exclusion, so the race condition remains."
+@@s067 <a href="../teoria/l03-esercizio-31.html">Exercise 3.1 worked out</a>.
+@@s068 15 · Is a correctly synchronized program free of race conditions?
+@@s069 Model answer
+@@s070 "No. Correct synchronization only rules out data races. The volatile counter and <i>addIfAbsent</i> on a synchronized list are data race free but still have race conditions."
+@@s071 Lecture 4 · Thread-safe classes and synchronizers
+@@s072 16 · What is a thread-safe class in this course?
+@@s073 Blue box: "What is the specification in this definition?"
+@@s074 Model answer
+@@s075 "A class is thread-safe if no concurrent execution of method calls or field accesses on objects of the class results in data races on the fields of the class. The specification is therefore absence of data races on the class state, not general correct behaviour. To show it, we cover class state, escaping, safe publication, immutability and mutual exclusion."
+@@s076 17 · Can list a escape in IntArrayList?
+@@s077 Blue box, lecture 4.
+@@s078 Model answer
+@@s079 "Yes. <i>get()</i> returns a reference to the internal list. The lock only covers the return, so a thread can later call <i>set</i> on the list without the lock. That write and the write in the synchronized <i>set</i> are not ordered by happens-before: a data race on the class state. The fix is to return a copy or a single element."
+@@s080 <a href="../teoria/l04-thread-safety.html">Escaping</a>.
+@@s081 18 · Is this program race condition free? (addIfAbsent on a synchronizedList)
+@@s082 Blue box, lecture 4.
+@@s083 Model answer
+@@s084 "It is data race free, because every access goes through the synchronized methods of the list. But it is not race condition free: contains and add are separate calls, and both threads can find the element absent and add it twice. We fix it by making the compound action atomic, with <i>synchronized (l)</i> around it or with a synchronized <i>addIfAbsent</i> in the class."
+@@s085 <a href="../teoria/l04-confinamento.html">Compound actions</a>.
+@@s086 19 · What is safe publication, and how do you ensure it for an int field?
+@@s087 Model answer
+@@s088 "State is safely published if the initial values of the fields are visible to every thread that accesses the object, which requires that initialization happens-before publication. For an int field: keep the default value if acceptable, declare it final if it never changes, volatile if it has to be volatile, or static if it belongs to the class."
+@@s089 <a href="../teoria/l04-pubblicazione.html">Safe publication</a>.
+@@s090 20 · Why doesn't isStooge in ThreeStooges need to be synchronized?
+@@s091 Blue box, lecture 4.
+@@s092 Model answer
+@@s093 "The set is final, so it is safely published; it is only modified in the constructor, so it is immutable after publication; and it never escapes, since isStooge returns a boolean. After publication there are only reads, and reads never conflict, so no data race is possible without a lock."
+@@s094 21 · How does a semaphore differ from a lock?
+@@s095 Model answer
+@@s096 "A semaphore has a capacity: up to c threads can pass acquire() at the same time, while a lock admits one. A semaphore has no owner, so any thread may call release(), and it is not reentrant. With capacity 1 it can be used as a mutex."
+@@s097 22 · Can you implement a bounded buffer with barriers only?
+@@s098 Exercise 4.1.3.
+@@s099 Model answer
+@@s100 "No. A barrier blocks until a fixed number of threads arrive, independently of the buffer's content. A bounded buffer must block producers only when it is full and consumers only when it is empty, which requires counting items and spaces, and it needs mutual exclusion on the queue. Barriers provide neither."

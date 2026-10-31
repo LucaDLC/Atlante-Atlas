@@ -1,0 +1,98 @@
+@@s001 Classi thread-safe
+@@s002 ora:T1 (con lock),due:T2 (con lock),no:accesso senza lock,ok:soluzione
+@@s003 Lo stato della classe è la lista <code>a</code>, <code>private</code>. L'idea: ci si arriva solo passando dai metodi <code>synchronized</code>, cioè con il lock dell'oggetto.
+@@s004 T1 chiama <code>array.set(0,1)</code>: prende il lock, scrive in <code>a</code>, rilascia.
+@@s005 T2 chiama <code>array.get()</code>: anche lui prende il lock, e il metodo restituisce <code>a</code>. Ma in Java restituire un oggetto vuol dire restituire un <b>riferimento</b> a quell'oggetto, non una copia.
+@@s006 <code>get()</code> finisce e rilascia il lock. T2 però tiene il riferimento: con <code>.set(0,42)</code> scrive dentro <code>a</code> <b>senza nessun lock</b>. Lo stato è <b>scappato</b> (escaped).
+@@s007 Le due scritture su <code>a</code> (T1 con lock, T2 senza) sono in conflitto e nessuna regola le ordina: la regola del monitor serve un lock <b>in entrambi</b> i thread. Data race sullo stato della classe ⇒ <code>IntArrayList</code> <b>non è thread-safe</b>.
+@@s008 Soluzione: non restituire mai lo stato. <code>get</code> restituisce una <b>copia</b> (<code>new ArrayList&lt;&gt;(a)</code>) o un solo elemento (<code>a.get(i)</code>). T2 può modificare la copia quanto vuole: non è stato della classe.
+@@s009 ok:specifica,spento:resto del programma,dato:la classe analizzata,ora:thread
+@@s010 dato:campi della classe,ora:thread,ok:accessi ordinati,no:data race
+@@s011 ora:elemento che stai controllando,ok:controllato
+@@s012 dato:class state di C,due:oggetto esterno (lista),ora:thread,no:data race
+@@s013 Classi thread-safe
+@@s014 Analizzare un intero programma concorrente con il JMM diventa impossibile oltre poche righe. Si analizza <b>una classe alla volta</b>. Questa pagina dà la definizione di classe thread-safe del corso e i primi due punti della checklist: <b>class state</b> ed <b>escaping</b>.
+@@s015 Correttezza e specifica
+@@s016 Un programma è <b>corretto</b> se rispetta la sua <b>specifica</b>.
+@@s017 La specifica è una frase precisa sul comportamento voluto. Esempi: "più lettori insieme, un solo scrittore e solo senza lettori"; "l'output deve essere PEOPLE*num_threads".
+@@s018 Nel corso le specifiche restano frasi (niente logica formale).
+@@s019 Ragionare su migliaia di righe (server, sistemi operativi, GUI) è ingestibile. In un linguaggio a oggetti si analizza la <b>classe</b>: restano solo le chiamate di metodo e gli accessi ai campi fatti in concorrenza.
+@@s020 Dal programma intero alla singola classe
+@@s021 La definizione del corso
+@@s022 Thread-safe class
+@@s023 "A class is thread-safe if no concurrent execution of method calls or field accesses (read/write) on objects of this class results in <b>data races on the fields of the class</b>."
+@@s024 In italiano: comunque si chiamino in parallelo i metodi (o si leggano/scrivano i campi) di un oggetto di questa classe, <b>non c'è mai una data race sui campi della classe</b>.
+@@s025 Non è un termine vago
+@@s026 Nel corso "thread-safe" <b>non</b> vuol dire "sembra funzionare in concorrenza". Vuol dire solo: nessuna data race sui campi. La specifica di questa definizione è quindi "assenza di data race". È ispirata alla definizione del JMM: "a program is correctly synchronized iff none of its executions contains data races".
+@@s027 È diversa da Goetz cap. 4, che parla di invarianti della classe; somiglia a Goetz cap. 2, pag. 18.
+@@s028 Thread-safe program
+@@s029 "A concurrent program is thread-safe if and only if it is <b>data race free</b>." Non confondere: una classe thread-safe riguarda i suoi campi, un programma thread-safe riguarda tutte le sue variabili condivise. Goetz non definisce i programmi thread-safe.
+@@s030 Cosa garantisce
+@@s031 Nessuna data race sui campi della classe, per qualsiasi uso concorrente dei suoi metodi.
+@@s032 Cosa non garantisce
+@@s033 Nessuna race condition. Un programma che usa solo classi thread-safe può comunque sbagliare risultato: esempio in <a href="l04-confinamento.html">confinamento e azioni composte</a>.
+@@s034 Thread-safe = nessuna data race sui campi
+@@s035 La checklist: 5 elementi
+@@s036 Per mostrare che una classe è thread-safe bisogna far vedere che, in qualsiasi esecuzione concorrente di accessi ai campi e chiamate di metodo con almeno una scrittura, le azioni sono ordinate da happens-before. In pratica si controllano sempre questi elementi.
+@@s037 Elemento
+@@s038 Domanda da farsi
+@@s039 Pagina
+@@s040 <b>Class state</b>
+@@s041 Quali sono i campi della classe?
+@@s042 qui sotto
+@@s043 <b>Escaping</b>
+@@s044 Lo stato è raggiungibile solo dai metodi pubblici?
+@@s045 qui sotto
+@@s046 <b>Safe publication</b>
+@@s047 I valori iniziali dei campi sono visibili a ogni thread che usa l'oggetto?
+@@s048 <a href="l04-pubblicazione.html">pubblicazione</a>
+@@s049 <b>Immutability</b>
+@@s050 Quali campi non cambiano mai dopo l'inizializzazione?
+@@s051 <a href="l04-pubblicazione.html">pubblicazione</a>
+@@s052 <b>Mutual exclusion</b>
+@@s053 Ogni accesso allo stato mutabile avviene con lo stesso lock?
+@@s054 <a href="l04-pubblicazione.html">pubblicazione</a>
+@@s055 Regola delle slide
+@@s056 "When asked to reason about the thread-safety of a class, you must <b>always cover these elements</b>." Una risposta che dice solo "i metodi sono synchronized" è incompleta. Le slide citano un teorema (letture opzionali): questi elementi insieme <b>bastano</b> a garantire la thread-safety.
+@@s057 I cinque elementi applicati a Counter
+@@s058 1 · Class state
+@@s059 Lo <b>stato</b> di una classe sono i suoi <b>campi</b>. Sono le variabili condivise da proteggere quando la classe è usata da più thread.
+@@s060 La definizione parla <b>solo</b> dei campi della classe. Un oggetto che arriva da fuori come parametro non è stato della classe.
+@@s061 Un parametro non è class state (AccessNoState.java)
+@@s062 Lo stato di <code>C</code> è solo il campo <code>i</code>.
+@@s063 <code>n</code> è <code>synchronized</code> e modifica la lista ricevuta come parametro.
+@@s064 Il primo thread scrive nella lista <b>senza lock</b>, il secondo passa da <code>n</code>, con il lock di <code>c</code>. Le due <code>add</code> non sono ordinate: <b>data race sulla lista</b>, il programma non è thread-safe.
+@@s065 Ma <code>C</code> <b>resta thread-safe</b>: la data race è sulla lista, che non è un suo campo. Il codice del corso stampa infatti a volte liste con meno di 2 elementi.
+@@s066 Morale
+@@s067 Meglio evitare metodi che prendono oggetti come parametro e li modificano: la classe non può garantire l'happens-before sulle azioni su quell'oggetto, perché altri thread lo usano come vogliono.
+@@s068 La lista passata come parametro non è stato di C
+@@s069 2 · Escaping
+@@s070 Definizione
+@@s071 Lo stato <b>non scappa</b> (does not escape) se si può raggiungere <b>solo attraverso i metodi pubblici</b> della classe. Se scappa, un thread può usarlo senza la sincronizzazione prevista, e non si può più garantire l'happens-before.
+@@s072 Primo modo di scappare: un campo non <code>private</code>
+@@s073 CounterEscape.java
+@@s074 Il campo non è <code>private</code>: il codice nello stesso package lo vede direttamente.
+@@s075 La classe protegge <code>i</code> con il lock dell'oggetto, ma solo <b>dentro</b> i suoi metodi.
+@@s076 Il secondo thread scavalca i metodi e scrive <code>c.i</code> senza lock.
+@@s077 Perché è una data race (con il JMM)
+@@s078 Program order: t1 ha lock, <code>i++</code>, unlock; t2 ha solo <code>i++</code>.
+@@s079 Sono azioni in conflitto.
+@@s080 Le uniche coppie tra thread diversi vengono dalla start rule.
+@@s081 t2 non fa azioni di lock, quindi la regola del monitor non crea coppie tra t1 e t2.
+@@s082 Correzione: <code>private int i</code>. Così ogni accesso passa dai metodi <code>synchronized</code>, e ogni coppia di accessi è ordinata dalla regola del monitor.
+@@s083 Dichiarare <code>private</code> tutti i campi di tipo primitivo garantisce che vengano toccati solo dai metodi della classe.
+@@s084 Secondo modo: restituire un riferimento allo stato
+@@s085 <code>private</code> non basta se un metodo restituisce l'oggetto che fa parte dello stato.
+@@s086 ArrayListEscape.java
+@@s087 Il campo è <code>private</code> e <code>final</code>. <code>final</code> blocca il <b>riferimento</b>, non il contenuto della lista.
+@@s088 <code>get</code> restituisce il riferimento alla lista interna. Il lock copre solo il <code>return</code>.
+@@s089 Chi ha il riferimento modifica la lista dopo che il lock è stato rilasciato.
+@@s090 Come lo stato scappa da get()
+@@s091 Come evitarlo
+@@s092 Non scrivere metodi che restituiscono riferimenti a oggetti dello stato. Restituisci valori (un <code>int</code>, un elemento immutabile come <code>Integer</code> o <code>String</code>) oppure una copia.
+@@s093 Frase modello
+@@s094 "The class state is the field <i>a</i>. It escapes through <i>get()</i>, which returns a reference to the internal list: a thread can then call <i>set</i> on it without holding the lock, so that write and the write in <i>set(…)</i> are not ordered by happens-before. This is a data race on the class state, hence the class is not thread-safe."
+@@s095 Perché ConcurrentSkipListSet passa i test di add/remove (esercizio 5.1.4)?
+@@s096 <code>HashSet.add</code> fa "guardo se c'è → scrivo il nodo → <code>size++</code>" in tre passi separati: due thread possono guardare entrambi prima che uno scriva.
+@@s097 <code>ConcurrentSkipListSet</code> (sopra <code>ConcurrentSkipListMap</code>) fa il passo decisivo con un <b>compare-and-set</b> (CAS): "scrivi il nuovo nodo <b>solo se</b> il puntatore vale ancora quello che ho letto". È un'unica operazione atomica dell'hardware: se un altro thread ha cambiato qualcosa nel frattempo, il CAS fallisce e il thread <b>ricomincia</b> la ricerca, e questa volta trova la chiave già presente → <code>add</code> restituisce <code>false</code>. Per <code>remove</code> è uguale: il nodo si cancella con un CAS sul valore (da <i>v</i> a <code>null</code>), e un solo thread lo vince.
+@@s098 Il contatore viene aggiornato (<code>addCount(±1)</code>, un <code>LongAdder</code> thread-safe) <b>solo</b> dal thread che ha vinto il CAS: niente duplicati, niente decrementi doppi. Verificato sul sorgente del JDK 26.

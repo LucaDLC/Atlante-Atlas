@@ -1,0 +1,98 @@
+@@s001 Assignment 1: stimare lo sguardo
+@@s002 ora:passo attuale,ok:già fatto
+@@s003 Dalla foto dell'occhio a un punto sullo schermo. Prima si <b>estrae una feature</b> (il centro della pupilla), poi si <b>impara una funzione</b> che la porta sullo schermo.
+@@s004 dato:pupilla (immagine della telecamera),due:schermo,ora:un punto,ok:mappa affine
+@@s005 dato:dati della pupilla,ora:colonna aggiunta,due:pesi,ok:previsioni
+@@s006 dato:errori piccoli,no:un errore grande
+@@s007 dato:colonna (cosa moltiplica il peso),no:peso sulla colonna sbagliata,ok:ordine giusto
+@@s008 dato:valori originali,ok:normalizzati in [0, 1],no:data leakage
+@@s009 Assignment 1: stimare lo sguardo
+@@s010 Il primo assignment obbligatorio (settimana 6, lavoro principale in settimana 42). Dalle immagini dell'occhio si stima <b>dove guarda la persona sullo schermo</b> (gaze), con un modello affine e poi quadratico imparato con i minimi quadrati. È la domanda d'esame <b>Q4</b>.
+@@s011 Il problema
+@@s012 <b>Input</b>: il centro della pupilla nell'immagine della telecamera, (x, y).
+@@s013 <b>Output</b>: il punto guardato sullo schermo, (x', y'), in pixel (i target della griglia vanno da 100 a 1820 in x e da 100 a 980 in y).
+@@s014 <b>Perché serve imparare</b>: la fovea (il punto della retina con cui si guarda) non sta sull'asse della pupilla, ma a un angolo diverso per ogni persona (±5°). Quindi il modello va <b>calibrato</b> su ogni persona: la persona guarda 9 punti noti (la griglia) e da quelle coppie si impara f<sub>w</sub>.
+@@s015 La pipeline completa
+@@s016 Q4 (a): preprocessing e feature extraction
+@@s017 Da saper raccontare: perché si riduce un'immagine a <b>due numeri</b> (feature), cosa fa ogni passo, quali parametri vanno regolati a mano (soglia, riquadro) e quali errori ne nascono (riflessi, ciglia, palpebra, sfocatura, frame senza pupilla trovata).
+@@s018 Quale notebook, quali task
+@@s019 La settimana 6 ha tre notebook. Ogni volta che si cita un task, va detto in quale notebook si trova, perché i numeri si ripetono.
+@@s020 <code>01-data-preprocessing.ipynb</code>: Task 1–10, dai frame ai due csv (il Task 9 si fa a mano). Nessun task obbligatorio, ma senza di lui non avete i vostri dati per i Task 14–16 del notebook 02.
+@@s021 <code>02-gaze.ipynb</code>: Task 1–21, il modello di gaze. Obbligatori i Task 1–16 (icona rossa), facoltativi i 17–21.
+@@s022 <code>03-penpaper.ipynb</code>: esercizi su carta e penna, non fanno parte del notebook da consegnare.
+@@s023 L'esercizio «Data preprocessing»: dai frame ai due csv
+@@s024 È il notebook <code>01-data-preprocessing.ipynb</code> (settimana 6), prerequisito dell'assignment. Esempio vero, test_subject_1, pattern grid:
+@@s025 <b>384 frame</b> dell'occhio (<code>frames/*.jpg</code>, dalla raccolta dati della settimana 2).
+@@s026 <code>pupil_detection</code> su ogni frame (Task 5) → <code>pupil_coordinates.csv</code>: 384 righe <code>image, px, py</code>.
+@@s027 Scatter dei 384 centri (Task 7): formano 9 gruppi, uno per target, circa 43 frame ciascuno.
+@@s028 <b>A mano</b> (Task 9) si legge il centro di ogni gruppo e lo si scrive nel dizionario <code>D</code>, nello stesso ordine dei target nel dizionario <code>S</code>.
+@@s029 <code>save_coordinates_to_csv</code> scrive <code>mean_pupil_coordinates.csv</code> (9 × 2, gli input) e <code>screen_coordinates.csv</code> (9 × 2, le etichette) in <code>W02/sessions/&lt;soggetto&gt;/&lt;trial&gt;/&lt;pattern&gt;/</code>. Prima riga: pupilla (321.5, 214.0) ↔ schermo (100, 100).
+@@s030 Per test_subject_0 e test_subject_1 il lavoro è già fatto (csv forniti): il Task 1 chiede solo di copiare <code>test_subject_0</code> da <code>Data/test_subjects/</code> del repo in <code>W02/sessions</code>. I parametri scelti (soglia, riquadro, <code>max_axis_ratio</code>) vanno riportati nel Task 14 del gaze.
+@@s031 Il modello affine
+@@s032 Da due equazioni a due sistemi lineari
+@@s033 Tutte e due le coordinate della pupilla servono per tutte e due le coordinate dello schermo. 6 parametri in tutto.
+@@s034 Più semplice che uno solo: ognuno ha 3 parametri e lo stesso input.
+@@s035 Ogni coppia (pupilla, target) dà un'equazione lineare nei pesi. L'1 moltiplica c: è la traslazione (<a href="w05-affine-omogenee.html">affine</a>).
+@@s036 9 equazioni, 3 incognite: sistema <b>sovradeterminato</b>, si risolve con i <a href="w05-minimi-quadrati.html">minimi quadrati</a> (<code>np.linalg.lstsq</code>, consigliato dall'assignment per la stabilità numerica). La stessa A serve anche per y'.
+@@s037 Task 2: quanti punti servono? Conta quali?
+@@s038 <b>Almeno 3</b>, perché ogni modello ha 3 parametri e ogni punto dà una equazione per modello. E <b>non allineati</b>: con 3 punti su una retta le righe [x, y, 1] sono dipendenti e A ha rango 2 invece di 3 (verificato), quindi infinite soluzioni. Anche con 3 punti validi conta quali: punti vicini tra loro rendono la soluzione molto sensibile al rumore; punti agli angoli della griglia la stabilizzano.
+@@s039 Dalla pupilla allo schermo, 6 parametri
+@@s040 Il codice, pezzo per pezzo
+@@s041 Design matrix, calibrazione e previsione (provato con i dati di test_subject_1)
+@@s042 Tre colonne: tutte le x, tutte le y, una colonna di 1. <code>np.c_</code> le affianca (vedi <a href="nozioni-numpy.html">NumPy</a>). Una riga per punto.
+@@s043 Due sistemi con la <b>stessa</b> A e due vettori b diversi: le x' e le y' dei target. <code>lstsq</code> restituisce 4 cose; <code>[0]</code> prende i pesi.
+@@s044 Per prevedere si costruisce la design matrix dei punti nuovi con <b>la stessa funzione</b>, e si moltiplica: (N × 3)(3) → N previsioni per coordinata.
+@@s045 Cosa dicono i pesi (test_subject_1, calibrazione sulla griglia)
+@@s046 Pesi calcolati con i 9 centri pupilla medi di test_subject_1 riportati nell'esercizio di preprocessing.
+@@s047 Il segno meno: nell'immagine della telecamera l'occhio è specchiato. La grandezza: tutto lo schermo (1720 px tra i target) corrisponde a circa 33 px di movimento della pupilla.
+@@s048 Il modello <b>amplifica</b> ogni imprecisione del preprocessing. Per questo l'assignment avvisa di aspettarsi errori di ±200 px.
+@@s049 Design matrix, lstsq, previsioni
+@@s050 Valutare il modello
+@@s051 Le metriche del Task 4
+@@s052 Errore assoluto per coordinata, poi la media <b>per colonna</b>: si vede separatamente quanto si sbaglia in x e in y.
+@@s053 Per ogni punto la <a href="w02-norme-distanze.html">distanza</a> euclidea tra stima e target (norma di ogni riga), poi la media: "di quanti pixel sbaglio in media".
+@@s054 <b>RMSE</b>: radice della media dei quadrati. I quadrati pesano di più gli errori grandi, quindi RMSE ≥ distanza media sempre; la differenza cresce quando ci sono pochi errori molto grandi.
+@@s055 Nei docstring non è precisato se l'RMSE va calcolato sulle distanze o su tutte le coordinate insieme: scegline uno e scrivi quale. Qui è quello sulle distanze.
+@@s056 Test su (test_subject_1)
+@@s057 affine: distanza
+@@s058 affine: RMSE
+@@s059 quadratico: distanza
+@@s060 quadratico: RMSE
+@@s061 grid (è il training)
+@@s062 circle
+@@s063 line
+@@s064 random
+@@s065 Pixel. Modelli calibrati sui 9 punti della griglia; calcolato con i centri pupilla medi e le coordinate dello schermo scritti nel testo degli esercizi. Con i tuoi dati i numeri saranno diversi, la lettura no.
+@@s066 Perché l'errore cresce pattern dopo pattern: il tempo
+@@s067 Ogni pattern è registrato dopo il precedente. Rispetto alla fine della griglia, circle parte a circa +25 s e dura 27 s; line parte a +52 s; random parte a +79 s. L'errore cresce nello stesso ordine: 124, 362, 411 px. Lo stesso bersaglio, (100, 540) sullo schermo, ha la pupilla a x = 318 nella griglia e x = 329 nella linea: 11 px di differenza, che il modello (circa 50 px sullo schermo per ogni pixel) trasforma in centinaia di pixel. È un'ipotesi da verificare sui frame (testa, posizione dell'occhio), non una conclusione.
+@@s068 Come si leggono
+@@s069 Si valuta sugli stessi punti usati per imparare: non dice niente su dati nuovi.
+@@s070 Con 6 parametri su 9 punti il modello segue meglio i punti di training, anche il loro rumore, e su un pattern nuovo peggiora. È l'<b>overfitting</b> (settimana 7).
+@@s071 Stesso punto guardato, pupilla spostata di 11 px: tra una registrazione e l'altra la testa o la telecamera si è mossa. 11 px × ~50 = centinaia di pixel sullo schermo.
+@@s072 Le stime sono spostate <b>tutte dalla stessa parte</b>: è un errore <b>sistematico</b>, non rumore casuale. Nessun modello calibrato sulla griglia lo può correggere.
+@@s073 Q4 (c) e Task 6: fonti di errore del modello affine
+@@s074 (1) <b>Il modello è troppo semplice</b>: l'occhio ruota su una sfera, quindi la relazione pupilla → schermo non è lineare. (2) <b>Rumore nella feature</b>: soglia, riflessi e palpebre spostano il centro di qualche pixel, amplificato ~50 volte. (3) <b>Movimenti della testa</b> tra calibrazione e test: errore sistematico. (4) <b>Pochi punti</b> di calibrazione (9), e il target sullo schermo non sempre guardato con precisione. <b>MAE vs RMSE</b>: il MAE dà l'errore tipico per asse, l'RMSE punisce di più i punti molto sbagliati.
+@@s075 Come capire da dove viene l'errore: tre controlli
+@@s076 <b>1. Errore sui punti di calibrazione.</b> Calcolate la distanza anche sui 9 punti usati per allenare. Se è già alta, il problema è il <b>modello</b> (troppo semplice), non il rumore sul test. Su <code>test_subject_0</code>, sessione 0: <b>84 px</b> sui punti di allenamento, 166 px sul test.
+@@s077 <b>2. Errore con segno, la media.</b> Sommate gli errori senza togliere il segno. Se la media è lontana da 0, le stime sono spostate tutte nella stessa direzione: errore <b>sistematico</b> (testa, deriva). Sulla stessa sessione: <b>+142 px</b> in x.
+@@s078 <b>3. Forma della distribuzione.</b> Molti errori piccoli e pochi enormi: l'RMSE si allontana dal MAE. Il grafico con le frecce mostra lo stesso: frecce tutte uguali = bias; frecce a caso = rumore; poche frecce lunghissime = punti fuori dalla zona calibrata.
+@@s079 Generalizzare: da una persona a un'altra
+@@s080 Calibrazione su <code>test_subject_0</code> (9 punti, pupille grezze), test su <code>test_subject_1</code> (4 pattern). Distanza media: <b>84 px</b> sui punti di allenamento della stessa persona, <b>96–166 px</b> sul test della stessa persona, <b>398–415 px</b> su un'altra persona. Errore con segno in y: <b>+263 … +384 px</b> per tutti e 4 i pattern, quindi uno spostamento fisso, non rumore.
+@@s081 <b>Attenzione:</b> il Task 8 scritto nel notebook usa <code>pupils_n_train</code> (coordinate normalizzate, circa 84–113) con <code>pupils_test</code> di <code>test_subject_1</code> (grezze, circa 284–321). Sono scale diverse: l'errore esce circa <b>16 000 px</b>. Non è un risultato sulla generalizzazione: è il valore sbagliato da segnalare al TA.
+@@s082 MAE, distanza media, RMSE
+@@s083 Il modello quadratico (Task 20)
+@@s084 Più feature, stesso metodo
+@@s085 Curvo in x e y, ma ancora <b>lineare nei pesi</b> (<a href="w04-polinomi.html">polinomi</a>): si impara con gli stessi minimi quadrati.
+@@s086 Il perché della design matrix del Task 20: ogni colonna è ciò che moltiplica un peso.
+@@s087 Rimangono solo 3 equazioni "in più" per mediare il rumore: poche.
+@@s088 Nessun errore di Python, ma un risultato assurdo (verificato). La funzione <code>quad</code> del notebook usa i pesi nell'ordine [1, x, y, xy, x², y²], la design matrix del Task 20 nell'ordine [x², y², xy, x, y, 1]: ogni peso finisce sulla colonna sbagliata. Regola: <b>l'ordine delle colonne deve essere lo stesso nel training e nella previsione</b>. Il modo più sicuro: prevedere con <code>get_design_matrix_quad(pupils) @ w</code>, la stessa funzione usata per il training. (Lo stesso vale per <code>linear</code>, che mette la costante per prima.)
+@@s089 6 colonne, e l’ordine dei pesi
+@@s090 Normalizzare i dati (Task 18–19)
+@@s091 Cosa cambia davvero con MinMaxScaler
+@@s092 Colonne di grandezze molto diverse: la matrice è "mal condizionata", i conti perdono cifre.
+@@s093 Dopo aver portato tutto tra 0 e 1. Numeri più stabili.
+@@s094 Normalizzare è un cambio di variabile affine: un modello affine o quadratico nelle variabili normalizzate è ancora affine o quadratico in quelle vere. I minimi quadrati trovano la stessa funzione.
+@@s095 Sembra un miglioramento, ma lo scaler ha usato il minimo e il massimo dei punti di test: informazioni che nella realtà non avresti. È <b>data leakage</b>. Lo scaler si fitta <b>solo</b> sul training e poi si applica al test.
+@@s096 Task 19: le trappole della normalizzazione
+@@s097 Fit dello scaler sul test (leakage). Min e max decisi da un solo outlier, che schiaccia tutti gli altri punti. Previsioni ed errori vanno <b>riportati in pixel</b> (<code>inverse_transform</code>) prima di confrontarli con i risultati non normalizzati.
+@@s098 Condizionamento e data leakage

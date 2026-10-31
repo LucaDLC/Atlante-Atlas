@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Wait-free, lock-free, obstruction-free</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Wait-free, lock-free, obstruction-free</h1>
+  <p class="lede">Lektion 6 (<i>Lock-Free Data Structures</i>), slide 14–17. Uden låse bliver ingen tråd blokeret af en anden, men "hvem bliver færdig, og hvornår?" har tre forskellige svar: det er de tre <b>progressionsbetingelser</b> (progress conditions) for ikke-blokerende datastrukturer. Herlihy, afsnit 3.8.</p>
+</header>
+
+<section>
+  <h2>Udgangspunktet: problemet med låse</h2>
+  <p>Med en lås, hvis tråden der holder den bliver suspenderet af scheduleren (eller blokeres), venter <b>alle</b> de andre, i en tid der ikke afhænger af dem. En <b>ikke-blokerende</b> implementering undgår låse og bruger CAS: ingen tråd kan holde de andre tilbage.</p>
+  <p>De tre betingelser siger, <b>hvor stærk</b> garantien er for, at kaldene bliver færdige. De læses alle med det samme spørgsmål: <i>"for hvem</i> er det garanteret, at det bliver færdigt på et endeligt antal trin?"</p>
+  <div class="box domanda-tua" data-tit="Men gør disse &quot;free&quot;-egenskaber koden korrekt i parallel?">
+    <p><b>Nej: det er to forskellige spørgsmål.</b></p>
+    <ul>
+      <li><b>Er resultatet rigtigt?</b> (safety: ingen tabte forøgelser, ingen dubletter). Det garanteres af <b>CAS'en</b>: den skriver kun, hvis værdien stadig er den, der blev læst; ellers skriver den ingenting.</li>
+      <li><b>Bliver kaldene færdige? Kan nogen blive blokeret?</b> (progression, altså liveness). Det er det, wait-free, lock-free og obstruction-free måler.</li>
+    </ul>
+    <p>Også en lås giver et rigtigt resultat. Det en lås <b>ikke</b> garanterer, er progression: hvis tråden, der holder den, stopper, stopper alle.</p>
+  </div>
+  <figure class="passi" data-titolo="I praksis: T1 suspenderes midt i increment()" data-legenda="dato:T1,due:de andre tråde,no:blokeret,ok:går videre">
+    <div class="passo"><div class="espr"><mark class="dato">T1</mark> legge 5, e lo scheduler lo sospende per 1 secondo</div><p class="nota">Det sker virkelig: slutningen af tidsskiven, page fault, afbrydelse, en tråd med højere prioritet.</p></div>
+    <div class="passo"><div class="espr">con un lock:  <mark class="dato">T1</mark> tiene il lock  →  <mark class="due">T2, T3, T4</mark> <mark class="no">aspettano 1 secondo</mark></div><p class="nota">Ingen kan komme ind, før T1 starter igen og laver <code>unlock()</code>. Hvis T1 dør og holder låsen, venter de for evigt. Den er <b>blokerende</b>.</p></div>
+    <div class="passo"><div class="espr">con il CAS:  <mark class="due">T2, T3, T4</mark> <mark class="ok">incrementano</mark>  5 → 6 → 7 → 8</div><p class="nota">T1 holder ikke noget: dens arbejde "halvvejs" (den læste 5) er kun i dens lokale variabel, og de andre ser det ikke. Ingen venter på T1.</p></div>
+    <div class="passo"><div class="espr"><mark class="dato">T1</mark> riparte: CAS(5 → 6) <mark class="no">fallisce</mark>, rilegge 8, CAS(8 → 9) <mark class="ok">riesce</mark></div><p class="nota">Værdien er ikke længere 5, så CAS'en overskriver ikke: ingen tabt forøgelse (safety). T1 prøver igen og bliver færdig. Systemet har aldrig stoppet (lock-free).</p></div>
+  </figure>
+</section>
+
+<section>
+  <h2>De tre definitioner</h2>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>betingelse</th><th>garanti (slide)</th><th>med ord</th><th>hvem bliver færdig</th></tr></thead>
+    <tbody>
+      <tr><td><b>wait-free</b></td><td>hvert kald bliver færdigt på et endeligt antal trin</td><td>"<b>mine</b> operationer bliver færdige, uanset hvad de andre gør"</td><td><mark class="ok">alle</mark></td></tr>
+      <tr><td><b>lock-free</b></td><td>at køre metoden garanterer, at <b>et</b> eller andet kald (også et samtidigt) bliver færdigt på et endeligt antal trin</td><td>"<b>nogens</b> operationer bliver færdige"</td><td><mark class="due">mindst én</mark></td></tr>
+      <tr><td><b>obstruction-free</b></td><td>fra ethvert punkt, hvor den kører <b>alene</b> (i isolation), bliver den færdig på et endeligt antal trin</td><td>"mine operationer bliver færdige, <b>hvis de lader mig</b> køre"</td><td><mark class="ora">den der bliver alene</mark></td></tr>
+    </tbody>
+  </table></div>
+  <div class="box regola" data-tit="Kæden (slide 15)">
+    <p><b>wait-free ⇒ lock-free ⇒ obstruction-free</b>. Hver betingelse medfører den under den:</p>
+    <ul>
+      <li>hvis <b>alle</b> bliver færdige, så bliver <b>nogen</b> færdige: wait-free ⇒ lock-free;</li>
+      <li>hvis nogen altid bliver færdig, og jeg kører <b>alene</b>, kan den nogen kun være mig: lock-free ⇒ obstruction-free.</li>
+    </ul>
+    <p>Det omvendte gælder ikke: garantien svækkes, når man går nedad.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Lock-free: CAS-løkken</h2>
+  <p>Slide 17 spørger: hvilken betingelse har <code>addAndGet</code> af <code>AtomicInteger</code>, skrevet med en CAS-løkke?</p>
+  <pre class="cod" data-lang="java" data-segna="compareAndSet(oldValue, newValue)@ora">do {
+    oldValue = get();
+    newValue = oldValue + delta;
+} while (!compareAndSet(oldValue, newValue));</pre>
+  <figure class="passi" data-titolo="Hvorfor den er lock-free" data-legenda="ok:den der vinder,no:den der taber,ora:nøglepunktet">
+    <div class="passo"><div class="espr">T1 e T2 leggono 5, provano CAS(5 → 6)</div><p class="nota">To tråde i den samme løkke, på den samme værdi.</p></div>
+    <div class="passo"><div class="espr">T1: CAS <mark class="ok">riesce</mark>   T2: CAS <mark class="no">fallisce</mark></div><p class="nota">Kun én CAS kan lykkes: værdien er ændret.</p></div>
+    <div class="passo"><div class="espr">T2 fallisce <mark class="ora">solo perché</mark> T1 è riuscito</div><p class="nota">En CAS fejler kun, hvis en anden tråd har ændret værdien, altså har <b>fuldført</b> sin operation. Så hver fejl svarer til, at en anden tråd er gået fremad: systemet stopper aldrig. Den er <b>lock-free</b>.</p></div>
+    <div class="passo"><div class="espr">T2 può perdere <mark class="no">per sempre</mark></div><p class="nota">Intet forhindrer T2 i at tabe hver runde mod T1, T3, T4… (sult). Der er ingen grænse for T2's forsøg: den er <b>ikke</b> wait-free.</p></div>
+  </figure>
+  <p>De fleste ikke-blokerende strukturer er lock-free: Treiber-stakken, Michael-Scott-køen, <code>ConcurrentSkipListSet</code>, <code>CasHistogram</code> fra øvelse 6.1 (<code>increment</code>, <code>getAndClear</code>).</p>
+</section>
+
+<section>
+  <h2>Wait-free og obstruction-free: eksempler</h2>
+  <div class="colonne">
+    <div class="carta buona"><h4>Wait-free</h4><p>Ingen løkke, der afhænger af de andre. <code>getCount(bin)</code> i <code>CasHistogram</code> laver et enkelt <code>get()</code>: den bliver færdig på ét trin, uanset hvad der sker. Også <code>getSpan()</code>.</p></div>
+    <div class="carta media"><h4>Obstruction-free</h4><p>To tråde kan <b>ophæve hinanden</b> for evigt: hver laver den andens halvfærdige arbejde om, og ingen bliver færdig (livelock). Som to personer i en gang, der altid flytter sig til samme side. Men hvis en af de to bliver alene, bliver den færdig.</p></div>
+  </div>
+</section>
+
+<section>
+  <h2>Uden låse, hvem garanterer at CAS'en er atomar?</h2>
+  <div class="box domanda-tua" data-tit="Hvilken lås er det? Virker det på tillid?">
+    <p>Hverken lås eller tillid: garantien kommer fra <b>processoren</b>. CAS er en <b>enkelt maskininstruktion</b> (slide 8: moderne processorer har dedikerede instruktioner, som compare-and-swap). Sammenligningen og skrivningen sker inde i den ene instruktion, og hardwaren forhindrer en anden kerne i at røre den hukommelsescelle, før instruktionen er færdig (på x86 er det <code>LOCK CMPXCHG</code>).</p>
+    <p>Der er altså en "blokering", men den varer <b>én instruktion</b>, nogle få nanosekunder, og hardwaren håndterer den. Ingen tråd kan holde den og så falde i søvn: forskellen til en <code>lock()</code>, der bliver taget under hele den kritiske sektion, også mens tråden er suspenderet.</p>
+  </div>
+  <div class="colonne">
+    <div class="carta"><h4>Lås: pessimistisk</h4><p>"Nogen kunne forstyrre mig, så <b>først</b> reserverer og lukker jeg døren, derefter arbejder jeg." De andre venter udenfor, selv om de ikke ville have rørt noget.</p></div>
+    <div class="carta"><h4>CAS: optimistisk (slide 17)</h4><p>"Sandsynligvis forstyrrer ingen mig: jeg arbejder på min kopi og kontrollerer <b>til sidst</b>. Hvis nogen har ændret værdien, smider jeg mit arbejde væk og gør det om." Det er <i>optimistic concurrency</i>.</p></div>
+  </div>
+  <div class="box basi" data-tit="Hvis du kender Git">
+    <p>CAS-løkken virker som en <code>git push</code>. Du arbejder lokalt (læser værdien, beregner den nye). Så pusher du: hvis ingen har pushet i mellemtiden, går det igennem. Hvis nogen har pushet før, bliver pushet <b>afvist</b> (det overskriver ikke andres arbejde): du laver pull, udfører beregningen igen på den nye værdi og pusher igen. Ingen har nogensinde låst repositoriet.</p>
+  </div>
+  <div class="box attenzione" data-tit="Hardwaren beskytter ét trin, ikke din algoritme">
+    <p>CAS'en er udelelig, og ingen tråd kan holde de andre som gidsler. Men koden omkring den kan stadig være forkert:</p>
+    <ul>
+      <li><b>én CAS pr. felt, når invarianten binder flere felter</b>: <code>NumberRange</code> nedenfor ender med lower &gt; upper;</li>
+      <li><b>at skrive med <code>set()</code> i stedet for CAS'en</b>: "læs, beregn, <code>set</code>" er igen en ikke-atomar read-modify-write, og opdateringer går tabt;</li>
+      <li><b>at bruge en anden værdi end CAS'ens</b>: i <code>getAndClear</code> skal man returnere den værdi, CAS'en nulstillede, ikke en genlæsning foretaget bagefter;</li>
+      <li><b>værdien vender tilbage til det samme</b>: CAS'en sammenligner kun værdien, så A → B → A ser "uændret" ud (ABA-problemet, senere i lektionen).</li>
+    </ul>
+  </div>
+</section>
+
+<section>
+  <h2>Erstatter CAS låse?</h2>
+  <div class="box domanda-tua" data-tit="CAS'en er kun en optimering, og låse skal man alligevel bruge?">
+    <p><b>Nej, til begge dele.</b> I en lock-free struktur findes der <b>ingen</b> låse: <code>CasHistogram</code>, Treiber-stakken og <code>ConcurrentSkipListSet</code> er korrekte uden nogen <code>lock()</code>. CAS'en klarer begge opgaver selv: den gør opdateringen atomar (safety) og blokerer ingen (progression).</p>
+    <p>Og det er ikke sikkert, at den er hurtigere: med mange tråde, der konkurrerer om den samme værdi, fejler CAS'erne ofte, og man prøver igen uden resultat. Slide 32–33 (tilfældighedsgeneratoren) viser, at CAS-versionen under høj konkurrence kan skalere <b>dårligere</b>, og at <b>lokalitet</b> betyder mere (hver tråd med sit eget objekt, <code>ThreadLocal</code>) end at være lock-free. Den reelle fordel ved CAS er progressionsgarantien, ikke hastigheden.</p>
+  </div>
+  <p>CAS'ens begrænsning: den virker på <b>én variabel</b> ad gangen. Hvis invarianten binder flere felter, er to separate CAS'er ikke nok.</p>
+  <figure class="passi" data-titolo="NumberRange: invarianten lower ≤ upper (slide 20–22)" data-legenda="no:ødelagt,ok:korrekt,ora:hvad der ændrer sig">
+    <div class="passo"><div class="espr">due AtomicInteger: lower, upper   stato (0, 5)</div><p class="nota">Hvert felt er atomart alene, men invarianten angår <b>parret</b>.</p></div>
+    <div class="passo"><div class="espr">T1: setLower(4) controlla 4 ≤ upper=5 ✔    T2: setUpper(3) controlla 3 ≥ lower=0 ✔</div><p class="nota">Begge kontroller består, fordi hver kigger på den gamle værdi af det andet felt.</p></div>
+    <div class="passo"><div class="espr">T1 scrive lower=4, T2 scrive upper=3  →  (4, 3)  <mark class="no">lower &gt; upper</mark></div><p class="nota">Check-then-act på to variable: ingen af de to skrivninger er forkert alene, men sammen bryder de invarianten. Goetz: "don't do this".</p></div>
+    <div class="passo"><div class="espr"><mark class="ora">AtomicReference&lt;IntPair&gt;</mark>: la coppia in un oggetto immutabile</div><p class="nota"><code>CasNumberRange</code>: man læser parret, kontrollerer det, opretter et <b>nyt</b> par og laver <b>én enkelt</b> CAS på referencen. Hvis nogen i mellemtiden har ændret parret, fejler CAS'en, og man kontrollerer igen: <mark class="ok">invarianten holder</mark>.</p></div>
+  </figure>
+  <p>Praktisk regel: tilstand i <b>én</b> variabel (eller som kan pakkes i et uforanderligt objekt) → CAS'en er nok og erstatter låsen. Tilstand spredt over flere objekter, eller man skal <b>vente</b> på en betingelse (buffer ikke tom) → låse og monitorer er stadig det rigtige værktøj.</p>
+</section>
+
+<section>
+  <h2>Ikke-blokerende betyder ikke busy-wait</h2>
+  <div class="box attenzione" data-tit="Slide 14 og 16">
+    <p><b>Busy-wait</b> (<code>while (i &gt; 0) { }</code>) venter på, at <b>en anden tråd</b> ændrer noget: hvis den tråd stopper, kører løkken for evigt. I kurset er det forbudt: løsninger med busy-wait bliver afvist.</p>
+    <p>En CAS-løkke venter derimod ikke på nogen: den gentager, fordi en anden tråd <b>er gået videre</b>, og med de tre betingelser er terminering garanteret (i det mindste i isolation). Derfor er CAS-løkken tilladt, men <b>kun</b> for implementeringer baseret på CAS.</p>
+  </div>
+  <div class="box inglese" data-tit="Modelsætning">
+    <p>CAS-løkken i <i>addAndGet</i> er lock-free, men ikke wait-free: et CAS fejler kun, hvis en anden tråds CAS er lykkedes, så et kald bliver altid færdigt, men en enkelt tråd kan blive ved med at tabe og aldrig blive færdig. Wait-free medfører lock-free, og lock-free medfører obstruction-free.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Prøv selv</h2>
+  <div class="quiz">
+    <div class="domanda">
+      <p class="q">En metode laver en CAS-løkke, der kun fejler, når en anden tråd er lykkedes. Hvilken betingelse har den?</p>
+      <div class="opzioni"><button>wait-free</button><button data-giusta>lock-free</button><button>nessuna</button></div>
+      <div class="perche"><p>Nogen bliver altid færdig (lock-free), men en enkelt tråd kan tabe for evigt (ikke wait-free).</p></div>
+    </div>
+    <div class="domanda">
+      <p class="q">En implementering er wait-free. Hvad kan du sige?</p>
+      <div class="opzioni"><button>è solo wait-free</button><button data-giusta>è anche lock-free e obstruction-free</button><button>non è lock-free</button></div>
+      <div class="perche"><p>wait-free ⇒ lock-free ⇒ obstruction-free.</p></div>
+    </div>
+    <div class="domanda">
+      <p class="q">Hvilken garanterer kun, at en tråd bliver færdig, <b>når den kører alene</b>?</p>
+      <div class="opzioni"><button>lock-free</button><button>wait-free</button><button data-giusta>obstruction-free</button></div>
+      <div class="perche"><p>Med andre aktive tråde kan ingen blive færdig (livelock).</p></div>
+    </div>
+  </div>
+</section>
+
+</main>
+</body>
+</html>

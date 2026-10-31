@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Kode: bipartit matching i Java</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Kode: bipartit matching i Java</h1>
+  <p class="lede">Det største matching med augmenterende veje (Kuhns version, svarende til flow): rekursion med et array over de besøgte knuder.</p>
+</header>
+
+<section>
+  <h2>Rekursiv augmenterende vej</h2>
+  <p>For hvert element i L leder jeg efter en ledig modtager, eller jeg flytter den nuværende partner over til et andet valg.</p>
+  <figure class="codice" data-titolo="Rekursiv augmenterende vej">
+<pre data-lang="java">import java.io.*;
+import java.util.*;
+
+public class Main {
+    static List&lt;List&lt;Integer&gt;&gt; permessi;   // permessi.get(l) = elementi di R accoppiabili con l
+    static int[] partnerR;                  // partnerR[r] = elemento di L accoppiato con r, -1 se libero
+    static boolean[] visitato;
+
+    // Cerca un cammino aumentante partendo da l: se un r è libero lo prendo, altrimenti
+    // provo a spostare il suo partner su un'altra scelta.
+    static boolean prova(int l) {
+        for (int r : permessi.get(l)) {
+            if (!visitato[r]) {
+                visitato[r] = true;
+                if (partnerR[r] == -1 || prova(partnerR[r])) {
+                    partnerR[r] = l;
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    public static void main(String[] args) throws IOException {
+        BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
+        StringTokenizer st = new StringTokenizer(in.readLine());
+        int nL = Integer.parseInt(st.nextToken());
+        int nR = Integer.parseInt(st.nextToken());
+        int m = Integer.parseInt(st.nextToken());
+
+        permessi = new ArrayList&lt;&gt;();
+        for (int i = 0; i &lt; nL; i++) {
+            permessi.add(new ArrayList&lt;&gt;());
+        }
+        for (int i = 0; i &lt; m; i++) {
+            st = new StringTokenizer(in.readLine());
+            permessi.get(Integer.parseInt(st.nextToken())).add(Integer.parseInt(st.nextToken()));
+        }
+
+        partnerR = new int[nR];
+        Arrays.fill(partnerR, -1);
+        int dimensione = 0;
+        for (int l = 0; l &lt; nL; l++) {
+            visitato = new boolean[nR];
+            if (prova(l)) {
+                dimensione++;                  // un cammino aumentante: il matching cresce di 1
+            }
+        }
+        System.out.println("matching massimo " + dimensione);
+    }
+}</pre>
+    <ol class="spiega">
+    <li data-righe="11"><p>En metode, der returnerer <code>boolean</code>: sand, hvis den lykkedes at matche l.</p></li>
+    <li data-righe="13"><p>Hver modtager prøves kun én gang pr. søgning: det undgår kredse.</p></li>
+    <li data-righe="15"><p>Ledig, eller dens partner finder en anden vej.</p></li>
+    </ol>
+  </figure>
+  <div class="box basi" data-tit="Syntaksnoter"><ul><li><code>||</code> er det logiske "eller" med kortslutning: hvis den første er sand, kaldes den anden (rekursionen) ikke.</li></ul></div>
+</section>
+<section>
+  <h2>Kør det</h2>
+  <p>Eksempel på input og output (faktisk kompileret og kørt).</p>
+  <pre class="cod">3 3 5
+0 0
+0 1
+1 0
+2 1
+2 2
+
+(output)
+matching massimo 3</pre>
+</section>
+<section>
+  <h2>Teorien side om side</h2>
+  <p><a href="../teoria/bipartite-matching.html"><b>← Tilbage til teorien om dette emne</b></a></p>
+</section>
+
+</main>
+</body>
+</html>

@@ -1,0 +1,74 @@
+@@s001 Rand[A]: sammensættelige generatorer
+@@s002 dato:RNG-tilstand,ora:generator i gang,due:producerede værdier,ok:resultat af map2
+@@s003 <code>map2(ra, rb)(f)</code> producerer ikke et tal med det samme: det er en ny <code>Rand</code>, en funktion, der <b>venter</b> på en tilstand <code>rng</code>.
+@@s004 Når den modtager <code>SimpleRNG(42)</code>, lader den <b>først</b> <code>ra</code> arbejde (her <code>nonNegativeInt</code>): der kommer <b>a = 16159453</b> ud og tilstanden <code>r1</code>.
+@@s005 Derefter arbejder <code>rb</code> (her <code>double</code>) på den <b>nye</b> tilstand <code>r1</code>, ikke på <code>rng</code>: der kommer <b>b = 0.5967…</b> ud og tilstanden <code>r2</code>.
+@@s006 Værdierne kombineres med <code>f</code>, og den endelige tilstand <code>r2</code> returneres: ((16159453, 0.5967…), r2). Det er netop <code>intDouble</code>, men uden at tilstandene nævnes i koden hos den, der bruger det.
+@@s007 dato:tilstand (RNG),ora:generator,ok:værdi
+@@s008 dato:tilstand der gives videre,ok:genereret tal
+@@s009 ora:første generator,due:anden generator (valgt ud fra a),ok:resultat,no:stykke kasseret
+@@s010 Rand[A]: sammensættelige generatorer
+@@s011 Uge 5, øvelse 5–8. Alle generatorerne på <a href="s05-rng-puro.html">den forrige side</a> har formen <span class="m">RNG =&gt; (A, RNG)</span>. Man giver typen et navn og bygger en lille API (unit, map, map2, sequence, flatMap), der videregiver tilstanden på dine vegne. Det er samme idé som <code>Option</code> i uge 3, anvendt på tilstanden.
+@@s012 Typen og de to grundfunktioner
+@@s013 Fra øvelsesfilen
+@@s014 Et <b>typealias</b>: <code>Rand[A]</code> er blot et kortere navn for "funktion fra RNG til par (værdi, ny RNG)". En <code>Rand[A]</code> læses "et tilfældigt A" eller "en generator af A".
+@@s015 <code>_.nextInt</code> er <code>rng =&gt; rng.nextInt</code>: metoden i <code>RNG</code> har allerede den rigtige form.
+@@s016 <code>unit</code>: en generator, der altid giver <code>a</code> og lader tilstanden være, <b>som den er</b>.
+@@s017 <code>map</code>: lader <code>s</code> arbejde, anvender <code>f</code> på værdien og sender tilstanden videre. Den, der bruger den, ser aldrig <code>rng</code>.
+@@s018 Eksempel fra bogen: et ikke-negativt lige tal, ved at fjerne resten af divisionen med 2.
+@@s019 Øvelse 5: double med map
+@@s020 Ingen <code>val (i, r) = …</code>, ingen tilstand: <code>map</code> sender den videre af sig selv. Testen <code>Ex05.01</code> kontrollerer, at den giver de samme tal som <code>double</code>.
+@@s021 Tvivl: er den anden parentes ikke argumentet til nonNegativeInt?
+@@s022 Nej: begge parenteser tilhører <code>map</code>. Efter <code>nonNegativeInt</code> er der ingen parentes, så man <b>kalder</b> den ikke: man giver den til <code>map</code>, som sender tilstanden til den, når den kommer.
+@@s023 Når man sætter ind i kroppen af <code>map</code>, får man <code>rng =&gt; { val (a, rng2) = nonNegativeInt(rng); (a / 2147483648.0, rng2) }</code>: altså netop den <code>double</code>, der er skrevet i hånden i øvelse 2. Den <code>rng =&gt;</code> i starten er parameteren, der så ud til at mangle, og den har <code>map</code> skrevet.
+@@s024 Tvivl: den startende rng, hvilken værdi har den, hvis ingen giver den en?
+@@s025 Ingen: den er parameteren til en funktion, ligesom <code>x</code> i <code>x =&gt; x + 1</code>. <code>val gen = map2(int, int)(_ + _)</code> genererer <b>ingen</b> tal: det er kun beskrivelsen af beregningen. Tallene opstår, når nogen kalder <code>gen(SimpleRNG(42))</code> — i øvelserne gør testene det med <code>forAll { (rng: RNG) =&gt; … }</code>. Det er samme idé som <code>LazyList</code>: først beskriv, derefter kør.
+@@s026 Rand[A], unit, map
+@@s027 map2: to generatorer i træk (øvelse 6)
+@@s028 map2(nonNegativeInt, double)((_, _)) på SimpleRNG(42)
+@@s029 Rækkefølgen betyder noget
+@@s030 I <code>map2</code> kører <code>ra</code> først, derefter <code>rb</code> på den tilstand, <code>ra</code> har efterladt. Hvis det blev vendt om, ville tallene ændre sig: testen <code>Ex07.03</code> ("ints2 &amp; ints are the same") består kun, hvis <code>ints</code> og <code>sequence</code> bruger den samme rækkefølge.
+@@s031 sequence (øvelse 7)
+@@s032 En liste af generatorer → en generator af lister
+@@s033 Det samme "omvendte af typerne" som <code>sequence</code> for Option: fra en liste af generatorer til en generator af en liste.
+@@s034 Man starter fra generatoren af den tomme liste og tilføjer et element forrest ad gangen med <code>map2</code>. Din rekursive version med <code>case h :: t =&gt; map2(h, sequence(t))(_ :: _)</code> gør det samme og er rigtig.
+@@s035 <code>List.fill(n)(x)</code> gentager x n gange: en liste af n ens generatorer. Med <code>SimpleRNG(42)</code> er <code>ints2(3)</code> = List(16159453, −1281479697, −340305902), lig med <code>ints(3)</code>.
+@@s036 Tvivl: hvad er h, t og _ :: _?
+@@s037 I den rekursive version <code>case h :: t =&gt;</code> opstår de to navne i mønsteret: <code>h</code> er den første generator, <code>t</code> listen af alle de andre. Efter <code>case</code> <b>tager</b> <code>::</code> listen fra hinanden i stedet for at bygge den.
+@@s038 <code>_ :: _</code> er den korte form af <code>(a, b) =&gt; a :: b</code>: hver <code>_</code> er en parameter, i den rækkefølge den optræder. Det er funktionen, <code>map2</code> bruger til at sætte værdien af <code>h</code> foran listen, de andre har produceret.
+@@s039 ints2 har ikke brug for et if for size ≤ 0
+@@s040 <code>List.fill(0)(int)</code> og også <code>List.fill(-3)(int)</code> giver den tomme liste, og <code>sequence(Nil)</code> er <code>unit(Nil)</code>: basistilfældet er allerede inde i <code>sequence</code>. <code>ints2(0)(SimpleRNG(42))._1</code> = <code>List()</code> (kontrolleret).
+@@s041 Tilstanden går fra den ene generator til den næste
+@@s042 flatMap og nonNegativeLessThan (øvelse 8)
+@@s043 Den anden generator afhænger af den første værdi
+@@s044 Som <code>map</code>, men <code>g</code> returnerer ikke en værdi: den returnerer <b>en anden generator</b>, valgt ud fra <code>a</code>. Den køres med det samme på den nye tilstand <code>r1</code>. Med map2 var de to generatorer faste; med flatMap afhænger den anden af den første's resultat.
+@@s045 Et tal mellem 0 og bound − 1: resten af divisionen. Alene er det dog ikke nok.
+@@s046 De ikke-negative er 2³¹ = 2147483648 værdier; med bound = 6 bliver 2147483648 mod 6 = 2 værdier tilbage øverst, og 0 og 1 ville komme lidt oftere. Hvis <code>i</code> falder i det sidste ufuldstændige stykke, overskrider <code>i + (bound − 1) − mod</code> Int.MaxValue og bliver negativ (overflow): så skal man <b>prøve igen</b> med et nyt tal. At prøve igen kræver den nye tilstand, altså <code>flatMap</code>.
+@@s047 Fem kast med terning (<code>nonNegativeLessThan(6)</code> + 1) fra <code>SimpleRNG(42)</code>: 2, 3, 2, 4, 5. Kontrolleret.
+@@s048 Dit flatMap
+@@s049 I din fil var <code>flatMap</code> kopieret fra LazyList (<code>foldRight(empty)(…append…)</code>), og det kompilerer ikke: "Not found: foldRight". På <code>Rand</code> er der ingen følge at gennemløbe: der er <b>én</b> funktion at køre og derefter den anden generator. Ovenfor er den rigtige version.
+@@s050 Opdatering (26. sep.): din nye version <code>rng =&gt; val (a, rng2) = f(rng)</code> med <code>g(a)(rng2)</code> på linjen under kompilerer og består testene Ex08.01–03. Men <code>g(a)(rng2)</code> står i samme kolonne som <code>rng =&gt;</code> og ser ud til at ligge uden for lambdaen: bedre at bryde linjen efter <code>=&gt;</code> og rykke de to linjer ind, som i koden ovenfor.
+@@s051 Tvivl: hvorfor er det ikke nok at prøve igen, indtil n &lt; bound?
+@@s052 Det er din første idé: <code>if n &gt;= bound then nonNegativeLessThan(bound) else unit(n)</code>. Hvis den slutter, er resultatet rigtigt (et tal &lt; bound), men den slutter næsten aldrig.
+@@s053 Med bound = 6 og <code>SimpleRNG(42)</code>: første tal 16159453 → det er ≥ 6 → prøv igen. Tallene &lt; 6 er 6 ud af 2³¹ = 2147483648: i gennemsnit skal der omkring 358 millioner forsøg til. Hvert forsøg er et kald inde i et andet (<code>flatMap</code> → <code>g</code> → <code>nonNegativeLessThan</code> → <code>flatMap</code> …), og stakken løber tør langt tidligere.
+@@s054 Løsningen: kassér ikke 16159453, <b>reducér</b> det med resten. 16159453 % 6 = <b>1</b>, og kontrollen 16159453 + 5 − 1 ≥ 0 er sand → resultat (1, SimpleRNG(1059025964525)). Man prøver kun igen i det lille stykke øverst, næsten aldrig.
+@@s055 En terning uden uendelige rekursioner
+@@s056 Kontrollen n + (bound − 1) − mod, trin for trin
+@@s057 dato:tal der kom ud,ora:hvad der ændrer sig,ok:accepteret,no:prøv igen
+@@s058 Lille eksempel: en generator, der kun giver 0…7, og bound = 3. Den sidste blok er ufuldstændig: 0 og 1 kommer ud 3 gange, 2 kun 2. Den simple <code>%</code> giver en snydeterning.
+@@s059 Hvis den sidste i blokken overskrider maksimum, er blokken ufuldstændig, og man prøver igen.
+@@s060 Blokken {3, 4, 5} er fuld; blokken {6, 7, 8} er ikke, fordi 8 aldrig kommer ud.
+@@s061 Med de rigtige Int og bound = 6. Maksimum er Int.MaxValue: "&gt; Int.MaxValue" kan ikke skrives, fordi et Int, der overskrider det, løber over og bliver <b>negativt</b>. Derfor kontrollerer koden <code>&gt;= 0</code>.
+@@s062 Værdier udskrevet af Scala 3.8.4.
+@@s063 Tilfældet "prøv igen" kørt for alvor, med en falsk RNG, der først giver 2147483647 og derefter 16. Det andet forsøg kører på den <b>nye</b> tilstand: det er <code>flatMap</code>'s arbejde. Med <code>map</code> skulle funktionen returnere et tal, og "endnu et forsøg" er ikke et tal, men en generator.
+@@s064 Tvivl: findes der en måde uden %? Vi har ikke set den
+@@s065 <code>%</code> er resten af divisionen (17 % 6 = 5, fordi 17 = 6 × 2 + 5). Den står ikke på sliderne, men den er allerede i øvelsesfilen: <code>nonNegativeEven</code> gør <code>i - i % 2</code>. Hvis du ikke kan lide den, kan du bruge <code>double</code> fra øvelse 2, som giver et tal i [0, 1):
+@@s066 <code>d * bound</code> ligger i [0, bound); <code>.toInt</code> skærer decimalerne af (det afrunder ikke), så resultatet går fra 0 til bound − 1. Med <code>SimpleRNG(42)</code>: d = 0.0075…, × 6 = 0.045…, toInt = <b>0</b>. Det højeste tilfælde: 0.99999… × 6 = 5.99999…, toInt = 5, aldrig 6. Alle 44 tests består (kontrolleret). Den prøver aldrig igen, så <code>flatMap</code> er ikke uundværlig her (<code>map</code> ville være nok), og den har den samme lille skævhed som den simple <code>%</code>. Fem terninger fra SimpleRNG(42): 1, 4, 1, 6, 5.
+@@s067 Hvorfor (d * bound).toInt virker: linealen i 6 skiver
+@@s068 dato:d,ora:d × 6,ok:valgt skive
+@@s069 Linealen [0, 1) delt i 6 lige store skiver. <code>double</code> lander på et tilfældigt punkt på linealen: hver skive er lige lang, så de har samme sandsynlighed.
+@@s070 0.2 ligger mellem 1/6 = 0.166… og 2/6 = 0.333…: skive 1. Ganget med 6 siger det, hvor mange hele skiver der er før d; <code>.toInt</code> smider stykket af skiven væk.
+@@s071 Resultatet er altid mellem 0 og 5, fordi d aldrig når 1 (det garanterer øvelse 2). Værdier udskrevet af Scala 3.8.4.
+@@s072 Tvivl: hvorfor double og ikke nonNegativeInt? Og hvad beder øvelse 8 om med almindelige ord?
+@@s073 <b>Med almindelige ord:</b> (1) skriv <code>flatMap</code>, altså en <code>map</code>, hvor funktionen returnerer en <b>generator</b> i stedet for en værdi; (2) brug den til at lave en terning med <code>bound</code> sider: et tilfældigt tal mellem 0 og bound − 1. Testene kontrollerer kun, at resultatet er ≥ 0 og &lt; bound.
+@@s074 <b>double eller nonNegativeInt:</b> fra den samme <code>SimpleRNG(42)</code> kommer 16159453 (nonNegativeInt) og 0.0075248… (double) ud, altså 16159453 / 2147483648. De er det samme tal på to forskellige skalaer. Tricket "× 6 og så toInt" virker kun på den lille skala [0, 1). På den store skala: 16159453 × 6 = 96956718, som ikke er en terning, og Int.MaxValue × 6 = −6 (overflow). Et stort tal skal <b>formindskes</b>, og til det skal man bruge <code>%</code>: 16159453 % 6 = 1. Altså: med nonNegativeInt bruger man <code>%</code>, med double bruger man <code>× bound</code> og <code>.toInt</code>.

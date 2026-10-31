@@ -1,0 +1,345 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Safe publication and immutability</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+SCENE.pubblica = {
+  w: 620, h: 250, lato: false,
+  legenda: 'dato:default value,ora:written by T1,due:read by T2,no:old value,ok:with final',
+  oggetti: [
+    { id: 'c1', tipo: 'rett', x: 10, y: 40, w: 180, h: 150 },
+    { id: 'mm', tipo: 'rett', x: 220, y: 40, w: 180, h: 150 },
+    { id: 'c2', tipo: 'rett', x: 430, y: 40, w: 180, h: 150 },
+    { id: 'l1', tipo: 'testo', x: 100, y: 28, t: 'cache di T1', size: 12.5, bold: true },
+    { id: 'lm', tipo: 'testo', x: 310, y: 28, t: 'memoria principale', size: 12.5, bold: true },
+    { id: 'l2', tipo: 'testo', x: 520, y: 28, t: 'cache di T2', size: 12.5, bold: true },
+    { id: 'x1', tipo: 'testo', x: 100, y: 100, t: '', size: 15, bold: true },
+    { id: 'u1', tipo: 'testo', x: 100, y: 145, t: '', size: 15, bold: true },
+    { id: 'xm', tipo: 'testo', x: 310, y: 100, t: '', size: 15, bold: true },
+    { id: 'um', tipo: 'testo', x: 310, y: 145, t: 'u = null', size: 15, bold: true },
+    { id: 'x2', tipo: 'testo', x: 520, y: 100, t: '', size: 15, bold: true },
+    { id: 'u2', tipo: 'testo', x: 520, y: 145, t: '', size: 15, bold: true },
+    { id: 'cod', tipo: 'testo', x: 310, y: 225, t: '', size: 12.5 }
+  ],
+  passi: [
+    { nota: 'The shared field <code>u</code> is <code>null</code>. T1 is about to execute <code>u = new UnsafeInitialization()</code>.', set: { cod: { t: 'T1: u = new UnsafeInitialization();' } } },
+    { nota: 'The object is created. Before the constructor each field has its <b>default value</b>: for an <code>int</code> it is 0. The default is visible to everybody.', set: { x1: { t: 'x = 0', tono: 'dato' }, xm: { t: 'x = 0', tono: 'dato' }, cod: { t: 'oggetto creato: x = 0 (default)' } } },
+    { nota: 'The constructor writes <code>x = 42</code>. The write sits in the cache of T1: nothing forces it to reach memory at once.', set: { x1: { t: 'x = 42', tono: 'ora' }, cod: { t: 'costruttore: this.x = 42;' } } },
+    { nota: 'T1 assigns the reference: <code>u = object</code>. This write can reach memory <b>before</b> the one on <code>x</code>: the order is not guaranteed (visibility and reordering).', set: { u1: { t: 'u = obj', tono: 'ora' }, um: { t: 'u = obj', tono: 'ora' }, cod: { t: 'T1: u = obj  (arriva in memoria per prima)' } } },
+    { nota: 'T2 reads <code>u</code>: it is not <code>null</code>, so it calls <code>u.readX()</code>. It reads the <code>x</code> it sees: 0. It prints "x is not equal 42": it has seen an object <b>initialised halfway</b>.', set: { u2: { t: 'u = obj', tono: 'due' }, x2: { t: 'x = 0', tono: 'no' }, xm: { tono: 'no' }, cod: { t: 'T2: u != null ma u.readX() == 0' } } },
+    { nota: 'With the JMM: the write <code>x = 42</code> of T1 and the read of <code>x</code> of T2 are in conflict and <b>no rule</b> orders them. It is a problem of <b>safe publication</b>.', set: { x1: { tono: 'ora' }, cod: { t: 't1(x = 42) e t2(lettura x): non ordinate' } } },
+    { nota: 'With <code>private final int x</code>: "the initialisation of final fields happens-before every other action, after the end of the constructor". Whoever sees the object sees <code>x = 42</code>.', set: { xm: { t: 'x = 42', tono: 'ok' }, x2: { t: 'x = 42', tono: 'ok' }, x1: { tono: 'ok' }, cod: { t: 'final int x → pubblicazione sicura' } } }
+  ]
+};
+</script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  const T = (id, x, y, t, extra) => Object.assign({ id, tipo: 'testo', x, y, t, size: 13 }, extra || {});
+  const R = (id, x, y, w, h, t, extra) => Object.assign({ id, tipo: 'rett', x, y, w, h, t }, extra || {});
+  const N = (id, x, y, t, tono, extra) => Object.assign({ id, tipo: 'nodo', x, y, t, tono, r: 20 }, extra || {});
+  const A = (id, da, a, extra) => Object.assign({ id, tipo: 'arco', da, a, dir: true, nascosto: true }, extra || {});
+  const F = (id, x1, y1, x2, y2, t, extra) => Object.assign({ id, tipo: 'vett', x1, y1, x2, y2, t }, extra || {});
+  const vedi = (ids, v) => Object.fromEntries(ids.map(k => [k, Object.assign({ nascosto: false }, v || {})]));
+
+  // 1. i modi per pubblicare in modo sicuro
+  SCENE.modisicuri = {
+    w: 620, h: 256, lato: true,
+    legenda: 'dato:thread that creates,due:thread that uses,ok:happens-before guaranteed,no:may see the default',
+    oggetti: [
+      T('la', 24, 60, 'A', { bold: true }), T('lb', 24, 170, 'B', { bold: true }),
+      N('c', 90, 60, 'new', 'dato', { sotto: 'costruttore' }), N('w', 230, 60, 'o=', 'dato', { sotto: 'o = new Object()' }), N('p', 370, 60, 'pub', 'dato', { sotto: 'shared = s' }),
+      N('r', 430, 170, 'rif', 'due', { sotto: 'legge shared' }), N('u', 560, 170, 'uso', 'due', { sotto: 's.o.hashCode()' }),
+      A('cw', 'c', 'w', { nascosto: false }), A('wp', 'w', 'p', { nascosto: false }), A('ru', 'r', 'u', { nascosto: false }),
+      A('pr', 'p', 'r', { t: 'solo se c’è una regola' }), A('wu', 'w', 'u', { tono: 'ok', curva: -40 }),
+      T('m', 310, 236, '', { size: 12, bold: true })
+    ],
+    passi: [
+      { nota: "<b>Pubblicare</b> un oggetto = renderlo raggiungibile da altri thread. A costruisce l'oggetto e scrive il riferimento in un campo condiviso; B legge il riferimento e usa l'oggetto." },
+      { nota: "Il problema: senza una regola, fra la scrittura del campo <code>o</code> nel costruttore e l'uso in B <b>non c'è happens-before</b>. B può vedere il riferimento all'oggetto, ma il campo o ancora a null: un oggetto \"a metà\".", set: { u: { tono: 'no' }, m: { t: 'senza regola: B può vedere o == null', tono: 'no' } } },
+      { nota: "<b>final</b> (il modo standard, per primitivi e riferimenti): l'inizializzazione di un campo final happens-before ogni uso successivo, a costruttore finito. Blocca il riferimento, non il contenuto dell'oggetto puntato.", set: { wu: { nascosto: false }, u: { tono: 'ok' }, m: { t: 'final Object o: inizializzazione → ogni uso', tono: 'ok' } } },
+      { nota: "<b>Valore di default</b> (0, false, null): l'inizializzazione di default happens-before ogni altra azione. Funziona se il default va bene come valore iniziale, come <code>private int x;</code> lasciato a 0.", set: { w: { t: 'x=0', sotto: 'int x; (default)' }, m: { t: 'default: prima di ogni altra azione del programma' } } },
+      { nota: "<b>volatile</b> (solo primitivi, nella tabella delle slide): una scrittura volatile happens-before le letture successive. Da usare solo se il campo deve comunque essere volatile, perché costa prestazioni.", set: { w: { t: 'v=', sotto: 'volatile int v' }, m: { t: 'volatile: scrittura → letture successive' } } },
+      { nota: "<b>static</b>: l'inizializzazione dei campi static happens-before ogni altro uso, come per final. Ha senso solo se il campo deve essere della classe, non del singolo oggetto.", set: { w: { t: 's=', sotto: 'static int s = 1' }, m: { t: 'static: inizializzazione della classe → ogni uso' } } }
+    ]
+  };
+
+  // 2. immutabilità: final blocca il riferimento, non l'oggetto
+  SCENE.immutabile = {
+    w: 600, h: 250, lato: true,
+    legenda: 'dato:final field,due:HashSet object,ok:reads only,no:reassigning is forbidden',
+    oggetti: [
+      R('obj', 30, 40, 200, 90, '', { tono: 'spento' }), T('ot', 130, 60, 'ThreeStooges', { bold: true, size: 12 }), R('f', 50, 76, 160, 36, 'final stooges', { tono: 'dato' }),
+      R('set', 350, 50, 220, 70, '{ }', { tono: 'due' }),
+      F('ref', 212, 94, 346, 88, '', {}), F('ref2', 212, 100, 346, 170, '', { nascosto: true, tono: 'no' }),
+      R('set2', 350, 150, 160, 40, 'altro set', { tono: 'no', nascosto: true }),
+      T('c', 300, 228, '', { size: 12, bold: true })
+    ],
+    passi: [
+      { nota: "Un campo <b>immutabile</b> non cambia dopo l'inizializzazione: pensalo come una costante. ThreeStooges ha un solo campo, <code>private final Set stooges</code>, che punta a un HashSet." },
+      { nota: "Il costruttore riempie il set: add(\"Moe\"), add(\"Larry\"), add(\"Curly\"). Il <b>contenuto</b> dell'oggetto cambia: final non lo impedisce.", set: { set: { t: '{ Moe, Larry, Curly }' }, c: { t: 'final non blocca il contenuto dell’oggetto' } } },
+      { nota: "final blocca il <b>riferimento</b>: <code>stooges = altroSet</code> non compila.", set: { ref2: { nascosto: false }, set2: { nascosto: false }, c: { t: 'riassegnare un campo final: errore di compilazione', tono: 'no' } } },
+      { nota: "E garantisce la <b>safe publication</b>: chi vede l'oggetto ThreeStooges vede anche il set già riempito dal costruttore (regola final field).", set: { ref2: { nascosto: true }, set2: { nascosto: true }, f: { tono: 'ok' }, c: { t: 'chi vede l’oggetto vede il set pieno', tono: 'ok' } } },
+      { nota: "Dopo la pubblicazione l'unico metodo, <code>isStooge</code>, fa solo <code>contains</code>: legge e restituisce un boolean, il set non esce. Letture concorrenti <b>non sono in conflitto</b> (nessuna scrittura): niente synchronized, e la classe è thread-safe.", set: { set: { tono: 'ok' }, c: { t: 'solo letture dopo la pubblicazione: nessun lock serve' } } }
+    ]
+  };
+
+  // 3. mutua esclusione: Stooges con addStooge
+  SCENE.mutuaesc = {
+    w: 620, h: 250, lato: true,
+    legenda: 'ora:t1 addStooge,due:t2 isStooge,no:conflicting unordered,ok:monitor rule',
+    oggetti: [
+      T('l1', 22, 70, 't1', { bold: true }), T('l2', 22, 180, 't2', { bold: true }),
+      N('a0', 90, 70, 'lk', 'ora', { sopra: 'lock(this)' }), N('a1', 190, 70, 'add', 'ora', { sopra: 'stooges.add' }), N('a2', 290, 70, 'ul', 'ora', { sopra: 'unlock' }),
+      N('b0', 370, 180, 'lk', 'due', { sotto: 'lock(this)', nascosto: true }), N('b1', 470, 180, 'con', 'due', { sotto: 'contains' }), N('b2', 570, 180, 'ul', 'due', { sotto: 'unlock', nascosto: true }),
+      A('p0', 'a0', 'a1', { nascosto: false }), A('p1', 'a1', 'a2', { nascosto: false }), A('q0', 'b0', 'b1'), A('q1', 'b1', 'b2'),
+      { id: 'k', tipo: 'arco', da: 'a1', a: 'b1', t: '?', tono: 'no', nascosto: true },
+      A('mon', 'a2', 'b0', { tono: 'ok' }),
+      T('c', 310, 240, '', { size: 12, bold: true })
+    ],
+    passi: [
+      { nota: "Aggiungiamo <code>addStooge</code>: ora il set viene <b>scritto</b> anche dopo la pubblicazione. Lo stato è diventato <b>mutabile</b>." },
+      { nota: "Se isStooge restasse senza synchronized: t1 scrive (add) sotto lock, t2 legge (contains) senza. Nessuna regola li collega: <b>data race</b>.", set: { k: { nascosto: false }, a1: { tono: 'no' }, b1: { tono: 'no' }, c: { t: 'contains senza lock: data race', tono: 'no' } } },
+      { nota: "Con <b>entrambi</b> i metodi synchronized sullo stesso lock (this), la regola del monitor aggiunge unlock → lock: add e contains sono <b>ordinate</b>, in un verso o nell'altro.", set: Object.assign(vedi(['b0', 'b2', 'q0', 'q1', 'mon']), { k: { nascosto: true }, a1: { tono: 'ok' }, b1: { tono: 'ok' }, c: { t: 'stesso lock per letture e scritture: ordinate', tono: 'ok' } }) },
+      { nota: "Il riassunto dei cinque punti per Stooges: stato = il set; private e mai restituito; final, quindi pubblicato in modo sicuro; mutabile, quindi ogni accesso sotto <b>lo stesso lock</b>. Thread-safe.", set: { c: { t: 'stato mutabile ⇒ ogni accesso con lo stesso lock' } } }
+    ]
+  };
+
+  // 4. esercizio 4.2: Person
+  SCENE.person42 = {
+    w: 620, h: 262, lato: true,
+    legenda: 'ora:lock of Person.class,dato:lock of this,ok:final (without lock),due:threads',
+    oggetti: [
+      R('cls', 20, 20, 250, 70, '', { tono: 'ora' }), T('ct', 145, 40, 'static: nextId, firstCreated', { bold: true, size: 12 }), T('cv', 100, 70, 'nextId = 0', { size: 12 }),
+      N('t1', 70, 150, 't1', 'due'), N('t2', 200, 150, 't2', 'due'),
+      R('p1', 330, 20, 270, 100, '', { tono: 'spento', nascosto: true }), T('p1a', 465, 42, 'Person (id = 0)', { bold: true, size: 12, nascosto: true }),
+      T('p1b', 465, 70, 'final id: nessun lock', { size: 12, tono: 'ok', nascosto: true }), T('p1c', 465, 96, 'name, zip, address: lock di this', { size: 12, nascosto: true }),
+      R('za', 330, 150, 270, 40, 'zip = 2300, address = "Kbh"', { tono: 'dato', nascosto: true }),
+      T('c', 310, 236, '', { size: 12, bold: true })
+    ],
+    passi: [
+      { nota: "Il contatore degli id è di <b>tutte</b> le persone: campi <code>static</code> nextId e firstCreated. Due thread creano una persona ciascuno, nello stesso momento." },
+      { nota: "Entrambi i costruttori chiamano <code>assignId</code>, che è <b>static synchronized</b>: il lock è quello di <b>Person.class</b>, uno solo per tutta la classe. t1 entra e prende nextId = 0.", set: { t1: { x: 222, y: 68, tono: 'ora' }, cv: { t: 'nextId = 1' }, c: { t: 't1 → id 0' } } },
+      { nota: "t2 aspetta il lock di Person.class, poi prende 1. Id distinti. Senza <code>static</code>, ognuno userebbe il lock del <b>proprio</b> oggetto: nessuna mutua esclusione, due persone con lo stesso id.", set: { t1: { x: 70, y: 150, tono: 'due' }, t2: { x: 222, y: 68, tono: 'ora' }, cv: { t: 'nextId = 2' }, c: { t: 't2 → id 1: static synchronized = un lock per la classe' } } },
+      { nota: "Nell'oggetto: <code>id</code> è <b>final</b>: immutabile e pubblicato in modo sicuro, quindi getId non ha lock. Gli altri campi cambiano: ogni lettura e scrittura prende il lock di <b>this</b>.", set: Object.assign(vedi(['p1', 'p1a', 'p1b', 'p1c']), { t2: { x: 200, y: 150, tono: 'due' }, c: { t: 'final → nessun lock   ·   mutabili → lock di this' } }) },
+      { nota: "<code>setZipAndAddress</code> scrive zip e address nello <b>stesso</b> blocco synchronized: chi legge con il lock vede o la coppia vecchia o quella nuova, mai zip nuovo con address vecchio. I getter restituiscono int e String (immutabile): niente escaping.", set: { za: { nascosto: false }, c: { t: 'zip e address cambiano insieme, sotto lo stesso lock', tono: 'ok' } } }
+    ]
+  };
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Safe publication and immutability</h1>
+  <p class="lede">Points 3, 4 and 5 of the <a href="l04-thread-safety.html">checklist</a>: the initial values of the fields must be visible to everybody (<b>safe publication</b>), what does not change must be made immutable (<b>immutability</b>), the rest must be protected (<b>mutual exclusion</b>). At the end, exercise 4.2 (<code>Person</code>) worked out.</p>
+</header>
+
+<section>
+  <h2>Safe publication</h2>
+  <div class="box regola" data-tit="Definition">
+    <p>The state of a class is <b>published safely</b> if, after an object has been initialised, the initial values of its fields are visible to <b>any thread</b> that accesses the object.</p>
+    <p>It requires that the <b>initialisation happens-before the publication</b>. Publishing = making the reference to the object accessible to other threads.</p>
+  </div>
+  <figure class="codice" data-titolo="UnsafeInitialization.java (reduced)">
+<pre data-lang="java">class UnsafeInitialization {
+    private int x;
+    private Object o;
+    public UnsafeInitialization() {
+        this.x = 42;
+        this.o = new Object();
+    }
+    public int readX() { return this.x; }
+    public Object readO() { return this.o; }
+}
+
+// T1
+u = new UnsafeInitialization();
+// T2
+if (u != null &amp;&amp; u.readX() != 42) System.out.println("x is not equal 42");</pre>
+    <ol class="spiega">
+      <li data-righe="2-3" data-segna="private int x;@dato|private Object o;@dato"><p>Two fields, neither <code>final</code> nor <code>volatile</code>.</p></li>
+      <li data-righe="4-7" data-segna="this.x = 42;@ora|this.o = new Object();@ora"><p>The constructor writes them. For the thread that runs the constructor there is no problem: it sees its own values.</p></li>
+      <li data-righe="12-13" data-segna="u = new UnsafeInitialization();@ora"><p>T1 creates the object and writes the reference into the shared field <code>u</code>.</p></li>
+      <li data-righe="14-15" data-segna="u != null@due|u.readX() != 42@no"><p>T2 can see <code>u</code> not null and yet <code>x == 0</code> or <code>o == null</code>: the writes of the constructor and its reads are not ordered by happens-before.</p></li>
+    </ol>
+  </figure>
+  <figure class="scena" data-scena="pubblica" data-titolo="How T2 sees an object initialised halfway"></figure>
+  <div class="box attenzione" data-tit="In practice">
+    <p>The course code repeats the test 10 million times, and the comment warns that on most systems the problem <b>is not observed</b>. The JMM however allows it: at the exam one reasons from the rules, not from what comes out when running.</p>
+  </div>
+  <div class="box attenzione" data-tit="Do not let this escape from the constructor">
+    <p>If the reference to the object comes out <b>during</b> the constructor (for example by passing <code>this</code> to another thread), the problem is not safe publication, but it must always be avoided.</p>
+  </div>
+</section>
+
+<section>
+  <h2>How to make it safe</h2>
+  <p>The slides give 4 ways for primitive types and 3 for references. Each works only under certain conditions.</p>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Way</th><th>Primitives (<code>int</code>…)</th><th>References (<code>Object</code>…)</th><th>When it can be used</th></tr></thead>
+    <tbody>
+      <tr><td><b>default value</b></td><td>0, <code>false</code></td><td><code>null</code></td><td>if the default is a good initial value</td></tr>
+      <tr><td><code>volatile</code></td><td>yes</td><td>—</td><td>only if the field must be volatile: otherwise it costs performance</td></tr>
+      <tr><td><code>final</code></td><td>yes</td><td>yes: the <b>standard</b> way</td><td>if the value no longer changes (for a reference: the reference does not change, the content may)</td></tr>
+      <tr><td><code>static</code></td><td>yes</td><td>yes</td><td>only if the field must belong to the class, not to the object</td></tr>
+    </tbody>
+  </table></div>
+  <pre class="cod" data-lang="java">public class SafeInitialization {
+    private int x;              // lasciato al default 0
+    private final Object o;     // final
+    public SafeInitialization() {
+        x = 0;
+        o = new Object();
+    }
+}</pre>
+  <figure class="passi" data-titolo="Why they work: three more happens-before rules">
+    <div class="passo"><div class="espr"><mark class="dato">volatile</mark>: una scrittura su un campo volatile → ogni lettura successiva di quel campo</div><p class="nota">It is the volatile rule you already know.</p></div>
+    <div class="passo"><div class="espr"><mark class="dato">default</mark>: l'inizializzazione di default (0, false, null) → ogni altra azione del programma</div><p class="nota">The defaults are assigned when the class is loaded.</p></div>
+    <div class="passo"><div class="espr"><mark class="ok">final</mark> e <mark class="ok">static</mark>: la loro inizializzazione → ogni altra azione del programma (dopo la fine del costruttore)</div><p class="nota">At JVM level: the initial value of a final or static field cannot stay in the cache after the constructor.</p></div>
+    <div class="passo"><div class="espr">inizializzazione → pubblicazione  ⇒  <mark class="ok">safe publication</mark></div><p class="nota">These rules are defined by the course starting from the JLS and from Goetz: they can be used in the exercises.</p></div>
+  </figure>
+  <div class="box esame" data-tit="From here on">
+    <p>The slides warn: up to now the initialisation had been ignored "for clarity and simplicity". From this lecture on, it must be considered in the exercises.</p>
+  </div>
+  <figure class="scena" data-scena="modisicuri" data-titolo="final, default, volatile, static"></figure>
+</section>
+
+<section>
+  <h2>Immutability</h2>
+  <ul>
+    <li>An <b>immutable</b> field does not change value after initialisation. Think of it as a constant.</li>
+    <li><code>final</code> prevents reassigning the field. But a variable of object type holds a <b>reference</b>: <code>final</code> blocks the reference, not the object it points to.</li>
+    <li>If it never changes, data races can exist <b>only during the initialisation</b>.</li>
+  </ul>
+  <div class="box regola" data-tit="Immutable thread-safe fields: 3 conditions">
+    <p>1) the field cannot be modified after the publication; 2) it is published safely; 3) it does not escape.</p>
+  </div>
+  <figure class="codice" data-titolo="ThreeStooges (Goetz p. 47)">
+<pre data-lang="java">public final class ThreeStooges {
+    private final Set&lt;String&gt; stooges = new HashSet&lt;String&gt;();
+
+    public ThreeStooges() {
+        stooges.add("Moe");
+        stooges.add("Larry");
+        stooges.add("Curly");
+    }
+
+    public boolean isStooge(String name) {
+        return stooges.contains(name);
+    }
+}</pre>
+    <ol class="spiega">
+      <li data-righe="2" data-segna="private final@ok|stooges@dato"><p><b>Class state</b>: the set <code>stooges</code>. It is <code>private</code> and <code>final</code>.</p></li>
+      <li data-righe="4-8" data-segna="stooges.add*@ora"><p>The set is filled <b>only in the constructor</b>. <code>final</code> guarantees that whoever sees the object sees the set already initialised: <b>safe publication</b>.</p></li>
+      <li data-righe="10-12" data-segna="contains@due"><p>The only public method <b>only reads</b>, and returns a <code>boolean</code>, not the set: no write after the publication, no <b>escaping</b>.</p></li>
+      <li data-righe="10" data-segna="public boolean isStooge@ok"><p>So <code>isStooge</code> <b>does not need <code>synchronized</code></b>: concurrent reads are not in conflict (no write). The class is thread-safe.</p></li>
+    </ol>
+  </figure>
+  <figure class="scena" data-scena="immutabile" data-titolo="final blocks the reference, not the content"></figure>
+</section>
+
+<section>
+  <h2>Mutual exclusion</h2>
+  <p>If the state is <b>mutable</b>, every access must be made with the same lock.</p>
+  <figure class="codice" data-titolo="Stooges: one method that writes is enough">
+<pre data-lang="java">public final class Stooges {
+    private final Set&lt;String&gt; stooges = new HashSet&lt;String&gt;();
+    // costruttore come prima
+    public synchronized boolean isStooge(String name) {
+        return stooges.contains(name);
+    }
+    public synchronized void addStooge(String name) {
+        stooges.add(name);
+    }
+}</pre>
+    <ol class="spiega">
+      <li data-righe="7-9" data-segna="stooges.add(name);@no"><p><code>addStooge</code> <b>writes</b> into the set: the state becomes mutable.</p></li>
+      <li data-righe="4-8" data-segna="synchronized*@ok"><p>Now both the write and the read must hold the lock of <code>this</code>. If <code>isStooge</code> stayed without <code>synchronized</code>, <code>contains</code> and <code>add</code> would be in conflict and unordered.</p></li>
+    </ol>
+  </figure>
+  <figure class="passi" data-titolo="Summary: how to analyse a class">
+    <div class="passo"><div class="espr">1. <mark class="dato">class state</mark>: elenco i campi</div><p class="nota">Only the fields, not the parameters of the methods.</p></div>
+    <div class="passo"><div class="espr">2. <mark class="dato">escaping</mark>: campi private, nessun metodo restituisce riferimenti allo stato</div><p class="nota"><a href="l04-thread-safety.html">Previous page</a>.</p></div>
+    <div class="passo"><div class="espr">3. <mark class="ora">safe publication</mark>: ogni campo è default, final, volatile o static</div><p class="nota">So that the initialisation happens-before the publication.</p></div>
+    <div class="passo"><div class="espr">4. <mark class="ok">immutability</mark>: quello che non cambia è final e non viene più scritto</div><p class="nota">These fields do not need the lock.</p></div>
+    <div class="passo"><div class="espr">5. <mark class="due">mutual exclusion</mark>: lo stato mutabile è letto e scritto sempre con lo stesso lock</div><p class="nota">The monitor rule orders every pair of accesses.</p></div>
+  </figure>
+  <figure class="scena" data-scena="mutuaesc" data-titolo="Mutable state: same lock for reads and writes"></figure>
+</section>
+
+<section>
+  <h2>Exercise 4.2 worked out: <code>Person</code></h2>
+  <p>Requirements: <code>id</code> not modifiable; <code>zip</code> and <code>address</code> change together; all fields readable; constructor without parameters (id = previous + 1, the first is 0); constructor with the initial id (used only if it is the first person created).</p>
+  <figure class="codice" data-titolo="One solution (verified: 8 threads × 50 000 persons → 400 000 distinct ids)">
+<pre data-lang="java">public class Person {
+    private static long nextId = 0;
+    private static boolean firstCreated = false;
+
+    private final long id;
+    private String name;
+    private int zip;
+    private String address;
+
+    public Person() { this.id = assignId(-1); }
+    public Person(long initialId) { this.id = assignId(initialId); }
+
+    private static synchronized long assignId(long initialId) {
+        if (!firstCreated) {
+            firstCreated = true;
+            if (initialId >= 0) nextId = initialId;
+        }
+        return nextId++;
+    }
+
+    public long getId() { return id; }
+    public synchronized String getName() { return name; }
+    public synchronized void setName(String name) { this.name = name; }
+    public synchronized int getZip() { return zip; }
+    public synchronized String getAddress() { return address; }
+    public synchronized void setZipAndAddress(int zip, String address) {
+        this.zip = zip;
+        this.address = address;
+    }
+}</pre>
+    <ol class="spiega">
+      <li data-righe="2-3" data-segna="nextId@dato|firstCreated@dato"><p>The counter of the ids is shared by <b>all</b> the persons: <code>static</code> field. It is also needed to know whether a person has already been created.</p></li>
+      <li data-righe="5" data-segna="private final long id;@ok"><p><code>id</code> never changes: <code>final</code>. It is immutable and published safely.</p></li>
+      <li data-righe="6-8" data-segna="name;@due|zip;@due|address;@due"><p>The other fields change: they are protected by the lock of the object (<code>this</code>). They are not written in the constructor, so they start from the default (<code>null</code>, 0).</p></li>
+      <li data-righe="10-11" data-segna="assignId(-1)@ora|assignId(initialId)@ora"><p>The two constructors ask for the id to the same method. <code>-1</code> means "no initial id".</p></li>
+      <li data-righe="13-19" data-segna="static synchronized@ok|firstCreated = true;@ora|nextId = initialId;@ora|nextId++@ora"><p><code>static synchronized</code> uses the lock of <code>Person.class</code>: only one for the whole class. Two constructors in parallel cannot read the same <code>nextId</code>. Without <code>static</code> each would use the lock of its <b>own</b> object and there would be no mutual exclusion.</p></li>
+      <li data-righe="21" data-segna="return id;@ok"><p><code>getId</code> has no lock: <code>id</code> is final, nobody writes it after the constructor.</p></li>
+      <li data-righe="22-29" data-segna="synchronized*@ok"><p>Every read and write of the mutable fields goes through the lock of <code>this</code>. <code>setZipAndAddress</code> changes them <b>together</b>, in the same block. The getters return <code>String</code> (immutable) and <code>int</code>: no escaping.</p></li>
+    </ol>
+  </figure>
+  <div class="box inglese" data-tit="4.2.2 · Model answer">
+    <p>"The class state is <i>id</i>, <i>name</i>, <i>zip</i>, <i>address</i>, plus the static fields <i>nextId</i> and <i>firstCreated</i>. All fields are private and the getters only return primitives or immutable Strings, so no state escapes. The static fields are only accessed inside the static synchronized method <i>assignId</i>, which locks on <i>Person.class</i>: concurrent constructor calls are ordered by the monitor rule, so each gets a distinct id. <i>id</i> is final, so its initialization happens-before any access after the constructor finishes: other threads can never see a partially created Person. The other fields keep their default values until set, and every access to them holds the intrinsic lock of the object, so all conflicting accesses are ordered by happens-before. Hence there are no data races on the class state."</p>
+  </div>
+  <ul>
+    <li><b>4.2.3</b> Run once, the program shows no errors (the version above: 400 000 distinct ids out of 400 000).</li>
+    <li><b>4.2.4</b> <b>No.</b> One execution explores just one interleaving out of very many: a test can show the presence of an error, never its absence. Thread-safety is proved by reasoning (checklist + JMM), as in 4.2.2.</li>
+  </ul>
+  <div class="box attenzione" data-tit="A test can hide the error it should find">
+    <p>Measured on this machine, 3 threads × 30 000 persons, with the <code>println</code> <b>inside</b> the loop (one per id, name, zip, address). With <code>synchronized</code> removed from <code>nextId</code>, so with the data race inside: <b>0 duplicate ids</b> in 3 executions out of 3. The test sees nothing.</p>
+    <p>The reason: <code>System.out.println</code> takes an internal lock on the stream. The threads spend almost all their time queued on that lock, so they execute almost one at a time and two <code>nextId</code> never overlap.</p>
+    <p>The same code without <code>synchronized</code>, but with the <code>println</code> outside the loop and a single check at the end (<code>new Person().getId()</code> must be 90 000): it comes out <b>52 900 – 58 300</b>, in all 5 executions. With <code>synchronized</code>: 90 000, always.</p>
+    <p>To quote in <b>4.2.4</b>: the same wrong code "passes" or "fails" depending on a detail that has nothing to do with concurrency. This is why a test does not prove the absence of data races.</p>
+  </div>
+  <div class="box domanda-tua" data-tit="On your Assignment 2 (exercise 4.2)">
+    <p>Your <code>People.java</code> is correct: same structure (<code>static synchronized nextId</code>, <code>final id</code>, getter and setter <code>synchronized</code>). <code>Person()</code> calls <code>this(0)</code>: if it is the first person, id = 0, as the text asks.</p>
+    <p>To fix in the written answers. <b>4.2.2</b>: you wrote "race condition free"; the right word is <b>data race</b>, and the checklist points are missing (escaping, safe publication with <code>final</code>, lock of <code>Person.class</code> for the constructor). The question explicitly asks <b>why the constructor</b> is thread-safe and why no half-built objects are seen: the answer is the <code>final</code> on <code>id</code> and the <code>static synchronized</code> method. <b>4.2.4</b>: the answer must be a clear "no", with the reason (a test does not prove the absence of data races).</p>
+  </div>
+  <figure class="scena" data-scena="person42" data-titolo="Class lock for the ids, lock of this for the rest"></figure>
+</section>
+
+</main>
+</body>
+</html>

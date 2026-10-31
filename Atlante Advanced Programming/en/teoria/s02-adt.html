@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Algebraic types (ADT)</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+SCENE.costruisci = {
+  w: 520, h: 210, lato: true,
+  codice: { lang: 'scala', testo: `List(1, 2, 3)
+= Cons(1, apply(2, 3))
+= Cons(1, Cons(2, apply(3)))
+= Cons(1, Cons(2, Cons(3, apply())))
+= Cons(1, Cons(2, Cons(3, Nil)))` },
+  oggetti: [
+    { id: 'coda', tipo: 'rett', x: 150, y: 78, w: 350, h: 64, tono: 'due', nascosto: true },
+    { id: 'c1', tipo: 'nodo', x: 80, y: 110, t: '1', nascosto: true },
+    { id: 'c2', tipo: 'nodo', x: 190, y: 110, t: '2', nascosto: true },
+    { id: 'c3', tipo: 'nodo', x: 300, y: 110, t: '3', nascosto: true },
+    { id: 'nil', tipo: 'nodo', forma: 'quadrato', r: 22, x: 420, y: 110, t: 'Nil', nascosto: true },
+    { id: 'a12', tipo: 'arco', da: 'c1', a: 'c2', dir: true, nascosto: true },
+    { id: 'a23', tipo: 'arco', da: 'c2', a: 'c3', dir: true, nascosto: true },
+    { id: 'a3n', tipo: 'arco', da: 'c3', a: 'nil', dir: true, nascosto: true },
+    { id: 'th', tipo: 'testo', x: 80, y: 60, t: 'head = 1', tono: 'dato', nascosto: true },
+    { id: 'tt', tipo: 'testo', x: 325, y: 60, t: 'tail = List(2, 3)', tono: 'due', nascosto: true }
+  ],
+  passi: [
+    { nota: '<p><code>List(1, 2, 3)</code> calls <code>apply</code>. No cell exists yet: <code>apply</code> must reach the end before building.</p>', righe: [1] },
+    { nota: '<p><code>apply</code> separates the first element and calls itself on the rest. Each call leaves a <code>Cons</code> pending.</p>', righe: [2, 3, 4] },
+    { nota: '<p>With zero elements <code>apply</code> returns <b>Nil</b>, the empty list. It is the first thing really built.</p>', righe: [5],
+      set: { nil: { nascosto: false, tono: 'ok' } } },
+    { nota: '<p><code>Cons(3, Nil)</code>: a cell holding 3 that points to Nil.</p>', righe: [5],
+      set: { nil: { tono: null }, c3: { nascosto: false, tono: 'ora' }, a3n: { nascosto: false } } },
+    { nota: '<p><code>Cons(2, …)</code> puts a cell <b>in front</b> of the one that already exists.</p>', righe: [5],
+      set: { c3: { tono: null }, c2: { nascosto: false, tono: 'ora' }, a23: { nascosto: false } } },
+    { nota: '<p><code>Cons(1, …)</code>: the list is complete. It is built from the right, because each cell needs the rest in order to exist.</p>', righe: [5],
+      set: { c2: { tono: null }, c1: { nascosto: false, tono: 'ora' }, a12: { nascosto: false } } },
+    { nota: '<p><b>head</b> is the first element: <b>1</b>.</p><p><b>tail</b> is <b>all the rest</b>: <code>List(2, 3)</code>, not the last element.</p>',
+      set: { c1: { tono: 'dato' }, th: { nascosto: false }, tt: { nascosto: false }, coda: { nascosto: false } } }
+  ]
+};
+SCENE.condivisa = {
+  w: 520, h: 230, lato: true,
+  oggetti: [
+    { id: 'va', tipo: 'nodo', forma: 'quadrato', r: 18, x: 230, y: 40, t: 'a', tono: 'dato' },
+    { id: 'n2', tipo: 'nodo', x: 300, y: 120, t: '2' },
+    { id: 'n3', tipo: 'nodo', x: 390, y: 120, t: '3' },
+    { id: 'nil', tipo: 'nodo', forma: 'quadrato', r: 22, x: 480, y: 120, t: 'Nil' },
+    { id: 'aa', tipo: 'arco', da: 'va', a: 'n2', dir: true },
+    { id: 'a23', tipo: 'arco', da: 'n2', a: 'n3', dir: true },
+    { id: 'a3n', tipo: 'arco', da: 'n3', a: 'nil', dir: true },
+    { id: 'vb', tipo: 'nodo', forma: 'quadrato', r: 18, x: 40, y: 60, t: 'b', nascosto: true },
+    { id: 'n1', tipo: 'nodo', x: 150, y: 90, t: '1', nascosto: true },
+    { id: 'ab', tipo: 'arco', da: 'vb', a: 'n1', dir: true, nascosto: true },
+    { id: 'a12', tipo: 'arco', da: 'n1', a: 'n2', dir: true, nascosto: true },
+    { id: 'vc', tipo: 'nodo', forma: 'quadrato', r: 18, x: 40, y: 190, t: 'c', nascosto: true },
+    { id: 'n9', tipo: 'nodo', x: 150, y: 175, t: '9', nascosto: true },
+    { id: 'ac', tipo: 'arco', da: 'vc', a: 'n9', dir: true, nascosto: true },
+    { id: 'a92', tipo: 'arco', da: 'n9', a: 'n2', dir: true, nascosto: true }
+  ],
+  passi: [
+    { nota: '<p><code>val a = List(2, 3)</code>.</p>' },
+    { nota: '<p><code>val b = Cons(1, a)</code>: just one new cell. The rest of <code>b</code> <b>is</b> <code>a</code>, not a copy.</p>',
+      set: { vb: { nascosto: false, tono: 'ok' }, n1: { nascosto: false, tono: 'ok' }, ab: { nascosto: false, tono: 'ok' }, a12: { nascosto: false, tono: 'ok' } } },
+    { nota: '<p><code>val c = Cons(9, a)</code>: another cell, same rest.</p>',
+      set: { vc: { nascosto: false, tono: 'ora' }, n9: { nascosto: false, tono: 'ora' }, ac: { nascosto: false, tono: 'ora' }, a92: { nascosto: false, tono: 'ora' } } },
+    { nota: '<p>The cells 2 and 3 are shared by <code>a</code>, <code>b</code> and <code>c</code>. That is why <code>tail(b) eq a</code> is <b>true</b>: it is the same object in memory (checked).</p><p>Sharing is safe because lists are immutable.</p>',
+      set: { n2: { tono: 'due' }, n3: { tono: 'due' }, a23: { tono: 'due' }, a3n: { tono: 'due' } } }
+  ]
+};
+</script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  const T = (id, x, y, t, extra) => Object.assign({ id, tipo: 'testo', x, y, t, size: 13 }, extra || {});
+  const R = (id, x, y, w, h, t, extra) => Object.assign({ id, tipo: 'rett', x, y, w, h, t }, extra || {});
+  const N = (id, x, y, t, tono, extra) => Object.assign({ id, tipo: 'nodo', x, y, t, tono, r: 20 }, extra || {});
+  const F = (id, x1, y1, x2, y2, t, extra) => Object.assign({ id, tipo: 'vett', x1, y1, x2, y2, t }, extra || {});
+  const C = (id, x, y, valori, extra) => Object.assign({ id, tipo: 'celle', x, y, cw: 52, ch: 40, valori, indici: false }, extra || {});
+
+    SCENE.dueforme = {
+      w: 540, h: 160,
+      codice: { lang: 'scala', testo: `enum List[+A]:
+  case Nil
+  case Cons(head: A, tail: List[A])` },
+      legenda: 'dato:Cons (head + tail),spento:Nil,ora:shape you are looking at',
+      oggetti: [
+        R('c1', 20, 50, 60, 40, '1', { tono: 'dato' }), R('t1', 80, 50, 40, 40, '•', { tono: 'dato' }), F('a1', 112, 70, 156, 70, ''),
+        R('c2', 160, 50, 60, 40, '2', { tono: 'dato' }), R('t2', 220, 50, 40, 40, '•', { tono: 'dato' }), F('a2', 252, 70, 296, 70, ''),
+        R('nil', 300, 50, 70, 40, 'Nil', { tono: 'spento' }),
+        T('c', 270, 130, 'Cons(1, Cons(2, Nil))', { bold: true, size: 13 })
+      ],
+      passi: [
+        { nota: "Un <code>enum</code> dichiara un tipo con un numero <b>fisso</b> di forme. List ne ha due. Il valore disegnato è Cons(1, Cons(2, Nil)).", righe: [1] },
+        { nota: "Prima forma: <b>Nil</b>, la lista vuota. Non contiene dati. Ogni lista finisce qui.", righe: [2], set: { nil: { tono: 'ora' } } },
+        { nota: "Seconda forma: <b>Cons</b>, una cella. Contiene un elemento, <code>head</code>…", righe: [3], set: { nil: { tono: 'spento' }, c1: { tono: 'ora' }, c2: { tono: 'ora' } } },
+        { nota: "…e il resto, <code>tail</code>, che è <b>a sua volta una List</b>: il tipo è definito usando se stesso (ricorsivo). Per questo le funzioni sulle liste hanno due casi: uno per Nil, uno per Cons.", righe: [3], set: { c1: { tono: 'dato' }, c2: { tono: 'dato' }, t1: { tono: 'ora' }, t2: { tono: 'ora' }, c: { t: 'tail di Cons(1, …) = Cons(2, Nil)' } } }
+      ]
+    };
+
+    const riga = (id, y, tipo, somma, prod) => [T(id + 't', 20, y, tipo, { anchor: 'start', bold: true, size: 12 }), R(id + 's', 150, y - 20, 170, 30, somma, { tono: 'spento', nascosto: true }), R(id + 'p', 340, y - 20, 230, 30, prod, { tono: 'spento', nascosto: true })];
+    SCENE.algebra = {
+      w: 590, h: 230, lato: true,
+      legenda: 'ora:sum (one shape or the other),dato:product (all the arguments together)',
+      oggetti: [T('hs', 235, 24, 'somma: le forme', { bold: true, size: 12 }), T('hp', 455, 24, 'prodotto: cosa contiene', { bold: true, size: 12 })]
+        .concat(riga('l', 70, 'List[A]', 'Nil  |  Cons', 'Cons = A × List[A]'), riga('o', 120, 'Option[A]', 'None  |  Some', 'Some = A'), riga('t', 170, 'Tree[A]', 'Leaf  |  Branch', 'Branch = Tree × Tree'), [T('c', 295, 218, '', { size: 12 })]),
+      passi: [
+        { nota: "Tipo <b>algebrico</b>: generato da uno o più costruttori, ciascuno con zero o più argomenti. Due operazioni: somma e prodotto." },
+        { nota: "<b>Somma</b>: un valore è <b>una</b> delle forme. Una List è Nil <b>oppure</b> Cons.", set: { ls: { nascosto: false, tono: 'ora' } } },
+        { nota: "<b>Prodotto</b>: ogni forma contiene <b>tutti</b> i suoi argomenti insieme. Cons contiene un A <b>e</b> una List[A].", set: { lp: { nascosto: false, tono: 'dato' } } },
+        { nota: "Option (settimana 3): None oppure Some, e Some contiene un A. Tree: Leaf oppure Branch, e Branch contiene due alberi.", set: { os: { nascosto: false, tono: 'ora' }, op: { nascosto: false, tono: 'dato' }, ts: { nascosto: false, tono: 'ora' }, tp: { nascosto: false, tono: 'dato' } } },
+        { nota: "Conseguenza pratica: ogni funzione su questi tipi risponde a \"quale forma ho in mano?\", con un caso per ogni forma della somma.", set: { c: { t: 'un case per ogni forma: Nil / Cons, None / Some, Leaf / Branch' } } }
+      ]
+    };
+
+    SCENE.companion = {
+      w: 540, h: 170,
+      codice: { lang: 'scala', testo: `object List:
+  def sum(ints: List[Int]): Int = ints match
+    case Nil => 0
+    case Cons(x, xs) => x + sum(xs)
+  def apply[A](as: A*): List[A] =
+    if as.isEmpty then Nil
+    else Cons(as.head, apply(as.tail*))` },
+      legenda: 'ora:current expression,ok:result',
+      oggetti: [T('e', 270, 60, 'List(1, 2, 3)', { bold: true, size: 14 }), T('c', 270, 120, '', { size: 12 })],
+      passi: [
+        { nota: "Il <b>companion object</b> ha lo stesso nome dell'enum e contiene le funzioni sulla lista. <code>List(1, 2, 3)</code> è una scorciatoia per <code>List.apply(1, 2, 3)</code>.", righe: [5] },
+        { nota: "<code>A*</code>: quanti argomenti vuoi. as = (1, 2, 3) non è vuota: una cella con il primo, e come resto <code>apply(as.tail*)</code>. L'asterisco spacchetta la sequenza di nuovo in argomenti.", righe: [7], set: { e: { t: 'Cons(1, apply(2, 3))' } } },
+        { nota: "Ripetendo: Cons(1, Cons(2, Cons(3, apply()))). Zero argomenti: Nil.", righe: [6], set: { e: { t: 'Cons(1, Cons(2, Cons(3, Nil)))' } } },
+        { nota: "Ora <code>sum</code> di quella lista: è un Cons, quindi 1 + sum(resto).", righe: [4], set: { e: { t: '1 + sum(Cons(2, Cons(3, Nil)))' } } },
+        { nota: "1 + (2 + (3 + sum(Nil))), e sum(Nil) = 0: il risultato è <b>6</b>.", righe: [3], set: { e: { t: '1 + (2 + (3 + 0)) = 6', tono: 'ok' }, c: { t: 'List.sum(List(1, 2, 3)) = 6' } } }
+      ]
+    };
+
+    SCENE.nilunico = {
+      w: 580, h: 240, lato: true,
+      legenda: 'dato:types,ok:Nil works here,ora:Nothing (under all)',
+      oggetti: [
+        R('li', 40, 30, 150, 40, 'List[Int]', { tono: 'dato' }), R('ls', 215, 30, 150, 40, 'List[String]', { tono: 'dato' }), R('lp', 390, 30, 150, 40, 'List[Persona]', { tono: 'dato' }),
+        R('ln', 215, 150, 150, 40, 'List[Nothing]', { tono: 'ora', nascosto: true }),
+        F('f1', 250, 148, 130, 74, '', { nascosto: true }), F('f2', 290, 148, 290, 74, '', { nascosto: true }), F('f3', 330, 148, 460, 74, '', { nascosto: true }),
+        T('c', 290, 222, '', { size: 12 })
+      ],
+      passi: [
+        { nota: "Con le classi (slide 3): <code>case object Nil extends List[Nothing]</code>. Un solo oggetto Nil: come fa a essere la lista vuota di Int, di String, di tutto?" },
+        { nota: "<b>Nothing</b> è il tipo \"in fondo a tutti\": sottotipo di ogni tipo, e senza valori. Nil è una List[Nothing].", set: { ln: { nascosto: false }, c: { t: 'Nothing <: Int, Nothing <: String, …' } } },
+        { nota: "Grazie al <b>+</b> (covarianza) di List[+A]: se Nothing &lt;: Int allora List[Nothing] &lt;: List[Int]. Lo stesso per ogni tipo.", set: { f1: { nascosto: false }, f2: { nascosto: false }, f3: { nascosto: false }, c: { t: 'List[Nothing] <: List[Int], List[String], …' } } },
+        { nota: "Quindi un solo Nil va bene come lista vuota di <b>qualsiasi</b> tipo. <code>sealed</code> garantisce che non esistano altre forme fuori dal file. La versione con enum del corso è equivalente.", set: { li: { tono: 'ok' }, ls: { tono: 'ok' }, lp: { tono: 'ok' }, c: { t: 'un solo Nil per tutti i tipi', tono: 'ok' } } }
+      ]
+    };
+  
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Algebraic types (ADT)</h1>
+  <p class="lede">An algebraic type lists <b>all the shapes</b> that a value can have. A list is: empty, or an element followed by another list. Nothing else. From this idea come pattern matching and all the functions on lists.</p>
+</header>
+
+<section>
+  <h2>Two shapes, and that is all</h2>
+  <figure class="codice" data-titolo="The course list (02-adt/Exercises.scala)">
+<pre data-lang="scala">enum List[+A]:
+  case Nil
+  case Cons(head: A, tail: List[A])</pre>
+    <ol class="spiega">
+      <li data-righe="1" data-segna="enum@ora"><p><code>enum</code> declares a type with a <b>fixed</b> number of possible shapes. Each shape is a <code>case</code>.</p></li>
+      <li data-righe="1" data-segna="[+A]@due"><p><code>A</code> is the type of the elements: <code>List[Int]</code>, <code>List[String]</code>… The <code>+</code> (covariance) is explained by the <a href="s03-varianza.html">page on variance</a>.</p></li>
+      <li data-righe="2" data-segna="Nil@dato"><p>First shape: <code>Nil</code>, the empty list. It contains no data.</p></li>
+      <li data-righe="3" data-segna="Cons@ora|head: A@dato"><p>Second shape: <code>Cons</code>, a cell. It contains an element, <code>head</code>…</p></li>
+      <li data-righe="3" data-segna="tail: List[A]@due"><p>…and the rest of the list, <code>tail</code>, which is <b>in turn a List</b>. The type is defined using itself: it is recursive.</p></li>
+    </ol>
+  </figure>
+  <div class="box basi" data-tit="If you come from Java">
+    <p>It is like a <code>sealed</code> interface with two implementations: an empty record <code>Nil</code> and a record <code>Cons(A head, List&lt;A&gt; tail)</code>. The compiler knows that no other shapes exist.</p>
+  </div>
+  <figure class="scena" data-scena="dueforme" data-titolo="Nil and Cons in a real value"></figure>
+</section>
+
+<section>
+  <h2>Building <code>List(1, 2, 3)</code></h2>
+  <figure class="scena" data-scena="costruisci" data-titolo="From the call to the cells"></figure>
+  <div class="box domanda-tua" data-tit="Frequent doubt">
+    <p><b>In the list 1, 2, 3, 4 is the tail 4?</b> No. <code>head</code> is <b>1</b>, <code>tail</code> is <b>2, 3, 4</b>: everything except the first. The last element has no special name and to reach it you must go through the whole list.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Why "algebraic": sums and products</h2>
+  <div class="box regola" data-tit="Definition (slide 3)">
+    <p>A type generated by one or more <b>constructors</b>, each with zero or more arguments. The shapes of the various constructors are <b>summed</b> (a value is one <i>or</i> the other); each constructor is a <b>product</b> of its arguments (it contains them all <i>together</i>).</p>
+  </div>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Type</th><th>Sum: the shapes</th><th>Product: what each shape contains</th></tr></thead>
+    <tbody>
+      <tr><td><code>List[A]</code></td><td><code>Nil</code> or <code>Cons</code></td><td><code>Cons</code> = an <code>A</code> and a <code>List[A]</code></td></tr>
+      <tr><td><code>Tree[A]</code> (week 3)</td><td><code>Leaf</code> or <code>Branch</code></td><td><code>Leaf</code> = an <code>A</code>; <code>Branch</code> = two <code>Tree[A]</code></td></tr>
+      <tr><td><code>Option[A]</code> (week 3)</td><td><code>Some</code> or <code>None</code></td><td><code>Some</code> = an <code>A</code>; <code>None</code> = nothing</td></tr>
+    </tbody>
+  </table></div>
+  <p>Practical consequence: if a type has two shapes, <b>every function on that type answers the question "which of the two do I have in hand?"</b>. That is why the functions on lists almost always have two cases: one for <code>Nil</code>, one for <code>Cons</code>.</p>
+  <figure class="scena" data-scena="algebra" data-titolo="Sums of shapes, products of arguments"></figure>
+</section>
+
+<section>
+  <h2>The companion object: the functions of the list</h2>
+  <p>Next to the <code>enum</code> there is an <code>object</code> with the <b>same name</b>. It is called <i>companion object</i> and contains the functions on the list (like the <code>static</code> methods of Java).</p>
+  <figure class="codice" data-titolo="sum and apply (slide 4)">
+<pre data-lang="scala">object List:
+
+  def sum(ints: List[Int]): Int = ints match
+    case Nil => 0
+    case Cons(x, xs) => x + sum(xs)
+
+  def apply[A](as: A*): List[A] =
+    if as.isEmpty then Nil
+    else Cons(as.head, apply(as.tail*))</pre>
+    <ol class="spiega">
+      <li data-righe="1" data-segna="object List@ora"><p>Same name as the <code>enum</code>: it is its companion. The functions are called <code>List.sum(…)</code>, or just <code>sum(…)</code> after <code>import List.*</code>.</p></li>
+      <li data-righe="3-5" data-segna="ints match@ora"><p><code>sum</code> looks at the shape of the list (pattern matching, <a href="s02-pattern-matching.html">next page</a>).</p></li>
+      <li data-righe="4" data-segna="0@ok"><p>The sum of the empty list is 0.</p></li>
+      <li data-righe="5" data-segna="x@dato|sum(xs)@ora"><p>Otherwise: the first element plus the sum of the rest.</p></li>
+      <li data-righe="7" data-segna="apply@ora"><p><code>apply</code> has a special name: <code>List(1, 2, 3)</code> is a shortcut for <code>List.apply(1, 2, 3)</code>.</p></li>
+      <li data-righe="7" data-segna="A*@due"><p><code>A*</code> means "how many arguments you want of type A" (varargs, like <code>A...</code> in Java). Inside, <code>as</code> is a sequence.</p></li>
+      <li data-righe="8" data-segna="as.isEmpty@dato|Nil@ok"><p>Zero arguments: the empty list.</p></li>
+      <li data-righe="9" data-segna="as.head@dato|as.tail*@due"><p>Otherwise: a cell with the first argument, and as the rest the list of the remaining arguments. <code>as.tail*</code> <b>unpacks</b> the sequence again into separate arguments, because <code>apply</code> wants them that way.</p></li>
+    </ol>
+  </figure>
+  <figure class="scena" data-scena="companion" data-titolo="List(1, 2, 3) with apply, then sum"></figure>
+</section>
+
+<section>
+  <h2>A shared tail</h2>
+  <p>Adding at the head copies nothing: the new cell points to the list that is already there.</p>
+  <figure class="scena" data-scena="condivisa" data-titolo="Three lists, two cells in common"></figure>
+</section>
+
+<section>
+  <h2>A single empty list for all types</h2>
+  <p>In the version of slide 3 with classes, <code>Nil</code> is declared like this:</p>
+  <pre class="cod" data-lang="scala">sealed trait List[+A]
+case object Nil extends List[Nothing]
+case class Cons[+A](head: A, tail: List[A]) extends List[A]</pre>
+  <ul>
+    <li><code>sealed</code>: no one can add shapes outside this file. So the compiler knows which cases exist.</li>
+    <li><code>Nothing</code> is the type "at the bottom of all": it is a subtype of every type. Thanks to the <code>+</code>, <code>List[Nothing]</code> is a subtype of <code>List[Int]</code>, <code>List[String]</code>… So a single <code>Nil</code> works for all lists.</li>
+  </ul>
+  <p class="piccolo">In the course the version with <code>enum</code> is used, which is shorter. The two versions are equivalent.</p>
+  <figure class="scena" data-scena="nilunico" data-titolo="Nothing and covariance: one Nil for all types"></figure>
+</section>
+
+</main>
+</body>
+</html>

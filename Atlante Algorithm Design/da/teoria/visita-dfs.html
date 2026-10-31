@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DFS: besøg i dybden</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+const N = (id,x,y,t) => ({id,tipo:'nodo',x,y,t,r:20});
+const A = (id,da,a,extra) => Object.assign({id,tipo:'arco',da,a,dir:false},extra||{});
+SCENE.dfs = {
+  w: 520, h: 270, lato: true,
+  legenda: 'ora:knude lige besøgt,dato:på stakken (på vejen),ok:færdig,no:back edge (cyklus)',
+  oggetti: [
+    N('s',60,130,'s'), N('a',170,50,'a'), N('b',280,50,'b'), N('c',390,50,'c'), N('d',390,170,'d'), N('e',60,40,'e'),
+    A('sa','s','a'), A('ab','a','b'), A('bc','b','c'), A('cd','c','d'), A('da','d','a',{tono:'no'}), A('se','s','e'),
+    {id:'lab',tipo:'testo',x:30,y:235,t:'ordine di visita (numero sotto il nodo)',size:12,anchor:'start'}
+  ],
+  passi: [
+    { nota: 'Jeg starter fra <b>s</b>. Jeg markerer den som besøgt og går ned til den første nabo, der ikke er set: <b>a</b>.', set: { s:{tono:'ora',sotto:'1'} } },
+    { nota: 'Jeg går dybere og dybere: fra a til <b>b</b>, fra b til <b>c</b>, fra c til <b>d</b>. Hver knude er "på stakken", så længe den stadig har naboer at udforske.', set: { s:{tono:'dato',sotto:'1'}, a:{tono:'dato',sotto:'2'}, b:{tono:'dato',sotto:'3'}, c:{tono:'dato',sotto:'4'}, d:{tono:'ora',sotto:'5'}, sa:{tono:'ok'}, ab:{tono:'ok'}, bc:{tono:'ok'}, cd:{tono:'ok'} } },
+    { nota: 'Fra <b>d</b> går buen mod <b>a</b>: a er allerede besøgt og er ikke forælderen til d. Det er en <b>back edge</b>: den lukker en cyklus a–b–c–d–a.', set: { d:{tono:'dato',sotto:'5'}, a:{tono:'dato',sotto:'2'}, da:{tono:'no'} } },
+    { nota: 'd har ingen andre naboer: den er <b>færdig</b>. Jeg går tilbage til c, derefter b, derefter a: også de er færdige. Jeg vender tilbage til <b>s</b>.', set: { d:{tono:'ok',sotto:'5'}, c:{tono:'ok',sotto:'4'}, b:{tono:'ok',sotto:'3'}, a:{tono:'ok',sotto:'2'}, da:{tono:null} } },
+    { nota: 'Fra s er naboen <b>e</b> tilbage, ikke set: jeg går derned og bliver færdig. Hver knude besøges én gang, hver kant kigges på højst to gange.', set: { s:{tono:'ora',sotto:'1'}, e:{tono:'ora',sotto:'6'}, se:{tono:'ok'} } }
+  ]
+};
+})();
+</script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+const N = (id,x,y,t,tono) => ({id,tipo:'nodo',x,y,t,r:20,tono});
+const A = (id,da,a) => ({id,tipo:'arco',da,a,dir:false});
+SCENE.compon = {
+  w: 520, h: 210, lato: true,
+  legenda: 'dato:første komponent,ora:anden komponent,ok:isoleret',
+  oggetti: [
+    N('a',60,60,'a'), N('b',150,60,'b'), N('c',105,130,'c'),
+    N('d',300,60,'d'), N('e',390,60,'e'),
+    N('f',350,150,'f'),
+    A('ab','a','b'), A('bc','b','c'), A('ca','c','a'), A('de','d','e'), A('ef','e','f'),
+    {id:'t1',tipo:'testo',x:300,y:200,t:'',size:12,bold:true}
+  ],
+  passi: [
+    { nota: 'Sammenhængende komponenter: grupper af knuder, der alle kan nås fra hinanden. Jeg starter en DFS fra <b>a</b>: den finder a, b, c.', set: { a:{tono:'dato'}, b:{tono:'dato'}, c:{tono:'dato'}, t1:{t:'componente 1: {a, b, c}'} } },
+    { nota: 'Alle de knuder, der allerede er besøgt, er "på plads". Jeg vælger en knude, der <b>ikke er besøgt</b>: d. Ny DFS: den finder d, e, f.', set: { d:{tono:'ora'}, e:{tono:'ora'}, f:{tono:'ora'}, t1:{t:'componente 2: {d, e, f}'} } },
+    { nota: 'Antallet af komponenter er antallet af gange, jeg startede besøget. I alt: hver knude og kant én gang, <code>O(n + m)</code>.', set: { d:{tono:'dato'}, e:{tono:'dato'}, f:{tono:'dato'}, t1:{t:'2 componenti, O(n + m)',tono:'ok'} } }
+  ]
+};
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>DFS: besøg i dybden</h1>
+  <p class="lede">DFS (depth-first search, besøg i dybden) går så dybt, den kan; når den er blokeret, går den tilbage. Den bruges til at finde cyklusser, sammenhængende komponenter og rækkefølgen af knuderne, som den topologiske sortering bygger på.</p>
+</header>
+
+<section>
+  <h2>Problemet og idéen</h2>
+<p>Problemet: at udforske alt, der kan nås, og huske <b>i hvilken rækkefølge</b> knuderne blev besøgt.</p>
+<p>Idéen: fra den aktuelle knude går du ned til en nabo, der ikke er set endnu, og gentager. Når en knude ikke har flere naboer at besøge, er den <b>færdig</b>, og besøget vender tilbage til den knude, det kom fra (forælderen). Stakken af rekursive kald, eller en eksplicit stak, holder styr på den aktuelle vej.</p>
+  <figure class="scena" data-scena="dfs" data-titolo="DFS fra s: du går dybt, derefter går du tilbage"></figure>
+</section>
+<section>
+  <h2>Back edges og cyklusser</h2>
+<p>En kant fra en knude <code>u</code> til en knude <code>v</code>, som allerede er besøgt, og som ikke er forælderen til <code>u</code>, kaldes en <b>back edge</b> (tilbagekant). I den ikke-orienterede graf betyder det, at der findes en cyklus.</p>
+<p>Cyklussen rekonstrueres ved at gå op gennem forældrene fra <code>u</code> til <code>v</code>. Det er den enkleste måde at finde en cyklus i en graf på: en DFS, der stopper ved den første back edge.</p>
+<div class="box attenzione" data-tit="Forælderen tæller ikke"><p>I den ikke-orienterede graf er buen, du lige har gået til forælderen, naturligvis allerede set. Det er ikke en cyklus. Kontrollér altid "set og ikke forælderen".</p></div>
+</section>
+<section>
+  <h2>Sammenhængende komponenter</h2>
+<p>En <b>sammenhængende komponent</b> (connected component) er en gruppe af knuder, der alle kan nås fra hinanden. For at tælle dem starter du et besøg fra en ikke-besøgt knude og markerer alt, du finder; du gentager, indtil der ikke er ikke-besøgte knuder tilbage. Hver start finder én komponent. Samlet omkostning: <code>O(n + m)</code>, fordi hver knude og kant ses én gang.</p>
+  <figure class="scena" data-scena="compon" data-titolo="To komponenter: to besøg"></figure>
+</section>
+<section>
+  <h2>Omkostning og hvornår den bruges</h2>
+<p>Omkostning <code>O(n + m)</code>. Brug DFS til: <b>cyklusser</b> (back edges), <b>sammenhængende komponenter</b>, <b>topologisk orden</b> (afslutningsrækkefølgen, læst baglæns, se den dedikerede side), <b>nåbarhed</b>, når du ikke har brug for afstanden.</p>
+<p>Brug den ikke til den mindste afstand uden vægte: den finder en vej, ikke den korteste.</p>
+</section>
+<section>
+  <h2>Koden side om side</h2>
+  <p>Denne side forklarer begrebet. Java-koden, der implementerer det, med en forklaring linje for linje og de syntaksnoter, der skal bruges, står på den side ved siden af.</p>
+  <p><a href="../codice/visita-dfs.html"><b>→ Java-kode til dette emne</b></a></p>
+</section>
+<section>
+  <h2>Til eksamen</h2>
+<div class="box esame" data-tit="Til eksamen">
+<p>Til <b>cyklusser</b> eller <b>rækkefølge af afhængigheder</b> (forudsætninger, beregningsrækkefølge) er svaret DFS eller topologisk sortering. Skriv: <i>"Run DFS from an arbitrary vertex. Every back edge found closes a cycle. Time O(n + m)."</i></p>
+<p>For <b>afstanden</b> er det ikke DFS: det er BFS (se siden om BFS).</p>
+</div>
+</section>
+<section>
+  <h2>Hurtig oversigt</h2>
+<div class="tab-wrap"><table class="tab"><thead><tr><th>element</th><th>betydning</th><th>note</th></tr></thead><tbody><tr><td>back edge</td><td>kant til en set forfader</td><td>findes kun hvis der er en cyklus</td></tr><tr><td>komponenter</td><td>ét besøg pr. gruppe</td><td>O(n + m) i alt</td></tr><tr><td>tid</td><td>O(n + m)</td><td>hver knude og kant én gang</td></tr><tr><td>ikke til</td><td>mindste afstande</td><td>finder en vej, ikke den korteste</td></tr></tbody></table></div>
+</section>
+
+</main>
+</body>
+</html>

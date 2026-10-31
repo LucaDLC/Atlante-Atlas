@@ -1,0 +1,68 @@
+@@s001 Sequential consistency and linearizability
+@@s002 dato:thread A,due:thread B,ok:valid,no:impossible
+@@s003 The execution of exercise 7.1.1. B does <code>q.deq(x)</code> and <b>finishes</b> before A starts <code>q.enq(x)</code>. Then A does <code>q.enq(y)</code>. Each rectangle goes from the invocation (left edge) to the response (right edge).
+@@s004 The question of sequential consistency: can the three calls be put <b>in a line, one at a time</b>, so that (1) inside each thread the order stays that of the program and (2) the result respects FIFO? For A: <code>enq(x)</code> before <code>enq(y)</code>, mandatory. Between A and B: <b>no constraint</b>.
+@@s005 First attempt: the order of real time. <code>deq</code> on an <b>empty</b> queue cannot return x. This line violates the FIFO specification.
+@@s006 But sequential consistency <b>does not look at real time between different threads</b>: <code>deq(x)</code> is of B, <code>enq(x)</code> is of A, so B can be moved after. The order of A (x before y) stays. The line respects FIFO: <b>sequentially consistent</b>.
+@@s007 <code>enq(x), enq(y), deq(x)</code> is also fine: it is enough that <b>one</b> valid line exists.
+@@s008 Linearizability adds one rule: each call takes effect at an <b>instant</b> (linearization point) <b>inside</b> its rectangle. Let us put the calls back on real time.
+@@s009 Whatever point is chosen inside <code>deq(x)</code> comes <b>before</b> whatever point is inside <code>enq(x)</code>: the rectangle of <code>deq</code> ends before the other begins. So in every linearization <code>deq(x)</code> stands before <code>enq(x)</code>, on an empty queue: <b>not linearizable</b> (exercise 7.1.2).
+@@s010 Sequential consistency and linearizability
+@@s011 Lecture 7 (<i>Linearizability</i>), slides 28–45. Two ways of answering the question "is this concurrent execution correct?". The difference is one thing only: linearizability respects <b>real time</b> also between different threads, sequential consistency does not.
+@@s012 The starting point: calls that last
+@@s013 In a sequential program a call <code>q.enq(x)</code> is a single step. In a concurrent program it <b>lasts</b>: it starts when it is invoked (<i>invocation</i>) and ends when the response comes back (<i>response</i>). In between, other threads make other calls on the same object. To say whether the result is right one tries to <b>put the calls in a line</b>, one at a time, and to compare the line with the sequential specification (here: a FIFO queue).
+@@s014 symbol
+@@s015 means
+@@s016 the threads, one per line
+@@s017 the real time that flows, from left to right
+@@s018 <code>|q.enq(x)|</code>
+@@s019 one call: the left <code>|</code> = invocation, the right <code>|</code> = response
+@@s020 <code>&lt;q.enq(x),q.deq(x)&gt;</code>
+@@s021 a <b>sequential</b> execution: the calls in a line, in the order written
+@@s022 Two calls of the <b>same</b> thread never overlap: a thread does one thing at a time, and the order in which it does them is the <b>program order</b> (<i>the order of the code</i>).
+@@s023 Sequential consistency
+@@s024 Definition of slide 31: a concurrent execution is <b>sequentially consistent</b> if <b>there exists</b> a sequential projection (the calls put in a line) in which:
+@@s025 the operations happen <b>one at a time</b>;
+@@s026 the <b>program order</b> is respected <b>for each thread</b>;
+@@s027 the execution respects the <b>specification</b> of the object.
+@@s028 What is <b>missing</b> from the list is the important point: no rule says to respect real time between calls of <b>different</b> threads. If a call of B finishes before a call of A starts, in the line they can still be put in the reverse order.
+@@s029 How to shuffle two decks of cards
+@@s030 Each thread is a deck, with the cards in the order of the program. Sequential consistency allows the decks to be <b>interleaved</b> as you like (a "riffle shuffle"), but never changing the order inside a deck. If at least one shuffle gives a line that respects FIFO, the execution is sequentially consistent.
+@@s031 Exercises 7.1.1 and 7.1.2: the same execution, two answers
+@@s032 But the dequeue comes before the enqueue: how can it be consistent?
+@@s033 It comes first <b>in real time</b>, and sequential consistency does not look at real time between different threads. <code>deq(x)</code> is of B, <code>enq(x)</code> is of A: between them there is no program order, so in the line B can be moved after A. The only forced order is the one inside A: <code>enq(x)</code> before <code>enq(y)</code>.
+@@s034 Valid line: <code>&lt;q.enq(x),q.deq(x),q.enq(y)&gt;</code> (<code>&lt;q.enq(x),q.enq(y),q.deq(x)&gt;</code> is fine too). Empty queue, x enters, x leaves, y enters: it respects FIFO.
+@@s035 Ready answer 7.1.1
+@@s036 Yes, it is sequentially consistent. Sequential consistency only requires that the calls happen one at a time, that the program order of each thread is preserved, and that the result satisfies the FIFO specification; it does not require preserving the real-time order between calls of different threads. The only program-order constraint is that A's <code>q.enq(x)</code> comes before A's <code>q.enq(y)</code>. Since <code>q.deq(x)</code> belongs to thread B, it can be placed after <code>q.enq(x)</code>, giving the sequential execution <code>&lt;q.enq(x),q.deq(x),q.enq(y)&gt;</code>, which is a valid FIFO execution.
+@@s037 It is not compositional
+@@s038 Slide 38: two objects that are individually sequentially consistent can together give an execution that is not. For this reason one cannot reason about one object at a time. Linearizability, instead, is compositional.
+@@s039 Linearizability
+@@s040 Slide 39: linearizability <b>extends</b> sequential consistency with one more rule:
+@@s041 each call must take effect <b>at an instant</b>, at a moment <b>between its invocation and its response</b>.
+@@s042 That instant is the <b>linearization point</b> (<i>the moment of the effect</i>). By putting the calls in a line in the order of their points one obtains the linearization. Consequence: if one call <b>finishes before</b> another <b>starts</b>, even in different threads, in the line it must stand before. Real time counts.
+@@s043 Sequentially consistent
+@@s044 Program order <b>inside</b> each thread. Between different threads, complete freedom. Execution 7.1.1: <b>yes</b>.
+@@s045 Linearizable
+@@s046 Program order <b>plus</b> the real-time order between calls that do not overlap. Execution 7.1.2: <b>no</b>.
+@@s047 Linearizable ⇒ sequentially consistent
+@@s048 A linearization is also a valid line for sequential consistency: it respects the program order (the calls of one thread do not overlap, so their points are in order). The converse does not hold: 7.1.1 is the counterexample.
+@@s049 Ready answer 7.1.2
+@@s050 No, it is not linearizable. In a linearization each call must take effect at a point between its invocation and its response. <code>q.deq(x)</code> returns before <code>q.enq(x)</code> is invoked, so every linearization point of <code>q.deq(x)</code> comes before every linearization point of <code>q.enq(x)</code>. Therefore every linearization starts with <code>q.deq(x)</code> on an empty queue, which cannot return x according to the FIFO specification.
+@@s051 Overlap: freedom, not guarantee (7.1.3 and 7.1.4)
+@@s052 When two calls of different threads <b>overlap</b> in time, their linearization points can be put in <b>both orders</b>. The overlap therefore gives <b>freedom</b> of choice. But then the chosen line must respect FIFO: if no choice respects it, the execution is not linearizable, with or without overlap.
+@@s053 7.1.3: the overlap is enough
+@@s054 dato:enq,due:deq,ok:valid
+@@s055 <code>deq(x)</code> lies entirely <b>inside</b> the interval of <code>enq(x)</code>: they overlap.
+@@s056 I choose the point of <code>enq(x)</code> right after its invocation, before <code>deq(x)</code> starts; the point of <code>deq(x)</code> after. Both stand inside their own interval.
+@@s057 x enters, x leaves: it respects FIFO. <b>Linearizable.</b>
+@@s058 7.1.4: the overlap is not enough
+@@s059 dato:enq of A,due:deq of B,no:violates FIFO
+@@s060 <code>deq(y)</code> overlaps <b>both</b> the <code>enq</code>s. Inside A the order is fixed: <code>enq(x)</code> before <code>enq(y)</code> (and they do not overlap). The point of <code>deq(y)</code> can fall in three places.
+@@s061 First of all: empty queue, it cannot return y.
+@@s062 In the middle: the queue contains only x, and y has not entered yet.
+@@s063 At the end: x entered <b>before</b> y, so FIFO makes x leave first.
+@@s064 The three positions are all the possible choices, and none respects FIFO. It is not even sequentially consistent: the possible lines are the same three.
+@@s065 "They overlap, so it is linearizable": why is that not enough?
+@@s066 The overlap only says <b>which lines are allowed</b>. To say "linearizable" one must <b>show an allowed line</b> that respects the specification; to say "not linearizable", show that <b>no</b> allowed line respects it. In 7.1.4 the allowed lines are three, and they all fail because of FIFO.
+@@s067 Ready answer 7.1.4
+@@s068 No, it is not linearizable. A's <code>q.enq(x)</code> and <code>q.enq(y)</code> do not overlap, so <code>q.enq(x)</code> comes before <code>q.enq(y)</code> in every linearization. <code>q.deq(y)</code> overlaps both, so its linearization point can be before, between or after them. Before: the queue is empty. Between: the queue contains only x. After: the queue is [x, y], and since x was enqueued first, a dequeue returns x. In no case can <code>q.deq(y)</code> return y, so no linearization satisfies the FIFO specification.

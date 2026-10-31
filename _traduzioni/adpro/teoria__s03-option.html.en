@@ -1,0 +1,78 @@
+@@s001 Option: no exceptions
+@@s002 dato:value travelling,ora:active step,no:failure,ok:final result
+@@s003 First round: one starts from the list <code>List(2, 3, 4)</code>. The rectangle at the bottom is the value that travels along the chain.
+@@s004 <code>headOption</code>: the list has a head, so <code>Some(2)</code>. If it were empty it would give <code>None</code> instead of an exception.
+@@s005 <code>filter</code>: 2 is even, the condition is true, <code>Some(2)</code> stays.
+@@s006 <code>map</code>: applies <code>_ / 2</code> to the value inside: <code>Some(1)</code>.
+@@s007 <code>getOrElse(-1)</code>: there is a value, I take it out. Result <b>1</b>: no longer an Option, an Int.
+@@s008 Second round, with <code>List(3, 4)</code>.
+@@s009 <code>headOption</code>: <code>Some(3)</code>.
+@@s010 <code>filter</code>: 3 is odd. The condition is false: <b>None</b>. Here the failure happens.
+@@s011 <code>map</code> on <code>None</code> <b>does not even call</b> <code>_ / 2</code>: there is nothing to divide. The None passes on. The code of the chain did not have to check anything.
+@@s012 <code>getOrElse(-1)</code>: there is no value, so I use the default. Result <b>-1</b>. The error is handled <b>at the end</b>, in one single place.
+@@s013 dato:input,ok:result,no:no result (exception),due:extra value: None
+@@s014 ok:Some (there is),no:None (not there)
+@@s015 ok:result with a value,no:None
+@@s016 no:Left (error with information),ok:Right (result),spento:None (error without information)
+@@s017 due:maybe (guard),ok:covered,no:warning
+@@s018 Option: no exceptions
+@@s019 Some functions have no answer for certain inputs: the mean of an empty list, the first element of nothing. Instead of throwing an exception, you make it return an <code>Option</code>: <code>Some(result)</code> if there is one, <code>None</code> if there is not. The first assessed delivery of the course is on this.
+@@s020 Partial and total functions
+@@s021 Definitions (slide 18)
+@@s022 A function <span class="m">f : A → B</span> is <b>total</b> if for <b>every</b> <span class="m">a</span> in A there exists a result in B. If for some input there is no answer (crash, exception), it is <b>partial</b>.
+@@s023 Making the mean total
+@@s024 Partial: on the empty list there is no mean. And the type <code>Double</code> does not say so: whoever calls does not know that it can blow up.
+@@s025 Idea: instead of restricting what goes in, I <b>widen what comes out</b>. I add one more value, <code>None</code>, which means "no result".
+@@s026 Total: every list has an answer. The possible failure is now <b>written in the type</b>, and the compiler forces whoever calls to handle it.
+@@s027 <b>Why not exceptions?</b> An exception is not a value: it breaks referential transparency and does not appear in the type. The only advantage of exceptions, the slides say, is being able to handle the error <b>far</b> from where it happens. Option keeps this advantage (you see it in the chain below) without the defects.
+@@s028 Widening what comes out: None
+@@s029 Option is an algebraic type
+@@s030 Two shapes, as with the list: <code>Some</code> contains a value, <code>None</code> nothing. <code>None</code> has type <code>Option[Nothing]</code> and thanks to the <code>+A</code> it works as <code>Option[Int]</code>, <code>Option[String]</code>… (<a href="s03-varianza.html">variance</a>).
+@@s031 The standard library uses it everywhere: <code>Map.get(key): Option[V]</code>, <code>List.headOption</code>, <code>List.find(p)</code>.
+@@s032 Some and None in the library
+@@s033 The API: map, flatMap, filter, getOrElse
+@@s034 Exercise 6: written as <b>methods</b> inside the <code>enum</code>, with pattern matching. It is your solution.
+@@s035 03-option/Exercises.scala, exercise 6
+@@s036 They are methods: the value they work on is <code>this</code>. They are called with the dot, <code>Some(3).map(…)</code>.
+@@s037 <b>map</b>: if there is a value, I apply <code>f</code>. <code>f(a)</code> gives a bare <code>B</code>, but I must return <code>Option[B]</code>: I put it back in a <code>Some</code>.
+@@s038 On <code>None</code> there is nothing to apply the function to: <code>None</code> stays <code>None</code>.
+@@s039 <b>flatMap</b>: here <code>f</code> <b>already</b> returns an <code>Option[B]</code>. So I return it as it is, without wrapping it again. It is needed when the next step can fail too.
+@@s040 <b>filter</b>: I keep the value only if it satisfies <code>p</code>. <code>this</code> is the Option itself, already a <code>Some(a)</code>. The last case without a guard avoids the exhaustiveness error.
+@@s041 <b>getOrElse</b>: it serves to <b>get out</b> of the Option. <code>B &gt;: A</code> is explained in the <a href="s03-varianza.html">page on variance</a>. <code>=> B</code> means that the default is computed only if needed.
+@@s042 With <code>None</code> I return the default, with <code>Some</code> the bare value.
+@@s043 Some(f(a)) or f(a)? Look at the type of f
+@@s044 <code>f(a)</code> has type <code>B</code>. I must return <code>Option[B]</code>.
+@@s045 The wrapper is missing: I add it.
+@@s046 Here <code>f(a)</code> is <b>already</b> <code>Option[B]</code>: nothing to add.
+@@s047 Wrapping it again would give two wrappers. The compiler complains (message checked).
+@@s048 The default of getOrElse is computed only if needed
+@@s049 The default is a block that prints and then is worth 42.
+@@s050 With <code>None</code> the default is needed: it is run.
+@@s051 With <code>Some</code> the block is never run, thanks to <code>=> B</code> (checked).
+@@s052 map, flatMap, filter, getOrElse on examples
+@@s053 A chain that can fail
+@@s054 The real advantage: you write the steps as if everything went well. If a step fails, the <code>None</code> goes through the rest without doing harm, and you decide what to do <b>at the end</b>.
+@@s055 headOption, filter, map, getOrElse
+@@s056 I want…
+@@s057 The function passed returns…
+@@s058 Use
+@@s059 transform the value
+@@s060 a normal value <code>B</code>
+@@s061 <code>map</code>
+@@s062 take another step that can fail
+@@s063 an <code>Option[B]</code>
+@@s064 <code>flatMap</code>
+@@s065 discard the value if it is not good
+@@s066 a <code>Boolean</code>
+@@s067 <code>filter</code>
+@@s068 get out of the Option with a default
+@@s069 <code>getOrElse</code>
+@@s070 What monadic means
+@@s071 In the slides you find "the Option monad". For now, informally: a type that acts as a <b>container with a context</b> (here: "perhaps there is nothing") and has <code>map</code> and <code>flatMap</code> to chain steps without checking the context every time. List is monadic, Option is monadic. The precise definition comes in week 9.
+@@s072 <code>Either</code>: failing with a message
+@@s073 <code>None</code> says that something went wrong, but not <b>what</b>. <code>Either</code> carries the information about the error, as an exception would.
+@@s074 Left with the message, Right with the result
+@@s075 Nil, None e null
+@@s076 Which "empty" to use: <code>Nil</code> for the empty list, <code>None</code> for the result that may not be there, <code>null</code> only as a value that arrives from Java and must be converted at once with <code>Option(x)</code>. Explanation and comparison in the <a href="s03-vuoti.html">dedicated page</a>.
+@@s077 Typical errors
+@@s078 Guards and exhaustive cases

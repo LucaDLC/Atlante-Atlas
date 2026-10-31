@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Missing data, outliers and the multivariate normal</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  const H = [150, 155, 160, 165, 170, 175, 180, 185, 190, 195], W = [50, 53, 57, 60, 65, 70, 72, 75, 78, 80];
+  const ogg = [{ id: 'ax', tipo: 'assi', box: [50, 15, 330, 235], dom: [145, 200, 45, 85], tacche: 10, etX: 'altezza', etY: 'peso' }];
+  H.forEach((h, i) => ogg.push({ id: 'p' + i, tipo: 'punto', in: 'ax', x: h, y: W[i], tono: 'dato' }));
+  ogg.push({ id: 'mu', tipo: 'punto', in: 'ax', x: 172.5, y: 66, t: 'media', tx: -44, ty: 4, tono: 'due' });
+  ogg.push({ id: 'A', tipo: 'punto', in: 'ax', x: 190, y: 55, t: 'A', tx: 10, ty: 4, tono: 'ora', nascosto: true });
+  ogg.push({ id: 'B', tipo: 'punto', in: 'ax', x: 190, y: 78, t: 'B', tx: -16, ty: -8, tono: 'ora', nascosto: true });
+  ogg.push({ id: 'dA', tipo: 'linea', in: 'ax', x1: 172.5, y1: 66, x2: 190, y2: 55, tratt: true, tono: 'ora', nascosto: true });
+  ogg.push({ id: 'dB', tipo: 'linea', in: 'ax', x1: 172.5, y1: 66, x2: 190, y2: 78, tratt: true, tono: 'ora', nascosto: true });
+  ogg.push({ id: 'n', tipo: 'testo', x: 215, y: 290, t: '', size: 13, bold: true });
+  SCENE.maha = {
+    w: 420, h: 300, lato: true,
+    legenda: 'dato:the 10 people,due:mean,ora:two new people,no:outlier,ok:normal',
+    oggetti: ogg,
+    passi: [
+      { nota: 'Again height and weight: the cloud is narrow and elongated, because the two variables are strongly correlated (0.995).' },
+      { nota: 'Two new people arrive. <b>A</b> = (190 cm, 55 kg), <b>B</b> = (190 cm, 78 kg).', set: { A: { nascosto: false }, B: { nascosto: false } } },
+      { nota: 'Euclidean distance from the mean: A <b>20.7</b>, B <b>21.2</b>. Almost equal. Also the z-scores taken one at a time are moderate (A: +1.16 and −1.04; B: +1.16 and +1.13): none exceeds 3.', set: { dA: { nascosto: false }, dB: { nascosto: false }, n: { t: 'euclidea: A 20.7   B 21.2', tono: 'ora' } } },
+      { nota: '<b>Mahalanobis</b> distance, which uses the covariance: A <b>21.4</b>, B <b>1.17</b>. B follows the correlation (tall and heavy), A goes against it (tall but light): A is a <b>multivariate outlier</b>.', set: { A: { tono: 'no' }, B: { tono: 'ok' }, dA: { tono: 'no' }, dB: { tono: 'ok' }, n: { t: 'Mahalanobis: A 21.4   B 1.17', tono: 'no' } } }
+    ]
+  };
+})();
+</script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  const D = {"par": [[-3.0, 9.0], [-2.5, 6.25], [-2.0, 4.0], [-1.5, 2.25], [-1.0, 1.0], [-0.5, 0.25], [0.0, 0.0], [0.5, 0.25], [1.0, 1.0], [1.5, 2.25], [2.0, 4.0], [2.5, 6.25], [3.0, 9.0]], "corr_par": 0.0, "s": [0.2, 0.2371, 0.2719, 0.3022, 0.3262, 0.3423, 0.3496, 0.3476, 0.3364, 0.3167, 0.2898, 0.2572, 0.2212, 0.1838, 0.1474, 0.1143, 0.0865, 0.0658, 0.0534, 0.0501, 0.0562, 0.0712, 0.0942, 0.1238, 0.1581, 0.195, 0.2323, 0.2675, 0.2985, 0.3235], "miss": [2, 4, 12, 15, 16, 18, 19, 21], "zero": [0.2, 0.2371, 0.0, 0.3022, 0.0, 0.3423, 0.3496, 0.3476, 0.3364, 0.3167, 0.2898, 0.2572, 0.0, 0.1838, 0.1474, 0.0, 0.0, 0.0658, 0.0, 0.0, 0.0562, 0.0, 0.0942, 0.1238, 0.1581, 0.195, 0.2323, 0.2675, 0.2985, 0.3235], "mean": [0.2, 0.2371, 0.233, 0.3022, 0.233, 0.3423, 0.3496, 0.3476, 0.3364, 0.3167, 0.2898, 0.2572, 0.233, 0.1838, 0.1474, 0.233, 0.233, 0.0658, 0.233, 0.233, 0.0562, 0.233, 0.0942, 0.1238, 0.1581, 0.195, 0.2323, 0.2675, 0.2985, 0.3235], "interp": [0.2, 0.2371, 0.2697, 0.3022, 0.3223, 0.3423, 0.3496, 0.3476, 0.3364, 0.3167, 0.2898, 0.2572, 0.2205, 0.1838, 0.1474, 0.1202, 0.093, 0.0658, 0.0626, 0.0594, 0.0562, 0.0752, 0.0942, 0.1238, 0.1581, 0.195, 0.2323, 0.2675, 0.2985, 0.3235], "mz": 0.03253, "mm": 0.01722, "mi": 4e-05, "varrid": 0.604, "mv": [[0.75, -0.64], [-1.85, -2.15], [1.57, 1.48], [-0.1, -0.1], [0.68, 1.59], [-0.14, -0.57], [-0.38, -0.17], [0.46, 2.27], [0.82, 0.11], [-0.2, -0.75], [-0.15, -0.14], [0.69, 0.48], [-0.87, -0.09], [-1.51, -1.05], [0.39, -0.2], [-0.67, -0.36], [-1.92, 0.31], [-0.81, 0.23], [-0.47, -2.19], [-1.19, -0.99], [-1.49, -1.7], [0.04, 0.44], [0.9, 0.56], [-0.23, 1.1], [-0.74, 0.06], [0.38, 0.88], [0.72, 0.66], [-0.3, -0.25], [0.54, 0.63], [1.04, 1.64], [-0.21, 0.2], [-0.81, -0.84], [0.35, 1.1], [0.25, 0.31], [1.1, 0.77], [-1.28, -1.49], [-0.66, -0.87], [-0.84, -1.05], [-1.73, -3.15], [0.13, 0.77], [0.53, 0.77], [-0.74, -0.7], [1.39, 1.73], [0.82, 0.91], [0.63, 0.72], [0.4, -1.34], [0.96, 0.56], [-1.33, -0.65], [0.61, 1.53], [0.6, 1.67], [-1.77, -0.38], [0.35, -0.51], [-0.25, -1.64], [0.78, 0.96], [-0.44, -0.31], [-0.02, 0.62], [0.34, 0.17], [-0.88, -0.51], [0.6, -0.54], [-0.1, 0.22], [0.49, 0.08], [-0.52, -0.16], [1.09, 1.12], [0.61, 0.38], [-0.18, 0.08], [0.63, 0.46], [1.26, 1.45], [1.79, 1.68], [-1.57, -1.54], [0.88, 0.27], [0.47, 1.5], [-0.09, -0.14], [-1.01, -0.1], [1.26, 1.2], [-1.26, -1.32], [0.57, -0.07], [1.3, 1.06], [-1.6, -1.03], [-0.3, 0.18], [-1.31, -1.82], [0.24, -0.21], [1.51, 1.07], [2.02, 2.58], [-1.78, -2.89], [-0.57, -0.14], [0.7, 0.17], [1.58, 1.47], [0.42, -0.01], [-0.75, -0.32], [0.3, 1.26], [-0.02, 0.22], [-0.2, 0.13], [-0.73, -0.3], [0.39, -0.21], [0.31, 0.59], [-0.09, -0.21], [-0.22, -0.7], [-1.28, -0.99], [-0.49, -0.51], [1.21, 1.4], [-0.19, -0.17], [-1.44, -1.43], [1.33, 1.96], [0.53, 1.05], [2.11, 2.42], [0.06, 0.45], [-0.46, -0.42], [-1.45, -1.36], [1.32, 0.81], [2.57, 2.55], [-0.82, -0.54], [-0.65, -1.47], [0.6, 0.42], [-0.83, -1.56], [-0.27, -0.09], [-0.35, -1.06], [0.19, -0.69], [1.09, 0.9], [0.02, -0.04], [0.92, -0.41], [-0.42, 0.18], [0.33, 1.68], [-2.14, -2.58], [-1.45, 0.12], [0.8, 0.14], [-0.59, -0.77], [0.58, 0.32], [0.54, -0.55], [1.32, 1.85], [0.81, 0.93], [1.02, 0.27], [-0.11, -0.27], [-0.7, -1.53], [-0.73, -0.78], [-0.49, 0.25], [-1.13, -1.98], [-0.55, -0.7], [-0.09, 0.03], [0.25, 0.88], [-0.34, 0.64], [-1.92, -1.75], [-0.07, -0.54], [0.23, 0.47], [1.08, 0.57], [0.58, 0.23], [-0.64, 0.23], [-0.72, 0.57], [2.01, 1.68], [0.76, 0.44], [1.83, 1.75], [2.13, 0.35], [-0.82, -0.63], [0.39, -0.41], [0.46, 1.92], [0.56, 0.9], [0.54, 0.5], [0.2, 0.02], [0.17, -1.53], [-1.5, -0.66], [-0.17, 0.95], [-0.75, -1.04], [0.13, 0.55], [-0.47, 0.13], [0.62, -0.56], [0.82, 1.23], [0.31, 1.13], [0.32, 0.39], [0.09, 0.03], [-0.45, 0.19], [-0.16, -1.14], [-0.5, -0.31], [0.39, 0.99], [0.01, -0.81], [0.58, 1.09], [-1.33, -1.27], [0.89, -0.71], [-0.76, -0.64], [-0.73, -1.19], [-0.2, 0.06], [-0.56, -1.2], [0.29, 0.91], [-0.57, -0.92], [-1.07, -0.57], [-0.85, -1.03], [1.31, 0.77], [0.04, 0.82], [-1.17, -0.73], [0.01, -0.26], [-1.56, -1.99], [1.79, 2.11], [-1.52, -0.66], [0.48, 0.14], [0.54, 0.57], [-1.45, -1.77], [0.3, -0.45], [1.0, 0.2], [0.47, 0.58], [0.26, 0.39], [0.95, 0.22], [0.16, 0.61], [0.34, 0.77], [-0.13, 0.02], [0.63, 1.16], [-0.94, -0.9], [0.79, 0.52], [-0.51, -0.07], [-1.09, -0.84], [0.37, 0.8], [1.69, 0.44], [0.96, 1.66], [-0.52, -0.9], [0.7, 0.41], [-0.45, -1.25], [-0.12, 0.3], [0.09, 0.91], [-2.32, -1.03], [0.19, 0.69], [-1.03, -1.8], [-0.7, -1.04], [-1.47, -1.41], [-1.52, -1.76], [-0.94, 0.04], [0.83, 0.74], [1.67, 1.23], [-0.03, 0.3], [1.09, 0.19], [-0.26, -0.8], [-1.91, -2.02], [0.15, 0.44], [0.45, 0.56], [-0.43, 0.06], [0.3, 0.94], [0.57, -0.47], [-0.86, -1.02], [-1.48, -1.01], [-0.22, -1.06], [-0.21, -0.51], [-0.35, 0.41], [0.99, 1.47], [1.73, 2.01], [-0.42, -0.28], [0.7, 0.38], [0.94, 1.42], [0.71, 0.29], [1.05, 1.01], [-0.39, 0.58], [0.74, 0.31], [2.02, 1.11], [0.8, 0.6], [-0.62, -0.07], [0.61, 0.77], [1.26, 1.05], [0.37, 0.64], [-0.56, -1.48], [1.54, 0.59], [-1.25, -0.83], [0.5, -0.24], [-0.02, -0.9], [-1.19, -1.69], [1.22, 0.31], [0.35, 0.14], [-1.17, -1.55], [0.6, 0.61], [-0.43, 0.8], [-1.9, -1.52], [-0.69, 0.33], [0.26, 0.39], [0.64, -0.26], [0.17, -0.05], [0.05, -0.62], [0.47, 0.86], [-0.21, -0.92], [1.18, 1.76], [0.15, 0.49], [0.29, -1.12], [0.54, 0.92], [-1.06, 0.23], [-0.71, -1.05], [1.53, 1.8], [0.34, -0.94], [-0.28, -0.05], [0.34, -0.84], [-0.48, -0.04], [0.28, -0.97], [-0.67, -2.24], [0.28, 0.47], [-1.58, 0.33], [1.33, 0.6], [-0.51, 0.16], [-1.58, -1.11], [-0.22, -0.38], [-0.37, 0.13], [0.15, 1.2], [-1.15, -1.68], [0.4, 0.67], [3.62, 2.95], [-1.28, -1.9], [0.34, 1.32], [-0.31, 1.06], [0.19, -0.49]], "mvcorr": 0.766, "eig": [0.25, 1.75], "V": [[-0.707, 0.707], [0.707, 0.707]], "curve": [[[-10.0, 122.98], [-9.5, 112.44], [-9.0, 102.39], [-8.5, 92.84], [-8.0, 83.77], [-7.5, 75.19], [-7.0, 67.1], [-6.5, 59.51], [-6.0, 52.41], [-5.5, 45.79], [-5.0, 39.67], [-4.5, 34.04], [-4.0, 28.9], [-3.5, 24.25], [-3.0, 20.09], [-2.5, 16.42], [-2.0, 13.24], [-1.5, 10.55], [-1.0, 8.36], [-0.5, 6.65], [0.0, 5.44], [0.5, 4.71], [1.0, 4.48], [1.5, 4.74], [2.0, 5.49], [2.5, 6.73], [3.0, 8.46], [3.5, 10.68], [4.0, 13.39], [4.5, 16.6], [5.0, 20.29], [5.5, 24.48], [6.0, 29.15], [6.5, 34.32], [7.0, 39.98], [7.5, 46.12], [8.0, 52.76], [8.5, 59.89], [9.0, 67.51], [9.5, 75.62], [10.0, 84.23]], [[-10.0, 119.93], [-9.5, 109.77], [-9.0, 100.09], [-8.5, 90.87], [-8.0, 82.13], [-7.5, 73.86], [-7.0, 66.06], [-6.5, 58.73], [-6.0, 51.87], [-5.5, 45.48], [-5.0, 39.56], [-4.5, 34.12], [-4.0, 29.14], [-3.5, 24.63], [-3.0, 20.6], [-2.5, 17.04], [-2.0, 13.94], [-1.5, 11.32], [-1.0, 9.17], [-0.5, 7.49], [0.0, 6.28], [0.5, 5.54], [1.0, 5.27], [1.5, 5.48], [2.0, 6.15], [2.5, 7.29], [3.0, 8.91], [3.5, 10.99], [4.0, 13.55], [4.5, 16.58], [5.0, 20.08], [5.5, 24.05], [6.0, 28.49], [6.5, 33.4], [7.0, 38.78], [7.5, 44.63], [8.0, 50.95], [8.5, 57.75], [9.0, 65.01], [9.5, 72.75], [10.0, 80.96]], [[-10.0, 121.45], [-9.5, 111.25], [-9.0, 101.52], [-8.5, 92.26], [-8.0, 83.48], [-7.5, 75.16], [-7.0, 67.32], [-6.5, 59.95], [-6.0, 53.05], [-5.5, 46.62], [-5.0, 40.66], [-4.5, 35.18], [-4.0, 30.17], [-3.5, 25.62], [-3.0, 21.55], [-2.5, 17.96], [-2.0, 14.83], [-1.5, 12.17], [-1.0, 9.99], [-0.5, 8.28], [0.0, 7.04], [0.5, 6.27], [1.0, 5.97], [1.5, 6.15], [2.0, 6.79], [2.5, 7.91], [3.0, 9.5], [3.5, 11.56], [4.0, 14.1], [4.5, 17.1], [5.0, 20.58], [5.5, 24.52], [6.0, 28.94], [6.5, 33.83], [7.0, 39.2], [7.5, 45.03], [8.0, 51.33], [8.5, 58.11], [9.0, 65.36], [9.5, 73.08], [10.0, 81.27]], [[-10.0, 121.28], [-9.5, 110.85], [-9.0, 100.89], [-8.5, 91.41], [-8.0, 82.41], [-7.5, 73.88], [-7.0, 65.83], [-6.5, 58.26], [-6.0, 51.16], [-5.5, 44.54], [-5.0, 38.39], [-4.5, 32.73], [-4.0, 27.53], [-3.5, 22.82], [-3.0, 18.58], [-2.5, 14.82], [-2.0, 11.53], [-1.5, 8.72], [-1.0, 6.39], [-0.5, 4.54], [0.0, 3.16], [0.5, 2.25], [1.0, 1.83], [1.5, 1.88], [2.0, 2.4], [2.5, 3.4], [3.0, 4.88], [3.5, 6.84], [4.0, 9.27], [4.5, 12.18], [5.0, 15.57], [5.5, 19.43], [6.0, 23.77], [6.5, 28.58], [7.0, 33.87], [7.5, 39.64], [8.0, 45.88], [8.5, 52.6], [9.0, 59.8], [9.5, 67.47], [10.0, 75.62]], [[-10.0, 110.51], [-9.5, 101.09], [-9.0, 92.1], [-8.5, 83.56], [-8.0, 75.45], [-7.5, 67.79], [-7.0, 60.56], [-6.5, 53.78], [-6.0, 47.43], [-5.5, 41.53], [-5.0, 36.06], [-4.5, 31.04], [-4.0, 26.45], [-3.5, 22.31], [-3.0, 18.6], [-2.5, 15.34], [-2.0, 12.52], [-1.5, 10.13], [-1.0, 8.19], [-0.5, 6.69], [0.0, 5.62], [0.5, 5.0], [1.0, 4.82], [1.5, 5.07], [2.0, 5.77], [2.5, 6.91], [3.0, 8.49], [3.5, 10.5], [4.0, 12.96], [4.5, 15.86], [5.0, 19.2], [5.5, 22.97], [6.0, 27.19], [6.5, 31.85], [7.0, 36.95], [7.5, 42.49], [8.0, 48.46], [8.5, 54.88], [9.0, 61.74], [9.5, 69.04], [10.0, 76.78]], [[-10.0, 119.2], [-9.5, 108.93], [-9.0, 99.12], [-8.5, 89.8], [-8.0, 80.96], [-7.5, 72.59], [-7.0, 64.7], [-6.5, 57.29], [-6.0, 50.35], [-5.5, 43.9], [-5.0, 37.92], [-4.5, 32.42], [-4.0, 27.4], [-3.5, 22.86], [-3.0, 18.79], [-2.5, 15.2], [-2.0, 12.09], [-1.5, 9.46], [-1.0, 7.31], [-0.5, 5.63], [0.0, 4.43], [0.5, 3.71], [1.0, 3.47], [1.5, 3.71], [2.0, 4.42], [2.5, 5.61], [3.0, 7.28], [3.5, 9.43], [4.0, 12.06], [4.5, 15.16], [5.0, 18.74], [5.5, 22.8], [6.0, 27.34], [6.5, 32.36], [7.0, 37.85], [7.5, 43.82], [8.0, 50.27], [8.5, 57.2], [9.0, 64.6], [9.5, 72.49], [10.0, 80.85]], [[-10.0, 122.96], [-9.5, 112.59], [-9.0, 102.7], [-8.5, 93.3], [-8.0, 84.37], [-7.5, 75.92], [-7.0, 67.95], [-6.5, 60.47], [-6.0, 53.46], [-5.5, 46.93], [-5.0, 40.89], [-4.5, 35.32], [-4.0, 30.24], [-3.5, 25.63], [-3.0, 21.51], [-2.5, 17.87], [-2.0, 14.7], [-1.5, 12.02], [-1.0, 9.82], [-0.5, 8.1], [0.0, 6.85], [0.5, 6.09], [1.0, 5.81], [1.5, 6.01], [2.0, 6.69], [2.5, 7.85], [3.0, 9.49], [3.5, 11.61], [4.0, 14.21], [4.5, 17.3], [5.0, 20.86], [5.5, 24.9], [6.0, 29.42], [6.5, 34.43], [7.0, 39.91], [7.5, 45.88], [8.0, 52.32], [8.5, 59.25], [9.0, 66.65], [9.5, 74.54], [10.0, 82.9]], [[-10.0, 123.36], [-9.5, 113.33], [-9.0, 103.75], [-8.5, 94.62], [-8.0, 85.94], [-7.5, 77.7], [-7.0, 69.92], [-6.5, 62.58], [-6.0, 55.69], [-5.5, 49.25], [-5.0, 43.25], [-4.5, 37.7], [-4.0, 32.61], [-3.5, 27.96], [-3.0, 23.75], [-2.5, 20.0], [-2.0, 16.69], [-1.5, 13.83], [-1.0, 11.42], [-0.5, 9.46], [0.0, 7.94], [0.5, 6.88], [1.0, 6.26], [1.5, 6.09], [2.0, 6.36], [2.5, 7.09], [3.0, 8.26], [3.5, 9.88], [4.0, 11.95], [4.5, 14.47], [5.0, 17.43], [5.5, 20.84], [6.0, 24.7], [6.5, 29.01], [7.0, 33.77], [7.5, 38.97], [8.0, 44.63], [8.5, 50.73], [9.0, 57.28], [9.5, 64.27], [10.0, 71.72]], [[-10.0, 122.22], [-9.5, 111.66], [-9.0, 101.59], [-8.5, 92.01], [-8.0, 82.91], [-7.5, 74.31], [-7.0, 66.19], [-6.5, 58.56], [-6.0, 51.43], [-5.5, 44.78], [-5.0, 38.62], [-4.5, 32.95], [-4.0, 27.76], [-3.5, 23.07], [-3.0, 18.87], [-2.5, 15.15], [-2.0, 11.93], [-1.5, 9.19], [-1.0, 6.94], [-0.5, 5.18], [0.0, 3.91], [0.5, 3.13], [1.0, 2.84], [1.5, 3.03], [2.0, 3.72], [2.5, 4.9], [3.0, 6.56], [3.5, 8.71], [4.0, 11.35], [4.5, 14.49], [5.0, 18.11], [5.5, 22.21], [6.0, 26.81], [6.5, 31.9], [7.0, 37.48], [7.5, 43.54], [8.0, 50.09], [8.5, 57.14], [9.0, 64.67], [9.5, 72.69], [10.0, 81.2]], [[-10.0, 117.65], [-9.5, 107.56], [-9.0, 97.93], [-8.5, 88.78], [-8.0, 80.1], [-7.5, 71.89], [-7.0, 64.15], [-6.5, 56.88], [-6.0, 50.09], [-5.5, 43.77], [-5.0, 37.92], [-4.5, 32.54], [-4.0, 27.63], [-3.5, 23.19], [-3.0, 19.23], [-2.5, 15.74], [-2.0, 12.71], [-1.5, 10.16], [-1.0, 8.09], [-0.5, 6.48], [0.0, 5.35], [0.5, 4.68], [1.0, 4.49], [1.5, 4.77], [2.0, 5.52], [2.5, 6.75], [3.0, 8.44], [3.5, 10.61], [4.0, 13.25], [4.5, 16.36], [5.0, 19.94], [5.5, 24.0], [6.0, 28.52], [6.5, 33.52], [7.0, 38.99], [7.5, 44.93], [8.0, 51.34], [8.5, 58.22], [9.0, 65.58], [9.5, 73.41], [10.0, 81.7]], [[-10.0, 123.46], [-9.5, 112.99], [-9.0, 102.99], [-8.5, 93.48], [-8.0, 84.44], [-7.5, 75.88], [-7.0, 67.81], [-6.5, 60.21], [-6.0, 53.1], [-5.5, 46.46], [-5.0, 40.3], [-4.5, 34.63], [-4.0, 29.43], [-3.5, 24.71], [-3.0, 20.48], [-2.5, 16.72], [-2.0, 13.44], [-1.5, 10.65], [-1.0, 8.33], [-0.5, 6.49], [0.0, 5.13], [0.5, 4.26], [1.0, 3.86], [1.5, 3.94], [2.0, 4.5], [2.5, 5.54], [3.0, 7.07], [3.5, 9.07], [4.0, 11.55], [4.5, 14.51], [5.0, 17.95], [5.5, 21.87], [6.0, 26.27], [6.5, 31.15], [7.0, 36.51], [7.5, 42.35], [8.0, 48.67], [8.5, 55.47], [9.0, 62.75], [9.5, 70.51], [10.0, 78.75]], [[-10.0, 117.08], [-9.5, 107.04], [-9.0, 97.47], [-8.5, 88.36], [-8.0, 79.71], [-7.5, 71.52], [-7.0, 63.8], [-6.5, 56.54], [-6.0, 49.74], [-5.5, 43.4], [-5.0, 37.53], [-4.5, 32.12], [-4.0, 27.17], [-3.5, 22.69], [-3.0, 18.67], [-2.5, 15.11], [-2.0, 12.01], [-1.5, 9.38], [-1.0, 7.21], [-0.5, 5.5], [0.0, 4.25], [0.5, 3.47], [1.0, 3.15], [1.5, 3.29], [2.0, 3.9], [2.5, 4.97], [3.0, 6.5], [3.5, 8.49], [4.0, 10.95], [4.5, 13.87], [5.0, 17.25], [5.5, 21.09], [6.0, 25.4], [6.5, 30.17], [7.0, 35.4], [7.5, 41.09], [8.0, 47.25], [8.5, 53.87], [9.0, 60.96], [9.5, 68.5], [10.0, 76.51]], [[-10.0, 120.92], [-9.5, 110.71], [-9.0, 100.97], [-8.5, 91.71], [-8.0, 82.93], [-7.5, 74.62], [-7.0, 66.79], [-6.5, 59.43], [-6.0, 52.55], [-5.5, 46.14], [-5.0, 40.21], [-4.5, 34.75], [-4.0, 29.77], [-3.5, 25.27], [-3.0, 21.24], [-2.5, 17.68], [-2.0, 14.6], [-1.5, 12.0], [-1.0, 9.87], [-0.5, 8.22], [0.0, 7.04], [0.5, 6.34], [1.0, 6.11], [1.5, 6.36], [2.0, 7.08], [2.5, 8.28], [3.0, 9.96], [3.5, 12.11], [4.0, 14.74], [4.5, 17.84], [5.0, 21.41], [5.5, 25.47], [6.0, 29.99], [6.5, 35.0], [7.0, 40.48], [7.5, 46.43], [8.0, 52.86], [8.5, 59.76], [9.0, 67.14], [9.5, 75.0], [10.0, 83.33]], [[-10.0, 131.09], [-9.5, 119.31], [-9.0, 108.08], [-8.5, 97.39], [-8.0, 87.26], [-7.5, 77.67], [-7.0, 68.63], [-6.5, 60.14], [-6.0, 52.19], [-5.5, 44.8], [-5.0, 37.95], [-4.5, 31.65], [-4.0, 25.89], [-3.5, 20.69], [-3.0, 16.03], [-2.5, 11.92], [-2.0, 8.36], [-1.5, 5.35], [-1.0, 2.88], [-0.5, 0.96], [0.0, -0.41], [0.5, -1.23], [1.0, -1.51], [1.5, -1.23], [2.0, -0.41], [2.5, 0.95], [3.0, 2.87], [3.5, 5.33], [4.0, 8.35], [4.5, 11.91], [5.0, 16.01], [5.5, 20.67], [6.0, 25.87], [6.5, 31.62], [7.0, 37.92], [7.5, 44.77], [8.0, 52.16], [8.5, 60.1], [9.0, 68.59], [9.5, 77.63], [10.0, 87.22]], [[-10.0, 122.64], [-9.5, 111.77], [-9.0, 101.4], [-8.5, 91.54], [-8.0, 82.19], [-7.5, 73.35], [-7.0, 65.02], [-6.5, 57.19], [-6.0, 49.87], [-5.5, 43.06], [-5.0, 36.75], [-4.5, 30.96], [-4.0, 25.67], [-3.5, 20.89], [-3.0, 16.62], [-2.5, 12.85], [-2.0, 9.59], [-1.5, 6.85], [-1.0, 4.6], [-0.5, 2.87], [0.0, 1.64], [0.5, 0.93], [1.0, 0.72], [1.5, 1.01], [2.0, 1.82], [2.5, 3.13], [3.0, 4.95], [3.5, 7.28], [4.0, 10.12], [4.5, 13.46], [5.0, 17.32], [5.5, 21.68], [6.0, 26.54], [6.5, 31.92], [7.0, 37.8], [7.5, 44.19], [8.0, 51.09], [8.5, 58.5], [9.0, 66.42], [9.5, 74.84], [10.0, 83.77]]], "coefmean": [0.96, -1.96, 5.11], "coefstd": [0.05, 0.25, 2.28], "corr_a_c": -0.82, "dati": [[-10.0, 123.89], [-9.19, 102.09], [-8.38, 85.08], [-7.58, 59.1], [-6.77, 58.49], [-5.96, 49.53], [-5.15, 46.23], [-4.34, 27.32], [-3.54, 21.44], [-2.73, 11.27], [-1.92, 1.62], [-1.11, 8.33], [-0.3, 16.44], [0.51, 2.21], [1.31, 5.14], [2.12, 0.17], [2.93, 8.05], [3.74, 13.97], [4.55, 21.67], [5.35, 16.28], [6.16, 29.98], [6.97, 28.6], [7.78, 42.6], [8.59, 56.48], [9.39, 73.6]]};
+  const T = (id, x, y, t, extra) => Object.assign({ id, tipo: 'testo', x, y, t, size: 13 }, extra || {});
+  const R = (id, x, y, w, h, t, extra) => Object.assign({ id, tipo: 'rett', x, y, w, h, t }, extra || {});
+  const P = (id, x, y, t, extra) => Object.assign({ id, tipo: 'punto', in: 'ax', x, y, t }, extra || {});
+  const L = (id, x1, y1, x2, y2, extra) => Object.assign({ id, tipo: 'linea', in: 'ax', x1, y1, x2, y2 }, extra || {});
+  const V = (id, x1, y1, x2, y2, t, extra) => Object.assign({ id, tipo: 'vett', in: 'ax', x1, y1, x2, y2, t }, extra || {});
+  const pl = p => p.concat(p.slice().reverse());
+  const curva = (id, pts, tono, extra) => Object.assign({ id, tipo: 'poli', in: 'ax', punti: pl(pts), tono, vuoto: true }, extra || {});
+
+    const val = [[3, 7, 2], [5, 1, 9], [4, 8, 6], [2, 6, 3], [8, 2, 7], [6, 9, 1]];
+    const og = [T('h0', 60, 24, 'A', { bold: true }), T('h1', 130, 24, 'B', { bold: true }), T('h2', 200, 24, 'C', { bold: true })];
+    val.forEach((r, i) => r.forEach((v, j) => og.push(R('v' + i + j, 30 + j * 70, 34 + i * 32, 62, 28, String(v), { tono: 'dato' }))));
+    og.push(T('c', 450, 60, '', { size: 12, bold: true }), T('c2', 450, 90, '', { size: 12 }), T('c3', 450, 130, '', { size: 12 }), T('c4', 300, 240, '', { size: 12 }));
+    const reset = () => { const o = {}; val.forEach((r, i) => r.forEach((v, j) => o['v' + i + j] = { t: String(v), tono: 'dato' })); return o; };
+    const togli = cells => cells.reduce((o, [i, j]) => Object.assign(o, { ['v' + i + j]: { t: '?', tono: 'no' } }), reset());
+    SCENE.mancanti = {
+      w: 620, h: 250, lato: true,
+      legenda: 'dato:value present,no:missing value',
+      oggetti: og,
+      passi: [
+        { nota: "Una tabella con tre variabili. Il <b>perché</b> mancano i valori decide che cosa si può fare." },
+        { nota: "<b>MCAR</b> (missing completely at random): la mancanza non dipende da niente. Buchi sparsi a caso, come un file corrotto, o il 30% tolto a caso nell'esercizio.", set: Object.assign(togli([[0, 1], [3, 0], [4, 2]]), { c: { t: 'MCAR: a caso' } }) },
+        { nota: "<b>MAR</b> (missing at random): dipende da <b>altre</b> variabili osservate. Qui C manca quando A è grande (≥ 6): per esempio i giunti della mano mancano quando il braccio è dietro la schiena.", set: Object.assign(togli([[4, 2], [5, 2]]), { v40: { t: '8', tono: 'ora' }, v50: { t: '6', tono: 'ora' }, c: { t: 'MAR: dipende da A' } }) },
+        { nota: "<b>NMAR</b> (not missing at random): dipende dal valore mancante <b>stesso</b>. Qui mancano i B grandi: come chi guadagna molto e non dichiara lo stipendio.", set: Object.assign(togli([[2, 1], [5, 1]]), { c: { t: 'NMAR: dipende dal valore' }, c2: { t: 'mancano proprio gli 8 e i 9' } }) },
+        { nota: "Con NMAR nessuna imputazione è davvero corretta: i valori che mancano sono diversi da quelli che vedi. E togliere le righe va bene solo se è MCAR; altrimenti il dataset diventa distorto.", set: { c3: { t: 'togliere righe: ok solo se MCAR', tono: 'no' }, c4: { t: 'il perché mancano decide il come riempirli' } } }
+      ]
+    };
+
+    const s = D.s, miss = D.miss, n = s.length;
+    const ogr = [{ id: 'ax', tipo: 'assi', box: [40, 20, 420, 210], dom: [0, n - 1, -0.02, 0.4], tacche: [5, 0.1], etX: 't', etY: 'coordinata' }]
+      .concat(s.map((v, i) => P('p' + i, i, v, '', { tono: miss.includes(i) ? 'spento' : 'dato', r: 4 })), miss.map((i, k) => P('f' + k, i, s[i], '', { tono: 'no', r: 5, nascosto: true })),
+        [T('c', 580, 50, '', { size: 12 }), T('c2', 580, 80, '', { size: 12 }), T('c3', 580, 110, '', { size: 12 }), T('c4', 580, 160, '', { size: 12 }), T('c5', 580, 190, '', { size: 12 })]);
+    const riempi = (arr, tono) => Object.fromEntries(miss.map((i, k) => ['f' + k, { nascosto: false, y: arr[i], tono }]));
+    SCENE.riempire = {
+      w: 700, h: 260, lato: true,
+      legenda: 'dato:known values,spento:true (unknown) value,no:zeros,ora:mean,ok:interpolation',
+      oggetti: ogr,
+      passi: [
+        { nota: "Una coordinata di un giunto nel tempo (serie di prova generata con NumPy) con 8 valori mancanti. In grigio il valore vero, che chi analizza non vede." },
+        { nota: "<b>Zero</b>: immediato, ma inventa valori lontanissimi. Nell'esercizio sposta il giunto lontano dal corpo: MSE 0.0536.", set: Object.assign(riempi(D.zero, 'no'), { c: { t: 'zeri: MSE ' + D.mz } }) },
+        { nota: "<b>Media della colonna</b>: ogni buco diventa la posizione media. Ragionevole, ma è una \"posa media\", non quella vera (esercizio: 0.00393). E schiaccia la varianza: qui al " + Math.round(D.varrid * 100) + "%, nell'esercizio al 71%.", set: Object.assign(riempi(D.mean, 'ora'), { c2: { t: 'media: MSE ' + D.mm } }) },
+        { nota: "<b>Interpolazione nel tempo</b> (np.interp): fra due frame vicini il corpo si muove poco, quindi la retta fra il valore prima e quello dopo stima bene. Usa la struttura dei dati (esercizio: 0.00134).", set: Object.assign(riempi(D.interp, 'ok'), { c3: { t: 'interpolazione: MSE ' + D.mi, tono: 'ok' } }) },
+        { nota: "Altre strategie: togliere le righe (si perdono dati), valore più frequente (anche per categorie), k-NN, MICE, regressione (usano le altre variabili, più lenti). Ogni imputazione falsa un po' le statistiche calcolate dopo.", set: { c4: { t: 'imputare falsa le statistiche' }, c5: { t: 'MSE: esempio su questa serie' } } }
+      ]
+    };
+
+    const ogm = [{ id: 'ax', tipo: 'assi', box: [40, 20, 260, 230], dom: [-3.5, 3.5, -3.5, 3.5], tacche: 1, etX: 'x₁', etY: 'x₂' }]
+      .concat(D.mv.filter(([a, b]) => Math.abs(a) < 3.4 && Math.abs(b) < 3.4).map(([a, b], i) => P('m' + i, a, b, '', { tono: 'dato', r: 2.5 })),
+        [V('e1', 0, 0, 0.707 * Math.sqrt(D.eig[1]) * 2, 0.707 * Math.sqrt(D.eig[1]) * 2, 'asse lungo', { tono: 'ok', nascosto: true }), V('e2', 0, 0, -0.707 * Math.sqrt(D.eig[0]) * 2, 0.707 * Math.sqrt(D.eig[0]) * 2, 'corto', { tono: 'due', nascosto: true, tx: -40 }),
+          T('c', 470, 50, '', { size: 12 }), T('c2', 470, 80, '', { size: 12 }), T('c3', 470, 120, '', { size: 12 }), T('c4', 470, 160, '', { size: 12 }), T('c5', 470, 200, '', { size: 12 })]);
+    SCENE.normalemv = {
+      w: 620, h: 270, lato: true,
+      legenda: 'dato:300 points from 𝒩(0, Σ),ok:large eigenvector,due:small eigenvector',
+      oggetti: ogm,
+      passi: [
+        { nota: "In 1D, 𝒩(μ, σ²): entro 1σ cade il 68.3% dei valori, entro 2σ il 95.4%, entro 3σ il 99.7%. Per questo |z| &gt; 3 è una soglia da outlier: succede 3 volte su 1000.", set: { c: { t: '1σ 68.3% · 2σ 95.4% · 3σ 99.7%' } } },
+        { nota: "In più dimensioni, <b>𝒩(μ, Σ)</b>: μ vettore medio, Σ matrice di covarianza. Qui 300 punti con Σ = [[1, 0.75], [0.75, 1]], generati come x = L z con L Lᵀ = Σ (Cholesky): correlazione ottenuta " + D.mvcorr + ".", set: { c2: { t: 'Σ = [[1, 0.75], [0.75, 1]]' } } },
+        { nota: "Le curve di livello sono <b>ellissi</b>, inclinate dalla correlazione. Gli assi dell'ellisse sono gli <b>autovettori</b> di Σ, e le lunghezze dipendono dagli autovalori (" + D.eig[1] + " e " + D.eig[0] + "): la stessa scomposizione della PCA (settimana 12).", set: { e1: { nascosto: false }, e2: { nascosto: false }, c3: { t: 'assi = autovettori di Σ' }, c4: { t: 'autovalori ' + D.eig[1] + ' e ' + D.eig[0] } } },
+        { nota: "Senza correlazione l'ellisse ha gli assi paralleli agli assi (o è un cerchio). I punti fuori dall'ellisse sono i candidati outlier: la <b>distanza di Mahalanobis</b> misura proprio quante \"ellissi\" un punto dista dal centro.", set: { c5: { t: 'fuori dall’ellisse: Mahalanobis grande' } } }
+      ]
+    };
+  
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Missing data, outliers and the multivariate normal</h1>
+  <p class="lede">Lecture 8 (data cleaning) and the exercise of week 9 <i>Descriptive statistics and handling missing data</i>, with the poses of 200 sequences. What to do with the values that are missing, how an outlier is recognised and why the multivariate normal distribution is the reference model. Exam questions <b>Q7 (c) and (d)</b>. Readings: <i>MissingData.pdf</i> and <i>Multivariate_Normal_Distribution.pdf</i> (folder Reading/Week8).</p>
+</header>
+
+<section>
+  <h2>Why data are missing</h2>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Type</th><th>It means</th><th>Example</th></tr></thead>
+    <tbody>
+      <tr><td><b>MCAR</b>: missing completely at random</td><td>the absence depends on nothing</td><td>a file corrupted at random; in the exercise 30% of the values removed at random</td></tr>
+      <tr><td><b>MAR</b>: missing at random</td><td>depends on <b>other</b> observed variables</td><td>the joints of the hand are missing more often when the arm is behind the back</td></tr>
+      <tr><td><b>NMAR</b>: not missing at random</td><td>depends on the missing value itself</td><td>whoever earns a lot does not declare the salary</td></tr>
+    </tbody>
+  </table></div>
+  <p class="piccolo">With NMAR no imputation is truly correct: the missing values are different from the ones you see.</p>
+  <figure class="scena" data-scena="mancanti" data-titolo="MCAR, MAR, NMAR"></figure>
+</section>
+
+<section>
+  <h2>How to fill them in</h2>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Strategy</th><th>Pros</th><th>Cons</th></tr></thead>
+    <tbody>
+      <tr><td>remove the rows</td><td>simple, no invented data</td><td>data are lost; if it is not MCAR the dataset becomes biased</td></tr>
+      <tr><td>zero or a constant</td><td>immediate</td><td>invents values that may be very far from the truth</td></tr>
+      <tr><td>mean / median of the column</td><td>fast</td><td>ignores the correlations, <b>reduces the variance</b></td></tr>
+      <tr><td>most frequent value</td><td>works also for categories</td><td>can introduce bias</td></tr>
+      <tr><td>k-NN, MICE, regression</td><td>use the other variables</td><td>slower; k-NN sensitive to outliers</td></tr>
+      <tr><td><b>interpolation</b> over time</td><td>uses the nearby values in the sequence</td><td>only for time series</td></tr>
+    </tbody>
+  </table></div>
+  <figure class="passi" data-titolo="The exercise with the real data: 200 sequences × 30 frames × 50 coordinates, 30% NaN">
+    <div class="passo"><div class="espr">zeri:  MSE = <mark class="no">0.0536</mark></div><p class="nota">The coordinates are worth on average about 0.1 (between 0 and 0.43 for the joint looked at): putting 0 moves the joint far from the body.</p></div>
+    <div class="passo"><div class="espr">media della feature:  MSE = <mark class="ora">0.00393</mark></div><p class="nota">Every missing coordinate becomes the mean position of that joint over all the poses: reasonable, but it is an "average pose", not the true one.</p></div>
+    <div class="passo"><div class="espr">interpolazione nel tempo:  MSE = <mark class="ok">0.00134</mark></div><p class="nota">Between two nearby frames the body moves little: the line between the value before and the one after estimates the missing value well. It uses the <b>structure</b> of the data.</p></div>
+    <div class="passo"><div class="espr">dopo l'imputazione con la media, la varianza di una feature scende al <mark class="no">71%</mark></div><p class="nota">The 30% of values was placed exactly at the centre: the data seem less variable than they are. The statistics computed afterwards (variance, covariance) come out falsified.</p></div>
+  </figure>
+  <p class="piccolo">The first two MSEs coincide with those printed in the notebook. The interpolation is computed with <code>np.interp</code> (line between the known values, at the edges the nearest known value): your implementation may give a slightly different number. Note: the text speaks of 252 features, but the shape of the files is (200, 30, 25, 2), that is 25 joints × 2 = 50 coordinates.</p>
+  <figure class="scena" data-scena="riempire" data-titolo="Zeros, mean, interpolation"></figure>
+</section>
+
+<section>
+  <h2>Recognising outliers</h2>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Method</th><th>Rule</th><th>Limit</th></tr></thead>
+    <tbody>
+      <tr><td><b>z-score</b></td><td>z = (x − μ) / σ; outlier if |z| exceeds a threshold. The tutorial uses 2 and finds 29 outliers for the age and 38 for the ticket; with the most common threshold, 3, they are 2 and 20 (verified)</td><td>μ and σ are moved by the outliers themselves</td></tr>
+      <tr><td><b>IQR</b> (box plot)</td><td>outlier if below Q1 − 1.5·IQR or above Q3 + 1.5·IQR</td><td>looks at one variable at a time</td></tr>
+      <tr><td><b>Mahalanobis</b></td><td>d = √((x − μ)ᵀ C⁻¹ (x − μ))</td><td>needs a good estimate of the covariance C</td></tr>
+    </tbody>
+  </table></div>
+  <figure class="scena" data-scena="maha" data-titolo="Same Euclidean distance, different Mahalanobis"></figure>
+  <p class="piccolo">Distances computed with NumPy (covariance with n − 1 of the 10 points).</p>
+  <div class="box attenzione" data-tit="Outlier does not mean error">
+    <p>Before removing it, ask where it comes from: a measurement error (the reflection taken for the pupil) can be corrected or removed; a rare but true case (a fraud, an illness) is often exactly what one is interested in. See also <a href="w06-rumore-generalizzazione.html">noise and generalisation</a>.</p>
+  </div>
+</section>
+
+<section>
+  <h2>The multivariate normal</h2>
+  <figure class="passi" data-titolo="From one variable to many">
+    <div class="passo"><div class="espr">1D:  𝒩(<mark class="dato">μ</mark>, <mark class="due">σ²</mark>)   entro 1σ: <mark class="ok">68.3%</mark>,  2σ: 95.4%,  3σ: 99.7%</div><p class="nota">The bell. That is why |z| &gt; 3 is an outlier threshold: it happens 3 times in 1000.</p></div>
+    <div class="passo"><div class="espr">nD:  𝒩(<mark class="dato">μ</mark>, <mark class="due">Σ</mark>)   μ vettore medio,  Σ matrice di covarianza</div><p class="nota">Each variable on its own is normal, but the variables can be correlated: Σ contains variances (diagonal) and covariances (off the diagonal).</p></div>
+    <div class="passo"><div class="espr">le curve di livello sono <mark class="ok">ellissi</mark>, inclinate dalla correlazione</div><p class="nota">Without correlation: an ellipse with axes parallel to the axes (or a circle). With strong correlation: a narrow, diagonal ellipse, like the height-weight cloud. Mahalanobis measures the distance in "number of ellipses".</p></div>
+    <div class="passo"><div class="espr">generare dati correlati: x = <mark class="ora">L</mark> z,   con L Lᵀ = Σ (Cholesky)</div><p class="nota">The method of the reading: from two independent standard normals one obtains data with the wanted covariance. Tried with target correlation 0.75: obtained 0.752 on 5000 points.</p></div>
+  </figure>
+  <div class="box idea" data-tit="Why it matters for machine learning">
+    <p>The noise is often modelled as normal (Y = f + N, N ~ 𝒩(0, σ²)). The covariance of the multivariate normal is the same matrix that PCA decomposes (week 12): its eigenvectors are the axes of the ellipse. And the points outside the ellipse are the outliers.</p>
+  </div>
+  <div class="box esame" data-tit="Q7 (c) and (d)">
+    <p>(c) "Describe noise, outliers, and missing data." (d) "Uncertainty, noise, data cleaning … (Covariance, distributions (e.g Normal/Gaussian))". To bring: the three types of missing data, the strategies with the results of the exercise (zeros → mean → interpolation), the side effects of imputation, z-score/IQR/Mahalanobis with the example A and B, the multivariate normal as the model of the cloud of data.</p>
+  </div>
+  <figure class="scena" data-scena="normalemv" data-titolo="Ellipses, eigenvectors, Cholesky"></figure>
+</section>
+
+</main>
+</body>
+</html>

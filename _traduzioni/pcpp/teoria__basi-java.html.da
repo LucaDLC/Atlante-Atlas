@@ -1,0 +1,58 @@
+@@s001 Java til samtidighed
+@@s002 dato:hovedtråden,due:turnstile-trådene,ora:kald der sker nu,no:main blokeret
+@@s003 <code>Turnstile turnstile = new Turnstile();</code> opretter trådobjektet. Der starter endnu intet: der er kun main.
+@@s004 <code>turnstile.start();</code> starter en <b>ny</b> tråd, der kører run(). start() returnerer straks: main fortsætter, mens den anden arbejder.
+@@s005 De to tråde går fremad sammen, hver med sine egne trin.
+@@s006 <code>turnstile.join();</code>: main <b>blokeres</b>, indtil turnstile er færdig.
+@@s007 Turnstile afslutter; main fortsætter og læser først nu counter: resultatet er komplet.
+@@s008 dato:hvordan det skrives,ok:hvad tråden udfører
+@@s009 dato:static main,ok:objektet med de delte felter,due:trådene (indre klasse)
+@@s010 dato:instansfelt (ét pr. objekt),ok:static felt (ét pr. klasse)
+@@s011 dato:det du skriver,no:hvordan PowerShell deler det op,ok:med anførselstegnene
+@@s012 Java til samtidighed
+@@s013 Det minimum af Java, der skal til for at læse kursets kode: oprette og starte en tråd, vente på den, hvad der ændrer sig mellem <code>static</code> og ikke, og hvordan man starter en øvelse med Gradle (også fra PowerShell).
+@@s014 Tre måder at skrive en tråd på
+@@s015 En <b>tråd</b> er en følge af instruktioner, der skrider frem <b>samtidig</b> med de andre: i blandede stykker på én kerne, eller rigtig parallelt på flere kerner. I Java skrives trådens adfærd i metoden <code>run()</code>.
+@@s016 Den samme tråd, tre skrivemåder (slide 32 og 36)
+@@s017 Form 1: klassen <b>er</b> en tråd. Praktisk, når tråden har flere metoder eller en egen tilstand.
+@@s018 <code>run()</code> indeholder, hvad tråden gør. Den redefineres (override).
+@@s019 Form 2: et objekt <code>Runnable</code> (en grænseflade med kun metoden <code>run</code>) givet til konstruktøren af <code>Thread</code>.
+@@s020 Form 3: lambdaen <code>() -> { … }</code> er en Runnable skrevet på stedet. Slides anbefaler den kun, når trådens kode er kort.
+@@s021 Tre skrivemåder, den samme run()
+@@s022 <code>start()</code> og <code>join()</code>
+@@s023 Oprette, starte, vente
+@@s024 Opretter trådobjektet. <b>Der starter endnu intet.</b>
+@@s025 Starter en <b>ny</b> tråd, der kører <code>run()</code>. <code>start()</code> returnerer straks: hovedtråden fortsætter, mens den anden arbejder.
+@@s026 Tråden, der kalder <code>join()</code>, <b>stopper</b>, indtil <code>turnstile</code> er færdig. Det er et blokerende kald.
+@@s027 Først efter <code>join()</code> giver det mening at læse resultatet: tråden er afsluttet.
+@@s028 start() og join() over tid
+@@s029 Klassisk fejl: run() i stedet for start()
+@@s030 <code>turnstile.run()</code> opretter <b>ikke</b> en tråd: den kører <code>run()</code> som en almindelig metode, i den tråd der kalder den. Til samtidighed skal du bruge <code>start()</code>.
+@@s031 Hvorfor join() vil have try/catch
+@@s032 <code>join()</code> kan kaste <code>InterruptedException</code> (hvis nogen afbryder den tråd, der venter). Det er en <b>kontrolleret</b> undtagelse: Java tvinger dig til at håndtere den med <code>try { … } catch (InterruptedException e) { … }</code> eller til at angive den med <code>throws</code>. Det samme gælder for <code>await()</code>, <code>wait()</code>, <code>sleep()</code>, <code>acquire()</code>.
+@@s033 Hvorfor koden fra forelæsningerne står i konstruktøren
+@@s034 I forelæsningernes kode gør <code>main</code> næsten intet: det opretter et objekt, og alt arbejdet ligger i <b>konstruktøren</b>. Grunden er en Java-regel: <code>main</code> er <code>static</code>, så den hører til intet objekt og ser ikke instansfelterne. Ved at lægge de delte felter (tælleren, låsen) i et objekt, og trådene i en indre klasse, ser alle trådene de samme felter.
+@@s035 CounterThreadsLock.java, struktur
+@@s036 <code>counter</code> og <code>lock</code> er felter i objektet <code>CounterThreadsLock</code>: alle de tråde, der oprettes her, deler dem.
+@@s037 <code>main</code> er <code>static</code>: den hører til klassen, ikke til et objekt, så den <b>kan ikke</b> bruge <code>counter</code> direkte. Derfor opretter den et objekt…
+@@s038 …og det egentlige arbejde ligger i konstruktøren, som til gengæld ser felterne.
+@@s039 En <b>indre</b> klasse (ikke static) kan læse og skrive felterne i det objekt, der indeholder den. Så de to tråde rører den samme <code>counter</code>.
+@@s040 main, objektet og de indre tråde
+@@s041 <code>static</code> over for instans
+@@s042 Instansfelt
+@@s043 Hvert objekt har sin <b>egen</b> <code>saldo</code>: <code>a.saldo</code> og <code>b.saldo</code> er to forskellige variable.
+@@s044 Statisk felt
+@@s045 Der er <b>kun én</b> <code>totale</code> for hele klassen, delt af alle objekterne.
+@@s046 Det betyder meget for låse: <code>synchronized</code> på en instansmetode bruger låsen <b>på objektet</b>, på en <code>static</code>-metode bruger den låsen <b>på klassen</b>. Det er to forskellige låse: se <a href="l02-synchronized.html">synchronized</a> (øvelse 2.3).
+@@s047 Ét pr. objekt eller ét pr. klasse
+@@s048 Start af en øvelse med Gradle
+@@s049 Kommando (fra mappen <code>week01exercises</code>)
+@@s050 Hvad den gør
+@@s051 <code>gradle compileJava</code>
+@@s052 kompilerer alt i <code>app/src/main/java</code>
+@@s053 <code>gradle -PmainClass=exercises01.TestLongCounterExperiments run</code>
+@@s054 kompilerer og kører den angivne klasse (bash, macOS, Linux)
+@@s055 <code>gradle "-PmainClass=exercises01.TestLongCounterExperiments" run</code>
+@@s056 <b>det samme i PowerShell</b>: anførselstegnene er nødvendige
+@@s057 Filerne ligger i <code>app/src/main/java/exercises01/</code>, og første linje i hver fil er <code>package exercises01;</code>. Navnet på klassen med <code>main</code> er det, du giver til <code>-PmainClass</code>, med pakken foran.
+@@s058 Det punkt, PowerShell deler op

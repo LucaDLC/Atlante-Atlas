@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Platformstråde og virtuelle tråde</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <div class="occhiello"><span>Uge 9 · Performance</span></div>
+  <h1>Platformstråde og virtuelle tråde</h1>
+  <p class="lede">Forelæsningen den 26. oktober starter her: hvilken tråd man skal bruge, og hvorfor. En virtuel tråd, der venter, optager ikke en systemtråd; en platformstråd gør. Eksempelkoden er kompileret og kørt.</p>
+</header>
+
+<section>
+  <h2>To slags tråde</h2>
+  <p>En <b>platformstråd</b> er en tråd i operativsystemet: tung, og systemet har et begrænset antal af dem. En <b>virtuel tråd</b> er en tråd, der styres af Java: mange kan eksistere samtidigt. Java kører dem på en lille gruppe platformstråde (<i>carriers</i>), kun mens de arbejder. Når en virtuel tråd blokeres (netværk, fil, <code>sleep</code>), bliver den frakoblet, og carrier'en betjener en anden.</p>
+  <p>De oprettes sådan her: <code>Thread.ofVirtual().start(task)</code> og <code>Thread.ofPlatform().start(task)</code>. <code>Thread.ofVirtual()</code> returnerer en <b>Thread.Builder</b>, altså objektet, der ved, hvordan tråde af den type bygges.</p>
+  <figure class="passi" data-titolo="Platform eller virtuelle: hvad sker der, når en tråd venter" data-legenda="dato:tråd,ora:hvad der ændrer sig,ok:konsekvens">
+    <div class="passo"><div class="espr"><mark class="dato">Thread di piattaforma</mark>: uno per ogni thread del sistema</div><p class="nota">Dyrt: at oprette tusindvis af dem bremser systemet, og hver tråd optager en plads i scheduleren.</p></div>
+    <div class="passo"><div class="espr"><mark class="ora">Thread virtuale</mark>: tanti possono esistere insieme</div><p class="nota">Java holder dem i hukommelsen og monterer dem på en carrier først, når de kører.</p></div>
+    <div class="passo"><div class="espr">Il thread virtuale fa una richiesta e <mark class="ora">si blocca</mark></div><p class="nota">Den frakobles carrier'en, som går videre til en anden virtuel tråd.</p></div>
+    <div class="passo"><div class="espr"><mark class="ok">Attesa senza costo</mark>: l’operazione bloccante non occupa un thread del sistema</div><p class="nota">Derfor passer virtuelle tråde til opgaver, der bruger tid på at vente.</p></div>
+  </figure>
+</section>
+
+<section>
+  <h2>Hvornår man bruger hvad</h2>
+  <p>Forelæsningens anvisninger, i prioritetsrækkefølge:</p>
+  <div class="tab-wrap"><table class="tab"><thead><tr><th>situation</th><th>valg</th></tr></thead><tbody>
+    <tr><td>du vil have mange platformstråde</td><td>no: opret ikke mange af dem</td></tr>
+    <tr><td>operationer, der venter (I/O, database, netværk)</td><td>virtuelle tråde</td></tr>
+    <tr><td>arbejde, der bruger CPU'en, og ydeevnen tæller</td><td>tasks i executoren (næste side)</td></tr>
+    <tr><td>alt det andet, for enkelhedens skyld</td><td>virtuelle tråde til alt</td></tr>
+  </tbody></table></div>
+  <div class="box attenzione" data-tit="Pas på">En virtuel tråd gør ikke en ren beregning hurtigere. I forelæsningen tager platformstråde og virtuelle tråde op til 64 tråde det samme tid på optællingen af primtal; forskellen ses med 2048 tråde, hvor platformstrådene er meget langsommere.</div>
+</section>
+
+<section>
+  <h2>Eksempel: download af sider parallelt</h2>
+  <p>Forelæsningens kode: én anmodning pr. URL, hver anmodning i en virtuel tråd, derefter venten på alle. Her simuleres anmodningen af et <code>sleep</code> på 100 ms, så eksemplet kører uden netværk.</p>
+  <figure class="codice" data-titolo="Virtuali.java">
+<pre data-lang="java">import java.util.ArrayList;
+import java.util.List;
+
+public class Virtuali {
+    // simula una richiesta web: il thread aspetta, non lavora
+    static void scarica(String url) {
+        try {
+            Thread.sleep(100);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+    }
+
+    public static void main(String[] args) throws InterruptedException {
+        List&lt;String&gt; urls = List.of("a.it", "b.it", "c.it", "d.it");
+        List&lt;Thread&gt; threads = new ArrayList&lt;&gt;();
+        long inizio = System.nanoTime();
+        for (String url : urls) {
+            final String mioUrl = url;          // copia locale: ogni thread usa il suo url
+            threads.add(Thread.ofVirtual().start(() -&gt; scarica(mioUrl)));
+        }
+        for (Thread t : threads)
+            t.join();                           // aspetta la fine di ognuno
+        long ms = (System.nanoTime() - inizio) / 1_000_000;
+        System.out.println("pagine: " + urls.size() + ", tempo sotto 300 ms: " + (ms &lt; 300));
+    }
+}</pre>
+    <ol class="spiega">
+      <li data-righe="8" data-segna="Thread.sleep(100)@ora"><p><code>scarica</code> simulerer en webanmodning. <code>Thread.sleep(100)</code> stopper tråden i 100 ms. Tråden arbejder ikke: den venter. Det er det tilfælde, hvor virtuelle tråde er nødvendige.</p></li>
+      <li data-righe="15" data-segna="List.of@ora"><p>Fire URL'er i en uforanderlig liste. <code>List.of</code> opretter den allerede fuld: den kan ikke ændres.</p></li>
+      <li data-righe="16" data-segna="threads@due"><p>Listen over de startede tråde, så man kan vente på dem bagefter.</p></li>
+      <li data-righe="17" data-segna="inizio@ora"><p>Starttidspunktet, med <code>System.nanoTime()</code>: den måler i nanosekunder.</p></li>
+      <li data-righe="18" data-segna="for (String url : urls)@ora"><p>En runde pr. URL. <code>url</code> er løkkevariablen: i en for-each er den allerede konstant inde i runden.</p></li>
+      <li data-righe="19" data-segna="final String mioUrl = url;@due"><p>Lokal kopi: hver tråd får sin URL i en variabel erklæret <code>final</code>. Lambdaer fanger kun variabler, der ikke ændrer sig; kopien gør tydeligt, at hver tråd har sin egen værdi.</p></li>
+      <li data-righe="20" data-segna="Thread.ofVirtual().start@ora"><p>Starter en virtuel tråd med lambdaen <code>() -&gt; scarica(mioUrl)</code>. <code>start</code> returnerer med det samme: tråden arbejder parallelt.</p></li>
+      <li data-righe="22-23" data-segna="t.join()@ora"><p><code>join</code> venter på, at hver tråd er færdig. Uden join kunne programmet udskrive tiden, før anmodningerne er færdige.</p></li>
+      <li data-righe="24-25" data-segna="System.out.println@ok"><p>Tiden i millisekunder. Med 4 anmodninger på 100 ms parallelt er totalen tæt på 100 ms, ikke 400: kontrollen <code>ms &lt; 300</code> udskriver <code>true</code>.</p></li>
+    </ol>
+  </figure>
+</section>
+
+<section>
+  <h2>Tiden parallelt</h2>
+    <figure class="passi" data-titolo="Fire sider på 100 ms hver" data-legenda="dato:tid for en anmodning,ora:hvornår den starter,ok:slut">
+    <div class="passo"><div class="espr">Una alla volta: <mark class="dato">100 + 100 + 100 + 100 = 400 ms</mark></div><p class="nota">Den klassiske løkke, uden tråde: hver anmodning venter på den foregående.</p></div>
+    <div class="passo"><div class="espr"><mark class="ora">Quattro thread virtuali</mark> partono insieme</div><p class="nota">Hver blokeres i 100 ms. Ingen optager en systemtråd, mens den venter.</p></div>
+    <div class="passo"><div class="espr">Tutte finiscono intorno a <mark class="ok">100 ms</mark></div><p class="nota">Den samlede tid er den for den langsomste anmodning, ikke summen af alle.</p></div>
+  </figure>
+</section>
+
+<section>
+  <h2>Praktiske regler</h2>
+  <div class="box regola" data-tit="Regel">For operationer, der venter, en virtuel tråd pr. operation. Til tunge beregninger bruges executoren med et fast antal tråde (næste side).</div>
+  <div class="box inglese" data-tit="Sætning til mundtlig eksamen">Virtuelle tråde er billige at oprette og blokeres uden at holde en OS-tråd, så de passer til I/O-bundet arbejde; platformstråde er dyre og bør ikke oprettes i stort antal.</div>
+</section>
+
+</main>
+</body>
+</html>

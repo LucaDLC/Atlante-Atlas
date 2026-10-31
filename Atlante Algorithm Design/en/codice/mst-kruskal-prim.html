@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Code: Kruskal in Java</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Code: Kruskal in Java</h1>
+  <p class="lede">The minimum spanning tree in Java: edges sorted by weight, union-find with path compression, and the cycle test.</p>
+</header>
+
+<section>
+  <h2>Find with path compression</h2>
+  <p>The <code>find</code> function climbs to the root. Each node met is linked directly to the root.</p>
+  <figure class="codice" data-titolo="Find with path compression">
+<pre data-lang="java">import java.io.*;
+import java.util.*;
+
+public class Main {
+    static int[] padre;
+
+    // find con path compression: ogni nodo incontrato viene collegato direttamente alla radice.
+    static int find(int x) {
+        if (padre[x] != x) {
+            padre[x] = find(padre[x]);
+        }
+        return padre[x];
+    }
+
+    public static void main(String[] args) throws IOException {
+        BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
+        StringTokenizer st = new StringTokenizer(in.readLine());
+        int n = Integer.parseInt(st.nextToken());
+        int m = Integer.parseInt(st.nextToken());
+
+        // Ogni arco è {u, v, peso}.
+        int[][] archi = new int[m][3];
+        for (int i = 0; i &lt; m; i++) {
+            st = new StringTokenizer(in.readLine());
+            archi[i][0] = Integer.parseInt(st.nextToken());
+            archi[i][1] = Integer.parseInt(st.nextToken());
+            archi[i][2] = Integer.parseInt(st.nextToken());
+        }
+
+        // Kruskal: archi per peso crescente.
+        Arrays.sort(archi, (x, y) -&gt; Integer.compare(x[2], y[2]));
+
+        padre = new int[n];
+        for (int i = 0; i &lt; n; i++) {
+            padre[i] = i;                 // ogni nodo è la radice di sé stesso
+        }
+
+        long costo = 0;
+        int presi = 0;
+        for (int[] a : archi) {
+            int ru = find(a[0]);
+            int rv = find(a[1]);
+            if (ru != rv) {               // radici diverse: nessun ciclo
+                padre[ru] = rv;           // unisco le due componenti
+                costo += a[2];            // long: la somma può superare int
+                presi++;
+            }                             // altrimenti l'arco chiuderebbe un ciclo: scartato
+        }
+        System.out.println("costo " + costo + ", archi " + presi);
+    }
+}</pre>
+    <ol class="spiega">
+    <li data-righe="8"><p>Recursive method. The field <code>padre</code> is static: all the calls share it.</p></li>
+    <li data-righe="10"><p>Path compression: the parent of <code>x</code> becomes the root found. Future calls cost less.</p></li>
+    </ol>
+  </figure>
+  <div class="box basi" data-tit="Syntax notes"><ul><li><code>static</code> on methods and fields: the <code>Main</code> class creates no objects, it only uses shared variables.</li></ul></div>
+</section>
+<section>
+  <h2>Kruskal</h2>
+  <p>I sort the edges by increasing weight and take those that connect different components.</p>
+  <figure class="codice" data-titolo="Kruskal">
+<pre data-lang="java">import java.io.*;
+import java.util.*;
+
+public class Main {
+    static int[] padre;
+
+    // find con path compression: ogni nodo incontrato viene collegato direttamente alla radice.
+    static int find(int x) {
+        if (padre[x] != x) {
+            padre[x] = find(padre[x]);
+        }
+        return padre[x];
+    }
+
+    public static void main(String[] args) throws IOException {
+        BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
+        StringTokenizer st = new StringTokenizer(in.readLine());
+        int n = Integer.parseInt(st.nextToken());
+        int m = Integer.parseInt(st.nextToken());
+
+        // Ogni arco è {u, v, peso}.
+        int[][] archi = new int[m][3];
+        for (int i = 0; i &lt; m; i++) {
+            st = new StringTokenizer(in.readLine());
+            archi[i][0] = Integer.parseInt(st.nextToken());
+            archi[i][1] = Integer.parseInt(st.nextToken());
+            archi[i][2] = Integer.parseInt(st.nextToken());
+        }
+
+        // Kruskal: archi per peso crescente.
+        Arrays.sort(archi, (x, y) -&gt; Integer.compare(x[2], y[2]));
+
+        padre = new int[n];
+        for (int i = 0; i &lt; n; i++) {
+            padre[i] = i;                 // ogni nodo è la radice di sé stesso
+        }
+
+        long costo = 0;
+        int presi = 0;
+        for (int[] a : archi) {
+            int ru = find(a[0]);
+            int rv = find(a[1]);
+            if (ru != rv) {               // radici diverse: nessun ciclo
+                padre[ru] = rv;           // unisco le due componenti
+                costo += a[2];            // long: la somma può superare int
+                presi++;
+            }                             // altrimenti l'arco chiuderebbe un ciclo: scartato
+        }
+        System.out.println("costo " + costo + ", archi " + presi);
+    }
+}</pre>
+    <ol class="spiega">
+    <li data-righe="22"><p>Each edge is <code>{u, v, weight}</code>: three columns in a two-dimensional array.</p></li>
+    <li data-righe="31"><p>I sort by weight, column 2.</p></li>
+    <li data-righe="43" data-segna="ru != rv@ok"><p>Different roots: the edge does not close a cycle. I take it.</p></li>
+    <li data-righe="45"><p>The total cost is a <code>long</code>: sums of many weights can exceed the capacity of an <code>int</code>.</p></li>
+    </ol>
+  </figure>
+  <div class="box basi" data-tit="Syntax notes"><ul><li><code>long</code> has 64 bits, <code>int</code> 32. The suffix <code>L</code> in literals makes them long: <code>1000000000L</code>.</li><li>The comment after <code>}</code> is allowed: the code and the comment can be on the same line.</li></ul></div>
+</section>
+<section>
+  <h2>Running it</h2>
+  <p>Example of input and output (actually compiled and run).</p>
+  <pre class="cod">5 6
+0 1 1
+1 2 2
+3 4 2
+0 2 3
+2 3 4
+1 4 5
+
+(output)
+costo 9, archi 4</pre>
+</section>
+<section>
+  <h2>The theory, side by side</h2>
+  <p><a href="../teoria/mst-kruskal-prim.html"><b>← Back to the theory of this topic</b></a></p>
+</section>
+
+</main>
+</body>
+</html>

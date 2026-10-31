@@ -1,0 +1,50 @@
+@@s001 Samtidige maps: fra én enkelt lås til ConcurrentHashMap
+@@s002 <span>Uge 9 · Performance</span>
+@@s003 Samtidige maps: fra én enkelt lås til ConcurrentHashMap
+@@s004 Det andet casestudie: otte implementeringer af et trådsikkert hash-map, fra én enkelt lås til strukturer uden låse. Reglen, der går igennem dem alle, er den samme som for tælleren: hold de data, der skrives, tæt på én enkelt tråd.
+@@s005 De otte maps
+@@s006 Det andet casestudie er et trådsikkert hash-map. Forelæsningen sammenligner otte implementeringer, fra den simpleste til Javas bibliotek:
+@@s007 navn
+@@s008 idé
+@@s009 SynchronizedMap
+@@s010 én enkelt lås på hele map'et
+@@s011 StripedMap
+@@s012 et array af låse: hver lås beskytter en del af bucket'erne. Sliderne siger 16 låse ét sted og 32 et andet
+@@s013 StripedMapPadded
+@@s014 som ovenfor, med padding mellem låsene
+@@s015 StripedWriteMap
+@@s016 som StripedMap, men listerne af par (nøgle, værdi) er uforanderlige: <b>læsninger</b> tager ingen lås
+@@s017 StripedWriteMapPadded
+@@s018 som ovenfor, med padding
+@@s019 StripedLevelWriteMap
+@@s020 to niveauer: et array af arrays, hver med sin egen lås; under-arrayerne ændrer størrelse hver for sig
+@@s021 HashTrieMap
+@@s022 uden låse: CAS-operationer på et hash array mapped trie (Prokopec, Bagwell)
+@@s023 WrapConcHashMap
+@@s024 Doug Leas <code>java.util.concurrent.ConcurrentHashMap</code>: lås og CAS sammen, med padding
+@@s025 Arbejdsbyrden
+@@s026 For at sammenligne dem bruger forelæsningen det samme arbejdsmønster for alle: N tråde udfører i alt 5 000 000 operationer (hver 5 000 000 / N). Hver operation leder efter en tilfældig nøgle og handler sådan her:
+@@s027 En operation i arbejdsbyrden
+@@s028 dato:nøgle,ora:beslutning,ok:handling
+@@s029 Det er det første tjek: <code>containsKey</code>.
+@@s030 Hvis det tilfældige tal er under addProb, laves <code>put</code>.
+@@s031 Hvis det tilfældige tal er under removeProb, laves <code>remove</code>.
+@@s032 Hvis man ændrer addProb og removeProb, får man forskellige arbejdsbyrder: <b>domineret af læsninger</b> (60 % og 2 %) eller <b>domineret af skrivninger</b> (90 % og 30 %).
+@@s033 Hvad målingerne viser
+@@s034 Den enkelte lås (<code>SynchronizedMap</code>) skalerer ikke: flere tråde, mere tid. På serveren er den meget værre end på laptoppen.
+@@s035 Med en balanceret eller skrivningsdomineret belastning skalerer ingen håndskrevet version godt: bibliotekets <code>ConcurrentHashMap</code> vinder.
+@@s036 Med en læsningsdomineret belastning forbliver <code>ConcurrentHashMap</code> den bedste; padding hjælper de versioner med ikke-blokerende læsninger.
+@@s037 Ikke-blokerende læsninger (uforanderlige lister) fungerer kun godt, hvis map'et læses meget mere, end det skrives.
+@@s038 De ikke-blokerende versioner har en hukommelsesomkostning: hver skrivning opretter et nyt par, så der skal bruges en garbage collector og omhyggelig styring. Derfor siger forelæsningen, at teknikken ikke er praktisk i C eller C++ uden en GC.
+@@s039 Lektionerne
+@@s040 Hvornår en lås er det rigtige valg, og hvornår ikke
+@@s041 dato:situation,ora:ræsonnementstrin,ok:konklusion,no:skal undgås
+@@s042 En lås der venter får ikke CPU'en til at arbejde: det er en fordel.
+@@s043 Men kun hvis de muterbare data, låse inklusive, for det meste bliver lokale for én tråd.
+@@s044 Trådene prøver igen i en løkke med aktiv venten (busy-wait), og linjerne går M → I → M → I.
+@@s045 @Contended er forbeholdt Javas biblioteker: i din kode skal padding laves i hånden.
+@@s046 Sådan vælger man
+@@s047 I praksis
+@@s048 Skriv ikke et samtidigt map fra bunden: brug <code>ConcurrentHashMap</code>. Skriv din egen version kun for at forstå afvejningen, eller hvis du måler, at biblioteket ikke er nok til et bestemt tilfælde.
+@@s049 Sætning til mundtlig eksamen
+@@s050 Striped locks og padding holder ofte skrevne data lokale til kernen, så cache-linjerne kan blive i tilstanden Modified; ConcurrentHashMap samler disse idéer i biblioteket.

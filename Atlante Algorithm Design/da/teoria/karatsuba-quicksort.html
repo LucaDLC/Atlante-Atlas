@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Karatsuba og quicksort</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+const r = (id,x,y,t,tono) => ({id,tipo:'rett',x,y,w:58,h:34,t,tono});
+SCENE.kar = {
+  w: 540, h: 230, lato: true,
+  legenda: 'dato:cifre,ora:produkt beregnet,ok:resultat,no:ikke nødvendigt (den 4. multiplikation)',
+  oggetti: [
+    r('a',60,30,'5','dato'), r('b',130,30,'6','dato'), r('c',220,30,'7','dato'), r('d',290,30,'8','dato'),
+    {id:'t1',tipo:'testo',x:20,y:90,t:'56 = 5·10 + 6,   78 = 7·10 + 8',size:12,bold:true,anchor:'start'},
+    {id:'m1',tipo:'testo',x:20,y:130,t:'',size:13,bold:true,anchor:'start'},
+    {id:'m2',tipo:'testo',x:20,y:160,t:'',size:13,bold:true,anchor:'start'},
+    {id:'m3',tipo:'testo',x:20,y:190,t:'',size:13,bold:true,anchor:'start'},
+    {id:'tot',tipo:'testo',x:330,y:190,t:'',size:14,bold:true,anchor:'start'}
+  ],
+  passi: [
+    { nota: 'Jeg multiplicerer 56 × 78 ved at dele hvert tal i to cifre: <b>a = 5, b = 6</b> (56), <b>c = 7, d = 8</b> (78).', set:{t1:{t:'56 = 5·10 + 6,   78 = 7·10 + 8'}} },
+    { nota: 'Skolemetoden: fire multiplikationer: <code>ac, ad, bc, bd</code>. Karatsuba laver <b>tre</b>. Først: ac = 5·7 = 35.', set:{a:{tono:'ora'},c:{tono:'ora'},m1:{t:'ac = 35'}} },
+    { nota: 'bd = 6·8 = 48.', set:{a:{tono:'dato'},c:{tono:'dato'},b:{tono:'ora'},d:{tono:'ora'},m2:{t:'bd = 48'}} },
+    { nota: 'Tricket: (a+b)(c+d) = 11 · 15 = 165, og <code>ad + bc = 165 − ac − bd = 165 − 83 = 82</code>. Kun én multiplikation mere, og ad + bc fremkommer uden at beregne dem hver for sig.', set:{b:{tono:'dato'},d:{tono:'dato'},m3:{t:'(a+b)(c+d) = 165, ad + bc = 82'}} },
+    { nota: 'Jeg sammensætter igen: <code>ac·100 + (ad+bc)·10 + bd = 3500 + 820 + 48 = 4368</code> = 56 · 78. Tre multiplikationer af halv størrelse: <code>T(n) = 3T(n/2) + O(n)</code>, altså <b>O(n^1.585)</b>.', set:{tot:{t:'= 4368 ✓',tono:'ok'}} }
+  ]
+};
+})();
+</script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+const v = (id,x,t,tono) => ({id,tipo:'rett',x,y:70,w:52,h:36,t,tono});
+SCENE.qs = {
+  w: 540, h: 230, lato: true,
+  legenda: 'ora:pivot,dato:mindre end pivot,due:større eller lig med,spento:skal rettes',
+  oggetti: [
+    v('x0',20,'3','spento'), v('x1',76,'8','spento'), v('x2',132,'2','spento'), v('x3',188,'5','ora'), v('x4',244,'1','spento'), v('x5',300,'4','spento'), v('x6',356,'7','spento'), v('x7',412,'6','spento'),
+    {id:'t1',tipo:'testo',x:20,y:50,t:'pivot = 5 (il quarto elemento)',size:12,bold:true,anchor:'start'},
+    {id:'t2',tipo:'testo',x:20,y:150,t:'',size:13,bold:true,anchor:'start'},
+    {id:'t3',tipo:'testo',x:20,y:190,t:'',size:12,anchor:'start'}
+  ],
+  passi: [
+    { nota: 'Quicksort: jeg vælger en <b>pivot</b>, flytter de mindre til venstre og de større til højre, og sorterer derefter de to dele rekursivt.', set:{} },
+    { nota: 'Jeg sammenligner hvert element med pivoten 5. Tallet 3 er mindre: det går til venstre. Tallet 8 er større: det bliver til højre.', set:{x0:{tono:'dato'},x1:{tono:'due'},x2:{tono:'dato'},x4:{tono:'dato'},x5:{tono:'dato'},x6:{tono:'due'},x7:{tono:'due'}} },
+    { nota: 'Resultat af partitioneringen: <b>3 2 1 4 | 5 | 8 7 6</b>. Pivoten står på sin endelige plads.', set:{x0:{t:'3',tono:'dato'},x2:{t:'2',tono:'dato'},x4:{t:'1',tono:'dato'},x5:{t:'4',tono:'dato'},x3:{t:'5',tono:'ora'},x1:{t:'8',tono:'due'},x6:{t:'7',tono:'due'},x7:{t:'6',tono:'due'},t2:{t:'pivot al posto giusto',tono:'ok'}} },
+    { nota: 'Tilfældig pivot: i gennemsnit <b>O(n log n)</b>. Med en pivot, der altid er den værste (minimum), bliver det O(n²): derfor er pivoten tilfældig. Quicksort sorterer på stedet: lidt ekstra hukommelse.', set:{t3:{t:'pivot casuale → O(n log n) atteso'}} }
+  ]
+};
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Karatsuba og quicksort</h1>
+  <p class="lede">To del-og-hersk-algoritmer, der slår den naive metode: Karatsuba multiplicerer store tal med tre multiplikationer i stedet for fire, quicksort sorterer med partitioner omkring en pivot.</p>
+</header>
+
+<section>
+  <h2>Karatsuba: tre multiplikationer i stedet for fire</h2>
+<p>At multiplicere to tal med <code>n</code> cifre i skolen koster <code>n²</code> (fire multiplikationer af halv størrelse). Karatsuba deler hvert tal i to halvdele: <code>x = a·10^k + b</code>, <code>y = c·10^k + d</code>. Den beregner <code>ac</code>, <code>bd</code> og <code>(a+b)(c+d)</code>: det blandede led <code>ad + bc</code> fremkommer ved differens, uden én multiplikation mere.</p>
+<p>Rekurrensen <code>T(n) = 3T(n/2) + O(n)</code>: <code>O(n^1.585)</code>.</p>
+  <figure class="scena" data-scena="kar" data-titolo="56 × 78 med tre multiplikationer"></figure>
+</section>
+<section>
+  <h2>Quicksort: partition omkring pivoten</h2>
+<p>Vælg en <b>pivot</b>. Flyt de mindre elementer til venstre, de større (eller lige store) til højre. Pivoten står på sin endelige plads. Sortér derefter de to dele rekursivt.</p>
+<p>Med en tilfældig pivot er den forventede omkostning <code>O(n log n)</code>. Med en pivot, der altid er den værste (minimum eller maksimum), bliver den <code>O(n²)</code>: derfor vælges pivoten tilfældigt.</p>
+  <figure class="scena" data-scena="qs" data-titolo="Partition omkring pivoten"></figure>
+</section>
+<section>
+  <h2>Til eksamen</h2>
+<div class="box esame" data-tit="Til eksamen">
+<p>Multiplikation af store heltal → Karatsuba, <code>O(n^log₂3)</code>. Sortering i gennemsnit → randomiseret quicksort, O(n log n) forventet. Sætning: <i>"Karatsuba uses three recursive multiplications of half size, so T(n) = 3T(n/2) + O(n) = O(n^1.585)."</i></p>
+</div>
+</section>
+<section>
+  <h2>Hurtig oversigt</h2>
+<div class="tab-wrap"><table class="tab"><thead><tr><th>algoritme</th><th>idé</th><th>tid</th></tr></thead><tbody><tr><td>Karatsuba</td><td>3 multiplikationer af halv størrelse</td><td>O(n^1.585)</td></tr><tr><td>quicksort</td><td>pivot og partition</td><td>O(n log n) forventet, O(n²) i værste fald</td></tr></tbody></table></div>
+</section>
+
+</main>
+</body>
+</html>

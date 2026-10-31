@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Vektorrum, uafhængighed og baser</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+SCENE.base = {
+  w: 420, h: 300, lato: true,
+  legenda: 'dato:standardbasen e1 e2,due:Andersens basis a1 a2,ora:en del af kombinationen,ok:punktet P',
+  codice: { lang: 'python', testo: `P = np.array([4, 3])
+A = np.array([[2, 1],
+              [1, 2]])          # colonne: a1, a2
+xA = np.linalg.solve(A, P)     # [1.667, 0.667]
+A @ xA                          # [4., 3.]  (si torna a P)` },
+  oggetti: [
+    { id: 'ax', tipo: 'assi', box: [40, 20, 340, 255], dom: [-0.5, 5, -0.5, 4], tacche: 1 },
+    { id: 'e1', tipo: 'vett', in: 'ax', x1: 0, y1: 0, x2: 1, y2: 0, t: 'e1', tx: -10, ty: -12, tono: 'dato' },
+    { id: 'e2', tipo: 'vett', in: 'ax', x1: 0, y1: 0, x2: 0, y2: 1, t: 'e2', tx: 14, ty: 8, tono: 'dato' },
+    { id: 'h4', tipo: 'linea', in: 'ax', x1: 0, y1: 0, x2: 4, y2: 0, tratt: true, tono: 'dato', nascosto: true },
+    { id: 'v3', tipo: 'linea', in: 'ax', x1: 4, y1: 0, x2: 4, y2: 3, tratt: true, tono: 'dato', nascosto: true },
+    { id: 'a1', tipo: 'vett', in: 'ax', x1: 0, y1: 0, x2: 2, y2: 1, t: 'a1', tx: 4, ty: 16, tono: 'due', nascosto: true },
+    { id: 'a2', tipo: 'vett', in: 'ax', x1: 0, y1: 0, x2: 1, y2: 2, t: 'a2', tx: -24, ty: 0, tono: 'due', nascosto: true },
+    { id: 'c1', tipo: 'vett', in: 'ax', x1: 0, y1: 0, x2: 3.333, y2: 1.667, t: '5/3 · a1', tx: 6, ty: 18, tono: 'ora', nascosto: true },
+    { id: 'c2', tipo: 'vett', in: 'ax', x1: 3.333, y1: 1.667, x2: 4, y2: 3, t: '2/3 · a2', tx: -74, ty: 8, tono: 'ora', nascosto: true },
+    { id: 'P', tipo: 'punto', in: 'ax', x: 4, y: 3, t: 'P', tx: 10, ty: -8, tono: 'ok' },
+    { id: 'n', tipo: 'testo', x: 210, y: 292, t: '', size: 13, bold: true }
+  ],
+  passi: [
+    { nota: 'Peter står i punktet <b>P = (4, 3)</b>. Disse koordinater er angivet i <b>standardbasen</b>: e1 = (1, 0) og e2 = (0, 1).', righe: [1] },
+    { nota: '(4, 3) betyder: <b>4 gange e1 plus 3 gange e2</b>. Koordinaterne er vægtene i en linearkombination af vektorerne i basen.', set: { h4: { nascosto: false }, v3: { nascosto: false }, n: { t: 'P = 4·e1 + 3·e2', tono: 'dato' } } },
+    { nota: 'Anders bruger en anden basis: <b>a1 = (2, 1)</b> og <b>a2 = (1, 2)</b>. De er uafhængige (de ligger ikke på samme linje), så de er en god basis for planen.', righe: [2, 3], set: { h4: { nascosto: true }, v3: { nascosto: true }, a1: { nascosto: false }, a2: { nascosto: false }, e1: { tono: 'spento' }, e2: { tono: 'spento' }, n: { t: '' } } },
+    { nota: 'I Andersens basis har P andre vægte: man leder efter c₁, c₂ med c₁a1 + c₂a2 = P, altså systemet <b>A x<sub>A</sub> = P</b> (A har a1 og a2 som søjler). Løsning: <b>x<sub>A</sub> = (5/3, 2/3)</b>.', righe: [4] },
+    { nota: 'Kontrol: 5/3 · a1 = (3.33, 1.67) …', set: { c1: { nascosto: false } } },
+    { nota: '… plus 2/3 · a2 = (0.67, 1.33) giver netop (4, 3). <b>Samme punkt, forskellige koordinater</b>: (4, 3) i standardbasen, (1.67, 0.67) i Andersens.', righe: [5], set: { c2: { nascosto: false }, n: { t: 'P = 5/3·a1 + 2/3·a2', tono: 'ok' } } }
+  ]
+};
+</script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  const D = {"x": [0.0, 0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0, 2.25, 2.5, 2.75, 3.0, 3.25, 3.5, 3.75, 4.0, 4.25, 4.5, 4.75, 5.0, 5.25, 5.5, 5.75, 6.0], "f": [0.0, 0.247, 0.479, 0.682, 0.841, 0.949, 0.997, 0.984, 0.909, 0.778, 0.598, 0.382, 0.141, -0.108, -0.351, -0.572, -0.757, -0.895, -0.978, -0.999, -0.959, -0.859, -0.706, -0.508, -0.279], "casuale": [0.0, 0.322, 0.411, 0.459, 0.728, 0.701, 1.013, 1.319, 0.786, 0.623, 0.721, 0.471, 0.167, -0.341, -0.358, -0.398, -1.093, -1.009, -1.453, -1.322, -1.419, -0.918, -1.022, -0.44, -0.24], "sistematico": [0.6, 0.847, 1.079, 1.282, 1.441, 1.549, 1.597, 1.584, 1.509, 1.378, 1.198, 0.982, 0.741, 0.492, 0.249, 0.028, -0.157, -0.295, -0.378, -0.399, -0.359, -0.259, -0.106, 0.092, 0.321], "saleppepe": [0.0, 0.247, 0.479, 0.682, 1.8, 0.949, 0.997, 0.984, 0.909, 0.778, 0.598, -1.8, 0.141, -0.108, -0.351, -0.572, -0.757, -0.895, -0.978, 1.8, -0.959, -0.859, -0.706, -0.508, -0.279], "slope_y": 2.003590857441914, "slope_x": 1.0000154927382434, "py": [[0.18, 1.57], [0.31, -0.45], [-1.07, -1.41], [0.03, 0.85], [-0.97, -1.22], [-0.2, -0.1], [0.85, 2.01], [0.61, 1.73], [0.83, 1.42], [0.55, -0.28], [1.91, 4.39], [0.53, -0.54], [-1.15, -2.1], [-0.1, 0.8], [-0.26, -0.15], [-0.92, -0.3], [-0.23, -0.3], [-0.44, -0.27], [1.25, 2.45], [-2.42, -5.1], [-0.99, -2.32], [0.57, 2.14], [-0.34, -1.94], [0.82, 1.62], [0.81, -0.74], [-2.1, -4.21], [0.62, 1.64], [-0.58, -0.56], [-0.03, -0.51], [1.45, 4.61]], "px": [[1.0, 0.35], [1.62, 0.62], [-1.03, -2.14], [-0.12, 0.05], [-0.37, -1.94], [-0.3, -0.4], [0.82, 1.7], [0.85, 1.21], [0.24, 1.66], [-0.23, 1.09], [-0.27, 3.81], [1.6, 1.05], [-2.15, -2.3], [0.86, -0.2], [0.23, -0.52], [-0.64, -1.84], [-0.71, -0.46], [0.1, -0.87], [4.77, 2.49], [-3.97, -4.84], [-0.3, -1.98], [1.44, 1.15], [-0.63, -0.67], [-0.59, 1.65], [1.23, 1.63], [-2.97, -4.2], [1.94, 1.23], [-1.24, -1.16], [-0.44, -0.07], [-0.26, 2.9]], "std_1": 0.998, "std_10": 0.316, "std_100": 0.1, "desc": [22.4, 3.0, 1505.8399999999997, 38.8051542968199], "desc2": [3.0, 3.0], "tr": [[0.0, 1.79], [1.0, 1.87], [2.0, 1.52], [3.0, 2.39], [4.0, 2.86], [5.0, 4.68], [6.0, 3.53], [7.0, 5.19]], "te": [[0.5, 1.31], [2.5, 2.76], [4.5, 3.25], [6.5, 4.45]], "p7": [0.008353231129090179, -0.1980650691616189, 1.8578432126329238, -8.766511389141694, 21.743927592070747, -26.340541270786048, 11.779314815024934, 1.7873205715809741], "p1": [0.5006, 1.2257], "mse7": [0.0, 3.196], "mse1": [0.338, 0.04], "c7": [[0.0, 1.787], [0.1, 2.723], [0.2, 3.25], [0.3, 3.471], [0.4, 3.47], [0.5, 3.317], [0.6, 3.068], [0.7, 2.769], [0.8, 2.454], [0.9, 2.148], [1.0, 1.872], [1.1, 1.636], [1.2, 1.449], [1.3, 1.313], [1.4, 1.227], [1.5, 1.19], [1.6, 1.196], [1.7, 1.238], [1.8, 1.31], [1.9, 1.405], [2.0, 1.515], [2.1, 1.634], [2.2, 1.756], [2.3, 1.874], [2.4, 1.986], [2.5, 2.087], [2.6, 2.175], [2.7, 2.25], [2.8, 2.31], [2.9, 2.358], [3.0, 2.394], [3.1, 2.421], [3.2, 2.443], [3.3, 2.463], [3.4, 2.484], [3.5, 2.512], [3.6, 2.548], [3.7, 2.599], [3.8, 2.665], [3.9, 2.751], [4.0, 2.857], [4.1, 2.984], [4.2, 3.133], [4.3, 3.302], [4.4, 3.488], [4.5, 3.688], [4.6, 3.897], [4.7, 4.108], [4.8, 4.315], [4.9, 4.509], [5.0, 4.681], [5.1, 4.823], [5.2, 4.925], [5.3, 4.978], [5.4, 4.973], [5.5, 4.904], [5.6, 4.766], [5.7, 4.556], [5.8, 4.275], [5.9, 3.929], [6.0, 3.528], [6.1, 3.09], [6.2, 2.639], [6.3, 2.208], [6.4, 1.843], [6.5, 1.597], [6.6, 1.542], [6.7, 1.762], [6.8, 2.358], [6.9, 3.453], [7.0, 5.188]], "rank": 2, "xA": [1.6667, 0.6667], "xB": [3.5, -0.5], "T": [[1.5, 1.5], [-0.5, 0.5]]};
+  const T = (id, x, y, t, extra) => Object.assign({ id, tipo: 'testo', x, y, t, size: 13 }, extra || {});
+  const R = (id, x, y, w, h, t, extra) => Object.assign({ id, tipo: 'rett', x, y, w, h, t }, extra || {});
+  const V = (id, x1, y1, x2, y2, t, extra) => Object.assign({ id, tipo: 'vett', in: 'ax', x1, y1, x2, y2, t }, extra || {});
+  const P = (id, x, y, t, extra) => Object.assign({ id, tipo: 'punto', in: 'ax', x, y, t }, extra || {});
+  const L = (id, x1, y1, x2, y2, extra) => Object.assign({ id, tipo: 'linea', in: 'ax', x1, y1, x2, y2 }, extra || {});
+  const pl = p => p.concat(p.slice().reverse());
+
+    SCENE.span = {
+      w: 640, h: 300, lato: true,
+      legenda: 'dato:v₁,due:v₂,ora:span,no:tilføjer intet',
+      oggetti: [
+        { id: 'ax', tipo: 'assi', box: [40, 20, 320, 250], dom: [-3, 4, -3, 4], tacche: 1, etX: 'x₁', etY: 'x₂' },
+        L('r1', -1.5, -3, 2, 4, { tratt: true, tono: 'ora', nascosto: true }),
+        V('v1', 0, 0, 1, 2, 'v₁', { tono: 'dato' }), V('v2', 0, 0, 2, 1, 'v₂', { tono: 'due', nascosto: true }), V('v3', 0, 0, 2, 4, 'v₃ = 2v₁', { tono: 'no', nascosto: true, tx: 6, ty: -6 }),
+        T('c', 515, 60, '', { size: 12 }), T('c2', 515, 90, '', { size: 12 }), T('c3', 515, 120, '', { size: 12 })
+      ],
+      passi: [
+        { nota: "Una <b>combinazione lineare</b> di v₁ = (1, 2): c₁v₁, per ogni numero c₁. Lo <b>span</b> è l'insieme di tutte le combinazioni." },
+        { nota: "Con un solo vettore, variando c₁ si ottiene una <b>retta</b> per l'origine (c₁ = 0 dà lo 0, che sta sempre nello span).", set: { r1: { nascosto: false }, c: { t: 'span(v₁) = una retta' } } },
+        { nota: "Aggiungo v₂ = (2, 1), non allineato: ora c₁v₁ + c₂v₂ raggiunge <b>ogni punto del piano</b>. Una direzione nuova, una dimensione in più.", set: { v2: { nascosto: false }, r1: { tono: 'spento' }, c2: { t: 'span(v₁, v₂) = il piano' } } },
+        { nota: "Aggiungo v₃ = (2, 4) = 2v₁: sta già nello span, quindi <b>non aggiunge niente</b>. Lo span resta il piano.", set: { v3: { nascosto: false }, c3: { t: 'v₃ = 2v₁: nessuna direzione nuova', tono: 'no' } } },
+        { nota: "Collegamento con i sistemi: <code>Ax = x₁a₁ + x₂a₂ + …</code>, quindi Ax = b ha soluzione solo se b sta nello span delle colonne di A (il <b>column space</b>). A = [[1, 2], [1, 0], [3, 2]] ha due colonne in 3D: il suo column space è un piano dentro lo spazio.", set: { c: { t: 'Ax = b risolvibile ⇔' }, c2: { t: 'b nello span delle colonne' }, c3: { t: '(column space di A)', tono: null } } }
+      ]
+    };
+
+    SCENE.indip = {
+      w: 640, h: 300, lato: true,
+      legenda: 'dato:v,due:u,ora:kombinationen der giver 0',
+      oggetti: [
+        { id: 'ax', tipo: 'assi', box: [40, 20, 320, 250], dom: [-1, 4, -1, 5], tacche: 1, etX: 'x₁', etY: 'x₂' },
+        V('v', 0, 0, 1, 2, 'v = (1, 2)', { tono: 'dato', tx: 8, ty: 10 }), V('u', 0, 0, 2, 4, 'u = (2, 4)', { tono: 'due', nascosto: true }),
+        V('m', 2, 4, 0, 0, '−2·v', { tono: 'ora', nascosto: true, tx: 30, ty: 40 }),
+        T('c', 515, 60, '', { size: 12 }), T('c2', 515, 90, '', { size: 12 }), T('c3', 515, 130, '', { size: 12, bold: true })
+      ],
+      passi: [
+        { nota: "<b>Indipendenti</b>: l'unico modo di ottenere 0 con c₁v₁ + … + cₙvₙ è con tutti i pesi a 0. A parole: nessuno si scrive come combinazione degli altri." },
+        { nota: "u = (2, 4) = 2 · (1, 2) = 2v: stessa retta.", set: { u: { nascosto: false }, c: { t: 'u = 2v' } } },
+        { nota: "Allora 1·u − 2·v = 0: parto dall'origine, vado su u, torno indietro di 2v e sono di nuovo nell'origine. Pesi <b>non nulli</b> (1 e −2) che danno 0: u e v sono <b>dipendenti</b>.", set: { m: { nascosto: false }, c2: { t: '1·u − 2·v = (0, 0)' }, c3: { t: 'dipendenti', tono: 'no' } } },
+        { nota: "Come colonne di A = [[2, 1], [4, 2]]: det = 0, rango 1, A·(1, −2) = (0, 0) (verificato con NumPy). Colonne dipendenti ⇒ A⁻¹ non esiste, e Ax = b ha nessuna o infinite soluzioni. In ℝⁿ stanno al massimo n vettori indipendenti.", set: { c: { t: 'det A = 0, rango 1' }, c2: { t: 'A·(1, −2) = (0, 0)' }, c3: { t: 'niente A⁻¹', tono: 'no' } } }
+      ]
+    };
+
+    SCENE.cambiobase = {
+      w: 640, h: 300, lato: true,
+      legenda: 'dato:standardbasen,due:Berthas basis,ora:de to dele,ok:punktet P',
+      oggetti: [
+        { id: 'ax', tipo: 'assi', box: [40, 20, 320, 250], dom: [-1, 5, -1, 4.5], tacche: 1 },
+        V('b1', 0, 0, 1, 1, 'b₁', { tono: 'due', tx: -16, ty: -6 }), V('b2', 0, 0, -1, 1, 'b₂', { tono: 'due', tx: -16, ty: -4 }),
+        V('p1', 0, 0, 3.5, 3.5, '3.5·b₁', { tono: 'ora', nascosto: true, tx: -60, ty: -6 }), V('p2', 3.5, 3.5, 4, 3, '−0.5·b₂', { tono: 'ora', nascosto: true, tx: 6, ty: 6 }),
+        P('P', 4, 3, 'P', { tono: 'ok' }),
+        T('c', 515, 50, 'P = (4, 3)', { size: 12 }), T('c2', 515, 80, '', { size: 12 }), T('c3', 515, 110, '', { size: 12 }), T('c4', 515, 150, '', { size: 12, bold: true })
+      ],
+      passi: [
+        { nota: "Peter sta in P = (4, 3) (coordinate standard). Anders lo descrive nella sua base A: x<sub>A</sub> = (5/3, 2/3). Bertha usa un'altra base: b₁ = (1, 1), b₂ = (−1, 1)." },
+        { nota: "Da A a standard: <code>x<sub>E</sub> = A x<sub>A</sub></code>. Da standard a B: <code>x<sub>B</sub> = B⁻¹ x<sub>E</sub></code>. Insieme: <b>x<sub>B</sub> = B⁻¹A x<sub>A</sub> = T x<sub>A</sub></b>, con T = B⁻¹A la matrice di cambio di base.", set: { c2: { t: 'T = B⁻¹A' }, c3: { t: '= [[1.5, 1.5], [−0.5, 0.5]]' } } },
+        { nota: "T · (5/3, 2/3) = (3.5, −0.5). Controllo con i vettori: 3.5 · b₁ = (3.5, 3.5)…", set: { p1: { nascosto: false }, c4: { t: 'x_B = (3.5, −0.5)' } } },
+        { nota: "…più −0.5 · b₂ = (0.5, −0.5) dà (4, 3): lo stesso P. Anders ha passato la posizione a Bertha senza passare da (4, 3). Tutto verificato con NumPy. Con una base <b>ortonormale</b> Q⁻¹ = Qᵀ: ogni coordinata è un prodotto interno, ed è la base che sceglie la PCA.", set: { p2: { nascosto: false }, c4: { t: '3.5·b₁ − 0.5·b₂ = (4, 3)', tono: 'ok' } } }
+      ]
+    };
+
+    const col = (id, x, vals, tono, tit) => [T(id + 't', x + 30, 34, tit, { size: 12, bold: true }), ...vals.map((v, i) => R(id + i, x, 44 + i * 34, 60, 30, v, { tono }))];
+    SCENE.perchebasi = {
+      w: 560, h: 240, lato: true,
+      legenda: 'dato:uafhængige søjler,no:afhængig søjle,ok:entydig løsning',
+      oggetti: [].concat(col('a', 30, ['1', '1', '1', '1'], 'dato', '1'), col('b', 100, ['0', '1', '2', '3'], 'dato', 'x'), col('c', 170, ['0', '2', '4', '6'], 'dato', '2x'), [T('c', 400, 60, '', { size: 12 }), T('c2', 400, 90, '', { size: 12 }), T('c3', 400, 130, '', { size: 12, bold: true }), T('c4', 280, 215, '', { size: 12 })]),
+      passi: [
+        { nota: "Una design matrix X con tre colonne: 1, x e 2x. Nei minimi quadrati serve <code>XᵀX</code> invertibile, cioè colonne <b>indipendenti</b>." },
+        { nota: "Ma la terza colonna è 2 volte la seconda: è <b>dipendente</b>. Rango 2 invece di 3 (verificato con NumPy).", set: { c0: { tono: 'no' }, c1: { tono: 'no' }, c2: { tono: 'no' }, c3: { tono: 'no' }, c: { t: 'colonna 3 = 2 · colonna 2' }, c2: { t: 'rango(X) = 2' } } },
+        { nota: "<code>np.linalg.inv(X.T @ X)</code> → <b>LinAlgError: Singular matrix</b>. Due feature che dicono la stessa cosa: infinite combinazioni di pesi danno la stessa previsione.", set: { c3: { t: 'XᵀX singolare: niente soluzione unica', tono: 'no' } } },
+        { nota: "Il resto della settimana in una riga per idea: il <b>column space</b> è dove i minimi quadrati proiettano y; [1, x, x²] è una <b>base di funzioni</b> per i polinomi; il <b>cambio di base</b> descrive i dati con assi più utili, e con pochi vettori di base si riducono le dimensioni (PCA).", set: { c4: { t: 'indipendenza · column space · basi di funzioni · cambio di base → PCA' } } }
+      ]
+    };
+  
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Vektorrum, uafhængighed og baser</h1>
+  <p class="lede">Uge 6 (Grasple-øvelser) og forelæsning 6 ("change of basis"). En vektor kan beskrives med forskellige koordinater alt efter den valgte <b>basis</b>. Det er nøglen til PCA (uge 12), og det forklarer, hvornår mindste kvadrater har én enkelt løsning. DW kapitel 9 og 10; eksamensspørgsmål <b>Q4 (d)</b>.</p>
+</header>
+
+<section>
+  <h2>Span: alt det, der kan nås</h2>
+  <figure class="passi" data-titolo="Fra linearkombinationer til spannet">
+    <div class="passo"><div class="espr"><mark class="ora">c₁</mark>v₁ + <mark class="ora">c₂</mark>v₂ + … + <mark class="ora">cₙ</mark>vₙ</div><p class="nota">En <b>linearkombination</b>: hver vektor ganget med et tal, derefter summen.</p></div>
+    <div class="passo"><div class="espr">span(v₁, …, vₙ) = { <mark class="ok">tutte</mark> le combinazioni lineari }</div><p class="nota">Alle de vektorer, der kan bygges ved at variere vægtene. Den indeholder altid 0 (alle vægte 0).</p></div>
+    <div class="passo"><div class="espr">un vettore → una <mark class="dato">retta</mark>;  due non allineati → un <mark class="dato">piano</mark>;  tre non complanari → lo <mark class="dato">spazio 3D</mark></div><p class="nota">Hver "ny" vektor tilføjer en retning. En der allerede er i spannet tilføjer intet.</p></div>
+    <div class="passo"><div class="espr">Ax = x₁a₁ + x₂a₂ + …  ⇒  i b raggiungibili = <mark class="ok">column space</mark> di A</div><p class="nota">Ax = b har kun en løsning, <b>hvis b ligger i spannet af søjlerne</b>. Eksempel fra bogen: A = [[1, 2], [1, 0], [3, 2]] har to søjler i 3D: dens søjlerum er et plan i rummet.</p></div>
+  </figure>
+  <div class="box regola" data-tit="Vektorrum og underrum, på en linje">
+    <p>Et <b>vektorrum</b> er en mængde, hvor summer og multipla af vektorer forbliver i mængden (bogens 8 regler, som man ikke skal lære udenad). Et <b>underrum</b> er en del, der overholder den samme regel: for eksempel en linje eller et plan <b>der går gennem origo</b>. En linje, der ikke går gennem 0, er ikke et underrum.</p>
+  </div>
+  <figure class="scena" data-scena="span" data-titolo="En linje, så planet, så intet nyt"></figure>
+</section>
+
+<section>
+  <h2>Lineær uafhængighed</h2>
+  <div class="box regola" data-tit="Definition">
+    <p>v₁, …, vₙ er <b>lineært uafhængige</b>, hvis den eneste måde at få 0 på er med alle vægte lig 0: <span class="m">c₁v₁ + … + cₙvₙ = 0 ⇒ c₁ = … = cₙ = 0</span>. Med ord: ingen af dem kan skrives som en kombination af de andre.</p>
+  </div>
+  <figure class="passi" data-titolo="Eksempel 10.1 i bogen: u = (2, 4), v = (1, 2)">
+    <div class="passo"><div class="espr"><mark class="dato">u</mark> = (2, 4) = 2 · (1, 2) = 2<mark class="due">v</mark></div><p class="nota">u er et multiplum af v: samme linje.</p></div>
+    <div class="passo"><div class="espr">1·<mark class="dato">u</mark> − 2·<mark class="due">v</mark> = (2 − 2, 4 − 4) = <mark class="no">0</mark></div><p class="nota">Jeg fandt vægte, der ikke er nul (1 og −2), som giver 0: de er <b>afhængige</b>.</p></div>
+    <div class="passo"><div class="espr">A = [[2, 1], [4, 2]]:  det = <mark class="no">0</mark>,  rango = 1,  A · (1, −2) = (0, 0)</div><p class="nota">Med u og v som søjler: determinant 0, et system Ax = 0 med løsninger, der ikke er nul. Verificeret med NumPy.</p></div>
+  </figure>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Søjler i A (kvadratisk)</th><th>det A</th><th>Ax = b</th></tr></thead>
+    <tbody>
+      <tr><td><b>uafhængige</b></td><td>≠ 0</td><td>én enkelt løsning, for hvert b; A⁻¹ findes</td></tr>
+      <tr><td><b>afhængige</b></td><td>= 0</td><td>ingen eller uendeligt mange løsninger; A⁻¹ findes ikke</td></tr>
+    </tbody>
+  </table></div>
+  <div class="box attenzione" data-tit="Flere vektorer end dimensioner ⇒ afhængige">
+    <p>I ℝⁿ er der højst n uafhængige vektorer. En matrix med flere søjler end rækker har nødvendigvis afhængige søjler. I modeller: flere parametre end træningspunkter ⇒ uendeligt mange løsninger (polynomiet af grad 4 med 3 punkter, <a href="w04-polinomi.html">polynomier</a>).</p>
+  </div>
+  <figure class="scena" data-scena="indip" data-titolo="1·u − 2·v = 0: afhængige"></figure>
+</section>
+
+<section>
+  <h2>Basis og dimension</h2>
+  <div class="box regola" data-tit="Basis">
+    <p>En <b>basis</b> for et rum er en mængde vektorer, der (1) er <b>uafhængige</b> og (2) <b>genererer</b> hele rummet (span = rummet). Så skrives hver vektor på <b>kun én måde</b> som deres kombination: vægtene er dens <b>koordinater</b> i den basis. Antallet af vektorer i en basis er <b>dimensionen</b>: 2 i ℝ², 3 i ℝ³.</p>
+  </div>
+  <p>Standardbasen for ℝ² er e1 = (1, 0), e2 = (0, 1): sat op som søjler danner de identitetsmatricen I. Men <b>ethvert</b> par af uafhængige vektorer er en basis for planen.</p>
+  <figure class="scena" data-scena="base" data-titolo="Samme punkt i to baser"></figure>
+</section>
+
+<section>
+  <h2>Skift af basis</h2>
+  <figure class="passi" data-titolo="Fra basis A til basis B via standardbasen">
+    <div class="passo"><div class="espr">x<sub>E</sub> = <mark class="due">A</mark> x<sub>A</sub></div><p class="nota">Koordinater i basis A → standardkoordinater: man ganger med matricen, der har vektorerne i A som søjler. Det er linearkombinationen (5/3)a1 + (2/3)a2 i scenen.</p></div>
+    <div class="passo"><div class="espr">x<sub>A</sub> = <mark class="ora">A⁻¹</mark> x<sub>E</sub></div><p class="nota">Den omvendte vej. A⁻¹ findes altid, fordi vektorerne i en basis er uafhængige.</p></div>
+    <div class="passo"><div class="espr">x<sub>B</sub> = <mark class="ora">B⁻¹</mark> <mark class="due">A</mark> x<sub>A</sub> = <mark class="ok">T</mark> x<sub>A</sub>,    T = B⁻¹A</div><p class="nota">Fra A til standardbasen (A), derefter fra standardbasen til B (B⁻¹). T er <b>skiftematricen</b>. Baglæns: x<sub>A</sub> = T⁻¹x<sub>B</sub> = A⁻¹B x<sub>B</sub>.</p></div>
+    <div class="passo"><div class="espr">Bertha: B con colonne (1, 1), (−1, 1).   T = [[1.5, 1.5], [−0.5, 0.5]]   T · (5/3, 2/3) = <mark class="ok">(3.5, −0.5)</mark></div><p class="nota">Anders fortæller Bertha Peters position uden at gå via (4, 3). Kontrol: 3.5·(1, 1) − 0.5·(−1, 1) = (4, 3). Alt verificeret med NumPy.</p></div>
+  </figure>
+  <div class="box idea" data-tit="Ortonormal basis: ingen invers nødvendig">
+    <p>Hvis vektorerne i basen har længde 1 og står vinkelret på hinanden (ortonormale), har matricen Q <span class="m">QᵀQ = I</span>, så <span class="m">Q⁻¹ = Qᵀ</span>: hver koordinat er blot et <a href="w02-prodotto-interno.html">indre produkt</a> med en vektor i basen. PCA vælger netop en ortonormal basis, der passer til dataene (uge 12).</p>
+  </div>
+  <figure class="scena" data-scena="cambiobase" data-titolo="Fra Anders til Bertha med T = B⁻¹A"></figure>
+</section>
+
+<section>
+  <h2>Hvorfor de er nødvendige i machine learning</h2>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Idé</th><th>Hvor</th></tr></thead>
+    <tbody>
+      <tr><td><b>uafhængige søjler</b> i designmatrixen ⇒ XᵀX kan inverteres ⇒ én enkelt løsning i mindste kvadrater</td><td>regression. Med en fordoblet søjle (x og 2x): rang 2 i stedet for 3, <code>np.linalg.inv(X.T @ X)</code> → <code>LinAlgError: Singular matrix</code> (verificeret). To features, der siger det samme, tilføjer ingen information.</td></tr>
+      <tr><td><b>søjlerum</b></td><td>mindste kvadrater projicerer y på spannet af søjlerne i X (<a href="w05-minimi-quadrati.html">mindste kvadrater</a>)</td></tr>
+      <tr><td><b>baser af funktioner</b></td><td>[1, x, x²] er en basis for polynomier af grad 2: modellen er en linearkombination af basisfunktioner (<a href="w05-kernel.html">kerne</a>)</td></tr>
+      <tr><td><b>skift af basis</b></td><td>at beskrive dataene med mere nyttige akser; med få basisvektorer reducerer man dimensionerne: PCA (Q10)</td></tr>
+      <tr><td><b>transformationer</b></td><td>en matrix sender standardbasen over i sine søjler (<a href="w04-trasformazioni.html">transformationer</a>)</td></tr>
+    </tbody>
+  </table></div>
+  <div class="box esame" data-tit="Q4 (d)">
+    <p>"Describe vector space, basis, independence and how these are related to concepts in machine learning (learning, transformations etc)." Vejen: span og linearkombinationer → uafhængighed → basis og koordinater → skift af basis (T = B⁻¹A) → designmatrix med uafhængige søjler og én entydig løsning → hen mod PCA.</p>
+  </div>
+  <figure class="scena" data-scena="perchebasi" data-titolo="En afhængig søjle gør XᵀX singulær"></figure>
+</section>
+
+</main>
+</body>
+</html>

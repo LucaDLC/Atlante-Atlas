@@ -1,0 +1,72 @@
+@@s001 Validazione e regolarizzazione
+@@s002 Giro ${k + 1}: il modello si allena sugli altri 4 fold (80 punti) e si misura l'errore sul <b>fold ${k + 1}</b>, che non ha visto: MSE <b>${e1[k]}</b>.
+@@s003 dato:fold di training,ora:fold di validazione,ok:stima finale
+@@s004 Dati dell'esercizio sugli alberi (100 punti). Si mescolano e si dividono in <b>K = 5 fold</b> da 20 punti.
+@@s005 Ogni punto è servito <b>una volta</b> per validare e 4 volte per allenare. La stima dell'errore è la <b>media</b> dei 5 numeri, 0.842; la deviazione standard (0.227) dice quanto cambia da uno split all'altro.
+@@s006 Stessa procedura per il grado 6: <b>1.012 ± 0.227</b>. Vince il grado 1. Scelto il modello, lo si riallena su tutti i dati.
+@@s007 dato:training,due:validation,ora:test,no:test usato per scegliere
+@@s008 dato:y vero,ora:previsione,spento:la media ȳ = 2.5
+@@s009 dato:training,no:λ = 0,ok:λ = 0.001,due:λ = 1
+@@s010 Validazione e regolarizzazione
+@@s011 Come si sceglie il modello senza imbrogliare: training, validation e test set, poi la cross-validation. Poi la regolarizzazione (ridge), che frena un modello troppo flessibile. Settimana 7 (tutorial <i>Cross validation</i>), domanda d'esame <b>Q5 (c)</b>. DW capitoli 11, 12 e 24.
+@@s012 Tre insiemi, tre compiti
+@@s013 Insieme
+@@s014 A cosa serve
+@@s015 Quante volte lo guardi
+@@s016 <b>training</b>
+@@s017 imparare i parametri w (minimi quadrati)
+@@s018 quante vuoi
+@@s019 <b>validation</b>
+@@s020 scegliere il modello: grado del polinomio, λ, feature (gli <b>iperparametri</b>, che w non contiene)
+@@s021 una volta per ogni candidato
+@@s022 <b>test</b>
+@@s023 stimare quanto funzionerà il modello finale su dati nuovi
+@@s024 <b>una volta sola</b>, alla fine
+@@s025 Data leakage
+@@s026 Se provi tanti modelli e tieni quello che va meglio <b>sul test</b>, il test è diventato un validation set: il modello si è adattato a lui e il risultato è troppo ottimista (DW, nota del capitolo 11). Lo stesso vale per statistiche calcolate sul test, come lo scaler dell'<a href="w06-assignment1-gaze.html">Assignment 1</a>.
+@@s027 <b>Hold-out</b>: un solo split, per esempio 80/20 con <code>train_test_split(X, y, test_size=0.2, random_state=42)</code> (le case di Windsor). Il numero ottenuto dipende da <b>quale</b> split è capitato: nel tutorial, rilanciando la cella senza <code>random_state</code>, R² cambia ogni volta.
+@@s028 Training, validation, test: chi guarda cosa
+@@s029 K-fold cross-validation
+@@s030 5-fold sugli alberi, grado 1 contro grado 6
+@@s031 Errori calcolati con NumPy: <code>KFold(5, shuffle=True, random_state=0)</code> sui 100 punti dell'esercizio (seed 42). Con i fold mescolati il grado 6 non esplode come nell'esercizio (808.6): lì il test stava tutto <b>dopo</b> il training, cioè era un'estrapolazione.
+@@s032 Quanto è grande ogni pezzo (N = 100, verificato con KFold)
+@@s033 Ogni giro lascia fuori un fold.
+@@s034 Training / validazione. <b>K più grande ⇒ training più grande, fold di validazione più piccolo</b>, e più giri da calcolare.
+@@s035 Si lascia fuori un punto alla volta: N allenamenti.
+@@s036 Errore nelle note (DW 12, “Varying K”)
+@@s037 Il paragrafo dice che aumentando K i training set diventano più piccoli e i validation set più grandi. È il contrario: con K fold il training ha (K − 1)/K dei dati, che <b>cresce</b> con K, e ogni fold di validazione ha N/K punti, che <b>cala</b>. Il tutorial di sklearn lo dice nel modo giusto. All'orale usa la versione corretta.
+@@s038 <b>Stratified</b> K-fold: ogni fold mantiene le proporzioni delle classi (utile con classi sbilanciate, settimana 11).
+@@s039 Media dei K errori = stima della prestazione; deviazione standard = stabilità. Errori molto diversi tra i fold ⇒ il modello dipende molto da quali dati vede (varianza alta).
+@@s040 Con scikit-learn (dal tutorial)
+@@s041 Una <b>pipeline</b> unisce la costruzione della design matrix e il modello: si allena e si valuta come un blocco unico, e le trasformazioni vengono rifatte dentro ogni fold.
+@@s042 5 fold, mescolando prima i dati (altrimenti i fold seguono l'ordine del file).
+@@s043 <code>test_score</code> contiene i 5 punteggi di <b>validazione</b> (sklearn li chiama "test"). Confrontarli con i punteggi di training mostra l'overfitting.
+@@s044 Normalizer non porta le feature tra 0 e 1
+@@s045 Il tutorial usa <code>Normalizer()</code> con il commento "normalizes the features to a (0, 1) range". In sklearn <code>Normalizer</code> rende di lunghezza 1 <b>ogni riga</b> (ogni dato), non ogni colonna: [1, 200] e [2, 400] diventano tutti e due [0.005, 1] (verificato). Per portare <b>ogni feature</b> tra 0 e 1 serve <code>MinMaxScaler</code>.
+@@s046 R²: il punteggio del tutorial
+@@s047 Definizione
+@@s048 <span class="m">R² = 1 − Σ(yᵢ − f(xᵢ))² / Σ(yᵢ − ȳ)²</span>. Sopra: l'errore del modello. Sotto: l'errore di chi prevede sempre la media ȳ.
+@@s049 y = [1, 2, 3, 4], previsioni
+@@s050 Lettura
+@@s051 quasi perfetto
+@@s052 [2.5, 2.5, 2.5, 2.5] (la media)
+@@s053 non meglio della media
+@@s054 <b>peggio</b> della media
+@@s055 Valori da <code>sklearn.metrics.r2_score</code>. Un R² negativo sul validation set (nel tutorial, polinomi di grado 3–5: −0.36, −1076, …) è il segno più chiaro di overfitting.
+@@s056 0.98, 0, −3
+@@s057 Regolarizzazione: ridge
+@@s058 Una penalità sui pesi grandi (DW 24)
+@@s059 Primo termine: sbagliare sui dati (i minimi quadrati di sempre). Secondo: avere pesi grandi. λ ≥ 0 decide quanto conta il secondo.
+@@s060 Il minimo sta dove il gradiente è zero (come per i minimi quadrati, con un termine in più).
+@@s061 Si somma λ alla diagonale. Con λ = 0 tornano i minimi quadrati. Con λ &gt; 0 la matrice è sempre invertibile.
+@@s062 λ è un iperparametro: si sceglie con il validation set o la cross-validation.
+@@s063 Ridge in una riga (verificato: gradiente nella soluzione ≈ 10⁻¹³)
+@@s064 d = numero di colonne della design matrix = numero di pesi.
+@@s065 <code>np.eye(d)</code> è la matrice identità d × d: λ finisce sulla diagonale. <code>solve</code> risolve il sistema senza calcolare l'inversa. <code>Ridge(alpha=lam, fit_intercept=False)</code> di sklearn dà gli stessi pesi; con <code>fit_intercept=True</code> sklearn non penalizza w₀, quindi i numeri cambiano di poco.
+@@s066 Grado 6 sugli alberi
+@@s067 MSE training
+@@s068 MSE test
+@@s069 x scalato in [0, 1], split del notebook (70 + 30). Con λ = 0 il test vale 3021 con <code>lstsq</code> (808.6 con <code>LinearRegression</code> sui dati non scalati: la cifra dipende dai conti numerici, ma è enorme in tutti e due i casi). Con λ = 0.01 il grado 6 si comporta quasi come la retta (0.857). Con λ = 100 i pesi sono troppo schiacciati: underfitting.
+@@s070 Ridge risolve anche i sistemi con troppe incognite
+@@s071 Una parabola (3 pesi) per 2 punti, (0, 1) e (1, 3): ΦᵀΦ ha rango 2 e determinante 0, quindi i minimi quadrati hanno infinite soluzioni. Con λ = 0.1 la soluzione è una sola, w = [0.996, 0.954, 0.954], e le previsioni sono 0.996 e 2.905, vicine ai dati (verificato). È la figura 24.2 del libro.
+@@s072 λ = 0, 0.001, 1 sul grado 9

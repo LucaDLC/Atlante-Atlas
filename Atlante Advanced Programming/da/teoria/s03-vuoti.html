@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Nil, None, null: hvornår de bruges</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <div class="occhiello"><span>Tværgående begreber · lister og Option</span></div>
+  <h1>Nil, None, null: hvornår de bruges</h1>
+  <p class="lede">Scala har tre måder at sige "intet" på, og de kan ikke udskiftes med hinanden. <code>Nil</code> er en tom liste, <code>None</code> er en Option uden værdi, <code>null</code> er Javas tomme reference. Denne side siger, hvilken man skal bruge, og hvornår man ikke skal bruge den.</p>
+</header>
+
+<section>
+  <h2>Problemet: en værdi mangler</h2>
+  <p>Nogle gange har en funktion intet resultat at returnere: søgningen finder intet, listen har ingen elementer, en data mangler. Der er tre forskellige spørgsmål, og hvert har en anden type:</p>
+  <ul>
+    <li>er <b>samlingen</b> tom? Svar: <code>Nil</code>, som er en liste uden elementer;</li>
+    <li>kan <b>resultatet</b> mangle? Svar: <code>Option[A]</code>, med <code>Some(value)</code> eller <code>None</code>;</li>
+    <li>taler jeg med et <b>Java-bibliotek</b>, der returnerer en tom reference? Svar: <code>null</code>, som dog straks skal konverteres.</li>
+  </ul>
+  <figure class="passi" data-titolo="Tre spørgsmål, tre værdier" data-legenda="dato:spørgsmålet,ora:den rigtige værdi,ok:resultat">
+    <div class="passo"><div class="espr"><mark class="dato">la lista è vuota?</mark></div><p class="nota">En samling uden elementer: <mark class="ora">Nil</mark>.</p></div>
+    <div class="passo"><div class="espr"><mark class="dato">il risultato può non esserci?</mark></div><p class="nota">En funktion, der kan fejle: <mark class="ora">None</mark> inde i en <code>Option</code>.</p></div>
+    <div class="passo"><div class="espr"><mark class="dato">il valore arriva da Java?</mark></div><p class="nota">En reference, der kan være tom: <mark class="ora">null</mark>, som skal omdannes til en <code>Option</code>, så snart den kommer.</p></div>
+  </figure>
+</section>
+
+<section>
+  <h2>Nil: den tomme liste</h2>
+  <p><code>Nil</code> er listen uden elementer. Den er <b>grundtilfældet</b> for lister bygget med <code>::</code>: listen <code>1 :: 2 :: Nil</code> er <code>List(1, 2)</code>, og <code>Nil</code> til sidst siger, hvor den slutter. I pattern matching skriver man <code>case Nil =&gt; …</code> for tilfældet med den tomme liste.</p>
+  <p><b>Hvornår det bruges</b>: til at bygge lister og til at genkende slutningen af en rekursiv liste. En tom liste er et <b>gyldigt resultat</b>: hvis en funktion returnerer "ingen elementer", er <code>Nil</code> det rigtige svar, ikke <code>None</code>.</p>
+  <figure class="passi" data-titolo="Nil til sidst i kæden" data-legenda="dato:elementer,ora:halen,ok:listens ende">
+    <div class="passo"><div class="espr"><mark class="dato">1</mark> :: <mark class="dato">2</mark> :: <mark class="ora">Nil</mark></div><p class="nota"><code>::</code> tilføjer et element foran listen, der står til højre for den. <code>Nil</code> er listen, der står til sidst.</p></div>
+    <div class="passo"><div class="espr">= <mark class="ok">List(1, 2)</mark></div><p class="nota">Den korte form er den samme liste. <code>List(1, 2)</code> og <code>1 :: 2 :: Nil</code> er ens.</p></div>
+    <div class="passo"><div class="espr">xs match { case <mark class="ora">Nil</mark> =&gt; …; case h :: t =&gt; … }</div><p class="nota">Mønsteret <code>Nil</code> genkender den tomme liste. Tilfældet <code>h :: t</code> skiller det første element fra resten.</p></div>
+  </figure>
+  <div class="box attenzione" data-tit="Pas på">Forveksl ikke <code>Nil</code> med <code>None</code>. En tom liste er en liste: du kan stadig kalde <code>isEmpty</code>, <code>map</code>, <code>foldLeft</code>. <code>None</code> er derimod ikke en liste: det er fraværet af et resultat.</div>
+</section>
+
+<section>
+  <h2>None: resultatet, der kan mangle</h2>
+  <p><code>Option[A]</code> har to former: <code>Some(a)</code>, som indeholder en værdi, og <code>None</code>, som siger "ingen værdi". En funktion, der kan fejle, returnerer en <code>Option</code> i stedet for at kaste en undtagelse eller returnere <code>null</code>.</p>
+  <p><b>Hvornår det bruges</b>: hver gang svaret måske ikke findes (en søgning, en division med nul, et valgfrit felt). Den, der kalder, er tvunget til at håndtere tilfældet <code>None</code>, fordi typen er <code>Option</code> og ikke <code>A</code>.</p>
+  <figure class="passi" data-titolo="En Option, to former" data-legenda="dato:input,ora:trin i gang,ok:resultat,no:ingen værdi">
+    <div class="passo"><div class="espr">primoOpzione(<mark class="dato">List(1, 2)</mark>)</div><p class="nota">Listen har et første element: funktionen giver <mark class="ok">Some(1)</mark>.</p></div>
+    <div class="passo"><div class="espr">primoOpzione(<mark class="dato">Nil</mark>)</div><p class="nota">Listen er tom: tilfældet <code>case Nil =&gt; None</code> giver <mark class="no">None</mark>.</p></div>
+    <div class="passo"><div class="espr"><mark class="no">None</mark>.getOrElse(0) = <mark class="ok">0</mark></div><p class="nota"><code>getOrElse</code> giver en reserveværdi, når resultatet mangler. Med <code>Some(3)</code> ville den give 3.</p></div>
+  </figure>
+  <div class="box regola" data-tit="Regel">Returner ikke <code>None</code> for at sige "tom liste": hvis funktionen producerer en liste, er den tomme liste <code>Nil</code>. Brug kun <code>None</code>, når "intet resultat" er en anden information end "nul elementer".</div>
+</section>
+
+<section>
+  <h2>null: Javas tomhed</h2>
+  <p><code>null</code> er Javas tomme reference. Scala accepterer den for at tale med Java-biblioteker, og i Scala 3 er den en mulig værdi for næsten enhver referencetype, selv <code>String</code>. Problemet: hvis du bruger en <code>null</code> (for eksempel kalder <code>.length</code>), kaster programmet en <code>NullPointerException</code>, og compileren advarer dig ikke.</p>
+  <p><b>Hvornår det bruges</b>: næsten aldrig i Scala. Kun når et Java-bibliotek returnerer <code>null</code>: på det sted konverterer du straks med <code>Option(x)</code>, som giver <code>None</code>, hvis <code>x</code> er <code>null</code>, og <code>Some(x)</code> ellers.</p>
+  <figure class="passi" data-titolo="Fra null til Option, før det spreder sig" data-legenda="dato:værdi der kommer ind,ora:konvertering,ok:sikker,no:farlig">
+    <div class="passo"><div class="espr">val testo: String = <mark class="no">null</mark></div><p class="nota">Compileren accepterer det: <code>String</code> er en referencetype, og <code>null</code> er en værdi af den type.</p></div>
+    <div class="passo"><div class="espr"><mark class="no">testo.length</mark></div><p class="nota">Her stopper programmet med en <code>NullPointerException</code>: der er intet at spørge om længden af.</p></div>
+    <div class="passo"><div class="espr">Option(<mark class="dato">testo</mark>) = <mark class="ok">None</mark></div><p class="nota">Konverter straks: <code>Option(x)</code> giver <code>None</code>, hvis <code>x</code> er <code>null</code>. Herfra bruger man kun <code>Option</code>.</p></div>
+  </figure>
+  <div class="box attenzione" data-tit="Pas på">Sammenligningen <code>None == null</code> giver <code>false</code>: det er forskellige værdier. Skriv ikke <code>if x == null</code> i ny Scala-kode: brug <code>Option</code> og <code>match</code>.</div>
+</section>
+
+<section>
+  <h2>Hvilken man skal bruge</h2>
+  <div class="tab-wrap"><table class="tab"><thead><tr><th>situation</th><th>brug</th><th>eksempel</th></tr></thead><tbody>
+    <tr><td>at bygge eller afslutte en liste</td><td><code>Nil</code></td><td><code>1 :: 2 :: Nil</code></td></tr>
+    <tr><td>liste uden elementer som gyldigt resultat</td><td><code>Nil</code> (eller tom liste)</td><td>filtrere og ikke finde noget</td></tr>
+    <tr><td>resultat, der måske ikke findes</td><td><code>Option</code>, altså <code>Some</code> eller <code>None</code></td><td>søge efter et element</td></tr>
+    <tr><td>værdi der kommer fra Java og kan være <code>null</code></td><td><code>Option(x)</code> med det samme</td><td><code>Option(javaCall())</code></td></tr>
+    <tr><td>at skrive ny Scala-kode</td><td>aldrig <code>null</code></td><td>brug <code>Option</code></td></tr>
+  </tbody></table></div>
+</section>
+
+<section>
+  <h2>Til eksamen</h2>
+  <div class="box esame" data-tit="Til eksamen">Når du skriver en funktion, der måske ikke finder et resultat, så angiv typen <code>Option[A]</code> og forklar i én sætning, hvorfor <code>None</code> og ikke en tom liste eller en undtagelse. Brug ikke <code>null</code> i Scala-løsninger.</div>
+  <div class="box inglese" data-tit="Sætning til eksamen">Use <code>None</code> when a result may be absent; use <code>Nil</code> for an empty list, which is a valid result; convert Java <code>null</code> to <code>Option</code> at the boundary.</div>
+</section>
+
+<section>
+  <h2>Eksempler side om side</h2>
+  <p>Koden på denne side, kompileret og kontrolleret med Scala 3.8.4 og kursets indstillinger, står på <a href="../esempi/s03-vuoti.html">siden med eksempler</a>.</p>
+</section>
+
+</main>
+</body>
+</html>

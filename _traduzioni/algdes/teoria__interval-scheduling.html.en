@@ -1,0 +1,69 @@
+@@s001 Interval scheduling: the first to finish
+@@s002 Six intervals, <b>A</b> … <b>F</b>. Two intervals are compatible if they do not overlap. I want the <b>maximum number</b> of compatible intervals.
+@@s003 I sort by increasing <b>end time</b>: A(3), B(5), C(7), D(8), E(9), F(10). It is the order in which the greedy looks at the intervals.
+@@s004 <b>${n}</b> starts at ${s}, not before the end of the last one taken: it is compatible. <b>I take it</b>. Now the last one ends at ${f}.
+@@s005 <b>${n}</b> starts at ${s}, before the end of ${ultimo}: it overlaps the last one taken. <b>Discarded</b>.
+@@s006 Result: <b>${scelti.join(', ')}</b>, ${scelti.length} intervals. The loop looks at each interval once: after the sort it costs O(n).
+@@s007 ok:taken,no:discarded,due:end of the last one taken
+@@s008 Interval partitioning: I assign all the intervals to <b>rooms</b>, without overlaps in the same room. How many rooms are needed at least?
+@@s009 I sort by increasing <b>start</b>. Here are all the intervals: A(0–3), B(1–4), C(2–6), D(5–8), E(6–9).
+@@s010 Room 1: I take A. B starts at 1, A is not finished: a new room is needed. Room 2: B. C starts at 2: both room 1 and room 2 are occupied, I open room 3: C.
+@@s011 D starts at 5: room 1 is free (A finished at 3). D goes into room 1.
+@@s012 E starts at 6: room 2 is free (B finished at 4). E goes into room 2. Total: <b>3 rooms</b>. The minimum is the <b>depth</b>: the maximum number of intervals that overlap at the same instant, that is 3 (at t = 2: A, B, C).
+@@s013 ok:assigned,due:busy at this instant,ora:new room
+@@s014 Interval scheduling: the first to finish
+@@s015 Given a set of intervals, choose the maximum number of intervals that do not overlap. The greedy rule is simple: always take the one that finishes first. Proving it is the classic exercise of the exchange argument.
+@@s016 The problem and the rule
+@@s017 Each interval has a start <code>s</code> and an end <code>f</code>. Two intervals are <b>compatible</b> if they do not overlap: the second starts no earlier than the first finishes. You want the maximum number of compatible intervals.
+@@s018 The greedy rule: <b>sort by increasing end</b> and take an interval if it is compatible with the last one taken. The intuition: an interval that finishes early leaves more free time for the others.
+@@s019 Order by end and compatible choice
+@@s020 Why it is optimal
+@@s021 <b>Greedy stays ahead</b> proof: after <code>k</code> choices, the greedy has the first interval that finishes no later than any other solution with <code>k</code> intervals. So it always has at least as much room as another solution for the next choice.
+@@s022 Or the <b>exchange argument</b>: if an optimum chooses an interval that finishes later than the greedy's, you replace it with the greedy's one without creating overlaps (the greedy finishes earlier). The number stays the same.
+@@s023 The cost
+@@s024 Sorting costs <code>O(n log n)</code>. Then a single scan, <code>O(n)</code>, with a single variable: the end of the last interval taken. Total <code>O(n log n)</code>. If the intervals are already sorted, the scan is enough: <code>O(n)</code>.
+@@s025 Neither by end nor by start
+@@s026 Sorting by <i>duration</i> is wrong: a short interval can overlap two long ones that together are compatible. Sorting by <i>start</i> is wrong: an interval that starts early can be very long.
+@@s027 Interval partitioning: how many rooms
+@@s028 Different variant: all the intervals must be assigned, using the <b>minimum number of rooms</b>. A room contains non-overlapping intervals.
+@@s029 The greedy: sort by increasing <b>start</b>. For each interval, use a free room if there is one, otherwise open a new room. The number of rooms is the <b>depth</b> of the intervals, that is the maximum number that overlap at the same instant. So it is optimal: no solution can use fewer rooms than the depth.
+@@s030 Rooms: the maximum of overlapping intervals
+@@s031 The code, side by side
+@@s032 This page explains the concept. The Java code that implements it, with a line-by-line explanation and the syntax notes needed, is on the side-by-side page.
+@@s033 <a href="../codice/interval-scheduling.html"><b>→ Java code for this topic</b></a>
+@@s034 Scheduling with minimum lateness (EDF)
+@@s035 One machine, several jobs. Each job <i>j</i> has a <b>duration</b> <code>tⱼ</code> and a <b>deadline</b> <code>dⱼ</code>: the moment by which it should be finished. If <i>j</i> starts at time <code>sⱼ</code>, it finishes at <code>fⱼ = sⱼ + tⱼ</code>.
+@@s036 The <b>lateness</b> of a job is <code>ℓⱼ = max(0, fⱼ − dⱼ)</code>. The <code>max(0, …)</code> takes the larger between zero and the number: a job finished early has lateness 0, never negative. The goal is the <b>maximum lateness</b> <code>L = maxⱼ ℓⱼ</code>, as small as possible.
+@@s037 Two greedy rules that seem obvious are wrong:
+@@s038 rule
+@@s039 counterexample
+@@s040 shortest duration first
+@@s041 durations (1, 10), deadlines (100, 10): the short job goes first, the second finishes at 11 with lateness 1. In the other order the lateness would be 0.
+@@s042 smallest slack <code>dⱼ − tⱼ</code> first
+@@s043 durations (1, 10), deadlines (2, 10): slacks 1 and 0. Putting the second first makes the first overrun by 9; the opposite order gives lateness 1.
+@@s044 The rule that works is <b>EDF</b> (<i>earliest deadline first</i>, closest deadline first): sort by increasing <code>dⱼ</code> and make the machine work without pauses. Leaving it idle never helps, and EDF does not need it either.
+@@s045 EDF on two jobs: the order by deadline
+@@s046 Why EDF is optimal (exchange argument)
+@@s047 An <b>inversion</b> is a pair of jobs <i>i</i>, <i>j</i> with <i>i</i> before <i>j</i> but <code>dᵢ &gt; dⱼ</code>: the job with the more distant deadline goes first.
+@@s048 An order without inversions is EDF (equal deadlines can be swapped without harm).
+@@s049 If there is an inversion, there is one between two <b>consecutive</b> jobs: if all the neighbours are in order, the whole row is.
+@@s050 I swap the two consecutive jobs. <i>j</i> now starts earlier and finishes before <code>fⱼ</code>, so its lateness does not grow. <i>i</i> finishes at the old <code>fⱼ</code>, and its lateness <code>fⱼ − dᵢ</code> is smaller than <code>fⱼ − dⱼ</code>, which is at most the maximum lateness <code>L</code>. So the maximum does not grow.
+@@s051 Each swap removes an inversion and creates no new ones. After at most <code>n(n−1)/2</code> swaps there are none left. Starting from an optimum you arrive at EDF without worsening the maximum lateness: EDF is optimal.
+@@s052 At the exam
+@@s053 At the exam
+@@s054 Interval scheduling (maximum number of compatible activities) → earliest finish time. Interval partitioning (minimum number of rooms) → earliest start time, number of rooms = depth. Phrase: <i>"Sort the jobs in increasing order of finish time. Take a job if it starts no earlier than the finish of the last job taken. Time O(n log n)."</i>
+@@s055 With different weights on the jobs it is no longer greedy: it is weighted interval scheduling (DP).
+@@s056 Quick reference
+@@s057 variant
+@@s058 rule
+@@s059 note
+@@s060 earliest finish
+@@s061 sort by end, take if compatible
+@@s062 maximum number, O(n log n)
+@@s063 earliest start
+@@s064 sort by start, free or new room
+@@s065 minimum number of rooms = depth
+@@s066 with weights
+@@s067 not greedy
+@@s068 weighted interval scheduling, DP
+@@s069 ok:on time,no:late,ora:just changed,dato:job B,spento:order not chosen

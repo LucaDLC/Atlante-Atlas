@@ -1,0 +1,333 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Reading a Scala signature</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+SCENE.sostituisci = {
+  w: 600, h: 250, lato: false,
+  legenda: 'dato:placeholder A,ok:A replaced by Int,ora:parameters filled in',
+  oggetti: [
+    { id: 'f1', tipo: 'testo', x: 20, y: 40, t: 'def isSorted[A](as: Array[A], ordered: (A, A) => Boolean): Boolean', size: 13, anchor: 'start', tono: 'dato' },
+    { id: 'c', tipo: 'testo', x: 20, y: 90, t: '', size: 13, anchor: 'start' },
+    { id: 'f2', tipo: 'testo', x: 20, y: 130, t: '', size: 13, anchor: 'start' },
+    { id: 'p', tipo: 'testo', x: 20, y: 170, t: '', size: 13, anchor: 'start' },
+    { id: 'e', tipo: 'testo', x: 20, y: 210, t: '', size: 13, anchor: 'start' }
+  ],
+  passi: [
+    { nota: 'The generic signature: <code>A</code> appears four times, and it is always the same type, still to be decided.' },
+    { nota: 'The call chooses the type: <code>isSorted[Int](…)</code>.', set: { c: { t: 'isSorted[Int](Array(1, 2, 3), (x, y) => x <= y)', tono: 'ora' } } },
+    { nota: 'In the signature <b>every A becomes Int</b>, all together.', set: { f2: { t: 'def isSorted(as: Array[Int], ordered: (Int, Int) => Boolean): Boolean', tono: 'ok' } } },
+    { nota: 'The parameters are filled in order: <code>as</code> is the array, <code>ordered</code> is the function written on the fly.', set: { p: { t: 'as = Array(1, 2, 3)     ordered = (x, y) => x <= y', tono: 'ora' } } },
+    { nota: 'In the body, <code>ordered(as(0), as(1))</code> = (x, y) =&gt; x &lt;= y applied to (1, 2) = 1 &lt;= 2 = <b>true</b>.', set: { e: { t: 'ordered(as(0), as(1)) = 1 <= 2 = true', tono: 'ok' } } }
+  ]
+};
+</script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  const T = (id, x, y, t, extra) => Object.assign({ id, tipo: 'testo', x, y, t, size: 13 }, extra || {});
+  const R = (id, x, y, w, h, t, extra) => Object.assign({ id, tipo: 'rett', x, y, w, h, t }, extra || {});
+  const N = (id, x, y, t, tono, extra) => Object.assign({ id, tipo: 'nodo', x, y, t, tono, r: 20 }, extra || {});
+  const F = (id, x1, y1, x2, y2, t, extra) => Object.assign({ id, tipo: 'vett', x1, y1, x2, y2, t }, extra || {});
+
+  // 1. la firma, pezzo per pezzo
+  const P = [['def', 40], ['isSorted', 80], ['[A]', 40], ['as: Array[A]', 105], ['ordered: (A, A) => Boolean', 190], [': Boolean =', 90]];
+  const og1 = []; let x = 10;
+  P.forEach(([t, w], i) => { og1.push(R('p' + i, x, 40, w, 34, t, { tono: 'spento' })); x += w + 6; });
+  og1.push(T('sp', 300, 120, '', { size: 13, bold: true }), T('sp2', 300, 148, '', { size: 12 }), T('ch', 300, 200, '', { size: 12 }));
+  const acc = (i, a, b) => Object.assign(Object.fromEntries(P.map((_, k) => ['p' + k, { tono: k === i ? 'ora' : (k < i ? 'dato' : 'spento') }])), { sp: { t: a }, sp2: { t: b || '' } });
+  SCENE.firma = {
+    w: 600, h: 230, lato: true,
+    legenda: 'ora:piece you are reading,dato:already read,ok:filled by the call',
+    oggetti: og1,
+    passi: [
+      { nota: "La firma di <code>isSorted</code> (esercizio 4, settimana 1), divisa nei suoi sei pezzi. Si legge da sinistra a destra, un pezzo alla volta." },
+      { nota: "<code>def</code>: sto definendo una funzione. È la parola chiave, come un metodo in Java.", set: acc(0, 'def', 'sto definendo una funzione') },
+      { nota: "Il <b>nome</b>: con questo la chiamerai, <code>isSorted(…)</code>.", set: acc(1, 'il nome', 'isSorted(…) per chiamarla') },
+      { nota: "<code>[A]</code>: un <b>segnaposto per un tipo</b>. Non è un valore. Chi chiama sceglie cosa diventa A, e ogni A della firma diventa lo stesso tipo.", set: acc(2, 'parametro di tipo', 'lo sceglie chi chiama: Int, String…') },
+      { nota: "Primo parametro, scritto <b>nome: tipo</b> (al contrario di Java). as è un array di elementi di tipo A.", set: acc(3, 'primo parametro', 'nome: tipo') },
+      { nota: "Secondo parametro: <code>ordered</code>. Il suo tipo ha una freccia: è una <b>funzione</b> che prende due A e dà un Boolean.", set: acc(4, 'secondo parametro: una funzione', 'prende due A, dà un Boolean') },
+      { nota: "Dopo la parentesi chiusa, il <b>tipo del risultato</b>: Boolean. Poi <code>=</code> e il corpo, un'espressione. Niente return.", set: acc(5, 'tipo del risultato', 'dopo = viene il corpo') },
+      { nota: "Nella chiamata <code>isSorted(Array(1, 3, 2), _ &lt;= _)</code> tutto si riempie: A = Int, as = Array(1, 3, 2), ordered = (x, y) =&gt; x &lt;= y. Risultato: false, perché 3 &lt;= 2 è falso.", set: Object.assign(Object.fromEntries(P.map((_, k) => ['p' + k, { tono: 'ok' }])), { p2: { t: '[Int]', tono: 'ok' }, p3: { t: 'Array(1, 3, 2)', tono: 'ok' }, p4: { t: '_ <= _', tono: 'ok' }, sp: { t: 'chiamata: A = Int' }, sp2: { t: '' }, ch: { t: 'isSorted(Array(1, 3, 2), _ <= _)  →  false', tono: 'ok' } }) }
+    ]
+  };
+
+  // 2. il tipo di una funzione
+  SCENE.freccia = {
+    w: 560, h: 220, lato: true,
+    legenda: 'dato:what comes in,due:what comes out,ora:the function',
+    oggetti: [
+      T('tipo', 280, 26, 'Int => Boolean', { bold: true, size: 15 }),
+      R('in', 30, 80, 110, 44, '', { tono: 'dato' }), R('fn', 200, 70, 160, 64, 'x => x < 0', { tono: 'ora' }), R('out', 420, 80, 110, 44, '', { tono: 'due' }),
+      F('a1', 142, 102, 196, 102, ''), F('a2', 362, 102, 416, 102, ''),
+      T('l1', 85, 150, 'entra', { size: 12 }), T('l2', 475, 150, 'esce', { size: 12 }),
+      T('c', 280, 196, '', { size: 12 })
+    ],
+    passi: [
+      { nota: "Il tipo di una funzione si scrive con la freccia: <b>a sinistra cosa entra, a destra cosa esce</b>. <code>Int =&gt; Boolean</code>: entra un Int, esce un Boolean." },
+      { nota: "Un valore di quel tipo: <code>x =&gt; x &lt; 0</code>. Entra 5…", set: { in: { t: '5' }, out: { t: 'false' } } },
+      { nota: "…entra −3: esce true. Il tipo dice solo la <b>forma</b>; cosa fa la funzione lo decide chi la scrive.", set: { in: { t: '-3' }, out: { t: 'true' } } },
+      { nota: "Con due argomenti: <code>(Int, Int) =&gt; Int</code>, per esempio <code>(x, y) =&gt; x + y</code>. Le parentesi a sinistra raccolgono gli argomenti.", set: { tipo: { t: '(Int, Int) => Int' }, fn: { t: '(x, y) => x + y' }, in: { t: '2, 3' }, out: { t: '5' } } },
+      { nota: "Senza argomenti: <code>() =&gt; A</code>. Non entra niente, esce un A quando la chiami con <code>()</code>. È la \"ricetta\" (thunk) della settimana 4.", set: { tipo: { t: '() => Int' }, fn: { t: '() => 42' }, in: { t: '( )' }, out: { t: '42' }, c: { t: 'f: A => B dice la forma, non cosa fa f' } } }
+    ]
+  };
+
+  // 3. frecce annidate
+  SCENE.matrioska = {
+    w: 580, h: 230, lato: true,
+    legenda: 'dato:first argument,ora:second argument,ok:result',
+    oggetti: [
+      R('est', 20, 30, 540, 120, '', { tono: 'spento' }), T('et', 110, 50, 'Array[A] =>', { bold: true }),
+      R('int', 190, 60, 350, 76, '', { tono: 'spento' }), T('it', 365, 80, '((A, A) => Boolean) => Boolean', { bold: true, size: 12 }),
+      T('call', 290, 180, 'isSortedCurried', { size: 13, bold: true }), T('ris', 290, 210, '', { size: 12 })
+    ],
+    passi: [
+      { nota: "<code>Array[A] =&gt; ((A, A) =&gt; Boolean) =&gt; Boolean</code>. Più frecce di fila si leggono <b>da destra</b>: X =&gt; Y =&gt; Z vuol dire X =&gt; (Y =&gt; Z). Scatola esterna: entra un array." },
+      { nota: "Dato l'array, esce la scatola interna: <b>un'altra funzione</b>, non ancora un Boolean.", set: { est: { tono: 'dato' }, call: { t: 'isSortedCurried(Array(1, 2, 3))' }, ris: { t: 'risultato: una funzione ((A, A) => Boolean) => Boolean' } } },
+      { nota: "La funzione interna aspetta il criterio, una funzione (A, A) =&gt; Boolean. Le parentesi tonde intorno servono: il criterio è <b>un argomento</b>, non il risultato.", set: { int: { tono: 'ora' }, call: { t: 'isSortedCurried(Array(1, 2, 3))(_ <= _)' }, ris: { t: '' } } },
+      { nota: "Dato anche il criterio, finalmente esce il Boolean: true. Nella chiamata c'è <b>una coppia di parentesi per ogni freccia esterna</b>.", set: { ris: { t: 'risultato: true', tono: 'ok' } } }
+    ]
+  };
+
+  // 4. più liste di parametri
+  SCENE.liste = {
+    w: 580, h: 240, lato: true,
+    legenda: 'dato:first list (tree),ora:second list (function),ok:result Tree[String]',
+    oggetti: [
+      T('sig', 290, 24, 'def map[A, B](t: Tree[A])(f: A => B): Tree[B]', { bold: true, size: 12 }),
+      R('s1', 150, 50, 130, 34, '( t = ? )', { tono: 'spento' }), R('s2', 300, 50, 130, 34, '( f = ? )', { tono: 'spento' }),
+      N('r', 120, 140, '•', 'spento', { r: 12 }), N('l1', 70, 200, '1', 'dato', { r: 16 }), N('l2', 170, 200, '2', 'dato', { r: 16 }),
+      { id: 'e1', tipo: 'arco', da: 'r', a: 'l1' }, { id: 'e2', tipo: 'arco', da: 'r', a: 'l2' },
+      N('r2', 460, 140, '•', 'spento', { r: 12, nascosto: true }), N('m1', 410, 200, '"1"', 'ok', { r: 18, nascosto: true }), N('m2', 510, 200, '"2"', 'ok', { r: 18, nascosto: true }),
+      { id: 'e3', tipo: 'arco', da: 'r2', a: 'm1', nascosto: true }, { id: 'e4', tipo: 'arco', da: 'r2', a: 'm2', nascosto: true },
+      T('c', 290, 120, '', { size: 12 })
+    ],
+    passi: [
+      { nota: "<code>map</code> sugli alberi ha <b>due liste di parametri</b>: due coppie di parentesi. Nella chiamata ne scrivi lo stesso numero, nello stesso ordine." },
+      { nota: "Prima lista: l'albero, qui con foglie Int. Allora A = Int.", set: { s1: { t: '( albero )', tono: 'dato' }, c: { t: 'A = Int' } } },
+      { nota: "Seconda lista: la funzione, <code>_.toString</code>. Allora B = String. Da sola, la firma A =&gt; B non diceva quale trasformazione: la decide questa chiamata.", set: { s2: { t: '( _.toString )', tono: 'ora' }, c: { t: 'A = Int, B = String' } } },
+      { nota: "Risultato: un albero con la <b>stessa forma</b> e le foglie trasformate, un Tree[String]. Scrivere <code>map(albero, f)</code>, con una sola coppia di parentesi, non compila.", set: { r2: { nascosto: false }, m1: { nascosto: false }, m2: { nascosto: false }, e3: { nascosto: false }, e4: { nascosto: false }, c: { t: 'map(albero)(_.toString): Tree[String]', tono: 'ok' } } }
+    ]
+  };
+
+  // 5. metodi dentro un enum
+  SCENE.metodoenum = {
+    w: 540, h: 170,
+    codice: { lang: 'scala', testo: `enum Option[+A]:
+  case Some(get: A)
+  case None
+  def map[B](f: A => B): Option[B] = this match
+    case None    => None
+    case Some(a) => Some(f(a))` },
+    legenda: 'dato:where A comes from,ora:the hidden parameter this,ok:result',
+    oggetti: [
+      T('call', 270, 30, 'Some(3).map(_ + 1)', { bold: true, size: 15 }),
+      R('th', 40, 70, 140, 40, 'this = ?', { tono: 'spento' }), R('fa', 200, 70, 140, 40, 'f = _ + 1', { tono: 'spento' }), R('ri', 360, 70, 140, 40, '?', { tono: 'spento' }),
+      T('c', 270, 145, '', { size: 12 })
+    ],
+    passi: [
+      { nota: "Dalla settimana 3 le funzioni su Option sono <b>metodi</b> dentro l'enum. L'A nasce sull'enum: <code>Option[+A]</code>.", righe: [1], set: { c: { t: 'A è il tipo dentro l’Option' } } },
+      { nota: "Il metodo aggiunge solo il suo segnaposto nuovo, <code>[B]</code>: A lo conosce già, perché vive dentro Option[A].", righe: [4], set: { c: { t: 'map[B]: B nuovo, A dall’enum' } } },
+      { nota: "Manca il parametro \"option su cui lavoro\": è <code>this</code>, l'oggetto prima del punto. In <code>Some(3).map(_ + 1)</code>, this = Some(3) e A = Int.", righe: [4], set: { th: { t: 'this = Some(3)', tono: 'ora' }, fa: { tono: 'dato' }, c: { t: 'A = Int, B = Int' } } },
+      { nota: "<code>this match</code>: this è un Some, quindi il secondo caso, con a = 3.", righe: [6], set: { ri: { t: 'Some(f(3))' } } },
+      { nota: "f(3) = 3 + 1 = 4. Risultato: <b>Some(4)</b>. Con None il primo caso restituirebbe None senza mai chiamare f.", righe: [6], set: { ri: { t: 'Some(4)', tono: 'ok' }, c: { t: 'None.map(_ + 1) = None: f non viene chiamata' } } }
+    ]
+  };
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Reading a Scala signature</h1>
+  <p class="lede">The first line of a function says <b>what comes in</b> and <b>what comes out</b>. If you can read it in pieces, from left to right, half of the exercise is already done: often the types also tell you how to write the body.</p>
+</header>
+
+<section>
+  <h2>A signature, taken apart piece by piece</h2>
+  <p>Let us take the function of exercise 4 of week 1. It checks whether an array is sorted, according to a criterion that you pass it.</p>
+  <pre class="cod" data-lang="scala">def isSorted[A](as: Array[A], ordered: (A, A) => Boolean): Boolean =</pre>
+
+  <figure class="passi" data-titolo="isSorted, from left to right">
+    <div class="passo">
+      <div class="espr"><mark class="ora">def</mark> isSorted[A](as: Array[A], ordered: (A, A) => Boolean): Boolean =</div>
+      <p class="nota"><code>def</code> = "I am defining a function". Like a method in Java.</p>
+    </div>
+    <div class="passo">
+      <div class="espr">def <mark class="ora">isSorted</mark>[A](as: Array[A], ordered: (A, A) => Boolean): Boolean =</div>
+      <p class="nota">The name. You will use it to call it: <code>isSorted(…)</code>.</p>
+    </div>
+    <div class="passo">
+      <div class="espr">def isSorted<mark class="due">[A]</mark>(as: Array[<mark class="due">A</mark>], ordered: (<mark class="due">A</mark>, <mark class="due">A</mark>) => Boolean): Boolean =</div>
+      <p class="nota"><code>[A]</code> is a <b>placeholder for a type</b>. It is not a value: it says "here there will be a type, chosen by whoever calls". Every <code>A</code> after it is the same type.</p>
+    </div>
+    <div class="passo">
+      <div class="espr">def isSorted[A](<mark class="dato">as: Array[A]</mark>, ordered: (A, A) => Boolean): Boolean =</div>
+      <p class="nota">First parameter. It is written <b>name : type</b> (the opposite of Java). <code>as</code> is an array of elements of type <code>A</code>.</p>
+    </div>
+    <div class="passo">
+      <div class="espr">def isSorted[A](as: Array[A], <mark class="dato">ordered</mark>: <mark class="ora">(A, A) => Boolean</mark>): Boolean =</div>
+      <p class="nota">Second parameter: <code>ordered</code>. Its type is <b>a function</b>: it takes two <code>A</code> and returns a <code>Boolean</code>.</p>
+    </div>
+    <div class="passo">
+      <div class="espr">def isSorted[A](as: Array[A], ordered: (A, A) => Boolean)<mark class="ok">: Boolean</mark> =</div>
+      <p class="nota">After the closing bracket, the <b>return type</b>. Here the function answers true or false.</p>
+    </div>
+    <div class="passo">
+      <div class="espr">def isSorted[A](as: Array[A], ordered: (A, A) => Boolean): Boolean <mark class="ora">=</mark>
+  …il corpo…</div>
+      <p class="nota">After <code>=</code> comes the body: an expression whose value is the result. No <code>return</code>.</p>
+    </div>
+  </figure>
+
+  <div class="box basi" data-tit="If you come from Java">
+    <p>The same signature in Java would be <code>static &lt;A&gt; boolean isSorted(A[] as, BiPredicate&lt;A,A&gt; ordered)</code>. Scala puts the types <b>after</b> the names, uses <code>[A]</code> in place of <code>&lt;A&gt;</code> and writes the type of the function with an arrow instead of an interface.</p>
+  </div>
+  <figure class="scena" data-scena="firma" data-titolo="The six pieces of a signature, then the call"></figure>
+</section>
+
+<section>
+  <h2>When <code>[A]</code> is needed and when it is not</h2>
+  <p>Put <code>[A]</code> only when the function <b>does not need to know</b> what type of elements it has in hand. If it works with real numbers, the type is fixed.</p>
+  <div class="colonne">
+    <div class="carta">
+      <h4>Without [A]</h4>
+      <pre class="cod" data-lang="scala">def abs(n: Int): Int =
+  if n &lt; 0 then -n else n</pre>
+      <p><code>abs</code> compares with <code>0</code> and changes the sign: it really needs <code>Int</code>s.</p>
+    </div>
+    <div class="carta">
+      <h4>With [A]</h4>
+      <pre class="cod" data-lang="scala">def isSorted[A](as: Array[A],
+    ordered: (A, A) => Boolean): Boolean</pre>
+      <p><code>isSorted</code> never compares the elements itself: it asks <code>ordered</code>. It works with numbers, strings, people.</p>
+    </div>
+  </div>
+  <p>Who decides what <code>A</code> becomes? <b>Whoever calls</b>. Look at what happens in a real call:</p>
+
+  <figure class="passi" data-titolo="Call: A becomes Int">
+    <div class="passo">
+      <div class="espr">isSorted[<mark class="dato">Int</mark>](Array(1, 2, 3), (x, y) => x &lt;= y)</div>
+      <p class="nota">I write the type in square brackets: <code>A</code> will be <code>Int</code>. (Often Scala understands it by itself and the square brackets can be omitted.)</p>
+    </div>
+    <div class="passo">
+      <div class="espr">def isSorted(as: Array[<mark class="dato">Int</mark>], ordered: (<mark class="dato">Int</mark>, <mark class="dato">Int</mark>) => Boolean): Boolean</div>
+      <p class="nota">Inside the signature, every <code>A</code> is replaced by <code>Int</code>.</p>
+    </div>
+    <div class="passo">
+      <div class="espr">as      = <mark class="due">Array(1, 2, 3)</mark>
+ordered = <mark class="ora">(x, y) => x &lt;= y</mark></div>
+      <p class="nota">The parameters are filled in order. <code>ordered</code> receives the function I wrote on the fly.</p>
+    </div>
+    <div class="passo">
+      <div class="espr"><mark class="ora">ordered</mark>(<mark class="due">as(0)</mark>, <mark class="due">as(1)</mark>)
+= <mark class="ora">(x, y) => x &lt;= y</mark> applicata a (1, 2)
+= 1 &lt;= 2
+= <mark class="ok">true</mark></div>
+      <p class="nota">When the body writes <code>ordered(a, b)</code>, it is calling the function received. The result is a <code>Boolean</code>, as the type promised.</p>
+    </div>
+  </figure>
+  <figure class="scena" data-scena="sostituisci" data-titolo="A becomes Int, everywhere"></figure>
+</section>
+
+<section>
+  <h2>The type of a function: the arrow <code>=></code></h2>
+  <p>To the left of the arrow there is what comes in, to the right what comes out. That is all.</p>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Type</th><th>Reads as</th><th>A value of that type</th></tr></thead>
+    <tbody>
+      <tr><td><code>Int => Boolean</code></td><td>takes an Int, gives a Boolean</td><td><code>x => x &lt; 0</code></td></tr>
+      <tr><td><code>(Int, Int) => Int</code></td><td>takes two Ints, gives an Int</td><td><code>(x, y) => x + y</code></td></tr>
+      <tr><td><code>(A, A) => Boolean</code></td><td>takes two A, gives a Boolean</td><td><code>(x, y) => x &lt;= y</code> when A = Int</td></tr>
+      <tr><td><code>A => B</code></td><td>takes an A, gives a B</td><td><code>_.toString</code> when A = Int and B = String</td></tr>
+      <tr><td><code>() => A</code></td><td>takes nothing, gives an A</td><td><code>() => 42</code> (week 4)</td></tr>
+    </tbody>
+  </table></div>
+  <div class="box regola" data-tit="Rule">
+    <p><code>f: A => B</code> does not say <i>what</i> <code>f</code> does. It says only what <b>shape</b> it has: an A comes in, a B comes out. What it really does is decided by whoever passes the function at the moment of the call.</p>
+  </div>
+  <figure class="scena" data-scena="freccia" data-titolo="What comes in, what comes out"></figure>
+</section>
+
+<section>
+  <h2>Arrows one inside the other</h2>
+  <p>In exercise 5 this signature appears, which looks like a Russian doll:</p>
+  <pre class="cod" data-lang="scala">def isSortedCurried[A]: Array[A] => ((A, A) => Boolean) => Boolean</pre>
+
+  <figure class="passi" data-titolo="Opening the doll, one shell at a time">
+    <div class="passo">
+      <div class="espr"><mark class="dato">Array[A]</mark> => ((A, A) => Boolean) => Boolean</div>
+      <p class="nota">Several arrows in a row are read <b>from the right</b>: <code>X => Y => Z</code> means <code>X => (Y => Z)</code>. So the first thing that comes in is the array.</p>
+    </div>
+    <div class="passo">
+      <div class="espr">Array[A] => <mark class="due">( ((A, A) => Boolean) => Boolean )</mark></div>
+      <p class="nota">Given the array, there comes out… another function. Not a Boolean, not yet.</p>
+    </div>
+    <div class="passo">
+      <div class="espr">Array[A] => ( <mark class="ora">((A, A) => Boolean)</mark> => Boolean )</div>
+      <p class="nota">That function waits for the sorting criterion: <code>(A, A) => Boolean</code>. The round brackets are needed here: the criterion is <b>one</b> argument.</p>
+    </div>
+    <div class="passo">
+      <div class="espr">Array[A] => ( ((A, A) => Boolean) => <mark class="ok">Boolean</mark> )</div>
+      <p class="nota">Given the criterion too, the <code>Boolean</code> finally comes out.</p>
+    </div>
+    <div class="passo">
+      <div class="espr">isSortedCurried(<mark class="dato">Array(1, 2, 3)</mark>)(<mark class="ora">_ &lt;= _</mark>)   →   <mark class="ok">true</mark></div>
+      <p class="nota">The call shows the structure: a pair of brackets for each "outer" arrow.</p>
+    </div>
+  </figure>
+  <figure class="scena" data-scena="matrioska" data-titolo="A function that returns a function"></figure>
+</section>
+
+<section>
+  <h2>Several parameter lists</h2>
+  <p>A function can have several pairs of brackets. In the call you write the same number of them, in the same order.</p>
+  <figure class="codice" data-titolo="map on trees (week 3)">
+<pre data-lang="scala">def map[A, B](t: Tree[A])(f: A => B): Tree[B]
+
+map(albero)(_.toString)</pre>
+    <ol class="spiega">
+      <li data-righe="1" data-segna="[A, B]@due">Two type placeholders: <code>A</code> is what is in the leaves at the start, <code>B</code> what there will be afterwards.</li>
+      <li data-righe="1" data-segna="(t: Tree[A])@dato">First list: the starting tree.</li>
+      <li data-righe="1" data-segna="(f: A => B)">Second list: the function that transforms each value. Alone, <code>A => B</code> does not say which transformation it is.</li>
+      <li data-righe="3" data-segna="(_.toString)|(albero)@dato">In the call the two lists are filled in: <b>here</b> you decide that <code>f</code> is <code>_.toString</code>. So <code>B</code> = <code>String</code>.</li>
+      <li data-righe="1" data-segna="Tree[B]@ok">The result: a tree with the same shape, but of <code>B</code> (here strings).</li>
+    </ol>
+  </figure>
+  <div class="box attenzione" data-tit="Watch out">
+    <p>If the definition has two lists and you call with only one, <code>map(albero, f)</code>, it does not compile. Count the pairs of brackets in the definition.</p>
+  </div>
+  <figure class="scena" data-scena="liste" data-titolo="map(albero)(f): two pairs of brackets"></figure>
+</section>
+
+<section>
+  <h2>Methods inside an <code>enum</code>: where does A come from?</h2>
+  <p>From week 3 some functions are written <b>inside</b> the type, as methods. Then <code>A</code> is not among the square brackets of the method: it comes from the <code>enum</code>.</p>
+  <figure class="codice" data-titolo="map as a method of Option">
+<pre data-lang="scala">enum Option[+A]:
+  case Some(get: A)
+  case None
+
+  def map[B](f: A => B): Option[B] = this match
+    case None    => None
+    case Some(a) => Some(f(a))</pre>
+    <ol class="spiega">
+      <li data-righe="1" data-segna="[+A]@due">The <code>A</code> is born here, on the <code>enum</code>. The <code>+</code> is the variance (dedicated page in week 3).</li>
+      <li data-righe="5" data-segna="A@due|[B]">The method adds only <code>[B]</code>: <code>A</code> it already knows, because the method lives inside <code>Option[A]</code>.</li>
+      <li data-righe="5" data-segna="this">The parameter "the option I work on" is missing: it is <code>this</code>, the object on which you call the method. It is called with the dot: <code>Some(3).map(_ + 1)</code>.</li>
+    </ol>
+  </figure>
+  <figure class="scena" data-scena="metodoenum" data-titolo="Some(3).map(_ + 1): A, B and this"></figure>
+</section>
+
+</main>
+</body>
+</html>

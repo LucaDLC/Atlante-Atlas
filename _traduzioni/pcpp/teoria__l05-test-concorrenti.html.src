@@ -1,0 +1,82 @@
+@@s001 Scrivere test concorrenti
+@@s002 dato:thread che lavora,ora:in attesa alla barriera,ok:partito insieme agli altri
+@@s003 La barriera si crea con <b>nrThreads + 1</b> partecipanti: i 3 thread del test più il <b>main</b>, il thread che esegue il test. Si apre solo quando sono arrivati tutti e 4.
+@@s004 t1 parte subito e arriva alla prima <code>await()</code>: si ferma lì.
+@@s005 t2 arriva: 2 su 4. Senza barriera t1 avrebbe già fatto tutto il suo lavoro da solo, e i thread girerebbero quasi uno dopo l'altro.
+@@s006 t3 arriva: 3 su 4. Manca ancora un partecipante.
+@@s007 Il main fa la sua <code>await()</code>: 4 su 4, la barriera si apre e i tre thread <b>partono nello stesso momento</b>. È così che si massimizza la contesa: più operazioni in parallelo, più probabilità di un interleaving cattivo.
+@@s008 La stessa barriera è ciclica: si riusa. Alla seconda <code>await()</code> il main aspetta che tutti abbiano finito, e solo allora controlla la proprietà con l'<b>asserzione</b>.
+@@s009 dato:main,ora:thread,no:proprietà violata,ok:dentro la sezione critica
+@@s010 dato:produttori,due:consumatori,ok:somme uguali,no:somme diverse
+@@s011 Scrivere test concorrenti
+@@s012 Lezione 5 ed esercizi 5.1–5.2 (parte dell'Assignment 3). Un test concorrente non può scegliere l'interleaving: può solo rendere <b>probabile</b> quello cattivo. Qui la ricetta della lezione, JUnit, la barriera per far partire i thread insieme, e i risultati veri sui set dell'esercizio.
+@@s013 La ricetta in 4 punti (slide 25)
+@@s014 Prima di scrivere codice
+@@s015 "Dopo che N thread hanno fatto X inc(), il contatore vale N·X." Diventa l'asserzione finale.
+@@s016 Lo stesso test gira su tutte le implementazioni (Buggy, Sync, Library): cambia solo la riga nel metodo <code>@BeforeEach</code>.
+@@s017 Più thread dei core (su 8 core, 16 thread) e una <code>CyclicBarrier</code> per farli partire insieme.
+@@s018 <code>@RepeatedTest(n)</code> e <code>@ParameterizedTest</code>: più esecuzioni, più interleaving visitati. L'esercizio dice che possono servire fino a 5000–10000 ripetizioni.
+@@s019 JUnit
+@@s020 A cosa serve
+@@s021 <code>@BeforeEach</code>
+@@s022 metodo eseguito prima di <b>ogni</b> test: crea un oggetto nuovo da testare
+@@s023 <code>@Test</code> / <code>@RepeatedTest(100)</code>
+@@s024 un test, eseguito una volta o 100 volte
+@@s025 <code>@ParameterizedTest</code> + <code>@MethodSource("argsGeneration")</code>
+@@s026 lo stesso test con tanti parametri (numero di thread, di operazioni), generati da un metodo che restituisce una lista di <code>Arguments</code>
+@@s027 <code>@DisplayName("…")</code>
+@@s028 il nome mostrato nel report
+@@s029 <code>assertTrue(cond, "messaggio")</code>, <code>assertEquals(atteso, valore)</code>
+@@s030 la proprietà da controllare
+@@s031 <code>gradle cleanTest test --tests exercises05.ConcurrentSetTest</code>
+@@s032 esegue i test; il report HTML è in <code>build/reports/tests/test/</code>
+@@s033 CyclicBarrier(nrThreads + 1)
+@@s034 La barriera fa partire i thread quasi uno alla volta
+@@s035 Dentro, <code>CyclicBarrier</code> usa un lock (<code>ReentrantLock</code>) e una condition. Quando arriva l'ultimo, sveglia tutti, ma ogni thread svegliato deve <b>riprendere quel lock</b> prima di uscire da <code>await()</code>: escono in fila. Se ogni thread fa un'operazione sola e brevissima, i primi hanno già finito quando gli ultimi escono, e gli scontri sono rari.
+@@s036 Misurato con il test di <code>push</code> dell'esercizio 7.2.2 (1000 thread, un <code>push</code> ciascuno) contro un <code>push</code> sbagliato apposta (<code>get</code> e poi <code>set</code>): con <code>CyclicBarrier</code> l'errore esce in <b>1 ripetizione su 20</b>. Con un <code>CountDownLatch(1)</code> come "pistola di partenza" (tutti fanno <code>await()</code>, il main fa <code>countDown()</code> una volta) e <code>join()</code> per la fine: <b>18 su 20</b>. Il latch sveglia i thread senza farli passare da un lock esclusivo. Il <code>CountDownLatch</code> non è nelle slide del corso: la barriera resta la tecnica "ufficiale", il latch è un rinforzo.
+@@s037 Esercizio 5.1: i set
+@@s038 Tre implementazioni di <code>ConcurrentIntegerSet</code>: <b>Buggy</b> (un <code>HashSet</code> senza protezione), <b>Sync</b> (da correggere) e <b>Library</b> (<code>ConcurrentSkipListSet</code>). Il test: 16 thread aggiungono tutti gli stessi numeri 0…999, quindi alla fine size deve essere <b>1000</b>; poi, con i numeri già dentro, li rimuovono tutti: size deve essere <b>0</b>.
+@@s039 Implementazione
+@@s040 add: test falliti
+@@s041 remove: test falliti
+@@s042 Buggy (HashSet)
+@@s043 <b>169 / 200</b> (size fino a 1633)
+@@s044 <b>23 / 200</b> (size fino a −219)
+@@s045 Sync (metodi <code>synchronized</code>)
+@@s046 Library (ConcurrentSkipListSet)
+@@s047 Eseguito con JDK 26 su una macchina a 12 core: 16 thread, CyclicBarrier, 200 ripetizioni (un programma con la stessa struttura del test JUnit). Una size di 1633 per un insieme di 1000 numeri, o negativa, è impossibile in un'esecuzione sequenziale.
+@@s048 Costruisci tu l'interleaving di add(5)
+@@s049 Due thread chiamano <code>add(5)</code> su un set vuoto. <code>HashSet.add</code> non è atomico: qui è diviso in tre passi (cerca, inserisci il nodo, incrementa size). Trova un interleaving che lascia 5 nel set <b>una volta</b> ma con <b>size = 2</b>.
+@@s050 Due add(5) in parallelo
+@@s051 5.1.3: perché synchronized ripara
+@@s052 Con <code>add</code>, <code>remove</code> e <code>size</code> tutti <code>synchronized</code> sullo stesso oggetto, i tre passi di un'operazione non si possono più mescolare con quelli di un'altra (mutua esclusione), e ogni thread vede le scritture del precedente (happens-before dell'unlock sul lock successivo, <a href="l03-happens-before.html">lezione 3</a>). Il set interno è confinato: non esce dalla classe (<a href="l04-confinamento.html">confinamento</a>).
+@@s053 5.1.5 e 5.1.6: cosa dimostra un test
+@@s054 Il fallimento è un controesempio concreto: un'esecuzione concorrente che produce un risultato impossibile in sequenza. Con la definizione del corso (niente data race sui campi) il ragionamento è quello della vostra risposta: una size sbagliata può nascere solo da accessi concorrenti non sincronizzati ai campi di HashSet.
+@@s055 Solo alcuni interleaving sono stati visitati, e solo la size finale è stata controllata. Dijkstra: i test mostrano la presenza di bug, non l'assenza.
+@@s056 Esercizio 5.2: il semaforo
+@@s057 Capacità 2, eppure 3 thread nella sezione critica (verificato: 3 esecuzioni su 3)
+@@s058 <code>acquire()</code> aspetta solo se state == capacity; <code>release()</code> fa state-- senza controllare niente.
+@@s059 Nessuno aveva fatto acquire: è come regalare un permesso in più. Anche il main fa parte dell'interleaving.
+@@s060 Quando ognuno controlla, state vale −1, 0, 1: mai uguale a 2, quindi nessuno aspetta.
+@@s061 Proprietà di Herlihy violata. La vostra risposta 5.2.1 è questa, ed è giusta. Il test non dipende dallo scheduling: basta un <code>@Test</code> normale.
+@@s062 Tre thread dentro con capacity 2
+@@s063 La notazione m(2) → t1(1) → t2(1) → t3(1)
+@@s064 I numeri sono le etichette dei commenti in <code>SemaphoreImp.java</code>: <code>// [1]</code> sta sopra <code>acquire()</code>, <code>// [2]</code> sopra <code>release()</code>. Quindi <code>m(2)</code> = il <b>main</b> chiama <code>release()</code>, <code>t1(1)</code> = il thread t1 chiama <code>acquire()</code>. La freccia → vuol dire "e poi". L'interleaving è scritto a livello di <b>chiamate di metodo</b> perché i campi sono <code>private</code>: da fuori non si possono toccare (Hint I dell'esercizio).
+@@s065 5.2.2: il test capacity() (SemaphoreImpTest.java, accorciato)
+@@s066 Il test ricostruisce l'interleaving del 5.2.1: CAPACITY = 2, THREADS_NUMBER = CAPACITY + 1 = 3. Il semaforo nuovo viene creato in <code>@BeforeEach</code>.
+@@s067 La barriera ha <b>4</b> partecipanti: i 3 thread più il main. Si apre solo quando sono arrivati tutti e 4.
+@@s068 Il contatore di "quanti sono entrati". È <code>AtomicInteger</code> perché lo incrementano 3 thread insieme: con un <code>int</code> il test stesso avrebbe una data race.
+@@s069 È il passo <code>m(2)</code>: il main chiama <code>release()</code> <b>prima</b> di creare i thread. state passa da 0 a −1: il permesso in più c'è già quando i thread partono.
+@@s070 Crea e fa partire 3 thread. <code>() -> { … }</code> è una lambda: il corpo del metodo <code>run()</code> del thread.
+@@s071 Prima barriera: i 3 thread e il main si aspettano, poi partono insieme.
+@@s072 È il passo <code>t(1)</code>: ogni thread fa <code>acquire()</code>. Se non si blocca, per l'esercizio <b>è entrato</b> nella sezione critica, e lo conta. Nessuno chiama <code>release()</code>: chi entra resta dentro.
+@@s073 Seconda barriera: il main aspetta che tutti abbiano contato. Solo dopo legge il contatore.
+@@s074 La proprietà di Herlihy: al massimo CAPACITY thread dentro. Con il semaforo difettoso il valore è sempre 3 e il test <b>fallisce sempre</b>.
+@@s075 Perché basta <code>@Test</code> e non <code>@RepeatedTest</code>: dopo <code>m(2)</code> state vale −1, e ogni <code>acquire()</code> lo alza di 1 (−1 → 0 → 1 → 2). Chiunque arrivi per primo trova sempre state &lt; 2. L'ordine dei thread non cambia il risultato.
+@@s076 Con un semaforo giusto questo test non passa: si blocca
+@@s077 Se il semaforo fosse corretto, il terzo thread resterebbe fermo in <code>acquire()</code> e non arriverebbe mai alla seconda <code>barrier.await()</code>. La barriera aspetta 4 partecipanti, ne arrivano 3: il main resta bloccato e il test non finisce. Un test dovrebbe poter <b>passare</b> su un'implementazione giusta. Per esempio, nel main si può usare <code>barrier.await(1, TimeUnit.SECONDS)</code> e gestire la <code>TimeoutException</code>; dopo il timeout il contatore vale 2 e l'asserzione è vera.
+@@s078 Il bounded buffer della lezione
+@@s079 Proprietà: se produttori e consumatori mettono e prendono lo stesso numero di elementi, <b>la somma dei numeri messi è uguale alla somma dei numeri presi</b>. Ogni produttore accumula la sua somma locale e alla fine la aggiunge a un <code>AtomicInteger</code> globale (<code>putSum</code>); i consumatori fanno lo stesso con <code>takeSum</code>; alla fine <code>assert(putSum.get() == takeSum.get())</code>. Il test si fida di <code>AtomicInteger</code>: se l'oggetto usato per controllare fosse sbagliato, il test non varrebbe niente.
+@@s080 Sfida 5.1.7–5.1.8: size() può mentire
+@@s081 In <code>HashMap</code> size() legge un campo, aggiornato dopo l'inserimento del nodo: un thread che chiama size() tra l'inserimento e il size++ di un altro thread vede un valore vecchio. Per <code>ConcurrentSkipListSet</code> la documentazione dice che size() attraversa la struttura e può essere inesatto se il set cambia durante il conteggio. Testarlo è difficile: servirebbe sapere quanti elementi ci sono "davvero" nell'istante esatto in cui size() legge, e un test non può fermare tutti i thread in quel punto.
+@@s082 putSum == takeSum

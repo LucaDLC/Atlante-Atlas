@@ -1,0 +1,63 @@
+@@s001 synchronized: intrinsic locks
+@@s002 dato:t1,due:t2,no:unprotected access,ok:protected
+@@s003 <p><code>sum</code> is <b>static</b>: a single variable for the whole class. t1 calls <code>m.addInstance(1)</code>, t2 calls <code>Mystery.addStatic(1)</code>.</p>
+@@s004 <p><code>addInstance</code> is <b>instance</b> <code>synchronized</code>: t1 takes the lock of the object <code>m</code>.</p>
+@@s005 <p><code>addStatic</code> is <code>static synchronized</code>: t2 takes the lock of the object <code>Mystery.class</code>. It is a <b>different</b> lock, free: t2 <b>does not block</b>.</p>
+@@s006 <p>Both execute <code>sum += x</code> at the same moment. The two locks do not exclude each other: <b>data race</b> on <code>sum</code> and lost increments (verified: about 1.5–1.7 million instead of 2).</p>
+@@s007 <p><b>Correction</b> (exercise 2.3.3): inside <code>addInstance</code> one synchronizes on <code>Mystery.class</code>. Now t1 and t2 use the <b>same</b> lock.</p>
+@@s008 <p>If t1 has the class lock, t2 waits, and vice versa: the accesses to <code>sum</code> are in mutual exclusion. Result always 2 000 000 (verified).</p>
+@@s009 dato:thread,ora:has the lock of o,no:exception,ok:lock released
+@@s010 dato:lock of object c1,due:lock of object c2,ora:class lock,no:waiting
+@@s011 no:error,ok:correct,dato:thread
+@@s012 synchronized: intrinsic locks
+@@s013 In Java <b>every object</b> already contains a lock with a condition variable: the <b>intrinsic</b> lock (the Java specifications call it a monitor). It is used with the keyword <code>synchronized</code>. The delicate point is to understand <b>which object</b> acts as the lock.
+@@s014 <code>synchronized</code> block = lock + try/finally
+@@s015 In Java every object already contains a lock, called the <b>intrinsic lock</b> (or monitor lock). The keyword <code>synchronized</code> uses it without having to create a <code>ReentrantLock</code>: it takes the lock on entering a block or a method and releases it on exiting. It does the same as the lock + try/finally idiom, with fewer lines and without the possibility of forgetting the unlock.
+@@s016 With a Lock
+@@s017 With the intrinsic lock
+@@s018 The lock of <code>o</code> is taken on entering the block and released on exiting, <b>even</b> with an exception. And it is reentrant.
+@@s019 The lock is released even with an exception
+@@s020 On a method: which lock?
+@@s021 <code>synchronized</code> can also be written in front of a method. Then the important question is: <b>which object</b> provides the lock? It depends on whether the method is instance or static, and getting this answer wrong is the mistake of exercise 2.3.
+@@s022 Three writings, two different locks
+@@s023 Instance synchronized method…
+@@s024 …is equivalent to synchronizing on <b><code>this</code></b>: the lock of the object on which you call the method. Two different <code>C</code> objects = two different locks.
+@@s025 Static synchronized method…
+@@s026 …is equivalent to synchronizing on <b><code>C.class</code></b>, the object that represents the class. There is only one: all the callers use the same lock.
+@@s027 Written
+@@s028 Lock used
+@@s029 Example from slides 44–45
+@@s030 <code>synchronized</code> on an instance method
+@@s031 the object <code>this</code>
+@@s032 two threads with different <code>new C()</code>: <b>different locks</b>, no waiting
+@@s033 <code>static synchronized</code>
+@@s034 the object <code>C.class</code>
+@@s035 two threads with different <code>new C()</code>: <b>same lock</b>
+@@s036 <code>synchronized (x) { … }</code>
+@@s037 the object <code>x</code>
+@@s038 you choose the object
+@@s039 this against C.class
+@@s040 Exercise 2.3: the class <code>Mystery</code>
+@@s041 Everything is <code>private</code> and all the methods are <code>synchronized</code>: it looks safe. It is not.
+@@s042 Two different locks on the same variable
+@@s043 The correction without changing static/instance (compiled and run)
+@@s044 <code>addStatic</code> uses the lock of <code>Mystery.class</code>.
+@@s045 The access to <code>sum</code> in <code>addInstance</code> now also uses <code>Mystery.class</code>. The text forbids changing the modifiers, and this change leaves them intact.
+@@s046 The remaining instance <code>synchronized</code> does no harm (it also takes the lock of <code>m</code>), but it is not what protects <code>sum</code>.
+@@s047 Exercise 2.3.4: is synchronized on sum() needed?
+@@s048 In <b>this</b> program no: <code>main</code> calls <code>sum()</code> after <code>t1.join()</code> and <code>t2.join()</code>. The last writes of the threads come before the join by the termination rule (lecture 3), so the read sees the final values without data race. In a class used by threads that read <b>while</b> others write, instead, it would be needed.
+@@s049 In English (2.3.2)
+@@s050 "A synchronized instance method locks <code>this</code>, the Mystery object, while a static synchronized method locks <code>Mystery.class</code>. Since t1 and t2 hold different locks, their executions of <code>sum += x</code> are not mutually exclusive, and the non-atomic read-modify-write on the static field sum can interleave and lose updates."
+@@s051 <code>wait()</code>, <code>notify()</code>, <code>notifyAll()</code>
+@@s052 With <code>ReentrantLock</code> + <code>Condition</code>
+@@s053 With <code>synchronized</code>
+@@s054 <code>c.await()</code>
+@@s055 <code>o.wait()</code>
+@@s056 <code>c.signal()</code>
+@@s057 <code>o.notify()</code>
+@@s058 <code>c.signalAll()</code>
+@@s059 <code>o.notifyAll()</code>
+@@s060 several conditions per lock (<code>newCondition()</code>)
+@@s061 only one condition per object
+@@s062 In a <code>synchronized</code> method one writes <code>this.wait()</code>. <code>wait()</code> and <code>notify()</code> must be called <b>while holding</b> the lock of that object, that is inside <code>synchronized</code> on it.
+@@s063 wait without the lock: the error

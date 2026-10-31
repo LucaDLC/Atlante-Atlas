@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{{t|s001|}}</title>
+<link rel="stylesheet" href="../assets/atlas.css">
+<link rel="stylesheet" href="../assets/tema.css">
+<script src="../assets/sito.js"></script>
+<script src="../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  // 1. intercetta e pendenza
+  const n = v => (v < 0 ? '−' + (-v) : '' + v);
+  const eqs = (w0, w1) => 'y = ' + n(w0) + (w1 < 0 ? ' − ' + (-w1) : ' + ' + w1) + '·x';
+  const retta = (w0, w1) => ({ li: { y1: w0 + w1 * -1, y2: w0 + w1 * 5 }, int: { y: w0, t: 'w₀ = ' + n(w0) }, dx: { x1: 1, y1: w0 + w1, x2: 2, y2: w0 + w1 }, dy: { x1: 2, y1: w0 + w1, x2: 2, y2: w0 + 2 * w1 }, eq: { t: eqs(w0, w1) } });
+  const o1 = [
+    { id: 'ax', tipo: 'assi', box: [50, 20, 300, 230], dom: [-1, 5, -2, 8], tacche: 1, etX: 'x', etY: 'y' },
+    { id: 'li', tipo: 'linea', in: 'ax', x1: -1, y1: 0, x2: 5, y2: 6, tono: 'ok' },
+    { id: 'int', tipo: 'punto', in: 'ax', x: 0, y: 1, t: 'w₀ = 1', tono: 'dato', tx: 10, ty: 12 },
+    { id: 'dx', tipo: 'linea', in: 'ax', x1: 1, y1: 2, x2: 2, y2: 2, tono: 'due', nascosto: true },
+    { id: 'dy', tipo: 'linea', in: 'ax', x1: 2, y1: 2, x2: 2, y2: 3, tono: 'ora', nascosto: true },
+    { id: 'eq', tipo: 'testo', x: 470, y: 60, t: 'y = 1 + 1·x', size: 15, bold: true },
+    { id: 'sp', tipo: 'testo', x: 470, y: 92, t: '', size: 13 }
+  ];
+  SCENE.pendenza = {
+    w: 600, h: 272, lato: true,
+    legenda: '{{j|s002|'}}',
+    oggetti: o1,
+    passi: [
+      { nota: "La retta y = w₀ + w₁·x con w₀ = 1 e w₁ = 1. Per ogni x dà una y: x = 2 → y = 1 + 1·2 = 3." },
+      { nota: "<b>w₀</b> è l'<b>intercetta</b> (<i>intercept</i>, o <i>y-offset</i>): il valore di y quando x = 0. Si vede dove la retta taglia l'asse verticale.", set: { int: { tono: 'dato' }, sp: { t: 'x = 0  →  y = w₀' } } },
+      { nota: "<b>w₁</b> è la <b>pendenza</b> (<i>slope</i>): se x aumenta di 1 (segmento viola), y aumenta di w₁ (segmento arancio).", set: { dx: { nascosto: false }, dy: { nascosto: false }, sp: { t: 'x + 1  →  y + w₁' } } },
+      Object.assign({ nota: "Cambio solo w₀, da 1 a 3: la retta <b>sale</b> tutta di 2, parallela a prima. La pendenza non cambia." }, { set: Object.assign(retta(3, 1), { sp: { t: 'w₀ sposta su e giù' } }) }),
+      Object.assign({ nota: "w₀ = −1: la retta scende sotto l'origine." }, { set: retta(-1, 1) }),
+      Object.assign({ nota: "Ora cambio solo w₁, da 1 a 2: la retta <b>ruota</b> attorno all'intercetta e diventa più ripida. Per ogni +1 in x, y sale di 2.", }, { set: Object.assign(retta(-1, 2), { sp: { t: 'w₁ fa ruotare' } }) }),
+      Object.assign({ nota: "w₁ = 0: retta orizzontale, y non dipende più da x." }, { set: retta(-1, 0) }),
+      Object.assign({ nota: "w₁ negativo (−0.5): se x aumenta, y <b>diminuisce</b>. Due numeri, w₀ e w₁, bastano a descrivere qualunque retta non verticale: sono i due <b>parametri</b> del modello.", }, { set: Object.assign(retta(3, -0.5), { sp: { t: 'w₁ < 0: la retta scende' } }) })
+    ]
+  };
+
+  // 2. spazio dei dati e spazio dei parametri
+  const R = [[1, 0.5], [-1, 2], [3, -0.5]];
+  const o2 = [
+    { id: 'axd', tipo: 'assi', box: [40, 46, 240, 188], dom: [-1, 5, -2, 8], tacche: 1, etX: 'x', etY: 'y' },
+    { id: 'axp', tipo: 'assi', box: [340, 46, 240, 188], dom: [-2, 4, -1, 3], tacche: 1, etX: 'w₀', etY: 'w₁' },
+    { id: 'td', tipo: 'testo', x: 160, y: 12, t: 'spazio dei dati (x, y)', size: 12, bold: true },
+    { id: 'tp', tipo: 'testo', x: 460, y: 12, t: 'spazio dei parametri (w₀, w₁)', size: 12, bold: true },
+    { id: 'rd', tipo: 'linea', in: 'axd', x1: -1, y1: 0.5, x2: 5, y2: 3.5, tono: 'ok' },
+    { id: 'pp', tipo: 'punto', in: 'axp', x: 1, y: 0.5, t: '(1, 0.5)', tono: 'ok' },
+    { id: 'eq', tipo: 'testo', x: 300, y: 262, t: 'y = 1 + 0.5·x   ↔   (w₀, w₁) = (1, 0.5)', size: 13, bold: true }
+  ];
+  const coppia = ([w0, w1], tono) => ({ rd: { y1: w0 - w1, y2: w0 + 5 * w1, tono }, pp: { x: w0, y: w1, t: '(' + n(w0) + ', ' + n(w1) + ')', tono, tx: w0 > 2 ? -72 : 9, ty: w0 > 2 ? 16 : -9 }, eq: { t: eqs(w0, w1) + '   ↔   (w₀, w₁) = (' + n(w0) + ', ' + n(w1) + ')' } });
+  SCENE.spazi = {
+    w: 600, h: 280, lato: true,
+    legenda: '{{j|s003|'}}',
+    oggetti: o2,
+    passi: [
+      { nota: "A sinistra lo <b>spazio dei dati</b>: gli assi sono x e y, e il modello è una <b>retta</b>. A destra lo <b>spazio dei parametri</b> (<i>parameter space</i>, slide 28): gli assi sono w₀ e w₁." },
+      { nota: "La retta y = 1 + 0.5·x è descritta da due numeri, quindi nello spazio dei parametri è <b>un solo punto</b>: (1, 0.5)." },
+      { nota: "Cambio retta: y = −1 + 2·x. A destra il punto si sposta in (−1, 2).", set: coppia(R[1], 'ok') },
+      { nota: "y = 3 − 0.5·x diventa il punto (3, −0.5). Ogni retta è un punto, ogni punto è una retta.", set: coppia(R[2], 'ok') },
+      { nota: "Perché serve: <b>imparare</b> vuol dire <b>cercare un punto</b> nello spazio dei parametri, quello con la loss più piccola. Con 2 parametri lo spazio è un piano; con un modello da 100 parametri è uno spazio a 100 dimensioni, ma l'idea resta la stessa.", set: coppia(R[0], 'ok') }
+    ]
+  };
+
+  // 3. due punti
+  const o3 = [
+    { id: 'ax', tipo: 'assi', box: [50, 20, 300, 230], dom: [-1, 5, -2, 8], tacche: 1, etX: 'x', etY: 'y' },
+    { id: 'a', tipo: 'punto', in: 'ax', x: 1, y: 1, t: '(1, 1)', tono: 'dato' },
+    { id: 'b', tipo: 'punto', in: 'ax', x: 3, y: 5, t: '(3, 5)', tono: 'dato', tx: -46 },
+    { id: 'dx', tipo: 'linea', in: 'ax', x1: 1, y1: 1, x2: 3, y2: 1, tono: 'due', nascosto: true },
+    { id: 'dy', tipo: 'linea', in: 'ax', x1: 3, y1: 1, x2: 3, y2: 5, tono: 'ora', nascosto: true },
+    { id: 'tdx', tipo: 'testo', in: 'ax', x: 2, y: 0.4, t: 'Δx = 2', size: 12, tono: 'due', nascosto: true },
+    { id: 'tdy', tipo: 'testo', in: 'ax', x: 3.55, y: 3, t: 'Δy = 4', size: 12, tono: 'ora', nascosto: true },
+    { id: 'li', tipo: 'linea', in: 'ax', x1: -1, y1: -3, x2: 5, y2: 9, tono: 'ok', nascosto: true },
+    { id: 'i0', tipo: 'punto', in: 'ax', x: 0, y: -1, t: 'w₀ = −1', tono: 'ok', tx: 10, ty: 12, nascosto: true },
+    { id: 'pr', tipo: 'punto', in: 'ax', x: 4, y: 7, t: 'x = 4 → 7', tono: 'ok', tx: -80, nascosto: true },
+    { id: 'c1', tipo: 'testo', x: 480, y: 60, t: '', size: 14, bold: true },
+    { id: 'c2', tipo: 'testo', x: 480, y: 90, t: '', size: 14, bold: true }
+  ];
+  SCENE.duepunti = {
+    w: 600, h: 272, lato: true,
+    legenda: '{{j|s004|'}}',
+    oggetti: o3,
+    passi: [
+      { nota: "Due punti misurati: (1, 1) e (3, 5). Una retta ha due parametri, e due punti danno due informazioni: basta per trovarla (slide 29, \"learning with two points\")." },
+      { nota: "Da un punto all'altro x cresce di <b>Δx</b> = 3 − 1 = 2. Il simbolo Δ (delta) vuol dire \"differenza\".", set: { dx: { nascosto: false }, tdx: { nascosto: false } } },
+      { nota: "Nello stesso tratto y cresce di <b>Δy</b> = 5 − 1 = 4.", set: { dy: { nascosto: false }, tdy: { nascosto: false } } },
+      { nota: "La pendenza è quanto sale y per ogni 1 di x: <b>w₁ = Δy / Δx</b> = 4 / 2 = <b>2</b>.", set: { c1: { t: 'w₁ = Δy / Δx = 4 / 2 = 2', tono: 'ora' } } },
+      { nota: "L'intercetta si ricava da un punto qualsiasi: 1 = w₀ + 2·1, quindi <b>w₀ = 1 − 2 = −1</b>. È la stessa mossa di <a href=\"w01-equazioni-modello.html\">isolare w</a>.", set: { c2: { t: 'w₀ = 1 − 2·1 = −1', tono: 'dato' }, i0: { nascosto: false } } },
+      { nota: "La retta y = −1 + 2·x passa per entrambi i punti. Controllo con il secondo: −1 + 2·3 = 5 ✓.", set: { li: { nascosto: false } } },
+      { nota: "Con i parametri si fanno <b>previsioni</b> (slide 29: \"knowing the model parameters we can make predictions\"): in x = 4 il modello dice y = −1 + 2·4 = 7.", set: { pr: { nascosto: false } } }
+    ]
+  };
+
+  // 4. polinomi e flessibilità
+  const X = [0, 1, 2, 3, 4, 5], Y = [1.0, 2.2, 2.6, 3.9, 6.1, 8.8];
+  const G = i => -0.2 + 0.2 * i;
+  const curve = {
+    1: [0.09, 0.39, 0.68, 0.98, 1.28, 1.57, 1.87, 2.17, 2.47, 2.76, 3.06, 3.36, 3.65, 3.95, 4.25, 4.55, 4.84, 5.14, 5.44, 5.73, 6.03, 6.33, 6.63, 6.92, 7.22, 7.52, 7.81, 8.11],
+    2: [1.24, 1.26, 1.31, 1.37, 1.46, 1.57, 1.7, 1.85, 2.02, 2.21, 2.42, 2.66, 2.91, 3.19, 3.49, 3.8, 4.14, 4.5, 4.88, 5.29, 5.71, 6.15, 6.62, 7.1, 7.61, 8.14, 8.69, 9.26],
+    3: [0.87, 1.08, 1.27, 1.45, 1.62, 1.79, 1.95, 2.11, 2.27, 2.44, 2.62, 2.8, 3.0, 3.22, 3.46, 3.71, 4.0, 4.31, 4.65, 5.03, 5.45, 5.9, 6.4, 6.94, 7.53, 8.17, 8.87, 9.62],
+    5: [0.32, 1.0, 1.48, 1.79, 2.0, 2.12, 2.2, 2.25, 2.31, 2.38, 2.47, 2.6, 2.77, 2.99, 3.25, 3.55, 3.9, 4.28, 4.7, 5.14, 5.61, 6.1, 6.61, 7.13, 7.66, 8.22, 8.8, 9.41]
+  };
+  const pl = v => { const p = v.map((y, i) => [G(i), y]); return p.concat(p.slice().reverse()); };
+  const o4 = [{ id: 'ax', tipo: 'assi', box: [50, 20, 300, 230], dom: [-0.5, 5.5, 0, 10], tacche: 1, etX: 'x', etY: 'y' }];
+  X.forEach((x, i) => o4.push({ id: 'p' + i, tipo: 'punto', in: 'ax', x, y: Y[i], t: '', tono: 'dato' }));
+  o4.push({ id: 'cu', tipo: 'poli', in: 'ax', punti: pl(curve[1]), tono: 'ok', nascosto: true });
+  o4.push({ id: 'm1', tipo: 'testo', x: 470, y: 50, t: '', size: 14, bold: true });
+  o4.push({ id: 'm2', tipo: 'testo', x: 470, y: 78, t: '', size: 13 });
+  o4.push({ id: 'm3', tipo: 'testo', x: 470, y: 106, t: '', size: 13 });
+  const grado = (d, eq, npar, L, tono) => ({ cu: { nascosto: false, punti: pl(curve[d]), tono }, m1: { t: 'grado ' + d }, m2: { t: eq }, m3: { t: npar + ' parametri, L = ' + L, tono } });
+  SCENE.flessibile = {
+    w: 600, h: 272, lato: true,
+    legenda: '{{j|s005|'}}',
+    oggetti: o4,
+    passi: [
+      { nota: "Sei misure che non stanno su una retta: la tendenza curva verso l'alto." },
+      { nota: "<b>Grado 1</b> (una retta): 2 parametri. La migliore è y = 0.386 + 1.486·x, con loss 0.495. Non riesce a seguire la curvatura.", set: grado(1, 'y = w₀ + w₁x', 2, '0.495', 'ok') },
+      { nota: "<b>Grado 2</b>: si aggiunge il termine w₂·x². 3 parametri, loss 0.067. Segue bene la tendenza. Attenzione: il polinomio non è lineare in <b>x</b>, ma è ancora lineare nei <b>parametri</b> w, per questo si impara con gli stessi strumenti (<a href=\"w04-polinomi.html\">polinomi</a>).", set: grado(2, 'y = w₀ + w₁x + w₂x²', 3, '0.067', 'ok') },
+      { nota: "<b>Grado 3</b>: 4 parametri, loss 0.027. Poco meglio del grado 2.", set: grado(3, '+ w₃x³', 4, '0.027', 'ok') },
+      { nota: "<b>Grado 5</b>: 6 parametri per 6 punti. Passa esattamente per tutti: loss <b>0</b>. Più parametri = più <b>flessibilità</b> (slide 32), ma qui la curva si piega tra x = 0 e x = 1 solo per toccare i punti: sta copiando anche il rumore. Loss 0 sui dati di training non vuol dire modello migliore (settimane 6–7). Tutti i numeri sono calcolati con <code>np.polyfit</code>.", set: grado(5, '+ w₄x⁴ + w₅x⁵', 6, '0', 'no') }
+    ]
+  };
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>{{s|s006|}}</h1>
+  <p class="lede">{{s|s007|}}</p>
+</header>
+
+<section>
+  <h2>{{s|s008|}}</h2>
+  <p>{{s|s009|}}</p>
+  <pre class="cod" data-lang="python">y = w₀ + w₁·x</pre>
+  <p>{{s|s010|}}</p>
+  <p>{{s|s011|}}</p>
+  <p>{{s|s012|}}</p>
+  <p>{{s|s013|}}</p>
+  <figure class="scena" data-scena="pendenza" data-titolo="{{a|s014|}}"></figure>
+</section>
+
+<section>
+  <h2>{{s|s015|}}</h2>
+  <p>{{s|s016|}}</p>
+  <p>{{s|s017|}}</p>
+  <p>{{s|s018|}}</p>
+  <figure class="scena" data-scena="spazi" data-titolo="{{a|s019|}}"></figure>
+</section>
+
+<section>
+  <h2>{{s|s020|}}</h2>
+  <p>{{s|s021|}}</p>
+  <p>{{s|s022|}}</p>
+  <pre class="cod" data-lang="python">w₁ = (y₂ − y₁) / (x₂ − x₁) = Δy / Δx</pre>
+  <p>{{s|s023|}}</p>
+  <p>{{s|s024|}}</p>
+  <figure class="scena" data-scena="duepunti" data-titolo="{{a|s025|}}"></figure>
+</section>
+
+<section>
+  <h2>{{s|s026|}}</h2>
+  <p>{{s|s027|}}</p>
+  <p>{{s|s028|}}</p>
+  <p>{{s|s029|}}</p>
+  <p>{{s|s030|}}</p>
+  <figure class="scena" data-scena="flessibile" data-titolo="{{a|s031|}}"></figure>
+</section>
+
+</main>
+</body>
+</html>

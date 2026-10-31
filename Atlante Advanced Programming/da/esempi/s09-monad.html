@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Eksempler: flatMap og for i Scala</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <div class="occhiello"><span>Uge 9 · eksempler</span></div>
+  <h1>Eksempler: flatMap og for i Scala</h1>
+  <p class="lede">Koden fra <a href="../teoria/s09-monad.html">siden om monaden</a>, med Option og List, som er monader, der allerede findes i Scala. Funktionen <code>sequence</code> og <code>replicateM</code> er kursets øvelser: de er ikke her.</p>
+</header>
+
+<section>
+  <h2>Hele filen</h2>
+  <p>Kør den med <code>scala-cli run Monad.scala</code>. De to funktioner <code>raddoppiaSePositivo</code> og <code>dimezza</code> returnerer en Option: de er trinene i en kæde, der kan fejle.</p>
+  <figure class="codice" data-titolo="Monad.scala">
+<pre data-lang="scala">//&gt; using scala 3.8.4
+//&gt; using options -Werror -deprecation -feature -source:future
+
+def raddoppiaSePositivo(n: Int): Option[Int] =
+  if n &gt; 0 then Some(n * 2) else None
+
+def dimezza(n: Int): Option[Int] =
+  if n % 2 == 0 then Some(n / 2) else None
+
+@main def esempiMonad(): Unit =
+  // flatMap a catena: se un passo fallisce (None), i passi dopo non girano
+  println(Some(3).flatMap(raddoppiaSePositivo).flatMap(dimezza))
+  println(Some(-3).flatMap(raddoppiaSePositivo).flatMap(dimezza))
+  println(Some(5).flatMap(raddoppiaSePositivo).flatMap(dimezza))
+  // map si può scrivere con flatMap e unit (Some)
+  println(Some(4).flatMap(a =&gt; Some(a + 1)) == Some(4).map(_ + 1))
+  // la forma for è zucchero per flatMap e map
+  val coppie = for
+    a &lt;- List(1, 2)
+    b &lt;- List(3, 4)
+  yield (a, b)
+  println(coppie)
+  println(List(1, 2).flatMap(a =&gt; List(3, 4).map(b =&gt; (a, b))) == coppie)
+  // legge dell'identità a destra: x.flatMap(unit) == x
+  println(List(1, 2, 3).flatMap(a =&gt; List(a)) == List(1, 2, 3))
+  // legge dell'identità a sinistra: unit(y).flatMap(f) == f(y)
+  println(List(7).flatMap(raddoppiaLista) == raddoppiaLista(7).toList)
+
+def raddoppiaLista(n: Int): List[Int] = List(n * 2)</pre>
+    <ol class="spiega">
+      <li data-righe="4-5" data-segna="Some(n * 2)@ora|None@due"><p>Første trin i kæden. Hvis tallet er positivt, returnerer den <code>Some</code> af det dobbelte, ellers <code>None</code>: det er containeren, der kan fejle.</p></li>
+      <li data-righe="7-8" data-segna="if n % 2 == 0 then Some(n / 2) else None"><p>Andet trin: den halverer kun de lige tal. <code>%</code> er resten ved division: <code>n % 2 == 0</code> gælder, når n er lige.</p></li>
+      <li data-righe="12" data-segna="flatMap(raddoppiaSePositivo).flatMap(dimezza)@ora"><p>Kæde af to <code>flatMap</code>. 3 → Some(6) → Some(3). Værdien inde i Some går fra det ene trin til det næste, uden at jeg skal kassere containeren.</p></li>
+      <li data-righe="13" data-segna="Some(-3)@no"><p>Med −3 giver første trin <code>None</code>. <code>flatMap</code> på None er None: andet trin kører ikke, og resultatet er None. Kontrollen med forløbet sker inde i <code>flatMap</code>.</p></li>
+      <li data-righe="16" data-segna="flatMap(a =&gt; Some(a + 1))@ora"><p>En <code>flatMap</code>, der altid returnerer <code>Some</code>, giver samme resultat som en <code>map</code>: derfor kan map skrives med flatMap og unit (<code>Some</code>). Sammenligningen <code>==</code> svarer <code>true</code>.</p></li>
+      <li data-righe="18-21" data-segna="for@ora|yield (a, b)@due"><p>Formen <code>for … yield</code> er syntaktisk sukker: compileren omskriver den til <code>flatMap</code> og <code>map</code>. <code>a &lt;- List(1, 2)</code> er et <code>flatMap</code> på den første liste, <code>b &lt;- List(3, 4)</code> på den anden.</p></li>
+      <li data-righe="23" data-segna="List(1, 2).flatMap(a =&gt; List(3, 4).map(b =&gt; (a, b)))@ora"><p>Det samme skrevet i hånden med <code>flatMap</code> og <code>map</code>: resultatet er lig med det, <code>for</code> giver, så sammenligningen svarer <code>true</code>.</p></li>
+      <li data-righe="25" data-segna="flatMap(a =&gt; List(a))@ora"><p>Identitet til højre: at give hvert element til <code>List(a)</code> ændrer ikke listen. Det er loven <code>x.flatMap(unit) == x</code>, med unit lig med <code>List(a)</code>.</p></li>
+      <li data-righe="27" data-segna="List(7).flatMap(raddoppiaLista)@ora"><p>Identitet til venstre: <code>List(7).flatMap(raddoppiaLista)</code> giver samme liste som <code>raddoppiaLista(7)</code>. Det er loven <code>unit(y).flatMap(f) == f(y)</code> anvendt på et eksempel.</p></li>
+      <li data-righe="29" data-segna="List(n * 2)@ora"><p>Hjælpefunktion: den returnerer en liste med det dobbelte af n. Det er en funktion <code>Int =&gt; List[Int]</code>, altså et trin i en kæde af List.</p></li>
+    </ol>
+  </figure>
+</section>
+
+<section>
+  <h2>Outputtet</h2>
+  <figure class="codice" data-titolo="Output fra kørslen">
+<pre data-lang="text">Some(3)
+None
+Some(5)
+true
+List((1,3), (1,4), (2,3), (2,4))
+true
+true
+true</pre>
+    <ol class="spiega">
+      <li data-righe="1-3"><p>Kæden med 3, med −3 og med 5: Some(3), None, Some(5).</p></li>
+      <li data-righe="4"><p><code>flatMap</code> med <code>Some</code> giver samme resultat som <code>map</code>.</p></li>
+      <li data-righe="5"><p><code>for</code> producerer de fire par, i læserækkefølge.</p></li>
+      <li data-righe="6-8"><p><code>flatMap</code> skrevet i hånden og de to identitetslove: alle <code>true</code>.</p></li>
+    </ol>
+  </figure>
+</section>
+
+<section>
+  <h2>Husk</h2>
+  <div class="box inglese" data-tit="Sætning til eksamen">A monad is a functor with unit and flatMap: the result of the next step depends on the value of the previous one.</div>
+  <div class="box regola" data-tit="Praktisk regel">Et <code>for</code> med flere <code>&lt;-</code> er en kæde af <code>flatMap</code>. Hvis du skriver det forkert (for eksempel med <code>map</code>, hvor der skal stå <code>flatMap</code>), får du en indlejret container: <code>Option[Option[Int]]</code>.</div>
+</section>
+
+</main>
+</body>
+</html>

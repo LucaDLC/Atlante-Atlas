@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cache and coherence: the MESI protocol</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <div class="occhiello"><span>Week 9 · Performance</span></div>
+  <h1>Cache and coherence: the MESI protocol</h1>
+  <p class="lede">The CPU is faster than the RAM, and the cache closes the gap. With several cores each cache has a copy of the data, and the copies must agree: that is the job of the MESI protocol.</p>
+</header>
+
+<section>
+  <h2>The bridge between CPU and RAM</h2>
+  <p>The CPU works much faster than the RAM. The <b>cache</b> is a small, fast memory, close to the CPU, that keeps copies of the data used recently. It works well because of <b>locality of access</b>: if a datum is needed now, it will probably be needed again, and data close together in memory are often needed together.</p>
+  <figure class="passi" data-titolo="A read from memory" data-legenda="dato:requested address,ora:step in progress,ok:fast,no:slow">
+    <div class="passo"><div class="espr">La CPU chiede un <mark class="dato">indirizzo</mark></div><p class="nota">The first step is always to look for it in the cache.</p></div>
+    <div class="passo"><div class="espr">Se è in cache: <mark class="ok">lettura veloce</mark></div><p class="nota">This is the good case: the datum is already there, and the RAM is not touched.</p></div>
+    <div class="passo"><div class="espr">Se non è in cache: <mark class="no">lettura lenta</mark> dalla RAM, e la <mark class="ora">linea</mark> viene copiata in cache</div><p class="nota">The cache copies a whole block, not a single byte: so the nearby data are already ready.</p></div>
+  </figure>
+</section>
+
+<section>
+  <h2>More cores, more caches</h2>
+  <p>Each core has its own caches. The same memory address can therefore be in several caches at the same time. The block of memory that a cache copies is called a <b>cache line</b>: usually 64 bytes. The caches must agree on the value of each line: the mechanism is called a <b>coherence protocol</b>, and in the slides it is <b>MESI</b>, from the name of its four states.</p>
+</section>
+
+<section>
+  <h2>The MESI states</h2>
+  <p>Each cache line, in each core, is in one of four states:</p>
+  <div class="tab-wrap"><table class="tab"><thead><tr><th>state</th><th>meaning</th><th>is the RAM up to date?</th></tr></thead><tbody>
+    <tr><td><b>M</b> Modified</td><td>modified copy, present only in this cache</td><td>no: the RAM has the old value</td></tr>
+    <tr><td><b>E</b> Exclusive</td><td>unmodified copy, present only here</td><td>yes</td></tr>
+    <tr><td><b>S</b> Shared</td><td>unmodified copy, present in several caches</td><td>yes</td></tr>
+    <tr><td><b>I</b> Invalid</td><td>the line is not valid: it must be read again</td><td>–</td></tr>
+  </tbody></table></div>
+  <p>To write to a line in state S, the core must first send an <b>invalidate</b> message to the other caches, and wait for their confirmation (<i>ack</i>). Only then does the line become M.</p>
+</section>
+
+<section>
+  <h2>Fast or slow</h2>
+  <p>The speed depends on what the core wants to do and on the state of the line in its cache. The most important rows of the slide:</p>
+  <div class="tab-wrap"><table class="tab"><thead><tr><th>current state</th><th>the core wants</th><th>speed</th></tr></thead><tbody>
+    <tr><td>M o E</td><td>read or write</td><td>fast: the datum is already its own</td></tr>
+    <tr><td>S</td><td>read</td><td>fast: the copy is valid</td></tr>
+    <tr><td>I</td><td>read</td><td>slow: it must be taken from another cache or from the RAM</td></tr>
+    <tr><td>S</td><td>write</td><td>very slow: invalidate all the other copies</td></tr>
+    <tr><td>I</td><td>write</td><td>very slow: first read, then invalidate</td></tr>
+  </tbody></table></div>
+  <figure class="passi" data-titolo="Two cores on the same line" data-legenda="dato:value,ora:what changes,ok:stable state,no:high cost">
+    <div class="passo"><div class="espr">Core 0 <mark class="ora">legge</mark> la linea: stato <mark class="dato">E</mark></div><p class="nota">Nobody else has it: the copy is its own and the RAM is up to date.</p></div>
+    <div class="passo"><div class="espr">Core 1 <mark class="ora">legge</mark> la stessa linea: entrambi in <mark class="ok">S</mark></div><p class="nota">Two identical and clean copies: fast reads for both.</p></div>
+    <div class="passo"><div class="espr">Core 0 <mark class="no">scrive</mark>: invalida la copia di core 1 (I), lui passa a <mark class="ora">M</mark></div><p class="nota">Writing on S costs: the invalidate message must reach the other core.</p></div>
+    <div class="passo"><div class="espr">Core 1 <mark class="no">rilegge</mark>: la sua copia è I, la prende da core 0 e tutti e due tornano in S</div><p class="nota">Every exchange of writes and reads between two cores costs a trip on the bus: the ping-pong of the next page.</p></div>
+  </figure>
+</section>
+
+<section>
+  <h2>What follows for the code</h2>
+  <div class="box idea" data-tit="The idea">The cost is not in the computation, it is in the movement of the lines between caches. A datum written only by one thread stays in M in its cache: fast. A datum written by several threads goes back and forth: slow.</div>
+  <div class="box basi" data-tit="If you come from…">If you have used only threads without thinking about memory, this is the part you are missing: there is not one single "value" in memory, there are copies in several caches that must agree.</div>
+</section>
+
+</main>
+</body>
+</html>

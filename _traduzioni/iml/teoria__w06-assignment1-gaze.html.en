@@ -1,0 +1,98 @@
+@@s001 Assignment 1: estimating gaze
+@@s002 ora:current step,ok:already done
+@@s003 From the photo of the eye to a point on the screen. First one <b>extracts a feature</b> (the centre of the pupil), then one <b>learns a function</b> that brings it onto the screen.
+@@s004 dato:pupil (camera image),due:screen,ora:one point,ok:affine map
+@@s005 dato:pupil data,ora:added column,due:weights,ok:predictions
+@@s006 dato:small errors,no:a large error
+@@s007 dato:column (what multiplies the weight),no:weight on the wrong column,ok:right order
+@@s008 dato:original values,ok:normalised to [0, 1],no:data leakage
+@@s009 Assignment 1: estimating gaze
+@@s010 The first compulsory assignment (week 6, main work in week 42). From the images of the eye one estimates <b>where the person looks on the screen</b> (gaze), with an affine model and then a quadratic one learned with least squares. It is the exam question <b>Q4</b>.
+@@s011 The problem
+@@s012 <b>Input</b>: the centre of the pupil in the camera image, (x, y).
+@@s013 <b>Output</b>: the point looked at on the screen, (x', y'), in pixels (the grid targets range from 100 to 1820 in x and from 100 to 980 in y).
+@@s014 <b>Why learning is needed</b>: the fovea (the point of the retina with which one looks) is not on the axis of the pupil, but at a different angle for each person (±5°). So the model must be <b>calibrated</b> on each person: the person looks at 9 known points (the grid) and from those pairs one learns f<sub>w</sub>.
+@@s015 The complete pipeline
+@@s016 Q4 (a): preprocessing and feature extraction
+@@s017 To be able to explain: why an image is reduced to <b>two numbers</b> (features), what each step does, which parameters must be set by hand (threshold, box) and which errors arise from them (reflections, eyelashes, eyelid, blur, frames where no pupil is found).
+@@s018 Which notebook, which tasks
+@@s019 Week 6 has three notebooks. Every time a task is cited, one must say in which notebook it is, because the numbers repeat.
+@@s020 <code>01-data-preprocessing.ipynb</code>: Tasks 1–10, from the frames to the two csv files (Task 9 is done by hand). No compulsory task, but without it you do not have your own data for Tasks 14–16 of notebook 02.
+@@s021 <code>02-gaze.ipynb</code>: Tasks 1–21, the gaze model. Compulsory Tasks 1–16 (red icon), optional 17–21.
+@@s022 <code>03-penpaper.ipynb</code>: pen-and-paper exercises, not part of the notebook to hand in.
+@@s023 The exercise "Data preprocessing": from the frames to the two csv files
+@@s024 It is the notebook <code>01-data-preprocessing.ipynb</code> (week 6), prerequisite of the assignment. Real example, test_subject_1, grid pattern:
+@@s025 <b>384 frames</b> of the eye (<code>frames/*.jpg</code>, from the data collection of week 2).
+@@s026 <code>pupil_detection</code> on each frame (Task 5) → <code>pupil_coordinates.csv</code>: 384 rows <code>image, px, py</code>.
+@@s027 Scatter of the 384 centres (Task 7): they form 9 groups, one per target, about 43 frames each.
+@@s028 <b>By hand</b> (Task 9) one reads the centre of each group and writes it in the dictionary <code>D</code>, in the same order as the targets in the dictionary <code>S</code>.
+@@s029 <code>save_coordinates_to_csv</code> writes <code>mean_pupil_coordinates.csv</code> (9 × 2, the inputs) and <code>screen_coordinates.csv</code> (9 × 2, the labels) in <code>W02/sessions/&lt;subject&gt;/&lt;trial&gt;/&lt;pattern&gt;/</code>. First row: pupil (321.5, 214.0) ↔ screen (100, 100).
+@@s030 For test_subject_0 and test_subject_1 the work is already done (csv provided): Task 1 only asks to copy <code>test_subject_0</code> from <code>Data/test_subjects/</code> of the repo into <code>W02/sessions</code>. The parameters chosen (threshold, box, <code>max_axis_ratio</code>) must be reported in Task 14 of the gaze.
+@@s031 The affine model
+@@s032 From two equations to two linear systems
+@@s033 Both coordinates of the pupil serve for both coordinates of the screen. 6 parameters in all.
+@@s034 Simpler than a single one: each has 3 parameters and the same input.
+@@s035 Each pair (pupil, target) gives a linear equation in the weights. The 1 multiplies c: it is the translation (<a href="w05-affine-omogenee.html">affine</a>).
+@@s036 9 equations, 3 unknowns: an <b>overdetermined</b> system, solved with <a href="w05-minimi-quadrati.html">least squares</a> (<code>np.linalg.lstsq</code>, recommended by the assignment for numerical stability). The same A serves also for y'.
+@@s037 Task 2: how many points are needed? Which ones?
+@@s038 <b>At least 3</b>, because each model has 3 parameters and each point gives one equation per model. And <b>not collinear</b>: with 3 points on a line the rows [x, y, 1] are dependent and A has rank 2 instead of 3 (verified), so infinite solutions. Even with 3 valid points, which ones matter: points close to each other make the solution very sensitive to noise; points at the corners of the grid stabilise it.
+@@s039 From the pupil to the screen, 6 parameters
+@@s040 The code, piece by piece
+@@s041 Design matrix, calibration and prediction (tried with the data of test_subject_1)
+@@s042 Three columns: all the x, all the y, a column of 1s. <code>np.c_</code> puts them side by side (see <a href="nozioni-numpy.html">NumPy</a>). One row per point.
+@@s043 Two systems with the <b>same</b> A and two different vectors b: the x' and the y' of the targets. <code>lstsq</code> returns 4 things; <code>[0]</code> takes the weights.
+@@s044 To predict one builds the design matrix of the new points with <b>the same function</b>, and multiplies: (N × 3)(3) → N predictions per coordinate.
+@@s045 What the weights say (test_subject_1, calibration on the grid)
+@@s046 Weights computed with the 9 mean pupil centres of test_subject_1 reported in the preprocessing exercise.
+@@s047 The minus sign: in the camera image the eye is mirrored. The size: the whole screen (1720 px between the targets) corresponds to about 33 px of movement of the pupil.
+@@s048 The model <b>amplifies</b> every imprecision of the preprocessing. That is why the assignment warns to expect errors of ±200 px.
+@@s049 Design matrix, lstsq, predictions
+@@s050 Evaluating the model
+@@s051 The metrics of Task 4
+@@s052 Absolute error per coordinate, then the mean <b>per column</b>: one sees separately how much one errs in x and in y.
+@@s053 For each point the Euclidean <a href="w02-norme-distanze.html">distance</a> between estimate and target (norm of each row), then the mean: "by how many pixels I am wrong on average".
+@@s054 <b>RMSE</b>: root of the mean of the squares. Squares weigh large errors more, so RMSE ≥ mean distance always; the difference grows when there are few very large errors.
+@@s055 In the docstrings it is not specified whether the RMSE must be computed on the distances or on all the coordinates together: choose one and write which. Here it is the one on the distances.
+@@s056 Test on (test_subject_1)
+@@s057 affine: distance
+@@s058 affine: RMSE
+@@s059 quadratic: distance
+@@s060 quadratic: RMSE
+@@s061 grid (it is the training)
+@@s062 circle
+@@s063 line
+@@s064 random
+@@s065 Pixels. Models calibrated on the 9 points of the grid; computed with the mean pupil centres and the screen coordinates written in the text of the exercises. With your data the numbers will be different, the reading will not.
+@@s066 Why the error grows pattern after pattern: time
+@@s067 Each pattern is recorded after the previous one. Compared with the end of the grid, circle starts at about +25 s and lasts 27 s; line starts at +52 s; random starts at +79 s. The error grows in the same order: 124, 362, 411 px. The same target, (100, 540) on the screen, has the pupil at x = 318 in the grid and x = 329 in the line: 11 px of difference, which the model (about 50 screen px for each pixel) turns into hundreds of pixels. It is a hypothesis to verify on the frames (head, position of the eye), not a conclusion.
+@@s068 How to read them
+@@s069 It is evaluated on the same points used to learn: it says nothing about new data.
+@@s070 With 6 parameters on 9 points the model follows the training points better, including their noise, and on a new pattern it gets worse. This is <b>overfitting</b> (week 7).
+@@s071 Same point looked at, pupil moved by 11 px: between one recording and the next the head or the camera has moved. 11 px × ~50 = hundreds of pixels on the screen.
+@@s072 The estimates are all shifted <b>to the same side</b>: it is a <b>systematic</b> error, not random noise. No model calibrated on the grid can correct it.
+@@s073 Q4 (c) and Task 6: sources of error of the affine model
+@@s074 (1) <b>The model is too simple</b>: the eye rotates on a sphere, so the relation pupil → screen is not linear. (2) <b>Noise in the feature</b>: threshold, reflections and eyelids move the centre by a few pixels, amplified about 50 times. (3) <b>Head movements</b> between calibration and test: systematic error. (4) <b>Few calibration points</b> (9), and the target on the screen not always looked at precisely. <b>MAE vs RMSE</b>: the MAE gives the typical error per axis, the RMSE punishes the very wrong points more.
+@@s075 How to understand where the error comes from: three checks
+@@s076 <b>1. Error on the calibration points.</b> Compute the distance also on the 9 points used to train. If it is already high, the problem is the <b>model</b> (too simple), not the noise on the test. On <code>test_subject_0</code>, session 0: <b>84 px</b> on the training points, 166 px on the test.
+@@s077 <b>2. Signed error, the mean.</b> Sum the errors without removing the sign. If the mean is far from 0, the estimates are all shifted in the same direction: <b>systematic</b> error (head, drift). On the same session: <b>+142 px</b> in x.
+@@s078 <b>3. Shape of the distribution.</b> Many small errors and a few enormous: the RMSE moves away from the MAE. The chart with the arrows shows the same: all equal arrows = bias; random arrows = noise; a few very long arrows = points outside the calibrated zone.
+@@s079 Generalising: from one person to another
+@@s080 Calibration on <code>test_subject_0</code> (9 points, raw pupils), test on <code>test_subject_1</code> (4 patterns). Mean distance: <b>84 px</b> on the training points of the same person, <b>96–166 px</b> on the test of the same person, <b>398–415 px</b> on another person. Signed error in y: <b>+263 … +384 px</b> for all 4 patterns, so a fixed shift, not noise.
+@@s081 <b>Warning:</b> Task 8 as written in the notebook uses <code>pupils_n_train</code> (normalised coordinates, about 84–113) with <code>pupils_test</code> of <code>test_subject_1</code> (raw, about 284–321). They are different scales: the error comes out at about <b>16 000 px</b>. It is not a result about generalisation: it is the wrong value to report to the TA.
+@@s082 MAE, mean distance, RMSE
+@@s083 The quadratic model (Task 20)
+@@s084 More features, same method
+@@s085 Curved in x and y, but still <b>linear in the weights</b> (<a href="w04-polinomi.html">polynomials</a>): it is learned with the same least squares.
+@@s086 The reason for the design matrix of Task 20: each column is what multiplies a weight.
+@@s087 Only 3 "extra" equations remain to average out the noise: few.
+@@s088 No Python error, but an absurd result (verified). The function <code>quad</code> of the notebook uses the weights in the order [1, x, y, xy, x², y²], the design matrix of Task 20 in the order [x², y², xy, x, y, 1]: every weight ends up on the wrong column. Rule: <b>the order of the columns must be the same in training and in prediction</b>. The safest way: predict with <code>get_design_matrix_quad(pupils) @ w</code>, the same function used for training. (The same holds for <code>linear</code>, which puts the constant first.)
+@@s089 6 columns, and the order of the weights
+@@s090 Normalising the data (Tasks 18–19)
+@@s091 What really changes with MinMaxScaler
+@@s092 Columns of very different magnitudes: the matrix is "ill-conditioned", the calculations lose digits.
+@@s093 After having brought everything between 0 and 1. More stable numbers.
+@@s094 Normalising is an affine change of variable: an affine or quadratic model in the normalised variables is still affine or quadratic in the real ones. Least squares finds the same function.
+@@s095 It looks like an improvement, but the scaler has used the minimum and the maximum of the test points: information that in reality you would not have. It is <b>data leakage</b>. The scaler is fitted <b>only</b> on the training and then applied to the test.
+@@s096 Task 19: the traps of normalisation
+@@s097 Fitting the scaler on the test (leakage). Min and max decided by a single outlier, which squashes all the other points. Predictions and errors must be <b>brought back in pixels</b> (<code>inverse_transform</code>) before comparing them with the non-normalised results.
+@@s098 Conditioning and data leakage

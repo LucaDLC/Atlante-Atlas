@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Affine and homogeneous coordinates</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  const T = (id, x, y, t, extra) => Object.assign({ id, tipo: 'testo', x, y, t, size: 14 }, extra || {});
+  const G = (id, x, y, vals, extra) => Object.assign({ id, tipo: 'griglia', x, y, cw: 44, ch: 32, valori: vals }, extra || {});
+  const Q = [[0, 0], [1, 0], [1, 1], [0, 1]];
+
+  // 1. affine = lineare + traslazione
+  SCENE.affine1 = {
+    w: 600, h: 272, lato: true,
+    legenda: 'spento:starting square,ora:after A,ok:after A and then + t',
+    oggetti: [
+      { id: 'ax', tipo: 'assi', box: [40, 20, 300, 220], dom: [-0.5, 4, -0.5, 2.5], tacche: 1 },
+      { id: 'q0', tipo: 'poli', in: 'ax', punti: Q, tono: 'spento' },
+      { id: 'q1', tipo: 'poli', in: 'ax', punti: Q, tono: 'ora', nascosto: true },
+      { id: 'tt', tipo: 'vett', in: 'ax', x1: 0, y1: 0, x2: 2, y2: 1, t: 't = [2, 1]', tx: -30, ty: 18, tono: 'ok', nascosto: true },
+      T('c1', 470, 60, 'p′ = A p + t', { bold: true }), T('c2', 470, 100, '', { size: 13 }), T('c3', 470, 130, '', { size: 13 }), T('c4', 470, 180, '', { size: 13, bold: true })
+    ],
+    passi: [
+      { nota: "Una trasformazione <b>affine</b> è una trasformazione lineare seguita da una traslazione: <b>p′ = Ap + t</b>. A è una matrice 2 × 2, t un vettore di 2 numeri." },
+      { nota: "Prima la parte lineare, A = [[1, 0.5], [0, 1]] (un taglio): il quadrato diventa un parallelogramma, ma l'origine resta ferma.", set: { q1: { nascosto: false, punti: [[0, 0], [1, 0], [1.5, 1], [0.5, 1]] }, c2: { t: 'A = [[1, 0.5], [0, 1]]' } } },
+      { nota: "Poi la traslazione t = [2, 1]: tutto si sposta, origine compresa. Ora (0, 0) va in (2, 1).", set: { tt: { nascosto: false }, q1: { punti: [[2, 1], [3, 1], [3.5, 2], [2.5, 2]], tono: 'ok' }, c3: { t: 't = [2, 1]' } } },
+      { nota: "Parametri: 4 in A più 2 in t, <b>6</b> in tutto. Le rette restano rette e le parallele restano parallele, come nelle lineari; cambia solo che l'origine si muove. È il modello dell'esercizio della settimana 5 (telecamera → mappa) e dell'Assignment 1.", set: { c4: { t: '4 + 2 = 6 parametri', tono: 'ok' } } }
+    ]
+  };
+
+  // 2. coordinate omogenee: esercizio 12
+  SCENE.omogenee = {
+    w: 600, h: 250, lato: true,
+    legenda: 'due:the added 1,ora:the row being computed,ok:result',
+    oggetti: [
+      T('tm', 110, 26, 'T', { bold: true }), G('M', 44, 36, [['1', '0', '3'], ['0', '1', '−1'], ['0', '0', '1']]),
+      G('p', 200, 36, [['1'], ['2'], ['1']]), T('tp', 222, 26, 'p', { bold: true }),
+      T('e', 270, 88, '=', { size: 20, bold: true }),
+      G('r', 290, 36, [[''], [''], ['']]),
+      T('c1', 460, 60, '', { size: 13 }), T('c2', 460, 100, '', { size: 13 }), T('c3', 460, 140, '', { size: 13 }), T('c4', 300, 210, '', { bold: true })
+    ],
+    passi: [
+      { nota: "Il problema: la traslazione non è un prodotto di matrici 2 × 2. Il trucco: al punto (1, 2) si <b>aggiunge una terza componente uguale a 1</b>: [1, 2, 1]. Sono le <b>coordinate omogenee</b>.", set: { p: { toni: { '2,0': 'due' } } } },
+      { nota: "La matrice diventa 3 × 3: in alto a sinistra la parte lineare (qui l'identità), nella <b>terza colonna</b> la traslazione [3, −1], e l'ultima riga [0, 0, 1].", set: { M: { toni: { '0,2': 'ora', '1,2': 'ora' } }, c1: { t: 'terza colonna = traslazione' } } },
+      { nota: "Riga 1 per p: 1·1 + 0·2 + 3·<b>1</b> = 4. La traslazione 3 è moltiplicata proprio dall'1 aggiunto: così entra nel prodotto.", set: { M: { toni: { '0,0': 'ora', '0,1': 'ora', '0,2': 'ora' } }, r: { valori: [['4'], [''], ['']], toni: { '0,0': 'ok' } }, c2: { t: '1 + 0 + 3·1 = 4' } } },
+      { nota: "Riga 2: 0·1 + 1·2 + (−1)·1 = 1. Riga 3: 0 + 0 + 1 = 1: l'ultima componente resta sempre 1.", set: { M: { toni: { '1,0': 'ora', '1,1': 'ora', '1,2': 'ora' } }, r: { valori: [['4'], ['1'], ['1']], toni: { '0,0': 'ok', '1,0': 'ok', '2,0': 'due' } }, c3: { t: '0 + 2 − 1 = 1' } } },
+      { nota: "Si leggono le prime due componenti: il punto è diventato <b>(4, 1)</b> = (1 + 3, 2 − 1). È l'esercizio 12 del test (controllato con NumPy).", set: { M: { toni: {} }, c4: { t: '(1, 2) traslato di (3, −1) = (4, 1)', tono: 'ok' } } }
+    ]
+  };
+
+  // 3. comporre
+  SCENE.componiaff = {
+    w: 600, h: 272, lato: true,
+    legenda: 'dato:p = (1, 0),ora:after the first,ok:result',
+    oggetti: [
+      { id: 'ax', tipo: 'assi', box: [40, 20, 280, 230], dom: [-1, 4, -1, 4], tacche: 1 },
+      { id: 'p', tipo: 'punto', in: 'ax', x: 1, y: 0, t: 'p = (1, 0)', tono: 'dato', ty: -12 },
+      { id: 'm', tipo: 'punto', in: 'ax', x: 0, y: 1, t: '', tono: 'ora', nascosto: true },
+      { id: 'f', tipo: 'punto', in: 'ax', x: 2, y: 1, t: '', tono: 'ok', nascosto: true },
+      T('c1', 470, 50, '', { bold: true, size: 13 }), T('c2', 470, 90, '', { size: 13 }), T('c3', 470, 120, '', { size: 13 }), T('c4', 470, 170, '', { bold: true, size: 13 })
+    ],
+    passi: [
+      { nota: "Con le coordinate omogenee ogni trasformazione affine è una matrice 3 × 3, e <b>comporre</b> è un prodotto: \"prima R, poi T\" = TR. Due trasformazioni: R = rotazione di 90°, T = traslazione di [2, 0]." },
+      { nota: "<b>Prima R, poi T</b> (matrice TR): R porta (1, 0) in (0, 1)…", set: { m: { nascosto: false, t: 'R p = (0, 1)' }, c1: { t: 'TR: prima R, poi T' }, c2: { t: 'R p = (0, 1)' } } },
+      { nota: "…poi T sposta di 2 a destra: (2, 1).", set: { f: { nascosto: false, t: 'T R p = (2, 1)' }, c3: { t: 'T(0, 1) = (2, 1)' } } },
+      { nota: "<b>Prima T, poi R</b> (matrice RT): T porta (1, 0) in (3, 0)…", set: { m: { x: 3, y: 0, t: 'T p = (3, 0)', ty: -12, tx: -30 }, f: { nascosto: true }, c1: { t: 'RT: prima T, poi R' }, c2: { t: 'T p = (3, 0)' }, c3: { t: '' } } },
+      { nota: "…poi R ruota attorno all'origine: (0, 3). Risultato diverso: TR ≠ RT. Con le omogenee una catena \"ruota, trasla, scala\" diventa un'unica matrice T₃T₂T₁, calcolata una volta (valori controllati).", set: { f: { nascosto: false, x: 0, y: 3, t: 'R T p = (0, 3)' }, c3: { t: 'R(3, 0) = (0, 3)' }, c4: { t: 'TR p = (2, 1) ≠ RT p = (0, 3)', tono: 'no' } } }
+    ]
+  };
+
+  // 4. quante corrispondenze
+  SCENE.quante = {
+    w: 600, h: 272, lato: true,
+    legenda: 'dato:starting points,ok:enough,no:not enough',
+    oggetti: [
+      { id: 'ax', tipo: 'assi', box: [40, 20, 260, 230], dom: [-0.5, 3, -0.5, 3], tacche: 1 },
+      { id: 'a', tipo: 'punto', in: 'ax', x: 0, y: 0, t: '(0, 0)', tono: 'dato' },
+      { id: 'b', tipo: 'punto', in: 'ax', x: 1, y: 0, t: '(1, 0)', tono: 'dato', nascosto: true },
+      { id: 'c', tipo: 'punto', in: 'ax', x: 0, y: 1, t: '(0, 1)', tono: 'dato', nascosto: true },
+      T('c1', 450, 50, '6 incognite: w₁ … w₆', { bold: true, size: 13 }),
+      T('c2', 450, 90, '1 punto → 2 equazioni', { size: 13 }), T('c3', 450, 120, '', { size: 13 }), T('c4', 450, 160, '', { size: 13, bold: true }), T('c5', 450, 200, '', { size: 13 })
+    ],
+    passi: [
+      { nota: "Una trasformazione affine del piano ha 6 parametri. Una corrispondenza (x, y) → (x′, y′) dà <b>2</b> equazioni, una per x′ e una per y′." },
+      { nota: "Con 2 punti: 4 equazioni per 6 incognite. Non basta: infinite trasformazioni rispettano le due corrispondenze.", set: { b: { nascosto: false }, c3: { t: '2 punti → 4 equazioni: poche', tono: 'no' } } },
+      { nota: "Con <b>3</b> punti <b>non allineati</b>: 6 equazioni per 6 incognite, e la design matrix 6 × 6 ha rango 6. Soluzione unica.", set: { c: { nascosto: false }, c3: { t: '3 punti → 6 equazioni' }, c4: { t: 'rango 6: soluzione unica', tono: 'ok' } } },
+      { nota: "Attenzione ai punti <b>allineati</b>, per esempio (0, 0), (1, 1), (2, 2): anche se sono 3, la design matrix ha rango 4, non 6. Non dicono niente su cosa succede \"di lato\" alla retta, e la trasformazione non è determinata (rango calcolato con NumPy).", set: { b: { x: 1, y: 1, t: '(1, 1)' }, c: { x: 2, y: 2, t: '(2, 2)', tono: 'no' }, c4: { t: 'allineati: rango 4', tono: 'no' }, c5: { t: 'servono punti "sparsi"' } } }
+    ]
+  };
+
+  // 5. imparare w (scena originale)
+  const S = [[0, 0], [1, 0], [0, 1]], D = [[1, -1], [3, -1], [1.5, 0]];
+  const ogg = [{ id: 'ax', tipo: 'assi', box: [40, 15, 330, 220], dom: [-0.5, 6.5, -1.5, 3], tacche: 1 }];
+  ogg.push({ id: 'src', tipo: 'poli', in: 'ax', punti: S, tono: 'dato' });
+  ogg.push({ id: 'dst', tipo: 'poli', in: 'ax', punti: D, tono: 'ok', nascosto: true });
+  S.forEach((p, i) => ogg.push({ id: 's' + i, tipo: 'punto', in: 'ax', x: p[0], y: p[1], t: `(${p[0]}, ${p[1]})`, tono: 'dato' }));
+  D.forEach((p, i) => ogg.push({ id: 'd' + i, tipo: 'punto', in: 'ax', x: p[0], y: p[1], t: `(${p[0]}, ${p[1]})`, tono: 'ok', tx: i === 2 ? 14 : 9, ty: i === 2 ? -26 : 16, nascosto: true }));
+  S.forEach((p, i) => ogg.push({ id: 'f' + i, tipo: 'linea', in: 'ax', x1: p[0], y1: p[1], x2: D[i][0], y2: D[i][1], tratt: true, tono: 'spento', nascosto: true }));
+  ogg.push({ id: 'nuovo', tipo: 'punto', in: 'ax', x: 2, y: 2, t: '(2, 2)', tono: 'due', nascosto: true });
+  ogg.push({ id: 'imm', tipo: 'punto', in: 'ax', x: 6, y: 1, t: '(6, 1)', tono: 'due', nascosto: true });
+  ogg.push({ id: 'fn', tipo: 'linea', in: 'ax', x1: 2, y1: 2, x2: 6, y2: 1, tratt: true, tono: 'due', nascosto: true });
+  ogg.push({ id: 'n', tipo: 'testo', x: 200, y: 262, t: '', size: 13, bold: true });
+  SCENE.aff = {
+    w: 400, h: 275, lato: true,
+    legenda: 'dato:points in the starting plane,ok:corresponding points,due:a new point',
+    oggetti: ogg,
+    passi: [
+      { nota: 'Three points in a plane (for example the floor in the camera image).' },
+      { nota: 'We know where they go in the other plane (the map seen from above): three <b>correspondences</b>. They are the training data.', set: { dst: { nascosto: false }, d0: { nascosto: false }, d1: { nascosto: false }, d2: { nascosto: false }, f0: { nascosto: false }, f1: { nascosto: false }, f2: { nascosto: false } } },
+      { nota: 'Each correspondence gives <b>2 equations</b> (one for x′, one for y′), linear in the 6 parameters w₁…w₆. Three points = 6 equations: one solves and obtains w = [2, 0.5, 1, 0, 1, −1].', set: { n: { t: 'x\' = 2x + 0.5y + 1     y\' = y − 1', tono: 'ok' } } },
+      { nota: 'The learned model is applied to <b>new</b> points: (2, 2) → (2·2 + 0.5·2 + 1, 2 − 1) = <b>(6, 1)</b>. This is how the exercise takes the trace of a person from the camera to the map.', set: { nuovo: { nascosto: false }, imm: { nascosto: false }, fn: { nascosto: false } } }
+    ]
+  };
+
+  // 6. più corrispondenze rumorose
+  const src5 = [[0, 0], [1, 0], [0, 1], [2, 1], [1, 2]];
+  const dst5 = [[1.0, -0.98], [2.98, -1.07], [1.46, -0.08], [5.5, 0.11], [3.96, 0.95]];
+  const og6 = [{ id: 'ax', tipo: 'assi', box: [40, 20, 300, 220], dom: [-0.5, 6.5, -1.5, 2.5], tacche: 1 }];
+  src5.forEach((p, i) => og6.push({ id: 's' + i, tipo: 'punto', in: 'ax', x: p[0], y: p[1], t: '', tono: 'dato' }));
+  dst5.forEach((p, i) => og6.push({ id: 'd' + i, tipo: 'punto', in: 'ax', x: p[0], y: p[1], t: '', tono: 'no', nascosto: true }));
+  src5.forEach((p, i) => og6.push({ id: 'f' + i, tipo: 'linea', in: 'ax', x1: p[0], y1: p[1], x2: dst5[i][0], y2: dst5[i][1], tratt: true, tono: 'spento', nascosto: true }));
+  og6.push(T('c1', 470, 50, '', { size: 13, bold: true }), T('c2', 470, 90, '', { size: 12 }), T('c3', 470, 116, '', { size: 12 }), T('c4', 470, 160, '', { size: 13 }), T('c5', 470, 200, '', { size: 13, bold: true }));
+  SCENE.rumorose = {
+    w: 620, h: 262, lato: true,
+    legenda: 'dato:points clicked in the camera,no:positions measured on the map (with error)',
+    oggetti: og6,
+    passi: [
+      { nota: "Nell'esercizio vero le corrispondenze si <b>cliccano a mano</b>: ogni punto ha un piccolo errore. Qui 5 punti di partenza…" },
+      { nota: "…e le loro posizioni misurate, un po' spostate rispetto alla trasformazione vera (x′ = 2x + 0.5y + 1, y′ = y − 1).", set: Object.assign({ c1: { t: '5 corrispondenze → 10 equazioni' } }, Object.fromEntries(dst5.map((_, i) => ['d' + i, { nascosto: false }])), Object.fromEntries(src5.map((_, i) => ['f' + i, { nascosto: false }]))) },
+      { nota: "10 equazioni, 6 incognite, e per il rumore nessun w le rispetta tutte: sistema <b>sovradeterminato</b>. Si usa lo stesso codice di prima: <code>lstsq</code> dà il w dei minimi quadrati.", set: { c2: { t: 'stimato: [2.01, 0.48, 0.98,' }, c3: { t: '0.06, 0.98, −1.05]' } } },
+      { nota: "La stima è vicina ai valori veri [2, 0.5, 1, 0, 1, −1], e (2, 2) finisce in (5.97, 1.03) invece di (6, 1). Più corrispondenze = errori che si compensano = stima più affidabile (numeri calcolati con NumPy su dati simulati).", set: { c4: { t: 'vero: [2, 0.5, 1, 0, 1, −1]' }, c5: { t: '(2, 2) → (5.97, 1.03)', tono: 'ok' } } }
+    ]
+  };
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Affine and homogeneous coordinates</h1>
+  <p class="lede">A linear transformation cannot shift the origin. An <b>affine</b> transformation can: it is linear plus a translation. With <b>homogeneous coordinates</b> it becomes a product of matrices again, and its parameters are learned with <a href="w05-minimi-quadrati.html">least squares</a>. It is the basis of the exercise of week 5 and of Assignment 1.</p>
+</header>
+
+<section>
+  <h2>Affine = linear + translation</h2>
+  <p>An <b>affine</b> transformation is <span class="m">p′ = Ap + t</span>: first a linear transformation A (which rotates, scales, shears), then a translation t (which shifts). In the plane A has 4 numbers and t has 2: <b>6 parameters</b>.</p>
+  <p>It keeps almost everything of the linear ones: straight lines remain straight, parallel lines remain parallel, midpoints remain midpoints. The only thing it loses is that the origin stays still. That is why it is the right model for carrying points from one plane to another, like the floor seen by the camera onto the map seen from above, or the pupil onto the screen.</p>
+  <p>The regression line y = w₀ + w₁x is the simplest example of an affine function: w₁x is the linear part, w₀ the translation.</p>
+  <figure class="scena" data-scena="affine1" data-titolo="First A, then + t"></figure>
+</section>
+
+<section>
+  <h2>Homogeneous coordinates: one extra 1</h2>
+  <p>The practical problem: Ap + t are two different operations, and with chains of transformations the calculations get complicated. The <b>homogeneous coordinates</b> solve it by adding to every point a fixed component equal to 1: [x, y] becomes [x, y, 1].</p>
+  <figure class="passi" data-titolo="From the form Ax + t to the 3 × 3 matrix">
+    <div class="passo"><div class="espr">p' = <mark class="dato">A</mark> p + <mark class="ora">t</mark>     A 2 × 2, t = [t₁, t₂]</div><p class="nota">A rotates, scales, shears; t shifts. 4 + 2 = 6 parameters.</p></div>
+    <div class="passo"><div class="espr">p = [x, y]  →  <mark class="due">[x, y, 1]</mark></div><p class="nota"><b>Homogeneous coordinates</b>: I add a fixed component equal to 1.</p></div>
+    <div class="passo"><div class="espr">[x', y', 1] = [[<mark class="dato">w₁, w₂</mark>, <mark class="ora">w₃</mark>], [<mark class="dato">w₄, w₅</mark>, <mark class="ora">w₆</mark>], [0, 0, 1]] · [x, y, <mark class="due">1</mark>]</div><p class="nota">The third column multiplies the 1: the translation becomes part of the product. It is the matrix T of the exercise.</p></div>
+    <div class="passo"><div class="espr">x' = w₁x + w₂y + w₃     y' = w₄x + w₅y + w₆</div><p class="nota">Carrying out the product. The last row always gives 1 = 1.</p></div>
+  </figure>
+  <p>It is the same idea as the column of 1s in the design matrix: adding a constant component allows a constant term to be treated as any other weight.</p>
+  <figure class="scena" data-scena="omogenee" data-titolo="(1, 2) shifted by (3, −1) with a 3 × 3 matrix"></figure>
+</section>
+
+<section>
+  <h2>Composing affine transformations</h2>
+  <p>With homogeneous coordinates every affine transformation is a 3 × 3 matrix, and applying several in a row is a product of matrices: "rotate, then shift, then scale" = <span class="m">T₃T₂T₁</span>, with the first applied on the right.</p>
+  <div class="box regola" data-tit="Why it matters">
+    <p>A long chain reduces to <b>one</b> matrix, computed once and then applied to thousands of points. Without homogeneous coordinates the translation would have to be handled separately at each step.</p>
+  </div>
+  <p>As always with matrices, the order matters. Rotating and then shifting is not the same as shifting and then rotating: the rotation turns around the origin, so a point already moved is taken to a different place.</p>
+  <figure class="scena" data-scena="componiaff" data-titolo="Rotate then shift, or shift then rotate"></figure>
+</section>
+
+<section>
+  <h2>How many correspondences are needed</h2>
+  <p>To <b>learn</b> an affine transformation from data one needs <b>correspondences</b>: pairs "this point in the starting plane goes to that other point in the arrival plane". Each correspondence gives 2 equations (for x′ and for y′), and the unknowns are 6: at least <b>3 correspondences</b> are needed.</p>
+  <p>Not just any 3: the three starting points must be <b>non-collinear</b>. Three points on a line tell what happens along that line, but nothing about what happens to the side: the design matrix loses rank and the solution is not unique. It is the same phenomenon as the zero determinant of week 3.</p>
+  <figure class="scena" data-scena="quante" data-titolo="2 points are not enough, 3 are, but not collinear"></figure>
+</section>
+
+<section>
+  <h2>Learning w from the correspondences</h2>
+  <p>With the correspondences one builds a design matrix and solves it, exactly as for polynomials. Each correspondence adds two rows.</p>
+  <figure class="passi" data-titolo="The design matrix of the exercise (Task 1)">
+    <div class="passo"><div class="espr">una corrispondenza (x, y) → (x', y') dà:<br>[<mark class="dato">x, y, 1</mark>, 0, 0, 0] · w = x'<br>[0, 0, 0, <mark class="dato">x, y, 1</mark>] · w = y'</div><p class="nota">Two rows of the design matrix. The unknowns are the weights w₁…w₆, the data x, y are in the matrix.</p></div>
+    <div class="passo"><div class="espr">n corrispondenze ⇒ <mark class="ora">A</mark> (2n × 6) · <mark class="ora">w</mark> = <mark class="ok">b</mark> (2n)</div><p class="nota">b stacks all the x' and y' in the same order as the rows.</p></div>
+    <div class="passo"><div class="espr">n = 3 punti non allineati: 6 equazioni, <mark class="ok">soluzione unica</mark></div><p class="nota">With 3 collinear points the equations are not enough to fix the transformation.</p></div>
+  </figure>
+  <figure class="codice" data-titolo="Building A and solving (verified: w = [2, 0.5, 1, 0, 1, −1], (2, 2) → (6, 1))">
+<pre data-lang="python">rows, b = [], []
+for (x, y), (xp, yp) in zip(src, dst):
+    rows.append([x, y, 1, 0, 0, 0]); b.append(xp)
+    rows.append([0, 0, 0, x, y, 1]); b.append(yp)
+A = np.array(rows, dtype=float)
+w = np.linalg.lstsq(A, np.array(b), rcond=None)[0]
+T = np.array([[w[0], w[1], w[2]],
+              [w[3], w[4], w[5]],
+              [0,    0,    1   ]])
+T @ np.array([2, 2, 1])        # array([6., 1., 1.])</pre>
+    <ol class="spiega">
+      <li data-righe="1-4" data-segna="[x, y, 1, 0, 0, 0]@dato|[0, 0, 0, x, y, 1]@dato|zip(src, dst)@ora"><p><code>zip</code> runs through the starting and the arrival points together. For each one, two rows and two values of b.</p></li>
+      <li data-righe="5-6" data-segna="np.linalg.lstsq@ok"><p>Least squares: with 3 points it is the exact solution, with more points the best approximation. Same code.</p></li>
+      <li data-righe="7-9" data-segna="[0,    0,    1   ]@due"><p>I put the 6 weights back in the 3 × 3 homogeneous matrix.</p></li>
+      <li data-righe="10" data-segna="[2, 2, 1]@due"><p>To transform a point: homogeneous coordinates (I add the 1), product, and I read the first two components.</p></li>
+    </ol>
+  </figure>
+  <figure class="scena" data-scena="aff" data-titolo="Three correspondences are enough"></figure>
+</section>
+
+<section>
+  <h2>More correspondences: least squares</h2>
+  <p>With real data the correspondences have error (a click wrong by a few pixels). With exactly 3 points every error ends up in the transformation; with <b>more</b> points the errors compensate. The system becomes overdetermined (2n equations, 6 unknowns) and is solved with least squares, <b>with the same code</b>: <code>lstsq</code> gives the exact solution if it exists and the best approximation otherwise.</p>
+  <div class="box esame" data-tit="Related exam questions">
+    <p><b>Q2 (c)</b>: "Explain affine transformations, homogeneous coordinates, and the composition of transformations." <b>Q3 (c)</b>: "Learning of affine (multivariate) functions and linear optimization." The chain to be able to tell: correspondences → design matrix → overdetermined system → least squares → matrix T → transform new points.</p>
+  </div>
+  <figure class="scena" data-scena="rumorose" data-titolo="Five imprecise clicks, a robust estimate"></figure>
+</section>
+
+</main>
+</body>
+</html>

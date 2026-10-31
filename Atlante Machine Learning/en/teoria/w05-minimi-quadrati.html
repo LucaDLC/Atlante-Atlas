@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Least squares and projections</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  const T = (id, x, y, t, extra) => Object.assign({ id, tipo: 'testo', x, y, t, size: 14 }, extra || {});
+  const P = [[0, 1], [1, 3], [2, 2], [3, 5]];
+  const assi = () => ({ id: 'ax', tipo: 'assi', box: [50, 15, 260, 232], dom: [-0.5, 3.5, 0, 6], tacche: 1, etX: 'x', etY: 'y' });
+  const punti = og => P.forEach(([x, y], i) => og.push({ id: 'p' + i, tipo: 'punto', in: 'ax', x, y, t: '(' + x + ', ' + y + ')', tono: 'dato' }));
+
+  // 1. il problema
+  const og1 = [assi()]; punti(og1);
+  og1.push({ id: 'li', tipo: 'linea', in: 'ax', x1: -0.5, y1: 0.5, x2: 3.5, y2: 4.5, tono: 'ora', nascosto: true });
+  og1.push(T('c1', 450, 60, '', { bold: true }), T('c2', 450, 96, '', { size: 13 }), T('c3', 450, 150, '', { size: 13 }));
+  const retta = (w0, w1, sse, nota) => ({ nota, set: { li: { nascosto: false, y1: w0 - 0.5 * w1, y2: w0 + 3.5 * w1 }, c1: { t: 'y = ' + w0 + ' + ' + w1 + 'x' }, c2: { t: 'somma dei quadrati: ' + sse } } });
+  SCENE.problema = {
+    w: 600, h: 272, lato: true,
+    legenda: 'dato:4 measurements,ora:a trial line',
+    oggetti: og1,
+    passi: [
+      { nota: "Quattro punti che non stanno su una retta. Il modello y = w₀ + w₁x ha 2 parametri, i punti danno 4 equazioni: il sistema è <b>sovradeterminato</b> e nessuna retta passa per tutti." },
+      retta(1, 1, 3, "Proviamo y = 1 + x: passa per (0, 1) ma sbaglia gli altri. Errori 0, 1, −1, 1."),
+      retta(2, 0.5, 4.5, "y = 2 + 0.5x: sbaglia di più."),
+      retta(0.5, 1.5, 3.5, "y = 0.5 + 1.5x: passa per (3, 5) ma sbaglia gli altri."),
+      { nota: "Ogni retta sbaglia da qualche parte: non si può chiedere \"quella giusta\". Si cambia domanda: <b>quale retta sbaglia di meno?</b> Serve un modo di misurare lo sbaglio totale, e la loss dei minimi quadrati è proprio questo (\"first landmark\" delle slide: learn linear least squares with more data than model parameters).", set: { c3: { t: 'serve un criterio', tono: 'ora' } } }
+    ]
+  };
+
+  // 2. la loss in forma matriciale
+  const cel = (id, x, y, vals, extra) => Object.assign({ id, tipo: 'celle', x, y, cw: 54, valori: vals, indici: false }, extra || {});
+  SCENE.lossmat = {
+    w: 600, h: 262, lato: true,
+    legenda: 'dato:observed y,due:predicted Xw,no:residuals,ok:the loss',
+    oggetti: [
+      T('ty', 60, 47, 'y', { bold: true }), cel('y', 90, 30, ['1', '3', '2', '5'], { toni: { 0: 'dato', 1: 'dato', 2: 'dato', 3: 'dato' } }),
+      T('tp', 60, 107, 'Xw', { bold: true }), cel('p', 90, 90, ['1', '2', '3', '4'], { toni: { 0: 'due', 1: 'due', 2: 'due', 3: 'due' } }),
+      T('tr', 60, 167, 'r', { bold: true, nascosto: true }), cel('r', 90, 150, ['0', '1', '−1', '1'], { nascosto: true, toni: { 0: 'no', 1: 'no', 2: 'no', 3: 'no' } }),
+      T('w', 450, 50, 'w = [1, 1]', { bold: true }), T('c1', 450, 100, '', { size: 13 }), T('c2', 450, 140, '', { bold: true, size: 15 }),
+      T('f', 300, 236, 'L(w) = ‖y − Xw‖² = Σᵢ rᵢ²', { bold: true })
+    ],
+    passi: [
+      { nota: "Con la design matrix X (righe [1, xᵢ]) tutte le previsioni si calcolano insieme: <b>Xw</b> è il vettore delle 4 previsioni. Con w = [1, 1]: [1, 2, 3, 4]." },
+      { nota: "Il vettore dei <b>residui</b> r = y − Xw: verità meno previsione, componente per componente: [0, 1, −1, 1].", set: { tr: { nascosto: false }, r: { nascosto: false } } },
+      { nota: "La loss è la somma dei quadrati dei residui, cioè la <b>norma al quadrato</b> del vettore r: ‖r‖² = 0 + 1 + 1 + 1 = 3. La formula matriciale L(w) = ‖y − Xw‖² dice tutto in un colpo, per qualunque numero di punti.", set: { c1: { t: '‖r‖² = 0 + 1 + 1 + 1' }, c2: { t: 'L = 3', tono: 'no' } } },
+      { nota: "Con w = [1.1, 1.1]: previsioni [1.1, 2.2, 3.3, 4.4], residui [−0.1, 0.8, −1.3, 0.6], L = 2.7. Più piccola. <b>Minimi quadrati</b> = trovare il w con la L più piccola possibile: w* = argmin ‖y − Xw‖² (argmin = \"il valore di w che rende minimo\").", set: { w: { t: 'w = [1.1, 1.1]' }, p: { valori: ['1.1', '2.2', '3.3', '4.4'] }, r: { valori: ['−0.1', '0.8', '−1.3', '0.6'] }, c1: { t: '0.01 + 0.64 + 1.69 + 0.36' }, c2: { t: 'L = 2.7', tono: 'ok' } } }
+    ]
+  };
+
+  // 3. la soluzione (scena originale)
+  const og3 = [assi()]; punti(og3);
+  const w0 = 1.1, w1 = 1.1;
+  og3.push({ id: 'retta', tipo: 'linea', in: 'ax', x1: -0.5, y1: w0 - 0.5 * w1, x2: 3.5, y2: w0 + 3.5 * w1, tono: 'ok', nascosto: true });
+  P.forEach(([x, y], i) => og3.push({ id: 'r' + i, tipo: 'linea', in: 'ax', x1: x, y1: y, x2: x, y2: w0 + w1 * x, tono: 'no', nascosto: true }));
+  og3.push(T('n', 450, 70, '', { bold: true }), T('n2', 450, 110, '', { size: 13 }), T('n3', 450, 140, '', { size: 13 }));
+  const res = Object.fromEntries(P.map((_, i) => ['r' + i, { nascosto: false }]));
+  SCENE.ls = {
+    w: 600, h: 272, lato: true,
+    legenda: 'dato:data,ok:least squares line,no:residuals',
+    codice: { lang: 'python', testo: `x = np.array([0, 1, 2, 3]); y = np.array([1, 3, 2, 5])
+X = np.c_[np.ones(4), x]              # design matrix [1, x]
+w = np.linalg.lstsq(X, y, rcond=None)[0]   # [1.1, 1.1]
+r = y - X @ w                         # residui` },
+    oggetti: og3,
+    passi: [
+      { nota: 'The four points.', righe: [1] },
+      { nota: 'The <b>least squares</b> line: the one that minimises the sum of the squares of the residuals. Result: <b>y = 1.1 + 1.1x</b>.', righe: [2, 3], set: { retta: { nascosto: false }, n: { t: 'y = 1.1 + 1.1x', tono: 'ok' } } },
+      { nota: 'The residuals (in red) are the vertical distances between points and line: −0.1, 0.8, −1.3, 0.6. Sum of squares = <b>2.7</b>, the smallest possible.', righe: [4], set: Object.assign({ n2: { t: 'residui: −0.1, 0.8, −1.3, 0.6' } }, res) },
+      { nota: 'Two facts that are not a coincidence: the residuals <b>sum to 0</b> (−0.1 + 0.8 − 1.3 + 0.6 = 0), and their inner product with the x is 0 (0·(−0.1) + 1·0.8 + 2·(−1.3) + 3·0.6 = 0). The vector of residuals is <b>orthogonal</b> to the columns of X. It is the key of the next section.', set: { n3: { t: 'r · 1 = 0,   r · x = 0', tono: 'ok' } } }
+    ]
+  };
+
+  // 4. geometria nello spazio dei dati (2 punti, 1 parametro)
+  SCENE.proiezioneY = {
+    w: 600, h: 290, lato: true,
+    legenda: 'due:column x (and its span),dato:observed y,ok:ŷ = projection,no:residual',
+    oggetti: [
+      { id: 'ax', tipo: 'assi', box: [50, 20, 250, 250], dom: [-0.5, 2.8, -0.5, 2.8], tacche: 1, etX: 'misura 1', etY: 'misura 2' },
+      { id: 'sp', tipo: 'linea', in: 'ax', x1: -0.25, y1: -0.5, x2: 1.4, y2: 2.8, tono: 'spento', nascosto: true },
+      { id: 'x', tipo: 'vett', in: 'ax', x1: 0, y1: 0, x2: 1, y2: 2, t: 'x = [1, 2]', tx: -80, tono: 'due' },
+      { id: 'y', tipo: 'vett', in: 'ax', x1: 0, y1: 0, x2: 2, y2: 1, t: 'y = [2, 1]', tono: 'dato', nascosto: true },
+      { id: 'yh', tipo: 'vett', in: 'ax', x1: 0, y1: 0, x2: 0.8, y2: 1.6, t: 'ŷ', tx: -18, tono: 'ok', nascosto: true },
+      { id: 'r', tipo: 'vett', in: 'ax', x1: 0.8, y1: 1.6, x2: 2, y2: 1, t: 'r', tx: -50, ty: -26, tono: 'no', nascosto: true },
+      T('c1', 460, 40, 'modello: y = w·x (1 parametro)', { size: 12, bold: true }),
+      T('c2', 460, 80, '', { size: 13 }), T('c3', 460, 110, '', { size: 13 }), T('c4', 460, 150, '', { size: 13 }), T('c5', 460, 190, '', { size: 13, bold: true })
+    ],
+    passi: [
+      { nota: "Il trucco per <b>vedere</b> i minimi quadrati: un asse per ogni <b>misura</b>, non per ogni variabile. Con 2 misure, x = [1, 2] (gli ingressi) è un vettore di questo piano. Modello y = w·x, un solo parametro." },
+      { nota: "Tutte le previsioni possibili w·x, al variare di w, stanno sulla <b>retta</b> generata da x: lo <b>spazio delle colonne</b> della design matrix.", set: { sp: { nascosto: false }, c2: { t: 'previsioni possibili: w·x' } } },
+      { nota: "Le misure vere sono y = [2, 1]. Non stanno su quella retta: nessun w dà previsioni esatte.", set: { y: { nascosto: false }, c3: { t: 'y non è nello span' } } },
+      { nota: "La previsione migliore è il punto della retta <b>più vicino</b> a y: la sua <b>proiezione ortogonale</b>. w = (x·y)/(x·x) = 4/5 = 0.8, ŷ = 0.8·[1, 2] = [0.8, 1.6].", set: { yh: { nascosto: false }, c4: { t: 'ŷ = 0.8·x = [0.8, 1.6]', tono: 'ok' } } },
+      { nota: "Il residuo r = y − ŷ = [1.2, −0.6] è <b>perpendicolare</b> alla retta: r·x = 1.2 − 1.2 = 0. \"Più vicino\" = distanza ‖y − ŷ‖ minima = somma dei quadrati minima. Con N misure e più colonne è identico, solo in N dimensioni e su un sottospazio invece di una retta (numeri controllati).", set: { r: { nascosto: false }, c5: { t: 'r ⊥ x:  r·x = 0', tono: 'no' } } }
+    ]
+  };
+
+  // 5. equazioni normali
+  const G = (id, x, y, vals, extra) => Object.assign({ id, tipo: 'griglia', x, y, cw: 46, ch: 32, valori: vals }, extra || {});
+  SCENE.normali = {
+    w: 600, h: 262, lato: true,
+    legenda: 'dato:XᵀX,due:Xᵀy,ok:w*',
+    oggetti: [
+      T('t0', 300, 24, 'Xᵀ(y − Xw) = 0   ⇒   XᵀX w = Xᵀy', { bold: true }),
+      T('ta', 110, 64, 'XᵀX', { bold: true, size: 13, nascosto: true }), G('A', 60, 76, [['4', '6'], ['6', '14']], { nascosto: true, toni: { '0,0': 'dato', '0,1': 'dato', '1,0': 'dato', '1,1': 'dato' } }),
+      T('tb', 240, 64, 'Xᵀy', { bold: true, size: 13, nascosto: true }), G('b', 216, 76, [['11'], ['22']], { nascosto: true, toni: { '0,0': 'due', '1,0': 'due' } }),
+      T('c1', 450, 80, '', { size: 13 }), T('c2', 450, 110, '', { size: 13 }), T('c3', 450, 140, '', { size: 13 }),
+      T('w', 300, 210, '', { bold: true, size: 15 })
+    ],
+    passi: [
+      { nota: "Il residuo migliore è ortogonale a <b>ogni</b> colonna di X: in forma di matrice Xᵀr = 0, cioè Xᵀ(y − Xw) = 0. Sviluppando: XᵀXw = Xᵀy, le <b>equazioni normali</b> (\"normale\" = perpendicolare)." },
+      { nota: "Con i 4 punti: XᵀX è 2 × 2. In alto a sinistra il numero di punti (4), poi Σx = 6, in basso Σx² = 14.", set: { ta: { nascosto: false }, A: { nascosto: false }, c1: { t: '[[N, Σx], [Σx, Σx²]]' } } },
+      { nota: "Xᵀy = [Σy, Σxy] = [11, 22].", set: { tb: { nascosto: false }, b: { nascosto: false }, c2: { t: '[Σy, Σxy] = [11, 22]' } } },
+      { nota: "Un sistema 2 × 2 normale: det = 4·14 − 6·6 = 20, e w* = (1/20)·[[14, −6], [−6, 4]]·[11, 22] = [1.1, 1.1]. Da 4 equazioni impossibili a 2 equazioni risolvibili: qualunque sia N, XᵀX è sempre quadrata (parametri × parametri).", set: { c3: { t: 'det = 20' }, w: { t: 'w* = (XᵀX)⁻¹Xᵀy = [1.1, 1.1]', tono: 'ok' } } }
+    ]
+  };
+
+  // 6. pseudoinversa: le forme
+  const R6 = (id, x, y, w, h, t, tono, extra) => Object.assign({ id, tipo: 'rett', x, y, w, h, t, tono }, extra || {});
+  SCENE.pinv = {
+    w: 600, h: 250, lato: true,
+    legenda: 'dato:X (4 × 2),due:Xᵀ,ok:X⁺ and w',
+    oggetti: [
+      R6('xt', 20, 60, 110, 44, 'Xᵀ  2 × 4', 'due', { nascosto: true }),
+      R6('x', 150, 40, 60, 90, 'X  4 × 2', 'dato'),
+      R6('xtx', 230, 60, 70, 60, 'XᵀX 2×2', 'dato', { nascosto: true }),
+      R6('xp', 320, 60, 110, 44, 'X⁺  2 × 4', 'ok', { nascosto: true }),
+      R6('w', 450, 60, 44, 60, 'w', 'ok', { nascosto: true }),
+      T('c1', 300, 170, '', { size: 13 }), T('c2', 300, 200, '', { size: 13 }), T('c3', 300, 230, '', { size: 13, bold: true })
+    ],
+    passi: [
+      { nota: "X è <b>alta e stretta</b>: 4 righe (punti), 2 colonne (parametri). Non è quadrata, quindi non ha inversa." },
+      { nota: "Moltiplicandola a sinistra per la sua trasposta si ottiene XᵀX: (2 × 4)(4 × 2) = 2 × 2, quadrata. Questa di solito ha l'inversa.", set: { xt: { nascosto: false }, xtx: { nascosto: false }, c1: { t: '(2 × 4)(4 × 2) = 2 × 2' } } },
+      { nota: "La <b>pseudoinversa</b> è X⁺ = (XᵀX)⁻¹Xᵀ: (2 × 2)(2 × 4) = 2 × 4. Per la X dei 4 punti: [[0.7, 0.4, 0.1, −0.2], [−0.3, −0.1, 0.1, 0.3]].", set: { xp: { nascosto: false }, c2: { t: 'X⁺ = (XᵀX)⁻¹Xᵀ: 2 × 4' } } },
+      { nota: "w* = X⁺y: (2 × 4)(4) = 2 numeri, [1.1, 1.1]. X⁺ fa per le matrici alte quello che l'inversa fa per le quadrate: X⁺X = I (2 × 2). Ma XX⁺ ≠ I: è la matrice 4 × 4 che <b>proietta</b> y sullo spazio delle colonne (valori controllati con <code>np.linalg.pinv</code>).", set: { w: { nascosto: false }, c3: { t: 'w* = X⁺ y = [1.1, 1.1]', tono: 'ok' } } }
+    ]
+  };
+
+  // 7. NumPy
+  SCENE.tremodi = {
+    w: 600, h: 230, lato: true,
+    legenda: 'ok:same result,due:more information',
+    codice: { lang: 'python', testo: `w = np.linalg.solve(X.T @ X, X.T @ y)
+w = np.linalg.pinv(X) @ y
+w, res, rank, sv = np.linalg.lstsq(X, y, rcond=None)` },
+    oggetti: [
+      T('a', 300, 50, '', { size: 14 }), T('b', 300, 90, '', { size: 14 }), T('c', 300, 130, '', { size: 14 }), T('d', 300, 180, '', { size: 13 })
+    ],
+    passi: [
+      { nota: "Tre modi di calcolare w* in NumPy. Tutti partono dalla design matrix <code>X = np.c_[np.ones(4), x]</code>." },
+      { nota: "Le <b>equazioni normali</b> con <code>solve</code>: la formula della teoria.", righe: [1], set: { a: { t: 'solve(XᵀX, Xᵀy) → [1.1, 1.1]', tono: 'ok' } } },
+      { nota: "La <b>pseudoinversa</b> con <code>pinv</code>, calcolata in modo più stabile.", righe: [2], set: { b: { t: 'pinv(X) @ y → [1.1, 1.1]', tono: 'ok' } } },
+      { nota: "<code>lstsq</code> risolve direttamente il problema e restituisce <b>quattro</b> cose: w, la somma dei quadrati dei residui ([2.7]), il rango di X (2) e i valori singolari. Per questo si scrive <code>[0]</code> quando serve solo w. È la scelta consigliata (output reale).", righe: [3], set: { c: { t: 'lstsq → w = [1.1, 1.1]', tono: 'ok' }, d: { t: 'res = [2.7], rank = 2', tono: 'due' } } }
+    ]
+  };
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Least squares and projections</h1>
+  <p class="lede">With real data there are more points than parameters and the system has no exact solution. The "first milestone" of the slides: "solve/learn linear least squares optimization for model parameters with more data than model parameters". Here: the problem, the loss in matrix form, the solution, its geometry (a <b>projection</b>), the normal equations, the pseudoinverse and NumPy.</p>
+</header>
+
+<section>
+  <h2>The problem: more points than parameters</h2>
+  <p>A model that is linear in the parameters is written <span class="m">Xw = y</span>, with one row of X for each measured point. If the points are more than the parameters (X is tall and narrow), the system is <b>overdetermined</b>: with real data, which contain noise, no w makes all the equations true together.</p>
+  <p>It makes no sense to ask for the "right" w. The question becomes: which w <b>gets it wrong least</b>? To answer one needs a number measuring the overall mistake of a w, and the course uses the sum of the squares of the errors, the same loss as week 1.</p>
+  <figure class="scena" data-scena="problema" data-titolo="No line passes through all four"></figure>
+</section>
+
+<section>
+  <h2>The loss in matrix form</h2>
+  <p>With the design matrix all the predictions are obtained together: <span class="m">Xw</span> is the vector of predictions, one per point. The vector of <b>residuals</b> is <span class="m">r = y − Xw</span>, and the loss is the sum of the squares of its components, that is its squared norm:</p>
+  <figure class="passi" data-titolo="The loss to minimise">
+    <div class="passo"><div class="espr">residuo del punto i:  <mark class="no">rᵢ = yᵢ − (w₀ + w₁xᵢ)</mark></div><p class="nota">True value minus predicted value.</p></div>
+    <div class="passo"><div class="espr">L(w) = Σᵢ rᵢ² = <mark class="ok">‖y − Xw‖²</mark></div><p class="nota">The sum of squares is the squared norm of the vector of residuals (<a href="w01-loss-minimi-quadrati.html">least squares loss</a>, <a href="w02-norme-distanze.html">norm</a>).</p></div>
+    <div class="passo"><div class="espr">w* = argmin<sub>w</sub> ‖y − Xw‖²</div><p class="nota">argmin = "the value of w that makes the expression minimal". The asterisk on w indicates the optimal solution.</p></div>
+  </figure>
+  <p>Compared with the formula with the Σ of week 1 only the division by N is missing, which does not change where the minimum is.</p>
+  <figure class="scena" data-scena="lossmat" data-titolo="y − Xw, then the squared norm"></figure>
+</section>
+
+<section>
+  <h2>The least squares solution</h2>
+  <p>Among all the lines there is only one with the smallest sum of squares: the <b>least squares line</b>. For the four points (0, 1), (1, 3), (2, 2), (3, 5) it is y = 1.1 + 1.1x, with sum of squares 2.7.</p>
+  <p>It passes through no point, and that is fine: it lies "in the middle" of the data, balancing the errors. Two properties are seen at once in the residuals: they sum to zero (the line is not all above or all below) and they have zero inner product with the column of x. They are not coincidences: they say that the vector of residuals is <b>orthogonal</b> to the columns of X, and this is where the formula comes from.</p>
+  <figure class="scena" data-scena="ls" data-titolo="The best line for 4 points"></figure>
+</section>
+
+<section>
+  <h2>The geometry: projecting y onto the column space</h2>
+  <p>To see what happens, the drawing is changed: instead of an axis for x and one for y, one uses <b>an axis for each measurement</b>. With N measurements one works in ℝᴺ; y (the N measurements) is a vector, and so is each column of X.</p>
+  <figure class="passi" data-titolo="Why the solution is a projection">
+    <div class="passo"><div class="espr">Xw = w₀·<mark class="dato">colonna 1</mark> + w₁·<mark class="dato">colonna x</mark></div><p class="nota">Column view: the possible predictions are all the linear combinations of the columns of X, a subspace (the <b>column space</b>).</p></div>
+    <div class="passo"><div class="espr">y di solito <mark class="no">non sta</mark> in quel sottospazio</div><p class="nota">Otherwise there would be an exact solution.</p></div>
+    <div class="passo"><div class="espr">il punto del sottospazio più vicino a y è la sua <mark class="ok">proiezione ortogonale</mark> ŷ = Xw*</div><p class="nota">Like the shadow of a vector on a line (<a href="w02-prodotto-interno.html">inner product</a>). "Closer" = minimum distance = least squares.</p></div>
+    <div class="passo"><div class="espr">il residuo r = y − Xw* è <mark class="ok">ortogonale</mark> a ogni colonna di X</div><p class="nota">This is why in the section above the residuals had inner product 0 with the column of 1s and with that of the x.</p></div>
+  </figure>
+  <div class="box attenzione" data-tit="The derivation of the pseudoinverse">
+    <p>The indications of week 4: the derivation (DW section 6.2) "is not required for the exam", but the geometric interpretation is. At the oral one must be able to say: the residuals are orthogonal to the column space, so Xw* is the projection of y.</p>
+  </div>
+  <figure class="scena" data-scena="proiezioneY" data-titolo="Two measurements, one parameter: the projection is seen"></figure>
+</section>
+
+<section>
+  <h2>The normal equations</h2>
+  <p>The condition "the residual is orthogonal to every column of X" is written in one line: <span class="m">Xᵀ(y − Xw) = 0</span>, because each row of Xᵀ is a column of X and the product does all the inner products together. Expanding:</p>
+  <div class="mblock"><span class="m">XᵀX w = Xᵀy</span></div>
+  <p>These are the <b>normal equations</b> ("normal" in the sense of perpendicular). The advantage: XᵀX is <b>square</b>, of size parameters × parameters, whatever the number of points. From a tall and impossible system one passes to a square and (usually) solvable system. For the line, XᵀX contains N, Σx and Σx², and Xᵀy contains Σy and Σxy: it is exercise 14 of the test.</p>
+  <figure class="scena" data-scena="normali" data-titolo="XᵀX and Xᵀy for the 4 points"></figure>
+</section>
+
+<section>
+  <h2>The pseudoinverse</h2>
+  <p>Solving the normal equations: <span class="m">w* = (XᵀX)⁻¹Xᵀy</span>. The matrix in front of y has a name:</p>
+  <div class="mblock"><span class="m">X⁺ = (XᵀX)⁻¹Xᵀ</span></div>
+  <p>It is the <b>pseudoinverse</b> (of Moore-Penrose): it does for tall matrices what the inverse does for square ones, and w* = X⁺y. Be careful however: X⁺X = I, but XX⁺ is not the identity, it is the matrix that <b>projects</b> onto the column space. When X is square and invertible, X⁺ coincides with X⁻¹.</p>
+  <p>The shapes are the safest way to remember the formula: X is N × p, Xᵀ is p × N, XᵀX is p × p, X⁺ is p × N, w is p.</p>
+  <figure class="scena" data-scena="pinv" data-titolo="From a tall matrix to a formula"></figure>
+</section>
+
+<section>
+  <h2>Least squares in NumPy</h2>
+  <figure class="codice" data-titolo="Three ways, same w (verified: [1.1, 1.1])">
+<pre data-lang="python">X = np.c_[np.ones(4), x]                   # colonne [1, x]
+w = np.linalg.solve(X.T @ X, X.T @ y)      # equazioni normali
+w = np.linalg.pinv(X) @ y                  # pseudoinversa
+w = np.linalg.lstsq(X, y, rcond=None)[0]   # la scelta consigliata</pre>
+    <ol class="spiega">
+      <li data-righe="1" data-segna="np.c_[np.ones(4), x]@dato"><p><code>np.c_</code> puts columns side by side: one of 1s (for w₀) and one with the x. It is the design matrix of the <a href="w04-polinomi.html">page on polynomials</a>.</p></li>
+      <li data-righe="2" data-segna="X.T @ X@ora|X.T @ y@ora"><p>The formula of the theory. It works, but XᵀX can be ill-conditioned (numbers that lose precision).</p></li>
+      <li data-righe="3" data-segna="np.linalg.pinv(X)@due"><p>The pseudoinverse, computed in a stable way.</p></li>
+      <li data-righe="4" data-segna="np.linalg.lstsq@ok"><p><code>lstsq</code> solves the least squares problem directly; it also returns the sum of the residuals and the rank. <code>[0]</code> takes only w.</p></li>
+    </ol>
+  </figure>
+  <figure class="scena" data-scena="tremodi" data-titolo="solve, pinv, lstsq"></figure>
+</section>
+
+</main>
+</body>
+</html>

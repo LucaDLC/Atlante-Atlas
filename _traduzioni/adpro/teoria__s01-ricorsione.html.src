@@ -1,0 +1,78 @@
+@@s001 Dal ciclo alla ricorsione
+@@s002 Stessa domanda, <b>factorial(5)</b>, con le due versioni. Ogni rettangolo è una chiamata ancora aperta (un frame nella pila).
+@@s003 A sinistra la chiamata non può chiudersi: deve aspettare <code>factorial(4)</code> per fare la moltiplicazione. A destra <code>f</code> passa il lavoro già fatto nell'accumulatore e <b>non aspetta niente</b>: la nuova chiamata prende il posto della vecchia.
+@@s004 A sinistra la pila cresce. A destra resta un solo frame: <code>acc</code> vale già 5 × 4 = 20.
+@@s005 Continua uguale.
+@@s006 Quinta chiamata a sinistra. A destra <code>acc</code> vale 120: il risultato è già pronto.
+@@s007 Caso base in entrambi. A destra <b>ho finito</b>: restituisco 120. A sinistra ho solo il primo numero: ora devo tornare indietro e fare tutte le moltiplicazioni rimaste in sospeso.
+@@s008 Si chiude una chiamata alla volta: 2 × 1.
+@@s009 3 × 2.
+@@s010 4 × 6.
+@@s011 5 × 24 = 120. Stesso risultato, ma la versione normale ha tenuto aperte fino a <b>n</b> chiamate: con n = 100 000 la pila si esaurisce (<code>StackOverflowError</code>). Quella in coda ne usa sempre <b>una</b>.
+@@s012 dato:stato delle variabili (while),ora:argomenti della chiamata,ok:risultato
+@@s013 due:moltiplicazione in sospeso,ok:valore calcolato
+@@s014 no:calcolo ripetuto,dato:curr,ora:next,ok:risultato
+@@s015 ora:coppia (i, i+1) controllata,ok:coppia in ordine,no:coppia fuori ordine
+@@s016 Dal ciclo alla ricorsione
+@@s017 Senza <code>var</code> e senza <code>for</code>, ripeti un calcolo con una funzione che <b>chiama se stessa</b> su un problema più piccolo. Qui trasformi un ciclo in ricorsione un passo alla volta, e vedi quando la ricorsione è "in coda".
+@@s018 La ricetta: da <code>while</code> a ricorsione
+@@s019 È il file <code>01-intro/Purification.scala</code>. Si parte da un fattoriale imperativo e lo si "purifica". Segui i colori: ogni variabile diventa un parametro.
+@@s020 Purificare un ciclo
+@@s021 dato:variabili che cambiano,ora:cosa trasformo adesso,ok:versione pura
+@@s022 Il punto di partenza. Due variabili cambiano a ogni giro: <code>result</code> e <code>x</code>.
+@@s023 <b>1.</b> Ogni variabile che cambia diventa un <b>parametro</b> di una funzione di lavoro. Il tipo di ritorno resta <code>Int</code>.
+@@s024 <b>2.</b> La condizione del <code>while</code> diventa un <code>if</code>: "devo fare ancora un giro, oppure ho finito?"
+@@s025 <b>3.</b> Il corpo del ciclo calcolava i <b>nuovi valori</b> delle variabili. Invece di assegnarli, li passo alla chiamata successiva.
+@@s026 <b>4.</b> Dopo il ciclo c'era <code>return result</code>: diventa il ramo <code>else</code>, senza <code>return</code>.
+@@s027 <b>5.</b> Nascondo <code>doWork</code> dentro <code>factorial</code> e la chiamo con i <b>valori iniziali</b> delle variabili: <code>result = 1</code>, <code>x = n</code>.
+@@s028 Variabili che cambiano → argomenti della chiamata
+@@s029 La versione più semplice, e come si srotola
+@@s030 Per il fattoriale esiste anche una ricorsione diretta, copiata dalla definizione matematica <span class="m">n! = n · (n − 1)!</span>:
+@@s031 factorial(4), sostituendo ogni chiamata
+@@s032 4 non è ≤ 1: ramo <code>else</code>.
+@@s033 La moltiplicazione per 4 <b>resta in sospeso</b>: prima serve <code>factorial(3)</code>.
+@@s034 Un'altra moltiplicazione in sospeso.
+@@s035 E un'altra.
+@@s036 Caso base: 1 ≤ 1, vale 1.
+@@s037 Ora si chiudono le moltiplicazioni, da dentro verso fuori.
+@@s038 Il numero di cose in sospeso cresce con <code>n</code>: la pila (stack) usa spazio proporzionale a <code>n</code>.
+@@s039 factorial(4): la pila cresce, poi si chiude
+@@s040 Ricorsione in coda
+@@s041 Definizione
+@@s042 Una chiamata è <b>in coda</b> (in <i>tail position</i>) quando il chiamante restituisce subito il suo risultato, <b>senza farci altro sopra</b>.
+@@s043 Non in coda
+@@s044 Dopo la chiamata resta da moltiplicare per <code>n</code>.
+@@s045 In coda
+@@s046 Il risultato della chiamata <b>è</b> il risultato. La moltiplicazione è già stata fatta, nell'argomento <code>acc</code>.
+@@s047 Il trucco per passare da una all'altra ha un nome: <b>parametro accumulatore</b>. Invece di combinare i risultati mentre torni indietro, li combini mentre vai avanti e porti con te il risultato parziale.
+@@s048 La pila delle chiamate: normale contro in coda
+@@s049 Il compilatore trasforma una ricorsione in coda in un ciclo, con spazio costante. Con <code>@annotation.tailrec</code> gli chiedi di <b>controllare</b> che sia davvero in coda: se non lo è, non compila.
+@@s050 Nel corso
+@@s051 Il foglio esercizi lo dice chiaramente: non insistere sulla ricorsione in coda se non è richiesta. Il corso preferisce la semplicità. Serve quando c'è davvero il rischio di esaurire la pila.
+@@s052 Fibonacci: perché <code>@tailrec</code> non accettava la tua versione
+@@s053 Nella prima versione dell'esercizio 3 c'erano <b>due</b> chiamate ricorsive sommate. Il compilatore la rifiuta:
+@@s054 La soluzione: per calcolare il prossimo numero ti servono <b>solo gli ultimi due</b>. Portali con te come parametri e vai avanti.
+@@s055 fib con una finestra di due valori
+@@s056 <code>curr</code> è il numero di Fibonacci "attuale", <code>next</code> quello subito dopo. Sono la finestra che scorre.
+@@s057 Si parte da F1 = 0 e F2 = 1, come dice il testo dell'esercizio.
+@@s058 Ogni passo sposta la finestra di uno: il nuovo <code>curr</code> è il vecchio <code>next</code>, il nuovo <code>next</code> è la somma dei due. <code>n</code> conta quanti spostamenti mancano.
+@@s059 Quando non mancano spostamenti, <code>curr</code> è la risposta. La chiamata al passo precedente è in coda: <code>@tailrec</code> è soddisfatto.
+@@s060 fib(6): la finestra che scorre
+@@s061 Partenza: curr = 0, next = 1.
+@@s062 curr prende 1 (il vecchio next), next = 1 + 0.
+@@s063 next = 1 + 1.
+@@s064 next = 2 + 1.
+@@s065 next = 3 + 2.
+@@s066 n ≤ 1: restituisco curr. La sequenza era 0, 1, 1, 2, 3, <b>5</b>: il sesto numero.
+@@s067 Due chiamate sommate contro una finestra che scorre
+@@s068 Un ciclo sugli indici: <code>isSorted</code>
+@@s069 Esercizio 4: fare con la ricorsione quello che faresti con un <code>for</code> sugli indici. È la tua soluzione.
+@@s070 isSorted, esercizio 4 della settimana 1
+@@s071 La funzione di lavoro ha un solo parametro: l'indice <code>i</code>, che in un <code>for</code> sarebbe la variabile del ciclo.
+@@s072 Se non esiste una coppia <code>(i, i+1)</code> da controllare, l'array è ordinato. Vale anche per array vuoti e da un elemento.
+@@s073 Confronto l'elemento con il successivo usando la funzione ricevuta. Se la coppia non rispetta l'ordine, rispondo subito <code>false</code>.
+@@s074 Altrimenti passo alla coppia successiva. La chiamata è in coda.
+@@s075 Il ciclo parte dall'indice 0.
+@@s076 Dubbio frequente
+@@s077 <b>Perché basta confrontare le coppie vicine?</b> Se <code>as(0) ≤ as(1)</code> e <code>as(1) ≤ as(2)</code>, allora anche <code>as(0) ≤ as(2)</code>: l'ordine si propaga. Controllare tutte le coppie sarebbe inutile.
+@@s078 go(i): il for sugli indici come ricorsione

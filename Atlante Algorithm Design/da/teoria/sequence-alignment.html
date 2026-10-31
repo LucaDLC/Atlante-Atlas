@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sekvensjustering: redigeringsafstand</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+const A = 'ALTO', B = 'ALTRO';
+const D = [[0,1,2,3,4,5],[1,0,1,2,3,4],[2,1,0,1,2,3],[3,2,1,0,1,2],[4,3,2,1,1,1]];
+const vuota = D.map((r,i) => r.map((v,j) => (i===0||j===0) ? String(v) : ''));
+SCENE.seq = {
+  w: 560, h: 280, lato: true,
+  legenda: 'ora:celle jeg beregner,ok:svar,dato:grundtilfælde,due:hvorfra minimum kommer',
+  oggetti: [
+    {id:'g',tipo:'griglia',x:90,y:50,cw:50,ch:34,valori:vuota,intR:['', 'A','L','T','O'].slice(0,5),intC:['','A','L','T','R','O'].slice(0,6)},
+    {id:'t',tipo:'testo',x:20,y:270,t:'',size:12,bold:true,anchor:'start'}
+  ],
+  passi: [
+    { nota: 'Redigeringsafstanden mellem <b>ALTO</b> og <b>ALTRO</b>: minimum af indsættelser, sletninger og substitutioner. <code>OPT(i, j)</code> = afstanden mellem de første i tegn i A og de første j i B.', set:{} },
+    { nota: 'Grundtilfælde: <code>OPT(i, 0) = i</code> og <code>OPT(0, j) = j</code>: første række og første kolonne. Allerede udfyldt.', set:{g:{valori:vuota,toni:{}}} },
+    { nota: '<code>OPT(i, j) = min( OPT(i−1, j) + 1, OPT(i, j−1) + 1, OPT(i−1, j−1) + [tegnene forskellige] )</code>. Celle (1,1): A[1]=A=B[1]: 0.', set:{g:{valori:D.map((r,i)=>r.map((v,j)=> (i<=1&&j<=1)||(i===0||j===0)?String(v):'')),toni:{'1,1':'ora'}}} },
+    { nota: 'Celle (4,4): ALTO mod ALTR: diagonalen giver 1, naboen ovenfor 1+1, den til venstre 1+1. Minimum er 1: rækken for O er <b>1 1</b>.', set:{g:{valori:D.map((r,i)=>r.map((v,j)=> (i===4&&j>=4)||(i<=3)?String(v):'')),toni:{'4,4':'ora','4,5':'ok'}}} },
+    { nota: 'Svar: <b>OPT(4, 5) = 1</b>: den eneste forskel er <b>R</b>, der skal indsættes. Omkostningen er <code>O(n·m)</code>: en tabel med (n+1)(m+1) celler, hver O(1).', set:{g:{valori:D.map(r=>r.map(v=>String(v))),toni:{'4,5':'ok'}}, t:{t:'distanza = 1',tono:'ok'}} }
+  ]
+};
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Sekvensjustering: redigeringsafstand</h1>
+  <p class="lede">Redigeringsafstanden mellem to strenge tæller det mindste antal indsættelser, sletninger og substitutioner. Det er DP på præfikser: en tabel af celler, der afhænger af tre naboer.</p>
+</header>
+
+<section>
+  <h2>Problemet og rekurrensen</h2>
+<p><code>OPT(i, j)</code> er afstanden mellem de første <code>i</code> tegn i <code>A</code> og de første <code>j</code> i <code>B</code>. Grundtilfældet er nul-rækken og nul-kolonnen: <code>OPT(i, 0) = i</code>, <code>OPT(0, j) = j</code>. Derefter:</p>
+<p><code>OPT(i, j) = min( OPT(i−1, j) + 1, OPT(i, j−1) + 1, OPT(i−1, j−1) + [A_i ≠ B_j] )</code></p>
+<p>De tre led er: slet <code>A_i</code>, indsæt <code>B_j</code>, justér de to tegn (med substitution, hvis de er forskellige).</p>
+  <figure class="scena" data-scena="seq" data-titolo="Tabellen udfyldes fra venstre og fra oven"></figure>
+</section>
+<section>
+  <h2>Omkostningen</h2>
+<p>Tabel med <code>(n + 1)(m + 1)</code> celler, hver i <code>O(1)</code>: tid og plads <code>O(nm)</code>. At rekonstruere justeringen gøres ved at gå op fra den sidste celle mod den, der gav minimum.</p>
+</section>
+<section>
+  <h2>Koden side om side</h2>
+  <p>Denne side forklarer begrebet. Java-koden, der implementerer det, med en forklaring linje for linje og de syntaksnoter, der skal bruges, står på den side ved siden af.</p>
+  <p><a href="../codice/sequence-alignment.html"><b>→ Java-kode til dette emne</b></a></p>
+</section>
+<section>
+  <h2>Til eksamen</h2>
+<div class="box esame" data-tit="Til eksamen">
+<p>Strengsammenligning, ord, palindromer → DP på præfikser, O(nm). Sætning: <i>"Let OPT(i,j) be the minimum cost of aligning the first i characters of A with the first j of B. Base cases OPT(i,0)=i, OPT(0,j)=j. Time and space O(mn)."</i></p>
+</div>
+</section>
+<section>
+  <h2>Hurtig oversigt</h2>
+<div class="tab-wrap"><table class="tab"><thead><tr><th>post</th><th>betydning</th><th>note</th></tr></thead><tbody><tr><td>OPT(i, j)</td><td>afstand på præfikser</td><td>2D-DP</td></tr><tr><td>grundtilfælde</td><td>nul-række og nul-kolonne</td><td>glem dem ikke</td></tr><tr><td>tid</td><td>O(nm)</td><td>tabel</td></tr></tbody></table></div>
+</section>
+
+</main>
+</body>
+</html>

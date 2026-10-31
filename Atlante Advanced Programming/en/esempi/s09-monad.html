@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Examples: flatMap and for in Scala</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <div class="occhiello"><span>Week 9 · examples</span></div>
+  <h1>Examples: flatMap and for in Scala</h1>
+  <p class="lede">The code of the <a href="../teoria/s09-monad.html">monad page</a>, with Option and List, which are monads already included in Scala. The function <code>sequence</code> and <code>replicateM</code> are the course exercises: they are not here.</p>
+</header>
+
+<section>
+  <h2>The whole file</h2>
+  <p>Run it with <code>scala-cli run Monad.scala</code>. The two functions <code>raddoppiaSePositivo</code> and <code>dimezza</code> return an Option: they are the steps of a chain that can fail.</p>
+  <figure class="codice" data-titolo="Monad.scala">
+<pre data-lang="scala">//&gt; using scala 3.8.4
+//&gt; using options -Werror -deprecation -feature -source:future
+
+def raddoppiaSePositivo(n: Int): Option[Int] =
+  if n &gt; 0 then Some(n * 2) else None
+
+def dimezza(n: Int): Option[Int] =
+  if n % 2 == 0 then Some(n / 2) else None
+
+@main def esempiMonad(): Unit =
+  // flatMap a catena: se un passo fallisce (None), i passi dopo non girano
+  println(Some(3).flatMap(raddoppiaSePositivo).flatMap(dimezza))
+  println(Some(-3).flatMap(raddoppiaSePositivo).flatMap(dimezza))
+  println(Some(5).flatMap(raddoppiaSePositivo).flatMap(dimezza))
+  // map si può scrivere con flatMap e unit (Some)
+  println(Some(4).flatMap(a =&gt; Some(a + 1)) == Some(4).map(_ + 1))
+  // la forma for è zucchero per flatMap e map
+  val coppie = for
+    a &lt;- List(1, 2)
+    b &lt;- List(3, 4)
+  yield (a, b)
+  println(coppie)
+  println(List(1, 2).flatMap(a =&gt; List(3, 4).map(b =&gt; (a, b))) == coppie)
+  // legge dell'identità a destra: x.flatMap(unit) == x
+  println(List(1, 2, 3).flatMap(a =&gt; List(a)) == List(1, 2, 3))
+  // legge dell'identità a sinistra: unit(y).flatMap(f) == f(y)
+  println(List(7).flatMap(raddoppiaLista) == raddoppiaLista(7).toList)
+
+def raddoppiaLista(n: Int): List[Int] = List(n * 2)</pre>
+    <ol class="spiega">
+      <li data-righe="4-5" data-segna="Some(n * 2)@ora|None@due"><p>First step of the chain. If the number is positive it returns <code>Some</code> of the double, otherwise <code>None</code>: it is the container that can fail.</p></li>
+      <li data-righe="7-8" data-segna="if n % 2 == 0 then Some(n / 2) else None"><p>Second step: it halves only the even numbers. <code>%</code> is the remainder of the division: <code>n % 2 == 0</code> holds when n is even.</p></li>
+      <li data-righe="12" data-segna="flatMap(raddoppiaSePositivo).flatMap(dimezza)@ora"><p>Chain of two <code>flatMap</code>s. 3 → Some(6) → Some(3). The value inside the Some passes from one step to the next without my having to discard the container.</p></li>
+      <li data-righe="13" data-segna="Some(-3)@no"><p>With −3 the first step gives <code>None</code>. <code>flatMap</code> on None is None: the second step does not run, and the result is None. The control of the flow is inside <code>flatMap</code>.</p></li>
+      <li data-righe="16" data-segna="flatMap(a =&gt; Some(a + 1))@ora"><p>A <code>flatMap</code> that always returns <code>Some</code> gives the same result as a <code>map</code>: that is why map can be written with flatMap and unit (<code>Some</code>). The comparison <code>==</code> answers <code>true</code>.</p></li>
+      <li data-righe="18-21" data-segna="for@ora|yield (a, b)@due"><p>The form <code>for … yield</code> is syntactic sugar: the compiler rewrites it into <code>flatMap</code> and <code>map</code>. <code>a &lt;- List(1, 2)</code> is a <code>flatMap</code> on the first list, <code>b &lt;- List(3, 4)</code> on the second.</p></li>
+      <li data-righe="23" data-segna="List(1, 2).flatMap(a =&gt; List(3, 4).map(b =&gt; (a, b)))@ora"><p>The same thing written by hand with <code>flatMap</code> and <code>map</code>: the result is equal to that of the <code>for</code>, so the comparison answers <code>true</code>.</p></li>
+      <li data-righe="25" data-segna="flatMap(a =&gt; List(a))@ora"><p>Right identity: passing each element to <code>List(a)</code> does not change the list. It is the law <code>x.flatMap(unit) == x</code>, with unit equal to <code>List(a)</code>.</p></li>
+      <li data-righe="27" data-segna="List(7).flatMap(raddoppiaLista)@ora"><p>Left identity: <code>List(7).flatMap(raddoppiaLista)</code> gives the same list as <code>raddoppiaLista(7)</code>. It is the law <code>unit(y).flatMap(f) == f(y)</code> applied to an example.</p></li>
+      <li data-righe="29" data-segna="List(n * 2)@ora"><p>Support function: it returns a list with the double of n. It is a function <code>Int =&gt; List[Int]</code>, that is a step of a chain of Lists.</p></li>
+    </ol>
+  </figure>
+</section>
+
+<section>
+  <h2>The output</h2>
+  <figure class="codice" data-titolo="Output of the run">
+<pre data-lang="text">Some(3)
+None
+Some(5)
+true
+List((1,3), (1,4), (2,3), (2,4))
+true
+true
+true</pre>
+    <ol class="spiega">
+      <li data-righe="1-3"><p>The chain with 3, with −3 and with 5: Some(3), None, Some(5).</p></li>
+      <li data-righe="4"><p>The <code>flatMap</code> with <code>Some</code> gives the same result as <code>map</code>.</p></li>
+      <li data-righe="5"><p>The <code>for</code> produces the four pairs, in reading order.</p></li>
+      <li data-righe="6-8"><p>The hand-written <code>flatMap</code> and the two identity laws: all <code>true</code>.</p></li>
+    </ol>
+  </figure>
+</section>
+
+<section>
+  <h2>To remember</h2>
+  <div class="box inglese" data-tit="Sentence for the exam">A monad is a functor with unit and flatMap: the result of the next step depends on the value of the previous one.</div>
+  <div class="box regola" data-tit="Practical rule">A <code>for</code> with several <code>&lt;-</code> is a chain of <code>flatMap</code>s. If you write it wrongly (for example with <code>map</code> where <code>flatMap</code> is needed), you get a nested container: <code>Option[Option[Int]]</code>.</div>
+</section>
+
+</main>
+</body>
+</html>

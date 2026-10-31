@@ -1,0 +1,65 @@
+@@s001 Happens-before: le regole
+@@s002 dato:azioni del main,ora:t1,due:t2,no:nessun percorso
+@@s003 <p>Ogni cerchio è un'azione di <code>PossibleReordering</code>. Una freccia <code>a → b</code> vuol dire <b>a happens-before b</b>.</p><p>st1 = start(t1), jt1 = join(t1).</p>
+@@s004 <p><b>Program order</b> del main: ogni azione del main happens-before la successiva.</p>
+@@s005 <p>Program order di <b>t1</b> e di <b>t2</b>: dentro ogni thread l'ordine è quello del codice.</p>
+@@s006 <p><b>Thread start rule</b>: <code>start()</code> happens-before la <b>prima</b> azione del thread avviato. Coppie: <code>m(start(t1)) → t1(1)</code> e <code>m(start(t2)) → t2(3)</code>.</p>
+@@s007 <p><b>Thread termination rule</b>: l'<b>ultima</b> azione di un thread happens-before il <code>join()</code> su quel thread. Coppie: <code>t1(2) → m(join(t1))</code> e <code>t2(4) → m(join(t2))</code>.</p>
+@@s008 <p><b>Transitive rule</b>: se c'è un percorso di frecce da a a b, allora a happens-before b. Per esempio <code>m(init(b)) → … → m(start(t1)) → t1(1) → t1(2)</code>: l'inizializzazione di b è visibile a <code>x=b</code>.</p>
+@@s009 <p>E tra <code>t1(1)</code> (scrive a) e <code>t2(4)</code> (legge a)? Cerca un percorso: dalle azioni di t1 si esce solo verso jt1, e da lì non si torna mai in t2. E viceversa.</p><p><b>Nessuna delle due coppie</b> è nell'ordine: le due azioni <b>non sono ordinate</b> da happens-before. Accessi sulla stessa variabile, uno è una scrittura: è una <b>data race</b>.</p>
+@@s010 dato:azione,ok:coppia in HB,due:coppia per transitività,no:non ordinate
+@@s011 dato:azione a,due:azione b,ok:a happens-before b
+@@s012 dato:main,ora:t1,due:t2,ok:start e termination,no:coppia mancante
+@@s013 Happens-before: le regole
+@@s014 Il program order ordina le azioni <b>dentro</b> un thread. Per sapere se un'azione di un thread viene sicuramente prima di un'azione di <b>un altro</b> thread (e quindi se il secondo vede l'effetto del primo) servono le regole di <b>happens-before</b>.
+@@s015 Le coppie: cosa vuol dire <code>a → b</code>
+@@s016 Definizione
+@@s017 Date due azioni <code>a</code>, <code>b</code> di un'esecuzione, <b><code>a</code> happens-before <code>b</code></b> (scritto <code>a → b</code>) se la coppia è ottenuta da una delle regole qui sotto. Se <code>a → b</code>, l'effetto di <code>a</code> è <b>visibile</b> a <code>b</code>.
+@@s018 Come si leggono le coppie
+@@s019 Stessa cosa, due scritture: a viene prima di b, garantito.
+@@s020 Una catena contiene anche le coppie "saltate": vale la transitività.
+@@s021 Se nessuna delle due coppie c'è, le azioni <b>non sono ordinate</b>: possono avvenire in qualsiasi ordine, e nessuna è garantita vedere l'effetto dell'altra.
+@@s022 "Parziale": non tutte le coppie di azioni sono confrontabili. Il program order di un thread invece è <b>totale</b>.
+@@s023 Coppie, transitività, azioni non ordinate
+@@s024 Le otto regole
+@@s025 Happens-before non si "sente": si <b>costruisce</b>, e solo con queste otto regole. Una coppia (a, b) sta nell'insieme soltanto se una regola la produce. Tre regole lavorano <b>dentro</b> un thread o prima di tutto (program order, default init, final field init). Quattro collegano <b>thread diversi</b> e sono le uniche che permettono a un thread di vedere le scritture di un altro (monitor, volatile, start, termination). L'ultima, la transitiva, incolla le altre in catene. Se fra due azioni di thread diversi non riesci a costruire una catena con queste regole, quelle azioni non sono ordinate.
+@@s026 Regola
+@@s027 a → b quando…
+@@s028 Esempio
+@@s029 <b>Program order</b>
+@@s030 a e b sono dello stesso thread e a viene prima nel codice
+@@s031 <b>Monitor</b>
+@@s032 a è un <code>unlock()</code> e b un <code>lock()</code> successivo sullo <b>stesso</b> monitor (lock, semaforo, barriera…)
+@@s033 <code>t1(unlock) → t2(lock)</code>
+@@s034 <b>Volatile</b>
+@@s035 a è una scrittura su una variabile volatile e b una lettura successiva della stessa variabile
+@@s036 <code>m(v=42) → t(read v)</code>
+@@s037 <b>Default init</b>
+@@s038 l'inizializzazione di default (0, false, null) viene prima di ogni altra azione
+@@s039 campo <code>int i;</code>
+@@s040 <b>Final field init</b>
+@@s041 l'inizializzazione dei campi <code>final</code> (e static) viene prima di ogni altro uso, a costruttore finito
+@@s042 <code>final Object o</code>
+@@s043 <b>Thread start</b>
+@@s044 a è <code>start()</code> e b è la <b>prima</b> azione del thread avviato
+@@s045 <code>m(start(t1)) → t1(1)</code>
+@@s046 <b>Thread termination</b>
+@@s047 a è l'<b>ultima</b> azione di un thread e b il <code>join()</code> su quel thread, da un qualsiasi altro thread
+@@s048 <code>t1(2) → m(join(t1))</code>
+@@s049 <b>Transitive</b>
+@@s050 catene
+@@s051 Le otto regole, una alla volta
+@@s052 Il grafo, regola per regola
+@@s053 Happens-before in PossibleReordering
+@@s054 Domanda della slide: quali coppie danno start e termination?
+@@s055 Start rule: <code>m(start(t1)) → t1(1)</code>, <code>m(start(t2)) → t2(3)</code>. Termination rule: <code>t1(2) → m(join(t1))</code>, <code>t2(4) → m(join(t2))</code>. Attenzione: la start rule lega <code>start</code> solo alla <b>prima</b> azione del thread, la termination rule solo l'<b>ultima</b>. Le altre seguono per transitività con il program order.
+@@s056 Costruire gli insiemi come nelle slide
+@@s057 All'esame il grafo si scrive come <b>insiemi di coppie</b>: uno per ogni regola che interviene (POm, PO1, PO2 per il program order, S per start, T per termination, poi eventualmente M per il monitor e V per volatile). L'happens-before è la <b>chiusura transitiva</b> dell'unione, indicata con ⁺: si aggiungono tutte le coppie che seguono da una catena. Per decidere se due azioni sono ordinate basta cercare un percorso nel grafo, in un verso o nell'altro.
+@@s058 Gli insiemi di coppie di PossibleReordering (slide 27)
+@@s059 Program order del main.
+@@s060 Program order dei thread.
+@@s061 Coppie della start rule.
+@@s062 Coppie della termination rule.
+@@s063 L'happens-before completo: tutte le coppie, più quelle che seguono per transitività. Qui è lo stesso per <b>tutte</b> le esecuzioni, perché c'è un solo ordine possibile per start e join.
+@@s064 Nessuna coppia collega azioni di t1 ad azioni di t2 (a parte passando per il main nel verso sbagliato). Conclusione: data race tra <code>t1(1)</code> e <code>t2(4)</code> in <b>ogni</b> esecuzione.
+@@s065 Da POm, PO1, PO2, S, T a HB

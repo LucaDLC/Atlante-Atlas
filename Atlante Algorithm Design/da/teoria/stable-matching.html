@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Stable matching: Gale-Shapley</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+const P = (id,x,y,t,tono) => ({id,tipo:'nodo',x,y,t,r:20,tono});
+const R = (id,x,y,t) => ({id,tipo:'nodo',x,y,t,r:20,forma:'quadrato'});
+const A = (id,da,a,extra) => Object.assign({id,tipo:'arco',da,a,dir:true},extra||{});
+SCENE.gs = {
+  w: 520, h: 270, lato: true,
+  legenda: 'dato:fri,ora:foreslår nu,ok:accepteret,no:afvist eller forladt',
+  oggetti: [
+    P('A',60,50,'A'), P('B',60,130,'B'), P('C',60,210,'C'),
+    R('X',440,50,'X'), R('Y',440,130,'Y'), R('Z',440,210,'Z'),
+    A('ax','A','X',{tono:'spento',nascosto:true}), A('bx','B','X',{tono:'spento',nascosto:true}), A('by','B','Y',{tono:'spento',nascosto:true}), A('cx','C','X',{tono:'spento',nascosto:true}), A('ay','A','Y',{tono:'spento',nascosto:true}), A('bz','B','Z',{tono:'spento',nascosto:true}),
+    {id:'c1',tipo:'testo',x:20,y:255,t:'',size:12,bold:true,anchor:'start'}
+  ],
+  passi: [
+    { nota: 'Præferencer. Forslagsstillere A, B, C; modtagere X, Y, Z. A: X ≻ Y ≻ Z. B: Y ≻ X ≻ Z. C: X ≻ Y ≻ Z. X: C ≻ A ≻ B. Y: A ≻ B ≻ C. Z: A ≻ B ≻ C.', set:{A:{tono:'dato'},B:{tono:'dato'},C:{tono:'dato'},X:{tono:'dato'},Y:{tono:'dato'},Z:{tono:'dato'}} },
+    { nota: '<b>A</b> foreslår <b>X</b> (A\'s første valg). X er fri: accepterer.', set:{ax:{nascosto:false,tono:'ok'},A:{tono:'ora'},X:{tono:'ok'},c1:{t:'A–X'}} },
+    { nota: '<b>B</b> foreslår <b>Y</b>. Y er fri: accepterer.', set:{by:{nascosto:false,tono:'ok'},B:{tono:'ora'},Y:{tono:'ok'},A:{tono:'dato'},c1:{t:'A–X, B–Y'}} },
+    { nota: '<b>C</b> foreslår <b>X</b>. X foretrækker C frem for A (C er først på X\'s liste). X forlader A, som bliver fri igen.', set:{cx:{nascosto:false,tono:'ok'},C:{tono:'ora'},X:{tono:'ok'},ax:{tono:'no'},A:{tono:'dato'},c1:{t:'C–X; A torna libero'}} },
+    { nota: '<b>A</b> foreslår <b>Y</b>. Y foretrækker A frem for B: forlader B, som bliver fri igen.', set:{ay:{nascosto:false,tono:'ok'},A:{tono:'ora'},Y:{tono:'ok'},by:{tono:'no'},B:{tono:'dato'},c1:{t:'A–Y; B torna libero'}} },
+    { nota: '<b>B</b>, forladt af Y, foreslår det andet valg på B\'s liste: <b>X</b>. X har C og foretrækker C frem for B: afviser B.', set:{by:{tono:null},bx:{tono:'no'},B:{tono:'ora'},X:{tono:'dato'},c1:{t:'B rifiutato da X'}} },
+    { nota: '<b>B</b> foreslår det tredje valg på B\'s liste: <b>Z</b>. Z er fri: accepterer. Nu er A–Y, B–Z, C–X alle parret.', set:{bz:{nascosto:false,tono:'ok'},B:{tono:'ora'},Z:{tono:'ok'},c1:{t:'A–Y, B–Z, C–X: tutti accoppiati',tono:'ok'}} },
+    { nota: 'Ingen er fri længere: matchingen er komplet og <b>stabil</b>. Kontrol: A foretrækker X frem for Y, men X foretrækker C frem for A. B foretrækker Y frem for Z, men Y foretrækker A frem for B. Intet par foretrækker hinanden frem for deres partnere.', set:{C:{tono:null},c1:{t:'nessuna coppia instabile',tono:'ok'}} }
+  ]
+};
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Stable matching: Gale-Shapley</h1>
+  <p class="lede">At parre n forslagsstillere med n modtagere, hver med en præferenceliste, uden ustabile par: to personer, der foretrækker hinanden frem for deres partnere. Gale-Shapley-algoritmen finder altid en stabil matching.</p>
+</header>
+
+<section>
+  <h2>Problemet</h2>
+<p>Der er <code>n</code> forslagsstillere og <code>n</code> modtagere, hver med en ordnet præferenceliste. En <b>matching</b> er en komplet parring. Den er <b>ustabil</b>, hvis der findes to personer, der foretrækker hinanden frem for deres respektive partnere. Virkelige eksempler: studerende og universiteter, læger og hospitaler.</p>
+</section>
+<section>
+  <h2>Algoritmen</h2>
+<ol>
+  <li>Så længe der er en fri forslagsstiller <code>p</code>: <code>p</code> foreslår den første modtager på sin liste, som p endnu ikke har foreslået.</li>
+  <li>Hvis modtageren <code>r</code> er fri, accepterer den.</li>
+  <li>Hvis <code>r</code> er optaget, men foretrækker <code>p</code>, afviser den den nuværende partner (som bliver fri igen) og accepterer <code>p</code>.</li>
+  <li>Ellers afviser <code>r</code> <code>p</code>.</li>
+</ol>
+  <figure class="scena" data-scena="gs" data-titolo="Gale-Shapley: forslag, accepter, forladelser"></figure>
+</section>
+<section>
+  <h2>Hvorfor den standser, og hvorfor den er stabil</h2>
+<p>En modtager forbedrer sig kun: den der holdes, kan kun erstattes af en, den foretrækker. En forslagsstiller bevæger sig kun nedad på sin liste: den foreslår aldrig igen den samme modtager. Så der er højst <code>n²</code> forslag, og algoritmen standser.</p>
+<p>Når den standser, er matchingen stabil: hvis to personer <code>p</code> og <code>r</code> foretrak hinanden frem for deres partnere, ville <code>p</code> have foreslået <code>r</code> før sin nuværende partner, og <code>r</code> ville have accepteret og aldrig forladt for en bedre.</p>
+</section>
+<section>
+  <h2>Hvem vinder</h2>
+<p>Matchingen er den bedst mulige <b>for forslagsstillerne</b>: hver forslagsstiller får den højeste modtager på sin liste blandt alle dem, de kan have i en stabil matching. For modtagerne er den den værste. Resultatet afhænger af, hvem der foreslår: at vende rollerne ændrer matchingen.</p>
+</section>
+<section>
+  <h2>Koden side om side</h2>
+  <p>Denne side forklarer begrebet. Java-koden, der implementerer det, med en forklaring linje for linje og de syntaksnoter, der skal bruges, står på den side ved siden af.</p>
+  <p><a href="../codice/stable-matching.html"><b>→ Java-kode til dette emne</b></a></p>
+</section>
+<section>
+  <h2>Implementering i O(1) pr. trin</h2>
+  <p>Omkostningen O(n²) gælder kun, hvis hvert spørgsmål i algoritmen besvares i konstant tid. Fire spørgsmål, fire strukturer:</p>
+  <div class="tab-wrap"><table class="tab"><thead><tr><th>spørgsmål</th><th>struktur</th></tr></thead><tbody>
+    <tr><td>er der en fri forslagsstiller?</td><td>en kø (<code>ArrayDeque</code>) af de frie</td></tr>
+    <tr><td>hvem spørger nu, <code>a</code>?</td><td><code>next[a]</code>: indekset på a's liste</td></tr>
+    <tr><td>er <code>x</code> fri, eller med hvem er den?</td><td><code>partner[x]</code>, −1 hvis fri</td></tr>
+    <tr><td>foretrækker <code>x</code> <code>a</code> frem for x's partner?</td><td><code>rank[x][a]</code>: positionen af <code>a</code> på listen for <code>x</code></td></tr>
+  </tbody></table></div>
+  <p>Listen <code>pref[x]</code> siger "hvem der er på position k". For at vide, hvor <code>a</code> står, skulle jeg gennemløbe den: omkostning O(n). Derfor bygger jeg den omvendte liste én gang, i O(n²): <code>rank[x][pref[x][k]] = k</code>. Herfra er hver sammenligning en sammenligning mellem to tal: O(1).</p>
+  <p>Samlet omkostning: konstruktionen O(n²) plus højst n² forslag à O(1), altså O(n²). Uden <code>rank</code> ville hver sammenligning koste O(n), og det samlede O(n³).</p>
+</section>
+<section>
+  <h2>Variant: flere pladser</h2>
+  <p>Det er versionen "hospitaler og beboere" (hospital-residents) fra slides. Hver <b>modtager</b> har en <b>kapacitet</b>: hvor mange pladser den har (et hold med 2 pladser, et hospital med 5 senge). <b>Forslagsstilleren</b> er fri, så længe der stadig er navne på dens liste, og den ikke allerede holdes.</p>
+  <p>Hvad ændrer sig i forhold til den almindelige Gale-Shapley:</p>
+  <ul>
+    <li>Modtageren holder op til <code>q</code> forslagsstillere, ikke kun én.</li>
+    <li>Når et forslag ankommer, og modtageren er fuld, sammenlignes det med den <b>værste</b> af dem, der holdes: hvis det foretrækkes, tager det den værstes plads, og den værste bliver fri igen.</li>
+    <li>Den forslagsstiller, der står uden plads, vender tilbage til køen, som før.</li>
+  </ul>
+  <figure class="scena" data-scena="cap" data-titolo="To pladser: den værste erstattes"></figure>
+  <p>Pas på: sammenligningen er altid med den <b>værste</b> af dem, der holdes, ikke med den første. Det er den hyppigste fejl, når man skriver denne variant.</p>
+</section>
+<section>
+  <h2>Til eksamen</h2>
+<div class="box esame" data-tit="Til eksamen">
+<p>Skriv: <i>"Gale–Shapley runs in O(n²) time: each proposal is made at most once per pair, and each proposal is handled in O(1). The output is a stable perfect matching, optimal for the proposing side."</i></p>
+<p>Det er ikke til eksamen som et heltalsproblem til 5 point, men det er modellen for mange tildelingsspørgsmål med præferencer.</p>
+</div>
+</section>
+<section>
+  <h2>Hurtig oversigt</h2>
+<div class="tab-wrap"><table class="tab"><thead><tr><th>post</th><th>betydning</th><th>note</th></tr></thead><tbody><tr><td>forslagsstiller</td><td>foreslår i præferencerækkefølge</td><td>går ned ad sin liste</td></tr><tr><td>modtager</td><td>holder den bedste indtil nu</td><td>forbedrer kun</td></tr><tr><td>forslag</td><td>højst n²</td><td>hvert par én gang</td></tr><tr><td>tid</td><td>O(n²)</td><td>standard</td></tr></tbody></table></div>
+</section>
+
+</main>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+const ogg = [
+  {id:'T', tipo:'rett', x:40, y:40, w:200, h:36, t:'Squadra T (2 posti)'},
+  {id:'s1', tipo:'rett', x:40, y:96, w:95, h:44, t:'libero'},
+  {id:'s2', tipo:'rett', x:145, y:96, w:95, h:44, t:'libero'},
+  {id:'P1', tipo:'nodo', x:400, y:50, t:'P1', r:20},
+  {id:'P2', tipo:'nodo', x:400, y:120, t:'P2', r:20},
+  {id:'P3', tipo:'nodo', x:400, y:190, t:'P3', r:20},
+  {id:'c', tipo:'testo', x:40, y:240, t:'', size:12, bold:true, anchor:'start'}
+];
+const passi = [
+  {nota:"La squadra <b>T</b> ha <b>2 posti</b>: è il <b>ricevente</b>. I giocatori sono i <b>proponenti</b>. Ordine di T: P1, P3, P2. Tutti partono liberi.", set:{c:{t:'T: P1 > P3 > P2 · posti liberi: 2'}}},
+  {nota:"P1 propone a T. T ha un posto libero: <b>accetta</b>.", set:{s1:{t:'P1', tono:'ok'}, P1:{tono:'ok'}, c:{t:'T: 1 posto libero'}}},
+  {nota:"P2 propone a T. Un posto è ancora libero: accetta. T è <b>piena</b>: 2 su 2.", set:{s2:{t:'P2', tono:'ok'}, P2:{tono:'ok'}, T:{tono:'due'}, c:{t:'T piena: P1 e P2'}}},
+  {nota:"P3 propone a T. T è piena: confronto P3 con il <b>peggiore</b> dei due tenuti, cioè P2. T preferisce P3 a P2.", set:{P3:{tono:'ora'}, P2:{tono:'due'}, c:{t:'P3 contro P2, il peggiore tenuto'}}},
+  {nota:"T preferisce P3: <b>P2 lascia il posto</b> e torna libero. P3 prende il posto. T resta con P1 e P3. P2 proporrà alla prossima squadra della sua lista.", set:{s2:{t:'P3', tono:'ok'}, P3:{tono:'ok'}, P2:{tono:'no'}, T:{tono:'ok'}, c:{t:'T tiene P1 e P3 · P2 torna libero', tono:'ok'}}}
+];
+SCENE.cap = {
+  w: 540, h: 270, lato: true,
+  legenda: 'ok:holdt,no:bliver fri,due:værste af dem der holdes,ora:forslag der kommer',
+  oggetti: ogg, passi
+};
+})();
+</script>
+</body>
+</html>

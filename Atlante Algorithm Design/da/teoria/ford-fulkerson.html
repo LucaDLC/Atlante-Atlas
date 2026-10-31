@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Ford-Fulkerson: det maksimale flow</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+const N = (id,x,y,t) => ({id,tipo:'nodo',x,y,t,r:20});
+const A = (id,da,a,t,extra) => Object.assign({id,tipo:'arco',da,a,dir:true,t},extra||{});
+SCENE.ff = {
+  w: 540, h: 260, lato: true,
+  legenda: 'ora:augmenterende vej,ok:mættet kant (flow = kapacitet),no:annulleret flow (restnetværk),dato:tilgængelig kapacitet',
+  oggetti: [
+    N('s',60,130,'s'), N('a',240,50,'a'), N('b',240,210,'b'), N('t',420,130,'t'),
+    A('sa','s','a','0/1'), A('sb','s','b','0/1'), A('ab','a','b','0/1'), A('at','a','t','0/1'), A('bt','b','t','0/1'),
+    {id:'c1',tipo:'testo',x:20,y:250,t:'',size:12,bold:true,anchor:'start'}
+  ],
+  passi: [
+    { nota: 'Netværk: hver kant har <b>kapacitet 1</b>, skrevet som <code>flow/kapacitet</code>. Startflow 0. Jeg vil sende så meget flow som muligt fra <b>s</b> til <b>t</b>.', set:{sa:{tono:'dato'},sb:{tono:'dato'},ab:{tono:'dato'},at:{tono:'dato'},bt:{tono:'dato'},c1:{t:'flusso = 0'}} },
+    { nota: 'Første vej: <b>s → a → b → t</b>. Flaskehalsen er 1: jeg øger flowet med 1 på de tre kanter. Nu er de mættede.', set:{sa:{t:'1/1',tono:'ok'},ab:{t:'1/1',tono:'ok'},bt:{t:'1/1',tono:'ok'},c1:{t:'flusso = 1'}} },
+    { nota: 'Jeg leder efter en anden vej i <b>restnetværket</b>. På s → a → b går intet mere igennem. Men kanten <b>b → a</b> i restnetværket er kanten a → b annulleret: jeg kan "gøre flowet ugjort".', set:{ab:{tono:'no'},c1:{t:'residuo: b → a (disfa a → b)'}} },
+    { nota: 'Anden vej: <b>s → b → a → t</b>. Jeg passerer b → a: flowet på a → b går tilbage til 0. Jeg tilføjer <b>s → b</b> og <b>a → t</b>.', set:{sb:{t:'1/1',tono:'ok'},ab:{t:'0/1',tono:'no'},at:{t:'1/1',tono:'ok'},bt:{t:'1/1',tono:'ok'},c1:{t:'flusso = 2',tono:'ok'}} },
+    { nota: 'Ingen vej s → t i restnetværket: flowet er <b>maksimalt</b>. Værdi 2. Snittet {s} har kapacitet 2: se siden max-flow min-cut.', set:{c1:{t:'flusso massimo = 2',tono:'ok'}} }
+  ]
+};
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Ford-Fulkerson: det maksimale flow</h1>
+  <p class="lede">Problemet med maksimalt flow: at sende så meget materiale som muligt fra en kilde s til et sink t, med respekt for kanternes kapaciteter. Ford-Fulkerson løser det med augmenterende veje i restnetværket.</p>
+</header>
+
+<section>
+  <h2>Netværket og flowet</h2>
+<p>Et <b>netværk</b> er en orienteret graf med en kilde <code>s</code>, et sink <code>t</code> og en kapacitet <code>c(e) ≥ 0</code> på hver kant. Et <b>flow</b> <code>f</code> giver hver kant en værdi med <code>0 ≤ f(e) ≤ c(e)</code>, og i hver knude forskellig fra s og t er det, der går ind, lig med det, der går ud (bevarelse). Flowets værdi er det, der går ud af <code>s</code>.</p>
+</section>
+<section>
+  <h2>Restnetværket</h2>
+<p>For hver kant <code>e = u → v</code> med kapacitet <code>c</code> og flow <code>f</code> indeholder <b>restnetværket</b>: en kant fremad <code>u → v</code> med kapacitet <code>c − f</code> (hvor meget du stadig kan sende), og en kant bagud <code>v → u</code> med kapacitet <code>f</code> (hvor meget du kan <b>gøre ugjort</b>). Kanten bagud er det, der gør det muligt at rette et valg, der blev truffet før.</p>
+</section>
+<section>
+  <h2>Metoden: augmenterende veje</h2>
+<p>Så længe der findes en vej <code>s → t</code> i restnetværket, tager du dens <b>flaskehals</b> (den mindste kapacitet langs vejen) og øger flowet med den mængde. At finde vejen: BFS eller DFS. Når der ikke er nogen vej mere, er flowet maksimalt.</p>
+  <figure class="scena" data-scena="ff" data-titolo="Første vej, derefter en vej der gør den ugjort"></figure>
+</section>
+<section>
+  <h2>Sætningen og omkostningen</h2>
+<p><b>Augmenterende vej-sætningen</b>: et flow er maksimalt, hvis og kun hvis der ikke findes en vej <code>s → t</code> i restnetværket. <b>Heltalsegenskaben</b>: med heltalskapaciteter findes et maksimalt heltalsflow, og Ford-Fulkerson finder det. Derfor læses et 0/1-flow som en tildeling.</p>
+<p>Omkostning <code>O(m · |f*|)</code>: med heltalskapaciteter afhænger den af flowets værdi. Med kapacitet 1: <code>O(mn)</code>.</p>
+</section>
+<section>
+  <h2>Koden side om side</h2>
+  <p>Denne side forklarer begrebet. Java-koden, der implementerer det, med en forklaring linje for linje og de syntaksnoter, der skal bruges, står på den side ved siden af.</p>
+  <p><a href="../codice/ford-fulkerson.html"><b>→ Java-kode til dette emne</b></a></p>
+</section>
+<section>
+  <h2>Til eksamen</h2>
+<div class="box esame" data-tit="Til eksamen">
+<p>Når spørgsmålet har <b>tildelinger med grænser</b>, <b>disjunkte stier</b> eller et <b>minimalt snit</b>, bygger du et netværk og læser det maksimale flow. Sætning: <i>"Build a flow network with source s and sink t. Arc capacities encode the limits. By the integrality theorem there is an integral maximum flow of value k, which is the answer. Ford–Fulkerson runs in O(m·|f*|)."</i></p>
+</div>
+</section>
+<section>
+  <h2>Hurtig oversigt</h2>
+<div class="tab-wrap"><table class="tab"><thead><tr><th>begreb</th><th>betydning</th><th>note</th></tr></thead><tbody><tr><td>restnetværk</td><td>kanter fremad c − f, bagud f</td><td>gøre flowet ugjort</td></tr><tr><td>augmenterende vej</td><td>s → t i restnetværket</td><td>flaskehals</td></tr><tr><td>heltalsegenskab</td><td>heltalskapaciteter ⇒ heltalsflow</td><td>0/1-matching</td></tr><tr><td>tid</td><td>O(m·|f*|), O(mn) med kapacitet 1</td><td>varierer med metoden</td></tr></tbody></table></div>
+</section>
+
+</main>
+</body>
+</html>

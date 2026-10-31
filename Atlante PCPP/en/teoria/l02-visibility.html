@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Visibility, reordering, volatile</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<link rel="stylesheet" href="../../assets/pcpp.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+<script src="../../assets/pcpp.js" defer></script>
+<script>
+window.PROGRAMMI = window.PROGRAMMI || {};
+PROGRAMMI.riordino = {
+  memoria: { a: 0, b: 0, x: 0, y: 0 },
+  thread: [
+    { nome: 't1', passi: [
+      { n: 1, codice: 'a = 1;', fai: m => { m.a = 1; } },
+      { n: 2, codice: 'x = b;', fai: m => { m.x = m.b; } } ] },
+    { nome: 't2', passi: [
+      { n: 3, codice: 'b = 1;', fai: m => { m.b = 1; } },
+      { n: 4, codice: 'y = a;', fai: m => { m.y = m.a; } } ] }
+  ],
+  esito: m => '(' + m.x + ',' + m.y + ')'
+};
+PROGRAMMI.riordinoSync = {
+  memoria: { a: 0, b: 0, x: 0, y: 0 },
+  thread: [
+    { nome: 't1', passi: [
+      { n: 'L1', codice: 'synchronized (o) {', lock: 'o' },
+      { n: 1, codice: '  a = 1;', fai: m => { m.a = 1; } },
+      { n: 2, codice: '  x = b;', fai: m => { m.x = m.b; } },
+      { n: 'U1', codice: '}', unlock: 'o' } ] },
+    { nome: 't2', passi: [
+      { n: 'L2', codice: 'synchronized (o) {', lock: 'o' },
+      { n: 3, codice: '  b = 1;', fai: m => { m.b = 1; } },
+      { n: 4, codice: '  y = a;', fai: m => { m.y = m.a; } },
+      { n: 'U2', codice: '}', unlock: 'o' } ] }
+  ],
+  esito: m => '(' + m.x + ',' + m.y + ')'
+};
+</script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  const T = (id, x, y, t, extra) => Object.assign({ id, tipo: 'testo', x, y, t, size: 13 }, extra || {});
+  const R = (id, x, y, w, h, t, extra) => Object.assign({ id, tipo: 'rett', x, y, w, h, t }, extra || {});
+  const F = (id, x1, y1, x2, y2, t, extra) => Object.assign({ id, tipo: 'vett', x1, y1, x2, y2, t }, extra || {});
+
+  // 1. cache e memoria
+  SCENE.cache = {
+    w: 600, h: 262, lato: true,
+    legenda: 'dato:main (CPU 1),due:t1 (CPU 2),no:old value,ok:updated value',
+    oggetti: [
+      R('c1', 30, 30, 200, 70, '', { tono: 'dato' }), T('l1', 130, 48, 'CPU 1 · main', { bold: true, size: 12 }), T('v1', 130, 78, 'cache: running = true', { size: 12 }),
+      R('c2', 370, 30, 200, 70, '', { tono: 'due' }), T('l2', 470, 48, 'CPU 2 · t1', { bold: true, size: 12 }), T('v2', 470, 78, 'cache: running = true', { size: 12 }),
+      R('mem', 180, 170, 240, 50, 'memoria: running = true', { tono: 'spento' }),
+      F('f1', 130, 102, 250, 168, '', { nascosto: true }), F('f2', 350, 168, 470, 102, '', { nascosto: true }),
+      T('c', 300, 245, '', { bold: true, size: 12 })
+    ],
+    passi: [
+      { nota: "NoVisibility1: t1 gira in <code>while (running)</code>, il main dopo mezzo secondo scrive <code>running = false</code>. I due thread possono stare su CPU diverse, ognuna con la sua <b>cache</b> (una copia veloce della memoria)." },
+      { nota: "Il main scrive false, ma la scrittura può restare nella cache della CPU 1 (o in un registro): la memoria e la CPU 2 non la vedono.", set: { v1: { t: 'cache: running = false', tono: 'ok' } } },
+      { nota: "t1 continua a leggere la sua copia, true. Anche il compilatore JIT può trasformare il ciclo in <code>while (true)</code>, visto che nel thread nessuno cambia running. Il programma può <b>non terminare mai</b>.", set: { v2: { tono: 'no' }, c: { t: 't1 non vede mai false', tono: 'no' } } },
+      { nota: "Con la sincronizzazione (synchronized su lettura e scrittura, oppure <code>volatile boolean running</code>) la scrittura viene resa visibile e la lettura aggiornata: t1 vede false e finisce. La spiegazione con le cache è un'intuizione; la regola precisa è il Java Memory Model: la scrittura è visibile solo se <b>happens-before</b> la lettura.", set: { f1: { nascosto: false }, f2: { nascosto: false }, mem: { t: 'memoria: running = false', tono: 'ok' }, v2: { t: 'cache: running = false', tono: 'ok' }, c: { t: 'con sincronizzazione: visibile', tono: 'ok' } } }
+    ]
+  };
+
+  // 2. esercizio 2.2: le quattro varianti
+  const riga = (id, y, t) => T(id, 150, y, t, { size: 12, anchor: 'start' });
+  const esito = (id, y) => T(id, 520, y, '', { size: 12, bold: true });
+  SCENE.mutable = {
+    w: 620, h: 240, lato: true,
+    legenda: 'ok:always terminates (there is happens-before),no:may not terminate',
+    oggetti: [
+      T('h', 310, 24, 'main: set(42)  →  t: while (get() == 0)', { bold: true, size: 12 }),
+      T('n1', 75, 70, '2.2.1', { bold: true, size: 12 }), riga('d1', 70, 'nessun lock'), esito('e1', 70),
+      T('n2', 75, 110, '2.2.2', { bold: true, size: 12 }), riga('d2', 110, 'get e set synchronized'), esito('e2', 110),
+      T('n3', 75, 150, '2.2.3', { bold: true, size: 12 }), riga('d3', 150, 'solo set synchronized'), esito('e3', 150),
+      T('n4', 75, 190, '2.2.4', { bold: true, size: 12 }), riga('d4', 190, 'value volatile, nessun lock'), esito('e4', 190)
+    ],
+    passi: [
+      { nota: "La domanda di ogni variante: esiste un arco <b>happens-before</b> dalla scrittura <code>set(42)</code> alle letture <code>get()</code>? Se sì, t vede 42 e termina; se no, può girare per sempre." },
+      { nota: "<b>Nessun lock</b>: nessuna regola lega scrittura e letture. Può girare per sempre.", set: { e1: { t: 'può non terminare', tono: 'no' } } },
+      { nota: "<b>get e set synchronized</b> (stesso lock, quello di mi): l'unlock alla fine di set happens-before il lock del get successivo (regola del monitor). Termina sempre.", set: { e2: { t: 'termina sempre', tono: 'ok' } } },
+      { nota: "<b>Solo set synchronized</b>: la regola del monitor collega un unlock e un lock <b>sullo stesso monitor</b>. get non prende nessun lock, quindi non c'è l'arco. Non garantito: mezza sincronizzazione non basta.", set: { e3: { t: 'non garantito', tono: 'no' } } },
+      { nota: "<b>value volatile</b>: la scrittura di una variabile volatile happens-before ogni lettura successiva della stessa variabile (regola volatile). Termina sempre, senza lock.", set: { e4: { t: 'termina sempre', tono: 'ok' } } }
+    ]
+  };
+
+  // 3. volatile non basta per count++
+  SCENE.volatilecount = {
+    w: 600, h: 240, lato: true,
+    legenda: 'dato:t1,due:t2,no:lost update',
+    oggetti: [
+      R('mem', 220, 20, 160, 40, 'volatile count = 5', { tono: 'ok' }),
+      T('l1', 60, 100, 't1', { bold: true }), T('l2', 60, 170, 't2', { bold: true }),
+      T('a1', 300, 100, '', { size: 12 }), T('a2', 300, 170, '', { size: 12 }), T('c', 300, 222, '', { bold: true, size: 12 })
+    ],
+    passi: [
+      { nota: "<code>volatile</code> garantisce <b>visibilità</b> (ogni lettura vede l'ultima scrittura) e niente <b>riordino</b>. Non garantisce <b>mutua esclusione</b>. Due thread fanno <code>count++</code> su un volatile count che vale 5." },
+      { nota: "t1 legge 5: il valore aggiornato, grazie a volatile.", set: { a1: { t: 'temp = count → 5', tono: 'dato' } } },
+      { nota: "Prima che t1 scriva, anche t2 legge 5, anche lui aggiornato.", set: { a2: { t: 'temp = count → 5', tono: 'due' } } },
+      { nota: "Tutti e due scrivono 6. Un incremento è <b>perso</b>, esattamente come senza volatile. Il problema non era la visibilità, ma che lettura e scrittura non sono <b>atomiche insieme</b>: serve un lock (o un AtomicInteger).", set: { a1: { t: 'count = temp + 1 → 6' }, a2: { t: 'count = temp + 1 → 6', tono: 'no' }, mem: { t: 'volatile count = 6', tono: 'no' }, c: { t: '5 + 2 incrementi = 6: lost update', tono: 'no' } } }
+    ]
+  };
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Visibility, reordering, volatile</h1>
+  <p class="lede">Two ways in which real execution betrays intuition: a write that another thread <b>never sees</b> (visibility) and instructions executed <b>in another order</b> (reordering). They are not "Java problems": they happen in every language with concurrency. <code>volatile</code> and locks are the answers.</p>
+</header>
+
+<section>
+  <h2>Visibility: the write that does not arrive</h2>
+  <figure class="codice" data-titolo="NoVisibility1.java">
+<pre data-lang="java">boolean running = true;
+Thread t1 = new Thread(() -> {
+    while (running) { /* do nothing */ }
+    System.out.println("t1 finishing execution");
+});
+t1.start();
+try { Thread.sleep(500); } catch (InterruptedException e) { }
+running = false;
+System.out.println("Main finishing execution");</pre>
+    <ol class="spiega">
+      <li data-righe="3" data-segna="while (running)@dato"><p>t1 keeps reading <code>running</code>.</p></li>
+      <li data-righe="8" data-segna="running = false;@ora"><p>After half a second the main writes <code>false</code>.</p></li>
+      <li data-righe="3,8"><p>Possible outputs: both finish, <b>or t1 never terminates</b>. No synchronization operation binds the write of the main to the reads of t1.</p></li>
+    </ol>
+  </figure>
+  <p><b>Hardware intuition</b> (slide 51): threads can run on different CPUs. Without synchronization the CPU can keep the value in its registers or in its cache, not visible to the other CPUs. Even the JIT compiler can treat the read as a constant. The slides warn that the hardware explanation is indicative: the precise rule is given by the <b>Java Memory Model</b> (lecture 3).</p>
+  <div class="box regola" data-tit="The rule to use">
+    <p>A write is guaranteed visible to a read <b>only if</b> the write <b>happens-before</b> the read. Without a lock, <code>volatile</code>, start/join or similar between the two, there is no guarantee.</p>
+  </div>
+  <p>By adding <code>synchronized(o)</code> around the read in t1 and the write in the main (<code>NoVisibility1Synchronized.java</code>) the program always terminates: the <code>unlock</code> of the main happens before the following <code>lock</code> of t1, and this order makes the write visible.</p>
+  <figure class="scena" data-scena="cache" data-titolo="Two CPUs, two caches, a write that stays behind"></figure>
+</section>
+
+<section>
+  <h2>Exercise 2.2: <code>MutableInteger</code>, explained properly</h2>
+  <pre class="cod" data-lang="java">class MutableInteger {
+    private int value = 0;
+    public void set(int value) { this.value = value; }
+    public int get() { return value; }
+}
+// t:     while (mi.get() == 0) { }
+// main:  Thread.sleep(500); mi.set(42);</pre>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Question</th><th>Answer</th><th>Why (with the course vocabulary)</th></tr></thead>
+    <tbody>
+      <tr><td>2.2.1 Can it run forever?</td><td class="t-no">yes</td><td>the write <code>set(42)</code> and the reads <code>get()</code> are not ordered by happens-before: the JVM may legitimately never let t see 42 (visibility)</td></tr>
+      <tr><td>2.2.2 <code>synchronized</code> on get and set</td><td class="t-ok">always terminates</td><td>both use the lock of <code>mi</code>: the unlock of <code>set</code> happens-before the lock of the next <code>get</code> (monitor rule), so that get sees 42</td></tr>
+      <tr><td>2.2.3 Only set synchronized</td><td class="t-no">not guaranteed</td><td>the monitor rule orders an unlock and a lock <b>on the same monitor</b>: if <code>get</code> does not take the lock, no rule links the read to the write</td></tr>
+      <tr><td>2.2.4 No lock, <code>value</code> volatile</td><td class="t-ok">always terminates</td><td>volatile rule: a write to a volatile variable happens-before every subsequent read of the same variable</td></tr>
+    </tbody>
+  </table></div>
+  <div class="box domanda-tua" data-tit="On your answer to 2.2.x">
+    <p>You explained with the JIT that "it caches the value and rewrites the loop". It is a possible mechanism, but at the oral it is better to give the course explanation: <b>there is no happens-before between the write and the read, so visibility is not guaranteed</b>; with <code>synchronized</code> on both methods (or with <code>volatile</code>) the order exists and the read sees the write. This way the answer does not depend on what a specific compiler does.</p>
+  </div>
+  <div class="box inglese" data-tit="In English (2.2.2)">
+    <p>"Making both get() and set() synchronized makes them use the intrinsic lock of mi. By the monitor rule, the unlock at the end of set(42) happens-before the lock at the beginning of any subsequent get(), so that get() is guaranteed to see the value 42 and the loop in t terminates."</p>
+  </div>
+  <figure class="scena" data-scena="mutable" data-titolo="Four variants, one happens-before arc"></figure>
+</section>
+
+<section>
+  <h2>Reordering: the instructions that swap</h2>
+  <pre class="cod" data-lang="java">// PossibleReordering.java
+x = 0; y = 0; a = 0; b = 0;
+Thread one   = new Thread(() -> { a = 1; x = b; });
+Thread other = new Thread(() -> { b = 1; y = a; });
+one.start(); other.start();
+one.join();  other.join();
+System.out.println("(" + x + "," + y + ")");</pre>
+  <p>First try as the scheduler: which outputs do you get by mixing the steps? Then open "All possible interleavings".</p>
+  <figure class="interleaving" data-prog="riordino" data-titolo="Without synchronization"></figure>
+  <figure class="passi" data-titolo="Why (0,0) can come out even if no interleaving gives it">
+    <div class="passo"><div class="espr">interleaving possibili → <mark class="ok">(0,1)  (1,0)  (1,1)</mark></div><p class="nota">Mixing the 4 steps in all 6 ways, (0,0) never comes out.</p></div>
+    <div class="passo"><div class="espr">x == 0  richiede  <mark class="dato">x=b</mark> prima di <mark class="due">b=1</mark>
+y == 0  richiede  <mark class="due">y=a</mark> prima di <mark class="dato">a=1</mark></div><p class="nota">To read both 0…</p></div>
+    <div class="passo"><div class="espr">a=1 → x=b → b=1 → y=a → <mark class="no">a=1</mark></div><p class="nota">…but by program order <code>a=1</code> comes before <code>x=b</code> and <code>b=1</code> before <code>y=a</code>: a cycle would be needed. No total order allows it.</p></div>
+    <div class="passo"><div class="espr">x = b;   a = 1;        y = a;   b = 1;   <span class="mano">// riordinato</span></div><p class="nota">Between <code>a=1</code> and <code>x=b</code> there is no data dependency nor synchronization: <b>the CPU or the JIT can swap them</b>. Reordering does not change the behaviour of the thread on its own, but between different threads it promises nothing.</p></div>
+    <div class="passo"><div class="espr"><mark class="no">(0,0)</mark>  è possibile</div><p class="nota">The program can really print it. It is an execution that is <b>not sequentially consistent</b> (lecture 3).</p></div>
+  </figure>
+  <h3>With <code>synchronized</code></h3>
+  <figure class="interleaving" data-prog="riordinoSync" data-titolo="The two bodies inside synchronized(o)"></figure>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Version</th><th>(0,0)</th><th>(0,1)</th><th>(1,0)</th><th>(1,1)</th></tr></thead>
+    <tbody>
+      <tr><td>no synchronization</td><td class="t-no">yes</td><td>yes</td><td>yes</td><td>yes</td></tr>
+      <tr><td><code>synchronized (o)</code> in both</td><td class="t-ok">no</td><td>yes</td><td>yes</td><td class="t-ok">no</td></tr>
+      <tr><td><code>volatile a, b</code></td><td class="t-ok">no</td><td>yes</td><td>yes</td><td>yes</td></tr>
+    </tbody>
+  </table></div>
+  <p class="piccolo">With <code>synchronized</code> even (1,1) disappears: the two bodies run one after the other, and whoever goes first reads the initial 0 of the other. Not because the lock prevents reordering inside the thread, but because mutual exclusion prevents mixing the bodies.</p>
+</section>
+
+<section>
+  <h2><code>volatile</code></h2>
+  <p><code>volatile</code> is a keyword for fields: <code>volatile boolean running</code>. It is a <b>weak</b> form of synchronization (slide 65): it solves the visibility and reordering problems on that variable, without blocking anyone. Precisely because it does not block, it cannot prevent two threads from mixing inside a compound operation.</p>
+  <ul>
+    <li>A <code>volatile</code> variable is not kept hidden in the registers or caches of a CPU: the writes are made visible to the other CPUs.</li>
+    <li>Accesses to volatile variables are <b>not reordered</b>.</li>
+    <li>Reads and writes are <b>not blocking</b>.</li>
+    <li>It does <b>not</b> guarantee mutual exclusion: <code>volatile int count; count++</code> remains a race condition.</li>
+  </ul>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th></th><th>Visibility</th><th>No reordering</th><th>Mutual exclusion</th></tr></thead>
+    <tbody>
+      <tr><td><code>volatile</code></td><td class="t-ok">yes</td><td class="t-ok">yes</td><td class="t-no">no</td></tr>
+      <tr><td>lock / <code>synchronized</code></td><td class="t-ok">yes</td><td class="t-ok">yes</td><td class="t-ok">yes</td></tr>
+    </tbody>
+  </table></div>
+  <figure class="scena" data-scena="volatilecount" data-titolo="volatile count++ still loses an increment"></figure>
+</section>
+
+</main>
+</body>
+</html>

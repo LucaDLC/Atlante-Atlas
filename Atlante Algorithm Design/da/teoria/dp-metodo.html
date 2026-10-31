@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Dynamisk programmering: metoden</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+const T0 = [[0,0,0,0,0,0,0],[0,1,1,1,1,1,1],[0,1,6,7,7,7,7],[0,1,6,7,7,18,19]];
+const blank = ['','','','','','',''];
+const riga = (k) => T0[k].map(String);
+const vista = (n) => [0,1,2,3].map(k => k < n ? riga(k) : blank);
+SCENE.dpk = {
+  w: 560, h: 240, lato: true,
+  legenda: 'ora:celle jeg beregner,dato:værdier allerede kendt,ok:svar',
+  oggetti: [
+    {id:'g',tipo:'griglia',x:50,y:40,cw:56,ch:36,valori:vista(1),intR:['0','1','2','3'],intC:['0','1','2','3','4','5','6']},
+    {id:'t',tipo:'testo',x:50,y:220,t:'',size:12,bold:true,anchor:'start'}
+  ],
+  passi: [
+    { nota: 'Genstande (vægt, værdi): (1, 1), (2, 6), (5, 18). Budget <code>W = 6</code>. <b>OPT(i, w)</b> = største værdi med de første i genstande og budget w.', set:{g:{valori:vista(1),toni:{}}} },
+    { nota: 'Række 0: uden genstande er værdien 0. Grundtilfældet.', set:{g:{valori:vista(1),toni:{'0,0':'dato','0,1':'dato','0,2':'dato','0,3':'dato','0,4':'dato','0,5':'dato','0,6':'dato'}}} },
+    { nota: 'Genstand 1 (vægt 1, værdi 1). For hvert budget: jeg tager den, hvis den passer, værdi 1 + OPT(0, w − 1), eller jeg springer den over. Række 1: 0 1 1 1 1 1 1.', set:{g:{valori:vista(2),toni:{'1,1':'ok','1,2':'ok','1,3':'ok','1,4':'ok','1,5':'ok','1,6':'ok'}}, t:{t:'riga 1 completa'}} },
+    { nota: 'Genstand 2 (vægt 2, værdi 6), budget 2: jeg tager denne genstand: 6 + OPT(1, 0) = 6, mod 1 for at springe den over. Budget 3: 6 + OPT(1, 1) = 7.', set:{g:{valori:vista(3),toni:{'2,2':'ok','2,3':'ok','2,4':'ok','2,5':'ok','2,6':'ok'}}, t:{t:'OPT(2,3) = 7'}} },
+    { nota: 'Genstand 3 (vægt 5, værdi 18). Budget 5: 18 + OPT(2, 0) = 18, slår 7. Budget 6: 18 + OPT(2, 1) = 19. Svar <b>OPT(3, 6) = 19</b>.', set:{g:{valori:vista(4),toni:{'3,5':'ora','3,6':'ok'}}, t:{t:'OPT(3, 6) = 19: risposta',tono:'ok'}} }
+  ]
+};
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Dynamisk programmering: metoden</h1>
+  <p class="lede">Dynamisk programmering (DP) løser et problem ved at bygge optimum op fra optima af mindre delproblemer, som gentager sig. Hvert delproblem beregnes én gang og gemmes i en tabel.</p>
+</header>
+
+<section>
+  <h2>Hvornår DP er nødvendig</h2>
+<p>Den naturlige grådige metode har et modeksempel. Men optimum bygges op af optima for mindre delproblemer, der <b>gentager</b> sig. Signaler:</p>
+<ul>
+  <li>en rækkefølge, hvor delproblemerne bliver mindre: præfikser af en følge, en DAG, et træ, en pyramide, der kun kan følges i én retning;</li>
+  <li>et <b>numerisk budget</b>, der bliver et indeks i tabellen (knapsack);</li>
+  <li>den grådige metode fejler, men valgene kan ordnes.</li>
+</ul>
+</section>
+<section>
+  <h2>Opskriften i otte trin</h2>
+<ol>
+  <li>Kig på den optimale løsning bagfra: hvad er den sidste beslutning? (med eller uden, hvilken bue, hvilket ord).</li>
+  <li><b>Definér</b> delproblemet med ord, med intervallet for parametrene: <code>OPT(i, w)</code> for <code>i ∈ {0…n}</code>, <code>w ∈ {0…W}</code>.</li>
+  <li>Tjek, at det er nok: er resten efter beslutningen et delproblem af samme type? Hvis ikke, tilføj en parameter.</li>
+  <li><b>Rekurrens</b>: ét tilfælde for hver mulig beslutning, derefter <code>max</code> eller <code>min</code>.</li>
+  <li><b>Grundtilfælde</b> og kanttilfælde. Et umuligt tilfælde er værd <code>−∞</code> (hvis du maksimerer), ikke 0.</li>
+  <li><b>Beregningsrækkefølge</b>: efter voksende indeks, eller efter voksende længde, eller i omvendt topologisk orden.</li>
+  <li><b>Svar</b>: hvilken celle du læser (<code>OPT(n, W)</code>, eller maksimum af en række).</li>
+  <li><b>Tid og plads</b> = antal delproblemer × omkostningen for ét trin. Hvis du har brug for løsningen, går du tilbage (traceback).</li>
+</ol>
+  <figure class="scena" data-scena="dpk" data-titolo="Knapsack: tabellen udfyldes række for række"></figure>
+</section>
+<section>
+  <h2>Knapsack og det pseudopolynomiske</h2>
+<p>Knapsack: <code>OPT(i, w) = max{ OPT(i−1, w), v_i + OPT(i−1, w − w_i) }</code> (det andet kun hvis <code>w_i ≤ w</code>). Tid og plads <code>O(nW)</code>: det er <b>pseudopolynomisk</b>, fordi <code>W</code> er et tal og ikke dets længde i bit (<code>log W</code>). Derfor er knapsack stadig NP-komplet, trods en DP.</p>
+</section>
+<section>
+  <h2>De tilbagevendende skabeloner</h2>
+<p>Seks skabeloner dækker næsten alle eksamener:</p>
+<ol>
+  <li><b>tag eller spring over</b> langs en følge (ikke-nabomønter, weighted interval scheduling);</li>
+  <li><b>numerisk budget</b> (knapsack, subset sum, exact change);</li>
+  <li><b>veje i en DAG</b> eller pyramide (Tower, Grave Robber, Bellman-Ford);</li>
+  <li><b>længste kæde</b> i en delvis orden (efter sortering);</li>
+  <li><b>strenge og præfikser</b> (edit distance, ord, palindromer);</li>
+  <li><b>træer</b> (vertex cover på et træ, spredning af en besked).</li>
+</ol>
+</section>
+<section>
+  <h2>Koden side om side</h2>
+  <p>Denne side forklarer begrebet. Java-koden, der implementerer det, med en forklaring linje for linje og de syntaksnoter, der skal bruges, står på den side ved siden af.</p>
+  <p><a href="../codice/knapsack.html"><b>→ Java-kode til dette emne</b></a></p>
+</section>
+<section>
+  <h2>Til eksamen</h2>
+<div class="box esame" data-tit="Til eksamen">
+<p>Definition af OPT med intervallerne, rekurrens, grundtilfælde, hvilken celle der er svaret, tid og plads. Sætning: <i>"Let OPT(i, w) denote the maximum value using only items 1..i with budget w, for i ∈ {0..n} and w ∈ {0..W}. Base: OPT(0, w) = 0. The answer is OPT(n, W). Time and space O(nW)."</i></p>
+<p>Fælder: at glemme intervallet; at skrive 0 i stedet for −∞ for de umulige tilfælde; ikke at sige, hvilken celle du læser.</p>
+</div>
+</section>
+<section>
+  <h2>Hurtig oversigt</h2>
+<div class="tab-wrap"><table class="tab"><thead><tr><th>element</th><th>betydning</th><th>note</th></tr></thead><tbody><tr><td>OPT(i, w)</td><td>største værdi med de første i genstande og budget w</td><td>knapsack</td></tr><tr><td>O(nW)</td><td>tid og plads</td><td>pseudopolynomisk</td></tr><tr><td>−∞</td><td>umuligt tilfælde (ved maksimering)</td><td>ikke 0</td></tr><tr><td>traceback</td><td>genskab løsningen</td><td>hvis outputtet er nødvendigt</td></tr></tbody></table></div>
+</section>
+
+</main>
+</body>
+</html>

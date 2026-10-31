@@ -1,0 +1,71 @@
+@@s001 Interleaving and race condition
+@@s002 dato:shared memory,due:the thread's local copy,ora:instruction being executed,no:can stop here
+@@s003 no:problem,ok:no problem
+@@s004 dato:t1 runs,due:t2 runs,no:overlap (lost updates possible)
+@@s005 Interleaving and race condition
+@@s006 With two turnstiles, <code>CounterThreads2.java</code> almost always prints <b>fewer than 20 000</b>. The reason: <code>counter++</code> looks like a single operation but it is <b>two steps</b>, and between the two another thread can slip in. Here you build yourself the interleavings that make increments disappear.
+@@s007 <code>counter++</code> is not atomic
+@@s008 The turnstile problem with <b>two</b> threads comes from here. An operation that looks single, like adding 1 to a counter, is for the machine a sequence of smaller steps. If two threads run their sequences mixed together, the result can be wrong. To understand which mixtures are possible, each operation is broken into its steps and the steps are numbered.
+@@s009 Atomic
+@@s010 An instruction is <b>atomic</b> if it is executed as a single, indivisible operation. Being written on one line does not make it atomic.
+@@s011 What the JVM really executes (javap -c, verified)
+@@s012 Three ways of writing it (exercise 1.1.3).
+@@s013 All three become the <b>same</b> bytecode (only one initial instruction changes, which loads the object): a <b>read</b> (<code>getfield</code>), a computation, a <b>write</b> (<code>putfield</code>).
+@@s014 To reason about it you write it like this: two numbered steps. Between (1) and (2) the scheduler can suspend the thread.
+@@s015 Answer to exercise 1.1.3: changing the form changes nothing, because none of the three is atomic.
+@@s016 counter++ in three instructions
+@@s017 Build the lost update
+@@s018 Two threads run the body of the loop once. The right result is <code>counter = 2</code>. Try to get 1, then open "All possible interleavings".
+@@s019 Lost update
+@@s020 The interleaving that loses an increment
+@@s021 t1 reads 0.
+@@s022 Before t1 writes, t2 <b>also</b> reads 0: a value already old (stale).
+@@s023 t1 writes 0 + 1.
+@@s024 t2 writes 0 + 1: it overwrites t1's increment.
+@@s025 Of the 6 possible interleavings, 4 lose an update. With 10 million loops per thread the chances are millions: the wrong result is almost certain.
+@@s026 How an interleaving is written (slide 48)
+@@s027 <code>&lt;thread&gt;(&lt;step&gt;), &lt;thread&gt;(&lt;step&gt;), …</code> — for example <code>t1(1), t1(2), t2(1), t2(2)</code>. It is a sequence of operations <b>of the concurrent program</b>, not of a single thread. Each thread must respect its own order: <code>t1(2)</code> cannot come before <code>t1(1)</code>.
+@@s028 Race condition and data race
+@@s029 They are the two most used words of the course, and the most confused. One concerns the <b>result</b> of the program, the other the <b>accesses</b> to memory. They often happen together (as with counter++), but they are independent: one can have one without the other.
+@@s030 Race condition
+@@s031 The <b>result</b> depends on the interleaving. It is a property of the output.
+@@s032 Data race (definition of lecture 1)
+@@s033 Two threads access the <b>same</b> memory location and <b>at least one writes</b>. It is a property of the accesses. In lecture 3 the definition becomes more precise.
+@@s034 Case
+@@s035 Race condition?
+@@s036 Data race?
+@@s037 <code>counter++</code> from two threads
+@@s038 yes (the total changes)
+@@s039 yes (reads and writes on counter)
+@@s040 two threads print without shared memory (Printer)
+@@s041 yes (the order of the symbols changes)
+@@s042 no
+@@s043 two threads write <b>the same value</b> into the same variable
+@@s044 no (the result does not change)
+@@s045 yes
+@@s046 Race condition and data race: the four cases
+@@s047 Why with 100 loops it almost always gives 200 (exercise 1.1.2)
+@@s048 With few loops one thread often finishes <b>all its work</b> before the other starts, or within a single turn of the scheduler: the "bad" interleavings, in which one thread slips in between the read and the write of the other, become rare. Rare does not mean impossible: <b>200 is not guaranteed</b>, because the scheduler can always suspend a thread between (1) and (2).
+@@s049 100 loops against 10 million
+@@s050 The minimum value (exercise 1.1.8)
+@@s051 Without locks and with <code>counts = 3</code>, what is the smallest value the program can print? Wrong intuition: 3. Verified by enumerating all the interleavings: the minimum is <b>2</b>, and it stays 2 even with 20 million loops.
+@@s052 Two threads, 3 loops each
+@@s053 An interleaving that prints 2
+@@s054 t1 reads 0 and stops (suspended by the scheduler).
+@@s055 t2 does its first <b>two</b> complete loops.
+@@s056 t1 writes its old 0 + 1: it erases the two loops of t2.
+@@s057 t2 reads 1 for its last loop and stops.
+@@s058 t1 finishes its two remaining loops.
+@@s059 t2 writes 1 + 1: it erases all of t1's work. Final result <b>2</b>. With N loops the scheme is the same: t2 does N−1 loops, then t1 does N−1 loops.
+@@s060 In English
+@@s061 "The minimum is 2. t1 reads 0 and is suspended; t2 completes all but its last iteration; t1 writes 1, overwriting t2's work; t2 reads 1 and is suspended; t1 completes its remaining iterations; finally t2 writes 2, overwriting all of t1's increments. The same interleaving works for any number of iterations greater than 1."
+@@s062 The Printer: race condition without shared memory
+@@s063 Exercise 1.2: <code>print()</code> prints <code>-</code>, sleeps 50 ms, prints <code>|</code>. Two threads call it. <code>sleep</code> does <b>not</b> guarantee anything about the order: it is only an opportunity for the scheduler.
+@@s064 Two threads, 4 print() each
+@@s065 Where "--|" comes from
+@@s066 t1 prints the dash and goes to sleep.
+@@s067 While t1 sleeps, t2 prints its dash: two dashes in a row.
+@@s068 Then both print the bar. After the "fault" <code>--</code> sooner or later <code>||</code> follows, because each thread always alternates <code>-</code> and <code>|</code>.
+@@s069 Exercise 1.2.4: can one obtain --|-|-|-|-|-|-|| with 4 print each?
+@@s070 <b>Yes</b> (verified by checking all the interleavings). An example:
+@@s071 Paste it into "Try a sequence" in the constructor above to see it run. It is an unlikely interleaving (t2 stays still for several prints of t1), but no rule forbids it.

@@ -1,0 +1,72 @@
+@@s001 for / yield
+@@s002 ora:current x,ok:passes the filter,no:discarded
+@@s003 With lists <code>&lt;-</code> means "for each element". For each x: incremented = x + 1, then two copies, kept only if even.
+@@s004 x = 3: incremented = 4, even: <b>4, 4</b> pass.
+@@s005 x = 4: incremented = 5, odd: the filter discards both.
+@@s006 x = 5: incremented = 6: <b>6, 6</b> pass.
+@@s007 The pieces are joined as in flatMap: <b>List(4, 4, 6, 6)</b> (checked).
+@@s008 ora:current step,ok:value,no:failed
+@@s009 ora:flatMap,due:map,ok:result
+@@s010 dato:list of pairs,ora:Option,ok:result
+@@s011 ora:step 1 (mean),due:step 2 (mean of the squares),ok:result,no:failed
+@@s012 for / yield
+@@s013 <code>for … yield</code> looks like a loop, but it <b>is not one</b>. The compiler rewrites it into <code>flatMap</code> and <code>map</code> before doing anything else. It is only a more readable way of writing chains of Options (or of lists). That is why it is allowed, even though loops are forbidden.
+@@s014 The same chain, written in three ways (slide 24)
+@@s015 From nested flatMaps to for
+@@s016 Three steps, two can fail. Each step gives a name to the value of the step before.
+@@s017 Same code, lines broken at another point: now to the right of the arrows there are the names.
+@@s018 Same code, with the syntactic sugar: each <code>name &lt;- value</code> is a step. It is read from top to bottom.
+@@s019 The final value (checked). With <code>Some(5)</code> the second step would give <code>None</code> and the result would be <code>None</code>.
+@@s020 Three steps, two can fail
+@@s021 The translation rules
+@@s022 In the for
+@@s023 Becomes
+@@s024 <code>x &lt;- e</code> (not the last)
+@@s025 <code>e.flatMap(x => …)</code>
+@@s026 <code>x &lt;- e</code> (the last) + <code>yield r</code>
+@@s027 <code>e.map(x => r)</code>
+@@s028 <code>y = expression</code>
+@@s029 an intermediate value (translated with <code>map</code>)
+@@s030 <code>if condition</code>
+@@s031 <code>withFilter</code> (a filter)
+@@s032 map2 written with for, translated by hand
+@@s033 Two generators.
+@@s034 The first generator becomes a <code>flatMap</code>.
+@@s035 The last generator together with <code>yield</code> becomes a <code>map</code>.
+@@s036 Doubt: but were the fors not forbidden?
+@@s037 What is forbidden is the <code>for</code> that <b>does</b> something, with <code>do</code>: <code>for x &lt;- lista do println(x)</code> returns <code>Unit</code> and lives on effects. The <code>for</code> with <code>yield</code> <b>produces a value</b> and is only another way of writing <code>flatMap</code>/<code>map</code>: it is pure code.
+@@s038 The same in F#: OptionBuilder.fsx (folder 03-option)
+@@s039 In the lecture material there is the F# version of the same mechanism, a <i>computation expression</i>. It is translated symbol by symbol:
+@@s040 <code>option { … }</code> ⇒ <code>for … yield …</code> &nbsp;·&nbsp; <code>let! x1 = Some 4</code> ⇒ <code>x1 &lt;- Some(4)</code>, because <code>Bind</code> is the <code>flatMap</code> &nbsp;·&nbsp; <code>yield r</code> ⇒ <code>yield r</code>: <code>Yield</code> puts r inside <code>Some</code> (the teacher's comment: it is usually called <code>Return</code>).
+@@s041 In the example: x1 = 4, x2 = 4 / 2 = 2, x3 = 3, result <code>Some "3"</code>. If x1 were odd, x2 would be <code>None</code> and the whole block would give <code>None</code>. Checked with the translation into Scala: from 4 comes <code>Some(3)</code>, from 3 comes <code>None</code>.
+@@s042 for → flatMap and map
+@@s043 It also works on lists (slide 25)
+@@s044 One element at a time
+@@s045 With lists, <code>&lt;-</code> means "for each element". The filter lets it pass.
+@@s046 The filter discards both.
+@@s047 It passes.
+@@s048 Result (checked). The partial results are joined as in <code>flatMap</code>.
+@@s049 for on lists, drawn
+@@s050 headGrade: <code>_._2</code> step by step
+@@s051 Exercise 7: given a list of pairs (name, grade), the grade of the first, or <code>None</code>.
+@@s052 Two versions: map and for
+@@s053 <code>(String, Int)</code> is the <b>pair</b> type: a name and a number, without field names. It is accessed by position.
+@@s054 The first element, if there is one: an <code>Option[(String, Int)]</code>.
+@@s055 The first <code>_</code> is a placeholder: the pair that is inside the Option.
+@@s056 <code>._2</code> takes the <b>second</b> piece of the pair: the grade. One counts from 1: <code>_1</code> is the name.
+@@s057 The same thing with <code>for</code>: one single generator, so it is only a <code>map</code>. Here the pair has a name, <code>p</code>.
+@@s058 Doubt: why specify _2 if the Int is already the second?
+@@s059 Because the pair has no named fields: Scala cannot know on its own which piece you want. <code>_2</code> is precisely the name of the method that returns the second piece. With a triple there would also be <code>_3</code>.
+@@s060 headOption(lst).map(_._2)
+@@s061 variance: the first computation "in a monad"
+@@s062 Exercise 8. The variance of a sequence is the mean of the squares of the deviations from the mean: <span class="m">var = mean((x<sub>i</sub> − m)²)</span>, where <span class="m">m</span> is the mean. Both means can fail (empty sequence).
+@@s063 With flatMap, then with for
+@@s064 Step 1: the mean. It is an <code>Option[Double]</code>.
+@@s065 Step 2 uses the mean and <b>can fail</b> too (it returns an Option): it needs <code>flatMap</code>, not <code>map</code>.
+@@s066 Inside, <code>xs.map</code> is the map of the <b>sequences</b>: it computes the square of the deviation of each element. <code>math.pow(b, 2)</code> is <span class="m">b²</span>.
+@@s067 The mean of those squares is the variance.
+@@s068 With <code>for</code> it reads like a recipe: take the mean <code>m</code>, then the mean of the squares <code>v</code>, return <code>v</code>.
+@@s069 variance(Seq(1.0, 2.0, 3.0))
+@@s070 Deviations −1, 0, 1, squared.
+@@s071 Checked. With <code>Seq()</code> the first step gives <code>None</code> and everything else is not run.
+@@s072 Two means that can fail

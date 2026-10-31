@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{{t|s001|}}</title>
+<link rel="stylesheet" href="../assets/atlas.css">
+<link rel="stylesheet" href="../assets/tema.css">
+<script src="../assets/sito.js"></script>
+<script src="../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  const ogg = [{ id: 'ax', tipo: 'assi', box: [45, 15, 330, 240], dom: [-0.3, 2.3, -0.5, 5], tacche: 1, etX: 'x', etY: 'y' }];
+  for (let k = 0; k < 25; k++) {
+    const a = -0.3 + k * 0.1, b = a + 0.1;
+    if (b * b <= 5) ogg.push({ id: 'c' + k, tipo: 'linea', in: 'ax', x1: a, y1: a * a, x2: b, y2: b * b, tono: 'dato' });
+  }
+  const retta = m => { const x0 = Math.max(-0.3, 1 - 1.5 / m), x1 = Math.min(2.3, 1 + 4 / m); return { x1: x0, y1: 1 + m * (x0 - 1), x2: x1, y2: 1 + m * (x1 - 1) }; };
+  ogg.push(Object.assign({ id: 's', tipo: 'linea', in: 'ax', tono: 'ora', nascosto: true }, retta(3)));
+  ogg.push({ id: 'P', tipo: 'punto', in: 'ax', x: 1, y: 1, t: 'P (1, 1)', tx: -58, ty: -8, tono: 'ok' });
+  ogg.push({ id: 'Q', tipo: 'punto', in: 'ax', x: 2, y: 4, t: 'Q', tx: 10, ty: 4, tono: 'ora', nascosto: true });
+  ogg.push({ id: 'n', tipo: 'testo', x: 215, y: 290, t: '', size: 13, bold: true });
+  const q = (h, m) => ({ Q: { nascosto: false, x: 1 + h, y: (1 + h) * (1 + h) }, s: Object.assign({ nascosto: false }, retta(m)), n: { t: `h = ${h}:  (f(${1 + h}) − f(1)) / ${h} = ${m}`, tono: 'ora' } });
+  SCENE.tangente = {
+    w: 420, h: 300, lato: true,
+    legenda: '{{j|s002|'}}',
+    oggetti: ogg,
+    passi: [
+      { nota: '{{j|s003|'}}' },
+      { nota: '{{j|s004|'}}', set: q(1, 3) },
+      { nota: '{{j|s005|'}}', set: q(0.5, 2.5) },
+      { nota: '{{j|s006|'}}', set: q(0.1, 2.1) },
+      { nota: '{{j|s007|'}}', set: { Q: { nascosto: true }, s: Object.assign({ tono: 'ok' }, retta(2)), n: { t: 'h → 0:  f′(1) = 2', tono: 'ok' } } }
+    ]
+  };
+})();
+</script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  const D = {"px": [299.52, 299.21, 299.85, 300.25, 300.68, 300.07, 299.67, 299.53, 300.45, 300.98, 300.16, 299.26, 299.43, 300.96, 300.12, 298.96, 299.95, 299.3, 299.62, 299.71, 299.57, 300.33, 299.96, 299.65, 300.25, 300.5, 299.01, 299.85, 299.41, 299.9, 305.89, 313.35, 319.98, 319.82, 319.37, 319.76, 319.35, 319.19, 320.13, 319.33, 320.7, 320.43, 318.8, 320.16, 319.34, 320.02, 320.03, 318.81, 319.86, 319.85, 320.58, 319.29, 320.44, 319.34, 319.8, 319.5, 320.87, 320.34, 321.46, 320.39, 320.51, 320.5, 319.64, 314.96, 310.81, 304.76, 305.11, 304.99, 305.37, 304.78, 304.91, 305.15, 305.06, 304.48, 305.54, 304.22, 304.28, 304.23, 305.58, 304.78, 304.42, 304.32, 305.25, 304.37, 304.24, 305.37, 304.28, 304.81, 305.0, 304.73, 304.97, 305.8, 304.69, 304.24, 303.9, 304.88], "d0": [0.313, 0.646, 0.401, 0.429, 0.616, 0.397, 0.139, 0.92, 0.532, 0.817, 0.904, 0.165, 1.535, 0.838, 1.161, 0.989, 0.648, 0.32, 0.085, 0.135, 0.76, 0.37, 0.316, 0.599, 0.252, 1.484, 0.832, 0.434, 0.485, 5.997, 7.453, 6.632, 0.16, 0.446, 0.391, 0.417, 0.158, 0.948, 0.8, 1.368, 0.272, 1.629, 1.362, 0.824, 0.681, 0.006, 1.219, 1.053, 0.013, 0.731, 1.286, 1.152, 1.102, 0.461, 0.306, 1.374, 0.528, 1.118, 1.074, 0.122, 0.003, 0.868, 4.678, 4.148, 6.048, 0.351, 0.126, 0.378, 0.584, 0.128, 0.237, 0.084, 0.581, 1.056, 1.317, 0.058, 0.049, 1.35, 0.797, 0.366, 0.099, 0.934, 0.886, 0.13, 1.132, 1.086, 0.525, 0.189, 0.263, 0.235, 0.836, 1.113, 0.445, 0.346, 0.979], "ev0": [7.45, 2, 15], "d2": [0.091, 0.145, 0.138, 0.077, 0.013, 0.003, 0.025, 0.039, 0.003, 0.053, 0.072, 0.053, 0.044, 0.068, 0.094, 0.082, 0.035, 0.021, 0.065, 0.084, 0.078, 0.054, 0.022, 0.006, 0.01, 0.164, 0.593, 1.38, 2.415, 3.341, 3.709, 3.317, 2.381, 1.363, 0.622, 0.246, 0.126, 0.114, 0.104, 0.054, 0.015, 0.06, 0.059, 0.036, 0.021, 0.012, 0.014, 0.051, 0.071, 0.051, 0.009, 0.015, 0.007, 0.074, 0.155, 0.198, 0.162, 0.031, 0.21, 0.601, 1.187, 1.908, 2.539, 2.785, 2.503, 1.832, 1.089, 0.529, 0.217, 0.084, 0.044, 0.046, 0.068, 0.086, 0.079, 0.036, 0.015, 0.032, 0.01, 0.019, 0.025, 0.014, 0.001, 0.016, 0.03, 0.042, 0.054, 0.065, 0.059, 0.02, 0.052, 0.12, 0.138, 0.099, 0.044], "ev2": [3.71, 1, 2], "d5": [0.007, 0.014, 0.018, 0.02, 0.018, 0.015, 0.009, 0.002, 0.006, 0.013, 0.019, 0.022, 0.022, 0.019, 0.012, 0.001, 0.021, 0.05, 0.091, 0.148, 0.224, 0.324, 0.45, 0.601, 0.773, 0.957, 1.14, 1.308, 1.443, 1.533, 1.565, 1.538, 1.454, 1.322, 1.157, 0.974, 0.789, 0.615, 0.462, 0.333, 0.232, 0.155, 0.101, 0.065, 0.042, 0.029, 0.023, 0.02, 0.016, 0.01, 0.003, 0.026, 0.063, 0.119, 0.196, 0.296, 0.419, 0.56, 0.71, 0.861, 0.998, 1.108, 1.182, 1.21, 1.191, 1.127, 1.027, 0.901, 0.763, 0.623, 0.491, 0.375, 0.278, 0.201, 0.141, 0.097, 0.065, 0.042, 0.026, 0.014, 0.006, 0.0, 0.004, 0.007, 0.008, 0.008, 0.005, 0.002, 0.002, 0.006, 0.01, 0.011, 0.011, 0.009, 0.005], "ev5": [1.57, 0, 2], "full": [97, 299.5, 304.9, 95]};
+  const T = (id, x, y, t, extra) => Object.assign({ id, tipo: 'testo', x, y, t, size: 13 }, extra || {});
+  const R = (id, x, y, w, h, t, extra) => Object.assign({ id, tipo: 'rett', x, y, w, h, t }, extra || {});
+  const V = (id, x1, y1, x2, y2, t, extra) => Object.assign({ id, tipo: 'vett', in: 'ax', x1, y1, x2, y2, t }, extra || {});
+  const P = (id, x, y, t, extra) => Object.assign({ id, tipo: 'punto', in: 'ax', x, y, t }, extra || {});
+  const L = (id, x1, y1, x2, y2, extra) => Object.assign({ id, tipo: 'linea', in: 'ax', x1, y1, x2, y2 }, extra || {});
+  const C = (id, x, y, valori, extra) => Object.assign({ id, tipo: 'celle', x, y, cw: 52, ch: 36, valori, indici: false }, extra || {});
+  const pl = p => p.concat(p.slice().reverse());
+  const curva = (id, pts, tono, extra) => Object.assign({ id, tipo: 'poli', in: 'ax', punti: pl(pts), tono, vuoto: true }, extra || {});
+
+    const s13 = Math.sqrt(13);
+    SCENE.gradiente = {
+      w: 640, h: 280, lato: true,
+      legenda: '{{j|s008|'}}',
+      oggetti: [{ id: 'ax', tipo: 'assi', box: [40, 20, 260, 240], dom: [-2, 3.5, -2, 3.8], tacche: 1, etX: 'x', etY: 'y' },
+        V('g', 0, 0, 2, 3, '∇f = (2, 3)', { tono: 'ok', tx: 6, ty: -6, nascosto: true }), V('u', 0, 0, 1, 0, 'u', { tono: 'dato', nascosto: true, tx: 6, ty: 14 }),
+        T('p1', 470, 40, '', { size: 12 }), T('p2', 470, 70, '', { size: 12 }), T('p3', 470, 110, '', { size: 12, bold: true }), T('p4', 470, 150, '', { size: 12 }), T('p5', 470, 190, '', { size: 12 })],
+      passi: [
+        { nota: "<b>Derivata parziale</b>: si deriva rispetto a una variabile tenendo le altre ferme come numeri. f(x₁, x₂) = 4x₁² + x₁ + sin(x₂) + x₁x₂ dà ∂f/∂x₁ = 8x₁ + 1 + x₂ e ∂f/∂x₂ = cos(x₂) + x₁.", set: { p1: { t: '∂f/∂x₁ = 8x₁ + 1 + x₂' }, p2: { t: '∂f/∂x₂ = cos(x₂) + x₁' } } },
+        { nota: "Il <b>gradiente</b> ∇f è il vettore di tutte le derivate parziali, una componente per variabile. Esempio: f = x² + 3y nel punto x = 1: ∇f = (2x, 3) = <b>(2, 3)</b>.", set: { g: { nascosto: false }, p1: { t: 'f = x² + 3y, in (1, ·)' }, p2: { t: '∇f = (2x, 3) = (2, 3)' } } },
+        { nota: "Derivata in una direzione u (unitario): <b>D<sub>u</sub>f = ∇f · u</b>, un prodotto interno. Lungo x, u = (1, 0): 2.", set: { u: { nascosto: false }, p3: { t: 'u = (1, 0): Duf = 2', tono: 'ora' } } },
+        { nota: "Lungo y, u = (0, 1): 3.", set: { u: { x2: 0, y2: 1 }, p3: { t: 'u = (0, 1): Duf = 3' } } },
+        { nota: "Perpendicolare al gradiente, u = (3, −2)/√13: 0. La funzione lì non cambia (è la direzione di una curva di livello).", set: { u: { x2: 3 / s13, y2: -2 / s13 }, p3: { t: 'u ⊥ ∇f: Duf = 0' } } },
+        { nota: "Nella direzione del gradiente stesso: ∇f · u = ‖∇f‖ cos 0 = <b>√13 ≈ 3.61</b>, il massimo. Il gradiente punta dove la funzione <b>sale più in fretta</b>, e la sua lunghezza dice quanto. La discesa del gradiente va nel verso opposto (settimana 14).", set: { u: { x2: 2 / s13, y2: 3 / s13 }, p3: { t: 'u ∥ ∇f: Duf = √13 ≈ 3.61', tono: 'ok' }, p4: { t: 'massimo per θ = 0' }, p5: { t: '−∇f: la discesa più ripida' } } }
+      ]
+    };
+
+    SCENE.derivfiltro = {
+      w: 600, h: 250, lato: true,
+      legenda: '{{j|s009|'}}',
+      oggetti: [T('tf', 20, 52, 'f', { bold: true }), C('f', 50, 34, ['0', '1', '4', '9', '16']), T('h', 20, 112, 'h', { bold: true }), C('h', 50, 94, ['−1', '1'], { toni: { 0: 'due', 1: 'due' } }),
+        T('td', 20, 172, "f′", { bold: true }), C('d', 76, 154, ['', '', '', ''], { toni: {} }), T('c', 450, 60, '', { size: 12 }), T('c2', 450, 100, '', { size: 12 }), T('c3', 300, 230, '', { size: 12 })],
+      passi: [
+        { nota: "Un segnale campionato (pixel, frame) non ha valori fra un campione e l'altro: il passo più piccolo è 1. La derivata diventa una <b>differenza finita</b>: f′(x) ≈ f(x + 1) − f(x). Qui f(x) = x² in x = 0…4." },
+        { nota: "È un prodotto interno con i pesi [−1, 1]: un <b>filtro</b>. Prima posizione: −0 + 1 = 1.", set: { f: { toni: { 0: 'ora', 1: 'ora' } }, d: { valori: ['1', '', '', ''], toni: { 0: 'ok' } } } },
+        { nota: "Facendolo scorrere: 1, 3, 5, 7. (Con la correlazione il filtro si scrive [−1, 1]; con la convoluzione, che capovolge, [1, −1].)", set: { f: { toni: {} }, h: { x: 206 }, d: { valori: ['1', '3', '5', '7'], toni: { 0: 'ok', 1: 'ok', 2: 'ok', 3: 'ok' } } } },
+        { nota: "Queste differenze cadono <b>fra</b> due campioni. La differenza <b>centrale</b> ( f(x + 1) − f(x − 1) ) / 2, filtro [1, 0, −1]/2 in convoluzione, cade sul campione: in x = 1, (4 − 0)/2 = 2, esatto.", set: { c: { t: 'centrale in x = 1: (4 − 0)/2 = 2', tono: 'ok' } } },
+        { nota: "Derivare <b>amplifica il rumore</b>: un segnale piatto 5.0, 5.1, 4.9, 5.0 ha differenze 0.1, −0.2, 0.1, grandi quanto il rumore stesso. Per questo prima si liscia (gaussiano) e poi si deriva; e (f ∗ g)′ = f ∗ g′: basta filtrare una volta con la derivata della gaussiana.", set: { c2: { t: 'piatto + rumore → differenze ±0.2', tono: 'no' }, c3: { t: 'prima lisciare, poi derivare (o derivata della gaussiana)' } } }
+      ]
+    };
+
+    const patch = [[10, 10, 10], [10, 10, 50], [10, 50, 50]], sob = [[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]];
+    const ogs = [T('hp', 105, 24, 'pezzo d’immagine', { size: 12, bold: true }), T('hs', 300, 24, 'Sobel x', { size: 12, bold: true })];
+    patch.forEach((r, i) => r.forEach((v, j) => { ogs.push(R('p' + i + j, 40 + j * 44, 36 + i * 44, 42, 42, String(v), { tono: v > 20 ? 'ok' : 'dato' })); ogs.push(R('s' + i + j, 235 + j * 44, 36 + i * 44, 42, 42, String(sob[i][j]), { tono: 'due' })); }));
+    ogs.push(T('c', 520, 60, '', { size: 12 }), T('c2', 520, 90, '', { size: 12 }), T('c3', 520, 130, '', { size: 12, bold: true }), T('c4', 520, 160, '', { size: 12 }), T('c5', 300, 205, '', { size: 12 }), T('c6', 300, 232, '', { size: 12 }));
+    const sobY = [[-1, -2, -1], [0, 0, 0], [1, 2, 1]];
+    SCENE.sobelimg = {
+      w: 680, h: 250, lato: true,
+      legenda: '{{j|s010|'}}',
+      oggetti: ogs,
+      passi: [
+        { nota: "Un'immagine è una funzione I(x, y). In ogni pixel il gradiente è ∇I = (I<sub>x</sub>, I<sub>y</sub>), con le due derivate calcolate da filtri. Un pezzo 3 × 3 attraversato da un bordo diagonale (scuro in alto a sinistra, chiaro in basso a destra)." },
+        { nota: "<b>Sobel x</b>: pesi per pixel (correlazione), poi la somma. (−10 + 10) + (−2·10 + 2·50) + (−10 + 50) = <b>120</b>: la colonna destra è più chiara della sinistra.", set: { c: { t: 'Ix = 0 + 80 + 40 = 120' } } },
+        { nota: "<b>Sobel y</b> (lo stesso filtro, trasposto): −(10 + 2·10 + 10) + (10 + 2·50 + 50) = <b>120</b>: la riga in basso è più chiara.", set: Object.assign(Object.fromEntries(sobY.flatMap((r, i) => r.map((v, j) => ['s' + i + j, { t: String(v) }]))), { hs: { t: 'Sobel y' }, c2: { t: 'Iy = −40 + 160 = 120' } }) },
+        { nota: "<b>Grandezza</b> √(120² + 120²) ≈ 169.7: grande, quindi c'è un bordo. <b>Direzione</b> atan2(120, 120) = 45°: dallo scuro al chiaro, perpendicolare al bordo (numeri verificati con NumPy).", set: { c3: { t: '‖∇I‖ ≈ 169.7, direzione 45°', tono: 'ok' } } },
+        { nota: "Gli altri filtri: differenze [−1, 1] (molto sensibile al rumore), Prewitt (differenza centrale mediata su 3 righe), Sobel (riga centrale doppia: un po' di smoothing). Con convolve il filtro si capovolge: Sobel x su un passaggio scuro → chiaro dà valori negativi (−4 invece di +4). Per la grandezza non cambia niente, per la direzione sì.", set: { c4: { t: 'convolve: segno opposto' }, c5: { t: 'Canny: bordi dalla grandezza del gradiente (Assignment 1)' }, c6: { t: 'HOG: istogrammi delle direzioni (settimana 11)' } } }
+      ]
+    };
+  
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>{{s|s011|}}</h1>
+  <p class="lede">{{s|s012|}}</p>
+</header>
+
+<section>
+  <h2>{{s|s013|}}</h2>
+  <figure class="scena" data-scena="tangente" data-titolo="{{a|s014|}}"></figure>
+  <p class="piccolo">{{s|s015|}}</p>
+  <figure class="passi" data-titolo="{{a|s016|}}">
+    <div class="passo"><div class="espr">f′(x) = lim<sub><mark class="ora">h → 0</mark></sub>  ( f(x + <mark class="ora">h</mark>) − f(x) ) / <mark class="ora">h</mark></div><p class="nota">{{s|s017|}}</p></div>
+    <div class="passo"><div class="espr">f(x) = 2x in x = 3:  ( 2(3 + h) − 6 ) / h = 2h / h = <mark class="ok">2</mark></div><p class="nota">{{s|s018|}}</p></div>
+    <div class="passo"><div class="espr">f′ &gt; 0 sale,  f′ &lt; 0 scende,  f′ = 0 <mark class="ok">punto piatto</mark> (minimo, massimo)</div><p class="nota">{{s|s019|}}</p></div>
+  </figure>
+  <div class="box basi" data-tit="{{a|s020|}}">
+    <p>{{s|s021|}}</p>
+  </div>
+</section>
+
+<section>
+  <h2>{{s|s022|}}</h2>
+  <figure class="passi" data-titolo="{{a|s023|}}">
+    <div class="passo"><div class="espr">f(x₁, x₂) = 4x₁² + x₁ + sin(x₂) + x₁x₂</div><p class="nota">{{s|s024|}}</p></div>
+    <div class="passo"><div class="espr">∂f/∂<mark class="ora">x₁</mark> = 8x₁ + 1 + 0 + x₂</div><p class="nota">{{s|s025|}}</p></div>
+    <div class="passo"><div class="espr">∂f/∂<mark class="due">x₂</mark> = cos(x₂) + x₁</div><p class="nota">{{s|s026|}}</p></div>
+    <div class="passo"><div class="espr">∇f = [ <mark class="ora">8x₁ + 1 + x₂</mark>,  <mark class="due">cos(x₂) + x₁</mark> ]</div><p class="nota">{{s|s027|}}</p></div>
+  </figure>
+  <figure class="passi" data-titolo="{{a|s028|}}">
+    <div class="passo"><div class="espr">∇f = (2x, 3) = <mark class="ok">(2, 3)</mark></div><p class="nota">{{s|s029|}}</p></div>
+    <div class="passo"><div class="espr">derivata nella direzione u:  D<sub>u</sub>f = ∇f · u</div><p class="nota">{{s|s030|}}</p></div>
+    <div class="passo"><div class="espr">massima quando u punta come ∇f:  D<sub>u</sub>f = ‖∇f‖ = <mark class="ok">√13 ≈ 3.61</mark></div><p class="nota">{{s|s031|}}</p></div>
+  </figure>
+  <figure class="scena" data-scena="gradiente" data-titolo="{{a|s032|}}"></figure>
+</section>
+
+<section>
+  <h2>{{s|s033|}}</h2>
+  <figure class="passi" data-titolo="{{a|s034|}}">
+    <div class="passo"><div class="espr">f′(x) ≈ f(x + <mark class="ora">1</mark>) − f(x)</div><p class="nota">{{s|s035|}}</p></div>
+    <div class="passo"><div class="espr">[ <mark class="no">−1</mark>, <mark class="ok">1</mark> ] · [ f(x), f(x + 1) ]</div><p class="nota">{{s|s036|}}</p></div>
+    <div class="passo"><div class="espr">centrale: ( f(x + 1) − f(x − 1) ) / 2  →  filtro [1, 0, −1] / 2 (convoluzione)</div><p class="nota">{{s|s037|}}</p></div>
+    <div class="passo"><div class="espr">derivare <mark class="no">amplifica il rumore</mark></div><p class="nota">{{s|s038|}}</p></div>
+    <div class="passo"><div class="espr">(f ∗ g)′ = f ∗ <mark class="ok">g′</mark></div><p class="nota">{{s|s039|}}</p></div>
+  </figure>
+  <figure class="scena" data-scena="derivfiltro" data-titolo="{{a|s040|}}"></figure>
+</section>
+
+<section>
+  <h2>{{s|s041|}}</h2>
+  <p>{{s|s042|}}</p>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>{{s|s043|}}</th><th>{{s|s044|}}</th><th>{{s|s045|}}</th></tr></thead>
+    <tbody>
+      <tr><td>{{s|s046|}}</td><td>[−1, 1]</td><td>{{s|s047|}}</td></tr>
+      <tr><td>{{s|s048|}}</td><td>[[−1, 0, 1], [−1, 0, 1], [−1, 0, 1]]</td><td>{{s|s049|}}</td></tr>
+      <tr><td>{{s|s050|}}</td><td>[[−1, 0, 1], [−2, 0, 2], [−1, 0, 1]]</td><td>{{s|s051|}}</td></tr>
+    </tbody>
+  </table></div>
+  <p class="piccolo">{{s|s052|}}</p>
+  <figure class="passi" data-titolo="{{a|s053|}}">
+    <div class="passo"><div class="espr">I<sub>x</sub> = (−10 + 10) + (−2·10 + 2·50) + (−10 + 50) = <mark class="ora">120</mark></div><p class="nota">{{s|s054|}}</p></div>
+    <div class="passo"><div class="espr">I<sub>y</sub> = −(10 + 2·10 + 10) + (10 + 2·50 + 50) = <mark class="due">120</mark></div><p class="nota">{{s|s055|}}</p></div>
+    <div class="passo"><div class="espr">‖∇I‖ = √(120² + 120²) ≈ <mark class="ok">169.7</mark>     direzione = atan2(120, 120) = <mark class="ok">45°</mark></div><p class="nota">{{s|s056|}}</p></div>
+  </figure>
+  <div class="box attenzione" data-tit="{{a|s057|}}">
+    <p>{{s|s058|}}</p>
+  </div>
+  <div class="box idea" data-tit="{{a|s059|}}">
+    <p>{{s|s060|}}</p>
+  </div>
+  <div class="box esame" data-tit="{{a|s061|}}">
+    <p>{{s|s062|}}</p>
+  </div>
+  <figure class="scena" data-scena="sobelimg" data-titolo="{{a|s063|}}"></figure>
+</section>
+
+</main>
+</body>
+</html>

@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Minimum spanning tree: Kruskal and Prim</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+const N = (id,x,y,t) => ({id,tipo:'nodo',x,y,t,r:18});
+const A = (id,da,a,t) => ({id,tipo:'arco',da,a,dir:false,t});
+SCENE.kru = {
+  w: 520, h: 270, lato: true,
+  legenda: 'ok:taken in the tree,no:discarded (cycle),dato:not yet considered',
+  oggetti: [
+    N('a',60,70,'a'), N('b',180,40,'b'), N('c',300,70,'c'), N('d',300,190,'d'), N('e',180,200,'e'),
+    A('ab','a','b','1'), A('bc','b','c','2'), A('de','d','e','2'), A('ac','a','c','3'), A('cd','c','d','4'), A('be','b','e','5'),
+    {id:'c1',tipo:'testo',x:20,y:250,t:'',size:12,bold:true,anchor:'start'}
+  ],
+  passi: [
+    { nota: 'Weighted edges, six nodes <b>a … e</b>. A spanning tree connects all the nodes with <b>n − 1 = 4 edges</b> without cycles, at minimum cost.', set:{ab:{tono:'dato'},bc:{tono:'dato'},de:{tono:'dato'},ac:{tono:'dato'},cd:{tono:'dato'},be:{tono:'dato'}} },
+    { nota: 'I sort the edges by increasing weight: 1, 2, 2, 3, 4, 5. I take the first: <b>ab = 1</b>, it creates no cycles.', set:{ab:{tono:'ok'},c1:{t:'preso: ab(1)'}} },
+    { nota: '<b>bc = 2</b>: connects c to the component of a–b, no cycle. Taken.', set:{bc:{tono:'ok'},c1:{t:'preso: ab(1), bc(2)'}} },
+    { nota: '<b>de = 2</b>: connects d–e, which is another component. Taken.', set:{de:{tono:'ok'},c1:{t:'preso: ab, bc, de (1+2+2)'}} },
+    { nota: '<b>ac = 3</b>: a and c are already in the same component (a–b–c). Adding it would close a cycle: <b>discarded</b>.', set:{ac:{tono:'no'},c1:{t:'ac scartato: chiuderebbe un ciclo'}} },
+    { nota: '<b>cd = 4</b>: joins the two components {a,b,c} and {d,e}. Taken: now I have 4 = n − 1 edges, cost <b>9</b>. I stop.', set:{cd:{tono:'ok'},ac:{tono:null},c1:{t:'albero: ab, bc, de, cd · costo 9',tono:'ok'}} }
+  ]
+};
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Minimum spanning tree: Kruskal and Prim</h1>
+  <p class="lede">Connecting all the nodes of a graph at the minimum total cost: the minimum spanning tree (MST) problem. Two greedy algorithms solve it: Kruskal, which adds the cheapest edges, and Prim, which grows a single tree.</p>
+</header>
+
+<section>
+  <h2>The problem</h2>
+<p>A <b>spanning tree</b> of a connected graph is a subset of edges that connects all the nodes without cycles. It always has <code>n − 1</code> edges. The <b>minimum spanning tree</b> (MST) is the one of minimum total cost: minimum sum of the weights.</p>
+<p>The cost does not depend on the root: a tree has no intrinsic root. The question is only which edges to keep.</p>
+</section>
+<section>
+  <h2>Kruskal: take the cheapest edge</h2>
+<p>Rule: sort the edges by increasing weight. For each edge <code>u–v</code>: if <code>u</code> and <code>v</code> are in different components, take it and merge the components; otherwise discard it, because it would close a cycle. Stop at <code>n − 1</code> edges.</p>
+<p>To know whether <code>u</code> and <code>v</code> are already connected one uses the <b>union-find</b> (dedicated page).</p>
+  <figure class="scena" data-scena="kru" data-titolo="Kruskal: order by weight and cycle test"></figure>
+</section>
+<section>
+  <h2>Why it works: the cut property</h2>
+<p>The <b>cut property</b>: given a cut of the graph (a division of the nodes into two groups), the cheapest edge crossing the cut belongs to <i>some</i> MST. Kruskal always takes this kind of edge: the cheapest one that connects two components.</p>
+<p>Symmetric, the <b>cycle property</b>: the most expensive edge of a cycle is in no MST. That is why you discard it when it closes a cycle.</p>
+</section>
+<section>
+  <h2>Prim: grow a single tree</h2>
+<p>Prim starts from a node and grows a single tree: at each step it adds the <b>cheapest edge leaving the tree</b> towards an external node. It is the same scheme as Dijkstra: a priority queue on the external nodes, with the minimum distance from the tree.</p>
+<p>Cost <code>O(m log n)</code> with a binary heap, like Kruskal. Prim is more convenient when the graph is dense; Kruskal when the edges are already sorted or when you need the global order.</p>
+</section>
+<section>
+  <h2>The code, side by side</h2>
+  <p>This page explains the concept. The Java code that implements it, with a line-by-line explanation and the syntax notes needed, is on the side-by-side page.</p>
+  <p><a href="../codice/mst-kruskal-prim.html"><b>→ Java code for this topic</b></a></p>
+</section>
+<section>
+  <h2>At the exam</h2>
+<div class="box esame" data-tit="At the exam">
+<p>Connecting everything at minimum cost → MST. Write: <i>"Sort the edges by non-decreasing weight. Add an edge if its endpoints are in different components (union-find). The result is a minimum spanning tree by the cut property. Time O(m log n)."</i></p>
+<p>If the question asks to <b>prove</b> the correctness, cite the cut property and do the exchange argument on the discarded edge.</p>
+</div>
+</section>
+<section>
+  <h2>Quick reference</h2>
+<div class="tab-wrap"><table class="tab"><thead><tr><th>item</th><th>meaning</th><th>note</th></tr></thead><tbody><tr><td>edge</td><td>u–v with weight ℓ</td><td>to be sorted</td></tr><tr><td>Kruskal</td><td>edges by weight, union-find</td><td>O(m log n)</td></tr><tr><td>Prim</td><td>a growing tree</td><td>O(m log n) with heap</td></tr><tr><td>n − 1</td><td>edges of the tree</td><td>always</td></tr></tbody></table></div>
+</section>
+
+</main>
+</body>
+</html>

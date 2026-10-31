@@ -1,0 +1,28 @@
+@@s001 Aggiornamenti condivisi e false sharing
+@@s002 <span>Settimana 9 · Performance</span>
+@@s003 Aggiornamenti condivisi e false sharing
+@@s004 Un dato scritto da più thread passa di cache in cache a ogni scrittura. Due dati indipendenti sulla stessa linea di cache danno lo stesso effetto: è il false sharing.
+@@s005 Scrivere sullo stesso dato è lento
+@@s006 Se più thread aggiornano lo stesso dato, la linea di cache fa un viaggio continuo da una cache all’altra: ogni scrittura invalida le copie degli altri. Il nome della slide è <b>cache ping-pong</b> o <b>cache thrashing</b>, e il ciclo M → I → M → I è il suo sintomo.
+@@s007 Anche il lock è una scrittura in memoria: se più thread prendono lo stesso lock di frequente, si passa lo stato della sua linea di continuo. Per questo un lock condiviso molto preso è lento anche con il lock "giusto".
+@@s008 Il ping-pong su un contatore condiviso
+@@s009 dato:linea di cache,ora:scrittura,no:invalidate,ok:stato stabile
+@@s010 Il core 0 ha la sua copia, modificata.
+@@s011 La linea si sposta nella cache del core 1, che la fa in M.
+@@s012 Ogni scrittura è un viaggio sul bus. Il contatore resta corretto, ma lento.
+@@s013 Quando la scrittura è veloce
+@@s014 Due situazioni vanno bene, e sono quelle da cercare:
+@@s015 <b>dati immutabili condivisi</b>: letti da tutti, mai scritti. Restano in S in tutte le cache, e leggerli è veloce;
+@@s016 <b>dati locali</b>: ogni thread scrive solo il suo dato. Resta in M nella sua cache, e nessuno lo tocca.
+@@s017 La lezione chiama questa idea "aggiornamenti thread-local": un dato che cambia deve appartenere a un solo thread.
+@@s018 False sharing: due dati estranei sulla stessa linea
+@@s019 La linea di cache è di 64 byte. Due dati diversi, usati da thread diversi, possono stare sulla <b>stessa linea</b>. Anche se i thread non si toccano, scrivere uno dei due invalida la copia dell’altro: è il <b>false sharing</b>, falsa condivisione. Il codice non lo mostra: due campi vicini in un oggetto possono finire sulla stessa linea.
+@@s020 Due contatori indipendenti sulla stessa linea
+@@s021 dato:contatori,ora:scrittura,no:danno,ok:soluzione
+@@s022 I due thread non condividono nessun dato logico.
+@@s023 Il ping-pong del caso precedente, senza nessun motivo logico.
+@@s024 Il padding costa memoria, ma toglie il ping-pong. In Java @Contended fa lo stesso, ma è usabile solo dentro le librerie del JDK.
+@@s025 Come si misura
+@@s026 Il false sharing non si vede leggendo il codice: si vede misurando. La lezione confronta versioni con e senza padding sullo stesso carico, e il padding vince dove due thread scrivono dati vicini. È il motivo per cui gli esercizi della settimana chiedono di misurare sulla propria macchina.
+@@s027 Attenzione
+@@s028 Il padding non è sempre utile: se i thread non scrivono dati vicini, non cambia niente. Prima misura, poi ottimizza.

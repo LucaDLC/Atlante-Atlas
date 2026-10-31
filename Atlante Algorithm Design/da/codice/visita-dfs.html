@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Kode: DFS i Java</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Kode: DFS i Java</h1>
+  <p class="lede">Den rekursive DFS: besøg, besøgsrækkefølge, sammenhængende komponenter og opdagelse af cykler. Med syntaksnoterne om statiske felter og rekursion.</p>
+</header>
+
+<section>
+  <h2>Det rekursive besøg</h2>
+  <p>DFS er en funktion, der kalder sig selv på de naboer, der ikke er set. Systemets kaldstak udfører stakkens arbejde.</p>
+  <figure class="codice" data-titolo="Det rekursive besøg">
+<pre data-lang="java">import java.io.*;
+import java.util.*;
+
+public class Main {
+    static List&lt;List&lt;Integer&gt;&gt; adj;
+    static boolean[] visto;
+    static int[] padre;
+    static int[] ordineVisita;
+    static int contatore = 0;
+    static boolean ciclo = false;
+
+    // Visita ricorsiva: va a fondo e torna indietro quando il nodo non ha più vicini nuovi.
+    static void dfs(int u) {
+        visto[u] = true;
+        ordineVisita[u] = ++contatore;
+        for (int v : adj.get(u)) {
+            if (!visto[v]) {
+                padre[v] = u;
+                dfs(v);
+            } else if (v != padre[u]) {
+                ciclo = true; // back edge: v è già visto ed è un antenato di u
+            }
+        }
+    }
+
+    public static void main(String[] args) throws IOException {
+        BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
+        StringTokenizer st = new StringTokenizer(in.readLine());
+        int n = Integer.parseInt(st.nextToken());
+        int m = Integer.parseInt(st.nextToken());
+
+        adj = new ArrayList&lt;&gt;();
+        for (int i = 0; i &lt; n; i++) {
+            adj.add(new ArrayList&lt;&gt;());
+        }
+        for (int i = 0; i &lt; m; i++) {
+            st = new StringTokenizer(in.readLine());
+            int u = Integer.parseInt(st.nextToken());
+            int v = Integer.parseInt(st.nextToken());
+            adj.get(u).add(v);
+            adj.get(v).add(u);
+        }
+
+        visto = new boolean[n];
+        padre = new int[n];
+        Arrays.fill(padre, -1);
+        ordineVisita = new int[n];
+
+        // Una visita per ogni componente connessa: ogni nodo non visto fa partire una DFS.
+        int componenti = 0;
+        for (int s = 0; s &lt; n; s++) {
+            if (!visto[s]) {
+                componenti++;
+                dfs(s);
+            }
+        }
+
+        StringBuilder out = new StringBuilder();
+        out.append("componenti: ").append(componenti).append('\n');
+        out.append("ciclo: ").append(ciclo ? "sì" : "no").append('\n');
+        out.append("ordine di visita: ");
+        for (int i = 0; i &lt; n; i++) {
+            out.append(i).append('=').append(ordineVisita[i]).append(i + 1 &lt; n ? " " : "\n");
+        }
+        System.out.print(out);
+    }
+}</pre>
+    <ol class="spiega">
+    <li data-righe="13"><p>Besøget er en <code>static</code>-metode: den har ikke brug for et objekt, den arbejder på klassens statiske felter.</p></li>
+    <li data-righe="15"><p><code>++contatore</code> øger <b>før</b> værdien læses: den første besøgte knude får 1.</p></li>
+    <li data-righe="17"><p>Nabo der ikke er set: jeg går ned. <code>!</code> negerer betingelsen.</p></li>
+    <li data-righe="18"><p>Jeg husker, hvor jeg kom fra: det skal bruges, for ikke at forveksle forælderen med en cyklus.</p></li>
+    <li data-righe="19"><p>Rekursivt kald: på dette punkt venter knuden <code>u</code> på stakken.</p></li>
+    <li data-righe="21"><p>En nabo, der allerede er set, og som ikke er forælderen til <code>u</code>: det er en <b>back edge</b>, altså en cyklus.</p></li>
+    </ol>
+  </figure>
+  <div class="box basi" data-tit="Syntaksnoter"><ul><li><code>static</code>: feltet eller metoden hører til klassen, ikke til objektet. Her er <code>main</code> static, så alt, den bruger, er static.</li><li><code>!</code> er negation; et <code>boolean[]</code> initialiseres helt til <code>false</code>.</li><li>I Java er rekursionens dybde begrænset: på grafer med millioner af knuder skal der en eksplicit stak til.</li></ul></div>
+</section>
+<section>
+  <h2>Sammenhængende komponenter</h2>
+  <p>Den ydre løkke starter en DFS fra hver knude, der endnu ikke er set. Hver start er en ny komponent.</p>
+  <figure class="codice" data-titolo="Sammenhængende komponenter">
+<pre data-lang="java">import java.io.*;
+import java.util.*;
+
+public class Main {
+    static List&lt;List&lt;Integer&gt;&gt; adj;
+    static boolean[] visto;
+    static int[] padre;
+    static int[] ordineVisita;
+    static int contatore = 0;
+    static boolean ciclo = false;
+
+    // Visita ricorsiva: va a fondo e torna indietro quando il nodo non ha più vicini nuovi.
+    static void dfs(int u) {
+        visto[u] = true;
+        ordineVisita[u] = ++contatore;
+        for (int v : adj.get(u)) {
+            if (!visto[v]) {
+                padre[v] = u;
+                dfs(v);
+            } else if (v != padre[u]) {
+                ciclo = true; // back edge: v è già visto ed è un antenato di u
+            }
+        }
+    }
+
+    public static void main(String[] args) throws IOException {
+        BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
+        StringTokenizer st = new StringTokenizer(in.readLine());
+        int n = Integer.parseInt(st.nextToken());
+        int m = Integer.parseInt(st.nextToken());
+
+        adj = new ArrayList&lt;&gt;();
+        for (int i = 0; i &lt; n; i++) {
+            adj.add(new ArrayList&lt;&gt;());
+        }
+        for (int i = 0; i &lt; m; i++) {
+            st = new StringTokenizer(in.readLine());
+            int u = Integer.parseInt(st.nextToken());
+            int v = Integer.parseInt(st.nextToken());
+            adj.get(u).add(v);
+            adj.get(v).add(u);
+        }
+
+        visto = new boolean[n];
+        padre = new int[n];
+        Arrays.fill(padre, -1);
+        ordineVisita = new int[n];
+
+        // Una visita per ogni componente connessa: ogni nodo non visto fa partire una DFS.
+        int componenti = 0;
+        for (int s = 0; s &lt; n; s++) {
+            if (!visto[s]) {
+                componenti++;
+                dfs(s);
+            }
+        }
+
+        StringBuilder out = new StringBuilder();
+        out.append("componenti: ").append(componenti).append('\n');
+        out.append("ciclo: ").append(ciclo ? "sì" : "no").append('\n');
+        out.append("ordine di visita: ");
+        for (int i = 0; i &lt; n; i++) {
+            out.append(i).append('=').append(ordineVisita[i]).append(i + 1 &lt; n ? " " : "\n");
+        }
+        System.out.print(out);
+    }
+}</pre>
+    <ol class="spiega">
+    <li data-righe="50"><p>Tæller for komponenterne.</p></li>
+    <li data-righe="53"><p>En knude, der ikke er set, er starten på en ny komponent.</p></li>
+    <li data-righe="54"><p>Jeg besøger hele komponenten af <code>s</code>. Når jeg vender tilbage, er alle dens knuder markeret.</p></li>
+    </ol>
+  </figure>
+  <div class="box basi" data-tit="Syntaksnoter"><ul><li><code>componenti++</code> er <code>componenti = componenti + 1</code>.</li></ul></div>
+</section>
+<section>
+  <h2>Kør det</h2>
+  <p>Eksempel på input og output (faktisk kompileret og kørt).</p>
+  <pre class="cod">5 5 0
+0 1
+1 2
+2 3
+3 1
+0 4
+
+(output)
+componenti: 1
+ciclo: sì
+ordine di visita: 0=1 1=2 2=3 3=4 4=5</pre>
+</section>
+<section>
+  <h2>Teorien side om side</h2>
+  <p><a href="../teoria/visita-dfs.html"><b>← Tilbage til teorien om dette emne</b></a></p>
+</section>
+
+</main>
+</body>
+</html>

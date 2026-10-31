@@ -1,0 +1,83 @@
+@@s001 Visibility, reordering, volatile
+@@s002 dato:main (CPU 1),due:t1 (CPU 2),no:old value,ok:updated value
+@@s003 ok:always terminates (there is happens-before),no:may not terminate
+@@s004 dato:t1,due:t2,no:lost update
+@@s005 Visibility, reordering, volatile
+@@s006 Two ways in which real execution betrays intuition: a write that another thread <b>never sees</b> (visibility) and instructions executed <b>in another order</b> (reordering). They are not "Java problems": they happen in every language with concurrency. <code>volatile</code> and locks are the answers.
+@@s007 Visibility: the write that does not arrive
+@@s008 NoVisibility1.java
+@@s009 t1 keeps reading <code>running</code>.
+@@s010 After half a second the main writes <code>false</code>.
+@@s011 Possible outputs: both finish, <b>or t1 never terminates</b>. No synchronization operation binds the write of the main to the reads of t1.
+@@s012 <b>Hardware intuition</b> (slide 51): threads can run on different CPUs. Without synchronization the CPU can keep the value in its registers or in its cache, not visible to the other CPUs. Even the JIT compiler can treat the read as a constant. The slides warn that the hardware explanation is indicative: the precise rule is given by the <b>Java Memory Model</b> (lecture 3).
+@@s013 The rule to use
+@@s014 A write is guaranteed visible to a read <b>only if</b> the write <b>happens-before</b> the read. Without a lock, <code>volatile</code>, start/join or similar between the two, there is no guarantee.
+@@s015 By adding <code>synchronized(o)</code> around the read in t1 and the write in the main (<code>NoVisibility1Synchronized.java</code>) the program always terminates: the <code>unlock</code> of the main happens before the following <code>lock</code> of t1, and this order makes the write visible.
+@@s016 Two CPUs, two caches, a write that stays behind
+@@s017 Exercise 2.2: <code>MutableInteger</code>, explained properly
+@@s018 Question
+@@s019 Answer
+@@s020 Why (with the course vocabulary)
+@@s021 2.2.1 Can it run forever?
+@@s022 yes
+@@s023 the write <code>set(42)</code> and the reads <code>get()</code> are not ordered by happens-before: the JVM may legitimately never let t see 42 (visibility)
+@@s024 2.2.2 <code>synchronized</code> on get and set
+@@s025 always terminates
+@@s026 both use the lock of <code>mi</code>: the unlock of <code>set</code> happens-before the lock of the next <code>get</code> (monitor rule), so that get sees 42
+@@s027 2.2.3 Only set synchronized
+@@s028 not guaranteed
+@@s029 the monitor rule orders an unlock and a lock <b>on the same monitor</b>: if <code>get</code> does not take the lock, no rule links the read to the write
+@@s030 2.2.4 No lock, <code>value</code> volatile
+@@s031 always terminates
+@@s032 volatile rule: a write to a volatile variable happens-before every subsequent read of the same variable
+@@s033 On your answer to 2.2.x
+@@s034 You explained with the JIT that "it caches the value and rewrites the loop". It is a possible mechanism, but at the oral it is better to give the course explanation: <b>there is no happens-before between the write and the read, so visibility is not guaranteed</b>; with <code>synchronized</code> on both methods (or with <code>volatile</code>) the order exists and the read sees the write. This way the answer does not depend on what a specific compiler does.
+@@s035 In English (2.2.2)
+@@s036 "Making both get() and set() synchronized makes them use the intrinsic lock of mi. By the monitor rule, the unlock at the end of set(42) happens-before the lock at the beginning of any subsequent get(), so that get() is guaranteed to see the value 42 and the loop in t terminates."
+@@s037 Four variants, one happens-before arc
+@@s038 Reordering: the instructions that swap
+@@s039 First try as the scheduler: which outputs do you get by mixing the steps? Then open "All possible interleavings".
+@@s040 Without synchronization
+@@s041 Why (0,0) can come out even if no interleaving gives it
+@@s042 Mixing the 4 steps in all 6 ways, (0,0) never comes out.
+@@s043 To read both 0…
+@@s044 …but by program order <code>a=1</code> comes before <code>x=b</code> and <code>b=1</code> before <code>y=a</code>: a cycle would be needed. No total order allows it.
+@@s045 Between <code>a=1</code> and <code>x=b</code> there is no data dependency nor synchronization: <b>the CPU or the JIT can swap them</b>. Reordering does not change the behaviour of the thread on its own, but between different threads it promises nothing.
+@@s046 The program can really print it. It is an execution that is <b>not sequentially consistent</b> (lecture 3).
+@@s047 With <code>synchronized</code>
+@@s048 The two bodies inside synchronized(o)
+@@s049 Version
+@@s050 no synchronization
+@@s051 yes
+@@s052 yes
+@@s053 yes
+@@s054 yes
+@@s055 <code>synchronized (o)</code> in both
+@@s056 no
+@@s057 yes
+@@s058 yes
+@@s059 no
+@@s060 <code>volatile a, b</code>
+@@s061 no
+@@s062 yes
+@@s063 yes
+@@s064 yes
+@@s065 With <code>synchronized</code> even (1,1) disappears: the two bodies run one after the other, and whoever goes first reads the initial 0 of the other. Not because the lock prevents reordering inside the thread, but because mutual exclusion prevents mixing the bodies.
+@@s066 <code>volatile</code>
+@@s067 <code>volatile</code> is a keyword for fields: <code>volatile boolean running</code>. It is a <b>weak</b> form of synchronization (slide 65): it solves the visibility and reordering problems on that variable, without blocking anyone. Precisely because it does not block, it cannot prevent two threads from mixing inside a compound operation.
+@@s068 A <code>volatile</code> variable is not kept hidden in the registers or caches of a CPU: the writes are made visible to the other CPUs.
+@@s069 Accesses to volatile variables are <b>not reordered</b>.
+@@s070 Reads and writes are <b>not blocking</b>.
+@@s071 It does <b>not</b> guarantee mutual exclusion: <code>volatile int count; count++</code> remains a race condition.
+@@s072 Visibility
+@@s073 No reordering
+@@s074 Mutual exclusion
+@@s075 <code>volatile</code>
+@@s076 yes
+@@s077 yes
+@@s078 no
+@@s079 lock / <code>synchronized</code>
+@@s080 yes
+@@s081 yes
+@@s082 yes
+@@s083 volatile count++ still loses an increment

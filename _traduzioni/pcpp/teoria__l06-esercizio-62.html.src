@@ -1,0 +1,140 @@
+@@s001 Esercizio 6.2: read-write lock con CAS
+@@s002 ora:appena cambiato,ok:riuscito,no:rifiutato
+@@s003 Un solo campo, <code>holders</code>, dice chi tiene il lock. <code>null</code> = nessuno. Due lettori (R1, R2) e uno scrittore (W).
+@@s004 R1 chiama <code>readerTryLock()</code>: legge <code>null</code>, non è un Writer, quindi CAS(<code>null</code> → lista [R1]). Riesce: <b>true</b>.
+@@s005 R2 chiama <code>readerTryLock()</code>: legge [R1], è una lista di lettori, quindi CAS([R1] → [R2 → R1]). Riesce: più lettori insieme vanno bene.
+@@s006 W chiama <code>writerTryLock()</code>: CAS(<code>null</code> → Writer(W)). Fallisce, perché <code>holders</code> non è <code>null</code>: <b>false</b>. Non aspetta, restituisce subito.
+@@s007 R1 chiama <code>readerUnlock()</code>: la lista contiene R1, quindi CAS([R2 → R1] → [R2]).
+@@s008 R2 chiama <code>readerUnlock()</code>: togliendo R2 la lista resta vuota, e <b>lista vuota = <code>null</code></b>. Il lock torna libero.
+@@s009 W riprova <code>writerTryLock()</code>: CAS(<code>null</code> → Writer(W)) riesce.
+@@s010 R1 chiama <code>readerTryLock()</code>: legge un Writer, quindi <b>false</b>, senza toccare niente.
+@@s011 R2 chiama <code>writerUnlock()</code>: c'è un Writer, ma il suo thread è W, non R2. <b>Eccezione</b>: non puoi aprire un lock che non è tuo.
+@@s012 W chiama <code>writerUnlock()</code>: il Writer è suo, quindi <code>holders = null</code>. Libero di nuovo.
+@@s013 dato:vecchia lista,ora:nodo in esame,ok:nuova lista,no:tolto
+@@s014 La lista dei lettori: T3 → T2 → T1. Ogni nodo ha campi <code>final</code>: una volta creato <b>non cambia più</b>. T2 vuole uscire: <code>remove(T2)</code>.
+@@s015 Primo nodo: T3 ≠ T2. T3 deve restare, ma il suo <code>next</code> deve cambiare, e non si può (è final). Quindi serve una <b>copia</b> di T3, con <code>next</code> = <code>next.remove(T2)</code>.
+@@s016 Secondo nodo: T2 == T2. È quello da togliere: restituisce il suo <code>next</code>, cioè il nodo T1 <b>così com'è</b>. Niente copia: la coda dopo T2 si condivide.
+@@s017 La copia di T3 punta a T1: la nuova lista è T3 → T1. Si copiano solo i nodi <b>prima</b> di quello tolto.
+@@s018 La vecchia lista è <b>intatta</b>: un thread che la sta leggendo (per esempio dentro <code>contains</code>) vede ancora T3 → T2 → T1, mai un pezzo a metà. Poi <code>compareAndSet(h, nuova)</code> cambia <code>holders</code> in un colpo solo.
+@@s019 Esercizio 6.2: read-write lock con CAS
+@@s020 Un lock che può essere tenuto da molti lettori insieme <b>oppure</b> da un solo scrittore, senza bloccare mai: ogni metodo prova e restituisce subito <code>true</code> o <code>false</code>. Tutto lo stato sta in un solo <code>AtomicReference</code>, cambiato con <code>compareAndSet</code>.
+@@s021 L'idea: un campo solo dice chi tiene il lock
+@@s022 Un <b>read-write lock</b> distingue chi legge da chi scrive: più lettori insieme non si danno fastidio (nessuno cambia niente), uno scrittore invece deve essere <b>solo</b>. Qui la versione "try" (<i>try-lock</i>): se il lock non si può prendere, il metodo non aspetta, restituisce <code>false</code>.
+@@s023 <code>holders</code> vale
+@@s024 vuol dire
+@@s025 può entrare
+@@s026 <code>null</code>
+@@s027 nessuno tiene il lock
+@@s028 un lettore o uno scrittore
+@@s029 un <code>ReaderList</code>
+@@s030 lo tengono i lettori nella lista
+@@s031 altri lettori, nessuno scrittore
+@@s032 un <code>Writer</code>
+@@s033 lo tiene lo scrittore indicato
+@@s034 nessuno
+@@s035 Tutto lo stato è <b>un solo riferimento</b>. Per questo basta un CAS per cambiarlo: non c'è mai un momento in cui "metà" del lock è aggiornata.
+@@s036 Chi tiene il lock, chiamata dopo chiamata
+@@s037 Le classi che descrivono chi tiene il lock
+@@s038 Campo holders, ReaderList e Writer (compilato e testato con Gradle)
+@@s039 <code>AtomicReference&lt;Holders&gt;</code>: una scatola che contiene un riferimento a un <code>Holders</code> e offre <code>get</code>, <code>set</code> e <code>compareAndSet</code> atomici. <code>&lt;&gt;</code> (diamond) fa dedurre il tipo al compilatore. Parte da <code>null</code>: lock libero. <code>private final</code>: lo stato non esce dalla classe e il campo è pubblicato in modo sicuro.
+@@s040 <code>abstract</code>: non si crea mai un <code>Holders</code> "puro", solo i due sottotipi. Serve solo a dare un tipo comune ai due casi, così stanno nello stesso <code>AtomicReference</code>.
+@@s041 Un nodo della lista: un thread lettore e il nodo dopo. Campi <code>final</code>, nessun metodo che li cambia: la lista è <b>immutabile</b>. <code>next == null</code> segna la fine.
+@@s042 <code>contains</code> scorre i nodi: parte da <code>this</code>, ad ogni giro passa a <code>node.next</code>, si ferma a <code>null</code>. <code>==</code> confronta i riferimenti: è proprio quel thread?
+@@s043 <code>remove</code> restituisce una lista <b>nuova</b> senza il primo <code>t</code>: se il nodo è <code>t</code>, la risposta è il resto della lista; altrimenti copia questo nodo e toglie <code>t</code> dal resto (ricorsione). <code>a ? b : c</code> = "se a allora b, altrimenti c": se non c'è un resto, il resto è <code>null</code>. Se la lista conteneva solo <code>t</code>, il risultato è <code>null</code>: lock libero.
+@@s044 <code>Writer</code>: solo il thread scrittore, <code>final</code>. Serve per sapere <b>chi</b> tiene il lock, così <code>writerUnlock</code> può rifiutare gli altri.
+@@s045 remove su una lista immutabile
+@@s046 Perché la lista deve essere immutabile
+@@s047 <code>compareAndSet(h, nuova)</code> confronta <b>riferimenti</b>, non contenuti. Se un thread modificasse la lista sul posto (per esempio cambiando un <code>next</code>), il riferimento in <code>holders</code> resterebbe lo stesso: il CAS di un altro thread non si accorgerebbe del cambiamento e lo cancellerebbe (aggiornamento perso). In più chi sta leggendo la lista vedrebbe nodi a metà. Con nodi immutabili ogni cambiamento è un <b>oggetto nuovo</b>, quindi un riferimento nuovo, e il CAS lo vede. È la stessa regola di <code>IntPair</code> in <code>CasNumberRange</code> della lezione.
+@@s048 6.2.1 e 6.2.2 · Scrittore: writerTryLock e writerUnlock
+@@s049 I due metodi dello scrittore
+@@s050 <code>Thread.currentThread()</code> restituisce l'oggetto <code>Thread</code> di chi sta eseguendo questa riga. È l'identità del chiamante.
+@@s051 Controllo "il lock è libero?" e presa del lock sono <b>un solo passo atomico</b>: il CAS scrive il Writer solo se <code>holders</code> è ancora <code>null</code>. Restituisce <code>true</code> se ha scritto, <code>false</code> se c'era già qualcuno (lettori o scrittore, anche se stessi: non è rientrante). Nessun ciclo: wait-free.
+@@s052 <code>h instanceof Writer w</code>: vero se <code>h</code> è un <code>Writer</code> (falso se è <code>null</code> o una lista), e in quel caso lo chiama <code>w</code>, già del tipo giusto. <code>&amp;&amp;</code> valuta la parte destra solo se la sinistra è vera, quindi <code>w</code> esiste sempre quando si usa. Poi: è il <b>mio</b> Writer? <code>holders.get()</code> si legge <b>una volta</b> in <code>h</code>: controllo e uso riguardano lo stesso valore. Due <code>get()</code> separate potrebbero leggere valori diversi.
+@@s053 Leggo, controllo e poi scrivo: di solito è una race (check-then-act). Qui no: mentre <b>io</b> tengo il lock nessun altro può cambiare <code>holders</code>. Un altro <code>writerTryLock</code> fallisce (non è <code>null</code>), <code>readerTryLock</code> vede un Writer e restituisce <code>false</code>, gli unlock degli altri lanciano eccezione. Quindi tra il mio <code>get</code> e il mio <code>set</code> il valore non cambia. È il ragionamento di <code>unlockVariant</code> in <code>SimpleTryLock</code> della lezione.
+@@s054 Lock libero, tenuto da lettori, o tenuto da un altro scrittore: eccezione, come chiede il testo. <code>IllegalStateException</code> ("chiamato nello stato sbagliato") è <b>unchecked</b> (estende <code>RuntimeException</code>): non serve scrivere <code>throws</code> nella firma, ed è un bene, perché l'interfaccia dice solo <code>void writerUnlock()</code> e non si può aggiungere un'eccezione checked.
+@@s055 Perché writerUnlock non usa il CAS, se gli altri metodi sì?
+@@s056 La domanda da farsi è sempre: <b>chi può cambiare lo stato tra la mia lettura e la mia scrittura?</b>
+@@s057 In <code>readerTryLock</code>: chiunque (la lista è condivisa da tanti lettori, e uno scrittore può entrare). Serve il CAS. In <code>writerUnlock</code>, dopo aver controllato che il Writer è mio: <b>nessuno</b>, perché ogni metodo chiamato da un altro thread fallisce senza toccare <code>holders</code> (<code>writerTryLock</code> → false, <code>readerTryLock</code> → false, i due unlock → eccezione). Lo stato "Writer(io)" lo può cambiare solo il proprietario. Un <code>set</code> semplice basta; <code>compareAndSet(h, null)</code> funzionerebbe uguale e riuscirebbe sempre.
+@@s058 Il <code>set(null)</code> fa anche da <b>rilascio</b> nel senso della memoria: <code>AtomicReference.set</code> è una scrittura volatile, quindi tutto quello che lo scrittore ha scritto prima dell'unlock è visibile al prossimo thread che legge <code>holders</code> e prende il lock (happens-before). È quello che rende il lock utile per proteggere dati.
+@@s059 Risposta pronta 6.2.1
+@@s060 <code>writerTryLock</code> calls <code>holders.compareAndSet(null, new Writer(current))</code>. The lock is unheld exactly when <code>holders</code> is null, so the CAS checks that the lock is free and installs a Writer for the calling thread in one atomic step. If two writers try at the same time, only the first CAS succeeds: afterwards <code>holders</code> is no longer null, so the other CAS fails and returns false. It also fails if readers hold the lock (<code>holders</code> is a ReaderList) or if the caller already holds it, so the lock is not reentrant. There is no loop and no waiting, so the method never blocks. The Writer stores the owner thread, which <code>writerUnlock</code> needs.
+@@s061 Risposta pronta 6.2.2
+@@s062 <code>writerUnlock</code> reads <code>holders</code> once and checks that it is a Writer whose thread is the calling thread. Otherwise (null, a ReaderList, or another thread's Writer) it throws an <code>IllegalStateException</code>. If the check passes, it releases the lock with <code>holders.set(null)</code>. This check-then-act is safe without a CAS because, while the calling thread holds the write lock, no other thread can change <code>holders</code>: <code>writerTryLock</code> fails because <code>holders</code> is not null, <code>readerTryLock</code> returns false when it sees a Writer, and <code>writerUnlock</code> and <code>readerUnlock</code> called by other threads throw. So the value cannot change between our get and our set. Moreover, <code>set</code> on an <code>AtomicReference</code> is a volatile write, so everything the writer did before unlocking happens-before the next thread that reads <code>holders</code> and acquires the lock.
+@@s063 6.2.3 e 6.2.4 · Lettori: readerTryLock e readerUnlock
+@@s064 I due metodi del lettore
+@@s065 Ciclo CAS: si legge lo stato (<code>h</code>), si prepara il nuovo, si prova a sostituirlo. Serve un ciclo perché altri lettori possono entrare o uscire nello stesso momento.
+@@s066 C'è uno scrittore: <code>false</code> subito, senza aspettare.
+@@s067 Qui <code>h</code> è <code>null</code> o un <code>ReaderList</code> (gli unici altri casi). Il cast <code>(ReaderList) h</code> va bene per entrambi: il cast di <code>null</code> dà <code>null</code>. Il nuovo nodo va <b>in testa</b>: <code>current</code> seguito dalla vecchia lista, che resta intatta e viene condivisa.
+@@s068 Il CAS riesce solo se <code>holders</code> è ancora esattamente <code>h</code>. Se un altro lettore è entrato o uscito nel frattempo, fallisce e il <code>while</code> riprova sul valore nuovo. Lock-free.
+@@s069 Le tre condizioni del testo in una riga: <code>h</code> non è <code>null</code> e non è un Writer (<code>instanceof</code> è falso su <code>null</code>), ed io sono nella lista.
+@@s070 Provo a mettere la lista senza di me. Se la lista è cambiata nel frattempo (un altro lettore è entrato o uscito), il CAS fallisce e riprovo. Se ero l'ultimo, <code>remove</code> restituisce <code>null</code> e il lock torna libero.
+@@s071 Altrimenti: non tengo un read lock, eccezione. Nessun ciclo qui: il caso "non ci sono" non può diventare vero per mano di un altro thread (solo io posso aggiungermi).
+@@s072 Perché serve il ciclo: due lettori entrano insieme
+@@s073 dato:valore letto,ora:CAS,ok:riuscito,no:fallito
+@@s074 T1 è già dentro. Due lettori arrivano nello stesso momento.
+@@s075 Leggono lo stesso valore. Ognuno prepara la sua lista: [R2 → T1] e [R3 → T1].
+@@s076 holders vale [T1]: il CAS scrive.
+@@s077 holders ora è [R2 → T1], non [T1]. Se scrivesse, R2 sparirebbe dalla lista pur avendo il lock: aggiornamento perso. Il CAS lo impedisce.
+@@s078 Il <code>while</code> rilegge e riprova sul valore nuovo. Tre lettori, nessuno perso.
+@@s079 Perché il lettore ha il ciclo e lo scrittore no?
+@@s080 Per lo scrittore c'è <b>un solo</b> stato buono: <code>null</code>. Se il CAS fallisce, il lock è occupato: la risposta giusta è <code>false</code>, subito.
+@@s081 Per il lettore gli stati buoni sono <b>tanti</b>: <code>null</code>, [R1], [R2 → R1]… Se il suo CAS fallisce perché un altro lettore è entrato o uscito, il lock è <b>ancora</b> disponibile per lui: rispondere <code>false</code> sarebbe sbagliato. Quindi riprova.
+@@s082 E se nel frattempo è entrato uno scrittore? Il lettore legge <code>null</code> e prepara [R]; W fa CAS(<code>null</code> → Writer(W)) e vince; il CAS del lettore (<code>null</code> → [R]) fallisce, perché <code>holders</code> non è più <code>null</code>. Al giro dopo il lettore legge il Writer e restituisce <code>false</code>. Corretto: il CAS confronta con <b>esattamente</b> lo stato su cui il lettore ha deciso.
+@@s083 Risposta pronta 6.2.3
+@@s084 <code>readerTryLock</code> is a CAS loop. It reads a snapshot <code>h</code> of <code>holders</code>; if <code>h</code> is a Writer it returns false. Otherwise <code>h</code> is null or a ReaderList, and it builds a new list with the calling thread in front of <code>h</code>, then tries <code>holders.compareAndSet(h, newList)</code>. The CAS succeeds only if <code>holders</code> is still exactly the snapshot, so the decision was based on the current state and no concurrent update is overwritten. If it fails, another thread changed <code>holders</code> in the meantime. If another reader locked or unlocked, the lock may still be available, so the method retries. If a writer took the lock, the next iteration sees the Writer and returns false. Since a ReaderList is immutable, every change creates a new object, so the reference comparison in the CAS detects every change, and threads reading the old list are not affected. A CAS fails only when another thread succeeded, so the method is lock-free.
+@@s085 Che tipo di progresso
+@@s086 <code>writerTryLock</code> e <code>writerUnlock</code>: nessun ciclo, finiscono sempre in pochi passi (<b>wait-free</b>). <code>readerTryLock</code> e <code>readerUnlock</code>: ciclo CAS, un CAS fallisce solo se un altro thread ha cambiato la lista, cioè ha finito la sua operazione (<b>lock-free</b>). Vedi <a href="l06-progresso.html">Wait-free, lock-free, obstruction-free</a>.
+@@s087 Il principio: fotografia, copia nuova, CAS
+@@s088 Tutti i metodi del lock seguono la stessa ricetta. Funziona solo se ci sono <b>tutti</b> gli ingredienti: un solo riferimento, oggetti immutabili, un CAS che controlla la fotografia.
+@@s089 La ricetta, ingrediente per ingrediente
+@@s090 dato:la fotografia,due:la copia nuova,ora:il CAS,ok:perché funziona
+@@s091 Chi tiene il lock (nessuno, quali lettori, quale scrittore) sta tutto dentro <b>un</b> oggetto. Un CAS su un riferimento cambia tutto lo stato insieme: non esiste un momento in cui è aggiornato a metà.
+@@s092 Leggo lo stato. Gli oggetti sono immutabili, quindi la fotografia <b>non può cambiare</b> mentre la guardo: decido su qualcosa di fermo.
+@@s093 Preparo lo stato nuovo in un oggetto nuovo che nessun altro vede ancora. Lo stato vecchio resta intatto per chi lo sta leggendo.
+@@s094 "Scrivi la copia <b>solo se</b> lo stato è ancora la mia fotografia". Confronto e scrittura sono un'unica istruzione del processore: nessuno può infilarsi in mezzo.
+@@s095 Il CAS riuscito dimostra che tra la mia lettura e la mia scrittura nessuno ha cambiato niente: la mia decisione era presa sullo stato vero.
+@@s096 Il mio lavoro non è mai stato visibile, quindi buttarlo non fa danni. E se ho fallito è perché un altro thread è riuscito: il sistema avanza sempre (<a href="l06-progresso.html">lock-free</a>).
+@@s097 Due campi atomici separati
+@@s098 <code>AtomicInteger readers</code> + <code>AtomicReference&lt;Thread&gt; writer</code>. Il lettore vede <code>writer == null</code>; lo scrittore vede <code>readers == 0</code> e si mette in <code>writer</code>; il lettore fa <code>readers++</code>. <b>Dentro tutti e due.</b> Ogni operazione è atomica, ma la regola "lettori oppure scrittore" lega <b>due</b> campi, e un CAS ne protegge uno solo.
+@@s099 Un solo riferimento
+@@s100 Lettori e scrittore stanno nello stesso <code>holders</code>. Il lettore e lo scrittore fanno CAS sullo <b>stesso</b> riferimento: se uno cambia lo stato, il CAS dell'altro fallisce e quello ricontrolla. È la soluzione di <code>CasNumberRange</code> della lezione: <code>lower</code> e <code>upper</code> dentro un solo <code>IntPair</code> immutabile.
+@@s101 Perché l'immutabilità è indispensabile
+@@s102 Il CAS confronta <b>riferimenti</b>. "Stesso riferimento" vuol dire "stesso stato" solo se l'oggetto non può cambiare. Se un thread potesse modificare la lista sul posto, il riferimento resterebbe lo stesso, il CAS di un altro thread riuscirebbe lo stesso e cancellerebbe la modifica. In più, un oggetto con campi <code>final</code> pubblicato con un <code>AtomicReference</code> (che si comporta come un <code>volatile</code>) è visibile completo a chi lo legge.
+@@s103 6.2.5 · Test sequenziali
+@@s104 Un thread solo, nessuna concorrenza: si controlla che le regole del lock siano giuste. Ogni test crea il suo lock, così i test non dipendono l'uno dall'altro.
+@@s105 TestLocks, parte sequenziale
+@@s106 Prima regola del testo. <code>assertTrue(x)</code>: il test fallisce se <code>x</code> è falso. Prima mi assicuro di avere davvero il write lock, poi controllo che il read lock venga <b>rifiutato</b>. Alla fine rilascio.
+@@s107 Seconda regola, al contrario: con un read lock, lo scrittore viene rifiutato.
+@@s108 Terza regola, nei due modi possibili: lock <b>di nessuno</b> (righe 20-21) e lock <b>dell'altro tipo</b> (righe 22-27). <code>assertThrows(Tipo.class, codice)</code> esegue il codice e passa solo se lancia un'eccezione di quel tipo. <code>lock::writerUnlock</code> (method reference) è un modo corto di scrivere <code>() -&gt; lock.writerUnlock()</code>.
+@@s109 Test in più: dopo ogni unlock il lock è davvero libero (un errore tipico è lasciare una lista vuota invece di <code>null</code>: lo scrittore non entrerebbe più). Riga 34: lo stesso thread non riprende il write lock, non è rientrante.
+@@s110 6.2.6 · Test parallelo: mai due scrittori insieme
+@@s111 Molti thread provano a prendere il write lock. Chi ci riesce lo segna in un contatore condiviso "quanti sono dentro adesso". Se entrando trova già qualcuno, è una <b>sovrapposizione</b>. Alla fine, quando tutti i thread hanno finito, le sovrapposizioni devono essere 0.
+@@s112 TestLocks, parte parallela
+@@s113 Un errore di concorrenza compare solo in certi interleaving: si ripete il test.
+@@s114 Gli strumenti di misura sono <code>AtomicInteger</code>: li toccano tutti i thread insieme, e un contatore non thread-safe falserebbe la misura. <code>holding</code> = scrittori dentro adesso; <code>overlaps</code> = volte in cui uno è entrato trovandone un altro.
+@@s115 La parte misurata. Entro: +1. Se il valore dopo il +1 supera 1, c'era già qualcuno: sovrapposizione. Esco: −1, poi unlock. Il −1 viene <b>prima</b> dell'unlock: dopo l'unlock un altro può entrare legittimamente, e non deve trovarmi ancora contato.
+@@s116 Partenza insieme con la barriera (settimana 5), fine con <code>join()</code> su ogni thread. Un <code>writerUnlock</code> rifiutato (righe 28-29) viene contato in <code>errors</code>, non fa morire il thread in silenzio. Perché <code>join</code> e non una seconda <code>await</code>: vedi i passi sotto.
+@@s117 Il controllo si fa <b>dopo</b> che tutti hanno finito, come chiede il testo. <code>acquisitions &gt; 0</code> evita un test che passa senza aver provato niente (un lock che dice sempre <code>false</code> non avrebbe mai sovrapposizioni).
+@@s118 Con due await il test con un lock sbagliato resta bloccato
+@@s119 dato:main,due:thread,no:il problema,ok:la correzione
+@@s120 Controllo e scrittura separati: due scrittori possono vedere entrambi <code>null</code> ed entrare entrambi.
+@@s121 Ora <code>holders</code> contiene Writer(W2).
+@@s122 Il Writer non è il suo. L'eccezione non è tra quelle del <code>catch</code> del thread: il thread <b>muore</b>.
+@@s123 La barriera aspetta THREADS + 1 arrivi, ma W1 non arriverà mai. Il test non fallisce: <b>si blocca</b>. Provato davvero: Gradle fermato dal timeout.
+@@s124 <code>join()</code> ritorna anche quando il thread è morto per un'eccezione; in più l'eccezione viene contata in <code>errors</code>. Con questa versione il lock sbagliato fa fallire il test in 10 ripetizioni su 10 (da 3 a 10 sovrapposizioni ciascuna), quello giusto passa 10 su 10.
+@@s125 Altra correzione: la seconda await nel finally
+@@s126 Se si vogliono tenere le due <code>await()</code> del main, la seconda <code>await()</code> del thread va nel <code>finally</code>: viene eseguita <b>sempre</b>, anche quando <code>writerUnlock()</code> lancia <code>IllegalStateException</code>.
+@@s127 <code>finally</code>: il blocco si esegue sia se il <code>try</code> finisce normalmente, sia se esce con un'eccezione, anche se nessun <code>catch</code> la cattura. Così il thread arriva alla barriera anche quando sta per morire.
+@@s128 Serve un <b>secondo</b> try/catch dentro il <code>finally</code>. Il <code>catch</code> di sopra protegge solo il <code>try</code> di sopra, non il <code>finally</code>. E <code>await()</code> lancia eccezioni <b>checked</b>, che il corpo di una lambda <code>Runnable</code> non può lasciar uscire: <code>run()</code> non dichiara <code>throws</code>. Senza questo try, javac dà <code>error: unreported exception InterruptedException; must be caught or declared to be thrown</code>.
+@@s129 Con il lock sbagliato, dopo il <code>finally</code> l'<code>IllegalStateException</code> continua a salire e il thread muore, ma <b>dopo</b> essere arrivato alla barriera: il main riparte e l'asserzione fallisce. Provato con un programma della stessa struttura (16 thread, 1000 tentativi): lock giusto 0 fallimenti su 50, lock sbagliato (get poi set) 50 fallimenti su 50, nessun blocco.
+@@s130 6.2.7 · Challenging: niente read lock doppio
+@@s131 readerTryLock che rifiuta un secondo read lock dello stesso thread
+@@s132 Prima di aggiungermi controllo di non esserci già. <code>readers != null</code> serve perché su <code>null</code> non si può chiamare un metodo (<code>NullPointerException</code>).
+@@s133 Controllo e CAS sono due passi separati (test-then-set), eppure funziona, per due motivi.
+@@s134 Perché il test-then-set qui è sicuro
+@@s135 <b>1.</b> Il CAS riesce solo se <code>holders</code> è ancora esattamente la lista <code>h</code> su cui ho fatto <code>contains</code>, e quella lista è immutabile: ho controllato proprio la lista che sostituisco. Se nel frattempo è cambiata, il CAS fallisce e ricontrollo.
+@@s136 <b>2.</b> Comunque solo il thread stesso può aggiungere o togliere se stesso dalla lista (<code>readerTryLock</code> e <code>readerUnlock</code> usano sempre <code>Thread.currentThread()</code>). Gli altri thread possono cambiare la lista, ma non la risposta a "<code>current</code> c'è?".
+@@s137 Cambia un test
+@@s138 Con questa versione un test che prende due read lock dallo stesso thread lancia eccezione. Il test giusto diventa: <code>assertTrue(lock.readerTryLock()); assertThrows(IllegalStateException.class, lock::readerTryLock);</code>
+@@s139 Risposta pronta
+@@s140 The check <code>contains(current)</code> and the CAS are not one atomic step, but this is safe here. First, the CAS succeeds only if <code>holders</code> still refers to the same list we checked, and lists are immutable, so we check exactly the list we replace; otherwise the CAS fails and we check again. Second, only the calling thread itself can add or remove itself from the reader list, so other threads cannot change the result of <code>contains(current)</code>.

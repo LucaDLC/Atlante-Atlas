@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Ordliste til den mundtlige eksamen</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  const az = (id, x, y, t) => ({ id, tipo: 'rett', x, y, w: 120, h: 30, t, nascosto: true });
+  SCENE.duerace = {
+    w: 600, h: 300, lato: true,
+    legenda: 'ora:handling nu,dato:returneret værdi,no:problemet,ok:resultat',
+    codice: { lang: 'java', testo: `// A: lista sincronizzata, t1 e t2 con x = 5
+if (!list.contains(x))
+    list.add(x);
+
+// B: campo normale, nessun lock
+boolean done = false;
+// t1 e t2 eseguono entrambi:
+done = true;` },
+    oggetti: [
+      { id: 'L1', tipo: 'linea', x1: 70, y1: 80, x2: 570, y2: 80, tratt: true, tono: 'spento' },
+      { id: 'L2', tipo: 'linea', x1: 70, y1: 170, x2: 570, y2: 170, tratt: true, tono: 'spento' },
+      { id: 'n1', tipo: 'testo', x: 40, y: 80, t: 't1', size: 15, bold: true },
+      { id: 'n2', tipo: 'testo', x: 40, y: 170, t: 't2', size: 15, bold: true },
+      az('a1', 80, 65, 'contains(5)'), az('a2', 200, 155, 'contains(5)'), az('a3', 320, 65, 'add(5)'), az('a4', 440, 155, 'add(5)'),
+      { id: 'r1', tipo: 'testo', x: 140, y: 110, t: 'false', tono: 'dato', nascosto: true },
+      { id: 'r2', tipo: 'testo', x: 260, y: 200, t: 'false', tono: 'dato', nascosto: true },
+      az('b1', 240, 65, 'done = true'), az('b2', 240, 155, 'done = true'),
+      { id: 'race', tipo: 'linea', x1: 300, y1: 97, x2: 300, y2: 153, tratt: true, tono: 'no', nascosto: true },
+      { id: 'rl', tipo: 'testo', x: 312, y: 125, t: 'data race', anchor: 'start', tono: 'no', nascosto: true },
+      { id: 'mem', tipo: 'rett', x: 200, y: 226, w: 200, h: 34, t: 'list = [ ]' },
+      { id: 'fix', tipo: 'testo', x: 300, y: 284, t: '', size: 12 }
+    ],
+    passi: [
+      { nota: "<b>Parte A.</b> t1 e t2 eseguono lo stesso codice con x = 5 su una lista sincronizzata (<code>Collections.synchronizedList</code>): <code>contains</code> e <code>add</code> prendono ciascuno il lock della lista.", righe: [1, 2, 3] },
+      { nota: "t1: <code>contains(5)</code> restituisce false. Alla fine del metodo il lock viene rilasciato.", righe: [2], set: { a1: { nascosto: false, tono: 'ora' }, r1: { nascosto: false } } },
+      { nota: "t2: <code>contains(5)</code> restituisce false anche a lui: il 5 non c'è ancora.", righe: [2], set: { a1: { tono: null }, a2: { nascosto: false, tono: 'ora' }, r2: { nascosto: false } } },
+      { nota: "t1: <code>add(5)</code>. list = [5].", righe: [3], set: { a2: { tono: null }, a3: { nascosto: false, tono: 'ora' }, mem: { t: 'list = [5]' } } },
+      { nota: "t2: <code>add(5)</code>, perché aveva già deciso di aggiungerlo. list = [5, 5]: un <b>duplicato</b>.", righe: [3], set: { a3: { tono: null }, a4: { nascosto: false, tono: 'no' }, mem: { t: 'list = [5, 5]', tono: 'no' } } },
+      { nota: "<b>Data race? No</b>: ogni accesso alla lista sta dentro un metodo synchronized, quindi è ordinato da happens-before (regola del monitor). <b>Race condition? Sì</b>: se t1 finisse tutto prima di t2, la lista sarebbe [5]. Il risultato dipende dall'interleaving.", righe: [2, 3] },
+      { nota: "Rimedio: controllo e aggiunta sono una <b>compound action</b> (check-then-act) e vanno sotto lo <b>stesso</b> lock.", righe: [2, 3], set: { fix: { t: 'synchronized (list) { if (!list.contains(x)) list.add(x); }', tono: 'ok' } } },
+      { nota: "<b>Parte B</b>, il contrario. Un campo normale e due thread che scrivono entrambi <code>done = true</code>, senza lock.", righe: [5, 6, 7, 8], set: { a1: { nascosto: true }, a2: { nascosto: true }, a3: { nascosto: true }, a4: { nascosto: true, tono: null }, r1: { nascosto: true }, r2: { nascosto: true }, fix: { t: '' }, mem: { t: 'done = false', tono: null }, b1: { nascosto: false, tono: 'ora' }, b2: { nascosto: false, tono: 'ora' } } },
+      { nota: "Due scritture sulla stessa variabile non volatile, non ordinate da happens-before: <b>data race</b>.", righe: [8], set: { race: { nascosto: false }, rl: { nascosto: false } } },
+      { nota: "Ma in qualunque ordine vadano, dopo i due join <code>done</code> vale true: il risultato non dipende dall'interleaving, quindi <b>nessuna race condition</b>. Per il JMM il programma resta comunque <b>non</b> correctly synchronized.", righe: [8], set: { b1: { tono: null }, b2: { tono: null }, mem: { t: 'done = true', tono: 'ok' } } }
+    ]
+  };
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Ordliste til den mundtlige eksamen</h1>
+  <p class="lede">Øvelserne beder om at forklare "using the concepts and vocabulary introduced during the lecture". Det gør den mundtlige eksamen også. Her har hvert ord definitionen, som kurset bruger den (på engelsk, sådan skal du sige det), og en linje på dansk for at forstå den.</p>
+</header>
+
+<section>
+  <h2>Forelæsning 1: samtidighed og gensidig udelukkelse</h2>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Begreb</th><th>Som kurset siger det</th><th>I enkle ord</th><th>Side</th></tr></thead>
+    <tbody>
+      <tr><td><b>Thread</b></td><td>an independent sequence of program statements; each thread has its own local memory and can communicate via shared memory</td><td>en "tråd" af instruktioner, der kører videre på egen hånd</td><td><a href="l01-thread.html">Thread</a></td></tr>
+      <tr><td><b>Concurrent</b></td><td>computation may be split in arbitrary blocks; multiple streams can run in one core</td><td>mange ting i gang i samme periode, også på én enkelt kerne</td><td><a href="l01-perche-concorrenza.html">Hvorfor</a></td></tr>
+      <tr><td><b>Atomic</b></td><td>executed as if it is a single (indivisible) operation</td><td>ingen anden tråd kan "smutte ind" midt i</td><td><a href="l01-interleaving.html">Interleaving</a></td></tr>
+      <tr><td><b>Interleaving</b></td><td>a possible sequence of operations for a concurrent program (not for a thread)</td><td>en mulig rækkefølge, hvor trinene fra alle trådene blandes</td><td><a href="l01-interleaving.html">Interleaving</a></td></tr>
+      <tr><td><b>Race condition</b></td><td>the result of the computation depends on the interleavings of the operations</td><td>resultatet ændrer sig, alt efter hvem der går først</td><td><a href="l01-interleaving.html">Interleaving</a></td></tr>
+      <tr><td><b>Data race</b> (L1)</td><td>two concurrent threads access a shared memory location and at least one access is a write</td><td>to tråde rører den samme variabel, og den ene skriver</td><td><a href="l01-interleaving.html">Interleaving</a></td></tr>
+      <tr><td><b>Critical section</b></td><td>a part of the program where concurrent access must be restricted</td><td>stykket af kode, som kun én tråd ad gangen må køre</td><td><a href="l01-lock.html">Lock</a></td></tr>
+      <tr><td><b>Mutual exclusion</b></td><td>two or more threads cannot execute their critical section at the same time</td><td>i den kritiske sektion er der én tråd ad gangen</td><td><a href="l01-lock.html">Lock</a></td></tr>
+      <tr><td><b>Deadlock</b> (fravær af)</td><td>threads eventually exit the critical section allowing other threads to enter</td><td>ingen bliver blokeret for evigt</td><td><a href="l01-lock.html">Lock</a></td></tr>
+      <tr><td><b>Starvation</b> (fravær af)</td><td>if a thread is ready to enter the critical section, it must eventually do so</td><td>den, der venter, kommer før eller siden ind</td><td><a href="l02-fairness.html">Fairness</a></td></tr>
+      <tr><td><b>Reentrant lock</b></td><td>a lock that can be locked more than once by the same thread</td><td>hvis du allerede har låsen, blokerer det dig ikke at tage den igen</td><td><a href="l01-lock.html">Lock</a></td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section>
+  <h2>Forelæsning 2: delt hukommelse I</h2>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Begreb</th><th>Som kurset siger det</th><th>I enkle ord</th><th>Side</th></tr></thead>
+    <tbody>
+      <tr><td><b>Monitor</b></td><td>a shared state and meaningful operations on the state that protect it from corruption, even when performed concurrently</td><td>en klasse med private data, metoder i gensidig udelukkelse og ventekøer</td><td><a href="l02-monitor.html">Monitor</a></td></tr>
+      <tr><td><b>Condition variable</b></td><td>a queue where the monitor can put threads to wait (<code>await</code>, <code>signal</code>, <code>signalAll</code>)</td><td>et venteværelse for dem, der må vente på, at noget sker</td><td><a href="l02-monitor.html">Monitor</a></td></tr>
+      <tr><td><b>Fairness</b></td><td>in this course: absence of starvation</td><td>ingen venter i evighed</td><td><a href="l02-fairness.html">Fairness</a></td></tr>
+      <tr><td><b>Mesa semantics</b></td><td>signalled threads go back to the entry queue and compete again (Java)</td><td>den, der bliver vækket, må stille sig i køen igen</td><td><a href="l02-fairness.html">Fairness</a></td></tr>
+      <tr><td><b>Busy-wait</b></td><td>a thread repeatedly checks a condition instead of blocking</td><td>at kontrollere i en løkke i stedet for at sove: forbudt i øvelserne</td><td><a href="l02-fairness.html">Fairness</a></td></tr>
+      <tr><td><b>Intrinsic lock</b></td><td>the lock (monitor) every Java object has, used via <code>synchronized</code></td><td>låsen, som hvert objekt allerede har indeni</td><td><a href="l02-synchronized.html">synchronized</a></td></tr>
+      <tr><td><b>Visibility</b></td><td>without synchronization the CPU may keep data in registers/cache not visible to threads on other CPUs</td><td>en skrivning, som en anden tråd måske aldrig ser</td><td><a href="l02-visibility.html">Visibility</a></td></tr>
+      <tr><td><b>Reordering</b></td><td>without data dependencies or synchronization, CPU or JIT may reorder operations</td><td>instruktioner, der er byttet om for at gå hurtigere</td><td><a href="l02-visibility.html">Visibility</a></td></tr>
+      <tr><td><b>volatile</b></td><td>a weak form of synchronization: ensures visibility, prevents reordering, no mutual exclusion</td><td>"læs altid den opdaterede værdi", men beskytter ikke <code>x++</code></td><td><a href="l02-visibility.html">Visibility</a></td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section>
+  <h2>Forelæsning 3: Java Memory Model</h2>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Begreb</th><th>Som kurset siger det</th><th>I enkle ord</th><th>Side</th></tr></thead>
+    <tbody>
+      <tr><td><b>Sequential consistency</b></td><td>preserves intra-thread program order and operations appear to occur at once</td><td>den "normale" opførsel, man forventer</td><td><a href="l03-azioni-esecuzioni.html">Handlinger</a></td></tr>
+      <tr><td><b>Action</b></td><td>a pair t(o): thread identifier and operation; variable access, synchronization, or other</td><td>"hvem gør hvad", for eksempel <code>t1(2)</code></td><td><a href="l03-azioni-esecuzioni.html">Handlinger</a></td></tr>
+      <tr><td><b>Execution</b></td><td>a sequence of actions</td><td>en sammenflettet rækkefølge skrevet med handlinger</td><td><a href="l03-azioni-esecuzioni.html">Handlinger</a></td></tr>
+      <tr><td><b>Program order</b></td><td>the intra-thread order: a before b if a would be executed before b when the thread runs sequentially</td><td>rækkefølgen af linjerne inde i en tråd</td><td><a href="l03-azioni-esecuzioni.html">Handlinger</a></td></tr>
+      <tr><td><b>Happens-before</b></td><td>a partial order a -> b defined by the rules (program order, monitor, volatile, init, start, termination, transitive)</td><td>"a sker helt sikkert før b, og b ser effekten af a"</td><td><a href="l03-happens-before.html">Happens-before</a></td></tr>
+      <tr><td><b>Synkroniseringsrækkefølge</b></td><td>a total order of the synchronization actions of an execution, consistent with mutual exclusion and happens-before</td><td>rækkefølgen, hvor lock, unlock, start, join… sker</td><td><a href="l03-data-race.html">Data race</a></td></tr>
+      <tr><td><b>Konfliktende handlinger</b></td><td>accesses on the same non-volatile variable, at least one is a write</td><td>parrene af adgange, der potentielt er farlige</td><td><a href="l03-data-race.html">Data race</a></td></tr>
+      <tr><td><b>Data race</b> (JMM)</td><td>two actions are conflicting and not ordered by happens-before</td><td>farlige adgange uden en garanteret rækkefølge</td><td><a href="l03-data-race.html">Data race</a></td></tr>
+      <tr><td><b>Korrekt synkroniseret</b></td><td>none of the executions contains data races</td><td>et korrekt program ifølge JMM</td><td><a href="l03-data-race.html">Data race</a></td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section>
+  <h2>Forelæsning 4: delt hukommelse II</h2>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Begreb</th><th>Som kurset siger det</th><th>I enkle ord</th><th>Side</th></tr></thead>
+    <tbody>
+      <tr><td><b>Trådsikker klasse</b></td><td>no concurrent execution of method calls or field accesses on objects of the class results in data races on the fields of the class</td><td>brugt af flere tråde: dens felter har aldrig data races</td><td><a href="l04-thread-safety.html">Thread-safety</a></td></tr>
+      <tr><td><b>Trådsikkert program</b></td><td>a concurrent program is thread-safe iff it is data race free</td><td>ingen data race i hele programmet</td><td><a href="l04-thread-safety.html">Thread-safety</a></td></tr>
+      <tr><td><b>Escaping</b></td><td>class state can be accessed other than through its (synchronized) methods</td><td>et felt, der "slipper ud" af beskyttelsen fra låsene</td><td><a href="l04-thread-safety.html">Thread-safety</a></td></tr>
+      <tr><td><b>Sikker publicering</b></td><td>after initialization, the initial values of the fields are visible to any thread accessing the object</td><td>den, der modtager objektet, ser det allerede bygget rigtigt</td><td><a href="l04-pubblicazione.html">Publicering</a></td></tr>
+      <tr><td><b>Uforanderligt felt</b></td><td>its value does not change after initialization</td><td>en konstant: ingen grund til at beskytte den efter konstruktionen</td><td><a href="l04-pubblicazione.html">Publicering</a></td></tr>
+      <tr><td><b>Semafor</b></td><td>allows up to c threads in the critical section (<code>acquire</code>, <code>release</code>)</td><td>en dørvogter med c pladser</td><td><a href="l04-semafori.html">Semaforer</a></td></tr>
+      <tr><td><b>Barriere</b></td><td>waits until a number of parties reach a point in their computation</td><td>man starter kun, når alle er ankommet</td><td><a href="l04-semafori.html">Semaforer</a></td></tr>
+      <tr><td><b>Instans-indeslutning</b></td><td>encapsulating a thread-unsafe object into a thread-safe class</td><td>at lukke et skrøbeligt objekt inde i en beskyttet klasse</td><td><a href="l04-confinamento.html">Indeslutning</a></td></tr>
+      <tr><td><b>Sammensat handling</b></td><td>multiple method calls or field accesses that must happen within one critical section (check-then-act)</td><td>"kontroller og handl derefter", alt gjort under samme lås</td><td><a href="l04-confinamento.html">Indeslutning</a></td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section>
+  <h2>De to mest almindelige forvekslinger</h2>
+  <div class="colonne">
+    <div class="carta">
+      <h4>Race condition ≠ data race</h4>
+      <p>En race condition handler om <b>resultatet</b>; en data race handler om <b>adgangene</b>. Man kan have den ene uden den anden: <code>addIfAbsent</code> på en synkroniseret liste har en race condition, men ingen data race (<a href="l04-confinamento.html">L4</a>).</p>
+    </div>
+    <div class="carta">
+      <h4>Thread-safe ≠ "ser ud til at virke"</h4>
+      <p>I kurset har thread-safe en præcis definition: fravær af data races på felterne. En test, der ikke finder fejl, <b>beviser ikke</b> thread-safety (øvelse 4.2.4).</p>
+    </div>
+  </div>
+  <figure class="scena" data-scena="duerace" data-titolo="Race condition uden data race, og omvendt"></figure>
+</section>
+
+</main>
+</body>
+</html>

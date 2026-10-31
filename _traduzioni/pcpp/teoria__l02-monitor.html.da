@@ -1,0 +1,80 @@
+@@s001 Monitor og condition variable
+@@s002 dato:læser,due:skriver,ora:hvem der bevæger sig nu,no:regel overtrådt,ok:korrekt adfærd
+@@s003 Skriveren W1 har låsen og skriver: writer = true. Læseren R1 kalder readLock().
+@@s004 R1 kommer ind, ser writer = true og laver <code>await()</code>: den frigiver låsen og går ind i wait set.
+@@s005 W1 er færdig: writeUnlock() sætter writer = false og laver <code>signalAll()</code>. R1 starter ikke straks: den vender tilbage til <b>entry queue</b> for at konkurrere om låsen (Mesa-semantikken, den som Java har).
+@@s006 En anden skriver, W2, tager låsen <b>før</b> R1: writer = true igen.
+@@s007 Med <code>if (writer) await();</code> kontrollerer R1, når den genoptager låsen, <b>ikke igen</b>: den laver readers++ og læser, mens W2 skriver.
+@@s008 Med <code>while (writer) await();</code> kontrollerer R1 betingelsen igen, finder den sand og venter igen. Derfor er reglen: <b>altid while</b>.
+@@s009 dato:læsere,due:skrivere,ok:tilladt,no:skal vente
+@@s010 dato:tråd,ora:har låsen,due:venter på betingelsen
+@@s011 ora:kald,no:tråd der venter,ok:tilstand opdateret
+@@s012 dato:Lock og Condition,ok:indre lås,no:venter
+@@s013 Monitor og condition variable
+@@s014 En simpel lås siger "én ad gangen". Men nogle problemer vil have rigere regler: <b>mange læsere sammen, eller én enkelt skriver</b>. Derfor skal man bruge en <b>monitor</b>: delt tilstand, metoder i gensidig udelukkelse og <b>ventekøer</b> til dem, der skal vente.
+@@s015 Læser- og skriverproblemet
+@@s016 En delt datastruktur, som trådene læser fra eller skriver til.
+@@s017 <b>Mange</b> tråde kan læse samtidig, så længe ingen skriver.
+@@s018 <b>Højst én</b> kan skrive, og kun hvis ingen læser.
+@@s019 Spørgsmål fra slidet: er en almindelig lås nok?
+@@s020 En lås ville garantere sikkerhed, men den ville også udelukke <b>læser mod læser</b>: man ville smide netop den parallelisme væk, problemet tillader. Der skal noget, der bestemmer <i>hvem</i> der må komme ind ud fra tilstanden.
+@@s021 Læsere sammen ja, en skriver alene
+@@s022 Hvad en monitor er
+@@s023 Definition (Brinch Hansen, Hoare)
+@@s024 En <b>monitor</b> er en delt tilstand plus meningsfulde operationer på den tilstand, der beskytter den mod ødelæggelse, selv når de udføres samtidigt.
+@@s025 Del
+@@s026 Hvad den gør
+@@s027 I Java
+@@s028 <b>Intern tilstand</b>
+@@s029 data, der kun er tilgængelige for monitorens metoder
+@@s030 <code>private</code>-felter
+@@s031 <b>Metoder</b>
+@@s032 alle i gensidig udelukkelse med hinanden
+@@s033 hver metode laver <code>lock()</code> … <code>unlock()</code>
+@@s034 <b>Condition variable</b>
+@@s035 køer hvor monitoren sætter trådene til at vente
+@@s036 <code>Condition c = lock.newCondition()</code>
+@@s037 De tre operationer på en condition variable
+@@s038 <code>await()</code>
+@@s039 Frigiver låsen <b>og</b> blokerer tråden i betingelsens kø. Begge ting sammen.
+@@s040 <code>signal()</code>
+@@s041 Vækker <b>én</b> tråd i køen, hvis der er en. Hvilken, er ikke bestemt.
+@@s042 <code>signalAll()</code>
+@@s043 Vækker <b>alle</b> trådene i køen.
+@@s044 En vakt tråd skal <b>tage låsen igen</b>, før den gør noget andet. Forveksl ikke <i>condition variable</i> med betingelserne i <code>if</code> og <code>while</code>: det er en kø.
+@@s045 Entry queue, monitor, betingelsens kø
+@@s046 <code>ReadWriteMonitor</code>, metode for metode
+@@s047 Monitoren fra forelæsningen for læser-skriver-problemet. Tilstanden er to private felter: <code>readers</code> (hvor mange læsere der er inde) og <code>writer</code> (er der en skriver?). De fire metoder tager låsen, kontrollerer tilstanden i en <code>while</code>, venter med <code>await()</code>, så længe det er nødvendigt, opdaterer tilstanden og frigiver låsen. Den, der frigiver ressourcen, vækker de andre med <code>signalAll()</code>.
+@@s048 week02/code-lecture/.../ReadWriteMonitor.java
+@@s049 Monitoren indeholder ikke ressourcen: den regulerer, hvem der må bruge den. Trådene laver <code>readLock()</code> / læser / <code>readUnlock()</code>, eller <code>writeLock()</code> / skriver / <code>writeUnlock()</code>.
+@@s050 <b>Tilstand</b>: hvor mange læsere der er inde, og om der er en skriver.
+@@s051 En lås til gensidig udelukkelse af metoderne, og <b>én</b> condition variable knyttet til den lås.
+@@s052 Hver metode starter med <code>lock()</code> og frigiver i <code>finally</code>: metoderne er gensidigt udelukkende.
+@@s053 En læser skal kun vente, hvis der er en skriver. <code>await()</code> frigiver låsen, mens den venter, så de andre kan komme ind i monitoren.
+@@s054 Når den kan, registrerer den sig som læser og går: monitorens lås er fri, og andre læsere kan komme ind og læse <b>sammen</b> med den.
+@@s055 En læser der er færdig, fjerner sig selv fra tællingen. Hvis det var den sidste, vækker den dem, der venter (måske en skriver).
+@@s056 En skriver venter, så længe der er læsere <b>eller</b> en anden skriver. Derefter registrerer den sig.
+@@s057 Skriveren der er færdig, vækker <b>altid</b> alle: der kan komme mange læsere eller en anden skriver ind.
+@@s058 readers og writer, kald for kald
+@@s059 Hvorfor <code>while</code> og ikke <code>if</code>
+@@s060 Med if kan en læser komme ind, mens der er en skriver
+@@s061 Version med <code>if</code>: den kontrollerer kun én gang.
+@@s062 Læseren R1 venter.
+@@s063 Skriveren er færdig og vækker alle. R1 vender tilbage til <b>entry queue</b>: den skal konkurrere om låsen igen.
+@@s064 <b>Mesa</b>-semantik (den som Java har): en anden skriver kan komme ind før R1.
+@@s065 Med <code>if</code> kontrollerer R1 ikke igen: den læser, mens W2 skriver. Specifikationen er overtrådt.
+@@s066 Med <code>while</code> kontrolleres betingelsen igen ved hver vækning. Desuden kan tråde vågne uden et signal (<b>spurious wakeup</b>): while beskytter også mod det.
+@@s067 Hvorfor while og ikke if
+@@s068 Spørgsmål fra slidet: er det nødvendigt at kontrollere readers == 0 før signalAll?
+@@s069 For <b>korrektheden</b> nej: den der vækkes, kontrollerer sin betingelse igen i <code>while</code> og, hvis den ikke kan komme ind, venter den igen. Kontrollen undgår kun <b>unødvendige</b> vækkelser: hvis der stadig er læsere, kunne ingen skriver alligevel komme ind.
+@@s070 Øvelse 2.1: den samme monitor med <code>synchronized</code>
+@@s071 Hvert Java-objekt har allerede en lås <b>og en condition variable</b> indeni. Med <code>synchronized</code> bruger man <code>wait()</code>, <code>notify()</code>, <code>notifyAll()</code> i stedet for <code>await()</code>, <code>signal()</code>, <code>signalAll()</code>.
+@@s072 Version med indre lås, allerede fair over for skriverne (kompileret og kørt)
+@@s073 <code>synchronized</code> på metoderne: de bruger alle låsen på objektet <code>this</code>, så de er gensidigt udelukkende.
+@@s074 <code>wait()</code> gør det, <code>await()</code> gjorde: den frigiver låsen på <code>this</code> og venter i sin kø. Også her i en <code>while</code>.
+@@s075 Ændringen "fair": skriveren <b>reserverer</b> straks (<code>writer = true</code>) og venter derefter på, at de læsere, der allerede er inde, går ud. Fra det øjeblik stopper de nye læsere ved <code>while (writer)</code>. Det er ideen i <code>FairReadWriteMonitor.java</code>.
+@@s076 <code>notifyAll()</code> vækker alle tråde, der venter på <code>this</code>.
+@@s077 Øvelse 2.1.3: hvor mange condition variables?
+@@s078 <b>Én</b>: den indre på objektet, hvor du laver <code>synchronized</code>. Læsere og skrivere venter alle i den samme kø, med <code>wait()</code>, og vækkes med <code>notifyAll()</code>. Med <code>ReentrantLock</code> kan man derimod oprette flere betingelser (<code>lock.newCondition()</code> to gange), for eksempel én for læserne og én for skriverne (øvelse 2.1.5).
+@@s079 Kontrolleret: 15 læsere og 5 skrivere, 200 adgange hver, ingen overtrædelse af specifikationen.
+@@s080 Fra den eksplicitte Lock til den indre lås

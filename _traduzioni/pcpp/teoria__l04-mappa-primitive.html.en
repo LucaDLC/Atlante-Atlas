@@ -1,0 +1,102 @@
+@@s001 Map of the primitives
+@@s002 ora:current question,no:answer no: go down,ok:the chosen primitive
+@@s003 One starts from what is needed, not from the primitive. The case: several threads do <code>count++</code> on the same counter.
+@@s004 The value changes: final is not enough.
+@@s005 It is not a flag written once: count++ is <b>read-then-write</b>. volatile would give visibility but not atomicity (exercise 3.1.8).
+@@s006 Read-then-write: <b>lock</b> (synchronized if it is enough; ReentrantLock for fairness, more conditions or tryLock).
+@@s007 The other questions serve other cases: waiting for a condition (bounded buffer) → monitor with while; limiting to c threads → Semaphore; waiting for everybody → CyclicBarrier.
+@@s008 ora:inside / has the permit,no:blocked,ok:sees the last write,dato:thread
+@@s009 ora:line added,ok:yes,no:no,due:depends,dato:rule
+@@s010 no:wrong,ok:right
+@@s011 Map of the primitives
+@@s012 All the synchronization tools seen up to lecture 4, in one place: what they guarantee, which happens-before rule they give, and when to use them.
+@@s013 You had asked (10 September)
+@@s014 "Explain to me the various kinds of lock we used, I do not remember the various categories." This page is the answer, updated up to lecture 4.
+@@s015 Three families
+@@s016 1 · Lock
+@@s017 One thread at a time in the critical section: <b>mutual exclusion</b>. <code>synchronized</code>, <code>ReentrantLock</code>.
+@@s018 2 · Waiting for a condition
+@@s019 A thread waits for the state to change: <b>monitor</b> (lock + condition variable), <code>Semaphore</code>, <code>CyclicBarrier</code>.
+@@s020 3 · Visibility only
+@@s021 No mutual exclusion, only "whoever reads sees the last write": <code>volatile</code>, <code>final</code>.
+@@s022 Lock, waiting for a condition, visibility only
+@@s023 The table
+@@s024 Primitive
+@@s025 How it is written
+@@s026 Mutual exclusion
+@@s027 Happens-before
+@@s028 Owner / reentrant
+@@s029 Fairness
+@@s030 <b>Intrinsic lock</b> (monitor lock)
+@@s031 <code>synchronized (o) { … }</code>, <code>synchronized</code> method (lock of <code>this</code>), <code>static synchronized</code> (lock of <code>X.class</code>)
+@@s032 yes
+@@s033 monitor rule: unlock → next lock on the same object
+@@s034 yes / yes
+@@s035 no guarantee, not configurable
+@@s036 <b><code>ReentrantLock</code></b>
+@@s037 <code>l.lock(); try { … } finally { l.unlock(); }</code>
+@@s038 yes
+@@s039 like the monitor
+@@s040 yes / yes
+@@s041 <code>new ReentrantLock(true)</code>: favours the thread that has waited longest
+@@s042 <b>Condition</b> (of a <code>ReentrantLock</code>)
+@@s043 <code>c = l.newCondition()</code>; <code>while (!ok) c.await();</code> · <code>c.signal()</code> / <code>c.signalAll()</code>
+@@s044 used while holding the lock
+@@s045 goes through the lock: <code>await()</code> releases it and takes it again
+@@s046 who is woken is not specified in general
+@@s047 <b><code>wait</code>/<code>notifyAll</code></b>
+@@s048 inside <code>synchronized</code>: <code>while (!ok) wait();</code> · <code>notifyAll()</code>
+@@s049 used while holding the intrinsic lock
+@@s050 goes through the intrinsic lock
+@@s051 only one condition per object
+@@s052 <b><code>Semaphore</code></b>
+@@s053 <code>s.acquire(); try { … } finally { s.release(); }</code>
+@@s054 only if c = 1 (mutex)
+@@s055 <code>release()</code> → a successful <code>acquire()</code> in another thread
+@@s056 <b>no</b> / <b>no</b>
+@@s057 <code>new Semaphore(c, true)</code>
+@@s058 <b><code>CyclicBarrier</code></b>
+@@s059 <code>cb.await()</code>
+@@s060 no
+@@s061 actions before <code>await()</code> → actions after the return from <code>await()</code> in the other threads
+@@s062 <b><code>volatile</code></b>
+@@s063 <code>volatile int x;</code>
+@@s064 <b>no</b>
+@@s065 volatile rule: write → later reads; volatile accesses never in conflict
+@@s066 <b><code>final</code></b>
+@@s067 <code>final int x;</code>
+@@s068 no
+@@s069 initialisation → every action after the constructor
+@@s070 <b><code>start</code>/<code>join</code></b>
+@@s071 <code>t.start()</code>, <code>t.join()</code>
+@@s072 no
+@@s073 start → first action of t; last action of t → join
+@@s074 The happens-before guarantees of <code>Semaphore</code> and <code>CyclicBarrier</code> are written in the Java documentation ("memory consistency effects"). The others are the rules seen in lecture.
+@@s075 Mutual exclusion and the origin of happens-before
+@@s076 Which one to use?
+@@s077 Start from what you need
+@@s078 No lock needed to read it. <a href="l04-pubblicazione.html">Immutability</a>.
+@@s079 Example: the <code>while (!stop)</code> that must see <code>stop = true</code>. It is not enough if the write depends on a read (<code>count++</code>).
+@@s080 <code>synchronized</code> if it is enough; <code>ReentrantLock</code> if you need fairness, more conditions or <code>tryLock</code>.
+@@s081 Lock + condition, always with <code>while</code>. <a href="l02-monitor.html">Monitor</a>.
+@@s082 <a href="l04-semafori.html">Semaphores</a> and bounded buffer.
+@@s083 For example: everybody has initialised their part of the array.
+@@s084 Choosing the primitive, one question at a time
+@@s085 The classic errors
+@@s086 Error
+@@s087 Why it is wrong
+@@s088 <code>volatile int count</code> for a shared counter
+@@s089 no data race, but <code>count++</code> remains a race condition (<a href="l03-esercizio-31.html">exercise 3.1.8</a>)
+@@s090 instance <code>synchronized</code> to protect a <code>static</code> field
+@@s091 different objects, different locks: no mutual exclusion (<a href="l02-synchronized.html">synchronized</a>)
+@@s092 <code>lock()</code> without <code>try/finally</code>
+@@s093 an exception in the critical section leaves the lock taken for ever
+@@s094 <code>if (!ok) c.await();</code>
+@@s095 after waking the condition can be false again (spurious wakeup, other threads): <code>while</code> is needed
+@@s096 active waiting: <code>while (!ok) { }</code>
+@@s097 busy-wait, forbidden in the course exercises: it uses CPU instead of blocking
+@@s098 mutex before <code>spaces.acquire()</code>
+@@s099 blocking while holding the mutex: deadlock (<a href="l04-semafori.html">bounded buffer</a>)
+@@s100 <code>release()</code> of a semaphore by a thread that did not do <code>acquire()</code>
+@@s101 Java allows it: the permits grow beyond the capacity
+@@s102 Wrong → right, one at a time

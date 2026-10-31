@@ -1,0 +1,80 @@
+@@s001 Monitor and condition variable
+@@s002 dato:reader,due:writer,ora:who moves now,no:rule violated,ok:correct behaviour
+@@s003 The writer W1 has the lock and is writing: writer = true. The reader R1 calls readLock().
+@@s004 R1 enters, sees writer = true and does <code>await()</code>: it releases the lock and goes into the wait set.
+@@s005 W1 finishes: writeUnlock() sets writer = false and does <code>signalAll()</code>. R1 does not restart at once: it returns to the <b>entry queue</b> to compete for the lock (Mesa semantics, the one of Java).
+@@s006 Another writer, W2, takes the lock <b>before</b> R1: writer = true again.
+@@s007 With <code>if (writer) await();</code> R1, when it resumes the lock, <b>does not check again</b>: it does readers++ and reads while W2 writes.
+@@s008 With <code>while (writer) await();</code> R1 checks the condition again, finds it true and goes back to waiting. That is why the rule is: <b>always while</b>.
+@@s009 dato:readers,due:writers,ok:allowed,no:must wait
+@@s010 dato:thread,ora:has the lock,due:waiting on the condition
+@@s011 ora:call,no:thread waiting,ok:state updated
+@@s012 dato:Lock and Condition,ok:intrinsic lock,no:waiting
+@@s013 Monitor and condition variable
+@@s014 A simple lock says "one at a time". But some problems want richer rules: <b>many readers together, or a single writer</b>. For this one needs a <b>monitor</b>: shared state, methods in mutual exclusion and <b>wait queues</b> for those who must wait.
+@@s015 The readers and writers problem
+@@s016 A shared data structure, on which threads read or write.
+@@s017 <b>Many</b> threads can read at the same time, as long as nobody is writing.
+@@s018 <b>At most one</b> can write, and only if nobody is reading.
+@@s019 Question from the slide: is an ordinary lock enough?
+@@s020 A lock would guarantee safety, but it would also exclude <b>reader against reader</b>: you would throw away exactly the parallelism that the problem allows. What is needed is something that decides <i>who</i> can enter based on the state.
+@@s021 Readers together yes, a writer alone
+@@s022 What a monitor is
+@@s023 Definition (Brinch Hansen, Hoare)
+@@s024 A <b>monitor</b> is a shared state plus significant operations on that state, which protect it from corruption even when executed concurrently.
+@@s025 Piece
+@@s026 What it does
+@@s027 In Java
+@@s028 <b>Internal state</b>
+@@s029 the data, accessible only by the methods of the monitor
+@@s030 <code>private</code> fields
+@@s031 <b>Methods</b>
+@@s032 all in mutual exclusion with each other
+@@s033 each method does <code>lock()</code> … <code>unlock()</code>
+@@s034 <b>Condition variable</b>
+@@s035 queues where the monitor puts the threads to wait
+@@s036 <code>Condition c = lock.newCondition()</code>
+@@s037 The three operations of a condition variable
+@@s038 <code>await()</code>
+@@s039 Releases the lock <b>and</b> blocks the thread in the queue of the condition. Both things together.
+@@s040 <code>signal()</code>
+@@s041 Wakes <b>one</b> thread in the queue, if there is one. Which one is not decided.
+@@s042 <code>signalAll()</code>
+@@s043 Wakes <b>all</b> the threads in the queue.
+@@s044 A woken thread must <b>take the lock again</b> before doing anything else. Do not confuse the <i>condition variable</i> with the conditions of the <code>if</code> and the <code>while</code>: it is a queue.
+@@s045 Entry queue, monitor, condition queue
+@@s046 <code>ReadWriteMonitor</code>, method by method
+@@s047 The monitor of the lecture for the readers-writers problem. The state is two private fields: <code>readers</code> (how many readers are inside) and <code>writer</code> (is there a writer?). The four methods take the lock, check the state in a <code>while</code>, wait with <code>await()</code> as long as needed, update the state and release the lock. Whoever frees the resource wakes the others with <code>signalAll()</code>.
+@@s048 week02/code-lecture/.../ReadWriteMonitor.java
+@@s049 The monitor does not contain the resource: it regulates who may use it. The threads do <code>readLock()</code> / read / <code>readUnlock()</code>, or <code>writeLock()</code> / write / <code>writeUnlock()</code>.
+@@s050 <b>State</b>: how many readers are inside, and whether there is a writer.
+@@s051 A lock for the mutual exclusion of the methods, and <b>one</b> condition variable tied to that lock.
+@@s052 Each method starts with <code>lock()</code> and releases in the <code>finally</code>: the methods are mutually exclusive.
+@@s053 A reader must wait only if there is a writer. <code>await()</code> releases the lock while waiting, so that the others can enter the monitor.
+@@s054 When it can, it registers as a reader and leaves: the lock of the monitor is free, and other readers can enter and read <b>together</b> with it.
+@@s055 A reader who finishes removes itself from the count. If it was the last one, it wakes whoever waits (perhaps a writer).
+@@s056 A writer waits as long as there are readers <b>or</b> another writer. Then it registers.
+@@s057 The writer who finishes <b>always</b> wakes everybody: many readers or another writer can enter.
+@@s058 readers and writer, call by call
+@@s059 Why <code>while</code> and not <code>if</code>
+@@s060 With if, a reader can enter while there is a writer
+@@s061 Version with <code>if</code>: it checks only once.
+@@s062 The reader R1 waits.
+@@s063 The writer finishes and wakes everybody. R1 returns to the <b>entry queue</b>: it must compete again for the lock.
+@@s064 <b>Mesa</b> semantics (that of Java): another writer can enter before R1.
+@@s065 With <code>if</code> R1 does not check again: it reads while W2 writes. The specification is violated.
+@@s066 With <code>while</code> the condition is checked again at every wakeup. Moreover, threads can wake up even without a signal (<b>spurious wakeup</b>): the while protects also from this.
+@@s067 Why while and not if
+@@s068 Question from the slide: is it necessary to check readers == 0 before signalAll?
+@@s069 For <b>correctness</b> no: whoever wakes checks its condition again in the <code>while</code> and, if it cannot enter, goes back to waiting. The check only avoids <b>useless</b> wakeups: if there are still readers, no writer could enter anyway.
+@@s070 Exercise 2.1: the same monitor with <code>synchronized</code>
+@@s071 Every Java object already has a lock <b>and a condition variable</b> inside. With <code>synchronized</code> one uses <code>wait()</code>, <code>notify()</code>, <code>notifyAll()</code> instead of <code>await()</code>, <code>signal()</code>, <code>signalAll()</code>.
+@@s072 Version with intrinsic lock, already fair towards the writers (compiled and run)
+@@s073 <code>synchronized</code> on the methods: they all use the lock of the object <code>this</code>, so they are mutually exclusive.
+@@s074 <code>wait()</code> does what <code>await()</code> did: it releases the lock of <code>this</code> and waits in its queue. Here too inside a <code>while</code>.
+@@s075 The "fair" change: the writer <b>reserves</b> at once (<code>writer = true</code>) and then waits for the readers already inside to leave. From that moment the new readers stop at <code>while (writer)</code>. It is the idea of <code>FairReadWriteMonitor.java</code>.
+@@s076 <code>notifyAll()</code> wakes all the threads waiting on <code>this</code>.
+@@s077 Exercise 2.1.3: how many condition variables?
+@@s078 <b>One</b>: the intrinsic one of the object on which you do <code>synchronized</code>. Readers and writers all wait in the same queue, with <code>wait()</code>, and are woken with <code>notifyAll()</code>. With <code>ReentrantLock</code> instead you can create several conditions (<code>lock.newCondition()</code> twice), for example one for the readers and one for the writers (exercise 2.1.5).
+@@s079 Checked: 15 readers and 5 writers, 200 accesses each, no violation of the specification.
+@@s080 From the explicit Lock to the intrinsic lock

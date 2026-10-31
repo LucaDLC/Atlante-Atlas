@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>synchronized: intrinsic locks</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+SCENE.duelock = {
+  w: 600, h: 260, lato: true,
+  legenda: 'dato:t1,due:t2,no:unprotected access,ok:protected',
+  oggetti: [
+    { id: 't1', tipo: 'nodo', x: 60, y: 60, t: 't1', tono: 'dato' },
+    { id: 't2', tipo: 'nodo', x: 60, y: 200, t: 't2', tono: 'due' },
+    { id: 'Lm', tipo: 'rett', x: 170, y: 40, w: 190, h: 40, t: 'lock di m (this)' },
+    { id: 'Lc', tipo: 'rett', x: 170, y: 180, w: 190, h: 40, t: 'lock di Mystery.class' },
+    { id: 'sum', tipo: 'nodo', forma: 'quadrato', r: 30, x: 510, y: 130, t: 'sum' },
+    { id: 'p1', tipo: 'linea', x1: 85, y1: 60, x2: 170, y2: 60, nascosto: true },
+    { id: 'p2', tipo: 'linea', x1: 85, y1: 200, x2: 170, y2: 200, nascosto: true },
+    { id: 'a1', tipo: 'vett', x1: 360, y1: 60, x2: 480, y2: 115, nascosto: true },
+    { id: 'a2', tipo: 'vett', x1: 360, y1: 200, x2: 480, y2: 145, nascosto: true },
+    { id: 'nota', tipo: 'testo', x: 300, y: 130, t: '', size: 12.5, bold: true }
+  ],
+  passi: [
+    { nota: '<p><code>sum</code> is <b>static</b>: a single variable for the whole class. t1 calls <code>m.addInstance(1)</code>, t2 calls <code>Mystery.addStatic(1)</code>.</p>' },
+    { nota: '<p><code>addInstance</code> is <b>instance</b> <code>synchronized</code>: t1 takes the lock of the object <code>m</code>.</p>', set: { p1: { nascosto: false, tono: 'dato' }, Lm: { tono: 'dato' } } },
+    { nota: '<p><code>addStatic</code> is <code>static synchronized</code>: t2 takes the lock of the object <code>Mystery.class</code>. It is a <b>different</b> lock, free: t2 <b>does not block</b>.</p>', set: { p2: { nascosto: false, tono: 'due' }, Lc: { tono: 'due' } } },
+    { nota: '<p>Both execute <code>sum += x</code> at the same moment. The two locks do not exclude each other: <b>data race</b> on <code>sum</code> and lost increments (verified: about 1.5–1.7 million instead of 2).</p>', set: { a1: { nascosto: false, tono: 'no' }, a2: { nascosto: false, tono: 'no' }, sum: { tono: 'no' }, nota: { t: 'due lock ≠ mutua esclusione', tono: 'no' } } },
+    { nota: '<p><b>Correction</b> (exercise 2.3.3): inside <code>addInstance</code> one synchronizes on <code>Mystery.class</code>. Now t1 and t2 use the <b>same</b> lock.</p>', set: { a1: { nascosto: true }, a2: { nascosto: true }, sum: { tono: null }, nota: { t: '' }, p1: { x2: 170, y2: 200, tono: 'dato' }, Lm: { tono: 'spento' }, Lc: { tono: 'dato' } } },
+    { nota: '<p>If t1 has the class lock, t2 waits, and vice versa: the accesses to <code>sum</code> are in mutual exclusion. Result always 2 000 000 (verified).</p>', set: { p2: { tono: 'no' }, a1: { nascosto: false, tono: 'ok' }, sum: { tono: 'ok' }, nota: { t: 'stesso lock → un thread alla volta', tono: 'ok' } } }
+  ]
+};
+</script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  const T = (id, x, y, t, extra) => Object.assign({ id, tipo: 'testo', x, y, t, size: 13 }, extra || {});
+  const R = (id, x, y, w, h, t, extra) => Object.assign({ id, tipo: 'rett', x, y, w, h, t }, extra || {});
+  const N = (id, x, y, t, tono, extra) => Object.assign({ id, tipo: 'nodo', x, y, t, tono, r: 18 }, extra || {});
+
+  // 1. blocco synchronized
+  SCENE.syncblock = {
+    w: 600, h: 230, lato: true,
+    legenda: 'dato:thread,ora:has the lock of o,no:exception,ok:lock released',
+    oggetti: [
+      R('blk', 200, 50, 200, 110, '', { tono: 'spento' }), T('tb', 300, 40, 'synchronized (o) { … }', { bold: true, size: 12 }),
+      R('lk', 460, 70, 120, 36, 'lock di o: libero', { tono: 'ok' }),
+      N('t', 100, 105, 't', 'dato'),
+      T('c', 300, 200, '', { bold: true, size: 12 })
+    ],
+    passi: [
+      { nota: "Ogni oggetto Java ha un <b>lock intrinseco</b>. <code>synchronized (o) { … }</code> lo usa per il blocco." },
+      { nota: "Entrando nel blocco il thread <b>prende</b> il lock di o (se è occupato, aspetta).", set: { t: { x: 300, y: 105, tono: 'ora' }, lk: { t: 'lock di o: di t', tono: 'ora' } } },
+      { nota: "Dentro il blocco viene lanciata un'eccezione.", set: { t: { tono: 'no' }, c: { t: 'throw new RuntimeException()', tono: 'no' } } },
+      { nota: "Uscendo dal blocco, <b>in qualunque modo</b> (fine normale, return, eccezione), il lock si rilascia da solo. È esattamente lock + try/finally, scritto dal compilatore per te (verificato: dopo l'eccezione <code>Thread.holdsLock(o)</code> è false). Ed è rientrante, come ReentrantLock.", set: { t: { x: 520, y: 180, tono: 'dato' }, lk: { t: 'lock di o: libero', tono: 'ok' }, c: { t: 'uscita dal blocco = unlock automatico', tono: 'ok' } } }
+    ]
+  };
+
+  // 2. quale lock
+  SCENE.qualelock = {
+    w: 600, h: 250, lato: true,
+    legenda: 'dato:lock of object c1,due:lock of object c2,ora:class lock,no:waiting',
+    oggetti: [
+      R('o1', 40, 40, 150, 50, 'oggetto c1 (lock)', { tono: 'dato' }), R('o2', 40, 150, 150, 50, 'oggetto c2 (lock)', { tono: 'due' }),
+      R('cl', 400, 95, 170, 50, 'C.class (lock)', { tono: 'ora' }),
+      N('t1', 260, 65, 't1', null), N('t2', 260, 175, 't2', null),
+      T('c', 300, 232, '', { bold: true, size: 12 })
+    ],
+    passi: [
+      { nota: "Due oggetti della stessa classe C, c1 e c2, e due thread." },
+      { nota: "Metodi d'<b>istanza</b> synchronized: t1 chiama c1.method(), t2 chiama c2.method(). Ognuno prende il lock <b>del suo oggetto</b> (this): due lock diversi, quindi girano <b>insieme</b>.", set: { t1: { x: 212, y: 65, tono: 'dato' }, t2: { x: 212, y: 175, tono: 'due' }, c: { t: 'this: due lock, nessuna attesa' } } },
+      { nota: "Metodi <b>static</b> synchronized: il lock è quello di <b>C.class</b>, l'oggetto che rappresenta la classe. Ce n'è uno solo per tutti.", set: { t1: { x: 485, y: 170, tono: 'ora' }, t2: { x: 330, y: 175, tono: 'no' }, c: { t: 'C.class: un lock, t2 aspetta', tono: 'no' } } },
+      { nota: "Conseguenza (esercizio 2.3, Mystery): un campo <b>static</b> modificato sia da metodi static sia da metodi d'istanza è protetto da <b>due lock diversi</b>, quindi <b>non</b> è protetto. Regola: una variabile condivisa va sempre protetta dallo <b>stesso</b> lock.", set: { c: { t: 'stessa variabile → stesso lock', tono: 'ok' } } }
+    ]
+  };
+
+  // 3. wait e notify tenendo il lock
+  SCENE.waitlock = {
+    w: 600, h: 230, lato: true,
+    legenda: 'no:error,ok:correct,dato:thread',
+    oggetti: [
+      R('cod', 30, 40, 250, 40, 'o.wait();', { tono: 'dato' }),
+      T('e', 440, 60, '', { size: 12, bold: true }),
+      R('cod2', 30, 120, 250, 40, 'synchronized (o) { o.wait(); }', { tono: 'ok', nascosto: true }),
+      T('e2', 440, 140, '', { size: 12, bold: true }), T('c', 300, 205, '', { size: 12 })
+    ],
+    passi: [
+      { nota: "<code>wait()</code>, <code>notify()</code>, <code>notifyAll()</code> sono i corrispondenti di await, signal, signalAll per il lock intrinseco. Ma vanno chiamati <b>tenendo</b> il lock di quell'oggetto." },
+      { nota: "Chiamare <code>o.wait()</code> senza essere dentro <code>synchronized (o)</code> fa fallire il programma: <code>java.lang.IllegalMonitorStateException: current thread is not owner</code> (errore vero, JDK 26).", set: { cod: { tono: 'no' }, e: { t: 'IllegalMonitorStateException', tono: 'no' } } },
+      { nota: "Dentro <code>synchronized (o)</code> funziona: wait rilascia il lock di o e aspetta, come await. In un metodo synchronized si scrive <code>this.wait()</code>.", set: { cod2: { nascosto: false }, e2: { t: 'ok: rilascia il lock e aspetta', tono: 'ok' } } },
+      { nota: "Rispetto a ReentrantLock c'è una sola differenza di fondo: ogni oggetto ha <b>una sola</b> condition, mentre un Lock può crearne quante ne servono con <code>newCondition()</code>.", set: { c: { t: 'synchronized: 1 condition per oggetto' } } }
+    ]
+  };
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>synchronized: intrinsic locks</h1>
+  <p class="lede">In Java <b>every object</b> already contains a lock with a condition variable: the <b>intrinsic</b> lock (the Java specifications call it a monitor). It is used with the keyword <code>synchronized</code>. The delicate point is to understand <b>which object</b> acts as the lock.</p>
+</header>
+
+<section>
+  <h2><code>synchronized</code> block = lock + try/finally</h2>
+  <p>In Java every object already contains a lock, called the <b>intrinsic lock</b> (or monitor lock). The keyword <code>synchronized</code> uses it without having to create a <code>ReentrantLock</code>: it takes the lock on entering a block or a method and releases it on exiting. It does the same as the lock + try/finally idiom, with fewer lines and without the possibility of forgetting the unlock.</p>
+  <div class="colonne">
+    <div class="carta">
+      <h4>With a Lock</h4>
+      <pre class="cod" data-lang="java">Lock l = new ReentrantLock();
+l.lock();
+try {
+    // sezione critica
+} finally {
+    l.unlock();
+}</pre>
+    </div>
+    <div class="carta">
+      <h4>With the intrinsic lock</h4>
+      <pre class="cod" data-lang="java">Object o = new Object();
+synchronized (o) {
+    // sezione critica
+}</pre>
+      <p>The lock of <code>o</code> is taken on entering the block and released on exiting, <b>even</b> with an exception. And it is reentrant.</p>
+    </div>
+  </div>
+  <figure class="scena" data-scena="syncblock" data-titolo="The lock is released even with an exception"></figure>
+</section>
+
+<section>
+  <h2>On a method: which lock?</h2>
+  <p><code>synchronized</code> can also be written in front of a method. Then the important question is: <b>which object</b> provides the lock? It depends on whether the method is instance or static, and getting this answer wrong is the mistake of exercise 2.3.</p>
+  <figure class="passi" data-titolo="Three writings, two different locks">
+    <div class="passo">
+      <div class="espr">class C {
+  public <mark class="dato">synchronized</mark> T method() { … }
+}</div>
+      <p class="nota">Instance synchronized method…</p>
+    </div>
+    <div class="passo">
+      <div class="espr">class C {
+  public T method() { <mark class="dato">synchronized (this)</mark> { … } }
+}</div>
+      <p class="nota">…is equivalent to synchronizing on <b><code>this</code></b>: the lock of the object on which you call the method. Two different <code>C</code> objects = two different locks.</p>
+    </div>
+    <div class="passo">
+      <div class="espr">class C {
+  public <mark class="due">static synchronized</mark> T method() { … }
+}</div>
+      <p class="nota">Static synchronized method…</p>
+    </div>
+    <div class="passo">
+      <div class="espr">class C {
+  public static T method() { <mark class="due">synchronized (C.class)</mark> { … } }
+}</div>
+      <p class="nota">…is equivalent to synchronizing on <b><code>C.class</code></b>, the object that represents the class. There is only one: all the callers use the same lock.</p>
+    </div>
+  </figure>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Written</th><th>Lock used</th><th>Example from slides 44–45</th></tr></thead>
+    <tbody>
+      <tr><td><code>synchronized</code> on an instance method</td><td>the object <code>this</code></td><td>two threads with different <code>new C()</code>: <b>different locks</b>, no waiting</td></tr>
+      <tr><td><code>static synchronized</code></td><td>the object <code>C.class</code></td><td>two threads with different <code>new C()</code>: <b>same lock</b></td></tr>
+      <tr><td><code>synchronized (x) { … }</code></td><td>the object <code>x</code></td><td>you choose the object</td></tr>
+    </tbody>
+  </table></div>
+  <figure class="scena" data-scena="qualelock" data-titolo="this against C.class"></figure>
+</section>
+
+<section>
+  <h2>Exercise 2.3: the class <code>Mystery</code></h2>
+  <pre class="cod" data-lang="java">class Mystery {
+    private static double sum = 0;
+    public static synchronized void addStatic(double x) { sum += x; }
+    public synchronized void addInstance(double x)      { sum += x; }
+    public static synchronized double sum()             { return sum; }
+}</pre>
+  <p>Everything is <code>private</code> and all the methods are <code>synchronized</code>: it looks safe. It is not.</p>
+  <figure class="scena" data-scena="duelock" data-titolo="Two different locks on the same variable"></figure>
+  <figure class="codice" data-titolo="The correction without changing static/instance (compiled and run)">
+<pre data-lang="java">class Mystery {
+    private static double sum = 0;
+    public static synchronized void addStatic(double x) { sum += x; }
+    public synchronized void addInstance(double x) {
+        synchronized (Mystery.class) { sum += x; }
+    }
+    public static synchronized double sum() { return sum; }
+}</pre>
+    <ol class="spiega">
+      <li data-righe="3" data-segna="static synchronized@due"><p><code>addStatic</code> uses the lock of <code>Mystery.class</code>.</p></li>
+      <li data-righe="5" data-segna="synchronized (Mystery.class)@ok"><p>The access to <code>sum</code> in <code>addInstance</code> now also uses <code>Mystery.class</code>. The text forbids changing the modifiers, and this change leaves them intact.</p></li>
+      <li data-righe="4" data-segna="synchronized@due"><p>The remaining instance <code>synchronized</code> does no harm (it also takes the lock of <code>m</code>), but it is not what protects <code>sum</code>.</p></li>
+    </ol>
+  </figure>
+  <div class="box domanda-tua" data-tit="Exercise 2.3.4: is synchronized on sum() needed?">
+    <p>In <b>this</b> program no: <code>main</code> calls <code>sum()</code> after <code>t1.join()</code> and <code>t2.join()</code>. The last writes of the threads come before the join by the termination rule (lecture 3), so the read sees the final values without data race. In a class used by threads that read <b>while</b> others write, instead, it would be needed.</p>
+  </div>
+  <div class="box inglese" data-tit="In English (2.3.2)">
+    <p>"A synchronized instance method locks <code>this</code>, the Mystery object, while a static synchronized method locks <code>Mystery.class</code>. Since t1 and t2 hold different locks, their executions of <code>sum += x</code> are not mutually exclusive, and the non-atomic read-modify-write on the static field sum can interleave and lose updates."</p>
+  </div>
+</section>
+
+<section>
+  <h2><code>wait()</code>, <code>notify()</code>, <code>notifyAll()</code></h2>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>With <code>ReentrantLock</code> + <code>Condition</code></th><th>With <code>synchronized</code></th></tr></thead>
+    <tbody>
+      <tr><td><code>c.await()</code></td><td><code>o.wait()</code></td></tr>
+      <tr><td><code>c.signal()</code></td><td><code>o.notify()</code></td></tr>
+      <tr><td><code>c.signalAll()</code></td><td><code>o.notifyAll()</code></td></tr>
+      <tr><td>several conditions per lock (<code>newCondition()</code>)</td><td>only one condition per object</td></tr>
+    </tbody>
+  </table></div>
+  <p>In a <code>synchronized</code> method one writes <code>this.wait()</code>. <code>wait()</code> and <code>notify()</code> must be called <b>while holding</b> the lock of that object, that is inside <code>synchronized</code> on it.</p>
+  <figure class="scena" data-scena="waitlock" data-titolo="wait without the lock: the error"></figure>
+</section>
+
+</main>
+</body>
+</html>

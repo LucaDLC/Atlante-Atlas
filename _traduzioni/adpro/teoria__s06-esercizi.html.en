@@ -1,0 +1,195 @@
+@@s001 Testing the LazyList
+@@s002 ok:test passed,no:test failed,dato:imported implementation
+@@s003 dato:normal cell,no:bomb: explodes if computed,ok:never computed
+@@s004 dato:good element,no:bomb,ok:read without exploding
+@@s005 dato:input,due:Scala List (oracle),ok:equal,no:different
+@@s006 dato:infinite list,ok:lazy map,no:strict map
+@@s007 dato:this,due:that,no:bomb,ok:result
+@@s008 dato:right version,no:broken function,ok:at least one test fails,due:no test fails
+@@s009 Testing the LazyList
+@@s010 Week 6, exercises 1–10. The role is reversed: the LazyList is already there, the test file is yours to write. The grader runs your tests on many broken LazyLists (the <b>mutants</b>): every mutant you make fail is worth points. The right LazyList, <code>lazyList00</code>, must pass all your tests, otherwise you lose 35%. Only <code>Exercises.scala</code> is handed in. Theory: <a href="s06-pbt.html">Property-based testing</a>.
+@@s011 Exercise 1: three LazyLists, two tests
+@@s012 No code to write. The file already has two tests on <code>headOption</code> and, in the folder <code>subjects/</code>, three implementations of the LazyList. You change which one to import by commenting/uncommenting the lines at the top of the file, run the tests and see which one fails.
+@@s013 import
+@@s014 Ex01.01 (None on empty)
+@@s015 Ex01.02 (Some on non-empty)
+@@s016 why
+@@s017 <code>lazyList00</code>
+@@s018 OK
+@@s019 OK
+@@s020 is the version from the book
+@@s021 <code>lazyList01</code>
+@@s022 <b>NotImplementedError</b>
+@@s023 OK
+@@s024 <code>headOption</code> on <code>Empty</code> does <code>???</code>
+@@s025 <code>lazyList02</code>
+@@s026 OK
+@@s027 <b>Falsified</b>, label <code>singleton</code>, ARG_0: 0
+@@s028 <code>cons</code> always returns <code>Empty</code>: every list is empty
+@@s029 Outputs obtained by running the file with Scala 3.8.4 and ScalaCheck 1.19. When you hand in, leave <code>import lazyList00.*</code> active: the grader changes that line itself. Never write <code>lazyList00.something</code> in the code: everything must go through the import at the top.
+@@s030 The same tests, three implementations
+@@s031 The exercise file, line by line
+@@s032 The file is in the package <code>adpro.lazyList</code>, so <code>import lazyList00.*</code> means <code>adpro.lazyList.lazyList00.*</code>: the folder <code>subjects/lazyList00</code>. From here comes the type <code>LazyList</code> that the tests see. To try another implementation one puts <code>//</code> in front of this line and removes it from another. Only one active at a time.
+@@s033 Brings in the functions of the companion object of the imported LazyList: <code>empty</code>, <code>cons</code>, <code>from</code>, … So one writes <code>cons(1, empty)</code> instead of <code>LazyList.cons(1, LazyList.empty)</code>.
+@@s034 The container of the tests. <code>"testing"</code> is the prefix that appears in the output: <code>+ testing.Ex01.01: …</code>.
+@@s035 Converts a List into a LazyList. <code>la*</code> "unrolls" the list into the arguments of <code>LazyList.apply(as: A*)</code>: <code>LazyList(List(1, 2)*)</code> = <code>LazyList(1, 2)</code>.
+@@s036 Generator of non-empty LazyLists. <code>using Arbitrary[A]</code>: to make lists of A one must be able to generate As (for Int there already is one). It generates a random List, keeps only the non-empty ones (<code>suchThat</code>), and converts it.
+@@s037 Ex01.01, scenario test: a Boolean. The <code>headOption</code> of the empty list must be None.
+@@s038 Ex01.02. The <code>given</code> holds only inside this test: the <code>LazyList[Int]</code> of forAll will be non-empty. Two pieces joined with <code>&amp;&amp;</code>: a list of a single element n must give Some(n) (label <code>singleton</code>); a random non-empty list must not give None (label <code>random</code>).
+@@s039 Doubt: what differences are there between the 3 lists and the 3 checks?
+@@s040 The three folders are the <b>same file</b>, except for one piece. <code>lazyList01</code> changes only <code>headOption</code>: it adds <code>case Empty =&gt; ???</code> in front of the right version. <code>lazyList02</code> changes only the last line of <code>cons</code>: <code>Empty</code> in place of <code>Cons(() =&gt; head, () =&gt; tail)</code>. The checks are three, because Ex01.02 has two pieces (<code>singleton</code> and <code>random</code>). Separating them and running them one by one:
+@@s041 Ex01.01<br><code>empty.headOption == None</code>
+@@s042 singleton<br><code>cons(n, empty).headOption == Some(n)</code>
+@@s043 random<br><code>s.headOption != None</code>
+@@s044 <code>lazyList00</code>
+@@s045 None == None ✓
+@@s046 Some(n) == Some(n) ✓
+@@s047 Some(…) != None ✓
+@@s048 <code>lazyList01</code>
+@@s049 <b>??? → NotImplementedError</b>
+@@s050 ✓ (never goes through Empty)
+@@s051 <code>lazyList02</code>
+@@s052 ✓ (empty is empty anyway)
+@@s053 <b>None ≠ Some(0)</b>: Falsified
+@@s054 <b>Falsified, ARG_0: Empty</b>
+@@s055 With <code>lazyList02</code> <b>two</b> pieces fail, but the output of Ex01.02 says only <code>singleton</code>: with <code>&amp;&amp;</code> ScalaCheck reports the label of the first piece that fails. The <code>random</code> piece fails with <code>ARG_0: Empty</code>: the "non-empty" list is empty, because <code>list2lazyList</code> too uses the broken <code>cons</code> (checked).
+@@s056 In the output
+@@s057 Means
+@@s058 <code>+</code> at the start of the line
+@@s059 test passed
+@@s060 <code>!</code> at the start of the line
+@@s061 test failed
+@@s062 <code>OK, proved property.</code>
+@@s063 scenario test (a Boolean) true
+@@s064 <code>OK, passed 100 tests.</code>
+@@s065 forAll true on 100 random inputs
+@@s066 <code>Exception raised on property evaluation.</code>
+@@s067 the test died with an exception (e.g. <code>???</code>, a bomb)
+@@s068 <code>Falsified after N passed tests.</code>
+@@s069 the test gave false: wrong result
+@@s070 <code>Labels of failing property: singleton</code>
+@@s071 which piece (label <code>:|</code>) failed
+@@s072 <code>ARG_0: 0</code>
+@@s073 the input that made it fail, already shrunk
+@@s074 Why lazyList01 and lazyList02 fall
+@@s075 dato:input,ora:the broken piece,no:test failed,ok:test passed
+@@s076 The broken headOption: on the empty list it runs <code>???</code>.
+@@s077 The scenario test takes it immediately. Ex01.02 instead passes: it tests only non-empty lists, and there headOption works.
+@@s078 The broken cons: whatever you build, you get the empty list.
+@@s079 Real output: <code>Labels of failing property: singleton</code>, <code>ARG_0: 0</code> (after shrinking; the original was −1218911280).
+@@s080 With lazyList02 the empty list is empty as always: this test cannot notice the defect. That is why many different tests are needed.
+@@s081 The tools: bomb, toList, generators, oracle
+@@s082 Four tools are needed in almost all the exercises. Put them at the top of the <code>object</code>, after the generators already present.
+@@s083 Tools (in my test file: 13 tests out of 13 pass on lazyList00)
+@@s084 The <b>bomb</b>: a value of any type <code>A</code> that, as soon as it is computed, throws an exception. Put in a list where the function must not look, it becomes a sensor: if it explodes, the function has forced something it should not have.
+@@s085 The <code>n</code> and <code>m</code> of the exercises are non-negative. Small (up to 50) so that <code>n + m</code> does not overflow and the tests are fast. It is used by passing the generator to forAll: <code>forAll(genN) { n =&gt; … }</code>.
+@@s086 Default generator for <code>LazyList[Int]</code>: finite lists, <b>even empty</b>. It generates an ordinary List and converts it with <code>list2lazyList</code>, which is already in the file. The file already has <code>genNonEmptyLazyList[Int]</code> (non-empty) and <code>infiniteLazyList[Int]</code> (infinite) as well.
+@@s087 Tool
+@@s088 What it is for
+@@s089 Exercises
+@@s090 bomb
+@@s091 finding out whether a function forces heads or tails
+@@s092 <code>.toList</code> to compare
+@@s093 two LazyLists are never compared with <code>==</code>
+@@s094 all those with an equality
+@@s095 <code>genN</code>, generators of lists
+@@s096 n ≥ 0; finite lists, non-empty, infinite
+@@s097 all
+@@s098 Scala's List as oracle
+@@s099 the List is already right: the LazyList must agree with it
+@@s100 Doubt: did Arbitrary ever explain it? Is it required? Is it recommended?
+@@s101 <b>Explained:</b> little. Slide 16: the tree generator and the <code>given</code> that makes it the default, "so forAll finds it"; slide 20: Arbitrary among the "key types", with the link to the documentation. The file itself uses it, in Ex01.02. How it is made inside is the topic of week 7. <b>Required:</b> no. <b>Recommended:</b> the PDF recommends your own <b>generator</b> of LazyLists ("probably a good idea"); making it a <code>given Arbitrary</code> is only convenience.
+@@s102 Difference: with the <code>given</code> you write <code>forAll { (l: LazyList[Int]) =&gt; … }</code> and forAll finds the generator by itself; with <code>Gen</code> you pass it yourself among the first brackets. Both versions: 13 tests out of 13 pass on lazyList00 and the 13 mutants fail (checked).
+@@s103 The bomb: a sensor that goes off if someone computes it
+@@s104 Laziness: exercises 2, 3, 4, 7
+@@s105 These four exercises ask you to check what a function does <b>not</b> compute. A right result is not enough: one needs a list with bombs placed exactly where the function must not look. If the test finishes without explosions, it returns <code>true</code>.
+@@s106 <b>Ex. 2</b>: <code>headOption</code> does not force the tail → bomb in the <b>tail</b>: <code>cons(n, bomba)</code>.
+@@s107 <b>Ex. 3</b>: <code>take</code> forces neither heads nor tails → one list of bomb-heads and one with a bomb-tail; one calls <code>take(n)</code> without looking at the result.
+@@s108 <b>Ex. 4</b>: <code>take(n)</code> does not force head number n+1, not even if you force the first n → n good elements and then a bomb; <code>take(n).toList</code>.
+@@s109 <b>Ex. 7</b>: <code>drop(n)</code> does not force the discarded heads, not even if you then force the rest → n bombs and then good elements; <code>drop(n).toList</code>.
+@@s110 Inside headOption: the envelope of the tail is never opened
+@@s111 dato:head envelope,no:tail envelope (bomb),ora:what happens,ok:result
+@@s112 A cell of the LazyList contains two <b>sealed envelopes</b>: <code>h</code> (the head) and <code>t</code> (the tail). They are functions: the content is computed only by calling them, <code>h()</code> and <code>t()</code>. <b>Forcing</b> = opening the envelope.
+@@s113 Building the list opens nothing: <code>cons</code> receives head and tail by name and seals them in the envelopes.
+@@s114 foldRight opens the head's envelope (<code>h()</code> → 7). The second argument of f is <b>by name</b> (<code>=> B</code>): ⟨…⟩ stays closed, <code>t()</code> is not yet called.
+@@s115 <code>_</code> means "I do not look at this argument": ⟨…⟩ is never computed, the tail's envelope stays closed, the bomb intact.
+@@s116 A headOption that opens the tail before answering makes the bomb explode: the test fails, mutant killed (checked, both with <code>cons(7, bomba)</code> and with forAll).
+@@s117 Doubt: I wrote the bomb but the test does not work
+@@s118 In your file the bomb was written with <b>4 spaces</b> in front, just below <code>/* The test suite */</code>. In Scala 3 indentation decides what is inside what, as in Python, and a comment closes nothing. The significant line before was <code>Gen.const(loop)</code>, at 4 spaces, inside <code>infiniteLazyList</code>: so the bomb too ended up <b>inside</b> <code>infiniteLazyList</code>, invisible to the tests.
+@@s119 Rule: the <code>def</code> and <code>property</code> of the object are at <b>2 spaces</b>, their body at 4.
+@@s120 Doubt: does ex. 3 want take not to force the type Any?
+@@s121 No: it is English, not Scala. <i>"does not force any heads nor any tails"</i> = "does not force <b>no</b> head and <b>no</b> tail". <i>any</i> in a negative sentence means "none"; Scala's type <code>Any</code> has nothing to do with it. Calling <code>l.take(n)</code> must not open even one envelope of the list <code>l</code>: the heads are computed only when someone reads the result (for example with <code>toList</code>), and that is ex. 4.
+@@s122 Ex. 3: how the two lists discover who opens heads and tails
+@@s123 no:bomb that explodes,ok:no explosion,ora:the broken line
+@@s124 The test runs the lines in order. If one of the first two explodes, <code>true</code> is never reached and ScalaCheck writes <code>Exception raised on property evaluation</code>. The result of take is not looked at.
+@@s125 <code>cons</code> receives head and tail by name: neither <code>h()</code> nor <code>t()</code> is called.
+@@s126 It opens the heads: the list with the bomb-heads catches it.
+@@s127 It opens the tails: the list with the bomb-tail catches it. That is why both are needed.
+@@s128 Ex. 2 step by step: the method for all the exercises
+@@s129 dato:element,no:bomb,ora:what changes,ok:passes
+@@s130 1. Read the sentence: "headOption does not force the tail of a lazy list".
+@@s131 What it must <b>not</b> do: compute the tail.
+@@s132 2. Put a bomb exactly there: a list with a good head and a <mark class="no">bomb-tail</mark>.
+@@s133 If headOption computes the tail, it explodes.
+@@s134 Check the result too: no explosion <b>and</b> the right head.
+@@s135 foldRight passes the tail by name, and the function throws it away with <code>_</code>: the bomb is never computed. The test must pass on the right version.
+@@s136 A headOption that computes the tail makes the bomb explode: mutant killed (real output, <code>ARG_0: 0</code>). The test must fail on the broken version.
+@@s137 Ex. 4 inside take: with n = 3 the fourth cell is not even built
+@@s138 dato:good element,no:bomb,ora:the take case used,ok:result
+@@s139 cons(1, …(2, 2)) → cons(2, …(1, 3)) → cons(3, …(0, 4)) → cons(bomb, empty). This recursion too is inside cons, so it unrolls only when someone opens the tails.
+@@s140 n = 3 &gt; 1: takes the head and refers to the rest with n − 1. Nothing is open yet.
+@@s141 With n = 1 take takes the head and puts <code>empty</code> as the tail: the tail of the third cell (<code>_</code>) is never called, so the cell with the bomb does not even exist.
+@@s142 <code>List.range(a, b)</code> goes from a to b <b>excluded</b>: that is why one writes <code>n + 1</code>.
+@@s143 With n = 0 the list is only the bomb; a take that looks at it anyway explodes (real output).
+@@s144 Show the solution (ex. 2, 3, 4, 7)
+@@s145 Where to put the bombs, exercise by exercise
+@@s146 Read: exercises 5, 6, 8
+@@s147 Three algebraic laws to try with <code>forAll</code>: <code>l.take(n).take(n) == l.take(n)</code>, <code>l.drop(n).drop(m) == l.drop(n + m)</code>, <code>l.map(identity) == l</code>. The <code>==</code> written in the exercises is mathematical: in the code one compares the <code>.toList</code>. For infinite lists one compares only a piece, with <code>take(k).toList</code>.
+@@s148 Ex. 6: the law and the oracle on a drop that discards one less
+@@s149 dato:input,ok:equal,no:different,due:oracle
+@@s150 The law: discarding n and then m is like discarding n + m at once.
+@@s151 Also when one discards more than the length: empty list from both sides.
+@@s152 Real output: <code>Falsified after 8 passed tests</code>, <code>Labels: oracle</code>, <code>ARG_0: List("0")</code>, <code>ARG_1: 1</code>. The oracle catches it with the smallest possible example.
+@@s153 Show the solution (ex. 5, 6, 8)
+@@s154 Compare with toList, and use the List as referee
+@@s155 Infinite lists: exercise 9
+@@s156 "map terminates on infinite lists": do <code>map</code> on an infinite list and then take a finite piece. If <code>map</code> is lazy, it computes only that piece; if it is strict, it tries to compute the whole list and never finishes (in practice: <code>StackOverflowError</code>, which counts as a failed test). The infinite lists are given by <code>infiniteLazyList[Int]</code>, already in the file.
+@@s157 Show the solution (ex. 9)
+@@s158 lazy map against strict map on an infinite list
+@@s159 append: exercise 10
+@@s160 Here you choose the properties. Three ideas: the <b>oracle</b> (append must do what <code>++</code> of the Lists does); the <b>laziness</b> (<code>append</code> receives <code>that</code> by name, so it must not compute it until it is needed); the <b>infinite lists</b> (what you attach after an infinite list is never seen).
+@@s161 Show the solution (ex. 10)
+@@s162 append: lazy only if this is not empty
+@@s163 The mutants: how to check your tests
+@@s164 We do not have the grader's mutants, but one can make them: copy <code>lazyList00</code>, break <b>one</b> function and see whether at least one test fails. I made 13; with the solution of this page they are all killed, and lazyList00 passes all 13 tests (checked).
+@@s165 Mutant (one function broken)
+@@s166 Killed by
+@@s167 headOption computes the tail before answering
+@@s168 Ex02
+@@s169 headOption returns the last instead of the first
+@@s170 Ex02
+@@s171 take computes the heads at once
+@@s172 Ex03
+@@s173 take computes the tails at once
+@@s174 Ex03
+@@s175 take touches head n+1
+@@s176 Ex03, Ex04
+@@s177 take does not stop: with n ≥ 1 it returns the whole rest of the list
+@@s178 Ex04, Ex05 (on the infinite list it never ends)
+@@s179 drop computes the discarded heads
+@@s180 Ex07
+@@s181 drop discards one element less
+@@s182 Ex06, Ex07
+@@s183 strict map (computes the whole tail)
+@@s184 Ex09
+@@s185 map loses the first element
+@@s186 Ex08, Ex09
+@@s187 append ignores that
+@@s188 Ex10.01
+@@s189 append computes that at once
+@@s190 Ex10.02, Ex10.03
+@@s191 append puts that in front
+@@s192 Ex10.01, Ex10.02, Ex10.03
+@@s193 The two rules that earn points
+@@s194 <b>1.</b> Every one of your tests must pass on <code>lazyList00</code>: a wrong test that fails on the right version costs 35%. <b>2.</b> Every requested function (headOption, take, drop, map, append) must have tests on both the <b>result</b> and the <b>laziness</b>: the mutants break one or the other.
+@@s195 A mutant: killed or survived

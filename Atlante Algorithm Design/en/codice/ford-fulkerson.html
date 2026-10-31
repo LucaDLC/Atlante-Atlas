@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Code: Ford-Fulkerson in Java</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Code: Ford-Fulkerson in Java</h1>
+  <p class="lede">The maximum flow with augmenting paths: matrix of residual capacities, BFS on the residual network, bottleneck and cancellation of the flow.</p>
+</header>
+
+<section>
+  <h2>The residual network</h2>
+  <p>The residual capacity is a matrix: <code>cap[u][v]</code> is how much I can still send from u to v. Suitable for small graphs.</p>
+  <figure class="codice" data-titolo="The residual network">
+<pre data-lang="java">import java.io.*;
+import java.util.*;
+
+public class Main {
+    static int n;
+    static int[][] cap;      // capacità residua: cap[u][v] = quanto posso ancora mandare da u a v
+
+    public static void main(String[] args) throws IOException {
+        BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
+        StringTokenizer st = new StringTokenizer(in.readLine());
+        n = Integer.parseInt(st.nextToken());
+        int m = Integer.parseInt(st.nextToken());
+        int s = Integer.parseInt(st.nextToken());
+        int t = Integer.parseInt(st.nextToken());
+
+        cap = new int[n][n];                   // matrice: adatta a grafi piccoli (n piccolo)
+        for (int i = 0; i &lt; m; i++) {
+            st = new StringTokenizer(in.readLine());
+            int u = Integer.parseInt(st.nextToken());
+            int v = Integer.parseInt(st.nextToken());
+            cap[u][v] += Integer.parseInt(st.nextToken());
+        }
+
+        // Finché trovo un cammino s→t nella rete residua, aumento il flusso del collo di bottiglia.
+        int flusso = 0;
+        while (true) {
+            int[] padre = new int[n];
+            Arrays.fill(padre, -1);
+            padre[s] = s;
+            Deque&lt;Integer&gt; coda = new ArrayDeque&lt;&gt;();
+            coda.add(s);
+            while (!coda.isEmpty() &amp;&amp; padre[t] == -1) {    // BFS sulla residua
+                int u = coda.poll();
+                for (int v = 0; v &lt; n; v++) {
+                    if (padre[v] == -1 &amp;&amp; cap[u][v] &gt; 0) {
+                        padre[v] = u;
+                        coda.add(v);
+                    }
+                }
+            }
+            if (padre[t] == -1) {
+                break;                                     // nessun cammino: flusso massimo
+            }
+            int collo = Integer.MAX_VALUE;                 // collo di bottiglia del cammino
+            for (int v = t; v != s; v = padre[v]) {
+                collo = Math.min(collo, cap[padre[v]][v]);
+            }
+            for (int v = t; v != s; v = padre[v]) {
+                cap[padre[v]][v] -= collo;                 // l'avanti si riduce
+                cap[v][padre[v]] += collo;                 // l'indietro cresce: si può disfare
+            }
+            flusso += collo;
+        }
+        System.out.println("flusso massimo " + flusso);
+    }
+}</pre>
+    <ol class="spiega">
+    <li data-righe="16"><p>n×n matrix: <code>cap[u][v]</code> is the capacity of the edge u→v, 0 if there is none.</p></li>
+    <li data-righe="21"><p><code>+=</code> for parallel edges: two edges u→v add up.</p></li>
+    </ol>
+  </figure>
+  <div class="box basi" data-tit="Syntax notes"><ul><li><code>static</code> on the class's global variables: the <code>main</code> method uses them without passing them.</li></ul></div>
+</section>
+<section>
+  <h2>Augmenting path</h2>
+  <p>A BFS on the residual network finds a path s→t. The bottleneck is the minimum capacity along the path: that amount passes.</p>
+  <figure class="codice" data-titolo="Augmenting path">
+<pre data-lang="java">import java.io.*;
+import java.util.*;
+
+public class Main {
+    static int n;
+    static int[][] cap;      // capacità residua: cap[u][v] = quanto posso ancora mandare da u a v
+
+    public static void main(String[] args) throws IOException {
+        BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
+        StringTokenizer st = new StringTokenizer(in.readLine());
+        n = Integer.parseInt(st.nextToken());
+        int m = Integer.parseInt(st.nextToken());
+        int s = Integer.parseInt(st.nextToken());
+        int t = Integer.parseInt(st.nextToken());
+
+        cap = new int[n][n];                   // matrice: adatta a grafi piccoli (n piccolo)
+        for (int i = 0; i &lt; m; i++) {
+            st = new StringTokenizer(in.readLine());
+            int u = Integer.parseInt(st.nextToken());
+            int v = Integer.parseInt(st.nextToken());
+            cap[u][v] += Integer.parseInt(st.nextToken());
+        }
+
+        // Finché trovo un cammino s→t nella rete residua, aumento il flusso del collo di bottiglia.
+        int flusso = 0;
+        while (true) {
+            int[] padre = new int[n];
+            Arrays.fill(padre, -1);
+            padre[s] = s;
+            Deque&lt;Integer&gt; coda = new ArrayDeque&lt;&gt;();
+            coda.add(s);
+            while (!coda.isEmpty() &amp;&amp; padre[t] == -1) {    // BFS sulla residua
+                int u = coda.poll();
+                for (int v = 0; v &lt; n; v++) {
+                    if (padre[v] == -1 &amp;&amp; cap[u][v] &gt; 0) {
+                        padre[v] = u;
+                        coda.add(v);
+                    }
+                }
+            }
+            if (padre[t] == -1) {
+                break;                                     // nessun cammino: flusso massimo
+            }
+            int collo = Integer.MAX_VALUE;                 // collo di bottiglia del cammino
+            for (int v = t; v != s; v = padre[v]) {
+                collo = Math.min(collo, cap[padre[v]][v]);
+            }
+            for (int v = t; v != s; v = padre[v]) {
+                cap[padre[v]][v] -= collo;                 // l'avanti si riduce
+                cap[v][padre[v]] += collo;                 // l'indietro cresce: si può disfare
+            }
+            flusso += collo;
+        }
+        System.out.println("flusso massimo " + flusso);
+    }
+}</pre>
+    <ol class="spiega">
+    <li data-righe="44"><p>The bottleneck starts from the maximum: each edge of the path reduces it.</p></li>
+    <li data-righe="49"><p>The forward edge loses capacity.</p></li>
+    <li data-righe="50"><p>The backward edge gains: it is the cancellation of the flow, the residual network.</p></li>
+    </ol>
+  </figure>
+  <div class="box basi" data-tit="Syntax notes"><ul><li>The <code>for</code> that climbs the parents goes from <code>t</code> to <code>s</code>: to reconstruct the path backwards.</li></ul></div>
+</section>
+<section>
+  <h2>Running it</h2>
+  <p>Example of input and output (actually compiled and run).</p>
+  <pre class="cod">4 5 0 3
+0 1 1
+0 2 1
+1 2 1
+1 3 1
+2 3 1
+
+(output)
+flusso massimo 2</pre>
+</section>
+<section>
+  <h2>The theory, side by side</h2>
+  <p><a href="../teoria/ford-fulkerson.html"><b>← Back to the theory of this topic</b></a></p>
+</section>
+
+</main>
+</body>
+</html>

@@ -1,0 +1,51 @@
+@@s001 Foldable: reducere med en monoid
+@@s002 ora:element der kommer ind,ok:akkumulator,dato:elementerne i listen
+@@s003 <code>foldLeft(0)(+)</code> på List(1, 2, 3, 4). Den starter fra det neutrale 0 og tager ét element ad gangen, fra venstre. Akkumulatoren er den værdi, der føres videre.
+@@s004 Første trin: 0 + 1 = 1. Akkumulatoren bliver 1.
+@@s005 Andet trin: 1 + 2 = 3.
+@@s006 Tredje trin: 3 + 3 = 6.
+@@s007 Sidste trin: 6 + 4 = 10. Sum og 0 danner en monoid, så resultatet 10 afhænger ikke af den rækkefølge, trinene tages i.
+@@s008 dato:elementer,ora:transformation eller kombination,ok:delresultat eller endeligt resultat
+@@s009 <b>foldMap</b> med f(x) = x · x og monoiden for summen (Int, +, 0). Først transformerer jeg hvert element med f, derefter kombinerer jeg alt med monoiden.
+@@s010 <b>map</b>: f anvendes på hvert element. Værdierne bliver 1, 4, 9, 16: nu er de værdier af B = Int, klar til monoiden.
+@@s011 Monoiden gør det muligt at dele værdierne op i <b>grupper</b>. Hver gruppe reduceres for sig selv, også på en anden processor: 1 ⊕ 4 = 5 og 9 ⊕ 16 = 25.
+@@s012 De to halvdele samles igen: 5 ⊕ 25 = 30. Enhver gruppering giver 30, takket være associativiteten.
+@@s013 dato:listens stykker,ora:arbejde i gang,ok:resultat
+@@s014 En liste med seks værdier, delt i to <b>stykker</b>. Monoiden gør det muligt for hvert stykke at blive reduceret for sig selv.
+@@s015 To workers arbejder <b>på samme tid</b>: den ene reducerer 1, 2, 3, den anden 4, 5, 6.
+@@s016 Hver har et delresultat: 6 og 15. Ingen af dem venter på den anden.
+@@s017 Sidste trin: 6 ⊕ 15 = 21. Det samme resultat som en seriel reduktion, uanset antallet af stykker. Det er idéen bag MapReduce (Spark).
+@@s018 ora:container under undersøgelse,ok:alle bruger den samme foldMap
+@@s019 Foldable er en type class over en <b>typekonstruktør</b>: F[_] er ikke en konkret type, men en container, der skal fyldes. <code>F[A]</code> er "en F af A".
+@@s020 F = <b>List</b>: en følge af mange værdier A.
+@@s021 F = <b>Option</b>: højst én værdi A. Hvis det er None, returnerer fold det neutrale element.
+@@s022 F = <b>Tree</b>: blade med værdier og grene. Fold besøger alle bladene.
+@@s023 Traiten <code>Foldable[F[_]]</code> beskriver adfærden for <b>enhver</b> F: én enkelt grænseflade, med <code>foldMap</code>, <code>foldLeft</code> og <code>foldRight</code>.
+@@s024 <span>Uge 9</span>
+@@s025 Foldable: reducere med en monoid
+@@s026 Et fold reducerer en samling til én enkelt værdi. Hvis operationen er en <a href="s09-monoid.html">monoid</a>, afhænger resultatet ikke længere af rækkefølgen og grupperingerne: man kan omordne arbejdet eller dele det mellem flere processorer.
+@@s027 Fra fold til monoid
+@@s028 <code>foldLeft(z)(f)</code> tager en startværdi <code>z</code> og en operation <code>f</code>, og reducerer samlingen fra venstre; <code>foldRight(z)(f)</code> reducerer fra højre. Med en vilkårlig operation har retningen betydning. Eksempel med subtraktion på List(1, 2, 3):
+@@s029 <code>foldLeft(0)(_ - _)</code> gør ((0 − 1) − 2) − 3 = <b>−6</b>;
+@@s030 <code>foldRight(0)(_ - _)</code> gør 1 − (2 − (3 − 0)) = <b>2</b>.
+@@s031 Med en monoid er <code>z</code> det neutrale element, og <code>f</code> er <code>combine</code>. <b>Associativiteten</b> gør grupperingen ligegyldig, og det <b>neutrale element</b> gør startværdien harmløs. Derfor giver <code>foldLeft</code> og <code>foldRight</code> det samme resultat på summen.
+@@s032 foldLeft med summen: akkumulatoren starter fra 0
+@@s033 foldMap: map og derefter reducer
+@@s034 Signaturen er <code>def foldMap[B: Monoid](f: A =&gt; B): B</code>. Læs den sådan:
+@@s035 <code>f: A =&gt; B</code> omdanner hvert element til en værdi af en anden type B;
+@@s036 <code>[B: Monoid]</code> siger, at B er en monoid: der findes en instans af <code>Monoid[B]</code> at bruge til at kombinere;
+@@s037 resultatet er én enkelt værdi af typen B.
+@@s038 I praksis er <code>foldMap</code> <code>map(f)</code> efterfulgt af <code>concatenate</code>. Typen B kan være forskellig fra A: her er A = Int og B = Int, men i andre tilfælde er B en streng, en længde, et maksimum. Implementeringen af <code>foldMap</code> er kursets opgave 5: her ser du idéen.
+@@s039 foldMap: omdan, derefter kombiner i grupper
+@@s040 F[_]: containeren er en parameter
+@@s041 I <code>Foldable[F[_]]</code> er bogstavet F ikke en type, men en <b>typekonstruktør</b>: en regel, der, givet en type A, producerer en type som <code>List[A]</code>, <code>Option[A]</code>, <code>Tree[A]</code>. Symbolet <code>[_]</code> siger, at F tager en type som argument. Den kaldes en <i>higher-kinded type</i>, en type af højere orden.
+@@s042 Hvorfor det er nyttigt: én enkelt grænseflade dækker alle containerne. Lister, options, træer, <code>LazyList</code> og iteratorer er alle foldable: de kan reduceres med den samme <code>foldMap</code>.
+@@s043 Tre containere, én enkelt grænseflade
+@@s044 concatenate og reduktioner i stykker
+@@s045 <code>concatenate(as)</code> reducerer en samling af værdier, der allerede er i en monoid: den starter fra det neutrale element og kombinerer alle elementerne med <code>combine</code>. Det er grundlaget for fold: <code>foldLeft(m.empty)(m.combine)</code>.
+@@s046 Monoidens fordel er, at arbejdet kan deles op. Hvert stykke reduceres til en værdi, og værdierne kombineres igen. På flere processorer er det princippet bag <b>MapReduce</b> (brugt af Spark): hver worker gør sin del, og derefter kombineres de delvise resultater.
+@@s047 To workers, to stykker, ét resultat
+@@s048 Pas på
+@@s049 Parallelisering virker kun, hvis typen virkelig er en monoid. Med subtraktion ændrer det at dele listen resultatet: compileren melder ikke det.
+@@s050 Hvor det bruges
+@@s051 Koden til folds på en monoid, med <code>foldMap</code> lavet som <code>map</code> efterfulgt af <code>concatenate</code>, står på <a href="../esempi/s09-foldable.html">siden med eksempler side om side</a>. Næste trin, hvor <code>map</code> laves på containerne, er <a href="s09-functor.html">siden om functor</a>.

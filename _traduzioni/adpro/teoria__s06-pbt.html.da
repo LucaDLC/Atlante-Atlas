@@ -1,0 +1,95 @@
+@@s001 Property-based testing
+@@s002 dato:input valgt af dig,due:tilfældigt input,ok:består,no:fejler
+@@s003 due:tilfældigt kast,ok:egenskab sand,no:modeksempel
+@@s004 no:modeksempel,ok:efter shrinking
+@@s005 dato:pre-betingelse,due:post-betingelse,ok:består,no:undtagelse
+@@s006 dato:generator,ok:producerede værdier,due:forbindelse til uge 5
+@@s007 dato:scenarie (en Boolean),due:egenskab (forAll),ok:testens output
+@@s008 Property-based testing
+@@s009 Uge 6, slide 2 og 15–19. Scenarietest beviser kun de tilfælde, du har forestillet dig. Property-based testing (PBT) skriver en <b>lov</b>, der skal gælde for alle input, og beviser den derefter på mange input, genereret tilfældigt med biblioteket ScalaCheck. Kontrakterne fra <a href="s06-contratti.html">forrige side</a> bliver til tests.
+@@s010 Scenarier mod egenskaber
+@@s011 Problemet (slide 2): en <b>scenarietest</b> (unit test) beviser kun de situationer, du har skrevet en testcase for, altså dem du havde forudset. For at dække meget kræves mange cases skrevet i hånden: det koster, og netop de tilfælde, du ikke tænkte på, forbliver udenfor.
+@@s012 Løsningen: generer testdata <b>automatisk</b>, tilfældigt men på en kontrolleret måde (med generatorerne, som vi kan lave siden uge 5), og skriv testen som en <b>egenskab</b>, der skal gælde for alle disse input.
+@@s013 Scenarietest
+@@s014 Egenskabstest (PBT)
+@@s015 hvad du skriver
+@@s016 et eksempel: input og forventet resultat
+@@s017 en lov: "for ethvert input gælder …"
+@@s018 hvor det kommer fra
+@@s019 fra kravene
+@@s020 fra pre/post-betingelser, invarianter, API'ens love
+@@s021 godt til
+@@s022 præcise grænsetilfælde, fejl set før (regressioner)
+@@s023 tilfælde du ikke havde forudset
+@@s024 værktøjer
+@@s025 JUnit, scalatest, …
+@@s026 QuickCheck, ScalaCheck, …
+@@s027 i ScalaCheck
+@@s028 <code>property("…") = </code>en Boolean
+@@s029 <code>property("…") = forAll { … }</code>
+@@s030 PBT-processen (slide 17): <b>1.</b> formulér lovene (at tænke på pre, post og invarianter hjælper); <b>2.</b> generer tilfældige data; <b>3.</b> test lovene på disse data. Det ligger tættere på formel verifikation, men er stadig let. Det erstatter ikke scenarier: de bruges sammen.
+@@s031 En forkert lov: scenariet godkender den, forAll afviser den
+@@s032 forAll: loven testet på 100 input
+@@s033 <code>forAll</code> er matematikkens "for hver" (en <b>kvantor</b>). Man giver den en funktion, der modtager input og returnerer en Boolean; ScalaCheck genererer 100 tilfældige input og kalder den på hvert. Hvis den altid er sand, består testen; ved den første falske stopper den og viser input'et, der fik den til at fejle (<b>modeksemplet</b>).
+@@s034 De tre love for map på træer (slide 15, fra testene i uge 3)
+@@s035 Input'et er <b>parametrene</b> i lambdaen: her et tilfældigt træ <code>t</code>. Loven: map med identitetsfunktionen ændrer intet.
+@@s036 ScalaCheck genererer også tilfældige <b>funktioner</b> (<code>f: Int =&gt; Int</code>). Loven: map ændrer ikke antallet af noder.
+@@s037 map to gange = map én gang med de to funktioner sammensat (<code>g compose f</code> = først f, derefter g). De tre love sammen er en delvis kontrakt for map, med pre true.
+@@s038 To terninger: forAll kaster, indtil der kommer dobbelt seks
+@@s039 At læse outputtet: modeksempel og shrinking
+@@s040 Når en egenskab fejler, udskriver ScalaCheck <code>! Falsified after N passed tests.</code> og de argumenter, der fik den til at fejle: <code>ARG_0</code> er lambdaens første parameter, <code>ARG_1</code> den anden, og så videre. Før den udskriver dem, <b>formindsker</b> den dem (shrinking): den prøver mindre versioner og beholder den mindste, der stadig fejler. <code>ARG_0_ORIGINAL</code> er modeksemplet, som det var før.
+@@s041 Tre rigtige outputs (Scala 3.8.4, ScalaCheck 1.19)
+@@s042 no:fejler,ok:består,dato:modeksempel
+@@s043 Post-betingelsen for abs, testet på 100 Int. ScalaCheck's Int-generator prøver med vilje de yderste værdier (0, 1, −1, Int.MinValue, Int.MaxValue): den fandt overflowet.
+@@s044 Shrinking'en bragte et modeksempel fra 3 enorme tal ned til List(0, −1). ScalaCheck 1.19 udskriver elementerne i anførselstegn, men de er Int.
+@@s045 Den rigtige lov: at køre to gange bringer listen tilbage, som den var.
+@@s046 Fra det enorme modeksempel til det mindste
+@@s047 ==&gt;: pre-betingelsen inde i testen
+@@s048 Med en scenarietest bevises kontrakten for <code>get</code> sådan her: vælg <code>Some(1)</code>, kald <code>get</code>, kontrollér at den giver 1. To mangler (slide 18): for et andet tal skal man skrive en anden test; og kontrakten ses ikke nogen steder. Med PBT bliver kontrakten selve testen:
+@@s049 Kontrakten for get som egenskabstest (slide 18)
+@@s050 Kvantoren: "for hver Option af Int".
+@@s051 <code>==&gt;</code> er implikationen: "hvis … så …". Hvis venstresiden er falsk (her: oa er None), <b>kasseres</b> input'et; det tæller hverken som succes eller fejl.
+@@s052 Post-betingelsen, kun kontrolleret på input, der overholder pre'en. Hundrede tests uden tabeller af cases og uden løkker.
+@@s053 Uden ==&gt; springer den None.get over; med ==&gt; kasseres None
+@@s054 Generatorer: Gen og Arbitrary
+@@s055 ScalaCheck har to nøgletyper. <b><code>Gen[A]</code></b> er en generator af tilfældige værdier af typen A: samme idé som <code>Rand[A]</code> i uge 5, og ligesom Rand har den <code>map</code>, <code>flatMap</code> og dermed for/yield. <b><code>Arbitrary[A]</code></b> er <b>standardgeneratoren</b> for typen A, den som <code>forAll</code> selv leder efter blandt <code>given</code>'erne, når man skriver <code>forAll { (x: A) =&gt; … }</code>. Når man tester en ny type, skriver man en generator til den; derefter skriver man som regel langt flere tests end generatorer.
+@@s056 Træ-generatoren (slide 16, fra testene i uge 3)
+@@s057 For at lave træer af A skal man kunne lave A'er: <code>using</code> beder om en <code>Arbitrary[A]</code>, som compileren selv finder blandt givens (for Int findes der allerede en).
+@@s058 En snydemønt: true 7 gange ud af 8. Den bruges til at afgøre blad eller gren.
+@@s059 Med true: et blad. <code>arbA.arbitrary</code> er en <code>Gen[A]</code>; med <code>map</code> sætter den værdien i et <code>Leaf</code>.
+@@s060 Med false: en gren med to undertræer genereret på samme måde (rekursion). Da blade er 7 ud af 8, bliver træerne små, og rekursionen slutter.
+@@s061 <code>given</code> gør generatoren til standarden for <code>Tree[A]</code>: herfra virker <code>forAll { (t: Tree[Int]) =&gt; … }</code>.
+@@s062 Et stykke ScalaCheck
+@@s063 Hvad det gør
+@@s064 Eksempel (kørt)
+@@s065 <code>Gen.choose(a, b)</code>
+@@s066 et tal mellem a og b
+@@s067 <code>Gen.choose(1, 6)</code>: 3, 4, 1, 3, 5, 2, …
+@@s068 <code>Gen.frequency(p -&gt; g, …)</code>
+@@s069 vælger med vægte
+@@s070 <code>7 -&gt; true, 1 -&gt; false</code>: true 7 gange ud af 8
+@@s071 <code>Gen.const(x)</code>
+@@s072 altid x
+@@s073 brugt i øvelsens fil til uendelige lister
+@@s074 <code>arbitrary[A]</code>
+@@s075 standard-Gen af A
+@@s076 <code>arbitrary[Int]</code>: 1, 1664308277, −2147483648, …
+@@s077 <code>g.suchThat(p)</code>
+@@s078 beholder kun de værdier, der opfylder p
+@@s079 <code>arbitrary[List[Int]].suchThat(_.nonEmpty)</code>: ikke-tomme lister
+@@s080 <code>g.sample</code>
+@@s081 en prøveværdi (Option)
+@@s082 for at se, hvad en generator producerer
+@@s083 Fra terningen til terningerne: Gen komponeres som Rand
+@@s084 Sådan er en testfil i kurset
+@@s085 Alle filerne <code>Exercises.test.scala</code> fra de foregående uger og øvelsesfilen for denne uge er skrevet sådan her. Denne uge bytter rollerne: koden (LazyList) findes allerede, og testfilen skriver du.
+@@s086 Fra øvelsesfilen i uge 6
+@@s087 Et objekt, der udvider <code>Properties</code>: det er beholderen for testene. <code>"testing"</code> er præfikset, der vises i outputtet.
+@@s088 En <b>scenarietest</b>: til højre står en Boolean. Output: <code>OK, proved property.</code>
+@@s089 Inde i testen erklæres standardgeneratoren for <code>LazyList[Int]</code>: kun ikke-tomme lister. Det gælder kun inde i denne test.
+@@s090 To egenskaber forenet med <code>&amp;&amp;</code>, hver med en etiket <code>:|</code>. Hvis den fejler, siger outputtet, hvilken af de to: <code>Labels of failing property: …</code>.
+@@s091 Scenarie, egenskab, etiketter: hvad outputtet skriver
+@@s092 Ugens homework på én linje
+@@s093 Skriv tests for <code>headOption</code>, <code>take</code>, <code>drop</code>, <code>map</code>, <code>append</code> på LazyList. Autograderen kører dem på ødelagte versioner af LazyList (<b>mutanterne</b>): jo flere mutanter du får til at fejle, desto flere point. Den rigtige version (<code>lazyList00</code>) skal bestå alle dine tests, ellers mister du 35%.
+@@s094 Færdige sætninger (skriftlig eksamen)
+@@s095 "Property-based testing states laws that must hold for all inputs, generates random inputs, and checks the laws on them; ScalaCheck shrinks a failing input to a minimal counterexample."

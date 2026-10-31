@@ -1,0 +1,74 @@
+@@s001 Monoid: combinare e avere un neutro
+@@s002 ora:cosa spiego adesso,ok:risultato,dato:esempio
+@@s003 Un <b>monoid</b> è fatto di un <b>tipo A</b> e di due cose su A: un'operazione <b>⊕</b> (in Scala <code>combine</code>) e un <b>elemento neutro 0</b> (in Scala <code>empty</code>). Qui A è Int.
+@@s004 <b>⊕</b> prende due valori di A e ne restituisce uno. Per Int, ⊕ è la somma <code>+</code>.
+@@s005 <b>0</b> è il neutro: combinato con un altro valore non lo cambia. Per la somma il neutro è 0, perché x + 0 = x.
+@@s006 Esempio delle slide, (Int, 0, +): 2 + 3 = 5 e 5 + 0 = 5. Il neutro non cambia niente.
+@@s007 Stesso schema con il prodotto: (Int, 1, *). Cambia l'operazione e cambia il neutro (1, non 0), ma il tipo A resta Int.
+@@s008 dato:valori,ora:coppia che si combina,ok:risultato parziale o finale,spento:raggruppamento non usato
+@@s009 Quattro valori: 1, 2, 3, 4. Voglio combinarli con ⊕. Posso scegliere quali due combinare per primi.
+@@s010 Prima metà: <b>1 ⊕ 2 = 3</b>. Le frecce mostrano quali valori entrano nel calcolo.
+@@s011 Seconda metà: <b>3 ⊕ 4 = 7</b>. Le due metà non dipendono l'una dall'altra: si possono calcolare in <b>parallelo</b>.
+@@s012 Ricombino i due risultati: <b>3 ⊕ 7 = 10</b>. La risposta finale è 10.
+@@s013 Stessa risposta raggruppando a sinistra: <b>((1 ⊕ 2) ⊕ 3) ⊕ 4 = 10</b>. L'<b>associatività</b> garantisce che il raggruppamento non cambia il risultato, quindi posso scegliere quello più comodo.
+@@s014 ora:cosa entra adesso,dato:istanze,ok:chiamata con l’istanza
+@@s015 <b>trait Monoid[A]</b> descrive l'interfaccia: <code>combine</code> ed <code>empty</code> per un tipo A. È un <b>type class</b>: una forma da riempire per ogni tipo che vuoi far diventare monoide.
+@@s016 <b>stringMonoid</b> è un <b>valore</b> di tipo Monoid[String]: l'istanza che dice come String diventa un monoide (concatenazione e "").
+@@s017 <b>maxMonoid</b> è un'altra istanza, Monoid[Int]: ⊕ è il massimo e il neutro è Int.MinValue. Lo stesso tipo Int può avere istanze diverse.
+@@s018 <b>concatenate</b> riceve l'istanza come argomento, insieme alla lista. Lo stesso codice lavora con tipi e operazioni diversi, perché l'istanza si passa come valore.
+@@s019 dato:valori di partenza,due:passaggio,ora:calcolo appena fatto,ok:risultato,spento:non ancora
+@@s020 Un <b>omomorfismo</b> f: M → N è una funzione che <b>rispetta</b> le due strutture. M e N sono monoidi: qui M = stringhe, N = interi. f = <code>length</code>.
+@@s021 Applico f a ogni valore: f("foo") = 3 e f("bar") = 3.
+@@s022 Prima combino in M: "foo" ⊕ "bar" = "foobar". Poi applico f: f("foobar") = 6.
+@@s023 La regola richiede f(x ⊕ y) = f(x) ⊗ f(y). Qui 6 = 3 + 3, quindi vale. Il neutro va rispettato anche: f("") = 0.
+@@s024 Un <b>isomorfismo</b> è un omomorfismo che si può invertire: f e la sua inversa sono entrambe omomorfismi. Esempio: String e List[Char] con <code>toList</code> e <code>mkString</code>. Non si perde niente.
+@@s025 <span>Settimana 9</span>
+@@s026 Monoid: combinare e avere un neutro
+@@s027 Il primo dei quattro concetti della settimana (monoid, foldable, functor, monad). Un monoide è la cosa più semplice che si può ridurre a pezzi: un'operazione che combina due valori e un valore che non cambia niente. Da qui nascono <a href="s09-foldable.html">fold e riduzioni parallele</a>.
+@@s028 Definizione
+@@s029 Un <b>monoid</b> (monoide) su un tipo <code>A</code> ha due parti:
+@@s030 un’<b>operazione binaria</b> <b>⊕</b>, in Scala <code>combine</code>: prende due valori di A e ne restituisce uno. Il simbolo ⊕ indica “combina”.
+@@s031 un <b>elemento neutro</b> <b>0</b>, in Scala <code>empty</code>: un valore di A che, combinato con un altro valore, non lo cambia.
+@@s032 Esempi dalle slide, scritti come terna (tipo, neutro, operazione):
+@@s033 tipo A
+@@s034 neutro 0
+@@s035 operazione ⊕
+@@s036 Int
+@@s037 Int
+@@s038 String
+@@s039 concatenazione
+@@s040 Un monoide è tipo, neutro e operazione
+@@s041 Le due leggi
+@@s042 Perché la combinazione sia utile, <code>combine</code> e <code>empty</code> devono rispettare due leggi, per ogni valore x, y, z di A:
+@@s043 <b>Associatività</b>: <code>(x ⊕ y) ⊕ z = x ⊕ (y ⊕ z)</code>. Non importa dove metti le parentesi. Questo permette di spezzare una lista in due metà e ridurle separatamente.
+@@s044 <b>Identità (neutro)</b>: <code>x ⊕ 0 = x</code> e <code>0 ⊕ x = x</code>. Il neutro non cambia niente da nessun lato.
+@@s045 Il compilatore Scala non verifica queste leggi: accetta qualunque <code>combine</code>. Le leggi si controllano con test (property-based, vedi <a href="s06-pbt.html">Property-based testing</a>).
+@@s046 Quattro valori, due modi di raggruppare, lo stesso risultato
+@@s047 Attenzione
+@@s048 Associatività non vuol dire commutatività. Il monoide non richiede <code>x ⊕ y = y ⊕ x</code>: la sottrazione non è un monoide perché non è associativa: (5 − 3) − 1 ≠ 5 − (3 − 1). Le stringhe con concatenazione sì sono un monoide, anche se "ab" ≠ "ba".
+@@s049 Il type class in Scala
+@@s050 Un <b>type class</b> è un'interfaccia parametrizzata sul tipo. <code>Monoid[A]</code> descrive come si comporta un tipo <code>A</code>, senza che A debba “sapere” di essere un monoide. Ogni <b>istanza</b> è un valore che si passa insieme ai dati.
+@@s051 trait Monoid[A] (dalle slide, semplificato)
+@@s052 <code>trait</code> definisce un’interfaccia. <code>[A]</code> è un <b>parametro di tipo</b>: il tipo che il monoide combina. <code>Monoid</code> da solo non basta: serve sempre <code>Monoid[qualcosa]</code>.
+@@s053 <code>def combine(a1: A, a2: A): A</code> è la firma di ⊕: due A in ingresso, un A in uscita. <code>def</code> introduce una funzione, <code>a1</code> e <code>a2</code> sono i nomi dei due argomenti.
+@@s054 <code>def empty: A</code> è il neutro. Non prende argomenti: è un valore fisso per ogni istanza.
+@@s055 <code>object laws</code> è un oggetto annidato: contiene le leggi come proprietà da testare. Ha accesso a <code>combine</code> e <code>empty</code> perché è dentro il trait.
+@@s056 <code>using</code> indica un <b>parametro implicito</b>. <code>Arbitrary[A]</code> dice a ScalaCheck come generare valori di A per i test. <code>Equality[A]</code> dice come confrontarli.
+@@s057 Istanze: un valore per ogni tipo
+@@s058 Per far diventare <code>String</code> un monoide scrivi un valore di tipo <code>Monoid[String]</code>. Una istanza è un valore: si crea istanziando il trait.
+@@s059 Il trait, due istanze, e una funzione che le riceve
+@@s060 Come si scrive un’istanza
+@@s061 Scrivi <code>val stringMonoid: Monoid[String] = new Monoid[String]: …</code>, con <code>combine</code> ed <code>empty</code> dentro. Il tipo dopo i due punti dice quale tipo sta diventando monoide.
+@@s062 Omomorfismi e isomorfismi
+@@s063 Un <b>omomorfismo</b> tra un monoide <code>(M, ⊕, 0)</code> e un monoide <code>(N, ⊗, 1)</code> è una funzione <code>f: M → N</code> che rispetta la struttura:
+@@s064 distributività: <code>f(x ⊕ y) = f(x) ⊗ f(y)</code> per ogni x, y in M;
+@@s065 neutro: <code>f(0) = 1</code>.
+@@s066 Quindi puoi combinare prima e applicare f dopo, o applicare f prima e combinare dopo: il risultato è lo stesso. Esempio dalle slide: f(s) = <code>s.size</code> da String (con concatenazione e "") a Int (con + e 0). Vale <code>"foo".size + "bar".size = ("foo" + "bar").size</code>.
+@@s067 La lunghezza rispetta la concatenazione
+@@s068 Un <b>isomorfismo</b> è un omomorfismo in entrambi i versi: f e la sua inversa g sono entrambe omomorfismi. Esempi dalle slide:
+@@s069 String e <code>List[Char]</code>, con <code>toList</code> e <code>mkString</code>: si passa da una all'altra senza perdere informazione;
+@@s070 <code>(Boolean, false, ||)</code> e <code>(Boolean, true, &amp;&amp;)</code>, con la negazione: la legge di De Morgan dice <code>¬(x ∨ y) = ¬x ∧ ¬y</code>, e <code>¬false = true</code>.
+@@s071 Perché ci interessa
+@@s072 Se due monoidi sono isomorfi, un calcolo fatto in uno si può trasportare nell'altro. È il motivo per cui una stringa e una lista di caratteri si trattano allo stesso modo nei calcoli a pezzi.
+@@s073 Dove si usa
+@@s074 Il monoide è la condizione minima per ridurre una collezione <b>in qualunque ordine e a pezzi</b>. Nella <a href="s09-foldable.html">pagina successiva</a> vedrai i <code>fold</code> e <code>foldMap</code> costruiti su un monoide. Il codice dei concetti è nella <a href="../esempi/s09-monoid.html">pagina di esempi affiancata</a>.

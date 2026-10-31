@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Data som vektorer</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  // 1. che cos'è un vettore
+  SCENE.vettore = {
+    w: 600, h: 272, lato: true,
+    legenda: 'dato:komponenterne,ok:vektoren',
+    oggetti: [
+      { id: 'ax', tipo: 'assi', box: [50, 20, 280, 220], dom: [-1, 4, -1, 3], tacche: 1, etX: 'x₁', etY: 'x₂' },
+      { id: 'c1', tipo: 'linea', in: 'ax', x1: 0, y1: 0, x2: 3, y2: 0, tono: 'dato', nascosto: true },
+      { id: 'c2', tipo: 'linea', in: 'ax', x1: 3, y1: 0, x2: 3, y2: 2, tono: 'dato', nascosto: true },
+      { id: 'pp', tipo: 'punto', in: 'ax', x: 3, y: 2, t: '(3, 2)', tono: 'ok', nascosto: true },
+      { id: 'vv', tipo: 'vett', in: 'ax', x1: 0, y1: 0, x2: 3, y2: 2, t: 'v', tx: -40, ty: -6, tono: 'ok', nascosto: true },
+      { id: 'col', tipo: 'griglia', x: 440, y: 50, cw: 50, ch: 34, valori: [['3'], ['2']] },
+      { id: 'tc', tipo: 'testo', x: 465, y: 34, t: 'v =', size: 14, bold: true },
+      { id: 'dim', tipo: 'testo', x: 465, y: 150, t: '', size: 13 },
+      { id: 'ri', tipo: 'testo', x: 465, y: 180, t: '', size: 13 }
+    ],
+    passi: [
+      { nota: "Un <b>vettore</b> è una lista ordinata di numeri. Questo ne ha due: 3 e 2. Nelle slide si scrive <b>in colonna</b> (vettore colonna, <i>column vector</i>)." },
+      { nota: "Ogni numero è una <b>componente</b>. La prima dice quanto andare lungo il primo asse (3), la seconda lungo il secondo (2). L'<b>ordine</b> conta: [3, 2] e [2, 3] sono vettori diversi.", set: { c1: { nascosto: false }, c2: { nascosto: false }, col: { toni: { '0,0': 'dato', '1,0': 'dato' } } } },
+      { nota: "Si può vedere come un <b>punto</b> del piano: quello di coordinate (3, 2).", set: { pp: { nascosto: false } } },
+      { nota: "Oppure come una <b>freccia</b> che parte dall'origine e arriva in quel punto. Punto e freccia sono due disegni dello stesso vettore.", set: { vv: { nascosto: false }, pp: { t: '' } } },
+      { nota: "Il numero di componenti è la <b>dimensione</b>: questo vettore vive in ℝ², con 3 componenti in ℝ³, con n in ℝⁿ. Una posa del corso vive in ℝ⁵⁰. Si disegna fino a 3, ma le regole valgono per ogni n.", set: { dim: { t: '2 componenti: v ∈ ℝ²' }, ri: { t: 'n componenti: v ∈ ℝⁿ' } } }
+    ]
+  };
+
+  // 2. feature
+  const pers = [['A', 170, 65], ['B', 182, 80], ['C', 160, 55], ['D', 175, 72]];
+  const og2 = [
+    { id: 'tb', tipo: 'griglia', x: 20, y: 30, cw: 64, ch: 30, cwR: 40, intR: pers.map(p => p[0]), intC: ['altezza', 'peso'], valori: pers.map(p => [String(p[1]), String(p[2])]) },
+    { id: 'ax', tipo: 'assi', box: [270, 20, 300, 210], dom: [150, 190, 50, 85], tacche: 10, etX: 'altezza (cm)', etY: 'peso (kg)', numeri: false }
+  ];
+  pers.forEach(([n, h, w], i) => og2.push({ id: 'p' + i, tipo: 'punto', in: 'ax', x: h, y: w, t: n + ' (' + h + ', ' + w + ')', tono: 'dato', nascosto: true }));
+  og2.push({ id: 'nt', tipo: 'testo', x: 130, y: 210, t: '', size: 13 });
+  const riga = i => Object.fromEntries([0, 1].map(c => [i + ',' + c, 'ora']));
+  SCENE.feature = {
+    w: 600, h: 260, lato: true,
+    legenda: 'ora:rækken der læses,dato:hver person er et punkt',
+    oggetti: og2,
+    passi: [
+      { nota: "Una tabella di dati: 4 persone, 2 misure ciascuna (slide 38–39). Ogni colonna è una <b>feature</b> (caratteristica), ogni riga un esempio." },
+      { nota: "La riga di A, (170, 65), è un vettore di 2 componenti: un punto nello spazio \"altezza × peso\".", set: { tb: { toni: riga(0) }, p0: { nascosto: false }, nt: { t: 'A = [170, 65]' } } },
+      { nota: "Ogni altra riga è un altro punto.", set: { tb: { toni: {} }, p1: { nascosto: false }, p2: { nascosto: false }, p3: { nascosto: false }, nt: { t: '4 righe → 4 punti in ℝ²' } } },
+      { nota: "Persone simili stanno <b>vicine</b> (A e D), diverse stanno lontane (B e C). Trasformare i dati in vettori serve proprio a questo: la somiglianza diventa una <b>distanza</b>, che si calcola (<a href=\"w02-norme-distanze.html\">lunghezza e distanza</a>).", set: { p0: { tono: 'ok' }, p3: { tono: 'ok' }, nt: { t: 'vicini = simili' } } }
+    ]
+  };
+
+  // 3. posa (scena originale)
+  const pt = [[0, 2], [0, 1], [-0.5, 0]];
+  const ogg = [{ id: 'ax', tipo: 'assi', box: [30, 20, 170, 190], dom: [-1.5, 1.5, -0.3, 2.5], tacche: 1 }];
+  pt.forEach((p, i) => ogg.push({ id: 'p' + i, tipo: 'punto', in: 'ax', x: p[0], y: p[1], r: 6, t: 'P' + (i + 1), tx: 10, ty: -6, tono: 'dato' }));
+  ogg.push({ id: 's1', tipo: 'linea', in: 'ax', x1: 0, y1: 2, x2: 0, y2: 1, tono: 'dato' });
+  ogg.push({ id: 's2', tipo: 'linea', in: 'ax', x1: 0, y1: 1, x2: -0.5, y2: 0, tono: 'dato' });
+  ogg.push({ id: 'V', tipo: 'celle', x: 230, y: 90, cw: 46, ch: 40, valori: ['', '', '', '', '', ''], etichette: ['x1', 'y1', 'x2', 'y2', 'x3', 'y3'] });
+  ogg.push({ id: 'n', tipo: 'testo', x: 367, y: 186, t: '', size: 13, bold: true });
+  const riempi = k => ['0', '2', '0', '1', '−0.5', '0'].map((v, i) => i < k ? v : '');
+  SCENE.appiattire = {
+    w: 520, h: 215, lato: false,
+    legenda: 'dato:punkterne i posen,ora:punkt der kopieres,ok:vektoren',
+    oggetti: ogg,
+    passi: [
+      { nota: 'En forenklet positur med 3 punkter (den rigtige har 25). Hvert punkt har to koordinater.' },
+      { nota: 'Koordinaterne kopieres den ene efter den anden: først x og y for P1…', set: { p0: { tono: 'ora' }, V: { valori: riempi(2), toni: { 0: 'ora', 1: 'ora' } } } },
+      { nota: '…derefter for P2…', set: { p0: { tono: 'dato' }, p1: { tono: 'ora' }, V: { valori: riempi(4), toni: { 2: 'ora', 3: 'ora' } } } },
+      { nota: '…derefter for P3. Posen er blevet <b>én vektor</b> med 6 tal, altid i samme rækkefølge: x1, y1, x2, y2, …', set: { p1: { tono: 'dato' }, p2: { tono: 'ora' }, V: { valori: riempi(6), toni: { 4: 'ora', 5: 'ora' } } } },
+      { nota: 'Med 25 punkter bliver det en vektor med 50 tal: én række i <code>poses.npy</code>, form (18, 50). Den faste rækkefølge er det, der gør det muligt at sammenligne to positurer komponent for komponent.', set: { p2: { tono: 'dato' }, V: { toni: { 0: 'ok', 1: 'ok', 2: 'ok', 3: 'ok', 4: 'ok', 5: 'ok' } }, n: { t: '3 punti → 6 numeri;  25 punti → 50', tono: 'ok' } } }
+    ]
+  };
+
+  // 4. immagine
+  const img = [['0', '255', '0'], ['255', '255', '255'], ['0', '255', '0']];
+  const flat = ['0', '255', '0', '255', '255', '255', '0', '255', '0'];
+  const fino = k => flat.map((v, i) => i < k ? v : '');
+  const tr = r => Object.fromEntries([0, 1, 2].map(c => [r + ',' + c, 'ora']));
+  const tv = (a, b) => Object.fromEntries([...Array(b - a).keys()].map(i => [a + i, 'ora']));
+  SCENE.immagine = {
+    w: 600, h: 250, lato: true,
+    legenda: 'ora:rækken der kopieres,ok:vektoren',
+    oggetti: [
+      { id: 'im', tipo: 'griglia', x: 30, y: 40, cw: 46, ch: 46, valori: img },
+      { id: 'ti', tipo: 'testo', x: 99, y: 24, t: 'immagine 3 × 3', size: 12, bold: true },
+      { id: 've', tipo: 'celle', x: 200, y: 90, cw: 42, valori: fino(0), indici: true },
+      { id: 'tv', tipo: 'testo', x: 389, y: 70, t: 'vettore di 9 componenti', size: 12, bold: true },
+      { id: 'nt', tipo: 'testo', x: 389, y: 170, t: '', size: 13 },
+      { id: 'n2', tipo: 'testo', x: 389, y: 200, t: '', size: 13 }
+    ],
+    passi: [
+      { nota: "Un'immagine in scala di grigi è una griglia di <b>pixel</b>, ognuno con un numero: 0 = nero, 255 = bianco. Questa, 3 × 3, disegna una croce (slide 40: \"images as vectors\")." },
+      { nota: "Si copia la <b>prima riga</b> di pixel in fila.", set: { im: { toni: tr(0) }, ve: { valori: fino(3), toni: tv(0, 3) } } },
+      { nota: "Poi la seconda, attaccata dopo.", set: { im: { toni: tr(1) }, ve: { valori: fino(6), toni: tv(3, 6) } } },
+      { nota: "Poi la terza. Riga dopo riga: è quello che fa <code>img.flatten()</code> in NumPy (forma da (3, 3) a (9,)).", set: { im: { toni: tr(2) }, ve: { valori: fino(9), toni: tv(6, 9) } } },
+      { nota: "L'immagine è diventata un punto di ℝ⁹. Un'immagine 28 × 28 diventa un vettore di 784 componenti. Due immagini simili hanno vettori vicini: si possono confrontare con le stesse formule dei punti del piano.", set: { im: { toni: {} }, ve: { toni: Object.fromEntries(flat.map((_, i) => [i, 'ok'])) }, nt: { t: '3 × 3 pixel → ℝ⁹' }, n2: { t: '28 × 28 pixel → ℝ⁷⁸⁴' } } }
+    ]
+  };
+
+  // 5. somma e scalare
+  SCENE.somma = {
+    w: 600, h: 272, lato: true,
+    legenda: 'dato:u og v,ora:operationen,ok:resultatet',
+    oggetti: [
+      { id: 'ax', tipo: 'assi', box: [50, 20, 300, 230], dom: [-2, 5, -3, 5], tacche: 1, etX: 'x₁', etY: 'x₂' },
+      { id: 'u', tipo: 'vett', in: 'ax', x1: 0, y1: 0, x2: 2, y2: 1, t: 'u', tono: 'dato' },
+      { id: 'v', tipo: 'vett', in: 'ax', x1: 0, y1: 0, x2: 1, y2: 3, t: 'v', tx: -18, tono: 'dato' },
+      { id: 'vc', tipo: 'vett', in: 'ax', x1: 2, y1: 1, x2: 3, y2: 4, t: '', tono: 'ora', nascosto: true },
+      { id: 'uv', tipo: 'vett', in: 'ax', x1: 0, y1: 0, x2: 3, y2: 4, t: 'u + v', tx: 8, ty: -2, tono: 'ok', nascosto: true },
+      { id: 'u2', tipo: 'vett', in: 'ax', x1: 0, y1: 0, x2: 4, y2: 2, t: '2u', tono: 'ok', nascosto: true },
+      { id: 'mv', tipo: 'vett', in: 'ax', x1: 0, y1: 0, x2: -1, y2: -3, t: '−v', tx: 8, tono: 'ok', nascosto: true },
+      { id: 'c1', tipo: 'testo', x: 475, y: 50, t: 'u = [2, 1],  v = [1, 3]', size: 13, bold: true },
+      { id: 'c2', tipo: 'testo', x: 475, y: 84, t: '', size: 14 },
+      { id: 'c3', tipo: 'testo', x: 475, y: 112, t: '', size: 14 }
+    ],
+    passi: [
+      { nota: "Due vettori, u = [2, 1] e v = [1, 3]." },
+      { nota: "<b>Somma</b> (slide 43): si sommano le componenti nella stessa posizione. u + v = [2 + 1, 1 + 3] = [3, 4]. Serve che i due vettori abbiano la <b>stessa dimensione</b>.", set: { c2: { t: 'u + v = [2+1, 1+3] = [3, 4]', tono: 'ok' } } },
+      { nota: "Nel disegno: si attacca v in coda a u (freccia arancio)…", set: { vc: { nascosto: false } } },
+      { nota: "…e la somma è la freccia dall'origine alla fine della catena: [3, 4].", set: { uv: { nascosto: false } } },
+      { nota: "<b>Prodotto per uno scalare</b>: uno <b>scalare</b> è un numero singolo. 2u = [2·2, 2·1] = [4, 2]: stessa direzione, lunghezza doppia.", set: { vc: { nascosto: true }, uv: { nascosto: true }, u2: { nascosto: false }, c2: { t: '2u = [4, 2]', tono: 'ok' } } },
+      { nota: "Con uno scalare negativo il verso si <b>rovescia</b>: −1·v = [−1, −3]. E la differenza u − v è u + (−1)·v = [1, −2]: componente per componente.", set: { mv: { nascosto: false }, c3: { t: '−v = [−1, −3],  u − v = [1, −2]', tono: 'ok' } } }
+    ]
+  };
+
+  // 6. combinazione (scena originale)
+  SCENE.combinazione = {
+    w: 400, h: 280, lato: true,
+    legenda: 'dato:u og v,ora:en del af kombinationen,ok:3u + 2v',
+    oggetti: [
+      { id: 'ax', tipo: 'assi', box: [40, 20, 300, 230], dom: [-0.5, 4, -0.5, 3], tacche: 1 },
+      { id: 'u', tipo: 'vett', in: 'ax', x1: 0, y1: 0, x2: 1, y2: 0, t: 'u', tx: -6, ty: -12, tono: 'dato' },
+      { id: 'v', tipo: 'vett', in: 'ax', x1: 0, y1: 0, x2: 0, y2: 1, t: 'v', tx: 12, ty: 6, tono: 'dato' },
+      { id: 'u3', tipo: 'vett', in: 'ax', x1: 0, y1: 0, x2: 3, y2: 0, t: '3u', tx: -14, ty: -12, tono: 'ora', nascosto: true },
+      { id: 'v2', tipo: 'vett', in: 'ax', x1: 3, y1: 0, x2: 3, y2: 2, t: '2v', tx: 12, ty: 8, tono: 'ora', nascosto: true },
+      { id: 'w', tipo: 'vett', in: 'ax', x1: 0, y1: 0, x2: 3, y2: 2, t: '[3, 2]', tx: -52, ty: -6, tono: 'ok', nascosto: true }
+    ],
+    passi: [
+      { nota: 'To vektorer: u = [1, 0] og v = [0, 1].' },
+      { nota: 'u ganges med vægten 3: 3u = [3, 0], en pil tre gange så lang.', set: { u3: { nascosto: false } } },
+      { nota: 'v ganges med 2 og sættes på enden: 2v = [0, 2].', set: { v2: { nascosto: false } } },
+      { nota: 'Summen er pilen fra origo til enden: 3u + 2v = <b>[3, 2]</b>. Vægte for vektorer, derefter sum: det er en linearkombination, ligesom w₁x₁ + w₂x₂.', set: { w: { nascosto: false } } }
+    ]
+  };
+
+  // 7. più dimensioni
+  const rigaP = (id, y, vals, et) => ({ id, tipo: 'celle', x: 150, y, cw: 64, valori: vals, indici: false, etichette: et });
+  SCENE.dimensioni = {
+    w: 600, h: 260, lato: true,
+    legenda: 'dato:de to positurer,ora:forskellen,ok:afstanden',
+    oggetti: [
+      { id: 't0', tipo: 'testo', x: 70, y: 57, t: 'posa 0', size: 13, bold: true },
+      rigaP('a', 40, ['−28.00', '−6.49', '−0.12', '−1.17', '0.84', '…']),
+      { id: 't1', tipo: 'testo', x: 70, y: 117, t: 'posa 1', size: 13, bold: true },
+      rigaP('b', 100, ['−28.79', '−7.15', '−0.09', '−1.12', '0.65', '…']),
+      { id: 't2', tipo: 'testo', x: 70, y: 177, t: 'differenza', size: 13, bold: true, nascosto: true },
+      Object.assign(rigaP('d', 160, ['−0.80', '−0.67', '0.02', '0.05', '−0.20', '…']), { nascosto: true }),
+      { id: 'nt', tipo: 'testo', x: 300, y: 236, t: 'ogni posa: 50 componenti (qui le prime 5)', size: 13 }
+    ],
+    passi: [
+      { nota: "Due pose vere da <code>poses.npy</code>, le righe 0 e 1: 50 componenti ciascuna, qui le prime cinque. Non si possono disegnare 50 assi.", set: { a: { toni: { 0: 'dato', 1: 'dato', 2: 'dato', 3: 'dato', 4: 'dato' } }, b: { toni: { 0: 'dato', 1: 'dato', 2: 'dato', 3: 'dato', 4: 'dato' } } } },
+      { nota: "Ma le operazioni si fanno <b>componente per componente</b> come in 2D. La differenza posa 1 − posa 0 ha ancora 50 componenti: −28.79 − (−28.00) = −0.80, e così via (arrotondati a due decimali).", set: { t2: { nascosto: false }, d: { nascosto: false, toni: { 0: 'ora', 1: 'ora', 2: 'ora', 3: 'ora', 4: 'ora' } } } },
+      { nota: "Dalla differenza si calcola la distanza fra le due pose, con la stessa formula del piano ma con 50 termini: <b>3.949</b> (<code>np.linalg.norm(P[1] − P[0])</code>, calcolato sul file). \"From two-dimensional vector spaces to higher-dimensional spaces\": le formule restano identiche, cambia solo quanti termini hanno.", set: { nt: { t: 'distanza fra posa 0 e posa 1 = 3.949', tono: 'ok' } } }
+    ]
+  };
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Data som vektorer</h1>
+  <p class="lede">Idéen i uge 2 (<i>Vector representations</i>): ethvert data kan skrives som en liste af tal, altså en vektor. Her: hvad en vektor er, hvordan en tabel, en positur og et billede bliver til vektorer, de to grundlæggende operationer, linearkombinationen og overgangen til mange dimensioner.</p>
+</header>
+
+<section>
+  <h2>Hvad en vektor er</h2>
+  <p>En <b>vektor</b> er en <b>ordnet</b> liste af tal. Hvert tal kaldes en <b>komponent</b>. I slides skrives den som en søjle (<i>column vector</i>), i teksten ofte i firkantede parenteser: <span class="m">v = [3, 2]</span>. I NumPy er det et 1D-array: <code>np.array([3, 2])</code>.</p>
+  <p>Rækkefølgen betyder noget: den første komponent siger altid det samme (for eksempel højden), den anden noget andet (vægten). Hvis man bytter dem, ændres betydningen, så [3, 2] og [2, 3] er forskellige vektorer.</p>
+  <p>En vektor med 2 komponenter kan tegnes på to ækvivalente måder: som et <b>punkt</b> i planen eller som en <b>pil</b>, der starter i origo og ender i det punkt. Antallet af komponenter er <b>dimensionen</b>: det skrives <span class="m">v ∈ ℝⁿ</span>, "v tilhører erre-en", altså er v en liste af n reelle tal.</p>
+  <div class="box domanda-tua" data-tit="Spørgsmål stillet i chatten: hvad betyder Vector representations?">
+    <p>At skrive et data (en positur, et billede, en måling) som en liste af tal. Det er broen, der gør det muligt at bruge længde, afstand og indre produkt på ting, der ikke er pile.</p>
+  </div>
+  <figure class="scena" data-scena="vettore" data-titolo="v = [3, 2]: komponenter, punkt, pil"></figure>
+</section>
+
+<section>
+  <h2>Feature: hver måling er en komponent</h2>
+  <p>På slide 38 lyder spørgsmålet: "hvilke karakteristika adskiller en person?" Højde, vægt, skostørrelse … Hver af dem er en <b>feature</b> (målt karakteristik). Når man sætter en persons features i række, får man deres <b>featurevektor</b> (<i>feature vector</i>).</p>
+  <p>En datatabel er altså en stak af vektorer: <b>én række pr. eksempel</b>, <b>én kolonne pr. feature</b>. Med 2 features er hvert eksempel et punkt i planen; med 50 features et punkt i ℝ⁵⁰.</p>
+  <p>Gevinsten er stor: lignende eksempler bliver til <b>nærliggende</b> punkter. Spørgsmålet "hvor ens er to personer?" bliver til "hvor langt fra hinanden er to punkter?", og afstande kan beregnes. Pas på enhederne: hvis den ene feature er i centimeter og den anden i kilogram, vejer den med de største tal mere i afstanden; derfor normaliserer man først (uge 7).</p>
+  <figure class="scena" data-scena="feature" data-titolo="En tabel er en sky af punkter"></figure>
+</section>
+
+<section>
+  <h2>Hvordan en positur bliver til en vektor</h2>
+  <p>Øvelsen <code>01-poses</code> bruger badmintonpositurer: en krop beskrevet af <b>25 punkter</b> (hoved, skuldre, albuer …), hvert med et <span class="m">x</span> og et <span class="m">y</span>. For at lave en vektor sættes alle koordinaterne i række, altid i samme rækkefølge: x₁, y₁, x₂, y₂, …, x₂₅, y₂₅. Resultat: en vektor med <b>50 komponenter</b>.</p>
+  <p>Filen <code>poses.npy</code> har formen <code>(18, 50)</code>: 18 positurer, én pr. række, 50 tal hver. Den faste rækkefølge er afgørende: komponent 3 skal være x for det andet punkt i <b>alle</b> positurerne, ellers ville det ikke give mening at sammenligne dem komponent for komponent.</p>
+  <div class="box inglese" data-tit="Til eksamen, på engelsk">
+    <p>"Each pose is represented as a <b>vector in R<sup>50</sup></b>, so the similarity between two poses is the <b>Euclidean distance</b> between their vectors."</p>
+  </div>
+  <figure class="scena" data-scena="appiattire" data-titolo="Fra punkter til en liste af tal"></figure>
+</section>
+
+<section>
+  <h2>Billeder som vektorer</h2>
+  <p>Et digitalt gråtonebillede er et gitter af <b>pixels</b>, og hver pixel er et tal (normalt fra 0, sort, til 255, hvid). Et gitter er en matrix, men for mange modeller er der brug for en vektor: billedet <b>flades ud</b> (<i>flatten</i>) ved at sætte rækkerne efter hinanden.</p>
+  <p>Et billede på 28 × 28 pixels bliver dermed til en vektor med 784 komponenter, et punkt i ℝ⁷⁸⁴ (slide 40: "images as vectors, feature vectors"). I NumPy: <code>img.flatten()</code> eller <code>img.reshape(-1)</code>. For farvebilleder har hver pixel 3 tal (rød, grøn, blå), og vektoren bliver tre gange så lang.</p>
+  <p>At bruge pixels direkte som features er den simpleste måde; i uge 8 og 11 ses bedre features beregnet ud fra pixels (kanter, histogrammer af gradienter).</p>
+  <figure class="scena" data-scena="immagine" data-titolo="Et 3 × 3 kryds bliver til en vektor i ℝ⁹"></figure>
+</section>
+
+<section>
+  <h2>Vektorsum og multiplikation med skalar</h2>
+  <p>De to grundlæggende operationer (slide 43) udføres <b>komponent for komponent</b>.</p>
+  <p><b>Sum</b>: <span class="m">u + v = [u₁ + v₁, u₂ + v₂, …]</span>. Man kan kun addere vektorer af <b>samme dimension</b>. På tegningen sættes pilen v på enden af pilen u: summen går fra origo til enden af kæden.</p>
+  <p><b>Multiplikation med en skalar</b>: en <b>skalar</b> er et enkelt tal, c. <span class="m">c·u = [c·u₁, c·u₂, …]</span>. Pilen bliver på samme linje: den bliver længere, hvis |c| &gt; 1, kortere, hvis |c| &lt; 1, og den vender om, hvis c er negativ.</p>
+  <p>Af disse to kommer <b>differensen</b>: <span class="m">u − v = u + (−1)·v</span>, pilen fra spidsen af v til spidsen af u. Den er grundlaget for afstanden mellem to data.</p>
+  <figure class="scena" data-scena="somma" data-titolo="u + v, 2u og −v"></figure>
+</section>
+
+<section>
+  <h2>Linearkombination</h2>
+  <p>En <b>linearkombination</b> samler de to operationer: hver vektor ganges med et tal (en <b>vægt</b>, eller koefficient), og resultaterne lægges sammen. Med vektorerne v₁, …, vₖ og vægtene c₁, …, cₖ: <span class="m">c₁v₁ + c₂v₂ + … + cₖvₖ</span>.</p>
+  <div class="mblock"><span class="m">u = [1, 0]</span> &nbsp; <span class="m">v = [0, 1]</span> &nbsp;&rarr;&nbsp; <span class="m">3u + 2v = [3, 2]</span></div>
+  <p>To læsninger, som kurset altid bruger. <b>At sammensætte</b>: med de rigtige vægte bygger man andre vektorer (her [3, 2]). <b>At opdele</b>: givet en vektor, find vægtene, der frembringer den (slide 23 i forelæsning 2, "composition and decomposition of vectors"). Med u = [1, 0] og v = [0, 1] fås på den måde enhver vektor i planen, og vægtene er netop dens komponenter.</p>
+  <div class="box regola" data-tit="Det er det samme som modellen">
+    <p><span class="m">w<sub>1</sub>x<sub>1</sub> + w<sub>2</sub>x<sub>2</sub></span> er en linearkombination: tal (vægtene) gange størrelser, derefter lagt sammen. At lære en model betyder at finde vægtene i den rigtige kombination. Og matrix-vektor-produktet i uge 3 er en linearkombination af matrixens søjler.</p>
+  </div>
+  <figure class="scena" data-scena="combinazione" data-titolo="3u + 2v, et trin ad gangen"></figure>
+</section>
+
+<section>
+  <h2>Fra 2 til mange dimensioner</h2>
+  <p>Et af ugens mål er "the transition from two-dimensional vector spaces to higher-dimensional spaces". Idéen er betryggende: <b>intet ændrer sig</b> i reglerne. Sum, multiplikation med skalar, differens, længde, afstand og indre produkt beregnes komponent for komponent, og med n komponenter har formlerne blot n led i stedet for 2.</p>
+  <p>Det, man mister, er tegningen: ud over 3 dimensioner kan man ikke længere se. Derfor ræsonnerer man i 2D, hvor man kan se, og stoler på formlerne for resten. Filen med positurerne er det konkrete eksempel: to positurer er to punkter i ℝ⁵⁰, og deres afstand beregnes helt præcist som mellem to punkter i planen.</p>
+  <p class="piccolo">Form og afstand for <code>poses.npy</code> kontrolleret ved at indlæse filen med NumPy. Filen tjener også til dataindsamlingen til Assignment 1.</p>
+  <figure class="scena" data-scena="dimensioni" data-titolo="To rigtige positurer, komponent for komponent"></figure>
+</section>
+
+</main>
+</body>
+</html>

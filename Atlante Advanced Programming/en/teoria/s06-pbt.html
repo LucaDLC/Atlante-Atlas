@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Property-based testing</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  const T = (id, x, y, t, extra) => Object.assign({ id, tipo: 'testo', x, y, t, size: 13 }, extra || {});
+  const R = (id, x, y, w, h, t, extra) => Object.assign({ id, tipo: 'rett', x, y, w, h, t }, extra || {});
+  const F = (id, x1, y1, x2, y2, t, extra) => Object.assign({ id, tipo: 'vett', x1, y1, x2, y2, t }, extra || {});
+  const C = (id, x, y, valori, extra) => Object.assign({ id, tipo: 'celle', x, y, cw: 52, ch: 40, valori, indici: false }, extra || {});
+
+  SCENE.scenari = {
+    w: 580, h: 220, lato: true,
+    legenda: 'dato:input chosen by you,due:random input,ok:passes,no:fails',
+    oggetti: [T('q', 290, 26, 'legge (sbagliata): l.reverse == l', { bold: true }), R('a', 20, 50, 250, 44, '', { tono: 'spento' }), R('b', 310, 50, 250, 44, '', { tono: 'spento' }),
+      T('ra', 145, 125, '', { size: 12 }), T('rb', 435, 125, '', { size: 12 }), T('c', 290, 175, '', { size: 12 }), T('c2', 290, 205, '', { size: 12 })],
+    passi: [
+      { nota: "Una legge <b>sbagliata</b>: \"girare una lista la lascia uguale\". Vale solo per i palindromi. Vediamo chi se ne accorge." },
+      { nota: "<b>Test a scenario</b> (unit test): scelgo io un esempio. Scelgo List(1, 2, 1), girata è uguale: il test passa. Il test prova solo i casi che mi sono venuti in mente.", set: { a: { t: 'List(1, 2, 1).reverse == List(1, 2, 1)', tono: 'dato' }, ra: { t: 'true → passa', tono: 'ok' } } },
+      { nota: "<b>Test di proprietà</b>: <code>forAll { (l: List[Int]) =&gt; l.reverse == l }</code>. ScalaCheck genera liste a caso e prova la legge su ognuna.", set: { b: { t: 'forAll { l => l.reverse == l }', tono: 'due' } } },
+      { nota: "Dopo 6 liste che passano ne trova una che non va: <code>! Falsified after 6 passed tests.</code>, con controesempio List(0, −1) (verificato). Nessuno aveva pensato a quel caso: l'ha trovato il caso.", set: { rb: { t: 'Falsified: List(0, -1)', tono: 'no' }, c: { t: 'scenario: provi i casi che immagini' }, c2: { t: 'proprietà: provi la legge su input che non immagini' } } }
+    ]
+  };
+
+  SCENE.forall = {
+    w: 580, h: 220, lato: true,
+    legenda: 'due:random throw,ok:property true,no:counterexample',
+    oggetti: [T('q', 290, 26, 'forAll { (d: Dadi) => d.a + d.b < 12 }', { bold: true }), C('l', 20, 50, ['', '', '', '', '', '', '', '', '', ''], { cw: 54 }),
+      T('n', 290, 130, '', { size: 12 }), T('c', 290, 165, '', { size: 12 }), T('c2', 290, 200, '', { size: 12 })],
+    passi: [
+      { nota: "Due dadi, <code>case class Dadi(a: Int, b: Int)</code>, generati a caso. Proprietà (sbagliata): \"la somma è sempre meno di 12\". <code>forAll</code> vuol dire \"per ogni coppia di dadi\"." },
+      { nota: "ScalaCheck lancia: (4,1), (1,6), (1,3), (2,6), (5,1)… Ogni lancio è un test: la somma è &lt; 12, passa.", set: { l: { valori: ['4,1', '1,6', '1,3', '2,6', '5,1', '…', '', '', '', ''], toni: { 0: 'ok', 1: 'ok', 2: 'ok', 3: 'ok', 4: 'ok' } }, n: { t: 'lanci che passano: 1, 2, 3, …' } } },
+      { nota: "Il doppio sei esce 1 volta su 36. Al lancio 54 esce: <code>! Falsified after 53 passed tests.</code>, <code>ARG_0: Dadi(6,6)</code> (verificato). Con 3 test a scenario scelti a mano quasi sicuramente non l'avresti provato.", set: { l: { valori: ['4,1', '1,6', '1,3', '2,6', '5,1', '…', '…', '…', '…', '6,6'], toni: { 0: 'ok', 1: 'ok', 2: 'ok', 3: 'ok', 4: 'ok', 9: 'no' } }, n: { t: 'Falsified after 53 passed tests · ARG_0: Dadi(6,6)', tono: 'no' } } },
+      { nota: "La proprietà giusta <code>d.a + d.b &gt;= 2 &amp;&amp; d.a + d.b &lt;= 12</code>: <code>+ OK, passed 100 tests.</code> Di default forAll prova 100 input.", set: { n: { t: 'somma tra 2 e 12: OK, passed 100 tests', tono: 'ok' }, c: { t: 'forAll = "per ogni" (un quantificatore)' }, c2: { t: '100 input a caso invece di una tabella di casi' } } }
+    ]
+  };
+
+  SCENE.shrink = {
+    w: 580, h: 210, lato: true,
+    legenda: 'no:counterexample,ok:after shrinking',
+    oggetti: [T('t1', 290, 30, 'ARG_0_ORIGINAL (il primo trovato)', { size: 12 }), R('o', 60, 44, 460, 40, '', { tono: 'spento' }), T('t2', 290, 118, 'ARG_0 (dopo lo shrinking)', { size: 12 }), R('s', 160, 132, 260, 40, '', { tono: 'spento' }), T('c', 290, 200, '', { size: 12 })],
+    passi: [
+      { nota: "Quando una proprietà fallisce, ScalaCheck stampa il controesempio. Spesso è enorme e illeggibile. Allora prova versioni <b>più piccole</b> (meno elementi, numeri più vicini a 0) e tiene l'ultima che fa ancora fallire la proprietà. Si chiama <b>shrinking</b>." },
+      { nota: "Legge <code>l.reverse == l</code>. Il primo controesempio trovato: List(1931840743, 729948336, −1).", set: { o: { t: 'List(1931840743, 729948336, -1)', tono: 'no' } } },
+      { nota: "Dopo lo shrinking: List(0, −1). Due elementi diversi bastano a rompere la legge: è il caso più piccolo, e si capisce al volo.", set: { s: { t: 'List(0, -1)', tono: 'ok' }, c: { t: 'leggi ARG_0; ARG_0_ORIGINAL è solo dove è partito' } } }
+    ]
+  };
+
+  SCENE.implica = {
+    w: 580, h: 220, lato: true,
+    legenda: 'dato:pre-condition,due:post-condition,ok:passes,no:exception',
+    oggetti: [R('a', 20, 40, 540, 44, '', { tono: 'spento' }), T('r', 290, 115, '', { size: 12, bold: true }), T('c', 290, 150, '', { size: 12 }), T('c2', 290, 185, '', { size: 12 })],
+    passi: [
+      { nota: "Il contratto di <code>get</code>: pre = l'Option non è vuoto; post = <code>Some(oa.get) == oa</code>. Provo la post su Option a caso." },
+      { nota: "Senza pre-condizione: ScalaCheck genera anche None, e <code>None.get</code> lancia un'eccezione. <code>! Exception raised on property evaluation.</code>, <code>ARG_0: None</code>, <code>NoSuchElementException: None.get</code> (verificato).", set: { a: { t: 'forAll { (oa: Option[Int]) => Some(oa.get) == oa }', tono: 'no' }, r: { t: 'Exception: None.get', tono: 'no' } } },
+      { nota: "Con <code>==&gt;</code> (si legge \"implica\"): a sinistra la pre, a destra la post. Se la pre è falsa, quell'input viene <b>scartato</b> e non conta. <code>+ OK, passed 100 tests.</code>", set: { a: { t: 'forAll { (oa: Option[Int]) => oa.nonEmpty ==> (Some(oa.get) == oa) }', tono: 'ok' }, r: { t: 'OK, passed 100 tests', tono: 'ok' }, c: { t: 'forAll = per ogni · ==> = pre · dopo = post' } } },
+      { nota: "Il contratto adesso è <b>scritto dentro il test</b>, e vale per 100 input invece che per uno. Attenzione: se la pre scarta quasi tutto, ScalaCheck si arrende (\"Gave up\"). Una pre troppo forte va sostituita da un generatore che produce solo input buoni.", set: { c2: { t: 'pre troppo rara → "Gave up": meglio un generatore apposta' } } }
+    ]
+  };
+
+  SCENE.gen = {
+    w: 580, h: 230, lato: true,
+    legenda: 'dato:generator,ok:values produced,due:link with week 5',
+    oggetti: [R('g', 20, 40, 250, 44, '', { tono: 'spento' }), F('f', 272, 62, 306, 62, ''), R('v', 310, 40, 250, 44, '', { tono: 'spento' }), T('c', 290, 130, '', { size: 12 }), T('c2', 290, 165, '', { size: 12 }), T('c3', 290, 200, '', { size: 12 })],
+    passi: [
+      { nota: "Un <b>generatore</b> <code>Gen[A]</code> produce valori a caso di tipo A. È l'idea di <code>Rand[A]</code> della settimana 5: uno stato (il seme) che produce un valore e uno stato nuovo." },
+      { nota: "<code>Gen.choose(1, 6)</code>: un dado. Dieci lanci con <code>.sample</code>: 3, 4, 1, 3, 5, 2, 6, 3, 2, 6 (esempio vero; ogni esecuzione dà numeri diversi).", set: { g: { t: 'Gen.choose(1, 6)', tono: 'dato' }, v: { t: '3, 4, 1, 3, 5, 2, 6, 3, 2, 6', tono: 'ok' }, c: { t: 'come nonNegativeLessThan(6) + 1 della settimana 5', tono: 'due' } } },
+      { nota: "<code>Gen.frequency(7 -&gt; true, 1 -&gt; false)</code>: true 7 volte su 8. Serve per decidere quando fermarsi (es. foglia o ramo in un albero).", set: { g: { t: 'Gen.frequency(7 -> true, 1 -> false)' }, v: { t: 'true, true, false, true, true, …' }, c: { t: '' } } },
+      { nota: "I generatori si compongono con for/yield (Gen ha map e flatMap, come Rand): due dadi = un dado, poi un altro dado.", set: { g: { t: 'for a <- choose(1,6); b <- choose(1,6)' }, v: { t: 'Dadi(4,1), Dadi(1,6), Dadi(1,3), …' }, c: { t: 'Gen è una monade: map, flatMap, for/yield' } } },
+      { nota: "<code>Arbitrary[A]</code> è il generatore <b>di default</b> per il tipo A. <code>forAll { (d: Dadi) =&gt; … }</code> lo cerca da solo tra i <code>given</code>. Per Int, List, Option ScalaCheck li ha già; per un tuo tipo lo scrivi tu: <code>given Arbitrary[Dadi] = Arbitrary(genDadi)</code>.", set: { g: { t: 'given Arbitrary[Dadi]', tono: 'dato' }, v: { t: 'forAll { (d: Dadi) => … } lo trova', tono: 'ok' }, c2: { t: 'Gen = come genero · Arbitrary = il Gen di default del tipo' } } }
+    ]
+  };
+
+  SCENE.file = {
+    w: 580, h: 230, lato: true,
+    legenda: 'dato:scenario (a Boolean),due:property (forAll),ok:test output',
+    oggetti: [R('p', 20, 40, 540, 44, '', { tono: 'spento' }), T('o', 290, 120, '', { size: 12, bold: true }), T('c', 290, 160, '', { size: 12 }), T('c2', 290, 195, '', { size: 12 })],
+    passi: [
+      { nota: "I file di test del corso sono tutti fatti così: un <code>object … extends org.scalacheck.Properties(\"nome\")</code>, e dentro tante righe <code>property(\"nome del test\") = …</code>." },
+      { nota: "A destra dell'<code>=</code> può esserci un <b>Boolean</b>: è un test a scenario. ScalaCheck lo controlla una volta e, se è vero, scrive <code>OK, proved property.</code>", set: { p: { t: 'property("Ex01.01: …") = empty.headOption == None', tono: 'dato' }, o: { t: '+ testing.Ex01.01: …: OK, proved property.', tono: 'ok' } } },
+      { nota: "Oppure un <b>forAll</b>: è un test di proprietà. Output: <code>OK, passed 100 tests.</code>", set: { p: { t: 'property("…") = forAll { (n: Int) => cons(n, empty).headOption == Some(n) }', tono: 'due' }, o: { t: '+ …: OK, passed 100 tests.' } } },
+      { nota: "<code>&amp;&amp;</code> unisce due proprietà in una; <code>:| \"nome\"</code> dà un'etichetta a un pezzo. Se un pezzo fallisce, l'output dice quale: <code>Labels of failing property: uno sbagliato</code> (verificato).", set: { p: { t: 'forAll {…} :| "singleton" && forAll {…} :| "random"', tono: 'due' }, o: { t: 'Labels of failing property: …', tono: 'no' }, c: { t: 'proved property = Boolean (scenario)' }, c2: { t: 'passed 100 tests = forAll (proprietà)' } } }
+    ]
+  };
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Property-based testing</h1>
+  <p class="lede">Week 6, slides 2 and 15–19. Scenario tests prove only the cases you imagined. Property-based testing (PBT) writes a <b>law</b> that must hold for all inputs, then proves it on many inputs generated at random with the ScalaCheck library. The contracts of the <a href="s06-contratti.html">previous page</a> become tests.</p>
+</header>
+
+<section>
+  <h2>Scenarios against properties</h2>
+  <p>The problem (slide 2): a <b>scenario test</b> (unit test) proves only the situations for which you wrote a test case, that is those you had foreseen. To cover a lot one needs many cases written by hand: it costs, and precisely the cases you did not think of remain out.</p>
+  <p>The solution: generate the test data <b>automatically</b>, at random but in a controlled way (with the generators, which we know how to make since week 5), and write the test as a <b>property</b> that must hold on all those inputs.</p>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th></th><th>Scenario test</th><th>Property test (PBT)</th></tr></thead>
+    <tbody>
+      <tr><td>what you write</td><td>an example: input and expected result</td><td>a law: "for every input, … holds"</td></tr>
+      <tr><td>where it comes from</td><td>from the requirements</td><td>from pre/post-conditions, invariants, API laws</td></tr>
+      <tr><td>good for</td><td>precise edge cases, bugs already seen (regressions)</td><td>cases you did not foresee</td></tr>
+      <tr><td>tools</td><td>JUnit, scalatest, …</td><td>QuickCheck, ScalaCheck, …</td></tr>
+      <tr><td>in ScalaCheck</td><td><code>property("…") = </code>a Boolean</td><td><code>property("…") = forAll { … }</code></td></tr>
+    </tbody>
+  </table></div>
+  <p>The PBT process (slide 17): <b>1.</b> formulate the laws (thinking about pre, post and invariants helps); <b>2.</b> generate random data; <b>3.</b> test the laws on that data. It is closer to formal verification, but remains easy. It does not replace scenarios: they are used together.</p>
+  <figure class="scena" data-scena="scenari" data-titolo="A wrong law: the scenario promotes it, forAll rejects it"></figure>
+</section>
+
+<section>
+  <h2>forAll: the law proven on 100 inputs</h2>
+  <p><code>forAll</code> is the "for every" of mathematics (a <b>quantifier</b>). You give it a function that receives the inputs and returns a Boolean; ScalaCheck generates 100 random inputs and calls it on each. If it is always true, the test passes; at the first false it stops and shows you the input that made it fail (the <b>counterexample</b>).</p>
+  <figure class="codice" data-titolo="The three laws of map on trees (slide 15, from the tests of week 3)">
+<pre data-lang="scala">property("Ex04.02: identity is a unit with map") =
+  forAll { (t: Tree[Int]) =&gt; Tree.map(t)(identity[Int]) == t }
+
+property("Ex04.03: map does not change size") =
+  forAll { (t: Tree[Int], f: Int =&gt; Int) =&gt;
+    Tree.size(Tree.map(t)(f)) == Tree.size(t) }
+
+property("Ex04.04: map is 'associative'") =
+  forAll { (t: Tree[Int], f: Int =&gt; Int, g: Int =&gt; Int) =&gt;
+    Tree.map(Tree.map(t)(f))(g) == Tree.map(t)(g compose f) }</pre>
+    <ol class="spiega">
+      <li data-righe="2" data-segna="(t: Tree[Int])@dato|Tree.map(t)(identity[Int]) == t@ok"><p>The inputs are the <b>parameters</b> of the lambda: here a random tree <code>t</code>. The law: map with the identity function changes nothing.</p></li>
+      <li data-righe="5-6" data-segna="f: Int =&gt; Int@dato"><p>ScalaCheck also generates random <b>functions</b> (<code>f: Int =&gt; Int</code>). The law: map does not change the number of nodes.</p></li>
+      <li data-righe="9-10" data-segna="g compose f@ok"><p>map twice = map once with the two functions composed (<code>g compose f</code> = first f, then g). The three laws together are a partial contract of map, with pre true.</p></li>
+    </ol>
+  </figure>
+  <figure class="scena" data-scena="forall" data-titolo="Two dice: forAll throws until a double six comes out"></figure>
+</section>
+
+<section>
+  <h2>Reading the output: counterexample and shrinking</h2>
+  <p>When a property fails, ScalaCheck prints <code>! Falsified after N passed tests.</code> and the arguments that made it fail: <code>ARG_0</code> is the first parameter of the lambda, <code>ARG_1</code> the second, and so on. Before printing them it <b>shrinks</b> them: it tries smaller versions and keeps the smallest that still fails. <code>ARG_0_ORIGINAL</code> is the counterexample as it was before.</p>
+  <figure class="passi" data-titolo="Three real outputs (Scala 3.8.4, ScalaCheck 1.19)" data-legenda="no:fails,ok:passes,dato:counterexample">
+    <div class="passo"><div class="espr">forAll { (n: Int) =&gt; abs(n) &gt;= 0 }
+<mark class="no">! Falsified after 18 passed tests.</mark>
+&gt; ARG_0: <mark class="dato">-2147483648</mark></div><p class="nota">The post-condition of abs, proved on 100 Ints. The Int generator of ScalaCheck tries the extreme values on purpose (0, 1, −1, Int.MinValue, Int.MaxValue): it found the overflow.</p></div>
+    <div class="passo"><div class="espr">forAll { (l: List[Int]) =&gt; l.reverse == l }
+<mark class="no">! Falsified after 6 passed tests.</mark>
+&gt; ARG_0: <mark class="dato">List("0", "-1")</mark>
+&gt; ARG_0_ORIGINAL: List("1931840743", "729948336", "-1")</div><p class="nota">The shrinking brought a counterexample from 3 huge numbers to List(0, −1). ScalaCheck 1.19 prints the elements in quotes, but they are Ints.</p></div>
+    <div class="passo"><div class="espr">forAll { (l: List[Int]) =&gt; l.reverse.reverse == l }
+<mark class="ok">+ OK, passed 100 tests.</mark></div><p class="nota">The right law: running twice brings the list back as it was.</p></div>
+  </figure>
+  <figure class="scena" data-scena="shrink" data-titolo="From the huge counterexample to the smallest one"></figure>
+</section>
+
+<section>
+  <h2>==&gt;: the pre-condition inside the test</h2>
+  <p>With a scenario test the contract of <code>get</code> is proved like this: choose <code>Some(1)</code>, call <code>get</code>, check that it gives 1. Two defects (slide 18): for another number you must write another test; and the contract is not seen anywhere. With PBT the contract becomes the test:</p>
+  <figure class="codice" data-titolo="The contract of get as a property test (slide 18)">
+<pre data-lang="scala">property("test get contract (PBT)") =
+  forAll { (oa: Option[Int]) =&gt;      // per ogni oa
+    !oa.isEmpty ==&gt;                    // pre-condizione
+      Some(get(oa)) == oa }            // post-condizione</pre>
+    <ol class="spiega">
+      <li data-righe="2" data-segna="forAll@ora"><p>The quantifier: "for every Option of Int".</p></li>
+      <li data-righe="3" data-segna="!oa.isEmpty@dato|==&gt;@dato"><p><code>==&gt;</code> is the implication: "if … then …". If the left part is false (here: oa is None), the input is <b>discarded</b>, it counts neither as success nor as failure.</p></li>
+      <li data-righe="4" data-segna="Some(get(oa)) == oa@due"><p>The post-condition, checked only on the inputs that respect the pre. A hundred tests without tables of cases and without loops.</p></li>
+    </ol>
+  </figure>
+  <figure class="scena" data-scena="implica" data-titolo="Without ==&gt; it skips None.get; with ==&gt; None is discarded"></figure>
+</section>
+
+<section>
+  <h2>Generators: Gen and Arbitrary</h2>
+  <p>ScalaCheck has two key types. <b><code>Gen[A]</code></b> is a generator of random values of type A: the same idea as <code>Rand[A]</code> of week 5, and like Rand it has <code>map</code>, <code>flatMap</code> and therefore for/yield. <b><code>Arbitrary[A]</code></b> is the <b>default</b> generator of type A, the one that <code>forAll</code> looks for by itself among the <code>given</code>s when you write <code>forAll { (x: A) =&gt; … }</code>. When you test a new type, you write a generator for it; then you usually write many more tests than generators.</p>
+  <figure class="codice" data-titolo="The tree generator (slide 16, from the tests of week 3)">
+<pre data-lang="scala">def genTree[A](using arbA: Arbitrary[A]): Gen[Tree[A]] =
+  for coin &lt;- Gen.frequency(7 -&gt; true, 1 -&gt; false)
+      tree &lt;- if coin
+        then arbA.arbitrary.map(Leaf.apply)
+        else genTree.flatMap { l =&gt; genTree.map { Branch(l, _) } }
+  yield tree
+
+given arbitraryTree: [A: Arbitrary] =&gt; Arbitrary[Tree[A]] =
+  Arbitrary[Tree[A]](genTree)</pre>
+    <ol class="spiega">
+      <li data-righe="1" data-segna="using arbA: Arbitrary[A]@dato"><p>To make trees of A one needs to be able to make As: <code>using</code> asks for an <code>Arbitrary[A]</code> that the compiler finds by itself among the givens (for Int there is already one).</p></li>
+      <li data-righe="2" data-segna="Gen.frequency(7 -&gt; true, 1 -&gt; false)@ora"><p>A loaded coin: true 7 times out of 8. It serves to decide leaf or branch.</p></li>
+      <li data-righe="3-4" data-segna="arbA.arbitrary.map(Leaf.apply)@ok"><p>With true: a leaf. <code>arbA.arbitrary</code> is a <code>Gen[A]</code>; with <code>map</code> it puts the value in a <code>Leaf</code>.</p></li>
+      <li data-righe="5" data-segna="genTree.flatMap@due"><p>With false: a branch with two subtrees generated in the same way (recursion). Since leaves are 7 out of 8, the trees stay small and the recursion ends.</p></li>
+      <li data-righe="8-9" data-segna="given arbitraryTree@dato"><p>The <code>given</code> makes the generator the default one for <code>Tree[A]</code>: from here on <code>forAll { (t: Tree[Int]) =&gt; … }</code> works.</p></li>
+    </ol>
+  </figure>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Piece of ScalaCheck</th><th>What it does</th><th>Example (run)</th></tr></thead>
+    <tbody>
+      <tr><td><code>Gen.choose(a, b)</code></td><td>a number between a and b</td><td><code>Gen.choose(1, 6)</code>: 3, 4, 1, 3, 5, 2, …</td></tr>
+      <tr><td><code>Gen.frequency(p -&gt; g, …)</code></td><td>chooses with weights</td><td><code>7 -&gt; true, 1 -&gt; false</code>: true 7 times out of 8</td></tr>
+      <tr><td><code>Gen.const(x)</code></td><td>always x</td><td>used in the file of the exercise for infinite lists</td></tr>
+      <tr><td><code>arbitrary[A]</code></td><td>the default Gen of A</td><td><code>arbitrary[Int]</code>: 1, 1664308277, −2147483648, …</td></tr>
+      <tr><td><code>g.suchThat(p)</code></td><td>keeps only the values that satisfy p</td><td><code>arbitrary[List[Int]].suchThat(_.nonEmpty)</code>: non-empty lists</td></tr>
+      <tr><td><code>g.sample</code></td><td>a sample value (Option)</td><td>to look at what a generator produces</td></tr>
+    </tbody>
+  </table></div>
+  <figure class="scena" data-scena="gen" data-titolo="From the die to the dice: Gen composes like Rand"></figure>
+</section>
+
+<section>
+  <h2>What a test file of the course is like</h2>
+  <p>All the <code>Exercises.test.scala</code> files of the past weeks, and the exercise file of this week, are written like this. This week the role is reversed: the code (LazyList) is already there, and you write the test file.</p>
+  <figure class="codice" data-titolo="From the exercise file of week 6">
+<pre data-lang="scala">object LazyListSpec
+  extends org.scalacheck.Properties("testing"):
+
+  property("Ex01.01: headOption returns None on an empty LazyList") =
+    empty.headOption == None
+
+  property("Ex01.02: headOption returns the head of the stream packaged in Some") =
+    given Arbitrary[LazyList[Int]] = Arbitrary(genNonEmptyLazyList[Int])
+    forAll { (n: Int) =&gt; cons(n, empty).headOption == Some(n) } :| "singleton" &amp;&amp;
+    forAll { (s: LazyList[Int]) =&gt; s.headOption != None }      :| "random"</pre>
+    <ol class="spiega">
+      <li data-righe="1-2" data-segna="org.scalacheck.Properties@dato"><p>An object that extends <code>Properties</code>: it is the container of the tests. <code>"testing"</code> is the prefix that appears in the output.</p></li>
+      <li data-righe="4-5" data-segna="empty.headOption == None@dato"><p>A <b>scenario test</b>: on the right there is a Boolean. Output: <code>OK, proved property.</code></p></li>
+      <li data-righe="8" data-segna="given Arbitrary[LazyList[Int]]@ora"><p>Inside the test the default generator for <code>LazyList[Int]</code> is declared: non-empty lists only. It holds only inside this test.</p></li>
+      <li data-righe="9-10" data-segna="&quot;singleton&quot;@due|&quot;random&quot;@due|&amp;&amp;@ora"><p>Two properties joined with <code>&amp;&amp;</code>, each with a label <code>:|</code>. If it fails, the output says which of the two: <code>Labels of failing property: …</code>.</p></li>
+    </ol>
+  </figure>
+  <figure class="scena" data-scena="file" data-titolo="Scenario, property, labels: what the output writes"></figure>
+  <div class="box esame" data-tit="This week's homework, in one line">
+    <p>Write tests for <code>headOption</code>, <code>take</code>, <code>drop</code>, <code>map</code>, <code>append</code> of the LazyList. The autograder runs them on broken versions of the LazyList (the <b>mutants</b>): the more mutants you make fail, the more points. The right version (<code>lazyList00</code>) must pass all your tests, otherwise you lose 35%.</p>
+  </div>
+  <div class="box inglese" data-tit="Ready sentences (written exam)">
+    <p>"Property-based testing states laws that must hold for all inputs, generates random inputs, and checks the laws on them; ScalaCheck shrinks a failing input to a minimal counterexample."</p>
+  </div>
+</section>
+
+</main>
+</body>
+</html>

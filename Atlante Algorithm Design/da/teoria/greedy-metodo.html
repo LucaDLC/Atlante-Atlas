@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Grådig metode: metoden</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+const N = (id,x,y,t,tono) => ({id,tipo:'rett',x,y,w:58,h:34,t,tono});
+SCENE.exch = {
+  w: 540, h: 230, lato: true,
+  legenda: 'dato:element,ora:hvad jeg bytter,ok:gyldig løsning,no:ikke gyldig',
+  oggetti: [
+    {id:'l1',tipo:'testo',x:20,y:60,t:'ottimo O',size:12,bold:true,anchor:'start'},
+    {id:'l2',tipo:'testo',x:20,y:150,t:'greedy G',size:12,bold:true,anchor:'start'},
+    N('o1',110,40,'1','dato'), N('o2',180,40,'2','dato'), N('o3',250,40,'3','dato'), N('o4',320,40,'4','spento'),
+    N('g1',110,130,'1','dato'), N('g2',180,130,'2','spento'), N('g3',250,130,'3','spento'), N('g4',320,130,'4','dato'),
+    {id:'x',tipo:'testo',x:440,y:60,t:'',size:12,bold:true},
+    {id:'c',tipo:'testo',x:20,y:210,t:'',size:13,bold:true,anchor:'start'}
+  ],
+  passi: [
+    { nota: 'En optimal løsning <b>O</b>. Jeg sammenligner den med den grådige <b>G</b>, som i første trin tager det mindste element: 1.', set: {} },
+    { nota: 'O indeholder ikke 1. Jeg bytter elementet <b>2</b> i O med elementet <b>1</b>, som den grådige valgte. Antallet af elementer ændrer sig ikke, og omkostningen stiger ikke, fordi 1 er det mindste.', set: { o2:{tono:'ora'}, o1:{tono:'ok'}, c:{t:'scambio: O\' = O − {2} + {1}: stessa taglia, costo non maggiore'} } },
+    { nota: 'Jeg gentager for hvert trin i den grådige. Til sidst er O\' lig med G og er værd mindst lige så meget som O: <b>den grådige er optimal</b>. Det er bytteargumentet (exchange argument).', set: { o3:{tono:'ora'}, g3:{tono:'dato'}, x:{t:'O\' = G',tono:'ok'}, c:{t:'ad ogni scambio la soluzione resta valida e ottima',tono:'ok'} } }
+  ]
+};
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Grådig metode: metoden</h1>
+  <p class="lede">En grådig algoritme (grådig, på engelsk greedy) bygger løsningen et stykke ad gangen: i hvert trin tager den det bedste element efter en fast regel, hvis det er tilladt, og den går aldrig tilbage. Den er enkel at skrive. Det svære er at bevise, at den valgte regel fører til optimum.</p>
+</header>
+
+<section>
+  <h2>Skemaet for enhver grådig metode</h2>
+<p>Enhver grådig metode gentager to beslutninger i hvert trin:</p>
+<ol>
+  <li><b>hvad er det bedste element nu?</b> (reglen: det korteste, det mindste, det første, der slutter…);</li>
+  <li><b>er det tilladt?</b> (det respekterer betingelserne: det overlapper ikke, det skaber ikke en cyklus, det passer i budgettet).</li>
+</ol>
+<p>Hvis det er tilladt, tager du det; ellers kasserer du det. Du går aldrig tilbage på de valg, du har truffet.</p>
+<p>Det, der afgør eksamen, er ikke at skrive løkken, men at <b>bevise</b>, at reglen fører til optimum. En forkert grådig metode ser ud som en rigtig: derfor spørger man altid efter et modeksempel eller et bevis.</p>
+</section>
+<section>
+  <h2>Hvorfor den virker: bytteargumentet</h2>
+<p>Bevismetoden, der næsten altid bruges til eksamen, er <b>byttet</b> (exchange argument):</p>
+<ol>
+  <li>Start fra en vilkårlig optimal løsning <b>O</b>.</li>
+  <li>Hvis O er forskellig fra den grådige, så find det første valg, hvor de er forskellige.</li>
+  <li>Byt elementet i O med det fra den grådige. Vis, at løsningen stadig er gyldig og ikke bliver værre.</li>
+  <li>Gentag: du når til en løsning lig med den grådige, som derfor er optimal.</li>
+</ol>
+<div class="box regola" data-tit="Byttet skal være gratis"><p>Byttet virker kun, hvis det grådige element ikke koster mere end det, det erstatter. Hvis genstandene har forskellige værdier, kan byttet forværre resultatet: så er problemet ikke grådigt, men en DP (knapsack).</p></div>
+  <figure class="scena" data-scena="exch" data-titolo="At bytte et valg i optimum med det fra den grådige"></figure>
+</section>
+<section>
+  <h2>De to andre måder at bevise det på</h2>
+<p><b>Greedy stays ahead</b> (den grådige er altid foran): efter hvert trin er den grådiges løsning mindst lige så god som enhver anden. Det er beviset for interval scheduling.</p>
+<p><b>Strukturel grænse</b>: du finder en grænse, som enhver løsning skal respektere, og viser, at den grådige når den. Eksempel: antallet af nødvendige lokaler er mindst den maksimale dybde af intervallerne, og den grådige bruger præcis det tal.</p>
+</section>
+<section>
+  <h2>Sådan genkender man et grådigt problem</h2>
+<p>På eksamen er signalet næsten altid dette: <b>maksimer antallet af genstande under ét budget</b>, eller <b>vælg de k bedste</b>, eller <b>scheduling på en linje</b>. Hvis genstandene har forskellige værdier og et budget på summen af værdierne, er det knapsack (DP).</p>
+<p>Fire tilbagevendende skabeloner: <i>tælling under budget</i> (sorter efter voksende omkostning, tag, mens det passer); <i>top-k</i> (sorter efter faldende værdi, tag de første k); <i>tærskel</i> (det mindste antal for at overstige halvdelen af totalen: sorter faldende); <i>scheduling</i> (intervaller efter slutning, lokaler efter start).</p>
+</section>
+<section>
+  <h2>Til eksamen</h2>
+<div class="box esame" data-tit="Til eksamen">
+<p>Skriv i denne rækkefølge: (a) problemet; (b) reglen med præcise ord, <i>"in increasing order of key"</i>, derefter pseudokoden med tilladelighedstesten; (c) tiden, i teksten parametre: sortering <code>O(n log n)</code> plus gennemgang <code>O(n)</code>. Korrekthedssætning: <i>"exchange argument: replacing a chosen item by a cheaper unchosen one never hurts."</i></p>
+<p>Typisk fejl: at sige "grådig" uden at bevise det. Hvis du ikke kan finde bytteargumentet, er det sandsynligvis DP.</p>
+</div>
+</section>
+<section>
+  <h2>Hurtig oversigt</h2>
+<div class="tab-wrap"><table class="tab"><thead><tr><th>metode</th><th>idé</th><th>brug</th></tr></thead><tbody><tr><td>greedy stays ahead</td><td>den grådige er altid foran</td><td>interval scheduling</td></tr><tr><td>strukturel grænse</td><td>en grænse den grådige når</td><td>lokaler = dybde</td></tr><tr><td>bytteargumentet</td><td>byt uden at blive værre</td><td>den mest brugte til eksamen</td></tr><tr><td>typisk tid</td><td>O(n log n)</td><td>sortering + gennemgang</td></tr></tbody></table></div>
+</section>
+
+</main>
+</body>
+</html>

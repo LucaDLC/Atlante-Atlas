@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Java til Kattis</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+const N = (id,x,y,t,tono) => ({id,tipo:'rett',x,y,w:110,h:40,t,tono});
+SCENE.ovf = {
+  w: 540, h: 230, lato: true,
+  legenda: 'dato:værdi,ora:operation,no:forkert værdi (overløb),ok:korrekt med long',
+  oggetti: [
+    N('a',20,40,'Integer.MAX_VALUE','dato'), N('b',170,40,'+ 1','ora'), N('c',320,40,'= ?','spento'),
+    {id:'c1',tipo:'testo',x:20,y:130,t:'',size:13,bold:true,anchor:'start'},
+    {id:'c2',tipo:'testo',x:20,y:160,t:'',size:12,anchor:'start'},
+    {id:'c3',tipo:'testo',x:20,y:200,t:'',size:12,anchor:'start'}
+  ],
+  passi: [
+    { nota: 'En <code>int</code> har 32 bit: maksimum er 2147483647 (<code>Integer.MAX_VALUE</code>). Java giver ingen fejl, når det overskrides: det <b>løber over</b>.', set:{} },
+    { nota: 'Jeg lægger 1 til: resultatet kan ikke længere være der, og starter forfra fra minimum. Værdien bliver <b>−2147483648</b>, negativ.', set:{c:{t:'-2147483648',tono:'no'},c1:{t:'overflow: int non è un numero infinito',tono:'no'}} },
+    { nota: 'Det samme sker med subtraktion i komparatorer: <code>a - b</code> kan give et forkert resultat med store værdier. Brug <code>Integer.compare(a, b)</code>.', set:{c2:{t:'comparatore: Integer.compare, non a − b',tono:'ok'}} },
+    { nota: 'Hvis summen kan overstige 2 milliarder (summer af vægte, omkostninger, afstande), brug <code>long</code>: 64 bit. Litteralen skrives med L: <code>1000000000L</code>.', set:{c:{t:'long: 9.2 · 10^18',tono:'ok'},c3:{t:'usa long per somme grandi',tono:'ok'}} }
+  ]
+};
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Java til Kattis</h1>
+  <p class="lede">Kattis bedømmer korrekthed og tid: en korrekt algoritme kan få 'Time Limit Exceeded', hvis den læser input langsomt eller tager forkerte datatyper. Denne side forklarer det sprog, du har brug for, med målingerne foretaget på denne pc.</p>
+</header>
+
+<section>
+  <h2>At læse input hurtigt</h2>
+<p><code>Scanner</code> er bekvem, men langsom: den analyserer hvert token med regulære udtryk. Til store input bruges <code>BufferedReader</code>, der læser én linje ad gangen, og <code>StringTokenizer</code> til at dele den op. Målt på 1 000 000 linjer: <code>Scanner.nextInt()</code> cirka 770 ms, <code>BufferedReader + StringTokenizer</code> cirka 200 ms.</p>
+<p>Navnet på den offentlige klasse skal stemme med filnavnet, og <code>readLine()</code> kan kaste <code>IOException</code>: man angiver det med <code>throws IOException</code>.</p>
+</section>
+<section>
+  <h2>Numeriske typer og overløb</h2>
+<p><code>int</code> (32 bit) går fra −2³¹ til 2³¹ − 1. Når den overskrider grænsen, er der ingen fejl: værdien starter forfra fra den anden side. <code>long</code> (64 bit) er valget til summer af vægte og omkostninger. Til sammenligninger bruges <code>Integer.compare</code> i stedet for subtraktion.</p>
+  <figure class="scena" data-scena="ovf" data-titolo="int der overskrider maksimum"></figure>
+</section>
+<section>
+  <h2>Arrays, lister og samlinger</h2>
+<p>Arrays (<code>int[]</code>) har fast længde og standardværdierne 0 (eller <code>false</code>, eller <code>null</code>). Lister (<code>ArrayList</code>) vokser; en kø er en <code>ArrayDeque</code>: <code>add</code> bagerst, <code>poll</code> forrest. En prioritetskø (<code>PriorityQueue</code>) kommer altid ud med minimum ifølge en komparator.</p>
+</section>
+<section>
+  <h2>Lambdaer og komparatorer</h2>
+<p>En komparator er en funktion, der siger, om et element kommer før et andet. I Java skrives den som en lambda: <code>(x, y) -> Integer.compare(x[1], y[1])</code> sorterer efter kolonne 1. Lambdaen er en funktion uden navn, der sendes som argument.</p>
+</section>
+<section>
+  <h2>Koden side om side</h2>
+  <p>Denne side forklarer begrebet. Java-koden, der implementerer det, med en forklaring linje for linje og de syntaksnoter, der skal bruges, står på den side ved siden af.</p>
+  <p><a href="../codice/basi-java-kattis.html"><b>→ Java-kode til dette emne</b></a></p>
+</section>
+<section>
+  <h2>Til eksamen</h2>
+<div class="box esame" data-tit="Til eksamen">
+<p>Til eksamen er sproget ikke det vigtige, men koden skal kunne kompilere. Kattis-opgaverne kræver Java: skriv <code>Main</code> med <code>BufferedReader</code> og <code>StringBuilder</code> til outputtet.</p>
+</div>
+</section>
+<section>
+  <h2>Hurtig oversigt</h2>
+<div class="tab-wrap"><table class="tab"><thead><tr><th>værktøj</th><th>egenskab</th><th>brug</th></tr></thead><tbody><tr><td>Scanner</td><td>bekvem, langsom</td><td>lille input</td></tr><tr><td>BufferedReader</td><td>hurtig</td><td>stort input</td></tr><tr><td>int</td><td>32 bit, lydløst overløb</td><td>tællere</td></tr><tr><td>long</td><td>64 bit</td><td>summer af vægte</td></tr></tbody></table></div>
+</section>
+
+</main>
+</body>
+</html>

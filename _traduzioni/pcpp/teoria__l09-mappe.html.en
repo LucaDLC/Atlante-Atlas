@@ -1,0 +1,50 @@
+@@s001 Concurrent maps: from one lock to ConcurrentHashMap
+@@s002 <span>Week 9 · Performance</span>
+@@s003 Concurrent maps: from one lock to ConcurrentHashMap
+@@s004 The second case study: eight implementations of a thread-safe hash map, from a single lock to structures without locks. The rule that runs through all of them is the same as for the counter: keep the data written close to a single thread.
+@@s005 The eight maps
+@@s006 The second case study is a thread-safe hash map. The lecture compares eight implementations, from the simplest to the Java library:
+@@s007 name
+@@s008 idea
+@@s009 SynchronizedMap
+@@s010 one single lock on the whole map
+@@s011 StripedMap
+@@s012 an array of locks: each lock protects a part of the buckets. The slides say 16 locks in one place and 32 in another
+@@s013 StripedMapPadded
+@@s014 as above, with padding between the locks
+@@s015 StripedWriteMap
+@@s016 as StripedMap, but the lists of (key, value) pairs are immutable: <b>reads</b> take no lock
+@@s017 StripedWriteMapPadded
+@@s018 as above, with padding
+@@s019 StripedLevelWriteMap
+@@s020 two levels: an array of arrays, each with its own lock; the sub-arrays resize separately
+@@s021 HashTrieMap
+@@s022 without locks: CAS operations on a hash array mapped trie (Prokopec, Bagwell)
+@@s023 WrapConcHashMap
+@@s024 the <code>java.util.concurrent.ConcurrentHashMap</code> of Doug Lea: locks and CAS together, with padding
+@@s025 The workload
+@@s026 To compare them, the lecture uses the same work pattern for all: N threads execute 5 000 000 operations in total (each 5 000 000 / N). Each operation looks for a random key and acts as follows:
+@@s027 One operation of the workload
+@@s028 dato:key,ora:decision,ok:action
+@@s029 This is the first check: <code>containsKey</code>.
+@@s030 If the random number is below addProb, one does <code>put</code>.
+@@s031 If the random number is below removeProb, one does <code>remove</code>.
+@@s032 Changing addProb and removeProb gives different workloads: <b>dominated by reads</b> (60% and 2%) or <b>dominated by writes</b> (90% and 30%).
+@@s033 What the measurements show
+@@s034 The single lock (<code>SynchronizedMap</code>) does not scale: more threads, more time. On the server it is much worse than on the laptop.
+@@s035 With a balanced or write-dominated load, no hand-written version scales well: the library's <code>ConcurrentHashMap</code> wins.
+@@s036 With a read-dominated load, <code>ConcurrentHashMap</code> remains the best; the padding helps the versions with non-blocking reads.
+@@s037 Non-blocking reads (immutable lists) work well only if the map is read much more than it is written.
+@@s038 The non-blocking versions have a memory cost: every write creates a new pair, so a garbage collector and careful management are needed. That is why the lecture says the technique is not practicable in C or C++ without a GC.
+@@s039 The lessons
+@@s040 When a lock is the right choice, and when not
+@@s041 dato:situation,ora:reasoning step,ok:conclusion,no:to avoid
+@@s042 A waiting lock does not keep the CPU busy: that is an advantage.
+@@s043 But only if the mutable data, locks included, mostly stay local to one thread.
+@@s044 Threads retry in a loop of active waiting (busy-wait), and the lines pass M → I → M → I.
+@@s045 @Contended is reserved for the Java libraries: in your code the padding must be done by hand.
+@@s046 How to choose
+@@s047 In practice
+@@s048 Do not write a concurrent map from scratch: use <code>ConcurrentHashMap</code>. Write your own version only to understand the trade-off, or if you measure that the library is not enough for a specific case.
+@@s049 Sentence for the oral
+@@s050 Striped locks and padding keep frequently written data core-local, so the cache lines can stay in the Modified state; ConcurrentHashMap combines these ideas in the library.

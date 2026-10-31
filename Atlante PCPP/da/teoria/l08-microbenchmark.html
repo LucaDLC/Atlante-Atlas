@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Microbenchmark: fra Mark0 til Mark8Setup</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Microbenchmark: fra Mark0 til Mark8Setup</h1>
+  <p class="lede">Sådan måler man, hvor lang tid et stykke Java-kode tager, uden at blive narret af JVM'en. Funktionerne <code>Mark0</code>…<code>Mark8Setup</code> i øvelse 8 er en stige: hver af dem retter en fejl fra den forrige.</p>
+</header>
+
+<section>
+  <h2>Hvor de kommer fra: de er ikke standard</h2>
+  <p>Funktionerne <code>Mark</code> <b>er ikke en del af Java</b>: de er skrevet af Peter Sestoft, en af de to undervisere. Det ses i headeren af <code>Benchmark.java</code> (<code>sestoft@itu.dk * 2013, 2015, 2026</code>) og i læsningen, der står i README'en for uge 8: hans noter <i>Microbenchmarks in Java, C# and C</i>. <code>Mark0</code>…<code>Mark8</code> er trinene i de noter. <code>Timer.java</code> kalder sig selv "crude wall clock timing utility" (et groft stopur).</p>
+  <div class="box idea" data-tit="Og uden for kurset?">
+    <p>Værktøjet, der bruges i praksis til Java-microbenchmarks, er <b>JMH</b> (Java Microbenchmark Harness, fra OpenJDK). Det gør professionelt de samme ting som <code>Mark</code>-funktionerne: opvarmning, gentagelser, gennemsnit og standardafvigelse. Kurset bruger <code>Mark</code>-funktionerne, fordi de er korte og kan læses linje for linje. Denne information om JMH stammer fra almen viden, ikke fra kursets filer.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Hvorfor et stopur ikke er nok</h2>
+  <p>Den første idé: jeg tager tiden, kører koden, tager tiden igen og trækker fra. I Java giver det forkerte tal af tre grunde.</p>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>problem</th><th>hvad der sker</th><th>hvordan man undgår det</th></tr></thead>
+    <tbody>
+      <tr><td><b>Opvarmning</b> (warm-up)</td><td>I starten er koden <b>fortolket</b>, og derefter kompilerer JIT-compileren den. De første kørsler er meget langsommere.</td><td>gentag, indtil tiden stabiliserer sig</td></tr>
+      <tr><td><b>Død kode</b> (dead code)</td><td>Hvis resultatet ikke bruges til noget, kan JIT'en fjerne beregningen, og du måler ingenting.</td><td>brug resultatet (<code>dummy += …</code>) og returnér det</td></tr>
+      <tr><td><b>Støj</b></td><td>Andre processer, garbage collectoren, CPU'ens frekvens: hver måling er lidt anderledes.</td><td>gentag 10 gange og giv <b>middelværdi ± standardafvigelse</b></td></tr>
+    </tbody>
+  </table></div>
+  <p>Et virkeligt eksempel, målt på denne pc (JDK 26.0.2.1): <code>myPoint.hashCode()</code> i første runde koster <b>490 ns</b> (sdev 1164); efter 134 millioner gentagelser koster det <b>2,5 ns</b> (sdev 0,09). Koden er identisk: det eneste, der er ændret, er, at JVM'en i mellemtiden har kompileret den.</p>
+</section>
+
+<section>
+  <h2>Stigen: hver Mark retter en fejl</h2>
+  <figure class="passi" data-titolo="Fra Mark0 til Mark8Setup" data-legenda="no:fejl,ok:rettelse,ora:hvad der ændrer sig,dato:de målte data">
+    <div class="passo"><div class="espr"><mark class="dato">Mark0</mark>: <mark class="no">una sola chiamata</mark> a multiply(10), cronometrata</div><p class="nota">Ubrugelig: den inkluderer opvarmningen, og stopurets præcision er ikke nok til et kald på få nanosekunder.</p></div>
+    <div class="passo"><div class="espr"><mark class="dato">Mark1</mark>: <mark class="ok">100 milioni di chiamate</mark>, ma <mark class="no">il risultato viene buttato</mark></div><p class="nota">Tiden deles med 100 millioner, men JIT'en kan regne ud, at <code>multiply(i)</code> ikke bruges til noget, og fjerne det: du måler måske en tom løkke.</p></div>
+    <div class="passo"><div class="espr"><mark class="dato">Mark2</mark>: <mark class="ok">dummy += multiply(i)</mark> e si restituisce dummy</div><p class="nota">Nu bruges resultatet (<code>dummy</code> kommer ud af metoden): JIT'en kan ikke fjerne beregningen.</p></div>
+    <div class="passo"><div class="espr"><mark class="dato">Mark3</mark>: <mark class="ok">10 ripetizioni</mark>, ognuna stampata</div><p class="nota">Man kan se opvarmningen (de første linjer er højere) og variationen mellem en gentagelse og den næste.</p></div>
+    <div class="passo"><div class="espr"><mark class="dato">Mark4</mark>: <mark class="ok">media ± deviazione standard</mark> delle 10 ripetizioni</div><p class="nota">Ét tal, med dets usikkerhed. Formlen står i afsnittet nedenfor.</p></div>
+    <div class="passo"><div class="espr"><mark class="dato">Mark5</mark>: <mark class="ora">count</mark> raddoppia (2, 4, 8, …) <mark class="ok">finché un giro dura almeno 0,25 s</mark></div><p class="nota">Man skal ikke gætte, hvor mange kald der skal til: man starter med få og fordobler, og stopper, når runden er lang nok til at blive målt godt. Den udskriver en linje for hver fordobling.</p></div>
+    <div class="passo"><div class="espr"><mark class="dato">Mark6</mark>: come Mark5 ma <mark class="ora">generico</mark>: unità, messaggio e funzione <mark class="ora">f</mark> come argomenti</div><p class="nota">Man kan måle al slags kode: <code>Mark6('n', "hashCode()", i -&gt; myPoint.hashCode())</code>. Den udskriver stadig en linje for hver fordobling: det tjener til at se, hvordan den stabiliserer sig.</p></div>
+    <div class="passo"><div class="espr"><mark class="dato">Mark7</mark>: come Mark6 ma <mark class="ok">stampa solo l'ultimo giro</mark></div><p class="nota">Det er den, man skal bruge til at rapportere et resultat: én linje pr. måling, uden linjerne fra opvarmningen.</p></div>
+    <div class="passo"><div class="espr"><mark class="dato">Mark8</mark>: Mark7 con una colonna <mark class="ora">info</mark> in più</div><p class="nota">Den bruges til at putte en parameter i linjen, for eksempel størrelsen af arrayet (<code>String.format("%8d", size)</code>).</p></div>
+    <div class="passo"><div class="espr"><mark class="dato">Mark8Setup</mark>: <mark class="ora">setup.run()</mark> tra <mark class="ora">t.pause()</mark> e <mark class="ora">t.play()</mark></div><p class="nota">Den forbereder data <b>uden at tælle tiden for det</b>: for eksempel at blande arrayet, inden hver sortering.</p></div>
+  </figure>
+</section>
+
+<section>
+  <h2>Mark7 linje for linje</h2>
+  <figure class="codice" data-titolo="Mark7 (fra Benchmark.java)">
+<pre data-lang="java">public static double Mark7(char tunit, String msg, LongToDoubleFunction f) {
+    long n = 10, count = 1, totalCount = 0;
+    double dummy = 0.0, runningTime = 0.0, st = 0.0, sst = 0.0;
+    do {
+      count *= 2;
+      st = sst = 0.0;
+      for (long j=0; j&lt;n; j++) {
+        Timer t = new Timer();
+        for (long i=0; i&lt;count; i++)
+          dummy += f.applyAsDouble(i);
+        runningTime = t.check();
+        double time = runningTime * scale(tunit) / count;
+        st += time;
+        sst += time * time;
+        totalCount += count;
+      }
+    } while (runningTime &lt; 0.25);
+    double mean = st/n, sdev = Math.sqrt((sst - mean*mean*n)/(n-1));
+    System.out.printf("%-25s %15.1f %cs %10.2f %10d%n", msg, mean, tunit, sdev, count);
+    return dummy / totalCount;
+}</pre>
+    <div class="intro"><p>Metoden modtager tre ting: <b>tidsenheden</b> (<code>'n'</code> nanosekunder, <code>'u'</code> mikrosekunder, <code>'m'</code> millisekunder), en <b>besked</b> at udskrive og <b>funktionen, der skal måles</b> <code>f</code>. <code>LongToDoubleFunction</code> er et Java-interface med én metode, <code>applyAsDouble(long)</code>: den tager en <code>long</code> og returnerer en <code>double</code>. Derfor sender man en lambda <code>i -&gt; …</code>.</p></div>
+    <ol class="spiega">
+      <li data-righe="2" data-segna="n = 10@dato|count = 1@ora"><p><code>n</code> = hvor mange gentagelser af den samme runde der laves, så der kan beregnes et gennemsnit. <code>count</code> = hvor mange gange <code>f</code> kaldes i en runde; den starter på 1 og fordobles straks, så den første runde har 2.</p></li>
+      <li data-righe="3" data-segna="dummy@ok|st@dato|sst@due"><p><code>dummy</code> samler alle resultaterne af <code>f</code>, så JIT'en ikke kan kassere beregningen. <code>st</code> = summen af tiderne, <code>sst</code> = summen af tidernes <b>kvadrater</b>: de skal bruges til standardafvigelsen.</p></li>
+      <li data-righe="4-5" data-segna="count *= 2@ora"><p>Hver runde i <code>do</code> fordobler <code>count</code>: 2, 4, 8, … indtil runden varer længe nok.</p></li>
+      <li data-righe="6" data-segna="st = sst = 0.0@ora"><p>Summerne nulstilles ved hver fordobling: gennemsnittet handler kun om de 10 gentagelser af <b>denne</b> <code>count</code>.</p></li>
+      <li data-righe="7-8,11" data-segna="Timer t = new Timer();@dato|t.check()@ok"><p>Et nyt stopur for hver gentagelse. <code>new Timer()</code> starter det; <code>t.check()</code> returnerer de forløbne sekunder.</p></li>
+      <li data-righe="9-10" data-segna="dummy += f.applyAsDouble(i);@ora"><p>Det målte arbejde: det kalder <code>f</code> <code>count</code> gange og sender <code>i</code> med (0, 1, 2, …). At sende <code>i</code> forhindrer JIT'en i at beregne resultatet på forhånd som en konstant.</p></li>
+      <li data-righe="12" data-segna="runningTime * scale(tunit) / count@ok"><p>Tiden for <b>ét</b> kald: sekunderne i runden × enhedens faktor (<code>scale('n')</code> = 1e9) ÷ <code>count</code>.</p></li>
+      <li data-righe="13-15" data-segna="time * time@due"><p>Opdaterer summerne: <code>st</code> med tiden, <code>sst</code> med dens kvadrat. <code>totalCount</code> tæller alle kald; den tjener kun til den returnerede værdi.</p></li>
+      <li data-righe="17" data-segna="runningTime &lt; 0.25@no"><p>Betingelse for at <b>fortsætte</b>: hvis den sidste gentagelse varede mindre end 0,25 s, fordobles <code>count</code>, og det gøres om. Når den varer mindst 0,25 s, er stopuret præcist nok, og man stopper.</p></li>
+      <li data-righe="18" data-segna="mean@ok|sdev@due"><p>Gennemsnit og standardafvigelse for de 10 gentagelser (formlen står i afsnittet nedenfor).</p></li>
+      <li data-righe="19" data-segna="mean@ok|sdev@due|count@ora"><p>Udskriver én enkelt linje: besked, gennemsnit, enhed, sdev, <code>count</code> for den sidste runde.</p></li>
+      <li data-righe="20" data-segna="dummy / totalCount@ok"><p>Returnerer noget, der afhænger af alle resultaterne: den sidste måde at få <code>dummy</code> brugt på.</p></li>
+    </ol>
+  </figure>
+</section>
+
+<section>
+  <h2>Gennemsnit og standardafvigelse</h2>
+  <p><b>Standardafvigelsen</b> (sdev) siger, hvor meget målingerne er spredt omkring gennemsnittet. Hvis den er lille i forhold til gennemsnittet, er målingen stabil; hvis den er stor, er den ikke det. Linjen <code>sdev = Math.sqrt((sst - mean*mean*n)/(n-1))</code> bruger de to summer, som løkken allerede har akkumuleret. Et eksempel med 4 tider (funktionen bruger 10):</p>
+  <figure class="passi" data-titolo="Fra 4 tider til gennemsnit ± sdev" data-legenda="dato:tiderne,due:kvadraterne,ora:formlen,ok:resultatet">
+    <div class="passo"><div class="espr">tempi: <mark class="dato">9, 10, 10, 11</mark> µs      n = 4</div><p class="nota">Fire gentagelser af den samme runde.</p></div>
+    <div class="passo"><div class="espr">st = <mark class="dato">9 + 10 + 10 + 11 = 40</mark></div><p class="nota">Summen af tiderne.</p></div>
+    <div class="passo"><div class="espr">sst = <mark class="due">81 + 100 + 100 + 121 = 402</mark></div><p class="nota">Summen af tidernes kvadrater.</p></div>
+    <div class="passo"><div class="espr">mean = st / n = 40 / 4 = <mark class="ok">10</mark></div><p class="nota">Gennemsnittet.</p></div>
+    <div class="passo"><div class="espr">sdev = √( (<mark class="due">sst</mark> − mean²·n) / (n−1) ) = √( (402 − 100·4) / 3 )</div><p class="nota">Der divideres med n−1 og ikke med n: det er formlen for den stikprøvebaserede standardafvigelse.</p></div>
+    <div class="passo"><div class="espr">sdev = √(2/3) = <mark class="ok">0,82</mark></div><p class="nota">Kontrol: afvigelserne fra gennemsnittet er −1, 0, 0, +1, og deres kvadrater giver 2 i alt: det samme, fordi Σ(t − gennemsnit)² = Σt² − n·gennemsnit². Fordelen er, at løkken ikke skal huske de enkelte tider.</p></div>
+  </figure>
+  <div class="box regola" data-tit="Sådan læser man en linje fra Mark7">
+    <p><code>navn gennemsnit enhed sdev count</code>: for eksempel betyder <code>Thread virt cre strt join 14557,2 ns 864,61 32768</code>, at det i gennemsnit koster 14 557 ns at oprette, starte og vente på en virtuel tråd, med sdev 865 ns (6 % af gennemsnittet), målt over en runde på 32 768 kald. En sdev tæt på eller over gennemsnittet betyder, at tallet ikke er pålideligt.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Timer og Mark8Setup: måling uden opsætningen</h2>
+  <figure class="codice" data-titolo="Timer.java og hjertet i Mark8Setup">
+<pre data-lang="java">public class Timer {
+  private long start, spent = 0;
+  public Timer() { play(); }
+  public double check() { return (System.nanoTime()-start+spent)/1e9; }
+  public void pause() { spent += System.nanoTime()-start; }
+  public void play() { start = System.nanoTime(); }
+}
+
+// dentro Mark8Setup, per ogni chiamata:
+t.pause();
+setup.run();
+t.play();
+dummy += f.applyAsDouble(i);</pre>
+    <ol class="spiega">
+      <li data-righe="2" data-segna="start@dato|spent@due"><p><code>start</code> = det øjeblik, stopuret blev (gen)startet; <code>spent</code> = den tid, der allerede er akkumuleret før en pause.</p></li>
+      <li data-righe="4" data-segna="System.nanoTime()@ora|/1e9@ok"><p><code>System.nanoTime()</code> er Javas ur i nanosekunder (nyttigt kun til at trække to øjeblikke fra hinanden). Den målte tid er <i>nu − start + spent</i>, divideret med 1e9 for at få den i sekunder.</p></li>
+      <li data-righe="5" data-segna="spent += System.nanoTime()-start@due"><p><code>pause()</code>: lægger den tid, der er gået siden det sidste <code>start</code>, til <code>spent</code>. Fra da tæller den tid, der går, <b>ikke</b>, før <code>play()</code> kaldes igen.</p></li>
+      <li data-righe="6" data-segna="start = System.nanoTime()@dato"><p><code>play()</code>: starter igen fra nu af. Alt, der er sket mellem <code>pause()</code> og <code>play()</code>, bliver udenfor <code>check()</code>.</p></li>
+      <li data-righe="10-13" data-segna="t.pause();@ora|setup.run();@due|t.play();@ora|f.applyAsDouble(i)@ok"><p>Stopuret stoppes, dataene forberedes (for eksempel <code>shuffle</code> af arrayet, som koster 1,1 ms på 100 000 elementer), det startes igen, og kun <code>f</code> måles. Uden dette ville sorteringen også måle omblandingen.</p></li>
+    </ol>
+  </figure>
+</section>
+
+<section>
+  <h2>Hvad øvelserne 8.1–8.4 måler</h2>
+  <p>Opgavens tråd: <b>hvor meget en ting virkelig koster</b>, når den i Java ser gratis ud (en biblioteksfunktion, en tråd, et nøgleord)? Hver øvelse måler en anden omkostning med de samme <code>Mark</code>-funktioner. Tallene er fra denne pc (i5-11400H, JDK 26.0.2.1).</p>
+  <figure class="passi" data-titolo="Opgaven i 4 trin" data-legenda="dato:hvad der måles,ok:resultat,ora:hvad man lærer,no:advarsel">
+    <div class="passo"><div class="espr"><mark class="dato">8.1</mark> funzioni matematiche (pow, exp, sin…): <mark class="ok">6–23 ns a chiamata</mark></div><p class="nota"><mark class="ora">Man lærer at bruge Mark7 og at læse sdev.</mark> I én kørsel havde <code>tan</code> og <code>asin</code> sdev ±5 ns, og i de andre kørsler blev de normale igen: det var støj. <code>Math.sqrt</code> (≈2 ns) er en enkelt CPU-instruktion; <code>Math.random</code> (≈20–29 ns) bruger en delt <code>Random</code> med en CAS. Og <code>sqrt(random)</code> er ikke <code>random + sqrt</code>: de 2 ns af <code>sqrt</code> forsvinder i støjen.</p></div>
+    <div class="passo"><div class="espr"><mark class="dato">8.2</mark> thread: platform <mark class="ok">≈110 µs</mark> contro virtual <mark class="ok">≈11,6 µs</mark> (crea + avvia + join)</div><p class="nota"><mark class="ora">Trådens omkostning = total − trådens arbejde.</mark> Arbejdet (1000 inkrementeringer) er værd ≈4,7 µs, så overhead er ≈106 µs mod ≈6,9 µs: cirka 15 gange mindre for den virtuelle. En platformstråd bør ikke oprettes til et lille arbejde. Pas på: <mark class="no">"opret + start" uden join er ikke pålideligt</mark> (meget høj sdev).</p></div>
+    <div class="passo"><div class="espr"><mark class="dato">8.3</mark> ordinamento di 100 000 interi: quicksort <mark class="ok">7,8 ms</mark>, <code>Arrays.sort</code> <mark class="ok">6,0 ms</mark>, <code>parallelSort</code> <mark class="ok">2,3 ms</mark></div><p class="nota"><mark class="ora">Parallelisering betaler sig kun, hvis arbejdet for en tråd er mere værd end trådens omkostning</mark> (≈7 µs for en virtuel, fra det forrige trin). Derfor opretter den parallelle quicksort kun en tråd, hvis <code>j - a &gt; 50</code>: under det koster sortering mindre end at oprette tråden.</p></div>
+    <div class="passo"><div class="espr"><mark class="dato">8.4</mark> campo <code>volatile</code>: <code>add</code> <mark class="ok">≈0,3 ns</mark> contro <code>addVolatile</code> <mark class="ok">5,6–8,5 ns</mark></div><p class="nota"><mark class="ora">Et <code>volatile</code>-felt koster cirka 20 gange</mark> allerede med én tråd: hver skrivning har en hukommelsesbarriere, og JIT'en kan ikke holde feltet i et register. Med to tråde på det samme objekt når <code>addVolatile</code> ≈31 ns pr. addition, mens <code>add</code> ikke ændrer sig.</p></div>
+  </figure>
+  <div class="box idea" data-tit="Lektionen der binder dem sammen">
+    <p>Omkostningen er aldrig "nul", og den er aldrig "det, den ser ud til": et bibliotekskald, en tråd eller et nøgleord kan koste fra få ns til hundredvis af µs. For at beslutte (tråd ja eller nej? <code>volatile</code> ja eller nej?) skal man <b>måle grundigt</b>: opvarmning, brugt resultat, gentagelser, sdev. Og det er derfor, <code>Mark</code>-funktionerne findes.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Praktiske regler</h2>
+  <div class="box attenzione" data-tit="Ting der forfalsker målingen">
+    <p><b>Aldrig i en IDE eller i debug-tilstand</b> (det står i opgavens tekst). Luk de andre programmer; på en bærbar computer skal strømforsyningen tilsluttes. Lav altid mindst to kørsler og kig på sdev: en meget højere sdev i én kørsel (som <code>tan</code> med ±5,4 ns i én kørsel ud af to) angiver støj, ikke en egenskab ved funktionen. Værdien, som <code>f</code> returnerer, skal <b>afhænge af det målte arbejde</b>, ellers fjerner JIT'en den.</p>
+  </div>
+  <div class="box basi" data-tit="Kommandoer i terminalen">
+    <p>Fra projektmappen: <code>gradle -q -PmainClass=exercises08.Benchmark run</code> (skift klassen for de andre: <code>TestTimeThreads</code>, <code>TestTimeSort</code>, <code>TestTimeVolatile</code>). <code>-q</code> udskriver kun programmets output; for at gemme det tilføjes <code>&gt; file.txt</code>. Uden Gradle: fra mappen <code>app/src/main/java</code>, <code>javac exercises08/*.java</code> og derefter <code>java exercises08.Benchmark</code>.</p>
+  </div>
+</section>
+
+</main>
+</body>
+</html>

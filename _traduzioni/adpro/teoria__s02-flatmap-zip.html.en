@@ -1,0 +1,75 @@
+@@s001 filter, flatMap, zipWith
+@@s002 dato:starting list,ora:result of f for one element,ok:final result
+@@s003 <code>flatMap(List(1, 2, 3), i =&gt; List(i, i))</code>: f turns each element into a <b>list</b>.
+@@s004 f(1) = List(1, 1).
+@@s005 f(2) = List(2, 2), f(3) = List(3, 3). With map I would stop here: a list of lists.
+@@s006 flatMap <b>joins</b> them: List(1, 1, 2, 2, 3, 3). "Map, then flatten".
+@@s007 dato:first list,due:second list,ok:f(h1, h2)
+@@s008 <code>zipWith(List(1, 2, 3), List(10, 20), _ + _)</code>: two lists, a function of two arguments.
+@@s009 The two heads: 1 + 10 = <b>11</b>.
+@@s010 The two heads of the tails: 2 + 20 = <b>22</b>.
+@@s011 The second list has ended: case <code>(_, Nil) =&gt; Nil</code>. The 3 has no partner and stays out: the result is as long as the shorter list, <b>List(11, 22)</b>.
+@@s012 ok:foldRight (elements copied),no:foldLeft (elements copied)
+@@s013 ora:element a,ok:kept,no:discarded,dato:z (rest already filtered)
+@@s014 ora:the two heads,ok:result,no:left out
+@@s015 filter, flatMap, zipWith
+@@s016 Exercises 12–18: the functions you will use most often, built with fold and with those already written. The exercise sheet insists on one: <b>flatMap</b>, which "will be the key for the rest of the course".
+@@s017 <code>concat</code>: flattening a list of lists
+@@s018 Two choices to understand:
+@@s019 <b>z = Nil</b>: flattening zero lists gives the empty list.
+@@s020 <b>f = append</b>: already a function of type <code>(List[A], List[A]) => List[A]</code>, I pass it as it is.
+@@s021 Why foldRight and not foldLeft: the cost
+@@s022 Remember: <code>append</code> copies only the <b>first</b> list.
+@@s023 Each original list is the first argument <b>only once</b>: total cost = number of elements. Linear.
+@@s024 The accumulator, which grows, is always on the left and is copied at every step: the same elements copied several times. Quadratic cost.
+@@s025 Copies with foldRight and with foldLeft
+@@s026 <code>filter</code> with foldRight
+@@s027 Exercise 13
+@@s028 Filtering the empty list gives the empty list.
+@@s029 <code>a</code> is the element, <code>z</code> is the result already filtered of everything that comes <b>after</b>.
+@@s030 If I keep it, I put it back in front of the filtered rest.
+@@s031 If I discard it, I return the rest as it is. Discarding = adding nothing.
+@@s032 filter(List(1, 2, 3, 4), _ % 2 == 0)
+@@s033 foldRight: one starts from the last element.
+@@s034 4 is even: kept.
+@@s035 3 odd: the rest passes unchanged.
+@@s036 2 kept.
+@@s037 1 discarded. The order is the original one: it is the advantage of foldRight.
+@@s038 From the last element to the first
+@@s039 <code>flatMap</code>: map, then flatten
+@@s040 <code>map</code> turns each element into <b>one</b> element. <code>flatMap</code> turns it into a <b>list</b> (with zero, one or many elements) and then joins all the lists.
+@@s041 flatMap(List(1, 2, 3), i => List(i, i))
+@@s042 The starting list.
+@@s043 Each element becomes a list: I get a list of lists.
+@@s044 I join them. Result checked.
+@@s045 flatMap: map, then flatten
+@@s046 f always gives 1 element
+@@s047 <code>flatMap(l, a => List(g(a)))</code> is <code>map</code>.
+@@s048 f gives 0 or 1 elements
+@@s049 <code>flatMap(l, a => if p(a) then List(a) else Nil)</code> is <code>filter</code> (exercise 15).
+@@s050 f gives many elements
+@@s051 It multiplies the list, as in the example above.
+@@s052 Why it matters
+@@s053 <code>flatMap</code> contains both <code>map</code> and <code>filter</code>. In week 3 the same operation, on <code>Option</code>, serves to chain calculations that may fail: it is the heart of <b>monads</b>.
+@@s054 <code>zipWith</code>: two lists in parallel
+@@s055 Exercise 16 adds two lists position by position. Exercise 17 generalises: not only integers, not only the sum.
+@@s056 From addPairwise to zipWith
+@@s057 Three types: elements of the first list, of the second, of the result. <code>f</code> says how to combine them.
+@@s058 As soon as one list ends, one stops: the result is as long as the shorter one. It is the only choice that does not invent missing values.
+@@s059 I combine the two heads and continue with the two tails.
+@@s060 Two lists in parallel, up to the shorter
+@@s061 <code>hasSubsequence</code>: looking for a block inside a list
+@@s062 Exercise 18. Here "subsequence" means <b>consecutive</b> elements: <code>List(2, 3)</code> is in <code>List(1, 2, 3, 4)</code>, <code>List(1, 4)</code> is not.
+@@s063 zipWith stops at the shorter list
+@@s064 Your solution: prefix, otherwise try again from the tail
+@@s065 I break the problem down. Question 1: is <code>sub</code> the <b>start</b> of <code>sup</code>?
+@@s066 An empty prefix is at the start of any list.
+@@s067 Equal heads: I check that the rest also matches.
+@@s068 Different heads, or <code>l</code> ended before <code>prefix</code>: it is not a prefix.
+@@s069 Question 2: if it is not at the start, it could start at <b>the position after</b>. I try again with the tail of <code>sup</code> and with the <b>whole</b> <code>sub</code>. <code>||</code> stops at the first true.
+@@s070 If <code>sup</code> is empty, only the empty list fits inside.
+@@s071 hasSubsequence(List(1, 2, 1, 2, 3), List(1, 2, 3))
+@@s072 From position 0: 1 and 2 match, then 1 ≠ 3. It is not a prefix.
+@@s073 I try again from position 1: 2 ≠ 1.
+@@s074 From position 2: everything matches.
+@@s075 The delicate point was the first failed attempt: one must not conclude <code>false</code>, but restart with the whole <code>sub</code> (checked).

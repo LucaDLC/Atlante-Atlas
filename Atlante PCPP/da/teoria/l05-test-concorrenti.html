@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>At skrive samtidige tests</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<link rel="stylesheet" href="../../assets/pcpp.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+<script src="../../assets/pcpp.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+SCENE.barriera = {
+  w: 560, h: 300, lato: false,
+  legenda: 'dato:tråd der arbejder,ora:venter ved barrieren,ok:startet sammen med de andre',
+  codice: { lang: 'java', testo: `barrier = new CyclicBarrier(nrThreads + 1);
+for (int i = 0; i < nrThreads; i++)
+  new Thread(() -> {
+    barrier.await();            // aspetta il via
+    for (...) set.add(i);       // il lavoro da testare
+    barrier.await();            // ho finito
+  }).start();
+barrier.await();                // il main da il via
+barrier.await();                // il main aspetta la fine
+assertEquals(N, set.size());` },
+  oggetti: [
+    { id: 'bar', tipo: 'linea', x1: 300, y1: 20, x2: 300, y2: 250, tratt: true, tono: 'no' },
+    { id: 'tb', tipo: 'testo', x: 300, y: 270, t: 'barriera', size: 13, bold: true },
+    { id: 't1', tipo: 'nodo', r: 20, x: 60, y: 50, t: 't1', tono: 'dato' },
+    { id: 't2', tipo: 'nodo', r: 20, x: 60, y: 105, t: 't2', tono: 'dato' },
+    { id: 't3', tipo: 'nodo', r: 20, x: 60, y: 160, t: 't3', tono: 'dato' },
+    { id: 'mn', tipo: 'nodo', forma: 'quadrato', r: 22, x: 60, y: 220, t: 'main', tono: 'due' },
+    { id: 'n', tipo: 'testo', x: 440, y: 30, t: 'in attesa: 0 / 4', size: 13, bold: true }
+  ],
+  passi: [
+    { nota: 'Barrieren oprettes med <b>nrThreads + 1</b> deltagere: de 3 tråde i testen plus <b>main</b>, tråden der kører testen. Den åbner først, når alle 4 er ankommet.', righe: [1] },
+    { nota: 't1 starter straks og når det første <code>await()</code>: den stopper der.', righe: [4], set: { t1: { x: 270, tono: 'ora' }, n: { t: 'in attesa: 1 / 4' } } },
+    { nota: 't2 kommer: 2 ud af 4. Uden barrieren ville t1 allerede have lavet alt sit arbejde alene, og trådene ville køre næsten én efter én.', righe: [4], set: { t2: { x: 270, tono: 'ora' }, n: { t: 'in attesa: 2 / 4' } } },
+    { nota: 't3 kommer: 3 ud af 4. Der mangler stadig en deltager.', righe: [4], set: { t3: { x: 270, tono: 'ora' }, n: { t: 'in attesa: 3 / 4' } } },
+    { nota: 'Main laver sit <code>await()</code>: 4 ud af 4, barrieren åbner, og de tre tråde <b>starter på samme øjeblik</b>. Sådan maksimeres konkurrencen: flere operationer parallelt, flere chancer for en dårlig interleaving.', righe: [8, 5], set: { mn: { x: 270, tono: 'ora' }, t1: { x: 420, tono: 'ok' }, t2: { x: 420, tono: 'ok' }, t3: { x: 420, tono: 'ok' }, n: { t: 'aperta: via!', tono: 'ok' } } },
+    { nota: 'Den samme barriere er cyklisk: den genbruges. Ved det andet <code>await()</code> venter main, til alle er færdige, og først derefter kontrollerer den egenskaben med <b>assertionen</b>.', righe: [6, 9, 10], set: { mn: { x: 420, tono: 'ok' }, n: { t: 'assertEquals(N, set.size())', tono: 'ok' } } }
+  ]
+};
+window.PROGRAMMI = window.PROGRAMMI || {};
+PROGRAMMI.addset = {
+  memoria: { set: [], size: 0 },
+  thread: ['t1', 't2'],
+  locali: { c: false },
+  passi: [
+    { n: 1, codice: 'boolean c = set.contains(5);', fai: (m, l) => { l.c = m.set.includes(5); } },
+    { n: 2, codice: 'if (!c) tab[i] = new Node(5);', fai: (m, l) => { if (!l.c) m.set = [5]; } },
+    { n: 3, codice: 'if (!c) size++;', fai: (m, l) => { if (!l.c) m.size++; } }
+  ],
+  esito: m => 'set = [' + m.set.join(', ') + '], size = ' + m.size,
+  giusto: m => m.size === 1
+};
+</script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  const T = (id, x, y, t, extra) => Object.assign({ id, tipo: 'testo', x, y, t, size: 13 }, extra || {});
+  const R = (id, x, y, w, h, t, extra) => Object.assign({ id, tipo: 'rett', x, y, w, h, t }, extra || {});
+  const N = (id, x, y, t, tono, extra) => Object.assign({ id, tipo: 'nodo', x, y, t, tono, r: 18 }, extra || {});
+
+    SCENE.sem52 = {
+      w: 600, h: 240, lato: true,
+      legenda: 'dato:main,ora:tråd,no:egenskab overtrådt,ok:inde i den kritiske sektion',
+      oggetti: [
+        R('st', 30, 20, 180, 40, 'state = 0', { tono: 'spento' }), R('cap', 230, 20, 150, 40, 'capacity = 2', { tono: 'spento' }),
+        R('sc', 330, 90, 250, 100, '', { tono: 'spento' }), T('sct', 455, 108, 'sezione critica', { size: 12 }),
+        N('m', 60, 120, 'm', 'dato'), N('t1', 130, 120, 't1', 'ora'), N('t2', 190, 120, 't2', 'ora'), N('t3', 250, 120, 't3', 'ora'),
+        T('c', 300, 222, '', { size: 12, bold: true })
+      ],
+      passi: [
+        { nota: "Il semaforo difettoso dell'esercizio 5.2: <code>acquire()</code> aspetta solo se state == capacity; <code>release()</code> fa state-- <b>senza controllare</b> niente. Proprietà (Herlihy): al massimo capacity thread nella sezione critica." },
+        { nota: "Il main chiama <code>release()</code> senza aver fatto acquire: state = −1. È come regalare un permesso. Anche il main fa parte dell'interleaving.", set: { st: { t: 'state = −1', tono: 'no' }, m: { tono: 'no' } } },
+        { nota: "t1 chiama acquire(): state vale −1, diverso da 2: entra, state = 0.", set: { t1: { x: 380, y: 150, tono: 'ok' }, st: { t: 'state = 0', tono: 'spento' } } },
+        { nota: "t2: state vale 0, entra, state = 1.", set: { t2: { x: 450, y: 150, tono: 'ok' }, st: { t: 'state = 1' } } },
+        { nota: "t3: state vale 1, entra, state = 2. <b>Tre thread</b> nella sezione critica con capacity = 2: proprietà violata. Il test non dipende dallo scheduling (è sequenziale): basta un @Test normale.", set: { t3: { x: 520, y: 150, tono: 'no' }, st: { t: 'state = 2' }, c: { t: '3 thread dentro con capacity 2: proprietà violata', tono: 'no' } } }
+      ]
+    };
+
+    const og = [T('lp', 90, 30, 'produttori', { bold: true, size: 12 }), T('lc', 510, 30, 'consumatori', { bold: true, size: 12 }),
+      R('buf', 230, 60, 140, 60, 'buffer', { tono: 'spento' }),
+      R('p1', 30, 50, 120, 30, 'P1: somma 0', { tono: 'dato' }), R('p2', 30, 100, 120, 30, 'P2: somma 0', { tono: 'dato' }),
+      R('c1', 450, 50, 120, 30, 'C1: somma 0', { tono: 'due' }), R('c2', 450, 100, 120, 30, 'C2: somma 0', { tono: 'due' }),
+      R('ps', 30, 170, 200, 34, 'putSum = 0', { tono: 'spento' }), R('ts', 370, 170, 200, 34, 'takeSum = 0', { tono: 'spento' }),
+      T('c', 300, 228, '', { size: 12, bold: true })];
+    SCENE.sommatest = {
+      w: 600, h: 240, lato: true,
+      legenda: 'dato:producenter,due:konsumenter,ok:lige summer,no:forskellige summer',
+      oggetti: og,
+      passi: [
+        { nota: "Il test del bounded buffer della lezione. Proprietà: se si mettono e si prendono lo stesso numero di elementi, la <b>somma dei numeri messi</b> è uguale alla <b>somma dei numeri presi</b>." },
+        { nota: "Ogni produttore mette numeri casuali e tiene la <b>sua</b> somma locale (nessuna condivisione, nessun costo di sincronizzazione nel test).", set: { p1: { t: 'P1: 7 + 3 = 10' }, p2: { t: 'P2: 5 + 1 = 6' }, buf: { t: '7 3 5 1' } } },
+        { nota: "Ogni consumatore prende e somma localmente.", set: { buf: { t: 'buffer vuoto' }, c1: { t: 'C1: 7 + 5 = 12' }, c2: { t: 'C2: 3 + 1 = 4' } } },
+        { nota: "Alla fine ognuno aggiunge la sua somma a un <b>AtomicInteger</b> globale: putSum = 16, takeSum = 16. <code>assert(putSum.get() == takeSum.get())</code>.", set: { ps: { t: 'putSum = 16', tono: 'ok' }, ts: { t: 'takeSum = 16', tono: 'ok' }, c: { t: 'somme uguali: nessun elemento perso o duplicato', tono: 'ok' } } },
+        { nota: "Se il buffer perdesse un elemento (per esempio due take che leggono lo stesso indice) le somme sarebbero diverse. Attenzione: il test si <b>fida</b> di AtomicInteger. Se l'oggetto usato per controllare fosse sbagliato, il test non varrebbe niente.", set: { c1: { t: 'C1: 7 + 7 = 14' }, ts: { t: 'takeSum = 18', tono: 'no' }, c: { t: 'elemento duplicato: 16 ≠ 18, il test fallisce', tono: 'no' } } }
+      ]
+    };
+  })();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>At skrive samtidige tests</h1>
+  <p class="lede">Forelæsning 5 og øvelse 5.1–5.2 (del af Assignment 3). En samtidig test kan ikke vælge interleavingen: den kan kun gøre den dårlige <b>sandsynlig</b>. Her er forelæsningens opskrift, JUnit, barrieren til at starte trådene sammen, og de rigtige resultater på øvelsens mængder.</p>
+</header>
+
+<section>
+  <h2>Opskriften i 4 punkter (slide 25)</h2>
+  <figure class="passi" data-titolo="Før du skriver kode">
+    <div class="passo"><div class="espr">1. definisci <mark class="ora">la proprietà</mark> in modo preciso</div><p class="nota">"Efter at N tråde har gjort X inc(), er tælleren N·X." Det bliver den afsluttende assertion.</p></div>
+    <div class="passo"><div class="espr">2. un'<mark class="dato">interfaccia</mark> per le classi da testare</div><p class="nota">Den samme test kører på alle implementeringerne (Buggy, Sync, Library): kun linjen i metoden <code>@BeforeEach</code> ændres.</p></div>
+    <div class="passo"><div class="espr">3. un setup che <mark class="no">massimizza la contesa</mark></div><p class="nota">Flere tråde end kerner (på 8 kerner, 16 tråde) og en <code>CyclicBarrier</code> til at starte dem sammen.</p></div>
+    <div class="passo"><div class="espr">4. <mark class="ok">ripeti</mark>, con parametri diversi</div><p class="nota"><code>@RepeatedTest(n)</code> og <code>@ParameterizedTest</code>: flere udførelser, flere interleavings besøgt. Øvelsen siger, at der kan være brug for op til 5000–10000 gentagelser.</p></div>
+  </figure>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>JUnit</th><th>Hvad det bruges til</th></tr></thead>
+    <tbody>
+      <tr><td><code>@BeforeEach</code></td><td>metode der kører før <b>hver</b> test: den opretter et nyt objekt at teste</td></tr>
+      <tr><td><code>@Test</code> / <code>@RepeatedTest(100)</code></td><td>én test, kørt én gang eller 100 gange</td></tr>
+      <tr><td><code>@ParameterizedTest</code> + <code>@MethodSource("argsGeneration")</code></td><td>den samme test med mange parametre (antal tråde, antal operationer), genereret af en metode, der returnerer en liste af <code>Arguments</code></td></tr>
+      <tr><td><code>@DisplayName("…")</code></td><td>navnet der vises i rapporten</td></tr>
+      <tr><td><code>assertTrue(cond, "besked")</code>, <code>assertEquals(forventet, værdi)</code></td><td>egenskaben der skal kontrolleres</td></tr>
+      <tr><td><code>gradle cleanTest test --tests exercises05.ConcurrentSetTest</code></td><td>kører testene; HTML-rapporten ligger i <code>build/reports/tests/test/</code></td></tr>
+    </tbody>
+  </table></div>
+  <figure class="scena" data-scena="barriera" data-titolo="CyclicBarrier(nrThreads + 1)"></figure>
+  <div class="box attenzione" data-tit="Barrieren starter trådene næsten én ad gangen">
+    <p>Indeni bruger <code>CyclicBarrier</code> en lås (<code>ReentrantLock</code>) og en condition. Når den sidste ankommer, vækker den alle, men hver vækket tråd skal <b>tage den lås igen</b>, før den forlader <code>await()</code>: de går ud i kø. Hvis hver tråd laver én enkelt, meget kort operation, er de første færdige, når de sidste går ud, og sammenstødene er sjældne.</p>
+    <p>Målt med <code>push</code>-testen i øvelse 7.2.2 (1000 tråde, én <code>push</code> hver) mod en <code>push</code>, der med vilje er forkert (<code>get</code> og så <code>set</code>): med <code>CyclicBarrier</code> kommer fejlen frem i <b>1 gentagelse ud af 20</b>. Med en <code>CountDownLatch(1)</code> som "startpistol" (alle laver <code>await()</code>, main laver <code>countDown()</code> én gang) og <code>join()</code> til slutningen: <b>18 ud af 20</b>. Latchen vækker trådene uden at lade dem passere en eksklusiv lås. <code>CountDownLatch</code> er ikke i kursets slides: barrieren er stadig den "officielle" teknik, latchen er en forstærkning.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Øvelse 5.1: mængderne</h2>
+  <p>Tre implementeringer af <code>ConcurrentIntegerSet</code>: <b>Buggy</b> (en <code>HashSet</code> uden beskyttelse), <b>Sync</b> (der skal rettes) og <b>Library</b> (<code>ConcurrentSkipListSet</code>). Testen: 16 tråde tilføjer alle de samme tal 0…999, så størrelsen til sidst skal være <b>1000</b>; derefter fjerner de dem alle, med tallene allerede indeni: størrelsen skal være <b>0</b>.</p>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Implementering</th><th>add: mislykkede tests</th><th>remove: mislykkede tests</th></tr></thead>
+    <tbody>
+      <tr><td>Buggy (HashSet)</td><td><b>169 / 200</b> (størrelse op til 1633)</td><td><b>23 / 200</b> (størrelse ned til −219)</td></tr>
+      <tr><td>Sync (<code>synchronized</code>-metoder)</td><td>0 / 200</td><td>0 / 200</td></tr>
+      <tr><td>Library (ConcurrentSkipListSet)</td><td>0 / 200</td><td>0 / 200</td></tr>
+    </tbody>
+  </table></div>
+  <p class="piccolo">Kørt med JDK 26 på en maskine med 12 kerner: 16 tråde, CyclicBarrier, 200 gentagelser (et program med samme struktur som JUnit-testen). En størrelse på 1633 for en mængde med 1000 tal, eller en negativ, er umulig i en sekventiel udførelse.</p>
+  <h3>Byg selv interleavingen af add(5)</h3>
+  <p>To tråde kalder <code>add(5)</code> på en tom mængde. <code>HashSet.add</code> er ikke atomisk: her er den delt i tre trin (led efter, indsæt noden, forøg størrelsen). Find en interleaving, der efterlader 5 i mængden <b>én gang</b>, men med <b>størrelse = 2</b>.</p>
+  <figure class="interleaving" data-prog="addset" data-titolo="To add(5) parallelt"></figure>
+  <div class="box regola" data-tit="5.1.3: hvorfor synchronized reparerer det">
+    <p>Med <code>add</code>, <code>remove</code> og <code>size</code> alle <code>synchronized</code> på det samme objekt, kan de tre trin i én operation ikke længere blandes med en andens (gensidig udelukkelse), og hver tråd ser den foregående tråds skrivninger (happens-before fra unlock til den næste lock, <a href="l03-happens-before.html">forelæsning 3</a>). Den interne mængde er indesluttet: den forlader ikke klassen (<a href="l04-confinamento.html">indkapsling</a>).</p>
+  </div>
+  <figure class="passi" data-titolo="5.1.5 og 5.1.6: hvad en test beviser">
+    <div class="passo"><div class="espr">test <mark class="no">fallito</mark>  ⇒  la classe <mark class="no">non è thread-safe</mark></div><p class="nota">Fejlen er et konkret modeksempel: en samtidig udførelse, der giver et resultat, som er umuligt i sekvens. Med kursets definition (ingen data race på felterne) er ræsonnementet det i jeres svar: en forkert størrelse kan kun opstå af usynkroniserede samtidige adgange til felterne i HashSet.</p></div>
+    <div class="passo"><div class="espr">test <mark class="ok">passato</mark>  ⇏  thread-safe</div><p class="nota">Kun nogle interleavings er besøgt, og kun den endelige størrelse er kontrolleret. Dijkstra: tests viser tilstedeværelsen af fejl, ikke fraværet af dem.</p></div>
+  </figure>
+</section>
+
+<section>
+  <h2>Øvelse 5.2: semaforen</h2>
+  <figure class="passi" data-titolo="Kapacitet 2, men 3 tråde i den kritiske sektion (verificeret: 3 udførelser ud af 3)">
+    <div class="passo"><div class="espr">state = 0,  capacity = 2</div><p class="nota"><code>acquire()</code> venter kun, hvis state == capacity; <code>release()</code> laver state-- uden at kontrollere noget.</p></div>
+    <div class="passo"><div class="espr">main: release()  →  state = <mark class="no">−1</mark></div><p class="nota">Ingen havde lavet acquire: det svarer til at give en ekstra tilladelse væk. Også main er en del af interleavingen.</p></div>
+    <div class="passo"><div class="espr">t1: acquire() → state = 0;   t2: acquire() → 1;   t3: acquire() → <mark class="no">2</mark></div><p class="nota">Når hver kontrollerer, er state −1, 0, 1: aldrig lig med 2, så ingen venter.</p></div>
+    <div class="passo"><div class="espr"><mark class="no">3 thread</mark> nella sezione critica con capacity = 2</div><p class="nota">Herlihys egenskab overtrådt. Jeres svar 5.2.1 er netop dette, og det er rigtigt. Testen afhænger ikke af schedulingen: en almindelig <code>@Test</code> er nok.</p></div>
+  </figure>
+  <figure class="scena" data-scena="sem52" data-titolo="Tre tråde inde med kapacitet 2"></figure>
+  <div class="box regola" data-tit="Notationen m(2) → t1(1) → t2(1) → t3(1)">
+    <p>Tallene er etiketterne på kommentarerne i <code>SemaphoreImp.java</code>: <code>// [1]</code> står over <code>acquire()</code>, <code>// [2]</code> over <code>release()</code>. Altså er <code>m(2)</code> = <b>main</b> kalder <code>release()</code>, <code>t1(1)</code> = tråden t1 kalder <code>acquire()</code>. Pilen → betyder "og så". Interleavingen er skrevet på niveau af <b>metodekald</b>, fordi felterne er <code>private</code>: udefra kan de ikke røres (hint I i øvelsen).</p>
+  </div>
+  <figure class="codice" data-titolo="5.2.2: testen capacity() (SemaphoreImpTest.java, forkortet)">
+<pre data-lang="java">CyclicBarrier barrier = new CyclicBarrier(THREADS_NUMBER + 1);   // 3 thread + main
+AtomicInteger inCriticalSection = new AtomicInteger(0);
+
+@Test
+public void capacity() {
+    semaphore.release();
+    for (int th = 0; th &lt; THREADS_NUMBER; th++) {
+        new Thread(() -> {
+            try {
+                barrier.await();
+                semaphore.acquire();
+                inCriticalSection.incrementAndGet();
+                barrier.await();
+            } catch (InterruptedException | BrokenBarrierException e) { e.printStackTrace(); }
+        }).start();
+    }
+    try { barrier.await(); barrier.await(); }
+    catch (InterruptedException | BrokenBarrierException e) { e.printStackTrace(); }
+    assertTrue(inCriticalSection.get() &lt;= CAPACITY, "... threads entered the critical section ...");
+}</pre>
+    <div class="intro"><p>Testen genskaber interleavingen fra 5.2.1: CAPACITY = 2, THREADS_NUMBER = CAPACITY + 1 = 3. Den nye semafor oprettes i <code>@BeforeEach</code>.</p></div>
+    <ol class="spiega">
+      <li data-righe="1" data-segna="THREADS_NUMBER + 1@dato"><p>Barrieren har <b>4</b> deltagere: de 3 tråde plus main. Den åbner kun, når alle 4 er ankommet.</p></li>
+      <li data-righe="2" data-segna="AtomicInteger@ok"><p>Tælleren over "hvor mange er kommet ind". Den er en <code>AtomicInteger</code>, fordi 3 tråde forøger den sammen: med en <code>int</code> ville testen selv have en data race.</p></li>
+      <li data-righe="6" data-segna="semaphore.release();@no"><p>Det er trinnet <code>m(2)</code>: main kalder <code>release()</code> <b>før</b> trådene oprettes. state går fra 0 til −1: den ekstra tilladelse er allerede der, når trådene starter.</p></li>
+      <li data-righe="7-8,15" data-segna="new Thread@ora|.start()@ora"><p>Opretter og starter 3 tråde. <code>() -&gt; { … }</code> er en lambda: kroppen af trådens <code>run()</code>-metode.</p></li>
+      <li data-righe="10,17" data-segna="barrier.await();#1@ora|barrier.await();#2@dato"><p>Første barriere: de 3 tråde og main venter på hinanden, og starter så sammen.</p></li>
+      <li data-righe="11-12" data-segna="semaphore.acquire();@ora|incrementAndGet()@ok"><p>Det er trinnet <code>t(1)</code>: hver tråd laver <code>acquire()</code>. Hvis den ikke blokeres, har den for øvelsen <b>kommet ind</b> i den kritiske sektion, og tæller det. Ingen kalder <code>release()</code>: den der kommer ind, bliver inde.</p></li>
+      <li data-righe="13,17" data-segna="barrier.await();#1@ora|barrier.await();#3@dato"><p>Anden barriere: main venter, til alle har talt. Først derefter læser den tælleren.</p></li>
+      <li data-righe="19" data-segna="inCriticalSection.get() &lt;= CAPACITY@no"><p>Herlihys egenskab: højst CAPACITY tråde inde. Med den fejlagtige semafor er værdien altid 3, og testen <b>fejler altid</b>.</p></li>
+      <li data-righe="6,11" data-segna="semaphore.release();@no|semaphore.acquire();@ora"><p>Hvorfor <code>@Test</code> er nok og ikke <code>@RepeatedTest</code>: efter <code>m(2)</code> er state −1, og hvert <code>acquire()</code> hæver den med 1 (−1 → 0 → 1 → 2). Den tråd der kommer først, finder altid state &lt; 2. Trådenes rækkefølge ændrer ikke resultatet.</p></li>
+    </ol>
+  </figure>
+  <div class="box attenzione" data-tit="Med en korrekt semafor består denne test ikke: den blokeres">
+    <p>Hvis semaforen var korrekt, ville den tredje tråd blive stående i <code>acquire()</code> og aldrig nå det andet <code>barrier.await()</code>. Barrieren venter på 4 deltagere, kun 3 kommer: main bliver blokeret, og testen slutter ikke. En test bør kunne <b>bestå</b> på en korrekt implementering. For eksempel kan man i main bruge <code>barrier.await(1, TimeUnit.SECONDS)</code> og håndtere <code>TimeoutException</code>; efter timeout er tælleren 2, og assertionen er sand.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Den afgrænsede buffer fra forelæsningen</h2>
+  <p>Egenskab: hvis producenter og konsumenter lægger og tager det samme antal elementer, er <b>summen af de tal, der er lagt, lig med summen af de tal, der er taget</b>. Hver producent akkumulerer sin lokale sum og lægger den til sidst i en global <code>AtomicInteger</code> (<code>putSum</code>); konsumenterne gør det samme med <code>takeSum</code>; til sidst <code>assert(putSum.get() == takeSum.get())</code>. Testen stoler på <code>AtomicInteger</code>: hvis objektet, der bruges til at kontrollere, var forkert, ville testen ikke være noget værd.</p>
+  <div class="box idea" data-tit="Udfordring 5.1.7–5.1.8: size() kan lyve">
+    <p>I <code>HashMap</code> læser size() et felt, opdateret efter indsættelsen af noden: en tråd, der kalder size() mellem indsættelsen og en anden tråds size++, ser en gammel værdi. For <code>ConcurrentSkipListSet</code> siger dokumentationen, at size() gennemløber strukturen og kan være unøjagtig, hvis mængden ændrer sig under tællingen. At teste det er svært: man skulle vide, hvor mange elementer der "virkelig" er i det præcise øjeblik, size() læser, og en test kan ikke stoppe alle tråde på netop det punkt.</p>
+  </div>
+  <figure class="scena" data-scena="sommatest" data-titolo="putSum == takeSum"></figure>
+</section>
+
+</main>
+</body>
+</html>

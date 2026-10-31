@@ -1,0 +1,72 @@
+@@s001 for / yield
+@@s002 ora:x attuale,ok:passa il filtro,no:scartato
+@@s003 Con le liste <code>&lt;-</code> vuol dire "per ogni elemento". Per ogni x: incremented = x + 1, poi due copie, tenute solo se pari.
+@@s004 x = 3: incremented = 4, pari: passano <b>4, 4</b>.
+@@s005 x = 4: incremented = 5, dispari: il filtro scarta tutti e due.
+@@s006 x = 5: incremented = 6: passano <b>6, 6</b>.
+@@s007 I pezzi si uniscono come in flatMap: <b>List(4, 4, 6, 6)</b> (verificato).
+@@s008 ora:passo attuale,ok:valore,no:fallito
+@@s009 ora:flatMap,due:map,ok:risultato
+@@s010 dato:lista di coppie,ora:Option,ok:risultato
+@@s011 ora:passo 1 (media),due:passo 2 (media dei quadrati),ok:risultato,no:fallito
+@@s012 for / yield
+@@s013 <code>for … yield</code> sembra un ciclo, ma <b>non lo è</b>. Il compilatore lo riscrive in <code>flatMap</code> e <code>map</code> prima di fare qualsiasi altra cosa. È solo un modo più leggibile di scrivere catene di Option (o di liste). Per questo è permesso, anche se i cicli sono vietati.
+@@s014 La stessa catena, scritta in tre modi (slide 24)
+@@s015 Da flatMap annidati a for
+@@s016 Tre passi, due possono fallire. Ogni passo dà un nome al valore del passo prima.
+@@s017 Stesso codice, righe spezzate in un altro punto: ora a destra delle frecce ci sono i nomi.
+@@s018 Stesso codice, con lo zucchero sintattico: ogni <code>nome &lt;- valore</code> è un passo. Si legge dall'alto in basso.
+@@s019 Il valore finale (verificato). Con <code>Some(5)</code> il secondo passo darebbe <code>None</code> e il risultato sarebbe <code>None</code>.
+@@s020 Tre passi, due possono fallire
+@@s021 Le regole di traduzione
+@@s022 Nel for
+@@s023 Diventa
+@@s024 <code>x &lt;- e</code> (non l'ultimo)
+@@s025 <code>e.flatMap(x => …)</code>
+@@s026 <code>x &lt;- e</code> (l'ultimo) + <code>yield r</code>
+@@s027 <code>e.map(x => r)</code>
+@@s028 <code>y = espressione</code>
+@@s029 un valore intermedio (tradotto con <code>map</code>)
+@@s030 <code>if condizione</code>
+@@s031 <code>withFilter</code> (un filtro)
+@@s032 map2 scritto con for, tradotto a mano
+@@s033 Due generatori.
+@@s034 Il primo generatore diventa un <code>flatMap</code>.
+@@s035 L'ultimo generatore insieme a <code>yield</code> diventa un <code>map</code>.
+@@s036 Dubbio: ma i for non erano vietati?
+@@s037 È vietato il <code>for</code> che <b>fa</b> qualcosa, con <code>do</code>: <code>for x &lt;- lista do println(x)</code> restituisce <code>Unit</code> e vive di effetti. Il <code>for</code> con <code>yield</code> <b>produce un valore</b> ed è solo un altro modo di scrivere <code>flatMap</code>/<code>map</code>: è codice puro.
+@@s038 Lo stesso in F#: OptionBuilder.fsx (cartella 03-option)
+@@s039 Nel materiale della lezione c'è la versione F# dello stesso meccanismo, una <i>computation expression</i>. Si traduce simbolo per simbolo:
+@@s040 <code>option { … }</code> ⇒ <code>for … yield …</code> &nbsp;·&nbsp; <code>let! x1 = Some 4</code> ⇒ <code>x1 &lt;- Some(4)</code>, perché <code>Bind</code> è il <code>flatMap</code> &nbsp;·&nbsp; <code>yield r</code> ⇒ <code>yield r</code>: <code>Yield</code> mette r dentro <code>Some</code> (il commento del docente: di solito si chiama <code>Return</code>).
+@@s041 Nell'esempio: x1 = 4, x2 = 4 / 2 = 2, x3 = 3, risultato <code>Some "3"</code>. Se x1 fosse dispari, x2 sarebbe <code>None</code> e tutto il blocco darebbe <code>None</code>. Verificato con la traduzione in Scala: da 4 esce <code>Some(3)</code>, da 3 esce <code>None</code>.
+@@s042 for → flatMap e map
+@@s043 Funziona anche sulle liste (slide 25)
+@@s044 Un elemento alla volta
+@@s045 Con le liste, <code>&lt;-</code> vuol dire "per ogni elemento". Il filtro lascia passare.
+@@s046 Il filtro scarta entrambi.
+@@s047 Passa.
+@@s048 Risultato (verificato). I risultati parziali vengono uniti come in <code>flatMap</code>.
+@@s049 for sulle liste, disegnato
+@@s050 headGrade: <code>_._2</code> passo per passo
+@@s051 Esercizio 7: data una lista di coppie (nome, voto), il voto del primo, o <code>None</code>.
+@@s052 Due versioni: map e for
+@@s053 <code>(String, Int)</code> è il tipo <b>coppia</b>: un nome e un numero, senza nomi di campo. Si accede per posizione.
+@@s054 Il primo elemento, se c'è: un <code>Option[(String, Int)]</code>.
+@@s055 Il primo <code>_</code> è un segnaposto: la coppia che sta dentro l'Option.
+@@s056 <code>._2</code> prende il <b>secondo</b> pezzo della coppia: il voto. Si conta da 1: <code>_1</code> è il nome.
+@@s057 Stessa cosa con <code>for</code>: un solo generatore, quindi è solo una <code>map</code>. Qui la coppia ha un nome, <code>p</code>.
+@@s058 Dubbio: perché specificare _2 se l'Int è già il secondo?
+@@s059 Perché la coppia non ha campi con nome: Scala non può sapere da solo quale pezzo vuoi. <code>_2</code> è proprio il nome del metodo che restituisce il secondo pezzo. Con una tripla esisterebbe anche <code>_3</code>.
+@@s060 headOption(lst).map(_._2)
+@@s061 variance: la prima computazione "in una monade"
+@@s062 Esercizio 8. La varianza di una sequenza è la media dei quadrati degli scarti dalla media: <span class="m">var = mean((x<sub>i</sub> − m)²)</span>, dove <span class="m">m</span> è la media. Entrambe le medie possono fallire (sequenza vuota).
+@@s063 Con flatMap, poi con for
+@@s064 Passo 1: la media. È un <code>Option[Double]</code>.
+@@s065 Il passo 2 usa la media e <b>può fallire</b> anche lui (restituisce un Option): serve <code>flatMap</code>, non <code>map</code>.
+@@s066 Dentro, <code>xs.map</code> è la map delle <b>sequenze</b>: calcola il quadrato dello scarto di ogni elemento. <code>math.pow(b, 2)</code> è <span class="m">b²</span>.
+@@s067 La media di quei quadrati è la varianza.
+@@s068 Con <code>for</code> si legge come una ricetta: prendi la media <code>m</code>, poi la media dei quadrati <code>v</code>, restituisci <code>v</code>.
+@@s069 variance(Seq(1.0, 2.0, 3.0))
+@@s070 Scarti −1, 0, 1, al quadrato.
+@@s071 Verificato. Con <code>Seq()</code> il primo passo dà <code>None</code> e tutto il resto non viene eseguito.
+@@s072 Due medie che possono fallire

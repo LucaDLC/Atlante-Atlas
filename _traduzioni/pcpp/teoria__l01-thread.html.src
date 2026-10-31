@@ -1,0 +1,45 @@
+@@s001 Thread, stati, scheduler
+@@s002 ora:stato attuale,dato:transizione appena fatta
+@@s003 <p><code>new Turnstile()</code>: l'oggetto esiste, ma il thread non è ancora partito.</p>
+@@s004 <p><code>start()</code>: il thread diventa <b>enabled</b>, cioè pronto. Non sta ancora eseguendo istruzioni.</p>
+@@s005 <p>Lo <b>scheduler</b> lo sceglie: ora è <b>running</b> ed esegue istruzioni. Quando succede non lo decide il programma.</p>
+@@s006 <p>Lo scheduler lo <b>sospende</b> in qualsiasi momento, anche a metà di <code>counter++</code>, e fa lavorare un altro thread. Torna enabled.</p>
+@@s007 <p>Riscelto: di nuovo running.</p>
+@@s008 <p>Il thread esegue una chiamata <b>bloccante</b> (<code>join()</code>, <code>lock()</code> con il lock occupato, <code>await()</code>…): passa a <b>blocked</b>. Qui la transizione la causa il codice del thread.</p>
+@@s009 <p>Succede l'evento atteso (l'altro thread termina, il lock si libera…). Il thread torna <b>enabled</b>, non running: deve aspettare di nuovo lo scheduler.</p>
+@@s010 <p>Scelto di nuovo, esegue fino alla fine di <code>run()</code>.</p>
+@@s011 <p><code>run()</code> è finito: il thread termina. Chi aveva fatto <code>join()</code> su di lui può ripartire.</p>
+@@s012 dato:thread main,due:thread tornello,ora:in esecuzione,ok:risultato
+@@s013 dato:t1 running,due:t2 running
+@@s014 Thread, stati, scheduler
+@@s015 Un thread non è sempre in esecuzione: passa tra alcuni stati, e chi decide quando è il <b>scheduler</b>, in modo non deterministico. Da questa libertà nascono gli interleaving e quindi tutti i problemi del corso.
+@@s016 Il tornello di Tivoli
+@@s017 Un <b>thread</b> è un flusso di istruzioni che avanza per conto suo: "an independent sequence of program statements". Ogni programma Java parte con un thread, il <code>main</code>; altri si creano con <code>new Thread(…)</code> e partono con <code>start()</code>. Tutti i thread di un programma vedono gli stessi campi degli oggetti: è la <b>memoria condivisa</b>, il modo in cui comunicano, e la fonte dei problemi del corso. <code>join()</code> fa aspettare un thread finché un altro non è finito.
+@@s018 L'esempio della lezione: un thread simula 10 000 persone che entrano da un tornello e incrementano un contatore condiviso.
+@@s019 CounterThreads.java (semplificato)
+@@s020 <b>Memoria condivisa</b>: <code>counter</code> è un campo, visibile al thread principale e al tornello. <code>final</code> su <code>PEOPLE</code> dice che non cambierà mai.
+@@s021 Il thread principale crea il tornello e lo avvia.
+@@s022 Aspetta che finisca.
+@@s023 Il comportamento del tornello: 10 000 incrementi.
+@@s024 Con <b>un solo</b> tornello stampa sempre <code>10000 people entered</code>: nessun altro thread tocca <code>counter</code> mentre lavora. Con due tornelli le cose cambiano: <a href="l01-interleaving.html">pagina successiva</a>.
+@@s025 main e tornello sulla linea del tempo
+@@s026 Gli stati di un thread
+@@s027 La slide 43 usa un modello semplificato con tre stati. La macchina a stati qui sotto segue la vita di un thread.
+@@s028 La vita di un thread
+@@s029 Transizione
+@@s030 Chi la causa
+@@s031 <code>start</code>
+@@s032 il programma, chiamando <code>start()</code>
+@@s033 <code>schedule</code> / <code>suspend</code>
+@@s034 lo scheduler del sistema: non controllabile, non prevedibile
+@@s035 <code>wait</code>
+@@s036 il thread stesso, con una chiamata bloccante
+@@s037 <code>event</code>
+@@s038 altre entità: altri thread, eccezioni, interruzioni hardware
+@@s039 Da ricordare all'orale
+@@s040 Da <b>blocked</b> non si torna mai direttamente a <b>running</b>: si passa sempre da <b>enabled</b>. Ritroverai la stessa idea nei monitor: un thread svegliato da <code>signal()</code> deve ricompetere per il lock.
+@@s041 Non determinismo
+@@s042 Due thread <code>t1</code> e <code>t2</code>, entrambi enabled. Lo scheduler può produrre, per esempio:
+@@s043 Conseguenza pratica
+@@s044 <b>Nessuna assunzione</b> è lecita su quale thread esegue dopo. Per questo un test che passa non dimostra che un programma concorrente è corretto: hai visto una esecuzione tra infinite. La correttezza si argomenta sui <b>vincoli</b> (mutua esclusione, happens-before), non sulle esecuzioni osservate.
+@@s045 Tre esecuzioni diverse degli stessi due thread

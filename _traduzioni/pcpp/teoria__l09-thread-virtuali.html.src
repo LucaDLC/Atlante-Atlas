@@ -1,0 +1,50 @@
+@@s001 Thread di piattaforma e thread virtuali
+@@s002 <span>Settimana 9 · Performance</span>
+@@s003 Thread di piattaforma e thread virtuali
+@@s004 La lezione del 26 ottobre parte da qui: quale thread usare, e perché. Un thread virtuale che aspetta non occupa un thread del sistema; un thread di piattaforma sì. Il codice dell’esempio è compilato ed eseguito.
+@@s005 Due tipi di thread
+@@s006 Un <b>thread di piattaforma</b> è un thread del sistema operativo: pesante, e il sistema ne ha un numero limitato. Un <b>thread virtuale</b> è un thread gestito da Java: molti possono esistere insieme. Java li fa girare su un piccolo gruppo di thread di piattaforma (i <i>carrier</i>) solo mentre lavorano. Quando un thread virtuale si blocca (rete, file, <code>sleep</code>), viene staccato e il carrier serve un altro.
+@@s007 Si creano così: <code>Thread.ofVirtual().start(task)</code> e <code>Thread.ofPlatform().start(task)</code>. <code>Thread.ofVirtual()</code> restituisce un <b>Thread.Builder</b>, cioè l’oggetto che sa costruire thread di quel tipo.
+@@s008 Platform o virtuali: cosa succede quando un thread aspetta
+@@s009 dato:thread,ora:cosa cambia,ok:conseguenza
+@@s010 Costoso: crearne migliaia rallenta il sistema, e ogni thread occupa un posto nello scheduler.
+@@s011 Java li tiene in memoria e li monta su un carrier solo quando girano.
+@@s012 Viene staccato dal carrier, che passa a un altro thread virtuale.
+@@s013 Per questo i thread virtuali sono adatti a lavori che passano tempo ad aspettare.
+@@s014 Quando usare cosa
+@@s015 Le indicazioni della lezione, in ordine di priorità:
+@@s016 situazione
+@@s017 scelta
+@@s018 vuoi molti thread di piattaforma
+@@s019 no: non crearne molti
+@@s020 operazioni che aspettano (I/O, database, rete)
+@@s021 thread virtuali
+@@s022 lavoro che usa la CPU, e la prestazione conta
+@@s023 task dell’executor (pagina successiva)
+@@s024 tutto il resto, per semplicità
+@@s025 thread virtuali per ogni cosa
+@@s026 Attenzione
+@@s027 Il thread virtuale non rende più veloce un calcolo puro. Nella lezione, fino a 64 thread, thread di piattaforma e virtuali hanno lo stesso tempo sul conteggio dei primi; la differenza si vede con 2048 thread, dove i thread di piattaforma sono molto più lenti.
+@@s028 Esempio: scaricare pagine in parallelo
+@@s029 Il codice della lezione: una richiesta per URL, ogni richiesta in un thread virtuale, poi l’attesa di tutti. Qui la richiesta è simulata da un <code>sleep</code> di 100 ms, così l’esempio gira senza rete.
+@@s030 Virtuali.java
+@@s031 <code>scarica</code> simula una richiesta web. <code>Thread.sleep(100)</code> ferma il thread per 100 ms. Il thread non lavora: aspetta. È il caso per cui servono i thread virtuali.
+@@s032 Quattro URL in una lista immutabile. <code>List.of</code> la crea già piena: non si può modificare.
+@@s033 La lista dei thread avviati, per poterli aspettare dopo.
+@@s034 Il tempo di partenza, con <code>System.nanoTime()</code>: misura in nanosecondi.
+@@s035 Un giro per URL. <code>url</code> è la variabile del ciclo: in un for-each è già costante dentro il giro.
+@@s036 Copia locale: ogni thread riceve il suo URL in una variabile dichiarata <code>final</code>. Le lambda catturano solo variabili che non cambiano; la copia rende esplicito che ogni thread ha il proprio valore.
+@@s037 Avvia un thread virtuale con la lambda <code>() -&gt; scarica(mioUrl)</code>. <code>start</code> restituisce subito: il thread lavora in parallelo.
+@@s038 <code>join</code> aspetta la fine di ogni thread. Senza join il programma potrebbe stampare il tempo prima che le richieste finiscano.
+@@s039 Il tempo in millisecondi. Con 4 richieste da 100 ms in parallelo il totale è vicino a 100 ms, non a 400: il controllo <code>ms &lt; 300</code> stampa <code>true</code>.
+@@s040 Il tempo in parallelo
+@@s041 Quattro pagine da 100 ms ciascuna
+@@s042 dato:tempo di una richiesta,ora:quando parte,ok:fine
+@@s043 Il ciclo classico, senza thread: ogni richiesta aspetta la precedente.
+@@s044 Ognuno si blocca per 100 ms. Nessuno occupa un thread del sistema mentre aspetta.
+@@s045 Il tempo totale è quello della richiesta più lenta, non la somma di tutte.
+@@s046 Regole pratiche
+@@s047 Regola
+@@s048 Per operazioni che aspettano, un thread virtuale per ogni operazione. Per calcoli pesanti, usa l’executor con un numero fisso di thread (pagina successiva).
+@@s049 Frase per l’orale
+@@s050 Virtual threads are cheap to create and block without holding an OS thread, so they suit I/O-bound work; platform threads are costly and should not be created in large numbers.

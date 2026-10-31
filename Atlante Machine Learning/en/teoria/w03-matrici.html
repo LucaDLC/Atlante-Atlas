@@ -1,0 +1,335 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Matrices and products</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  const T = (id, x, y, t, extra) => Object.assign({ id, tipo: 'testo', x, y, t, size: 14 }, extra || {});
+  const G = (id, x, y, vals, extra) => Object.assign({ id, tipo: 'griglia', x, y, cw: 50, ch: 40, valori: vals }, extra || {});
+  const toni = (celle, tono) => Object.fromEntries(celle.map(c => [c, tono]));
+  const riga = (r, n, tono) => toni([...Array(n).keys()].map(c => r + ',' + c), tono);
+  const colonna = (c, m, tono) => toni([...Array(m).keys()].map(r => r + ',' + c), tono);
+
+  // 1. che cos'è
+  const M = [['1', '2', '3'], ['4', '5', '6']];
+  SCENE.matrice = {
+    w: 600, h: 230, lato: true,
+    legenda: 'dato:one row,due:one column,ok:one element',
+    oggetti: [
+      G('A', 40, 30, M, { intR: ['riga 1', 'riga 2'], intC: ['col 1', 'col 2', 'col 3'], cwR: 60, cw: 56 }),
+      T('f', 460, 50, 'A: 2 × 3', { bold: true, size: 16 }), T('c1', 460, 90, ''), T('c2', 460, 120, ''), T('c3', 460, 170, '', { size: 13 })
+    ],
+    passi: [
+      { nota: "Una <b>matrice</b> è una tabella rettangolare di numeri. Questa ha 2 righe e 3 colonne: si dice <b>2 × 3</b> (\"due per tre\"), prima le righe poi le colonne." },
+      { nota: "Una <b>riga</b> è un vettore orizzontale: la riga 2 è [4, 5, 6].", set: { A: { toni: riga(1, 3, 'dato') }, c1: { t: 'riga 2 = [4, 5, 6]', tono: 'dato' } } },
+      { nota: "Una <b>colonna</b> è un vettore verticale: la colonna 3 è [3, 6].", set: { A: { toni: colonna(2, 2, 'due') }, c2: { t: 'colonna 3 = [3, 6]', tono: 'due' } } },
+      { nota: "<b>A<sub>ij</sub></b> è l'elemento in riga i e colonna j: A₂₃ = 6. Nelle slide si conta da 1; in NumPy da 0, quindi A₂₃ è <code>A[1, 2]</code>.", set: { A: { toni: { '1,2': 'ok' } }, c3: { t: 'A₂₃ = 6  (NumPy: A[1, 2])', tono: 'ok' } } }
+    ]
+  };
+
+  // 2. tre usi
+  SCENE.treusi = {
+    w: 600, h: 240, lato: true,
+    legenda: 'dato:how it is read now',
+    oggetti: [
+      G('A', 40, 60, [['2', '1'], ['1', '3']], { cw: 56, ch: 44 }),
+      T('t', 96, 40, 'A', { bold: true, size: 15 }),
+      T('u', 400, 60, '', { bold: true, size: 15 }), T('c1', 400, 100, '', { size: 13 }), T('c2', 400, 130, '', { size: 13 }), T('c3', 400, 170, '', { size: 13 })
+    ],
+    passi: [
+      { nota: "La stessa tabella di numeri può voler dire tre cose diverse, a seconda di come la si usa (slide 29: \"matrix uses in IML\")." },
+      { nota: "<b>1. Contenitore di dati</b>: ogni <b>riga</b> è un esempio, ogni colonna una feature. Qui due esempi, [2, 1] e [1, 3]. Il file delle pose è una matrice 18 × 50.", set: { A: { toni: Object.assign(riga(0, 2, 'dato')) }, u: { t: 'dati' }, c1: { t: 'riga = un esempio' }, c2: { t: 'colonna = una feature' } } },
+      { nota: "<b>2. Trasformazione</b>: moltiplicata per un vettore, lo trasforma in un altro vettore. Le <b>colonne</b> dicono dove finiscono i vettori [1, 0] e [0, 1] (settimana 4).", set: { A: { toni: colonna(0, 2, 'dato') }, u: { t: 'trasformazione' }, c1: { t: 'colonna 1 = dove va [1, 0]' }, c2: { t: 'Ax = vettore trasformato' } } },
+      { nota: "<b>3. Sistema di equazioni</b>: ogni <b>riga</b> contiene i coefficienti di un'equazione. Ax = b scrive in una riga sola tutto il sistema 2x₁ + x₂ = b₁, x₁ + 3x₂ = b₂ (<a href=\"w03-sistemi-lineari.html\">sistemi lineari</a>).", set: { A: { toni: riga(1, 2, 'dato') }, u: { t: 'sistema' }, c1: { t: 'riga = un’equazione' }, c2: { t: 'Ax = b' } } }
+    ]
+  };
+
+  // 3. elemento per elemento
+  const P = [['1', '2'], ['3', '4']], R = [['5', '6'], ['7', '8']];
+  const tutte = t => toni(['0,0', '0,1', '1,0', '1,1'], t);
+  SCENE.elementi = {
+    w: 600, h: 230, lato: true,
+    legenda: 'dato:A,due:B,ok:result',
+    oggetti: [
+      T('ta', 85, 30, 'A', { bold: true }), G('A', 40, 40, P, { toni: tutte('dato') }),
+      T('op', 180, 80, '', { bold: true, size: 20 }),
+      T('tb', 265, 30, 'B', { bold: true, nascosto: true }), G('B', 220, 40, R, { toni: tutte('due'), nascosto: true }),
+      T('eq', 360, 80, '=', { bold: true, size: 20 }),
+      G('C', 390, 40, [['', ''], ['', '']], { toni: tutte('ok') }),
+      T('n', 300, 180, '', { size: 13 }), T('n2', 300, 208, '', { size: 13, bold: true })
+    ],
+    passi: [
+      { nota: "Le operazioni più semplici fra matrici (slide 31) lavorano <b>elemento per elemento</b>: ogni casella con la casella nella stessa posizione." },
+      { nota: "<b>Somma</b>: A + B, casella per casella. 1 + 5 = 6, 2 + 6 = 8, … Serve la <b>stessa forma</b>.", set: { op: { t: '+' }, tb: { nascosto: false }, B: { nascosto: false }, C: { valori: [['6', '8'], ['10', '12']] }, n: { t: 'A + B: stessa forma, casella per casella' } } },
+      { nota: "<b>Per uno scalare</b>: 2·A moltiplica ogni casella per 2.", set: { op: { t: '× 2' }, tb: { nascosto: true }, B: { nascosto: true }, C: { valori: [['2', '4'], ['6', '8']] }, n: { t: '2·A: ogni casella per 2' } } },
+      { nota: "<b>Prodotto di Hadamard</b> A ⊙ B: si moltiplicano le caselle nella stessa posizione. 1·5 = 5, 2·6 = 12, 3·7 = 21, 4·8 = 32. In NumPy è <code>A * B</code>.", set: { op: { t: '⊙' }, tb: { nascosto: false }, B: { nascosto: false }, C: { valori: [['5', '12'], ['21', '32']] }, n: { t: 'A ⊙ B = A * B in NumPy' } } },
+      { nota: "Attenzione: il <b>prodotto di matrici</b> vero, <code>A @ B</code>, è un'altra cosa e dà [[19, 22], [43, 50]]. Confondere <code>*</code> e <code>@</code> è l'errore più comune in NumPy (numeri controllati).", set: { n2: { t: 'A @ B = [[19, 22], [43, 50]]  ≠  A * B', tono: 'no' } } }
+    ]
+  };
+
+  // 4. trasposta
+  const D = [['1', '2', '3'], ['4', '5', '6']], Dt = [['1', '4'], ['2', '5'], ['3', '6']];
+  SCENE.trasposta = {
+    w: 600, h: 240, lato: true,
+    legenda: 'dato:a row of A,ok:the same, now a column',
+    oggetti: [
+      T('ta', 110, 24, 'A: 2 × 3', { bold: true }), G('A', 40, 36, D, { cw: 46 }),
+      T('tt', 420, 24, 'Aᵀ: 3 × 2', { bold: true, nascosto: true }), G('At', 370, 36, Dt, { cw: 46, nascosto: true }),
+      T('c', 300, 190, '', { size: 13 }), T('c2', 300, 216, '', { size: 13 })
+    ],
+    passi: [
+      { nota: "La <b>trasposta</b> Aᵀ (\"A trasposta\", in NumPy <code>A.T</code>) scambia righe e colonne." },
+      { nota: "La riga 1 di A, [1, 2, 3]…", set: { A: { toni: riga(0, 3, 'dato') } } },
+      { nota: "…diventa la <b>colonna</b> 1 di Aᵀ.", set: { tt: { nascosto: false }, At: { nascosto: false, toni: colonna(0, 3, 'ok') } } },
+      { nota: "La riga 2, [4, 5, 6], diventa la colonna 2. La forma passa da 2 × 3 a 3 × 2.", set: { A: { toni: riga(1, 3, 'dato') }, At: { toni: colonna(1, 3, 'ok') }, c: { t: 'forma (2, 3) → (3, 2)' } } },
+      { nota: "In formula: (Aᵀ)<sub>ij</sub> = A<sub>ji</sub>, gli indici si scambiano. Esempio: (Aᵀ)₃₁ = A₁₃ = 3. Trasporre due volte riporta A. Su un array 1D di NumPy <code>.T</code> non fa nulla (<a href=\"nozioni-numpy.html\">la trappola</a>).", set: { A: { toni: { '0,2': 'dato' } }, At: { toni: { '2,0': 'ok' } }, c2: { t: '(Aᵀ)₃₁ = A₁₃ = 3' } } }
+    ]
+  };
+
+  // 5. matrice per vettore, per righe
+  SCENE.mv = {
+    w: 560, h: 250, lato: true,
+    legenda: 'ora:row of A,dato:components of x,ok:result',
+    oggetti: [
+      G('A', 40, 50, [['2', '1'], ['1', '3']], { cw: 50, ch: 44 }), T('tA', 90, 34, 'A', { bold: true, size: 15 }),
+      G('x', 170, 50, [['1'], ['2']], { cw: 50, ch: 44 }), T('tx', 195, 34, 'x', { bold: true, size: 15 }),
+      T('eq', 250, 98, '=', { bold: true, size: 22 }),
+      G('y', 280, 50, [[''], ['']], { cw: 50, ch: 44 }), T('ty', 305, 34, 'Ax', { bold: true, size: 15 }),
+      T('c1', 450, 72, ''), T('c2', 450, 116, ''), T('n', 280, 200, '', { bold: true })
+    ],
+    passi: [
+      { nota: 'A 2 × 2 matrix times a vector of 2 components. The result is a vector of 2 components.' },
+      { nota: '<b>Seen by rows</b>: the first component of the result is the inner product of <b>row 1</b> with x: 2·1 + 1·2 = <b>4</b>.', set: { A: { toni: { '0,0': 'ora', '0,1': 'ora' } }, x: { toni: { '0,0': 'dato', '1,0': 'dato' } }, y: { valori: [['4'], ['']], toni: { '0,0': 'ok' } }, c1: { t: '[2, 1] · [1, 2] = 4' } } },
+      { nota: 'Row 2 with x: 1·1 + 3·2 = <b>7</b>. Each row is a linear equation, that is an inner product with x.', set: { A: { toni: { '1,0': 'ora', '1,1': 'ora' } }, y: { valori: [['4'], ['7']], toni: { '0,0': 'ok', '1,0': 'ok' } }, c2: { t: '[1, 3] · [1, 2] = 7' } } },
+      { nota: 'Ax = [4, 7]. "Matrix multiplication is just repeated use of the inner product": once for each row. Each output is a <b>weighted sum</b> of the inputs.', set: { n: { t: 'Ax = [4, 7]', tono: 'ok' } } }
+    ]
+  };
+
+  // 6. matrice per vettore, per colonne (geometrico)
+  SCENE.colonne = {
+    w: 600, h: 280, lato: true,
+    legenda: 'due:columns of A,ora:weighted columns,ok:Ax',
+    oggetti: [
+      { id: 'ax', tipo: 'assi', box: [50, 20, 260, 240], dom: [-0.5, 5, -0.5, 8], tacche: 1, etX: 'x₁', etY: 'x₂' },
+      { id: 'a1', tipo: 'vett', in: 'ax', x1: 0, y1: 0, x2: 2, y2: 1, t: 'a₁ = [2, 1]', tono: 'due' },
+      { id: 'a2', tipo: 'vett', in: 'ax', x1: 0, y1: 0, x2: 1, y2: 3, t: 'a₂ = [1, 3]', tx: -76, tono: 'due' },
+      { id: 'p1', tipo: 'vett', in: 'ax', x1: 0, y1: 0, x2: 2, y2: 1, t: '1·a₁', tono: 'ora', nascosto: true },
+      { id: 'p2', tipo: 'vett', in: 'ax', x1: 2, y1: 1, x2: 4, y2: 7, t: '2·a₂', tx: 10, tono: 'ora', nascosto: true },
+      { id: 'r', tipo: 'vett', in: 'ax', x1: 0, y1: 0, x2: 4, y2: 7, t: 'Ax = [4, 7]', tx: -96, ty: -4, tono: 'ok', nascosto: true },
+      T('c1', 470, 60, 'x = [1, 2]', { bold: true }), T('c2', 470, 100, '', { size: 13 }), T('c3', 470, 140, '', { size: 13, bold: true })
+    ],
+    passi: [
+      { nota: "<b>Vista per colonne</b>: le colonne di A = [[2, 1], [1, 3]] sono due vettori, a₁ = [2, 1] e a₂ = [1, 3]." },
+      { nota: "Le componenti di x = [1, 2] sono i <b>pesi</b> delle colonne: 1 volta a₁…", set: { a1: { tono: 'spento', t: '' }, p1: { nascosto: false }, c2: { t: '1·[2, 1]' } } },
+      { nota: "…più 2 volte a₂, attaccato in coda.", set: { a2: { tono: 'spento' }, p2: { nascosto: false }, c2: { t: '1·[2, 1] + 2·[1, 3]' } } },
+      { nota: "La somma è Ax = [4, 7], lo stesso risultato della vista per righe. <b>Ax è una combinazione lineare delle colonne di A</b> (slide 41 e 45: \"where does the input vector go?\"). Le uscite possibili sono tutte le combinazioni delle colonne: lo spazio delle colonne.", set: { r: { nascosto: false }, c3: { t: 'Ax = [4, 7]', tono: 'ok' } } }
+    ]
+  };
+
+  // 7. matrice per matrice
+  const AA = [['2', '1'], ['1', '3']], BB = [['0', '1'], ['1', '0']];
+  const cella = (i, j, v, calc) => ({ A: { toni: riga(i, 2, 'ora') }, B: { toni: colonna(j, 2, 'due') }, C: { valori: v, toni: { [i + ',' + j]: 'ok' } }, c: { t: calc } });
+  SCENE.mm = {
+    w: 600, h: 240, lato: true,
+    legenda: 'ora:row i of A,due:column j of B,ok:element (i, j) of AB',
+    oggetti: [
+      T('ta', 85, 30, 'A', { bold: true }), G('A', 40, 40, AA),
+      T('tb', 225, 30, 'B', { bold: true }), G('B', 180, 40, BB),
+      T('eq', 310, 80, '=', { bold: true, size: 20 }),
+      T('tc', 385, 30, 'AB', { bold: true }), G('C', 340, 40, [['', ''], ['', '']]),
+      T('c', 300, 180, '', { bold: true }), T('c2', 300, 210, '', { size: 13 })
+    ],
+    passi: [
+      { nota: "Il prodotto AB: <b>ogni elemento</b> (i, j) del risultato è il prodotto interno fra la <b>riga i di A</b> e la <b>colonna j di B</b>." },
+      Object.assign({ nota: "Elemento (1, 1): riga 1 di A, [2, 1], con colonna 1 di B, [0, 1]: 2·0 + 1·1 = 1." }, { set: cella(0, 0, [['1', ''], ['', '']], '[2, 1] · [0, 1] = 1') }),
+      Object.assign({ nota: "Elemento (1, 2): riga 1 con colonna 2: 2·1 + 1·0 = 2." }, { set: cella(0, 1, [['1', '2'], ['', '']], '[2, 1] · [1, 0] = 2') }),
+      Object.assign({ nota: "Elemento (2, 1): riga 2, [1, 3], con colonna 1: 1·0 + 3·1 = 3." }, { set: cella(1, 0, [['1', '2'], ['3', '']], '[1, 3] · [0, 1] = 3') }),
+      Object.assign({ nota: "Elemento (2, 2): riga 2 con colonna 2: 1·1 + 3·0 = 1. AB = [[1, 2], [3, 1]] (controllato con NumPy).", }, { set: Object.assign(cella(1, 1, [['1', '2'], ['3', '1']], '[1, 3] · [1, 0] = 1'), { c2: { t: 'AB = [[1, 2], [3, 1]]', tono: 'ok' } }) }),
+      { nota: "Un'altra lettura: la colonna j di AB è <b>A per la colonna j di B</b>. Moltiplicare per una matrice è applicare A a ogni colonna di B, una alla volta.", set: { A: { toni: {} }, B: { toni: colonna(0, 2, 'due') }, C: { toni: colonna(0, 2, 'ok') }, c: { t: 'colonna 1 di AB = A · [0, 1] = [1, 3]' } } }
+    ]
+  };
+
+  // 8. ordine e dimensioni
+  const R8 = (id, x, y, w, h, t, tono, extra) => Object.assign({ id, tipo: 'rett', x, y, w, h, t, tono }, extra || {});
+  SCENE.dimensioni = {
+    w: 600, h: 250, lato: true,
+    legenda: 'dato:first factor,due:second factor,ok:result,no:not possible',
+    oggetti: [
+      R8('a', 30, 60, 90, 60, '2 × 3', 'dato'), T('x', 140, 90, '·', { size: 22, bold: true }),
+      R8('b', 160, 40, 60, 90, '3 × 2', 'due'), T('e', 245, 90, '=', { size: 22, bold: true }),
+      R8('c', 270, 60, 60, 60, '2 × 2', 'ok'),
+      T('m1', 470, 60, '', { size: 13, bold: true }), T('m2', 470, 92, '', { size: 13 }), T('m3', 470, 130, '', { size: 13 }), T('m4', 300, 220, '', { size: 13, bold: true })
+    ],
+    passi: [
+      { nota: "La regola delle forme: <b>(m × n) · (n × p) = m × p</b>. Le due dimensioni \"interne\" devono essere uguali e spariscono; quelle \"esterne\" danno la forma del risultato.", set: { m1: { t: 'D · Dᵀ: (2 × 3)(3 × 2)' }, m2: { t: 'interne: 3 = 3 ✓' }, m3: { t: 'risultato: 2 × 2' } } },
+      { nota: "Nell'ordine opposto, Dᵀ · D: (3 × 2)(2 × 3). Interne 2 = 2, esterne 3 e 3: il risultato è <b>3 × 3</b>. Cambiando l'ordine cambia persino la forma.", set: { a: { w: 60, h: 90, y: 40, t: '3 × 2' }, b: { w: 90, h: 60, y: 60, t: '2 × 3' }, c: { w: 90, h: 90, y: 40, t: '3 × 3' }, m1: { t: 'Dᵀ · D: (3 × 2)(2 × 3)' }, m2: { t: 'interne: 2 = 2 ✓' }, m3: { t: 'risultato: 3 × 3' } } },
+      { nota: "D · D: (2 × 3)(2 × 3). Interne 3 e 2: <b>non si può</b>. NumPy solleva <code>ValueError</code>.", set: { a: { w: 90, h: 60, y: 60, t: '2 × 3' }, b: { w: 90, h: 60, y: 60, t: '2 × 3', tono: 'no' }, c: { t: '?', tono: 'no' }, m1: { t: 'D · D: (2 × 3)(2 × 3)' }, m2: { t: 'interne: 3 ≠ 2 ✗', tono: 'no' }, m3: { t: 'errore' } } },
+      { nota: "Anche con matrici quadrate l'ordine conta: con A = [[2, 1], [1, 3]] e B = [[0, 1], [1, 0]], AB = [[1, 2], [3, 1]] ma BA = [[1, 3], [2, 1]]. Il prodotto di matrici <b>non è commutativo</b>; è però associativo: (AB)C = A(BC).", set: { a: { t: '2 × 2', w: 60, h: 60 }, b: { t: '2 × 2', w: 60, h: 60, tono: 'due' }, c: { t: '2 × 2', tono: 'ok', w: 60, h: 60, y: 60 }, m1: { t: 'AB = [[1, 2], [3, 1]]' }, m2: { t: 'BA = [[1, 3], [2, 1]]', tono: null }, m3: { t: '' }, m4: { t: 'AB ≠ BA', tono: 'no' } } }
+    ]
+  };
+
+  // 9. identità e diagonale
+  SCENE.identita = {
+    w: 600, h: 230, lato: true,
+    legenda: 'ora:diagonal,dato:x,ok:result',
+    oggetti: [
+      T('tm', 85, 30, 'I', { bold: true }), G('M', 40, 40, [['1', '0'], ['0', '1']], { toni: { '0,0': 'ora', '1,1': 'ora' } }),
+      G('x', 160, 40, [['1'], ['2']], { toni: { '0,0': 'dato', '1,0': 'dato' } }), T('tx', 185, 30, 'x', { bold: true }),
+      T('e', 235, 80, '=', { size: 20, bold: true }),
+      G('y', 260, 40, [['1'], ['2']], { toni: { '0,0': 'ok', '1,0': 'ok' } }),
+      T('c', 450, 60, 'Ix = x', { bold: true }), T('c2', 450, 100, '', { size: 13 }), T('c3', 450, 140, '', { size: 13 })
+    ],
+    passi: [
+      { nota: "La <b>matrice identità</b> I ha 1 sulla diagonale principale e 0 altrove. Moltiplicata per qualsiasi vettore lo lascia com'è: Ix = x. È l'\"uno\" delle matrici: AI = IA = A. In NumPy: <code>np.eye(2)</code>." },
+      { nota: "Una matrice <b>diagonale</b> ha numeri qualsiasi sulla diagonale e 0 altrove. diag(2, 3) · [1, 2] = [2, 6]: ogni componente viene moltiplicata per il suo numero della diagonale, indipendentemente dalle altre.", set: { tm: { t: 'diag(2, 3)' }, M: { valori: [['2', '0'], ['0', '3']] }, y: { valori: [['2'], ['6']] }, c: { t: 'diag(2, 3) x = [2, 6]' }, c2: { t: 'ogni asse scalato per conto suo' } } },
+      { nota: "Le matrici diagonali sono le trasformazioni più semplici: allungano o accorciano ogni asse. Tornano nella settimana 4 (scala) e nella PCA, dove la covarianza diventa diagonale nella base giusta.", set: { c3: { t: 'scala: settimana 4' } } }
+    ]
+  };
+
+  // 10. matrici ortogonali
+  SCENE.ortogonale = {
+    w: 600, h: 272, lato: true,
+    legenda: 'due:columns of Q,dato:v,ok:Qv',
+    oggetti: [
+      { id: 'ax', tipo: 'assi', box: [50, 20, 260, 230], dom: [-5, 5, -1, 5.5], tacche: 1, numeri: false, etX: 'x₁', etY: 'x₂' },
+      { id: 'q1', tipo: 'vett', in: 'ax', x1: 0, y1: 0, x2: 0, y2: 1, t: 'q₁', tx: 8, tono: 'due' },
+      { id: 'q2', tipo: 'vett', in: 'ax', x1: 0, y1: 0, x2: -1, y2: 0, t: 'q₂', ty: 16, tono: 'due' },
+      { id: 'v', tipo: 'vett', in: 'ax', x1: 0, y1: 0, x2: 3, y2: 4, t: 'v = [3, 4]', tono: 'dato', nascosto: true },
+      { id: 'qv', tipo: 'vett', in: 'ax', x1: 0, y1: 0, x2: -4, y2: 3, t: 'Qv = [−4, 3]', tx: -20, ty: -12, tono: 'ok', nascosto: true },
+      T('m', 470, 50, 'Q = [[0, −1], [1, 0]]', { bold: true, size: 13 }),
+      T('c1', 470, 90, '', { size: 13 }), T('c2', 470, 120, '', { size: 13 }), T('c3', 470, 160, '', { size: 13, bold: true })
+    ],
+    passi: [
+      { nota: "Una matrice è <b>ortogonale</b> (slide 48) se le sue colonne sono vettori di <b>lunghezza 1</b> e <b>perpendicolari</b> fra loro. Q = [[0, −1], [1, 0]]: colonne q₁ = [0, 1] e q₂ = [−1, 0]." },
+      { nota: "Controllo: ‖q₁‖ = ‖q₂‖ = 1 e q₁ · q₂ = 0·(−1) + 1·0 = 0. In forma compatta: <b>QᵀQ = I</b>, quindi l'inversa di Q è semplicemente la sua trasposta.", set: { c1: { t: '‖q₁‖ = ‖q₂‖ = 1, q₁ · q₂ = 0' }, c2: { t: 'QᵀQ = I  ⇒  Q⁻¹ = Qᵀ' } } },
+      { nota: "Applicata a v = [3, 4] dà Qv = [−4, 3]: una <b>rotazione</b> di 90°.", set: { v: { nascosto: false }, qv: { nascosto: false } } },
+      { nota: "Le lunghezze non cambiano: ‖v‖ = 5 e ‖Qv‖ = 5. Le matrici ortogonali sono <b>rotazioni</b> (o riflessioni): spostano senza deformare. Una scala come diag(2, 1) invece allunga: ‖[6, 4]‖ ≈ 7.21 (valori controllati).", set: { c3: { t: '‖v‖ = ‖Qv‖ = 5', tono: 'ok' } } }
+    ]
+  };
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Matrices and products</h1>
+  <p class="lede">A matrix is a table of numbers. In the course it has three roles: <b>holding the data</b>, representing a linear <b>transformation</b>, and writing a <b>system of equations</b> in one line (that is, learning a model). Here: the notation, the element-by-element operations, the transpose, the matrix-vector product in the two views, the product of matrices, the shapes, the identity and orthogonal matrices. Slides 28–50 of lecture 2.</p>
+</header>
+
+<section>
+  <h2>What a matrix is</h2>
+  <p>A <b>matrix</b> is a rectangular table of numbers. An <b>m × n</b> matrix ("m by n") has m rows and n columns: rows are always named first. In NumPy it is a 2D array and <code>A.shape == (m, n)</code>.</p>
+  <p>The element in row i and column j is written <span class="m">A<sub>ij</sub></span>. In the slides and books one counts from 1; in NumPy from 0, so <span class="m">A<sub>23</sub></span> is <code>A[1, 2]</code>. Each row is a vector (horizontal), each column is a vector (vertical): a matrix is a stack of vectors, read in two directions.</p>
+  <p>Special cases: <b>square</b> (m = n), <b>column vector</b> (n = 1), <b>row vector</b> (m = 1). A 1 × 1 matrix is a number.</p>
+  <figure class="scena" data-scena="matrice" data-titolo="Rows, columns, elements"></figure>
+</section>
+
+<section>
+  <h2>Three ways to use a matrix</h2>
+  <p>Slide 29 lists the uses of matrices in the course. The table is the same, only the way of reading it changes.</p>
+  <p><b>Data container</b> (<i>data storage</i>): one row per example, one column per feature. The dataset of poses is an 18 × 50 matrix; a greyscale image is a matrix of pixels.</p>
+  <p><b>Transformation</b> (<i>linear mapping</i>): the matrix acts on vectors, <span class="m">x ↦ Ax</span>. The columns say where the vectors of the basis go: it is the viewpoint of week 4.</p>
+  <p><b>System of equations</b>: each row is the list of coefficients of a linear equation, and <span class="m">Ax = b</span> writes a whole system in one formula. Learning a linear model means solving such a system in the weights.</p>
+  <figure class="scena" data-scena="treusi" data-titolo="The same A, read in three ways"></figure>
+</section>
+
+<section>
+  <h2>Element-by-element operations</h2>
+  <p>The simplest operations are extensions of those on vectors (slide 31) and work <b>box by box</b>.</p>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Operation</th><th>Rule</th><th>NumPy</th></tr></thead>
+    <tbody>
+      <tr><td>sum, subtraction</td><td>element by element, same shape</td><td><code>A + B</code></td></tr>
+      <tr><td>by a scalar</td><td>each element times the number</td><td><code>3 * A</code></td></tr>
+      <tr><td><b>Hadamard</b> product ⊙</td><td>element by element (<b>not</b> the matrix product)</td><td><code>A * B</code></td></tr>
+      <tr><td><b>matrix product</b></td><td>rows × columns (below)</td><td><code>A @ B</code></td></tr>
+    </tbody>
+  </table></div>
+  <p>The Hadamard product (<i>Hadamard product</i>, or <i>elementwise multiplication</i>) is used for example to apply a "mask" to an image. But it does not have the properties of the matrix product, and in NumPy a single symbol is enough to confuse them.</p>
+  <figure class="scena" data-scena="elementi" data-titolo="A + B, 2A, A ⊙ B"></figure>
+</section>
+
+<section>
+  <h2>The transpose</h2>
+  <p>The <b>transpose</b> <span class="m">Aᵀ</span> is obtained by swapping rows and columns: row i of A becomes column i of Aᵀ. In formula <span class="m">(Aᵀ)<sub>ij</sub> = A<sub>ji</sub></span>, and an m × n matrix becomes n × m.</p>
+  <p>It is needed continually to make shapes work in products. The inner product itself is written <span class="m">uᵀw</span>: a row vector (1 × n) times a column vector (n × 1) gives a number (1 × 1). In least squares <span class="m">XᵀX</span> appears.</p>
+  <p>In NumPy <code>A.T</code>. Two details: it is a <b>view</b> (it does not copy the data, it reads them in another order, so modifying <code>A.T</code> modifies <code>A</code> too), and on a 1D array it does nothing, because a 1D vector is neither row nor column (<a href="nozioni-numpy.html">NumPy</a>).</p>
+  <figure class="scena" data-scena="trasposta" data-titolo="From 2 × 3 to 3 × 2"></figure>
+</section>
+
+<section>
+  <h2>Matrix times vector: the view by rows</h2>
+  <p>The product <span class="m">Ax</span> between an m × n matrix and a vector of n components gives a vector of <b>m</b> components. Component i of the result is the <b>inner product of row i of A with x</b>.</p>
+  <p>This is "matrix multiplication is just repeated use of the inner product": the inner product is repeated once for each row. Read as a model: each output is a weighted sum of the inputs, and each row contains the weights of one output. It is the view of <b>systems of equations</b> and hyperplanes (a row = an equation = a hyperplane).</p>
+  <div class="box regola" data-tit="The dimensions">
+    <p>An <b>m × n</b> matrix times a vector of <b>n</b> components gives a vector of <b>m</b> components. The number of columns of A must equal the length of x. It is a function from ℝⁿ to ℝᵐ: the "non-square matrices" of the slides are transformations between different dimensions.</p>
+  </div>
+  <figure class="scena" data-scena="mv" data-titolo="A = [[2, 1], [1, 3]] for x = [1, 2], row by row"></figure>
+</section>
+
+<section>
+  <h2>Matrix times vector: the view by columns</h2>
+  <p>The same product can also be read by columns: <span class="m">Ax = x₁·(column 1) + x₂·(column 2) + … </span>. The components of x are the <b>weights</b> of a linear combination of the columns of A.</p>
+  <p>This view answers the question of slide 45, "where does the input vector go?": the vector [1, 0] goes to the first column, [0, 1] to the second, and every other vector goes to the corresponding combination. It is the view of <b>transformations</b> (week 4) and of <b>bases</b> (week 6).</p>
+  <p>An important consequence: the possible results of Ax are all and only the linear combinations of the columns. This set is called the <b>column space</b> (<i>column space</i>), and it decides whether a system Ax = b has a solution (<a href="w03-sistemi-lineari.html">linear systems</a>).</p>
+  <figure class="scena" data-scena="colonne" data-titolo="Ax as a mixture of the columns"></figure>
+</section>
+
+<section>
+  <h2>Matrix times matrix</h2>
+  <p>The product <span class="m">AB</span> extends the matrix-vector product: <span class="m">(AB)<sub>ij</sub></span> is the inner product between the <b>row i of A</b> and the <b>column j of B</b>. An m × p result requires m·p inner products.</p>
+  <p>Equivalent, and often more useful: column j of AB is <b>A multiplied by column j of B</b>. So "multiplying by B and then by A" means applying one transformation after the other: the product of matrices is the <b>composition</b> of transformations, like f(g(x)) for functions.</p>
+  <figure class="passi" data-titolo="(m × n) · (n × p) = m × p">
+    <div class="passo"><div class="espr">(AB)<sub>ij</sub> = <mark class="ora">riga i di A</mark> · <mark class="due">colonna j di B</mark></div><p class="nota">"Matrix multiplication is just repeated use of the inner product."</p></div>
+    <div class="passo"><div class="espr">A = [[2, 1], [1, 3]],  B = [[0, 1], [1, 0]]  ⇒  AB = [[1, 2], [3, 1]]</div><p class="nota">For example (AB)₁₁ = [2, 1] · [0, 1] = 1.</p></div>
+    <div class="passo"><div class="espr">colonna j di AB = <mark class="ok">A · (colonna j di B)</mark></div><p class="nota">Multiplying by B and then by A is one transformation after the other: the composition (week 4).</p></div>
+  </figure>
+  <figure class="scena" data-scena="mm" data-titolo="AB element by element"></figure>
+</section>
+
+<section>
+  <h2>Shapes and order</h2>
+  <p>Before any product the shapes are checked: <b>(m × n)(n × p) = m × p</b>. The inner dimensions must coincide, the outer ones give the shape of the result. If the inner ones do not coincide the product does not exist, and NumPy raises <code>ValueError</code> (the full rule is in <a href="nozioni-dimensioni.html">dimensions in products</a>).</p>
+  <p>The <b>order matters</b>. With non-square matrices AB may exist and BA not, or have different shapes. Even with square matrices, in general AB ≠ BA: the product is not commutative. It remains associative, (AB)C = A(BC), and distributive, A(B + C) = AB + AC.</p>
+  <figure class="codice" data-titolo="Shapes in NumPy">
+<pre data-lang="python">D = np.array([[1, 2, 3],
+              [4, 5, 6]])     # forma (2, 3)
+D.T.shape                     # (3, 2)
+D @ D.T                       # (2, 3)(3, 2) → forma (2, 2): [[14, 32], [32, 77]]
+(D.T @ D).shape               # (3, 2)(2, 3) → (3, 3)
+D @ D                         # errore: (2, 3)(2, 3), 3 ≠ 2</pre>
+    <ol class="spiega">
+      <li data-righe="1-3" data-segna="(2, 3)@dato|(3, 2)@due"><p>The transpose swaps the two dimensions.</p></li>
+      <li data-righe="4-5" data-segna="D @ D.T@ok|D.T @ D@ok"><p>The "inner" dimensions must coincide; the outer ones give the shape of the result. <code>D @ D.T</code> contains all the inner products between rows: it is the basis of covariance and similarities.</p></li>
+      <li data-righe="6" data-segna="errore@no"><p>Inner dimensions different (3 and 2): NumPy raises <code>ValueError</code>. The first check in case of error is always <code>.shape</code>.</p></li>
+    </ol>
+  </figure>
+  <figure class="scena" data-scena="dimensioni" data-titolo="Inner dimensions equal, outer ones give the result"></figure>
+</section>
+
+<section>
+  <h2>Identity and diagonal matrices</h2>
+  <p>The <b>identity matrix</b> <span class="m">I</span> is square, with 1 on the main diagonal and 0 elsewhere. It changes nothing: <span class="m">Ix = x</span> and <span class="m">AI = IA = A</span>. It is the equivalent of the number 1 for the product, and it serves to define the inverse: <span class="m">A⁻¹A = I</span>.</p>
+  <p>A <b>diagonal</b> matrix has any numbers on the diagonal and 0 outside. It multiplies each component of the vector by the corresponding number, without mixing the components: it is a transformation that stretches or shortens each axis on its own. In NumPy <code>np.eye(n)</code> and <code>np.diag([d1, d2, …])</code>.</p>
+  <figure class="scena" data-scena="identita" data-titolo="Ix = x and diag(2, 3) x"></figure>
+</section>
+
+<section>
+  <h2>Orthogonal matrices</h2>
+  <p>A square matrix Q is <b>orthogonal</b> (slides 48–49) if all its columns have <b>length 1</b> and are <b>perpendicular</b> two by two. It is written in a single formula: <span class="m">QᵀQ = I</span>, because the element (i, j) of QᵀQ is the inner product between columns i and j.</p>
+  <p>Two consequences. The inverse costs nothing: <span class="m">Q⁻¹ = Qᵀ</span>. And Q does <b>not distort</b>: it preserves lengths and angles, ‖Qv‖ = ‖v‖. Orthogonal matrices are the rotations and reflections.</p>
+  <p>Where they come back: the orthonormal bases of week 6, and the PCA of week 12, where the eigenvectors of the covariance form an orthogonal matrix that "rotates" the data onto the principal axes.</p>
+  <figure class="scena" data-scena="ortogonale" data-titolo="Q rotates by 90° and does not stretch"></figure>
+</section>
+
+</main>
+</body>
+</html>

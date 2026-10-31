@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Union-find: disjunkte mængder</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+const N = (id,x,y,t) => ({id,tipo:'nodo',x,y,t,r:20});
+const A = (id,da,a) => ({id,tipo:'arco',da,a,dir:true});
+SCENE.uf = {
+  w: 520, h: 250, lato: true,
+  legenda: 'ora:operation i gang,dato:rod (repræsentant),ok:resultat',
+  oggetti: [
+    N('a',60,60,'a'), N('b',170,60,'b'), N('c',280,60,'c'), N('d',390,60,'d'), N('e',470,160,'e'),
+    {id:'c1',tipo:'testo',x:20,y:225,t:'',size:12,bold:true,anchor:'start'}
+  ],
+  passi: [
+    { nota: 'Hver knude er en mængde for sig. Hver mængde er et træ, og <b>roden</b> er dens repræsentant. Her: 5 rødder.', set:{a:{tono:'dato'},b:{tono:'dato'},c:{tono:'dato'},d:{tono:'dato'},e:{tono:'dato'},c1:{t:'5 insiemi: {a} {b} {c} {d} {e}'}} },
+    { nota: '<code>union(a, b)</code>: jeg finder rødderne (a og b), og hænger det mindste træ under det andet. Begge har størrelse 1: jeg hænger b under a.', set:{b:{tono:'ora',sotto:'figlio di a'}, a:{tono:'dato'}, ab:{tono:'ok'}, c1:{t:'{a, b} con radice a'}} },
+    { nota: '<code>union(c, d)</code>: det samme. d under c.', set:{d:{tono:'ora',sotto:'figlio di c'}, c:{tono:'dato'}, cd:{tono:'ok'}, c1:{t:'{a, b} · {c, d} · {e}'}} },
+    { nota: '<code>union(a, c)</code>: rødderne a og c, lige store: c under a. Nu har {a, b, c, d} roden a.', set:{c:{tono:'ora',sotto:'figlio di a'}, d:{tono:'dato',sotto:'figlio di c'}, ac:{tono:'ok'}, c1:{t:'un solo insieme: {a, b, c, d} con radice a'}} },
+    { nota: '<code>find(d)</code>: jeg går op d → c → a. Med <b>path compression</b> hæfter jeg d direkte på a: næste søgning koster kun ét trin.', set:{d:{tono:'ok',sotto:'figlio di a'},c:{tono:'dato'},da:{tono:'ok'},c1:{t:'find(d) = a, e d ora punta direttamente ad a',tono:'ok'}} }
+  ]
+};
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Union-find: disjunkte mængder</h1>
+  <p class="lede">Union-find (disjunkte mængder) holder grupper, der fusioneres, og besvarer næsten i konstant tid spørgsmålet: er x og y i samme gruppe? Det er strukturen bag Kruskal.</p>
+</header>
+
+<section>
+  <h2>De tre operationer</h2>
+<ul>
+  <li><b>make-set(x)</b>: opretter gruppen <code>{x}</code>, med <code>x</code> som rod for sig selv.</li>
+  <li><b>find(x)</b>: gå op gennem forældrene til roden. Roden er gruppens <b>repræsentant</b>.</li>
+  <li><b>union(x, y)</b>: finder de to rødder og hænger den mindste under den største.</li>
+</ul>
+<p>To elementer er i samme gruppe, hvis og kun hvis <code>find</code> giver den samme rod.</p>
+  <figure class="scena" data-scena="uf" data-titolo="make-set, union, find med path compression"></figure>
+</section>
+<section>
+  <h2>Hvorfor det holder træerne lave</h2>
+<p>Uden forholdsregler kan et træ blive en lang kæde, og <code>find</code> ville koste <code>O(n)</code>. To regler undgår det:</p>
+<ul>
+  <li><b>link by size / rank</b>: under den største rod kommer den mindste. Højden vokser kun, når to træer af samme højde forenes, så den bliver <code>≤ log n</code>.</li>
+  <li><b>path compression</b>: under en <code>find</code> kobles hver knude, man møder, direkte til roden.</li>
+</ul>
+</section>
+<section>
+  <h2>Omkostningen</h2>
+<p>Med <b>link by size</b> og <b>path compression</b> sammen koster <code>m</code> operationer <code>O(m · α(m, n))</code> i alt, hvor <code>α</code> er den inverse Ackermann-funktion: den vokser så langsomt, at den i praksis er en konstant (≤ 4 for ethvert reelt input). Uden path compression, men med link by size: <code>O(log n)</code> pr. operation.</p>
+</section>
+<section>
+  <h2>Koden side om side</h2>
+  <p>Denne side forklarer begrebet. Java-koden, der implementerer det, med en forklaring linje for linje og de syntaksnoter, der skal bruges, står på den side ved siden af.</p>
+  <p><a href="../codice/union-find.html"><b>→ Java-kode til dette emne</b></a></p>
+</section>
+<section>
+  <h2>Til eksamen</h2>
+<div class="box esame" data-tit="Til eksamen">
+<p>Forbundethed, der vokser over tid, eller Kruskal: skriv <i>"We maintain disjoint sets with union-find, using union by size and path compression; m operations cost O(m α(m, n))."</i></p>
+<p>Hvis spørgsmålet beder om at kontrollere, om to knuder er forbundet <b>én gang</b>, er en BFS nok; hvis kanterne kommer <b>én ad gangen</b>, og svaret skal bruges efter hver kant, union-find.</p>
+</div>
+</section>
+<section>
+  <h2>Hurtig oversigt</h2>
+<div class="tab-wrap"><table class="tab"><thead><tr><th>operation</th><th>effekt</th><th>omkostning</th></tr></thead><tbody><tr><td>make-set</td><td>ny gruppe</td><td>O(1)</td></tr><tr><td>find</td><td>gruppens rod</td><td>næsten konstant</td></tr><tr><td>union</td><td>fusionerer to grupper</td><td>næsten konstant</td></tr><tr><td>omkostning</td><td>O(m α(m, n))</td><td>med union by size + path compression</td></tr></tbody></table></div>
+</section>
+
+</main>
+</body>
+</html>

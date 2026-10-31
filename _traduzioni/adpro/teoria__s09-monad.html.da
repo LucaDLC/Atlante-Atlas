@@ -1,0 +1,57 @@
+@@s001 Monad: unit og flatMap
+@@s002 ora:trin der køres,ok:værdi der sendes videre,no:fejl,spento:trin sprunget over
+@@s003 <b>flatMap</b> kæder beregninger, der kan fejle, sammen. Jeg starter fra <code>Some(3)</code>.
+@@s004 <code>flatMap(raddoppiaSePositivo)</code>: 3 er positivt, så resultatet er Some(6). Det næste trin modtager værdien <b>inde i</b> containeren.
+@@s005 <code>flatMap(dimezza)</code>: 6 er lige, så resultatet er Some(3).
+@@s006 Med <code>Some(-3)</code>: raddoppiaSePositivo returnerer <b>None</b>. Et flatMap på None er None, så det næste trin køres ikke.
+@@s007 Kontrollen med forløbet (hvis et trin fejler, stop) sidder inde i <code>flatMap</code>, ikke i koden, der bruger det. Det er monadens styrke.
+@@s008 dato:input,ora:trin der ændrer sig,ok:lig med
+@@s009 <b>Venstre identitet</b>: <code>unit(y).flatMap(f) === f(y)</code>. unit lægger y inde i containeren, og flatMap sender det til f: det er som at kalde f direkte. Med List og f = raddoppia: List(7).flatMap(f) = List(14) = f(7).
+@@s010 <b>Højre identitet</b>: <code>x.flatMap(unit) === x</code>. At sende hver værdi til unit lægger den tilbage i den samme container: List(1, 2, 3) bliver ved med at være List(1, 2, 3).
+@@s011 <b>Associativitet</b>: <code>x.flatMap(f).flatMap(g) === x.flatMap(a => f(a).flatMap(g))</code>. At kæde to trin til venstre eller indlejre dem til højre giver samme resultat. Det er den samme regel, vi så med monoiden.
+@@s012 dato:input,ora:valg i gang,ok:resultat
+@@s013 <b>sequence</b> tager en liste af containere, List(List(1, 2), List(3, 4)), og returnerer en container af lister. Det betyder: "tag én værdi fra hver container, på alle mulige måder".
+@@s014 Første valg: 1 fra den første liste og 3 fra den anden. Jeg får List(1, 3).
+@@s015 De andre kombinationer: 1 med 4, 2 med 3, 2 med 4. Fire lister i alt.
+@@s016 Samme idé med Option: <code>sequence(List(Some(1), Some(2)))</code> = Some(List(1, 2)), men <code>sequence(List(Some(1), None))</code> = None: ét None er nok til at tabe alt.
+@@s017 dato:mulige valg,ora:valg i gang,ok:resultat
+@@s018 <b>replicateM(n, ma)</b> gentager containeren <code>ma</code> n gange og samler resultaterne i en liste. Med List(0, 1) og n = 2 kan hvert trin vælge 0 eller 1.
+@@s019 Første trin: jeg vælger 0 eller 1. To mulige grene.
+@@s020 Andet trin: fra hver gren igen 0 eller 1. Fire resultater, alle mulige måder.
+@@s021 Med Option: <code>replicateM(2, Some(1))</code> = Some(List(1, 1)); med None er resultatet None. Betydningen afhænger af containeren: i en liste multipliceres valgene, i en Option gentages den samme værdi.
+@@s022 dato:startfunktion,ora:trin i gang,ok:resultat
+@@s023 <b>compose</b> (Kleisli-sammensætning): f går fra A til en container F[B], g går fra B til F[C]. De kan ikke sammensættes direkte, fordi g ikke accepterer F[B].
+@@s024 Jeg anvender f på <code>a</code>: jeg får en container F[B]. Værdien B står inde i den, og f kan ikke kaldes direkte på den.
+@@s025 Med <code>flatMap(g)</code> udtrækkes værdien B og sendes til g: jeg får F[C]. Sammensætningen er altså en <b>ny</b> funktion fra A til F[C].
+@@s026 <span>Uge 9</span>
+@@s027 Monad: unit og flatMap
+@@s028 Monaden er ugens mest generelle begreb: en type med <code>unit</code> (at lægge en værdi ind) og <code>flatMap</code> (at kæde beregninger sammen, der afhænger af den forrige værdi). Option, List, LazyList, Gen, Parser og <a href="s05-state.html">State</a> er alle monader.
+@@s029 Traiten Monad
+@@s030 På sliderne er traiten sådan her (forenklet):
+@@s031 <code>trait Monad[F[_]] extends Functor[F]</code>, med to metoder:
+@@s032 <code>unit[A](a: =&gt; A): F[A]</code>: lægger en værdi ind i containeren. For Option er det <code>Some(a)</code>, for List er det <code>List(a)</code>. Typen <code>=&gt; A</code> betyder, at argumentet sendes med navn, altså beregnes først når der er brug for det.
+@@s033 <code>flatMap[B](f: A =&gt; F[B]): F[B]</code>: tager værdien inde i containeren og sender den til <code>f</code>, som vælger den næste beregning ud fra den værdi. <code>f</code> returnerer allerede en container, og <code>flatMap</code> udfolder den til kun én.
+@@s034 Ud fra disse to får man <code>map</code>: <code>fa.flatMap(a =&gt; unit(f(a)))</code>. Derfor er en monad også en functor: traiten udvider den.
+@@s035 flatMap kæder trin sammen, der kan fejle
+@@s036 Idéen
+@@s037 Sliderne bemærker, at navnet kunne være <i>FlatMappable</i>: en container, som man kan kæde beregninger på, hvor hvert trin afhænger af værdien fra det foregående.
+@@s038 Lovene
+@@s039 Lovene (fra sliderne og bogen) gælder <code>unit</code> og <code>flatMap</code>:
+@@s040 <b>Venstre identitet</b>: <code>unit(y).flatMap(f) === f(y)</code>;
+@@s041 <b>Højre identitet</b>: <code>x.flatMap(unit) === x</code>;
+@@s042 <b>Associativitet</b>: <code>x.flatMap(f).flatMap(g) === x.flatMap(a =&gt; f(a).flatMap(g))</code>.
+@@s043 Lovene læses sådan: <code>unit</code> er det neutrale element i kædningen (som 0 i monoiden), og <code>flatMap</code> er associativ. På sliderne er de skrevet som ScalaCheck-egenskaber, ligesom for monoiden.
+@@s044 De tre love med List
+@@s045 sequence: den generaliserede zip
+@@s046 <code>sequence(lfa: List[F[A]]): F[List[A]]</code> tager en liste af containere og returnerer en container af lister. For List-monaden betyder det alle mulige valg; for Option betyder det "alle til stede eller intet". På sliderne beskrives resultatet som en generaliseret <i>n-ary zip</i>: en zip af n containere i stedet for to.
+@@s047 Koden til <code>sequence</code> er kursets opgave 17: her ser du kun opførslen.
+@@s048 sequence: fra en liste af lister til dens kombinationer
+@@s049 replicateM og compose
+@@s050 <code>replicateM(n, ma)</code> gentager containeren <code>n</code> gange og samler værdierne i en liste inde i containeren: <code>F[List[A]]</code>. Betydningen ændrer sig med monaden, som scenen viser.
+@@s051 replicateM med List: fire resultater
+@@s052 <b>compose</b> (Kleisli-sammensætning) kombinerer to funktioner, der returnerer en container: <code>f: A =&gt; F[B]</code> og <code>g: B =&gt; F[C]</code> giver en ny funktion <code>A =&gt; F[C]</code>. Den opnås med <code>flatMap</code>: du anvender f, og derefter sender du værdien inde i til g. Implementeringen er opgave 19.
+@@s053 Sammensætning: f derefter g, med flatMap i midten
+@@s054 Hvor det bruges
+@@s055 Koden til <code>unit</code>, <code>flatMap</code> og eksemplerne med Option og List står på <a href="../esempi/s09-monad.html">siden med eksempler side om side</a>. State, som allerede er set i <a href="s05-state.html">uge 5</a>, er en anden monad: <code>flatMap</code> på State kæder automater sammen.
+@@s056 Til eksamen
+@@s057 Hvis en opgave beder dig om at "sekvensere" containere, så tænk på <code>flatMap</code> og lovene: skriv hvilken monad du bruger, og hvilken opførsel du forventer (alle til stede, alle kombinationerne, den første der fejler).

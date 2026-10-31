@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Interval scheduling: the first to finish</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+const J = [['A',0,3],['B',2,5],['C',4,7],['D',1,8],['E',6,9],['F',8,10]];
+const X = t => 40 + t * 40; const ogg = [];
+for (let t = 0; t <= 10; t++) ogg.push({id:'tk'+t,tipo:'testo',x:X(t),y:262,t:String(t),size:11});
+ogg.push({id:'asse',tipo:'linea',x1:X(0),y1:250,x2:X(10),y2:250});
+J.forEach(([n,s,f],i) => ogg.push({id:n,tipo:'rett',x:X(s),y:24+i*34,w:(f-s)*40,h:24,t:n}));
+ogg.push({id:'ul',tipo:'linea',x1:X(0),y1:14,x2:X(0),y2:250,tratt:true,tono:'due',nascosto:true});
+ogg.push({id:'c',tipo:'testo',x:40,y:302,t:'',size:12,bold:true,anchor:'start'});
+const passi = [{nota:'Six intervals, <b>A</b> … <b>F</b>. Two intervals are compatible if they do not overlap. I want the <b>maximum number</b> of compatible intervals.', set:{}}];
+passi.push({nota:'I sort by increasing <b>end time</b>: A(3), B(5), C(7), D(8), E(9), F(10). It is the order in which the greedy looks at the intervals.', set:{c:{t:'ordine per fine: A B C D E F'}}});
+let ultimo = 0; const scelti = [];
+J.forEach(([n,s,f]) => {
+  if (s >= ultimo) { scelti.push(n); ultimo = f;
+    passi.push({nota:`<b>${n}</b> starts at ${s}, not before the end of the last one taken: it is compatible. <b>I take it</b>. Now the last one ends at ${f}.`, set:{[n]:{tono:'ok'}, ul:{nascosto:false}, c:{t:'preso: '+scelti.join(', ')}}});
+  } else {
+    passi.push({nota:`<b>${n}</b> starts at ${s}, before the end of ${ultimo}: it overlaps the last one taken. <b>Discarded</b>.`, set:{[n]:{tono:'no'}}});
+  }
+});
+passi.push({nota:`Result: <b>${scelti.join(', ')}</b>, ${scelti.length} intervals. The loop looks at each interval once: after the sort it costs O(n).`, set:{c:{t:'risultato: '+scelti.join(', '),tono:'ok'}}});
+SCENE.int = {
+  w: 540, h: 320, lato: true,
+  legenda: 'ok:taken,no:discarded,due:end of the last one taken',
+  oggetti: ogg, passi
+};
+})();
+</script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+const J = [['A',0,3],['B',1,4],['C',2,6],['D',5,8],['E',6,9]];
+const X = t => 40 + t * 40; const ogg = [];
+for (let t = 0; t <= 9; t++) ogg.push({id:'tk'+t,tipo:'testo',x:X(t),y:262,t:String(t),size:11});
+ogg.push({id:'asse',tipo:'linea',x1:X(0),y1:250,x2:X(9),y2:250});
+J.forEach(([n,s,f],i) => ogg.push({id:n,tipo:'rett',x:X(s),y:24+i*34,w:(f-s)*40,h:24,t:n,nascosto:true}));
+ogg.push({id:'c',tipo:'testo',x:40,y:302,t:'',size:12,bold:true,anchor:'start'});
+const passi = [{nota:'Interval partitioning: I assign all the intervals to <b>rooms</b>, without overlaps in the same room. How many rooms are needed at least?', set:{}}];
+const mostra = [];
+passi.push({nota:'I sort by increasing <b>start</b>. Here are all the intervals: A(0–3), B(1–4), C(2–6), D(5–8), E(6–9).', set:Object.fromEntries(J.map(([n])=>[n,{nascosto:false}]))});
+passi.push({nota:'Room 1: I take A. B starts at 1, A is not finished: a new room is needed. Room 2: B. C starts at 2: both room 1 and room 2 are occupied, I open room 3: C.', set:{A:{tono:'ok'},B:{tono:'due'},C:{tono:'ora'},c:{t:'aule aperte: 3'}}});
+passi.push({nota:'D starts at 5: room 1 is free (A finished at 3). D goes into room 1.', set:{D:{tono:'ok'},A:{tono:'dato'},c:{t:'D nell\'aula 1'}}});
+passi.push({nota:'E starts at 6: room 2 is free (B finished at 4). E goes into room 2. Total: <b>3 rooms</b>. The minimum is the <b>depth</b>: the maximum number of intervals that overlap at the same instant, that is 3 (at t = 2: A, B, C).', set:{E:{tono:'ok'},c:{t:'aule = profondità = 3',tono:'ok'}}});
+SCENE.part = {w:540,h:320,lato:true,legenda:'ok:assigned,due:busy at this instant,ora:new room',oggetti:ogg,passi};
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Interval scheduling: the first to finish</h1>
+  <p class="lede">Given a set of intervals, choose the maximum number of intervals that do not overlap. The greedy rule is simple: always take the one that finishes first. Proving it is the classic exercise of the exchange argument.</p>
+</header>
+
+<section>
+  <h2>The problem and the rule</h2>
+<p>Each interval has a start <code>s</code> and an end <code>f</code>. Two intervals are <b>compatible</b> if they do not overlap: the second starts no earlier than the first finishes. You want the maximum number of compatible intervals.</p>
+<p>The greedy rule: <b>sort by increasing end</b> and take an interval if it is compatible with the last one taken. The intuition: an interval that finishes early leaves more free time for the others.</p>
+  <figure class="scena" data-scena="int" data-titolo="Order by end and compatible choice"></figure>
+</section>
+<section>
+  <h2>Why it is optimal</h2>
+<p><b>Greedy stays ahead</b> proof: after <code>k</code> choices, the greedy has the first interval that finishes no later than any other solution with <code>k</code> intervals. So it always has at least as much room as another solution for the next choice.</p>
+<p>Or the <b>exchange argument</b>: if an optimum chooses an interval that finishes later than the greedy's, you replace it with the greedy's one without creating overlaps (the greedy finishes earlier). The number stays the same.</p>
+</section>
+<section>
+  <h2>The cost</h2>
+<p>Sorting costs <code>O(n log n)</code>. Then a single scan, <code>O(n)</code>, with a single variable: the end of the last interval taken. Total <code>O(n log n)</code>. If the intervals are already sorted, the scan is enough: <code>O(n)</code>.</p>
+<div class="box attenzione" data-tit="Neither by end nor by start"><p>Sorting by <i>duration</i> is wrong: a short interval can overlap two long ones that together are compatible. Sorting by <i>start</i> is wrong: an interval that starts early can be very long.</p></div>
+</section>
+<section>
+  <h2>Interval partitioning: how many rooms</h2>
+<p>Different variant: all the intervals must be assigned, using the <b>minimum number of rooms</b>. A room contains non-overlapping intervals.</p>
+<p>The greedy: sort by increasing <b>start</b>. For each interval, use a free room if there is one, otherwise open a new room. The number of rooms is the <b>depth</b> of the intervals, that is the maximum number that overlap at the same instant. So it is optimal: no solution can use fewer rooms than the depth.</p>
+  <figure class="scena" data-scena="part" data-titolo="Rooms: the maximum of overlapping intervals"></figure>
+</section>
+<section>
+  <h2>The code, side by side</h2>
+  <p>This page explains the concept. The Java code that implements it, with a line-by-line explanation and the syntax notes needed, is on the side-by-side page.</p>
+  <p><a href="../codice/interval-scheduling.html"><b>→ Java code for this topic</b></a></p>
+</section>
+<section>
+  <h2>Scheduling with minimum lateness (EDF)</h2>
+  <p>One machine, several jobs. Each job <i>j</i> has a <b>duration</b> <code>tⱼ</code> and a <b>deadline</b> <code>dⱼ</code>: the moment by which it should be finished. If <i>j</i> starts at time <code>sⱼ</code>, it finishes at <code>fⱼ = sⱼ + tⱼ</code>.</p>
+  <p>The <b>lateness</b> of a job is <code>ℓⱼ = max(0, fⱼ − dⱼ)</code>. The <code>max(0, …)</code> takes the larger between zero and the number: a job finished early has lateness 0, never negative. The goal is the <b>maximum lateness</b> <code>L = maxⱼ ℓⱼ</code>, as small as possible.</p>
+  <p>Two greedy rules that seem obvious are wrong:</p>
+  <div class="tab-wrap"><table class="tab"><thead><tr><th>rule</th><th>counterexample</th></tr></thead><tbody>
+    <tr><td>shortest duration first</td><td>durations (1, 10), deadlines (100, 10): the short job goes first, the second finishes at 11 with lateness 1. In the other order the lateness would be 0.</td></tr>
+    <tr><td>smallest slack <code>dⱼ − tⱼ</code> first</td><td>durations (1, 10), deadlines (2, 10): slacks 1 and 0. Putting the second first makes the first overrun by 9; the opposite order gives lateness 1.</td></tr>
+  </tbody></table></div>
+  <p>The rule that works is <b>EDF</b> (<i>earliest deadline first</i>, closest deadline first): sort by increasing <code>dⱼ</code> and make the machine work without pauses. Leaving it idle never helps, and EDF does not need it either.</p>
+  <figure class="scena" data-scena="lat" data-titolo="EDF on two jobs: the order by deadline"></figure>
+  <div class="box idea" data-tit="Why EDF is optimal (exchange argument)">
+    <ol>
+      <li>An <b>inversion</b> is a pair of jobs <i>i</i>, <i>j</i> with <i>i</i> before <i>j</i> but <code>dᵢ &gt; dⱼ</code>: the job with the more distant deadline goes first.</li>
+      <li>An order without inversions is EDF (equal deadlines can be swapped without harm).</li>
+      <li>If there is an inversion, there is one between two <b>consecutive</b> jobs: if all the neighbours are in order, the whole row is.</li>
+      <li>I swap the two consecutive jobs. <i>j</i> now starts earlier and finishes before <code>fⱼ</code>, so its lateness does not grow. <i>i</i> finishes at the old <code>fⱼ</code>, and its lateness <code>fⱼ − dᵢ</code> is smaller than <code>fⱼ − dⱼ</code>, which is at most the maximum lateness <code>L</code>. So the maximum does not grow.</li>
+      <li>Each swap removes an inversion and creates no new ones. After at most <code>n(n−1)/2</code> swaps there are none left. Starting from an optimum you arrive at EDF without worsening the maximum lateness: EDF is optimal.</li>
+    </ol>
+  </div>
+</section>
+<section>
+  <h2>At the exam</h2>
+<div class="box esame" data-tit="At the exam">
+<p>Interval scheduling (maximum number of compatible activities) → earliest finish time. Interval partitioning (minimum number of rooms) → earliest start time, number of rooms = depth. Phrase: <i>"Sort the jobs in increasing order of finish time. Take a job if it starts no earlier than the finish of the last job taken. Time O(n log n)."</i></p>
+<p>With different weights on the jobs it is no longer greedy: it is weighted interval scheduling (DP).</p>
+</div>
+</section>
+<section>
+  <h2>Quick reference</h2>
+<div class="tab-wrap"><table class="tab"><thead><tr><th>variant</th><th>rule</th><th>note</th></tr></thead><tbody><tr><td>earliest finish</td><td>sort by end, take if compatible</td><td>maximum number, O(n log n)</td></tr><tr><td>earliest start</td><td>sort by start, free or new room</td><td>minimum number of rooms = depth</td></tr><tr><td>with weights</td><td>not greedy</td><td>weighted interval scheduling, DP</td></tr></tbody></table></div>
+</section>
+
+</main>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+const X = t => 40 + t * 60;
+const ogg = [];
+for (let t = 0; t <= 6; t++) ogg.push({id:'tk'+t, tipo:'testo', x:X(t), y:252, t:String(t), size:11});
+ogg.push({id:'asse', tipo:'linea', x1:X(0), y1:242, x2:X(6), y2:242});
+ogg.push({id:'lab1', tipo:'testo', x:40, y:24, t:"Ordine EDF: prima A, poi B", size:12, bold:true, anchor:'start'});
+ogg.push({id:'lab2', tipo:'testo', x:40, y:112, t:"Ordine inverso: prima B, poi A", size:12, bold:true, anchor:'start'});
+ogg.push({id:'a1', tipo:'rett', x:X(0), y:36, w:120, h:30, t:'A (d 3)', nascosto:true});
+ogg.push({id:'b1', tipo:'rett', x:X(2), y:36, w:180, h:30, t:'B (d 4)', nascosto:true});
+ogg.push({id:'r1', tipo:'rett', x:X(4), y:36, w:60, h:30, t:'', tono:'no', nascosto:true});
+ogg.push({id:'b2', tipo:'rett', x:X(0), y:126, w:180, h:30, t:'B (d 4)', nascosto:true});
+ogg.push({id:'a2', tipo:'rett', x:X(3), y:126, w:120, h:30, t:'A (d 3)', tono:'no', nascosto:true});
+ogg.push({id:'c', tipo:'testo', x:40, y:296, t:'', size:12, bold:true, anchor:'start'});
+const passi = [
+  {nota:"Due lavori su una macchina. <b>A</b>: durata 2, scadenza 3. <b>B</b>: durata 3, scadenza 4. L’asse orizzontale è il tempo: ogni barra occupa la macchina per la durata del lavoro.", set:{c:{t:'A: durata 2, scadenza 3 · B: durata 3, scadenza 4'}}},
+  {nota:"Provo l’ordine <b>EDF</b>: prima <b>A</b>, perché la sua scadenza è più vicina. A parte a 0 e finisce a 2, prima della scadenza 3: <b>in orario</b>, ritardo 0.", set:{a1:{nascosto:false, tono:'ok'}, c:{t:'EDF, passo 1: A finisce a 2, ritardo 0'}}},
+  {nota:"Poi <b>B</b>: parte a 2 e finisce a 5. La scadenza è 4, quindi sfora di <b>5 − 4 = 1</b>: è il tratto rosso. Con EDF il ritardo massimo è L = 1.", set:{b1:{nascosto:false, tono:'ora'}, r1:{nascosto:false}, c:{t:'EDF: ritardo massimo L = 1'}}},
+  {nota:"Provo l’altro ordine: <b>B prima</b>. B finisce a 3, in orario (3 ≤ 4). Poi A parte a 3 e finisce a 5: scade a 3, quindi ritardo 2.", set:{a1:{tono:'spento'}, b1:{tono:'spento'}, r1:{nascosto:true}, b2:{nascosto:false, tono:'ok'}, a2:{nascosto:false}, c:{t:'B prima: A finisce a 5, ritardo 2'}}},
+  {nota:"Ritardo massimo: 1 con EDF, 2 con B prima. EDF è il migliore, e l’argomento di scambio dice che lo è sempre.", set:{a1:{tono:'ok'}, b1:{nascosto:false, tono:'dato'}, r1:{nascosto:false}, b2:{tono:'spento'}, a2:{tono:'spento'}, c:{t:'EDF: L = 1 · inverso: L = 2', tono:'ok'}}}
+];
+SCENE.lat = {
+  w: 540, h: 310, lato: true,
+  legenda: 'ok:on time,no:late,ora:just changed,dato:job B,spento:order not chosen',
+  oggetti: ogg, passi
+};
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Brute force and branching</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+const ELEM = ['1','2','3'];
+const righe = [[0,'{}'],[1,'{1}'],[2,'{2}'],[3,'{1, 2}'],[4,'{3}'],[5,'{1, 3}'],[6,'{2, 3}'],[7,'{1, 2, 3}']];
+const celle = (k) => ['','',''].map((_,i) => ((k >> i) & 1) ? '1' : '0');
+SCENE.bits = {
+  w: 540, h: 290, lato: true,
+  legenda: 'ora:bit of k in this step,ok:valid subset,dato:subsets already seen',
+  oggetti: [
+    {id:'h',tipo:'testo',x:20,y:26,t:'k   bit (i = 2,1,0)   sottoinsieme',size:12,bold:true,anchor:'start'},
+    ...righe.map(([k,s],i) => ({id:'r'+k,tipo:'testo',x:20,y:52+i*28,t:k + '    ' + celle(k).join(' ') + '     ' + s,size:13,anchor:'start'})),
+    {id:'c1',tipo:'testo',x:20,y:282,t:'',size:12,bold:true,anchor:'start'}
+  ],
+  passi: [
+    { nota: 'Brute force: I try all the subsets of 3 elements. The number k from 0 to 2³ − 1 = 7 is a <b>mask</b>: its bit i says whether element i is in the subset.', set:{} },
+    { nota: 'k = 0: bits 000, empty subset. k = 1: bits 001 (bit 0 on), subset {1}. Bit 0 corresponds to element 1.', set:{r0:{tono:'dato'},r1:{tono:'ora'},c1:{t:'k = 1 → {1}'}} },
+    { nota: 'k = 3: bits 011, subset {1, 2}. With k & (1 &lt;&lt; i) I check bit i in constant time.', set:{r0:{tono:'dato'},r1:{tono:'dato'},r2:{tono:'dato'},r3:{tono:'ora'},c1:{t:'k = 3 → {1, 2}'}} },
+    { nota: 'The same for all: 8 subsets. For each one I check the condition in polynomial time and keep the best. Cost <code>O(2ⁿ · poly(n))</code>: exponential in n, but always correct.', set:{r7:{tono:'ok'},c1:{t:'8 sottoinsiemi = 2³',tono:'ok'}} }
+  ]
+};
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Brute force and branching</h1>
+  <p class="lede">When a problem is NP-hard, the only guaranteed way to the exact solution is to try the candidates. Brute force enumerates them all, branching branches only where needed. The cost is exponential, but it often depends on the size of the solution, not on n.</p>
+</header>
+
+<section>
+  <h2>Enumerating with bits</h2>
+<p>A subset of <code>n</code> elements is represented by a number <code>k</code> from 0 to <code>2ⁿ − 1</code>: bit <code>i</code> of <code>k</code> says whether element <code>i</code> is inside. In Java: <code>k &amp; (1 &lt;&lt; i)</code> is non-zero if bit i is on. For each subset you check the condition and keep the best.</p>
+  <figure class="scena" data-scena="bits" data-titolo="Bit masks: k = 0 … 7"></figure>
+</section>
+<section>
+  <h2>Branching: in or out</h2>
+<p>Branching does the same thing as recursion: for an element, two branches, in or out. With pruning, the branches that cannot improve are discarded.</p>
+<p>Example: vertex cover with small k. Take an edge <code>u–v</code>: at least one of the two is in the cover. Branch on <code>G − u</code> with <code>k − 1</code> and on <code>G − v</code> with <code>k − 1</code>. Depth <code>k</code>, <code>2ᵏ</code> branches: exponential in <b>k</b>, not in n.</p>
+</section>
+<section>
+  <h2>When it is useful and why it is correct</h2>
+<p>Every problem in NP has a <b>certificate</b> verifiable in polynomial time. So trying all the certificates is always correct, only slow. To understand the costs: <code>O(2ⁿ · poly(n))</code> for the subsets, <code>O(n! · poly(n))</code> for the permutations, <code>O(2ᵏ · kn)</code> for the branching on vertex cover.</p>
+</section>
+<section>
+  <h2>The code, side by side</h2>
+  <p>This page explains the concept. The Java code that implements it, with a line-by-line explanation and the syntax notes needed, is on the side-by-side page.</p>
+  <p><a href="../codice/forza-bruta.html"><b>→ Java code for this topic</b></a></p>
+</section>
+<section>
+  <h2>Permutations in lexicographic order</h2>
+  <p>A <b>permutation</b> of 1, 2, 3 is a way of writing the three numbers in a row: 123, 132, 213, 231, 312, 321. There are 3! = 6. The <b>lexicographic order</b> is the dictionary one: you compare the first number, then the second, and so on.</p>
+  <p>To go from the permutation <code>p</code> to the next one, there are three moves:</p>
+  <ol>
+    <li>From the right I look for the first point where the row <b>stops increasing</b>: the position <code>i</code> with <code>p[i] &lt; p[i+1]</code>. The suffix to the right of <code>i</code> is decreasing: you cannot increase it by staying inside.</li>
+    <li>The number at <code>i</code> (the <b>pivot</b>) must be increased: I look from the right for the smallest number greater than <code>p[i]</code>, and I swap them.</li>
+    <li>The suffix to the right of <code>i</code> is decreasing: I reverse it, so it becomes as small as possible (increasing).</li>
+  </ol>
+  <figure class="scena" data-scena="perm" data-titolo="From 132 to the next one, 213, in three moves"></figure>
+  <p>Generating all n! permutations costs O(n!) in total: on average each step touches a very short suffix. With n = 13 there are more than 6 billion: brute force only works for small n.</p>
+</section>
+<section>
+  <h2>At the exam</h2>
+<div class="box esame" data-tit="At the exam">
+<p>NP-hard problem with a small instance, or with a small parameter (k) → brute force or branching. Phrase: <i>"Enumerate all subsets using bit masks; each subset is checked in polynomial time. Time O(2ⁿ · poly(n))."</i></p>
+</div>
+</section>
+<section>
+  <h2>Quick reference</h2>
+<div class="tab-wrap"><table class="tab"><thead><tr><th>approach</th><th>time</th><th>use</th></tr></thead><tbody><tr><td>subsets</td><td>2ⁿ · poly(n)</td><td>bit mask</td></tr><tr><td>permutations</td><td>n! · poly(n)</td><td>orders</td></tr><tr><td>vertex cover, parameter k</td><td>O(2ᵏ · kn)</td><td>branching</td></tr></tbody></table></div>
+</section>
+
+</main>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+const Q = (id,x,t) => ({id,tipo:'rett',x,y:70,w:60,h:50,t});
+const ogg = [
+  Q('q0',150,'1'), Q('q1',230,'3'), Q('q2',310,'2'),
+  {id:'c',tipo:'testo',x:40,y:170,t:'',size:13,bold:true,anchor:'start'}
+];
+const passi = [
+  {nota:"Parto da <b>1 3 2</b>. Da destra: <b>3 2</b> è decrescente, la fila smette di crescere lì. Il <b>1</b> è il pivot: è il numero da aumentare, perché prima del 3 la fila cresce ancora.", set:{q0:{tono:'ora'}, q1:{tono:'due'}, q2:{tono:'due'}, c:{t:'132 → ?'}}},
+  {nota:"Nel suffisso cerco il più piccolo numero maggiore di 1: è il <b>2</b>. Li scambio: la fila diventa <b>2 3 1</b>.", set:{q0:{t:'2', tono:'ora'}, q1:{tono:'due'}, q2:{t:'1', tono:'due'}, c:{t:'scambio: 2 3 1'}}},
+  {nota:"Il suffisso <b>3 1</b> è decrescente: lo rovescio e diventa <b>1 3</b>, il più piccolo possibile. Risultato: <b>2 1 3</b>, la permutazione successiva a 132.", set:{q0:{tono:'ok'}, q1:{t:'1', tono:'ok'}, q2:{t:'3', tono:'ok'}, c:{t:'132 → 213', tono:'ok'}}}
+];
+SCENE.perm = {
+  w: 540, h: 230, lato: true,
+  legenda: 'ora:pivot,due:decreasing suffix,ok:result',
+  oggetti: ogg, passi
+};
+})();
+</script>
+</body>
+</html>

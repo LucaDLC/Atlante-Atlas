@@ -1,0 +1,53 @@
+@@s001 Random numbers without effects
+@@s002 dato:state (seed),ora:call in progress,ok:number produced,no:state readable again
+@@s003 A <b>pure</b> generator: an immutable state, <code>SimpleRNG(42)</code>. 42 is the seed, the initial "seed".
+@@s004 <code>r0.nextInt</code> changes nothing: it <b>returns</b> a pair, the number <b>16159453</b> and a new state <code>r1</code>.
+@@s005 For the next number one calls <code>nextInt</code> on the <b>new</b> state <code>r1</code>: <b>−1281479697</b> comes out and the state <code>r2</code>. The state must be passed by hand from one call to the next.
+@@s006 And if one calls <code>r0.nextInt</code> again? Again <b>16159453</b> comes out and again <code>r1</code>. Same input, same output: the function is <b>referentially transparent</b>. With <code>scala.util.Random</code> instead two equal calls give different numbers.
+@@s007 no:hidden state that changes,dato:explicit state,ok:same input = same output
+@@s008 dato:state,ora:generator,ok:result
+@@s009 no:error,ok:fix
+@@s010 Random numbers without effects
+@@s011 Week 5, exercises 1–4 (chapter 6 of the book). An ordinary random number generator has a hidden state that changes at every call: it is not pure. The functional solution is to make the state <b>explicit</b>: each call receives the state and returns a new one. It is the first step towards the <a href="s05-state.html">State monad</a>.
+@@s012 The problem: a hidden state
+@@s013 Why rollDie is not a pure function
+@@s014 Same expression, different results: it depends on <code>rng</code>, an external state that changes at every call (and that anyone can change).
+@@s015 I cannot replace an expression with its value: <b>referential transparency</b> is missing (week 1). Testing and reasoning become difficult.
+@@s016 The function changes nothing: it also returns the next state, and whoever uses it passes it to the next call.
+@@s017 Hidden var against explicit state
+@@s018 RNG and SimpleRNG
+@@s019 From the exercise file
+@@s020 A <code>trait</code> (an interface) with a single method. The return type is a <b>pair</b>: the number and the generator to use the next time.
+@@s021 The <code>case class</code> is immutable: the seed is not changed, a new <code>SimpleRNG</code> is created.
+@@s022 A linear congruential generator (the same as <code>java.util.Random</code>): it multiplies, adds, and with <code>&amp;</code> (bitwise AND) keeps only 48 bits. <code>L</code> means Long.
+@@s023 <code>&gt;&gt;&gt;</code> shifts the bits to the right filling with zeros; <code>.toInt</code> keeps 32 bits, so the number can be negative. The number is returned with the new state.
+@@s024 Passing the state by hand
+@@s025 All the numbers were obtained by running the code (Scala 3.8.4).
+@@s026 Exercises 1–4: generators by hand
+@@s027 Solutions (the 27 RNG tests of the course pass)
+@@s028 Ex. 1. The awkward case: <code>Int.MinValue</code> = −2147483648 has no opposite among Ints (the maximum is 2147483647). With <code>-(i + 1)</code> every negative goes into a non-negative: −1 → 0, MinValue → 2147483647. With <code>r1</code> of the example: −1281479697 → 1281479696.
+@@s029 Ex. 2. One divides by MaxValue + 1, not by MaxValue: so 1.0 never comes out (the exercise asks for [0, 1)). From <code>SimpleRNG(42)</code>: 0.0075…
+@@s030 Ex. 3. The state is passed like a baton: <code>rng</code> to the first generator, <code>r1</code> to the second, <code>r2</code> to whoever comes after. Using <code>rng</code> twice would give numbers that are not independent.
+@@s031 Reuse: a single generator, then I swap the order of the pair.
+@@s032 Ex. 4. Recursion: a number with the current state, the other <code>size − 1</code> with the new state. <code>ints(3)(SimpleRNG(42))</code> = List(16159453, −1281479697, −340305902).
+@@s033 Doubt: does Int.MaxValue.toDouble + 1 overflow?
+@@s034 No. The <code>.toDouble</code> is run <b>before</b> the <code>+</code>: the +1 is done by a Double, which goes up to about 1.8 × 10³⁰⁸. It overflows only if the +1 is done by an Int, that is if you move the bracket: <code>(Int.MaxValue + 1).toDouble</code>.
+@@s035 Where the bracket is decides who does the +1
+@@s036 dato:Int,ora:conversion,ok:correct,no:overflow
+@@s037 The largest Int: 2³¹ − 1.
+@@s038 First one converts: from here on it is a Double.
+@@s039 The +1 between Doubles: no problem. It is the divisor of <code>double</code>.
+@@s040 Without conversion the +1 is done by an Int: it exceeds the maximum and starts again from the minimum (overflow).
+@@s041 Converting afterwards does not save: the damage is already done. With this divisor <code>double</code> would give negative numbers (2147483647 / −2147483648.0 = −0.99999…).
+@@s042 Doubt: is the final state of ints the same as the first recursion's?
+@@s043 Each call has <b>its own</b> variables <code>r1</code> and <code>r2</code> — same names, different boxes — but the value that comes out is the same at all levels: the state born after the <b>last</b> number drawn, which climbs back up.
+@@s044 It must be the last: whoever calls <code>ints(3)</code> and then wants other numbers must restart from after the three already used. Returning <code>r1</code> would make the second number come out again.
+@@s045 The pattern that repeats
+@@s046 All these functions have the form <span class="m">RNG =&gt; (A, RNG)</span>, and all share the same tedium: take the state, call, extract the pair, pass the new state. The next page gives a name to this form, <code>Rand[A]</code>, and hides it: <a href="s05-rand.html">Rand[A]: composable generators</a>.
+@@s047 The state as the baton of a relay race
+@@s048 The errors in your file
+@@s049 Your <code>Exercises.scala</code> of week 5, as it is now in the repo (I only read it and compiled it on a copy): Scala 3.8.4 stops with 4 errors.
+@@s050 The variable is called <code>num</code>, not <code>i</code>: <code>else num</code>.
+@@s051 In the same block a name is declared only once. The second value is an integer: call it <code>numInt</code> and return <code>((numDouble, numInt), rand2)</code>. The second error comes from the first: the pair contained two Doubles, the return type wanted (Double, Int).
+@@s052 It is the <code>flatMap</code> of the LazyList of week 4, but here <code>f</code> is a generator, not a list: there is nothing to "fold". The solution is on the <a href="s05-rand.html">Rand page</a>.
+@@s053 The four errors and the fix

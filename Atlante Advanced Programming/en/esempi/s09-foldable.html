@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Examples: fold and monoid in Scala</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <div class="occhiello"><span>Week 9 · examples</span></div>
+  <h1>Examples: fold and monoid in Scala</h1>
+  <p class="lede">The code of the <a href="../teoria/s09-foldable.html">foldable page</a>: fold with <code>foldLeft</code> and <code>foldRight</code>, and the reduction with a monoid done in two steps (first <code>map</code>, then <code>concatenate</code>). Checked with Scala 3.8.4 and the course options. The real <code>foldMap</code> is the course exercise: it is not here.</p>
+</header>
+
+<section>
+  <h2>The whole file</h2>
+  <p>Run it with <code>scala-cli run Foldable.scala</code>. It uses two different monoids on the same type of list: the maximum of integers and the concatenation of strings.</p>
+  <figure class="codice" data-titolo="Foldable.scala">
+<pre data-lang="scala">//&gt; using scala 3.8.4
+//&gt; using options -Werror -deprecation -feature -source:future
+
+trait Monoid[A]:
+  def combine(a1: A, a2: A): A
+  def empty: A
+
+val maxMonoid: Monoid[Int] = new Monoid[Int]:
+  def combine(a1: Int, a2: Int): Int = a1.max(a2)
+  val empty: Int = Int.MinValue
+
+val stringMonoid: Monoid[String] = new Monoid[String]:
+  def combine(a1: String, a2: String): String = a1 + a2
+  val empty: String = ""
+
+def concatenate[A](as: List[A], m: Monoid[A]): A =
+  as.foldLeft(m.empty)(m.combine)
+
+val parole: List[String] = List("monoid", "fold", "map", "reduce")
+
+@main def esempiFoldable(): Unit =
+  // foldLeft e foldRight con la stessa operazione: qui la somma delle lunghezze
+  println(parole.foldLeft(0)((acc, p) =&gt; acc + p.length))
+  println(parole.foldRight(0)((p, acc) =&gt; acc + p.length))
+  // map e poi concatenate: il foldMap fatto in due passi
+  println(concatenate(parole.map(_.length), maxMonoid))
+  println(concatenate(parole.map(_.take(1)), stringMonoid))
+  // lista vuota: si ottiene il neutro
+  println(concatenate(List.empty[Int], maxMonoid))
+  // due modi di raggruppare la stessa lista: stesso risultato
+  val a = List("a", "b", "c", "d")
+  println(concatenate(a.take(2), stringMonoid) + concatenate(a.drop(2), stringMonoid))
+  println(concatenate(a, stringMonoid))</pre>
+    <ol class="spiega">
+      <li data-righe="16-17" data-segna="as.foldLeft(m.empty)(m.combine)@ora"><p><code>concatenate</code> is a fold on the monoid: it starts from the neutral element <code>m.empty</code> and combines with <code>m.combine</code>. The type <code>A</code> is generic: it works for any monoid.</p></li>
+      <li data-righe="23" data-segna="foldLeft(0)@ora"><p><code>foldLeft(0)</code> starts from 0 and reduces from the left. The lambda <code>(acc, p) =&gt; acc + p.length</code> takes the accumulator and the element, and returns the new accumulator. Here the sum of the lengths: 6 + 4 + 3 + 6 = 19.</p></li>
+      <li data-righe="24" data-segna="foldRight(0)@ora"><p><code>foldRight</code> does the same work from the right. For the sum the result is the same (19), because the sum is a monoid: the order does not matter.</p></li>
+      <li data-righe="26" data-segna="parole.map(_.length)@ora|maxMonoid@due"><p><code>map</code> turns each word into its length: List(6, 4, 3, 6). Then <code>concatenate</code> reduces them with the maximum: 6. This is the foldMap in two steps.</p></li>
+      <li data-righe="27" data-segna="parole.map(_.take(1))@ora|stringMonoid@due"><p>Same pattern with another monoid: <code>take(1)</code> takes the first letter, and the concatenation joins them into <b>mfmr</b>. The type B is String, different from the type of the words.</p></li>
+      <li data-righe="29" data-segna="List.empty[Int]@ora"><p>Empty list: <code>concatenate</code> returns the neutral element of <code>maxMonoid</code>, <code>Int.MinValue</code>.</p></li>
+      <li data-righe="31-32" data-segna="a.take(2)@ora|a.drop(2)@due"><p>I split the list into two halves, reduce them separately and combine them with <code>+</code> (string concatenation). It is the parallel grouping from the theory: the result is "ab" + "cd".</p></li>
+      <li data-righe="33" data-segna="concatenate(a, stringMonoid)@ok"><p>Reduction in one step of the whole list: "abcd". Same result as the example above, by associativity.</p></li>
+    </ol>
+  </figure>
+</section>
+
+<section>
+  <h2>The output</h2>
+  <figure class="codice" data-titolo="Output of the run">
+<pre data-lang="text">19
+19
+6
+mfmr
+-2147483648
+abcd
+abcd</pre>
+    <ol class="spiega">
+      <li data-righe="1-2"><p>Sum of the lengths with <code>foldLeft</code> and <code>foldRight</code>: equal.</p></li>
+      <li data-righe="3-4"><p>Maximum of the lengths, then concatenation of the first letters.</p></li>
+      <li data-righe="5"><p>Neutral element of the maximum on an empty list.</p></li>
+      <li data-righe="6-7"><p>Two groupings of "a", "b", "c", "d": same result, "abcd".</p></li>
+    </ol>
+  </figure>
+</section>
+
+<section>
+  <h2>To remember</h2>
+  <div class="box inglese" data-tit="Sentence for the exam">A fold over a monoid does not depend on the order of the elements, nor on how they are grouped.</div>
+  <div class="box regola" data-tit="Practical rule">To compute a foldMap by hand: <code>map</code> on the list with the function, then <code>concatenate</code> with the monoid of the target type.</div>
+</section>
+
+</main>
+</body>
+</html>

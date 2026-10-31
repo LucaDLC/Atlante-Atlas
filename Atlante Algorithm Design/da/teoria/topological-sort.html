@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Topologisk sortering</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+const N = (id,x,y,t,sotto) => ({id,tipo:'nodo',x,y,t,r:20,sotto});
+const A = (id,da,a) => ({id,tipo:'arco',da,a,dir:true});
+SCENE.topo = {
+  w: 520, h: 250, lato: true,
+  legenda: 'ora:knude skrevet nu,dato:på listen (grad 0),no:grad stadig > 0,ok:allerede skrevet',
+  oggetti: [
+    N('a',50,60,'a','in 0'), N('b',50,190,'b','in 0'), N('c',200,120,'c','in 2'), N('e',340,60,'e','in 1'), N('d',340,190,'d','in 2'),
+    A('ac','a','c'), A('bc','b','c'), A('ae','a','e'), A('cd','c','d'), A('ed','e','d'),
+    {id:'ord',tipo:'testo',x:260,y:240,t:'ordine: ',size:13,bold:true}
+  ],
+  passi: [
+    { nota: 'DAG: hver pil går "fremad". Jeg beder om en rækkefølge af alle knuderne, hvor hver pil går fra venstre mod højre. Jeg tæller de <b>indgående kanter</b> (in) for hver knude.', set: {} },
+    { nota: 'Indgrad 0: <b>a</b> og <b>b</b>. Ingen pil går ind i dem: de kan komme først. Jeg sætter dem på listen.', set: { a:{tono:'dato'}, b:{tono:'dato'} } },
+    { nota: 'Jeg skriver <b>a</b> og fjerner den fra grafen. Dens udgående pile (mod c og e) forsvinder: c falder til 1, e falder til 0.', set: { a:{tono:'ok'}, c:{tono:null,sotto:'in 1'}, e:{tono:'dato',sotto:'in 0'}, ord:{t:'ordine: a'} } },
+    { nota: 'Jeg skriver <b>b</b>. Nu falder c til 0. Listen indeholder e og c, begge med grad 0.', set: { b:{tono:'ok'}, c:{tono:'dato',sotto:'in 0'}, ord:{t:'ordine: a, b'} } },
+    { nota: 'Jeg skriver <b>e</b>: d falder til 1. Jeg skriver <b>c</b>: d falder til 0.', set: { e:{tono:'ok'}, c:{tono:'dato',sotto:'in 0'}, d:{tono:'dato',sotto:'in 0'}, ord:{t:'ordine: a, b, e, c'} } },
+    { nota: 'Jeg skriver <b>d</b>. Endelig rækkefølge: a, b, e, c, d. Hver kant går fra venstre mod højre: derfor findes den. Hvis listen på et tidspunkt var tom, mens der stadig er knuder tilbage, er der en cyklus, og en rækkefølge findes ikke.', set: { d:{tono:'ok'}, ord:{t:'ordine: a, b, e, c, d',tono:'ok'} } }
+  ]
+};
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Topologisk sortering</h1>
+  <p class="lede">En topologisk sortering (topological sort) sætter knuderne i en DAG op i en række, så hver kant går fra venstre mod højre. Den er nødvendig, hver gang der er afhængigheder: forudsætninger, beregningsrækkefølger, kæder af beslutninger.</p>
+</header>
+
+<section>
+  <h2>Problemet og DAG</h2>
+<p>En <b>DAG</b> (directed acyclic graph) er en orienteret graf uden cyklusser. En topologisk orden er en følge af alle knuderne, således at hver kant <code>u → v</code> har <code>u</code> før <code>v</code>. Den findes <b>hvis og kun hvis</b> grafen er en DAG.</p>
+<p>Eksempel: kurser med deres forudsætninger. Et kursus kan kun følges efter sine forudsætninger, så den lovlige følge er en topologisk orden.</p>
+</section>
+<section>
+  <h2>Metoden med indgraderne</h2>
+<p>Indgraden (in-degree) for en knude er antallet af kanter, der går ind i den. Kahns metode:</p>
+<ol>
+  <li>Beregn indgraden for hver knude.</li>
+  <li>Læg knuderne med grad 0 (<b>kilderne</b>) på en liste.</li>
+  <li>Tag en, skriv den i rækkefølgen, og sænk graden for dens efterfølgere med 1. Den, der når 0, kommer på listen.</li>
+  <li>Gentag, indtil listen er tom.</li>
+</ol>
+<p>Hvorfor den virker: i en DAG er der altid mindst én kilde, og når den fjernes, er resten stadig en DAG. Omkostning <code>O(n + m)</code>.</p>
+  <figure class="scena" data-scena="topo" data-titolo="Kahns metode: først kilderne"></figure>
+</section>
+<section>
+  <h2>Metoden med DFS</h2>
+<p>Alternativ: lav en DFS på hele grafen, og skriv hver knude, når den <b>er færdig</b> (når alle dens naboer er besøgt). Læs derefter listen over afslutninger <b>baglæns</b>: det er en topologisk orden. Hvis DFS'en finder en back edge, har grafen en cyklus.</p>
+<div class="box regola" data-tit="Afslutningerne baglæns"><p>Knuden, der bliver færdig sidst i en DAG, er en kilde: ingen kant går ind i den fra resten af grafen, uden at den allerede er færdig. Derfor kommer den først i den omvendte rækkefølge.</p></div>
+</section>
+<section>
+  <h2>Hvornår den findes</h2>
+<p>En topologisk orden findes kun i en DAG. Hvis grafen har en cyklus, kan ingen rækkefølge få alle pilene til at gå fra venstre mod højre: knuderne i cyklen ville jagte hinanden. Kahns metode opdager det: til sidst bliver der knuder tilbage uden at være skrevet.</p>
+</section>
+<section>
+  <h2>Koden side om side</h2>
+  <p>Denne side forklarer begrebet. Java-koden, der implementerer det, med en forklaring linje for linje og de syntaksnoter, der skal bruges, står på den side ved siden af.</p>
+  <p><a href="../codice/topological-sort.html"><b>→ Java-kode til dette emne</b></a></p>
+</section>
+<section>
+  <h2>Til eksamen</h2>
+<div class="box esame" data-tit="Til eksamen">
+<p>Når spørgsmålet taler om <b>rækkefølge af afhængigheder</b>, <b>forudsætninger</b> eller <b>beregningsrækkefølge</b> for en DP på en DAG, bruger du topologisk sortering. Skriv den eksplicitte rækkefølge og retningen: <i>"in topological order: each arc goes from an earlier to a later vertex."</i></p>
+</div>
+</section>
+<section>
+  <h2>Hurtig oversigt</h2>
+<div class="tab-wrap"><table class="tab"><thead><tr><th>element</th><th>betydning</th><th>note</th></tr></thead><tbody><tr><td>DAG</td><td>orienteret graf uden cyklusser</td><td>det eneste tilfælde med en rækkefølge</td></tr><tr><td>indgrad</td><td>kanter der går ind i en knude</td><td>0 = kilde</td></tr><tr><td>tid</td><td>O(n + m)</td><td>Kahn eller DFS</td></tr><tr><td>typisk brug</td><td>forudsætninger, DP på DAG</td><td>se siden om DP</td></tr></tbody></table></div>
+</section>
+
+</main>
+</body>
+</html>

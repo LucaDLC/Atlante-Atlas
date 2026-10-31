@@ -1,0 +1,66 @@
+@@s001 Kernel and feature transformations
+@@s002 dato:data in the original space,ora:the same data in the feature space,ok:linear model in the new space
+@@s003 Five points (x, y). A line y = w₀ + w₁x does not describe them: they rise on both sides.
+@@s004 They lie on a parabola, y = 1 + 0.5x². Curved in x.
+@@s005 <b>Feature mapping</b>: instead of x I use the new feature z = φ(x) = x². I move every point horizontally from x to x²: (−2, 3) goes to (4, 3), (1, 1.5) stays at (1, 1.5)…
+@@s006 In the new space the points lie on a <b>line</b>: y = 1 + 0.5z. The model is linear in the weights and is learned with the same least squares as always. Going back to x it is a parabola.
+@@s007 dato:the input,ora:the feature vector
+@@s008 dato:the data x,ora:the row φ(xᵢ),ok:the weights
+@@s009 dato:the input (x, y),due:linear terms,ora:quadratic terms,ok:parameters
+@@s010 dato:measurements over time,no:a line,ok:model with sines and cosines
+@@s011 dato:10 noisy points,ok:model that generalises,no:model that memorises
+@@s012 Kernel and feature transformations
+@@s013 The lecture of week 5: how to obtain <b>non-linear</b> models while still using linear algebra. The trick is to transform the inputs with a function φ (in this course it is called the <b>kernel</b> or <i>feature mapping</i>) and then do least squares on the new features. Here: the idea, the function φ, the design matrix Φ, the two-input case of Assignment 1, a kernel different from polynomials, and the price to pay.
+@@s014 The idea: a curve becomes a line
+@@s015 Many data follow curved relations, and a line does not describe them. Instead of inventing a new method for each curve, one <b>transforms the data</b>: one builds new features (for example x²) so that, in the new space, the relation becomes linear. Then one uses the usual method, least squares.
+@@s016 In the example the points lie on the parabola y = 1 + 0.5x². With the new feature z = x² the relation becomes y = 1 + 0.5z: a line in the space (z, y). The line is learned with linear algebra, and going back to x one has the parabola.
+@@s017 It is the goal "understand how feature transformations extend linear models" of week 5: the non-linearity lies entirely in the features, the weights remain linear.
+@@s018 A parabola becomes a line
+@@s019 The kernel φ: from a number to a vector
+@@s020 Kernel (feature mapping) in this course
+@@s021 A function <span class="m">φ(x)</span> that transforms the input into a feature vector. The model is <span class="m">y = w · φ(x)</span>: <b>non-linear in x</b>, <b>linear in w</b>. For the polynomial of degree 2: <span class="m">φ(x) = [1, x, x²]</span>.
+@@s022 φ is read "fi". It takes an input (even a single number) and returns a vector, usually longer: the datum passes into a <b>feature space</b> (<i>feature space</i>) with more dimensions. The choice of φ is a choice of model: it says which shapes of curve the model will be able to represent.
+@@s023 Watch the name: later "kernel" also means the <i>kernel trick</i> of SVMs (week 10), and in the filters one prefers to say "filter" precisely to avoid confusion (week 8).
+@@s024 φ(x) = [1, x, x²] on three inputs
+@@s025 The design matrix Φ
+@@s026 With a kernel the design matrix is built in the same way, only each row is <b>φ(xᵢ)</b> instead of [1, xᵢ]. It is called Φ (capital Phi).
+@@s027 From x to φ(x), row by row
+@@s028 The line of the <a href="w05-minimi-quadrati.html">least squares page</a>.
+@@s029 Each datum is transformed and put in a row. The rest does not change.
+@@s030 Same least squares, same pseudoinverse, same closed formula: the matrix only has different columns.
+@@s031 Each column of Φ is a weight to learn: at least as many rows (data) as columns are needed.
+@@s032 Input
+@@s033 Kernel φ
+@@s034 Features
+@@s035 Model
+@@s036 polynomial of degree 2
+@@s037 parabola
+@@s038 polynomial of degree d
+@@s039 curve of degree d (d + 1 parameters)
+@@s040 polynomial of degree 2
+@@s041 [1, x, y, x², xy, y²]
+@@s042 quadratic surface (6 parameters)
+@@s043 t (time)
+@@s044 sines and cosines
+@@s045 [1, sin t, cos t]
+@@s046 oscillation
+@@s047 affine
+@@s048 [x, y, 1] (twice, for x' and y')
+@@s049 affine transformation (<a href="w05-affine-omogenee.html">page</a>)
+@@s050 Φ row by row
+@@s051 Two inputs: the quadratic kernel of Assignment 1
+@@s052 With two inputs (x, y) the complete polynomial of degree 2 has <b>6</b> terms: 1 constant, 2 linear (x, y), 3 quadratic (x², xy, y²). The mixed term xy is the one most often forgotten, and it is the one that lets the model bend along the diagonal.
+@@s053 In Assignment 1 (gaze estimation) one starts from an affine model, x′ = ax + by + c, and then improves it precisely with this kernel: f(x, y) = a·x² + b·y² + c·xy + d·x + e·y + f, with <b>6 parameters for each coordinate</b> of the screen, so 12 in all. At least 6 calibration points are needed, and better many more.
+@@s054 The same order of the columns, always
+@@s055 The function that builds Φ must be used <b>identical</b> in training and in prediction. If at one point the columns are [x², y², xy, …] and at another [x², xy, y², …], the weights get multiplied by the wrong features: no Python error, only wrong predictions.
+@@s056 (2, 3) becomes six features
+@@s057 Not only polynomials: sines and cosines
+@@s058 The kernel does not have to be a polynomial. Any set of known functions can serve as columns: the only condition is that the model be "weights for known functions, then sum". For data that <b>oscillate</b> over time the natural kernel is φ(t) = [1, sin t, cos t].
+@@s059 It is here that the meaning of "kernel = hypothesis about the problem" is seen: a high-degree polynomial could also chase the wave on the data seen, but it would diverge as soon as one goes outside; sines and cosines oscillate by themselves, even where there are no data. Choosing φ well is worth more than adding features at random.
+@@s060 An oscillation learned with least squares
+@@s061 The price: more features, more data, overfitting
+@@s062 Going into a larger feature space has three advantages: a non-linear problem becomes linear, flexibility is gained, and the solution remains in <b>closed form</b> (no iterative optimisation).
+@@s063 The price: each feature is one more parameter, so more data are needed; and a model too flexible for the data also fits the <b>noise</b>. The error on the training data keeps going down, while that on new data at some point goes up again. This is <b>overfitting</b>, and choosing the right complexity is the theme of week 7 (<a href="w07-complessita-modello.html">model complexity</a>).
+@@s064 Related exam questions
+@@s065 <b>Q3 (b)</b>: "linear least squares problems for model fitting (design matrix, kernel, lines, polynomials, affine…)". <b>Q5 (a)</b>, same theme, linked to model complexity. The review questions of week 5 are a good outline: what a kernel is, why one goes into a larger space, how the design matrix changes, the kernel of the polynomial of degree 2, why the number of features fixes the minimum of data.
+@@s066 Degrees 1, 3 and 9 on the same 10 points

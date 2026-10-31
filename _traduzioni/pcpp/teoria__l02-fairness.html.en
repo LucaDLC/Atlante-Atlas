@@ -1,0 +1,65 @@
+@@s001 Fairness, starvation, Mesa
+@@s002 ora:holds the lock,due:waiting on the condition,dato:just woken up
+@@s003 Three threads want to enter the monitor and wait for the lock in the <b>entry queue</b>. It is called a "queue" for historical reasons: in reality it is a set, with no guaranteed order.
+@@s004 <b>T2</b> is chosen (non-deterministically), takes the lock and executes a method.
+@@s005 T2 executes <code>c.await()</code>: it goes into the <b>condition queue</b> and <b>releases the lock</b>.
+@@s006 <b>T1</b> is chosen, which also does <code>await()</code>. (At this moment a <i>spurious wakeup</i> could also arrive and put T1 or T2 back into the entry queue for no reason.)
+@@s007 <b>T3</b> remains: it takes the lock and executes <code>c.signal()</code>.
+@@s008 <code>signal()</code> moves <b>one</b> thread from the condition queue to the <b>entry queue</b>: here T1, chosen at random. T1 does not restart at once: it must take the lock again.
+@@s009 T3 releases the lock and finishes. T1 can take the lock. T2, instead, stays in the condition queue: <b>nothing guarantees</b> that it will be woken up sooner or later.
+@@s010 With <code>signalAll()</code> instead of <code>signal()</code>, T2 too would have returned to the entry queue, to compete for the lock.
+@@s011 dato:in the queue,ora:has the lock,no:overtaking,ok:enters whoever has waited longest
+@@s012 dato:reader R1,due:writers,ok:condition true,no:condition changed
+@@s013 dato:readers inside,no:writer blocked,ok:writer inside
+@@s014 no:CPU wasted,ok:blocked (no CPU)
+@@s015 Fairness, starvation, Mesa
+@@s016 Running <code>ReadersWriters.java</code> usually <b>all</b> the readers read first and only afterwards the writers write. The monitor is correct, but <b>unfair</b>. To understand why you must look at where the threads wait: a monitor has <b>two queues</b>.
+@@s017 Fairness in the course
+@@s018 A correct monitor guarantees mutual exclusion, but it can still treat someone badly: a thread that waits and is always overtaken never enters. To reason about it two queues are needed: the <b>lock queue</b> (whoever waits to enter) and the <b>condition queue</b> (whoever has entered, found the condition false and waits to be woken up).
+@@s019 Definition
+@@s020 In this course <b>fairness</b> means <b>absence of starvation</b>: if a thread is ready to enter the critical section, it sooner or later enters.
+@@s021 Queue
+@@s022 Who is in it
+@@s023 How one gets in
+@@s024 <b>Lock queue</b> (entry queue)
+@@s025 threads that want to enter the monitor
+@@s026 by calling <code>lock()</code> with the lock taken, or after being woken up
+@@s027 <b>Condition queue</b>
+@@s028 threads already inside that found the condition false
+@@s029 by calling <code>await()</code>
+@@s030 Fair and non-fair lock: overtaking
+@@s031 Who goes where (slides 28–37)
+@@s032 Three threads, one lock, one condition variable
+@@s033 The fair flag
+@@s034 <code>new ReentrantLock(true)</code> makes the <b>entry queue fair</b>: the thread that has waited longest enters (slide 29). On its own it is not enough to eliminate the starvation of a monitor: if the <i>logic</i> of the monitor always puts someone forward again (like the readers below), the order of the queue does not help.
+@@s035 Technical note: in the model of the slides not even the condition queue has an order. The concrete implementation of <code>ReentrantLock</code> does signal the threads in FIFO order (documentation of <code>newCondition()</code>); for the exercises reason with the course model.
+@@s036 Mesa against Hoare
+@@s037 Mesa — the semantics of Java
+@@s038 Woken threads return to the <b>entry queue</b> and compete with those already there. Between the wakeup and the moment they resume, another thread may have <b>changed the state</b>: the condition that woke them may no longer hold.
+@@s039 Hoare
+@@s040 Threads waiting on a condition variable have <b>priority</b> over those in the entry queue: whoever is woken resumes at once, with the condition still true.
+@@s041 Consequence
+@@s042 Since Java is Mesa, the guard of an <code>await()</code> always goes in a <b><code>while</code></b>, never in an <code>if</code>. Step-by-step example on the page <a href="l02-monitor.html">Monitor</a>.
+@@s043 Is a woken thread let in at once, or does it queue up again?
+@@s044 The starvation of writers
+@@s045 Why in the basic ReadWriteMonitor a writer can wait forever
+@@s046 A reader waits only if there is a writer <b>inside</b>.
+@@s047 A writer waits as long as there is <b>at least one</b> reader.
+@@s048 If readers keep arriving, there is always at least one inside: <code>readers</code> never returns to 0.
+@@s049 Mutual exclusion respected, absence of starvation not.
+@@s050 FairReadWriteMonitor.java: the writer reserves
+@@s051 First it waits only until there is no other writer.
+@@s052 Then it <b>reserves</b>: it sets <code>writer = true</code> even if there are still readers inside. From now on <code>readLock()</code> stops the new readers.
+@@s053 It waits for only the readers <b>already inside</b> to leave, which are a finite number. Then it writes.
+@@s054 Question from the slide: so a ready writer sooner or later writes?
+@@s055 Against the <b>readers</b>, yes: after the reservation no new reader enters, and those inside sooner or later leave. What remains is the competition <b>among writers</b>: if several writers wait at the <code>while (writer)</code>, with <code>synchronized</code> or with a non-fair <code>ReentrantLock</code> (the default) nobody guarantees the order, so an unlucky writer could in theory always lose (exercise 2.1.4). The fair flag of <code>ReentrantLock</code> serves exactly to give an order to those who wait. In your answer to 2.1.2 you used the fact that the number of threads is finite: that is the right argument.
+@@s056 Readers taking turns
+@@s057 Busy-wait: forbidden
+@@s058 Waiting means that a thread cannot continue until the state changes. One can wait in two very different ways: by continuing to check, or by stopping until someone warns it.
+@@s059 Busy-wait
+@@s060 The thread stays <b>running</b> and uses CPU to check a state that does not change.
+@@s061 Blocking
+@@s062 The thread goes into <b>blocked</b> and uses no CPU until someone wakes it.
+@@s063 In the assignments
+@@s064 From the slides: "Exercise solutions using busy-wait will not be approved."
+@@s065 Checking or blocking

@@ -1,0 +1,74 @@
+@@s001 Monoid: kombinere og have et neutralt element
+@@s002 ora:hvad jeg forklarer nu,ok:resultat,dato:eksempel
+@@s003 En <b>monoid</b> består af en <b>type A</b> og to ting om A: en operation <b>⊕</b> (i Scala <code>combine</code>) og et <b>neutralt element 0</b> (i Scala <code>empty</code>). Her er A Int.
+@@s004 <b>⊕</b> tager to værdier af A og returnerer én. For Int er ⊕ summen <code>+</code>.
+@@s005 <b>0</b> er det neutrale element: kombineret med en anden værdi ændrer det den ikke. For summen er det neutrale element 0, fordi x + 0 = x.
+@@s006 Eksempel fra sliderne, (Int, 0, +): 2 + 3 = 5 og 5 + 0 = 5. Det neutrale element ændrer ingenting.
+@@s007 Samme mønster med produktet: (Int, 1, *). Operationen ændrer sig, og det neutrale element også (1, ikke 0), men typen A bliver Int.
+@@s008 dato:værdier,ora:par der kombineres,ok:delresultat eller endeligt resultat,spento:gruppering ikke brugt
+@@s009 Fire værdier: 1, 2, 3, 4. Jeg vil kombinere dem med ⊕. Jeg kan vælge, hvilke to der kombineres først.
+@@s010 Første halvdel: <b>1 ⊕ 2 = 3</b>. Pilene viser, hvilke værdier der indgår i beregningen.
+@@s011 Anden halvdel: <b>3 ⊕ 4 = 7</b>. De to halvdele afhænger ikke af hinanden: de kan beregnes <b>parallelt</b>.
+@@s012 Jeg kombinerer de to resultater igen: <b>3 ⊕ 7 = 10</b>. Det endelige svar er 10.
+@@s013 Samme svar, når man grupperer til venstre: <b>((1 ⊕ 2) ⊕ 3) ⊕ 4 = 10</b>. <b>Associativiteten</b> garanterer, at grupperingen ikke ændrer resultatet, så jeg kan vælge den mest praktiske.
+@@s014 ora:hvad der kommer ind nu,dato:instanser,ok:kald med instansen
+@@s015 <b>trait Monoid[A]</b> beskriver grænsefladen: <code>combine</code> og <code>empty</code> for en type A. Det er en <b>type class</b>: en form, der skal udfyldes for hver type, man vil gøre til monoid.
+@@s016 <b>stringMonoid</b> er en <b>værdi</b> af typen Monoid[String]: instansen, der siger, hvordan String bliver en monoid (sammenkædning og "").
+@@s017 <b>maxMonoid</b> er en anden instans, Monoid[Int]: ⊕ er maksimum, og det neutrale element er Int.MinValue. Den samme type Int kan have forskellige instanser.
+@@s018 <b>concatenate</b> modtager instansen som argument sammen med listen. Den samme kode virker med forskellige typer og operationer, fordi instansen sendes med som en værdi.
+@@s019 dato:startværdier,due:trin,ora:beregning lige udført,ok:resultat,spento:endnu ikke
+@@s020 En <b>homomorfi</b> f: M → N er en funktion, der <b>respekterer</b> de to strukturer. M og N er monoider: her er M = strenge, N = heltal. f = <code>length</code>.
+@@s021 Jeg anvender f på hver værdi: f("foo") = 3 og f("bar") = 3.
+@@s022 Først kombinerer jeg i M: "foo" ⊕ "bar" = "foobar". Derefter anvender jeg f: f("foobar") = 6.
+@@s023 Reglen kræver f(x ⊕ y) = f(x) ⊗ f(y). Her er 6 = 3 + 3, så den holder. Det neutrale element skal også respekteres: f("") = 0.
+@@s024 En <b>isomorfi</b> er en homomorfi, der kan vendes: f og dens inverse er begge homomorfier. Eksempel: String og List[Char] med <code>toList</code> og <code>mkString</code>. Intet går tabt.
+@@s025 <span>Uge 9</span>
+@@s026 Monoid: kombinere og have et neutralt element
+@@s027 Det første af ugens fire begreber (monoid, foldable, functor, monad). En monoid er det enkleste, der kan reduceres i stykker: en operation, der kombinerer to værdier, og en værdi, der ikke ændrer noget. Herfra kommer <a href="s09-foldable.html">folds og parallelle reduktioner</a>.
+@@s028 Definition
+@@s029 En <b>monoid</b> på en type <code>A</code> har to dele:
+@@s030 en <b>binær operation</b> <b>⊕</b>, i Scala <code>combine</code>: den tager to værdier af A og returnerer én. Symbolet ⊕ betyder "kombiner".
+@@s031 et <b>neutralt element</b> <b>0</b>, i Scala <code>empty</code>: en værdi af A, som ikke ændrer en anden værdi, når den kombineres med den.
+@@s032 Eksempler fra sliderne, skrevet som en tripel (type, neutralt element, operation):
+@@s033 type A
+@@s034 neutralt 0
+@@s035 operation ⊕
+@@s036 Int
+@@s037 Int
+@@s038 String
+@@s039 sammenkædning
+@@s040 En monoid er type, neutralt element og operation
+@@s041 De to love
+@@s042 For at kombinationen er nyttig, skal <code>combine</code> og <code>empty</code> overholde to love, for alle værdier x, y, z af A:
+@@s043 <b>Associativitet</b>: <code>(x ⊕ y) ⊕ z = x ⊕ (y ⊕ z)</code>. Det er ligegyldigt, hvor man sætter parenteserne. Det gør det muligt at dele en liste i to halvdele og reducere dem hver for sig.
+@@s044 <b>Identitet (neutralt element)</b>: <code>x ⊕ 0 = x</code> og <code>0 ⊕ x = x</code>. Det neutrale element ændrer intet på nogen side.
+@@s045 Scala-compileren kontrollerer ikke disse love: den accepterer enhver <code>combine</code>. Lovene kontrolleres med tests (property-based, se <a href="s06-pbt.html">Property-based testing</a>).
+@@s046 Fire værdier, to måder at gruppere på, det samme resultat
+@@s047 Pas på
+@@s048 Associativitet betyder ikke kommutativitet. Monoiden kræver ikke <code>x ⊕ y = y ⊕ x</code>: subtraktion er ikke en monoid, fordi den ikke er associativ: (5 − 3) − 1 ≠ 5 − (3 − 1). Strenge med sammenkædning er en monoid, selv om "ab" ≠ "ba".
+@@s049 Typeklassen i Scala
+@@s050 En <b>type class</b> er en grænseflade parametriseret over typen. <code>Monoid[A]</code> beskriver, hvordan en type <code>A</code> opfører sig, uden at A skal "vide", at den er en monoid. Hver <b>instans</b> er en værdi, der sendes med sammen med dataene.
+@@s051 trait Monoid[A] (fra sliderne, forenklet)
+@@s052 <code>trait</code> definerer en grænseflade. <code>[A]</code> er en <b>typeparameter</b>: den type, monoiden kombinerer. <code>Monoid</code> alene er ikke nok: man skal altid bruge <code>Monoid[noget]</code>.
+@@s053 <code>def combine(a1: A, a2: A): A</code> er signaturen for ⊕: to A som input, ét A som output. <code>def</code> introducerer en funktion, <code>a1</code> og <code>a2</code> er navnene på de to argumenter.
+@@s054 <code>def empty: A</code> er det neutrale element. Det tager ingen argumenter: det er en fast værdi for hver instans.
+@@s055 <code>object laws</code> er et indlejret objekt: det indeholder lovene som egenskaber, der skal testes. Det har adgang til <code>combine</code> og <code>empty</code>, fordi det står inde i traiten.
+@@s056 <code>using</code> angiver en <b>implicit parameter</b>. <code>Arbitrary[A]</code> fortæller ScalaCheck, hvordan den genererer værdier af A til testene. <code>Equality[A]</code> fortæller, hvordan de sammenlignes.
+@@s057 Instanser: én værdi for hver type
+@@s058 For at gøre <code>String</code> til en monoid skriver du en værdi af typen <code>Monoid[String]</code>. En instans er en værdi: den oprettes ved at instansiere traiten.
+@@s059 Traiten, to instanser og en funktion, der modtager dem
+@@s060 Sådan skrives en instans
+@@s061 Skriv <code>val stringMonoid: Monoid[String] = new Monoid[String]: …</code>, med <code>combine</code> og <code>empty</code> inde i. Typen efter kolonet siger, hvilken type der bliver til monoid.
+@@s062 Homomorfier og isomorfier
+@@s063 En <b>homomorfi</b> mellem en monoid <code>(M, ⊕, 0)</code> og en monoid <code>(N, ⊗, 1)</code> er en funktion <code>f: M → N</code>, der respekterer strukturen:
+@@s064 distributivitet: <code>f(x ⊕ y) = f(x) ⊗ f(y)</code> for alle x, y i M;
+@@s065 neutralt element: <code>f(0) = 1</code>.
+@@s066 Så du kan kombinere først og anvende f bagefter, eller anvende f først og kombinere bagefter: resultatet er det samme. Eksempel fra sliderne: f(s) = <code>s.size</code> fra String (med sammenkædning og "") til Int (med + og 0). Det gælder, at <code>"foo".size + "bar".size = ("foo" + "bar").size</code>.
+@@s067 Længden respekterer sammenkædningen
+@@s068 En <b>isomorfi</b> er en homomorfi i begge retninger: f og dens inverse g er begge homomorfier. Eksempler fra sliderne:
+@@s069 String og <code>List[Char]</code>, med <code>toList</code> og <code>mkString</code>: man går fra den ene til den anden uden at miste information;
+@@s070 <code>(Boolean, false, ||)</code> og <code>(Boolean, true, &amp;&amp;)</code>, med negationen: De Morgans lov siger <code>¬(x ∨ y) = ¬x ∧ ¬y</code>, og <code>¬false = true</code>.
+@@s071 Hvorfor det interesserer os
+@@s072 Hvis to monoider er isomorfe, kan en beregning udført i den ene overføres til den anden. Det er grunden til, at en streng og en liste af tegn behandles ens i beregninger i stykker.
+@@s073 Hvor det bruges
+@@s074 Monoiden er det minimale krav for at reducere en samling <b>i enhver rækkefølge og i stykker</b>. På den <a href="s09-foldable.html">næste side</a> ser du <code>fold</code> og <code>foldMap</code> bygget på en monoid. Koden til begreberne står på <a href="../esempi/s09-monoid.html">siden med eksempler side om side</a>.

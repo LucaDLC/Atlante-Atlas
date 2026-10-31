@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Indexing and slicing NumPy arrays</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  const V = [['1', '2', '3'], ['3', '4', '9'], ['5', '7', '3']];
+  const T = (celle, tono) => Object.fromEntries(celle.map(c => [c, tono]));
+  const griglia = (extra) => Object.assign({ id: 'A', tipo: 'griglia', x: 40, y: 20, cw: 56, ch: 44, valori: V, intR: ['riga 0', 'riga 1', 'riga 2'], intC: ['col 0', 'col 1', 'col 2'], cwR: 64 }, extra || {});
+  const passo = (codice, celle, ris, nota, tono) => ({ nota, set: { A: { toni: T(celle, tono || 'ok') }, c: { t: codice, tono: 'ora' }, r: { t: '→ ' + ris, tono: 'ok' } } });
+  const testi = [{ id: 'c', tipo: 'testo', x: 400, y: 80, t: '', size: 16, bold: true }, { id: 'r', tipo: 'testo', x: 400, y: 120, t: '', size: 15, bold: true }, { id: 's', tipo: 'testo', x: 400, y: 160, t: '', size: 13 }];
+
+  // 1. forma e indici da 0
+  SCENE.forma = {
+    w: 540, h: 230, lato: true,
+    legenda: 'dato:one row,due:one column,ok:one element',
+    oggetti: [griglia()].concat(testi),
+    passi: [
+      { nota: "<code>A = np.array([[1, 2, 3], [3, 4, 9], [5, 7, 3]])</code>: una lista di righe diventa una <b>matrice</b> NumPy. Ogni lista interna è una riga.", set: { c: { t: 'A.shape = (3, 3)', tono: 'ora' }, s: { t: '(righe, colonne)' } } },
+      { nota: "<code>A.shape</code> dà la <b>forma</b>: prima il numero di righe, poi il numero di colonne. <code>A.ndim</code> = 2 dice che servono due indici per arrivare a un elemento.", set: { A: { toni: T(['0,0', '1,0', '2,0'], 'due') }, s: { t: 'ndim = 2: due indici' } } },
+      { nota: "Le righe si contano <b>da 0</b>: la prima riga è la riga 0, la \"seconda riga\" è l'indice 1.", set: { A: { toni: T(['1,0', '1,1', '1,2'], 'dato') }, c: { t: 'seconda riga = indice 1' }, s: { t: '' } } },
+      { nota: "Lo stesso per le colonne: la \"prima colonna\" è l'indice 0.", set: { A: { toni: T(['0,0', '1,0', '2,0'], 'due') }, c: { t: 'prima colonna = indice 0' } } },
+      { nota: "Gli indici <b>negativi</b> contano dalla fine: −1 è l'ultimo, −2 il penultimo. In una riga di 3 elementi, −1 equivale a 3 − 1 = 2.", set: { A: { toni: T(['2,0'], 'ok') }, c: { t: 'A[−1, 0] = A[2, 0]' }, r: { t: '→ 5', tono: 'ok' } } }
+    ]
+  };
+
+  // 2. la virgola
+  SCENE.virgola = {
+    w: 540, h: 230, lato: true,
+    legenda: 'dato:chosen row,due:chosen column,ok:intersection',
+    oggetti: [griglia()].concat(testi),
+    passi: [
+      { nota: "<code>A[riga, colonna]</code>: dentro le quadre, <b>prima della virgola la riga</b>, dopo la colonna." },
+      { nota: "<code>A[1, 2]</code>: prima scelgo la riga 1…", set: { A: { toni: T(['1,0', '1,1', '1,2'], 'dato') }, c: { t: 'A[1, 2]', tono: 'ora' } } },
+      { nota: "…poi la colonna 2. L'elemento all'incrocio è 9.", set: { A: { toni: Object.assign(T(['1,0', '1,1'], 'dato'), T(['0,2'], 'due'), T(['2,2'], 'due'), T(['1,2'], 'ok')) }, r: { t: '→ 9', tono: 'ok' } } },
+      passo('A[2, 0]', ['2,0'], '5', "Riga 2, colonna 0: l'angolo in basso a sinistra, 5."),
+      passo('A[0]', ['0,0', '0,1', '0,2'], '[1 2 3]', "Con un <b>solo</b> indice NumPy prende la <b>riga intera</b>: <code>A[0]</code> è la riga 0, un vettore di 3 elementi. Il nome <code>single</code> del Task 4 inganna: non è un elemento.", 'dato')
+    ]
+  };
+
+  // 3. slice su un vettore
+  const vv = ['10', '20', '30', '40', '50', '60'];
+  const sl = (cod, idx, ris, nota) => ({ nota, set: { v: { toni: T(idx.map(String), 'ok') }, c: { t: cod, tono: 'ora' }, r: { t: '→ ' + ris, tono: 'ok' } } });
+  SCENE.slice = {
+    w: 560, h: 200, lato: true,
+    legenda: 'ok:elements taken',
+    oggetti: [
+      { id: 'v', tipo: 'celle', x: 40, y: 40, cw: 56, valori: vv },
+      { id: 'n', tipo: 'testo', x: 208, y: 112, t: 'indici 0 … 5', size: 12 },
+      { id: 'c', tipo: 'testo', x: 460, y: 50, t: '', size: 16, bold: true },
+      { id: 'r', tipo: 'testo', x: 460, y: 90, t: '', size: 15, bold: true },
+      { id: 's', tipo: 'testo', x: 208, y: 160, t: 'inizio : fine  (fine esclusa)', size: 14, bold: true }
+    ],
+    passi: [
+      { nota: "Un vettore <code>v</code> di 6 elementi, indici da 0 a 5. Uno <b>slice</b> (\"fetta\") si scrive <code>inizio:fine</code>." },
+      sl('v[1:4]', [1, 2, 3], '[20 30 40]', "Dall'indice 1 fino al 4 <b>escluso</b>: gli indici 1, 2, 3. Tre elementi: 4 − 1 = 3. Il vantaggio dell'estremo escluso è proprio questo conto."),
+      sl('v[:3]', [0, 1, 2], '[10 20 30]', "Senza inizio si parte da 0: i primi 3 elementi."),
+      sl('v[3:]', [3, 4, 5], '[40 50 60]', "Senza fine si arriva in fondo. Nota: <code>v[:3]</code> e <code>v[3:]</code> insieme danno tutto il vettore, senza buchi né doppioni."),
+      sl('v[-2:]', [4, 5], '[50 60]', "Con un indice negativo: dagli ultimi due fino in fondo."),
+      sl('v[::2]', [0, 2, 4], '[10 30 50]', "Un terzo numero è il <b>passo</b>: <code>::2</code> prende un elemento sì e uno no.")
+    ]
+  };
+
+  // 4. task 4 (scena originale)
+  SCENE.indici = {
+    w: 540, h: 230, lato: true,
+    legenda: 'ok:elements taken',
+    oggetti: [griglia(), { id: 'c', tipo: 'testo', x: 400, y: 80, t: '', size: 16, bold: true }, { id: 'r', tipo: 'testo', x: 400, y: 120, t: '', size: 15, bold: true }],
+    passi: [
+      { nota: 'The matrix A of the page: 3 rows and 3 columns, indices from 0. Before the comma the rows, after the columns.' },
+      passo('A[0]', ['0,0', '0,1', '0,2'], '[1 2 3]', 'Un solo indice: la <b>riga</b> 0 intera.'),
+      passo('A[:2, 1]', ['0,1', '1,1'], '[2 4]', 'Righe <code>:2</code> = 0 e 1 (il 2 è escluso), colonna 1: gli incroci sono 2 e 4.'),
+      passo('A[:, :2]', ['0,0', '0,1', '1,0', '1,1', '2,0', '2,1'], '3 × 2', 'Tutte le righe, colonne 0 e 1: le prime due colonne, una matrice 3 × 2.'),
+      passo('A[-1, -1]', ['2,2'], '3', 'Gli indici negativi contano dalla fine: ultima riga, ultima colonna.'),
+      passo('A[0:-2, 0:-1]', ['0,0', '0,1'], '[[1 2]]', 'Righe da 0 fino al penultimo <b>escluso</b>: resta solo la riga 0. Colonne da 0 all\'ultima esclusa: 0 e 1. Con gli slice la dimensione resta: forma (1, 2).')
+    ]
+  };
+
+  // 5. numero secco o slice: la forma
+  SCENE.formarisultato = {
+    w: 540, h: 230, lato: true,
+    legenda: 'ok:elements taken',
+    oggetti: [griglia()].concat(testi),
+    passi: [
+      passo('A[0, :]', ['0,0', '0,1', '0,2'], 'forma (3,)', "Riga 0 scelta con un <b>numero secco</b>: la dimensione delle righe <b>sparisce</b>. Resta un vettore 1D di 3 elementi, forma <code>(3,)</code>."),
+      passo('A[0:1, :]', ['0,0', '0,1', '0,2'], 'forma (1, 3)', "Stessi elementi, ma presi con uno <b>slice</b> <code>0:1</code>: la dimensione resta. È una matrice di 1 riga e 3 colonne, forma <code>(1, 3)</code>."),
+      passo('A[:, 0]', ['0,0', '1,0', '2,0'], 'forma (3,)', "Una colonna con un numero secco: di nuovo un vettore 1D <code>(3,)</code>. NumPy non lo \"disegna\" verticale: un array 1D non è né riga né colonna."),
+      passo('A[:, 0:1]', ['0,0', '1,0', '2,0'], 'forma (3, 1)', "Con lo slice <code>0:1</code> resta una matrice colonna <code>(3, 1)</code>. La differenza conta nei prodotti tra matrici (<a href=\"nozioni-dimensioni.html\">dimensioni</a>)."),
+      { nota: "Regola: <b>ogni numero secco toglie una dimensione, ogni slice la conserva</b>. Si controlla sempre con <code>.shape</code>.", set: { A: { toni: {} }, c: { t: 'numero: dim. tolta', tono: 'ora' }, r: { t: 'slice: dim. tenuta', tono: 'ok' } } }
+    ]
+  };
+
+  // 6. tradurre una richiesta in indici
+  SCENE.richiesta = {
+    w: 540, h: 230, lato: true,
+    legenda: 'dato:chosen rows,due:chosen columns,ok:result',
+    oggetti: [griglia()].concat(testi),
+    passi: [
+      { nota: "Per ogni richiesta a parole ci si fanno due domande: <b>quali righe?</b> <b>quali colonne?</b> Esempio: \"il blocco 2 × 2 in basso a sinistra\"." },
+      { nota: "Quali righe? Le ultime due: 1 e 2, cioè <code>1:</code> (dalla 1 fino in fondo).", set: { A: { toni: T(['1,0', '1,1', '1,2', '2,0', '2,1', '2,2'], 'dato') }, c: { t: 'righe: 1:', tono: 'ora' } } },
+      { nota: "Quali colonne? Le prime due: 0 e 1, cioè <code>:2</code>.", set: { A: { toni: Object.assign(T(['1,2', '2,2'], 'dato'), T(['0,0', '0,1'], 'due'), T(['1,0', '1,1', '2,0', '2,1'], 'ok')) }, c: { t: 'colonne: :2', tono: 'ora' } } },
+      { nota: "Si uniscono con la virgola: <code>A[1:, :2]</code> = [[3, 4], [5, 7]] (controllato in NumPy).", set: { A: { toni: T(['1,0', '1,1', '2,0', '2,1'], 'ok') }, c: { t: 'A[1:, :2]' }, r: { t: '→ [[3 4] [5 7]]', tono: 'ok' } } },
+      passo('A[:, -1]', ['0,2', '1,2', '2,2'], '[3 9 3]', "Altra richiesta: \"l'ultima colonna\". Tutte le righe (<code>:</code>), colonna −1."),
+      passo('A[2]', ['2,0', '2,1', '2,2'], '[5 7 3]', "\"La terza riga\": si conta da 0, quindi indice 2.", 'dato')
+    ]
+  };
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Indexing and slicing NumPy arrays</h1>
+  <p class="lede">How to read <code>A[:2, 1]</code>: first the rows, then the columns, and the end of the interval is never included. Here the shape of an array, the comma, the slices, the cell of Task 4, the shape of the result and the method for Task 5 of <i>Practical introduction to Python and Numpy</i>, week 1.</p>
+</header>
+
+<section>
+  <h2>NumPy arrays: shape and indices from 0</h2>
+  <p>NumPy (imported with <code>import numpy as np</code>) is the library for calculations with vectors and matrices. <code>np.array</code> turns a Python list into an <b>array</b>: a list of numbers becomes a vector, a list of lists becomes a matrix, one row for each inner list.</p>
+  <pre class="cod" data-lang="python">A = np.array([
+    [1, 2, 3],    # riga 0
+    [3, 4, 9],    # riga 1
+    [5, 7, 3]     # riga 2
+])
+#  col: 0  1  2</pre>
+  <p>Every array has a <b>shape</b> (<code>.shape</code>): a tuple with the length of each dimension, first the rows then the columns. Here <code>A.shape</code> is <code>(3, 3)</code>. The number of dimensions is read with <code>.ndim</code>: 1 for a vector, 2 for a matrix.</p>
+  <div class="box regola" data-tit="One counts from zero">
+    <p>The "second row" is the index <b>1</b>. The "first column" is the index <b>0</b>. The last element of a row of length 3 has index 2, or −1.</p>
+  </div>
+  <figure class="scena" data-scena="forma" data-titolo="Shape, rows and columns of A"></figure>
+</section>
+
+<section>
+  <h2>One element: A[row, column]</h2>
+  <p>To read an element one writes the indices in square brackets, separated by a comma: <b>first the row, then the column</b>. <code>A[1, 2]</code> is the element in row 1 and column 2, that is 9.</p>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Symbol</th><th>Meaning</th></tr></thead>
+    <tbody>
+      <tr><td><code>A[ ]</code></td><td>take from <code>A</code></td></tr>
+      <tr><td><code>,</code></td><td>separates <b>row</b> (first) and <b>column</b> (after): <code>A[row, column]</code></td></tr>
+      <tr><td><code>-1</code>, <code>-2</code></td><td>the last, the penultimate: one counts from the end</td></tr>
+    </tbody>
+  </table></div>
+  <p>With <b>a single</b> index, <code>A[0]</code>, NumPy does not take an element but the <b>whole row</b>: it is like writing <code>A[0, :]</code>. It is a classic source of errors, because it looks like an element and is instead a vector.</p>
+  <figure class="scena" data-scena="virgola" data-titolo="First the row, then the column"></figure>
+</section>
+
+<section>
+  <h2>Slice: start:end, with the end excluded</h2>
+  <p>A <b>slice</b> takes an interval of indices with the notation <code>start:end</code>. The rule to remember: <b>the start is included, the end is excluded</b>. <code>v[1:4]</code> takes the indices 1, 2 and 3.</p>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Written</th><th>Meaning</th></tr></thead>
+    <tbody>
+      <tr><td><code>start:end</code></td><td>from start (included) to end (excluded)</td></tr>
+      <tr><td><code>:2</code></td><td>from the beginning up to 2 excluded: indices 0 and 1</td></tr>
+      <tr><td><code>3:</code></td><td>from 3 to the end</td></tr>
+      <tr><td><code>:</code> alone</td><td>everything</td></tr>
+      <tr><td><code>::2</code></td><td>everything, with step 2 (one yes and one no)</td></tr>
+    </tbody>
+  </table></div>
+  <p>Why the end is excluded: the number of elements taken is simply <code>end − start</code>, and <code>v[:k]</code> and <code>v[k:]</code> fit together without gaps or duplicates. On a matrix one puts a slice for each dimension, separated by the comma.</p>
+  <figure class="scena" data-scena="slice" data-titolo="Five slices on a vector of 6 elements"></figure>
+</section>
+
+<section>
+  <h2>The cell of Task 4, row by row</h2>
+  <p>Task 4 asks only to <b>read</b> the cell and understand what it prints: no code is written. Each row uses one of the rules above.</p>
+  <figure class="codice" data-titolo="Task 4: array indexing">
+<pre data-lang="python">single = A[0]
+vector = A[:2, 1]
+matrix = A[:, :2]
+single = A[-1, -1]
+arange = A[0:-2, 0:-1]</pre>
+    <ol class="spiega">
+      <li data-righe="1" data-segna="A[0]@ora"><p>A single index on a matrix takes the <b>whole row</b>: <code>[1 2 3]</code>. The name <code>single</code> is misleading: it is not an element.</p></li>
+      <li data-righe="2" data-segna=":2@dato|1]@due"><p>Rows <code>:2</code> = 0 and 1. Column <code>1</code>. At the intersection: <code>A[0,1] = 2</code> and <code>A[1,1] = 4</code> &rarr; <code>[2 4]</code>.</p></li>
+      <li data-righe="3" data-segna="A[:, :2]@ora"><p>All the rows, columns 0 and 1: the first two columns, a 3&times;2 matrix.</p></li>
+      <li data-righe="4" data-segna="-1, -1@ora"><p>Last row, last column &rarr; <code>3</code>.</p></li>
+      <li data-righe="5" data-segna="0:-2@dato|0:-1@due"><p>Rows from 0 up to the penultimate <b>excluded</b>: with 3 rows only row 0 remains. Columns from 0 up to the last excluded: 0 and 1. Result <code>[[1 2]]</code>, shape <code>(1, 2)</code>.</p></li>
+    </ol>
+  </figure>
+  <figure class="passi" data-titolo="A[:2, 1]" data-legenda="dato:chosen rows,due:chosen column,ok:result">
+    <div class="passo">
+      <div class="espr testo">A[ <mark class="dato">:2</mark> , 1 ]</div>
+      <p class="nota">Before the comma there are the rows. <code>:2</code> means from 0 up to 2, 2 excluded: rows 0 and 1.</p>
+    </div>
+    <div class="passo">
+      <div class="espr testo">A[ :2 , <mark class="due">1</mark> ]</div>
+      <p class="nota">After the comma the column: a bare number, column 1.</p>
+    </div>
+    <div class="passo">
+      <div class="espr testo">A[0,1] = 2 &nbsp;&nbsp; A[1,1] = 4</div>
+      <p class="nota">Take the elements at the intersection of each chosen row with the chosen column.</p>
+    </div>
+    <div class="passo">
+      <div class="espr"><mark class="ok">[2 4]</mark></div>
+      <p class="nota">The column was a bare number, so that dimension disappears: the result is a vector.</p>
+    </div>
+  </figure>
+  <figure class="scena" data-scena="indici" data-titolo="The five rows of Task 4 on the matrix"></figure>
+</section>
+
+<section>
+  <h2>Bare number or slice: the shape of the result</h2>
+  <p>The same elements can be taken in two ways, and the result has a <b>different shape</b>. A bare number in place of a dimension <b>removes</b> it; a slice, even of length 1, <b>keeps</b> it.</p>
+  <div class="box attenzione" data-tit="Double brackets">
+    <p><code>A[0:1, :]</code> is still a 1&times;3 matrix, and is printed with double brackets <code>[[1 2 3]]</code>. <code>A[0, :]</code> is a vector of 3 elements, <code>[1 2 3]</code>.</p>
+  </div>
+  <p>Why it matters: a matrix <code>(3, 1)</code> and a vector <code>(3,)</code> contain the same numbers, but in products and in element-by-element operations they behave differently (<i>broadcasting</i> can turn a sum into a 3 × 3 matrix). The complete trap is in <a href="nozioni-numpy.html">NumPy: shapes, axes, errors</a>.</p>
+  <div class="box domanda-tua" data-tit="Doubt asked in chat: is the T a horizontal or vertical view?">
+    <p>Neither one nor the other: it is not a <i>view</i>. <code>.T</code> swaps rows and columns and <b>changes the shape</b>: <code>(2, 3)</code> becomes <code>(3, 2)</code>. On a 1D array instead nothing changes, and NumPy gives no error. In full: <a href="w03-matrici.html">Matrices</a> and <a href="nozioni-numpy.html">NumPy</a>.</p>
+  </div>
+  <figure class="scena" data-scena="formarisultato" data-titolo="Same numbers, different shapes"></figure>
+</section>
+
+<section>
+  <h2>Translating a request into indices (Task 5)</h2>
+  <p>Task 5 asks the opposite of Task 4: from a sentence ("the top right corner", "the second row") write the index. The method is always the same, two questions: <b>which rows?</b> and <b>which columns?</b> Each becomes a bare number (a single row or column, dimension removed) or a slice <code>start:end</code>. Then they are joined with the comma.</p>
+  <p>Two checks before running: the indices start from 0, and the end of the slice is excluded. Afterwards: the <code>.shape</code> of the result must be the one asked for (a 2 × 2 must have shape <code>(2, 2)</code>).</p>
+  <details class="soluzione"><summary>Shows the solutions of Task 5</summary><div>
+    <p>Top-right 2 × 2 corner: rows 0 and 1, columns 1 and 2 &rarr; <code>ur = A[:2, 1:]</code> = <code>[[2, 3], [4, 9]]</code>. Second row &rarr; <code>row = A[1]</code> = <code>[3, 4, 9]</code>. First column &rarr; <code>col = A[:, 0]</code> = <code>[1, 3, 5]</code>. Checked with the <code>assert</code> of the notebook.</p>
+  </div></details>
+  <figure class="scena" data-scena="richiesta" data-titolo="From a sentence to an index"></figure>
+</section>
+
+</main>
+</body>
+</html>

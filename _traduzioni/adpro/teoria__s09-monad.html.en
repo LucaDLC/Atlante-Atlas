@@ -1,0 +1,57 @@
+@@s001 Monad: unit and flatMap
+@@s002 ora:step being run,ok:value that passes,no:failure,spento:step skipped
+@@s003 <b>flatMap</b> chains calculations that may fail. I start from <code>Some(3)</code>.
+@@s004 <code>flatMap(raddoppiaSePositivo)</code>: 3 is positive, so the result is Some(6). The next step receives the value <b>inside</b> the container.
+@@s005 <code>flatMap(dimezza)</code>: 6 is even, so the result is Some(3).
+@@s006 With <code>Some(-3)</code>: raddoppiaSePositivo returns <b>None</b>. A flatMap on None is None, so the next step is not run.
+@@s007 The control of the flow (if one step fails, stop) sits inside <code>flatMap</code>, not in the code that uses it. This is the strength of the monad.
+@@s008 dato:input,ora:step that changes,ok:same
+@@s009 <b>Left identity</b>: <code>unit(y).flatMap(f) === f(y)</code>. unit puts y inside the container, and flatMap passes it to f: it is like calling f directly. With List and f = raddoppia: List(7).flatMap(f) = List(14) = f(7).
+@@s010 <b>Right identity</b>: <code>x.flatMap(unit) === x</code>. Passing each value to unit puts it back in the same container: List(1, 2, 3) stays List(1, 2, 3).
+@@s011 <b>Associativity</b>: <code>x.flatMap(f).flatMap(g) === x.flatMap(a => f(a).flatMap(g))</code>. Chaining two steps on the left or nesting them on the right gives the same result. It is the same rule we saw with the monoid.
+@@s012 dato:input,ora:choice under way,ok:result
+@@s013 <b>sequence</b> takes a list of containers, List(List(1, 2), List(3, 4)), and returns a container of lists. It means: "from each container take one value, in all possible ways".
+@@s014 First choice: 1 from the first list and 3 from the second. I get List(1, 3).
+@@s015 The other combinations: 1 with 4, 2 with 3, 2 with 4. Four lists in all.
+@@s016 The same idea with Option: <code>sequence(List(Some(1), Some(2)))</code> = Some(List(1, 2)), but <code>sequence(List(Some(1), None))</code> = None: one None is enough to lose everything.
+@@s017 dato:possible choices,ora:choice under way,ok:result
+@@s018 <b>replicateM(n, ma)</b> repeats the container <code>ma</code> n times and collects the results in a list. With List(0, 1) and n = 2 each step can choose 0 or 1.
+@@s019 First step: I choose 0 or 1. Two possible branches.
+@@s020 Second step: from each branch, again 0 or 1. Four results, all the possible ways.
+@@s021 With Option: <code>replicateM(2, Some(1))</code> = Some(List(1, 1)); with None the result is None. The meaning depends on the container: in a list the choices multiply, in an Option the same value is repeated.
+@@s022 dato:starting function,ora:step under way,ok:result
+@@s023 <b>compose</b> (Kleisli composition): f goes from A to a container F[B], g goes from B to F[C]. They cannot be composed directly, because g does not accept F[B].
+@@s024 I apply f to <code>a</code>: I get a container F[B]. The value B is inside, and f cannot be called on it directly.
+@@s025 With <code>flatMap(g)</code> the value B is extracted and passed to g: I get F[C]. The composition is therefore a <b>new</b> function from A to F[C].
+@@s026 <span>Week 9</span>
+@@s027 Monad: unit and flatMap
+@@s028 The monad is the most general concept of the week: a type with <code>unit</code> (putting a value inside) and <code>flatMap</code> (chaining calculations that depend on the previous value). Option, List, LazyList, Gen, Parser and <a href="s05-state.html">State</a> are all monads.
+@@s029 The Monad trait
+@@s030 In the slides the trait is this (simplified):
+@@s031 <code>trait Monad[F[_]] extends Functor[F]</code>, with two methods:
+@@s032 <code>unit[A](a: =&gt; A): F[A]</code>: puts a value inside the container. For Option it is <code>Some(a)</code>, for List it is <code>List(a)</code>. The type <code>=&gt; A</code> means that the argument is passed by name, that is evaluated only when needed.
+@@s033 <code>flatMap[B](f: A =&gt; F[B]): F[B]</code>: takes the value inside the container and passes it to <code>f</code>, which chooses the next calculation based on that value. <code>f</code> already returns a container, and <code>flatMap</code> flattens it into one only.
+@@s034 From these two one gets <code>map</code>: <code>fa.flatMap(a =&gt; unit(f(a)))</code>. That is why a monad is also a functor: the trait extends it.
+@@s035 flatMap chains steps that may fail
+@@s036 The idea
+@@s037 The slides note that the name could be <i>FlatMappable</i>: a container on which you can chain calculations, where each step depends on the value of the step before.
+@@s038 The laws
+@@s039 The laws (from the slides and the book) concern <code>unit</code> and <code>flatMap</code>:
+@@s040 <b>Left identity</b>: <code>unit(y).flatMap(f) === f(y)</code>;
+@@s041 <b>Right identity</b>: <code>x.flatMap(unit) === x</code>;
+@@s042 <b>Associativity</b>: <code>x.flatMap(f).flatMap(g) === x.flatMap(a =&gt; f(a).flatMap(g))</code>.
+@@s043 The laws are read like this: <code>unit</code> is the neutral element of the chaining (like the 0 of the monoid), and <code>flatMap</code> is associative. On the slides they are written as ScalaCheck properties, as for the monoid.
+@@s044 The three laws with List
+@@s045 sequence: the generalised zip
+@@s046 <code>sequence(lfa: List[F[A]]): F[List[A]]</code> takes a list of containers and returns a container of lists. For the List monad it means all the possible choices; for Option it means "all present or nothing". On the slides the result is described as a generalised <i>n-ary zip</i>: a zip of n containers instead of two.
+@@s047 The code of <code>sequence</code> is exercise 17 of the course: here you see only the behaviour.
+@@s048 sequence: from a list of lists to its combinations
+@@s049 replicateM and compose
+@@s050 <code>replicateM(n, ma)</code> repeats the container <code>n</code> times and collects the values in a list inside the container: <code>F[List[A]]</code>. The meaning changes with the monad, as the scene shows.
+@@s051 replicateM with List: four results
+@@s052 <b>compose</b> (Kleisli composition) combines two functions that return a container: <code>f: A =&gt; F[B]</code> and <code>g: B =&gt; F[C]</code> give a new function <code>A =&gt; F[C]</code>. It is obtained with <code>flatMap</code>: you apply f, then pass the value inside to g. The implementation is exercise 19.
+@@s053 Composition: f then g, with flatMap in the middle
+@@s054 Where it is used
+@@s055 The code of <code>unit</code>, <code>flatMap</code> and of the examples with Option and List is in the <a href="../esempi/s09-monad.html">side-by-side examples page</a>. State, already seen in the <a href="s05-state.html">week 5</a>, is another monad: <code>flatMap</code> on State chains automata.
+@@s056 At the exam
+@@s057 If an exercise asks you to "sequence" containers, think of <code>flatMap</code> and the laws: write which monad you are using and what behaviour you expect (all present, all the combinations, the first that fails).

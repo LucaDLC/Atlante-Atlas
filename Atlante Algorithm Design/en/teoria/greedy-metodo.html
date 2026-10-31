@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Greedy: the method</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+const N = (id,x,y,t,tono) => ({id,tipo:'rett',x,y,w:58,h:34,t,tono});
+SCENE.exch = {
+  w: 540, h: 230, lato: true,
+  legenda: 'dato:item,ora:what I swap,ok:valid solution,no:not valid',
+  oggetti: [
+    {id:'l1',tipo:'testo',x:20,y:60,t:'ottimo O',size:12,bold:true,anchor:'start'},
+    {id:'l2',tipo:'testo',x:20,y:150,t:'greedy G',size:12,bold:true,anchor:'start'},
+    N('o1',110,40,'1','dato'), N('o2',180,40,'2','dato'), N('o3',250,40,'3','dato'), N('o4',320,40,'4','spento'),
+    N('g1',110,130,'1','dato'), N('g2',180,130,'2','spento'), N('g3',250,130,'3','spento'), N('g4',320,130,'4','dato'),
+    {id:'x',tipo:'testo',x:440,y:60,t:'',size:12,bold:true},
+    {id:'c',tipo:'testo',x:20,y:210,t:'',size:13,bold:true,anchor:'start'}
+  ],
+  passi: [
+    { nota: 'An optimal solution <b>O</b>. I compare it with the greedy <b>G</b>, which at the first step takes the smallest element: 1.', set: {} },
+    { nota: 'O does not contain 1. I swap the element <b>2</b> of O with the element <b>1</b>, which the greedy chose. The number of elements does not change, and the cost does not rise, because 1 is the smallest.', set: { o2:{tono:'ora'}, o1:{tono:'ok'}, c:{t:'scambio: O\' = O − {2} + {1}: stessa taglia, costo non maggiore'} } },
+    { nota: 'I repeat for each step of the greedy. In the end O\' coincides with G and is worth at least as much as O: <b>the greedy is optimal</b>. It is the exchange argument.', set: { o3:{tono:'ora'}, g3:{tono:'dato'}, x:{t:'O\' = G',tono:'ok'}, c:{t:'ad ogni scambio la soluzione resta valida e ottima',tono:'ok'} } }
+  ]
+};
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Greedy: the method</h1>
+  <p class="lede">A greedy algorithm builds the solution a piece at a time: at each step it takes the best element according to a fixed rule, if it is admissible, and never goes back. It is simple to write. The difficulty is proving that the chosen rule leads to the optimum.</p>
+</header>
+
+<section>
+  <h2>The scheme of every greedy</h2>
+<p>Every greedy repeats two decisions, at each step:</p>
+<ol>
+  <li><b>which is the best element now?</b> (the rule: the shortest, the smallest, the first that finishes…);</li>
+  <li><b>is it admissible?</b> (it respects the constraints: it does not overlap, it does not create a cycle, it fits in the budget).</li>
+</ol>
+<p>If it is admissible you take it; otherwise you discard it. You never go back on the choices made.</p>
+<p>The point that decides the exam is not writing the loop, but <b>proving</b> that the rule leads to the optimum. A wrong greedy looks identical to a right one: that is why one always asks for a counterexample or a proof.</p>
+</section>
+<section>
+  <h2>Why it works: the exchange argument</h2>
+<p>The proof method that is almost always needed at the exam is the <b>exchange</b> (exchange argument):</p>
+<ol>
+  <li>Start from any optimal solution <b>O</b>.</li>
+  <li>If O differs from the greedy, find the first choice where they differ.</li>
+  <li>Swap the element of O with the one of the greedy. Show that the solution remains valid and does not get worse.</li>
+  <li>Repeat: you reach a solution equal to the greedy, which is therefore optimal.</li>
+</ol>
+<div class="box regola" data-tit="The swap must be free"><p>The swap works only if the greedy element does not cost more than the one it replaces. If the objects have different values, the swap can worsen the result: then the problem is not greedy, it is a DP (knapsack).</p></div>
+  <figure class="scena" data-scena="exch" data-titolo="Swapping a choice of the optimum with the one of the greedy"></figure>
+</section>
+<section>
+  <h2>The other two ways of proving it</h2>
+<p><b>Greedy stays ahead</b>: after each step, the greedy solution is at least as good as that of anyone else. It is the proof of interval scheduling.</p>
+<p><b>Structural bound</b>: you find a bound that every solution must respect, and show that the greedy reaches it. Example: the number of rooms needed is at least the maximum depth of the intervals, and the greedy uses exactly that number.</p>
+</section>
+<section>
+  <h2>How to recognise a greedy problem</h2>
+<p>In the exams the signal is almost always this: <b>maximise the number of objects under a single budget</b>, or <b>choose the k best</b>, or <b>scheduling on a line</b>. If the objects have different values and a budget on the sum of the values, it is knapsack (DP).</p>
+<p>Four recurring templates: <i>count under budget</i> (sort by increasing cost, take while it fits); <i>top-k</i> (sort by decreasing value, take the first k); <i>threshold</i> (the minimum number to exceed half of the total: sort decreasing); <i>scheduling</i> (intervals by end, rooms by start).</p>
+</section>
+<section>
+  <h2>At the exam</h2>
+<div class="box esame" data-tit="At the exam">
+<p>Write in this order: (a) the problem; (b) the rule in precise words, <i>"in increasing order of key"</i>, then the pseudocode with the admissibility test; (c) the time, in the parameters of the text: sorting <code>O(n log n)</code> plus scan <code>O(n)</code>. Correctness phrase: <i>"exchange argument: replacing a chosen item by a cheaper unchosen one never hurts."</i></p>
+<p>Typical mistake: saying "greedy" without proving it. If you cannot find the exchange argument, it is probably DP.</p>
+</div>
+</section>
+<section>
+  <h2>Quick reference</h2>
+<div class="tab-wrap"><table class="tab"><thead><tr><th>method</th><th>idea</th><th>use</th></tr></thead><tbody><tr><td>greedy stays ahead</td><td>the greedy is always ahead</td><td>interval scheduling</td></tr><tr><td>structural bound</td><td>a bound that the greedy reaches</td><td>rooms = depth</td></tr><tr><td>exchange argument</td><td>swap without getting worse</td><td>the most used at the exam</td></tr><tr><td>typical time</td><td>O(n log n)</td><td>sorting + scan</td></tr></tbody></table></div>
+</section>
+
+</main>
+</body>
+</html>

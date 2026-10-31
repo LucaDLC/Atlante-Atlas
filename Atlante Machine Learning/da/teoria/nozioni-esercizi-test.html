@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Håndøvelser til in-class-testen</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  const V = (id, x2, y2, t, tono, extra) => Object.assign({ id, tipo: 'vett', in: 'ax', x1: 0, y1: 0, x2, y2, t, tono, nascosto: true }, extra || {});
+  SCENE.ordine = {
+    w: 420, h: 300, lato: true,
+    legenda: 'dato:startvektor,ora:efter første matrix,ok:resultat SR,due:resultat RS',
+    oggetti: [
+      { id: 'ax', tipo: 'assi', box: [60, 20, 300, 240], dom: [-2, 3, -1, 3], tacche: 1 },
+      V('v', 2, 1, 'v = (2, 1)', 'dato', { nascosto: false }),
+      V('Rv', -1, 2, 'Rv = (−1, 2)', 'ora', { tx: -100, ty: -6 }),
+      V('e', 1, 0, 'e₁', 'dato'),
+      V('Re', 0, 1, 'R e₁ = (0, 1)', 'ora'),
+      V('Se', 2, 0, 'S e₁ = (2, 0)', 'ora'),
+      V('RSe', 0, 2, 'RS e₁ = (0, 2)', 'due'),
+      { id: 'm', tipo: 'testo', x: 210, y: 286, t: 'R = [[0, −1], [1, 0]]    S = [[2, 0], [0, 1]]', size: 13 }
+    ],
+    passi: [
+      { nota: "R ruota di 90° in senso antiorario; S raddoppia la x e lascia la y. Il primo vettore è v = (2, 1)." },
+      { nota: "R · (2, 1) = 2 · (prima colonna) + 1 · (seconda colonna) = 2·(0, 1) + 1·(−1, 0) = <b>(−1, 2)</b>: v ruotato di 90°.", set: { Rv: { nascosto: false } } },
+      { nota: "Ora SR · (1, 0). Si legge <b>da destra</b>: la matrice attaccata al vettore agisce per prima, quindi prima R.", set: { v: { nascosto: true }, Rv: { nascosto: true }, e: { nascosto: false }, m: { t: 'SR · (1, 0) = S · (R · (1, 0))' } } },
+      { nota: "R · (1, 0) = (0, 1): la prima colonna di R.", set: { Re: { nascosto: false } } },
+      { nota: "Poi S raddoppia la x, ma la x è 0: (0, 1) resta (0, 1). <b>SR · (1, 0) = (0, 1)</b>.", set: { Re: { t: 'SR e₁ = (0, 1)', tono: 'ok' }, m: { t: 'SR · (1, 0) = (0, 1)', tono: 'ok' } } },
+      { nota: "Ora RS · (1, 0): questa volta <b>prima S</b>. S · (1, 0) = (2, 0).", set: { Re: { nascosto: true }, Se: { nascosto: false }, m: { t: 'RS · (1, 0) = R · (S · (1, 0))', tono: null } } },
+      { nota: "Poi R ruota (2, 0) di 90°: <b>RS · (1, 0) = (0, 2)</b>.", set: { RSe: { nascosto: false }, m: { t: 'RS · (1, 0) = (0, 2)', tono: 'due' } } },
+      { nota: "Stesse due matrici, ordine diverso, risultati diversi: <b>SR ≠ RS</b>. Infatti SR = [[0, −2], [1, 0]] e RS = [[0, −1], [2, 0]] (verificato con NumPy).", set: { Se: { nascosto: true }, Re: { nascosto: false }, m: { t: 'SR e₁ = (0, 1)    RS e₁ = (0, 2)', tono: null } } }
+    ]
+  };
+})();
+
+(function () {
+  const P = [[0, 1], [1, 1], [2, 3]], w0 = 2 / 3, w1 = 1;
+  const ogg = [{ id: 'ax', tipo: 'assi', box: [50, 20, 300, 220], dom: [-0.5, 2.5, 0, 3.5], tacche: 1 }];
+  ogg.push({ id: 'retta', tipo: 'linea', in: 'ax', x1: -0.5, y1: w0 - 0.5, x2: 2.5, y2: w0 + 2.5, tono: 'ok', nascosto: true });
+  ogg.push({ id: 'altra', tipo: 'linea', in: 'ax', x1: -0.5, y1: 0.5, x2: 2.5, y2: 3.5, tono: 'due', tratt: true, nascosto: true });
+  P.forEach(([x, y], i) => ogg.push({ id: 's' + i, tipo: 'linea', in: 'ax', x1: x, y1: y, x2: x, y2: w0 + w1 * x, tono: 'no', nascosto: true }));
+  P.forEach(([x, y], i) => ogg.push({ id: 'p' + i, tipo: 'punto', in: 'ax', x, y, t: '(' + x + ', ' + y + ')', tono: 'dato' }));
+  ogg.push({ id: 'r0', tipo: 'testo', x: 108, y: 188, t: '+0.333', anchor: 'start', size: 12, tono: 'no', nascosto: true });
+  ogg.push({ id: 'r1', tipo: 'testo', x: 192, y: 156, t: '−0.667', anchor: 'end', size: 12, tono: 'no', nascosto: true });
+  ogg.push({ id: 'r2', tipo: 'testo', x: 308, y: 62, t: '+0.333', anchor: 'start', size: 12, tono: 'no', nascosto: true });
+  ogg.push({ id: 'c1', tipo: 'testo', x: 210, y: 274, t: '' });
+  ogg.push({ id: 'c2', tipo: 'testo', x: 210, y: 296, t: '' });
+  SCENE.es14 = {
+    w: 420, h: 312, lato: true,
+    legenda: 'dato:de 3 punkter,ok:linjen fra mindste kvadrater,no:residualer,due:en anden linje til sammenligning',
+    oggetti: ogg,
+    passi: [
+      { nota: "I tre punti (0, 1), (1, 1), (2, 3). Nessuna retta passa per tutti e tre: cerchiamo quella con la somma dei quadrati degli errori più piccola." },
+      { nota: "Una riga di A per punto: [1, x]. y contiene i valori veri.", set: { c1: { t: 'A = [[1, 0], [1, 1], [1, 2]]' }, c2: { t: 'y = (1, 1, 3)' } } },
+      { nota: "AᵀA contiene il numero di punti, Σx e Σx²; Aᵀy contiene Σy e Σxy.", set: { c1: { t: 'AᵀA = [[3, 3], [3, 5]]' }, c2: { t: 'Aᵀy = (5, 7)' } } },
+      { nota: "Determinante e inversa della 2 × 2, con la regola (1/det)·[[d, −b], [−c, a]].", set: { c1: { t: 'det = 3·5 − 3·3 = 6' }, c2: { t: '(AᵀA)⁻¹ = (1/6) [[5, −3], [−3, 3]]' } } },
+      { nota: "w = (AᵀA)⁻¹ Aᵀy: w₀ ≈ 0.667 e w₁ = 1. Ecco la retta <b>y = 0.667 + x</b>.", set: { retta: { nascosto: false }, c1: { t: 'w = (1/6)(5·5 − 3·7, −3·5 + 3·7)' }, c2: { t: '= (4/6, 6/6) = (0.667, 1)', tono: 'ok' } } },
+      { nota: "I residui y − ŷ: 1 − 0.667, 1 − 1.667, 3 − 2.667. La loro somma è 0 (succede sempre quando c'è l'intercetta).", set: { s0: { nascosto: false }, s1: { nascosto: false }, s2: { nascosto: false }, r0: { nascosto: false }, r1: { nascosto: false }, r2: { nascosto: false }, c1: { t: 'residui: +0.333, −0.667, +0.333 (somma 0)' }, c2: { t: 'somma dei quadrati = 0.667', tono: 'no' } } },
+      { nota: "Confronto: la retta per il primo e l'ultimo punto, y = 1 + x, ha residui 0, −1, 0: somma dei quadrati <b>1</b>, peggio di 0.667. Nessuna retta scende sotto 0.667 (verificato con <code>np.linalg.lstsq</code>).", set: { altra: { nascosto: false }, c1: { t: 'y = 1 + x: residui 0, −1, 0' }, c2: { t: 'somma dei quadrati = 1 > 0.667', tono: 'due' } } }
+    ]
+  };
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Håndøvelser til in-class-testen</h1>
+  <p class="lede">Den første in-class-test er mandag 28. september, i de første 30–45 minutter af lektion 6: papir og blyant, om materialet fra uge 1–5 (går det dårligt, er der resit i uge 41). Her er 14 øvelser af samme type som Grasple- og in-class-aktiviteterne, hver med løsningen trin for trin. Prøv først selv, og åbn derefter løsningen. Alle resultaterne er kontrolleret med NumPy.</p>
+</header>
+
+<section>
+  <h2>Vektorer (uge 1–2)</h2>
+
+  <p><b>1.</b> u = (1, 2, 2), w = (3, 0, 4). Beregn ‖u‖, ‖w‖ og afstanden d(u, w).</p>
+  <details class="soluzione"><summary>Løsning</summary><div>
+    <p>‖u‖ = √(1 + 4 + 4) = √9 = <b>3</b>.  ‖w‖ = √(9 + 0 + 16) = √25 = <b>5</b>.</p>
+    <p>u − w = (−2, 2, −2) ⇒ d = √(4 + 4 + 4) = <b>√12 ≈ 3.46</b>. Først kvadraterne, derefter summen, derefter kvadratroden (<a href="w02-norme-distanze.html">normer</a>).</p>
+  </div></details>
+
+  <p><b>2.</b> Samme vektorer: indre produkt og vinkel.</p>
+  <details class="soluzione"><summary>Løsning</summary><div>
+    <p>u · w = 1·3 + 2·0 + 2·4 = <b>11</b>. cos θ = 11 / (3 · 5) = 11/15 ≈ 0.733 ⇒ θ ≈ <b>42.8°</b>.</p>
+  </div></details>
+
+  <p><b>3.</b> Projicer w = (2, 3) på retningen af u = (1, 1).</p>
+  <details class="soluzione"><summary>Løsning</summary><div>
+    <p>(u · w / u · u) · u = (5 / 2) · (1, 1) = <b>(2.5, 2.5)</b>. Kontrol: w − projektion = (−0.5, 0.5), vinkelret på u (indre produkt 0).</p>
+  </div></details>
+
+  <p><b>4.</b> Modellen f(x) = 2x + 1 på dataene (1, 3), (2, 4), (3, 8). Beregn loss ved mindste kvadrater L = (1/N) Σ (yᵢ − f(xᵢ))².</p>
+  <details class="soluzione"><summary>Løsning</summary><div>
+    <p>Forudsigelser: 3, 5, 7. Fejl: 3 − 3 = 0, 4 − 5 = −1, 8 − 7 = 1. Kvadrater: 0, 1, 1. L = 2/3 ≈ <b>0.667</b>. N = antallet af punkter (3), ikke af modeller (<a href="w01-loss-minimi-quadrati.html">loss</a>).</p>
+  </div></details>
+</section>
+
+<section>
+  <h2>Matricer og systemer (uge 3)</h2>
+
+  <p><b>5.</b> [[1, 2], [0, −1], [3, 1]] · (2, 1) = ? Først dimensionerne.</p>
+  <details class="soluzione"><summary>Løsning</summary><div>
+    <p>(3 × 2) · (2) → 3 tal, ét pr. række (<a href="nozioni-dimensioni.html">dimensioner</a>). Række 1: 1·2 + 2·1 = 4. Række 2: 0·2 + (−1)·1 = −1. Række 3: 3·2 + 1·1 = 7. Resultat <b>(4, −1, 7)</b>.</p>
+  </div></details>
+
+  <p><b>6.</b> A = [[1, 2], [3, 4]], B = [[0, 1], [1, 0]]. Beregn AB og BA.</p>
+  <details class="soluzione"><summary>Løsning</summary><div>
+    <p>AB = [[1·0 + 2·1, 1·1 + 2·0], [3·0 + 4·1, 3·1 + 4·0]] = <b>[[2, 1], [4, 3]]</b> (bytter søjlerne i A).</p>
+    <p>BA = <b>[[3, 4], [1, 2]]</b> (bytter rækkerne i A). AB ≠ BA: rækkefølgen betyder noget.</p>
+  </div></details>
+
+  <p><b>7.</b> A = [[2, 1], [5, 3]]. Determinant, invers og løsningen af Ax = (1, 2).</p>
+  <details class="soluzione"><summary>Løsning</summary><div>
+    <p>det = 2·3 − 1·5 = <b>1</b>. For en 2 × 2 [[a, b], [c, d]]: A⁻¹ = (1/det) [[d, −b], [−c, a]] = <b>[[3, −1], [−5, 2]]</b>.</p>
+    <p>x = A⁻¹(1, 2) = (3·1 − 1·2, −5·1 + 2·2) = <b>(1, −1)</b>. Kontrol: 2·1 + 1·(−1) = 1 ✓, 5·1 + 3·(−1) = 2 ✓.</p>
+  </div></details>
+
+  <p><b>8.</b> [[1, 2], [2, 4]] x = b. Hvor mange løsninger med b = (3, 6)? Og med b = (3, 5)?</p>
+  <details class="soluzione"><summary>Løsning</summary><div>
+    <p>det = 4 − 4 = 0: den anden række er dobbelt så stor som den første (rang 1).</p>
+    <p>b = (3, 6): den anden ligning er dobbelt så stor som den første ⇒ kun én ligning, x₁ + 2x₂ = 3 ⇒ <b>uendeligt mange</b> løsninger. b = (3, 5): 2x₁ + 4x₂ skulle være lig med både 6 og 5 samtidig ⇒ <b>ingen</b> løsning (<a href="w03-sistemi-lineari.html">systemer</a>).</p>
+  </div></details>
+
+  <p><b>9.</b> Find linjen y = w₀ + w₁x gennem (1, 1) og (3, 5), og skriv systemet op.</p>
+  <details class="soluzione"><summary>Løsning</summary><div>
+    <p>w₀ + 1·w₁ = 1 og w₀ + 3·w₁ = 5. Ved at trække fra: 2w₁ = 4 ⇒ w₁ = 2; derefter w₀ = 1 − 2 = −1. Linjen <b>y = −1 + 2x</b>. I matrixform: [[1, 1], [1, 3]] · [w₀, w₁] = [1, 5] (<a href="w01-equazioni-modello.html">isolere w</a>).</p>
+  </div></details>
+
+  <p><b>10.</b> Er (1, 2, 3) og (2, 4, 6) uafhængige? Og (1, 0, 1), (0, 1, 1), (1, 1, 0)?</p>
+  <details class="soluzione"><summary>Løsning</summary><div>
+    <p>(2, 4, 6) = 2·(1, 2, 3): <b>afhængige</b>. For de tre vektorer: matricen med dem som søjler har determinant −2 ≠ 0 ⇒ <b>uafhængige</b> (og de er en basis for ℝ³) (<a href="w06-basi.html">baser</a>).</p>
+  </div></details>
+</section>
+
+<section>
+  <h2>Transformationer og mindste kvadrater (uge 4–5)</h2>
+
+  <p><b>11.</b> R = rotation på 90°, [[0, −1], [1, 0]]; S = [[2, 0], [0, 1]]. Beregn R · (2, 1), derefter SR · (1, 0) og RS · (1, 0).</p>
+  <details class="soluzione"><summary>Løsning</summary><div>
+    <p>R · (2, 1) = (0·2 − 1·1, 1·2 + 0·1) = <b>(−1, 2)</b>.</p>
+    <p>SR(1, 0): først R → (0, 1), derefter S → <b>(0, 1)</b>. RS(1, 0): først S → (2, 0), derefter R → <b>(0, 2)</b>. Den matrix, der står længst til højre, anvendes først; rækkefølgen ændrer resultatet (<a href="w04-trasformazioni.html">transformationer</a>).</p>
+  <figure class="scena" data-scena="ordine" data-titolo="Øvelse 11 tegnet: SR mod RS"></figure>
+  </div></details>
+
+  <p><b>12.</b> Flyt punktet (1, 2) med (3, −1) ved hjælp af homogene koordinater.</p>
+  <details class="soluzione"><summary>Løsning</summary><div>
+    <p>[[1, 0, 3], [0, 1, −1], [0, 0, 1]] · [1, 2, 1] = [1 + 3, 2 − 1, 1] = <b>(4, 1)</b>. Den 1, der er tilføjet nederst, ganger translationen (<a href="w05-affine-omogenee.html">homogene</a>).</p>
+  </div></details>
+
+  <p><b>13.</b> Polynomiet af grad 2, der går gennem (−1, 2), (0, 1), (1, 2).</p>
+  <details class="soluzione"><summary>Løsning</summary><div>
+    <p>y = w₀ + w₁x + w₂x². Fra (0, 1): w₀ = 1. Fra (1, 2): 1 + w₁ + w₂ = 2. Fra (−1, 2): 1 − w₁ + w₂ = 2. Lægger man de to sidste sammen: 2 + 2w₂ = 4 ⇒ w₂ = 1, altså w₁ = 0. <b>y = 1 + x²</b>.</p>
+  </div></details>
+
+  <p><b>14.</b> Linjen ved mindste kvadrater for (0, 1), (1, 1), (2, 3), med w = (AᵀA)⁻¹Aᵀy.</p>
+  <details class="soluzione"><summary>Løsning</summary><div>
+    <p>A = [[1, 0], [1, 1], [1, 2]], y = (1, 1, 3). AᵀA = [[3, 3], [3, 5]] (øverst: hvor mange punkter; derefter Σx; nederst Σx²). Aᵀy = (Σy, Σxy) = (5, 7).</p>
+    <p>det(AᵀA) = 15 − 9 = 6; (AᵀA)⁻¹ = (1/6) [[5, −3], [−3, 3]]. w = (1/6)(5·5 − 3·7, −3·5 + 3·7) = (4/6, 6/6) = <b>(0.667, 1)</b>: y = 0.667 + x.</p>
+    <p>Forudsigelser 0.667, 1.667, 2.667; residualer 0.333, −0.667, 0.333 (sum 0); sum af kvadrater <b>0.667</b>. Ingen linje klarer det bedre (<a href="w05-minimi-quadrati.html">mindste kvadrater</a>).</p>
+  <figure class="scena" data-scena="es14" data-titolo="Øvelse 14 tegnet: linjen og residualerne"></figure>
+  </div></details>
+</section>
+
+<section>
+  <h2>Hvor langt det rækker, på kursets side</h2>
+  <p>Den officielle vejledning siger kun <i>"material from the preceding weeks"</i>: der findes ingen liste. Testen ligger i begyndelsen af lektion 6, så den dækker <b>lektion 1&ndash;5</b>. Oversat til øvelserne på siderne <i>Week Material</i> (numrene som i kolonnen <i>Overview</i> for hver uge):</p>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Uge</th><th>Med: i hånden, testform</th><th>Kun begrebet, ikke koden</th><th>Uden</th></tr></thead>
+    <tbody>
+      <tr><td>W01</td><td>3 Evaluating Models &middot; 4 Model Equations &middot; 5 Functions &middot; 6 Function Composition</td><td>2 Practical intro (norm, indre produkt, vinkel, afstand)</td><td>1 Treasurehunt</td></tr>
+      <tr><td>W02</td><td>4 Vector Properties &middot; 5 Inner Product and Distances &middot; 6 Linear Combinations &middot; 7 Linear Regression &middot; 8 Refresh</td><td>1 Evaluating poses &middot; 3 Single and multivariate functions</td><td>2 Data Collection</td></tr>
+      <tr><td>W03</td><td>2 Linear Equations &middot; 4 Matrix-Vector &middot; 5 Matrix-Matrix &middot; 6 Polynomial Functions &middot; 7 Refresh</td><td>3 Basic Linear Algebra in Python</td><td>1 Data Collection</td></tr>
+      <tr><td>W04</td><td>2 Linear Transformations &middot; 3 Regression Analysis &middot; 4 Refresh</td><td>1 Fitting polynomial models (design matrix)</td><td>&mdash;</td></tr>
+      <tr><td>W05</td><td>2 Homogeneous Coordinates &middot; 3 Least-Squares Method &middot; 5 Regression &middot; 9 Refresh</td><td>1 Affine 2D Transformation &middot; 4 Tutorial</td><td>6&ndash;8 <i>Extra</i>: kun hvis der er tid tilbage</td></tr>
+      <tr><td>W06</td><td>3 Vector Spaces &middot; 4 Linear Independence &middot; 5 Basis and Projections <b>(meget sandsynlige)</b></td><td>&mdash;</td><td>1 preprocessing &middot; 2 Assignment &middot; 6&ndash;8 <i>Extra</i></td></tr>
+    </tbody>
+  </table></div>
+  <div class="box regola" data-tit="Fordi også tre øvelser fra W06">
+    <p>Øvelserne i uge N handler om lektionen i ugen før. <b>Basis</b> er et emne i lektion 5 (<i>Kernels and Basis</i>), og <b>lineær uafhængighed</b> var allerede i in-class'en i uge 4: de tre Grasple-øvelser hører til lektionerne 1&ndash;5.</p>
+  </div>
+  <div class="box idea" data-tit="Repetitionsrækkefølge">
+    <p>(1) De <b>in-class 1&ndash;4</b> (<code>www/05-inclass/</code>): håndøvelser lavet i timen, formatet tættest på testen. 1 = afstande, loss, modelligninger &middot; 2 = lineære kombinationer, matrix &times; vektor, matrix &times; matrix &middot; 3 = designmatrix og vægte med inversen &middot; 4 = lineær uafhængighed, baser og projektioner. (2) Grasple-øvelserne i kolonnen <i>Med</i>. (3) Refresh Questions fra W02&ndash;W05, mundtligt. (4) Øvelserne herover.</p>
+  </div>
+  <div class="box attenzione" data-tit="Det er et skøn">
+    <p>Tabellen er udledt af kursets opbygning, ikke af en officiel liste. Til bekræftelse: vejledningen siger, at du kan skrive til Dan <b>senest dagen før lektionen</b> for at spørge, hvilke emner der skal gennemgås i startsessionen, som netop er den, hvor testen ligger.</p>
+  </div>
+  <div class="box domanda-tua" data-tit="Op til hvilke øvelser fra Week Material går testen?">
+    <p>Op til og med W05, plus de første tre Grasple-øvelser i W06 (vektorrum, lineær uafhængighed, baser og projektioner). De er inde i Grasple-øvelserne og håndøvelserne; af Python-notebookene skal man kende begrebet, ikke koden.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Før testen</h2>
+  <div class="box idea" data-tit="Tre kontroller, der sparer point">
+    <p>(1) <b>Dimensioner</b> før hvert produkt. (2) <b>Sæt løsningen ind i ligningerne</b> (som i øvelse 7 og 9): hvis det ikke går op, ligger fejlen i regningen. (3) <b>Rækkefølgen af operationer</b>: i loss først kvadratet af hver fejl, derefter summen, derefter divisionen med N.</p>
+  </div>
+</section>
+
+</main>
+</body>
+</html>

@@ -1,0 +1,86 @@
+@@s001 Working on lists
+@@s002 <p><code>append(l1, l2)</code> with <code>l1 = List(1, 2)</code> and <code>l2 = List(3, 4)</code>.</p>
+@@s003 <p>The cell 2 of <code>l1</code> points to Nil and cannot be modified (immutable lists). So I cannot "attach" <code>l2</code> at the end of <code>l1</code>.</p>
+@@s004 <p><code>append</code> <b>copies</b> the cells of <code>l1</code>, one by one: <code>Cons(h, append(t, l2))</code>.</p>
+@@s005 <p>Arriving at <code>Nil</code>, <code>append(Nil, l2)</code> returns <code>l2</code> as it is. The last copy points directly to the cells of <code>l2</code>.</p><p>Cost: proportional to the length of <b>l1</b>. <code>l2</code> is shared, not copied.</p>
+@@s006 dato:cell of the list,ok:what tail returns (shared),no:exception
+@@s007 spento:skipped,ok:returned (shared),ora:where I am
+@@s008 spento:removed,ok:stays,ora:p(h) = false: I stop
+@@s009 dato:original list,due:new cell,spento:the last thrown away
+@@s010 ora:traversed,no:copied (new cell),ok:shared
+@@s011 no:wrong,ok:correct
+@@s012 Working on lists
+@@s013 <code>tail</code>, <code>drop</code>, <code>dropWhile</code>, <code>init</code>, <code>append</code>: five functions of exercises 2–5 that teach you to go through a list with pattern matching. And to understand <b>how much each costs</b>, because a list can only be read from the beginning.
+@@s014 <code>tail</code>: removing the first, without copying
+@@s015 Exercise 2
+@@s016 The empty list has no tail. The exercise asks to throw <code>NoSuchElementException</code> (it is one of the rare cases in which an exception is required).
+@@s017 If there is a cell, the head is not needed (<code>_</code>) and I call <code>t</code> the tail.
+@@s018 I return <code>t</code>: <b>the same</b> list that was inside the cell, not a copy. Constant time, whatever the length.
+@@s019 Why not return Nil on the empty list?
+@@s020 Because it would confuse two different things: "the list had one element, its tail is empty" and "you gave me an empty list, it makes no sense to ask for the tail". The tests of the exercise check precisely that the exception is thrown.
+@@s021 The tail returned without copying
+@@s022 <code>drop</code>: <code>tail</code> repeated n times
+@@s023 Exercise 3
+@@s024 It is <code>n</code> that commands. If I have nothing to remove, I return the list as it is. The text says: for a non-positive <code>n</code> the list stays the same.
+@@s025 I still have to remove elements but the list has ended: it was too short. Exception, as the text asks.
+@@s026 I remove one cell and ask to remove one less from the rest. The call is in tail position.
+@@s027 drop(List(1, 2, 3, 4), 2)
+@@s028 n = 2 &gt; 0 and the list has a cell: I remove 1.
+@@s029 n = 1 &gt; 0: I remove 2.
+@@s030 n = 0: enough.
+@@s031 Time proportional to <code>n</code>, not to the length of the list.
+@@s032 Skipping n cells, sharing the rest
+@@s033 <code>dropWhile</code>: the condition decides
+@@s034 Exercise 4
+@@s035 Here no exceptions: "remove while p holds" on an empty list has a sensible answer, the empty list.
+@@s036 I ask <code>p</code> whether the head must be removed.
+@@s037 Yes: I continue on the rest, passing ahead the same function <code>p</code>.
+@@s038 No: I stop and return <code>l</code>, which starts precisely with this element. There is no need to rebuild <code>Cons(h, t)</code>: I already have it.
+@@s039 dropWhile(List(1, 2, 3, 1), _ < 3)
+@@s040 1 is removed.
+@@s041 2 too.
+@@s042 The 3 stops it: I return the list from here on.
+@@s043 The last 1 stays even if it is &lt; 3: <code>dropWhile</code> removes only at the beginning (checked).
+@@s044 Removing only the prefix
+@@s045 <code>init</code>: the awkward operation
+@@s046 Removing the <b>last</b> element is hard for a list: you must reach the end and rebuild all the cells traversed.
+@@s047 Exercise 5
+@@s048 An empty list has no last element to remove: exception.
+@@s049 The real base case: <b>one single element left</b>. That is the last one: I throw it away and the empty list remains.
+@@s050 More than one element: the head stays, and after it I put the rest <b>without its last</b>. This <code>Cons</code> is a <b>new</b> cell.
+@@s051 The order of the cases matters: <code>Cons(_, Nil)</code> must come before <code>Cons(h, t)</code>, otherwise the general case would "steal" it.
+@@s052 init(List(1, 2, 3))
+@@s053 More than one element: case 3.
+@@s054 I keep 1, and the rest must lose its last.
+@@s055 I keep 2.
+@@s056 <code>Cons(3, Nil)</code> matches <code>Cons(_, Nil)</code>: it becomes <code>Nil</code>.
+@@s057 I created 2 new cells: time <b>and</b> memory proportional to the length. It is not in tail position (after the call the <code>Cons</code> remains).
+@@s058 Rebuilding everything except the last
+@@s059 <code>append</code>: joining two lists
+@@s060 append(List(1, 2), List(3, 4))
+@@s061 How much each costs
+@@s062 Function
+@@s063 Time
+@@s064 New cells
+@@s065 Why
+@@s066 <code>tail</code>
+@@s067 constant
+@@s068 returns the tail that is already there
+@@s069 <code>drop(l, n)</code>
+@@s070 goes through n cells, then shares
+@@s071 <code>dropWhile</code>
+@@s072 ∝ elements removed
+@@s073 stops at the first one that stays
+@@s074 <code>init</code>
+@@s075 ∝ length
+@@s076 length − 1
+@@s077 must rebuild everything except the last
+@@s078 <code>append(l1, l2)</code>
+@@s079 ∝ length of l1
+@@s080 length of l1
+@@s081 copies l1, shares l2
+@@s082 Traversed, copied, shared
+@@s083 Nil, None e null
+@@s084 Which "empty" to use: <code>Nil</code> for the empty list, <code>None</code> for the result that may not be there, <code>null</code> only as a value that arrives from Java and must be converted at once with <code>Option(x)</code>. Explanation and comparison in the <a href="s03-vuoti.html">dedicated page</a>.
+@@s085 Typical errors
+@@s086 Element in place of list, Nil in place of 0

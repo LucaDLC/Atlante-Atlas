@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Concurrent maps: from one lock to ConcurrentHashMap</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <div class="occhiello"><span>Week 9 · Performance</span></div>
+  <h1>Concurrent maps: from one lock to ConcurrentHashMap</h1>
+  <p class="lede">The second case study: eight implementations of a thread-safe hash map, from a single lock to structures without locks. The rule that runs through all of them is the same as for the counter: keep the data written close to a single thread.</p>
+</header>
+
+<section>
+  <h2>The eight maps</h2>
+  <p>The second case study is a thread-safe hash map. The lecture compares eight implementations, from the simplest to the Java library:</p>
+  <div class="tab-wrap"><table class="tab"><thead><tr><th>name</th><th>idea</th></tr></thead><tbody>
+    <tr><td>SynchronizedMap</td><td>one single lock on the whole map</td></tr>
+    <tr><td>StripedMap</td><td>an array of locks: each lock protects a part of the buckets. The slides say 16 locks in one place and 32 in another</td></tr>
+    <tr><td>StripedMapPadded</td><td>as above, with padding between the locks</td></tr>
+    <tr><td>StripedWriteMap</td><td>as StripedMap, but the lists of (key, value) pairs are immutable: <b>reads</b> take no lock</td></tr>
+    <tr><td>StripedWriteMapPadded</td><td>as above, with padding</td></tr>
+    <tr><td>StripedLevelWriteMap</td><td>two levels: an array of arrays, each with its own lock; the sub-arrays resize separately</td></tr>
+    <tr><td>HashTrieMap</td><td>without locks: CAS operations on a hash array mapped trie (Prokopec, Bagwell)</td></tr>
+    <tr><td>WrapConcHashMap</td><td>the <code>java.util.concurrent.ConcurrentHashMap</code> of Doug Lea: locks and CAS together, with padding</td></tr>
+  </tbody></table></div>
+</section>
+
+<section>
+  <h2>The workload</h2>
+  <p>To compare them, the lecture uses the same work pattern for all: N threads execute 5 000 000 operations in total (each 5 000 000 / N). Each operation looks for a random key and acts as follows:</p>
+  <figure class="passi" data-titolo="One operation of the workload" data-legenda="dato:key,ora:decision,ok:action">
+    <div class="passo"><div class="espr"><mark class="dato">Chiave</mark> casuale. Se la mappa <mark class="ora">non la contiene</mark>…</div><p class="nota">This is the first check: <code>containsKey</code>.</p></div>
+    <div class="passo"><div class="espr">…la aggiunge con probabilità <mark class="ora">addProb</mark></div><p class="nota">If the random number is below addProb, one does <code>put</code>.</p></div>
+    <div class="passo"><div class="espr">Se la mappa la <mark class="ora">contiene</mark>, la rimuove con probabilità <mark class="ora">removeProb</mark></div><p class="nota">If the random number is below removeProb, one does <code>remove</code>.</p></div>
+  </figure>
+  <p>Changing addProb and removeProb gives different workloads: <b>dominated by reads</b> (60% and 2%) or <b>dominated by writes</b> (90% and 30%).</p>
+</section>
+
+<section>
+  <h2>What the measurements show</h2>
+  <ul>
+    <li>The single lock (<code>SynchronizedMap</code>) does not scale: more threads, more time. On the server it is much worse than on the laptop.</li>
+    <li>With a balanced or write-dominated load, no hand-written version scales well: the library's <code>ConcurrentHashMap</code> wins.</li>
+    <li>With a read-dominated load, <code>ConcurrentHashMap</code> remains the best; the padding helps the versions with non-blocking reads.</li>
+    <li>Non-blocking reads (immutable lists) work well only if the map is read much more than it is written.</li>
+  </ul>
+  <p>The non-blocking versions have a memory cost: every write creates a new pair, so a garbage collector and careful management are needed. That is why the lecture says the technique is not practicable in C or C++ without a GC.</p>
+</section>
+
+<section>
+  <h2>The lessons</h2>
+    <figure class="passi" data-titolo="When a lock is the right choice, and when not" data-legenda="dato:situation,ora:reasoning step,ok:conclusion,no:to avoid">
+    <div class="passo"><div class="espr">I lock <mark class="ok">possono essere veloci</mark>: un thread bloccato non consuma CPU</div><p class="nota">A waiting lock does not keep the CPU busy: that is an advantage.</p></div>
+    <div class="passo"><div class="espr">Più lock (<mark class="ora">lock striping</mark>) possono essere ancora più veloci</div><p class="nota">But only if the mutable data, locks included, mostly stay local to one thread.</p></div>
+    <div class="passo"><div class="espr">I <mark class="no">CAS</mark> senza lock possono essere molto lenti sotto contesa</div><p class="nota">Threads retry in a loop of active waiting (busy-wait), and the lines pass M → I → M → I.</p></div>
+    <div class="passo"><div class="espr">Il padding, o <code>@Contended</code>, tiene i dati locali sulla propria linea</div><p class="nota">@Contended is reserved for the Java libraries: in your code the padding must be done by hand.</p></div>
+  </figure>
+</section>
+
+<section>
+  <h2>How to choose</h2>
+  <div class="box regola" data-tit="In practice">Do not write a concurrent map from scratch: use <code>ConcurrentHashMap</code>. Write your own version only to understand the trade-off, or if you measure that the library is not enough for a specific case.</div>
+  <div class="box inglese" data-tit="Sentence for the oral">Striped locks and padding keep frequently written data core-local, so the cache lines can stay in the Modified state; ConcurrentHashMap combines these ideas in the library.</div>
+</section>
+
+</main>
+</body>
+</html>

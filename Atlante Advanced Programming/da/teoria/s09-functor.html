@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Functor: map på hver container</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  const B = (id, x, y, w, t, extra) => Object.assign({ id, tipo: 'rett', x, y, w, h: 44, t }, extra || {});
+  const T = (id, x, y, t, extra) => Object.assign({ id, tipo: 'testo', x, y, t, size: 13, bold: true, anchor: 'start' }, extra || {});
+
+  SCENE.map = {
+    w: 540, h: 270, lato: true,
+    legenda: 'dato:startcontainer,ora:f i aktion,ok:resultat,no:ingen værdi at transformere',
+    oggetti: [
+      B('l1', 40, 30, 60, '1', { tono: null }), B('l2', 120, 30, 60, '2'), B('l3', 200, 30, 60, '3'),
+      B('r1', 40, 110, 60, '2', { nascosto: true }), B('r2', 120, 110, 60, '4', { nascosto: true }), B('r3', 200, 110, 60, '6', { nascosto: true }),
+      B('po', 40, 180, 120, 'Some(3)', { nascosto: false }),
+      B('pr', 240, 180, 120, 'Some(6)', { nascosto: true }),
+      B('pn', 400, 180, 110, 'None', { nascosto: false }),
+      T('c', 40, 255, '', { size: 12 })
+    ],
+    passi: [
+      { nota: `<code>map</code> anvender f på det, der er indeni, og lader <b>formen</b> være, som den er. Her er f = x · 2, og containeren er en liste med tre værdier.`, set: { l1: { tono: 'dato' }, l2: { tono: 'dato' }, l3: { tono: 'dato' } } },
+      { nota: `Hvert element transformeres: 1 → 2, 2 → 4, 3 → 6. Listen er stadig tre lang.`, set: { l1: { tono: null }, l2: { tono: null }, l3: { tono: null }, r1: { nascosto: false, tono: 'ok' }, r2: { nascosto: false, tono: 'ok' }, r3: { nascosto: false, tono: 'ok' }, c: { t: 'List(1, 2, 3).map(f) = List(2, 4, 6)' } } },
+      { nota: `<b>Some(3)</b>: f anvendes på værdien indeni. Resultatet er <b>Some(6)</b>, stadig en Option.`, set: { po: { tono: 'dato' }, pr: { nascosto: false, tono: 'ok' }, c: { t: 'Some(3).map(f) = Some(6)' } } },
+      { nota: `<b>None</b> har ingen værdier: map gør ingenting og returnerer None. Formen er den samme som før, en container.`, set: { po: { tono: null }, pn: { tono: 'no' }, c: { t: 'None.map(f) = None' } } }
+    ]
+  };
+
+  SCENE.legge = {
+    w: 540, h: 250, lato: true,
+    legenda: 'dato:input,ok:lig med input\'et,ora:sammensætning',
+    oggetti: [
+      B('fa', 40, 30, 240, 'fa = List(1, 2, 3)', { tono: 'dato' }),
+      B('res', 40, 100, 240, 'fa.map(identity) = List(1, 2, 3)', { nascosto: true }),
+      B('f1', 40, 170, 240, 'fa.map(x + 1).map(x * 2)', { nascosto: true }),
+      B('f2', 290, 170, 230, 'fa.map(x => (x + 1) * 2)', { nascosto: true }),
+      T('c', 40, 240, '', { size: 12 })
+    ],
+    passi: [
+      { nota: `<b>Identitetsloven</b>: <code>fa.map(identity) === fa</code>. <code>identity</code> er funktionen x ↦ x, som ikke ændrer noget. Resultatet skal være lig med input'et: strukturen røres ikke.`, set: { fa: { tono: 'dato' } } },
+      { nota: `Jeg anvender map(identity) på List(1, 2, 3): jeg får List(1, 2, 3). Lig med input'et: loven gælder.`, set: { res: { nascosto: false, tono: 'ok' }, c: { t: 'uguali: la legge vale', tono: 'ok' } } },
+      { nota: `<b>Sammensætningsloven</b>: to <code>map</code> efter hinanden giver samme resultat som ét <code>map</code> med sammensætningen af funktionerne. Med x + 1 og derefter x · 2 er det som x ↦ (x + 1) · 2. Begge giver List(4, 6, 8).`, set: { f1: { nascosto: false, tono: 'ora' }, f2: { nascosto: false, tono: 'ok' }, c: { t: 'due map = un map con la composizione' } } }
+    ]
+  };
+
+  SCENE.distr = {
+    w: 540, h: 260, lato: true,
+    legenda: 'dato:startpar,ora:projektion i gang,ok:resultat',
+    oggetti: [
+      B('p1', 40, 30, 150, '(John, 35)', { tono: 'dato' }),
+      B('p2', 200, 30, 150, '(Andrzej, 39)', { tono: 'dato' }),
+      B('p3', 360, 30, 150, '(Stefan, 18)', { tono: 'dato' }),
+      B('nomi', 40, 120, 240, 'List(John, Andrzej, Stefan)', { nascosto: true }),
+      B('eta', 300, 120, 210, 'List(35, 39, 18)', { nascosto: true }),
+      T('c', 40, 215, '', { size: 13 })
+    ],
+    passi: [
+      { nota: `<b>distribute</b> tager et F af par og returnerer et par af F: en liste af (navn, alder) bliver til (liste af navne, liste af aldre).`, set: {} },
+      { nota: `<code>fab.map(_._1)</code> tager det første element i hvert par: listen af navne.`, set: { p1: { tono: 'ora' }, p2: { tono: 'ora' }, p3: { tono: 'ora' }, nomi: { nascosto: false, tono: 'ok' } } },
+      { nota: `<code>fab.map(_._2)</code> tager det andet element: listen af aldre.`, set: { p1: { tono: 'dato' }, p2: { tono: 'dato' }, p3: { tono: 'dato' }, nomi: { tono: null }, eta: { nascosto: false, tono: 'ok' } } },
+      { nota: `Resultatet er et par af lister. Den samme definition for List, LazyList, Gen og Par: den bruger kun <code>map</code>, så den gælder for enhver functor.`, set: { eta: { tono: null }, c: { t: '(List(John, Andrzej, Stefan), List(35, 39, 18))', tono: 'ok' } } }
+    ]
+  };
+
+  SCENE.map2 = {
+    w: 540, h: 250, lato: true,
+    legenda: 'dato:containere,ora:kombination,ok:resultat,no:resultat None',
+    oggetti: [
+      B('fa', 40, 30, 200, 'fa = Some("John")', { tono: 'dato' }),
+      B('fb', 300, 30, 200, 'fb = Some(35)', { tono: 'dato' }),
+      B('comb', 120, 110, 300, 'f(a, b) = "John (35)"', { nascosto: true, tono: 'ora' }),
+      B('res', 120, 180, 300, 'Some("John (35)")', { nascosto: true, tono: 'ok' }),
+      T('c', 40, 240, '', { size: 12 })
+    ],
+    passi: [
+      { nota: `<b>map2</b> kombinerer to containere med en funktion f(a, b). For at kombinere dem skal <b>begge</b> værdier være der. Et enkelt <code>map</code>, på én container, er ikke nok.`, set: {} },
+      { nota: `Hvis fa er Some(a) og fb er Some(b), er resultatet Some(f(a, b)). Her forener f navn og alder til en streng.`, set: { comb: { nascosto: false } } },
+      { nota: `Resultat: <b>Some("John (35)")</b>. Resultatet bliver en Option: map2 forlader ikke containeren.`, set: { comb: { tono: 'dato' }, res: { nascosto: false, tono: 'ok' }, c: { t: 'map2 restituisce un Option' } } },
+      { nota: `Hvis en af de to er <b>None</b>, er resultatet None: der er intet at kombinere. På sliden skrives map2 med <code>flatMap</code>, som er emnet på monadesiden.`, set: { fb: { t: 'fb = None', tono: 'no' }, res: { t: 'None', tono: 'no' }, c: { t: 'con None: risultato None' } } }
+    ]
+  };
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <div class="occhiello"><span>Uge 9</span></div>
+  <h1>Functor: map på hver container</h1>
+  <p class="lede">Lister, options, generatorer, parsere, træer: de har alle en <code>map</code> med samme form. Functor er navnet på denne fælles grænseflade, og dens lov siger, at <code>map</code> ikke ændrer strukturen.</p>
+</header>
+
+<section>
+  <h2>Den samme form overalt</h2>
+  <p>I de foregående uger har du skrevet <code>map</code> flere gange. Signaturerne er næsten ens:</p>
+  <div class="tab-wrap"><table class="tab"><thead><tr><th>container</th><th>signatur for map</th></tr></thead><tbody>
+    <tr><td>Gen</td><td><code>def map[A,B](ga: Gen[A])(f: A =&gt; B): Gen[B]</code></td></tr>
+    <tr><td>List</td><td><code>def map[A,B](la: List[A])(f: A =&gt; B): List[B]</code></td></tr>
+    <tr><td>Option</td><td><code>def map[A,B](oa: Option[A])(f: A =&gt; B): Option[B]</code></td></tr>
+  </tbody></table></div>
+  <p>Også <code>State</code>, <code>Par</code>, <code>Parser</code> og <code>Tree</code> følger samme mønster. Derfor kan man skrive én enkelt grænseflade. Navnet <i>Functor</i> er det traditionelle (sliderne indrømmer, at <i>Mappable</i> ville være tydeligere).</p>
+  <figure class="scena" data-scena="map" data-titolo="map: formen bliver, værdierne ændrer sig"></figure>
+</section>
+
+<section>
+  <h2>Traiten Functor og dens lov</h2>
+  <p>Traiten har en typekonstruktør <code>F[_]</code> (som i foldable) og en udvidelse <code>map</code>:</p>
+  <p><code>trait Functor[F[_]]</code> med <code>extension [A](fa: F[A]) def map[B](f: A =&gt; B): F[B]</code>. <code>map</code> tager en <code>F[A]</code>, anvender f på det, der er indeni, og returnerer en <code>F[B]</code>.</p>
+  <p><b>Identitetsloven</b> (fra sliderne): <code>fa.map(identity) === fa</code>. Med <code>identity</code> ændres intet, så strukturen må ikke ændre sig. Sammensætningsloven er den samme idé med to funktioner: to maps efter hinanden svarer til ét map med sammensætningen.</p>
+  <figure class="scena" data-scena="legge" data-titolo="Loven: map(identity) ændrer intet"></figure>
+  <div class="box attenzione" data-tit="Pas på">Compileren kontrollerer ikke loven. En <code>map</code>, der gør underlige ting (for eksempel kasserer elementer), kompilerer alligevel, men den er ikke en functor.</div>
+</section>
+
+<section>
+  <h2>distribute: en generel unzipper</h2>
+  <p><code>distribute</code> tager en <code>F[(A, B)]</code> og returnerer et par <code>(F[A], F[B])</code>: den adskiller komponenterne. Med en liste af par er det en unzip. Definitionen bruger kun <code>map</code>:</p>
+  <p><code>(fab.map { _._1 }, fab.map { _._2 })</code>.</p>
+  <figure class="scena" data-scena="distr" data-titolo="En liste af par bliver til to lister"></figure>
+</section>
+
+<section>
+  <h2>map2: at kombinere to containere</h2>
+  <p>Med et enkelt <code>map</code> kan du ikke kombinere to containere: der skal <code>map2</code> til, som tager <code>F[A]</code> og <code>F[B]</code> og en funktion <code>f(a, b)</code>. På sliderne er den defineret med <code>flatMap</code> for Option, List og Gen:</p>
+  <p><code>fa.flatMap(a =&gt; fb.map(b =&gt; f(a, b)))</code></p>
+  <p>Det er den generaliserede "zip" (en slags <code>zipWith</code>). For Option er opførslen klar: hvis en værdi mangler, mangler resultatet. For lister og generatorer ændrer betydningen sig, og derfor advarer sliden om, at hver type har sin egen intuition.</p>
+  <figure class="scena" data-scena="map2" data-titolo="map2 med to Option: begge skal være der"></figure>
+</section>
+
+<section>
+  <h2>Hvor det bruges</h2>
+  <p>Koden til <code>map</code>, <code>distribute</code> og <code>map2</code> på kursets typer står på <a href="../esempi/s09-functor.html">siden med eksempler side om side</a>. <code>map2</code> på generatorer og på parseren, og dens generelle form med <code>flatMap</code>, er på <a href="s09-monad.html">monadesiden</a>.</p>
+</section>
+
+</main>
+</body>
+</html>

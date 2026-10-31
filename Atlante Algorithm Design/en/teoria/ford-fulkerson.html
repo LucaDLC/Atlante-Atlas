@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Ford-Fulkerson: the maximum flow</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+const N = (id,x,y,t) => ({id,tipo:'nodo',x,y,t,r:20});
+const A = (id,da,a,t,extra) => Object.assign({id,tipo:'arco',da,a,dir:true,t},extra||{});
+SCENE.ff = {
+  w: 540, h: 260, lato: true,
+  legenda: 'ora:augmenting path,ok:saturated arc (flow = capacity),no:cancelled flow (residual network),dato:available capacity',
+  oggetti: [
+    N('s',60,130,'s'), N('a',240,50,'a'), N('b',240,210,'b'), N('t',420,130,'t'),
+    A('sa','s','a','0/1'), A('sb','s','b','0/1'), A('ab','a','b','0/1'), A('at','a','t','0/1'), A('bt','b','t','0/1'),
+    {id:'c1',tipo:'testo',x:20,y:250,t:'',size:12,bold:true,anchor:'start'}
+  ],
+  passi: [
+    { nota: 'Network: each arc has <b>capacity 1</b>, written as <code>flow/capacity</code>. Initial flow 0. I want to send as much flow as possible from <b>s</b> to <b>t</b>.', set:{sa:{tono:'dato'},sb:{tono:'dato'},ab:{tono:'dato'},at:{tono:'dato'},bt:{tono:'dato'},c1:{t:'flusso = 0'}} },
+    { nota: 'First path: <b>s → a → b → t</b>. The bottleneck is 1: I increase the flow by 1 on these three arcs. Now they are saturated.', set:{sa:{t:'1/1',tono:'ok'},ab:{t:'1/1',tono:'ok'},bt:{t:'1/1',tono:'ok'},c1:{t:'flusso = 1'}} },
+    { nota: 'I look for another path in the <b>residual network</b>. On s → a → b nothing passes any more. But the arc <b>b → a</b> in the residual network is the arc a → b cancelled: I can "undo" the flow.', set:{ab:{tono:'no'},c1:{t:'residuo: b → a (disfa a → b)'}} },
+    { nota: 'Second path: <b>s → b → a → t</b>. I pass through b → a: the flow on a → b goes back to 0. I add <b>s → b</b> and <b>a → t</b>.', set:{sb:{t:'1/1',tono:'ok'},ab:{t:'0/1',tono:'no'},at:{t:'1/1',tono:'ok'},bt:{t:'1/1',tono:'ok'},c1:{t:'flusso = 2',tono:'ok'}} },
+    { nota: 'No path s → t in the residual network: the flow is <b>maximum</b>. Value 2. The cut {s} has capacity 2: see the max-flow min-cut page.', set:{c1:{t:'flusso massimo = 2',tono:'ok'}} }
+  ]
+};
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Ford-Fulkerson: the maximum flow</h1>
+  <p class="lede">The maximum-flow problem: sending as much material as possible from a source s to a sink t, respecting the capacities of the arcs. Ford-Fulkerson solves it with augmenting paths in the residual network.</p>
+</header>
+
+<section>
+  <h2>The network and the flow</h2>
+<p>A <b>network</b> is a directed graph with a source <code>s</code>, a sink <code>t</code> and a capacity <code>c(e) ≥ 0</code> on each arc. A <b>flow</b> <code>f</code> assigns to each arc a value with <code>0 ≤ f(e) ≤ c(e)</code>, and at each node other than s and t what enters equals what leaves (conservation). The value of the flow is what leaves <code>s</code>.</p>
+</section>
+<section>
+  <h2>The residual network</h2>
+<p>For each arc <code>e = u → v</code> with capacity <code>c</code> and flow <code>f</code>, the <b>residual network</b> contains: a forward arc <code>u → v</code> with capacity <code>c − f</code> (how much you can still send), and a backward arc <code>v → u</code> with capacity <code>f</code> (how much you can <b>undo</b>). The backward arc is what allows correcting a choice made before.</p>
+</section>
+<section>
+  <h2>The method: augmenting paths</h2>
+<p>While there is a path <code>s → t</code> in the residual network, take its <b>bottleneck</b> (the minimum capacity along the path) and increase the flow by that amount. To find the path: BFS or DFS. When there is no path any more, the flow is maximum.</p>
+  <figure class="scena" data-scena="ff" data-titolo="First path, then a path that undoes"></figure>
+</section>
+<section>
+  <h2>The theorem and the cost</h2>
+<p><b>Augmenting path theorem</b>: a flow is maximum if and only if there is no path <code>s → t</code> in the residual network. <b>Integrality</b>: with integer capacities there is an integer maximum flow, and Ford-Fulkerson finds it. That is why a 0/1 flow is read as an assignment.</p>
+<p>Cost <code>O(m · |f*|)</code>: with integer capacities it depends on the value of the flow. With capacity 1: <code>O(mn)</code>.</p>
+</section>
+<section>
+  <h2>The code, side by side</h2>
+  <p>This page explains the concept. The Java code that implements it, with a line-by-line explanation and the syntax notes needed, is on the side-by-side page.</p>
+  <p><a href="../codice/ford-fulkerson.html"><b>→ Java code for this topic</b></a></p>
+</section>
+<section>
+  <h2>At the exam</h2>
+<div class="box esame" data-tit="At the exam">
+<p>When the question has <b>assignments with limits</b>, <b>disjoint paths</b> or a <b>minimum cut</b>, build a network and read the max flow. Phrase: <i>"Build a flow network with source s and sink t. Arc capacities encode the limits. By the integrality theorem there is an integral maximum flow of value k, which is the answer. Ford–Fulkerson runs in O(m·|f*|)."</i></p>
+</div>
+</section>
+<section>
+  <h2>Quick reference</h2>
+<div class="tab-wrap"><table class="tab"><thead><tr><th>concept</th><th>meaning</th><th>note</th></tr></thead><tbody><tr><td>residual network</td><td>forward arcs c − f, backward f</td><td>undo flow</td></tr><tr><td>augmenting path</td><td>s → t in the residual</td><td>bottleneck</td></tr><tr><td>integrality</td><td>integer capacities ⇒ integer flow</td><td>0/1 matching</td></tr><tr><td>time</td><td>O(m·|f*|), O(mn) with capacity 1</td><td>varies with the method</td></tr></tbody></table></div>
+</section>
+
+</main>
+</body>
+</html>

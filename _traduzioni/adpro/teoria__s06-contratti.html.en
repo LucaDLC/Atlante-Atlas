@@ -1,0 +1,97 @@
+@@s001 Assertions and contracts
+@@s002 dato:condition,ok:true: nothing happens,no:false: exception
+@@s003 ora:the flavour of this step,dato:before the function,due:after the function
+@@s004 ok:input admitted,no:input excluded
+@@s005 dato:input,ok:post-condition true,no:post-condition false
+@@s006 dato:pre (up to the caller),due:post (up to the function),no:contract violated
+@@s007 dato:sorted list,ok:still sorted,no:invariant broken
+@@s008 Assertions and contracts
+@@s009 Week 6, slides 1–14. Before testing a program one must say what "correct" means. One does it with true/false conditions on the program: assertions, pre-conditions (what the caller must guarantee), post-conditions (what the function guarantees), contracts and invariants. The <a href="s06-pbt.html">next page</a> has the computer check them on random inputs.
+@@s010 Assertions
+@@s011 An <b>assertion</b> is a Boolean condition on the state of the program (variables, values) that in correct executions is true. It is a sentence in Italian ("an empty list has length 0") turned into code that is worth <code>true</code> or <code>false</code>.
+@@s012 The assertions of the slides (slide 4)
+@@s013 <code>assert(condition)</code>: if the condition is true nothing happens; if it is false the program stops with <code>java.lang.AssertionError: assertion failed</code>. <code>assert</code> is in the object <code>Predef</code>, which Scala imports by itself: no import is needed.
+@@s014 Three facts about "I add 42 at the head of a list l": the list has at least one element; the length grows by 1; the head is 42. In the slides they are called "contracts for Cons". With <code>l = List(7, 8)</code> they are all true (checked). Each <code>assert</code> checks <b>one</b> thing only: if it fails, you know at once which one.
+@@s015 What they are for (slide 6): they help whoever <b>reads</b> the code (they say what is expected); they make the program fail <b>at once</b>, where the error arises (fail-fast); they help the compiler; they are the basis of testing and verification. Assertions are not only imperative: in FP they are used too.
+@@s016 assert: true does nothing, false stops everything
+@@s017 Definition (exam)
+@@s018 "An assertion is a Boolean predicate over the program state (variables and values), usually expressed as a logical proposition, that evaluates to true in the correct executions."
+@@s019 The four flavours: require, ensuring, assert, assume
+@@s020 Scala has four ways of writing an assertion. At runtime they behave almost the same: if the condition is false they throw an exception. The difference is in the <b>meaning</b>: when one checks and whose fault it is if it fails. The image: a coffee machine. Pre-condition: "insert at least 50 cents" (if you do not, it is your fault). Post-condition: "a coffee comes out" (if you have paid and none comes out, it is the machine's fault).
+@@s021 Flavour
+@@s022 When
+@@s023 If it fails, fault of
+@@s024 Exception (Scala 3.8.4)
+@@s025 <code>require(c)</code>
+@@s026 before: pre-condition
+@@s027 the caller
+@@s028 <code>IllegalArgumentException: requirement failed</code>
+@@s029 <code>(e) ensuring { r =&gt; P(r) }</code>
+@@s030 after: post-condition
+@@s031 the function
+@@s032 <code>AssertionError: assertion failed</code>
+@@s033 <code>assert(c)</code>
+@@s034 anywhere: it must hold
+@@s035 the program (it is a test)
+@@s036 <code>AssertionError: assertion failed</code>
+@@s037 <code>assume(c)</code>
+@@s038 an hypothesis: considers only the cases in which it holds
+@@s039 — (for the verifier it is an axiom)
+@@s040 <code>AssertionError: assumption failed</code>
+@@s041 require and ensuring in a function
+@@s042 <code>require</code> is the first line of the function: it checks the argument before doing anything. <code>factorial(-1)</code> → <code>IllegalArgumentException: requirement failed: n deve essere &gt;= 0</code>.
+@@s043 <code>ensuring</code> is attached <b>after</b> the expression of the result. <code>r</code> is the result just computed; if the condition is true, <code>ensuring</code> returns precisely that result. <code>abs(-5)</code> = 5; <code>abs(Int.MinValue)</code> → <code>AssertionError</code>.
+@@s044 The coffee machine: before, after, anywhere, assumption
+@@s045 Rule of the slides
+@@s046 Write <b>small</b> assertions: one violation at a time. If one single assertion checks five things, when it fails you do not know which of the five is wrong.
+@@s047 Pre-conditions: weaker and stronger
+@@s048 A <b>pre-condition</b> is a condition that, if it is true <b>before</b> running a piece of code, guarantees that the code behaves well. It is usually put at the entrance of a function and speaks of the arguments. A function can have many different pre-conditions that are all fine: what matters is how much they ask.
+@@s049 factorial: n &gt;= 0 against n &gt;= 2
+@@s050 dato:pre-condition,ok:admitted,no:excluded
+@@s051 If n ≥ 0, factorial works. It is a pre-condition.
+@@s052 This too is a pre-condition: if n ≥ 2, factorial works. But it excludes 0 and 1 for no reason.
+@@s053 Stronger = asks for more = admits fewer inputs. Every n that satisfies n ≥ 2 also satisfies n ≥ 0, not the reverse.
+@@s054 In complete specifications one writes the weakest. In tests one also uses stronger ones, to try one aspect at a time.
+@@s055 Examples of the slides: <code>reduceRight</code> has pre true; <code>def f = throw Exception()</code> has pre false (always fails); <code>get</code> on Option has pre "is not empty".
+@@s056 Which n the pre-condition admits
+@@s057 Post-conditions
+@@s058 A <b>post-condition</b> describes the correct result of a piece of code: it is checked <b>after</b>. For a function, it speaks of the returned value. In tests one does so: one calls the function, then one checks with an assertion that the result respects the post-condition.
+@@s059 <b>Stronger</b> = guarantees more. The <b>strongest</b> (strongest post-condition) describes the whole behaviour, but often writing it means rewriting the function. So one splits it into several weak post-conditions, and tests each. <code>true</code> as a post-condition says nothing about the result: the slides use it for <code>nextInt</code>, because saying more would mean describing the whole generator.
+@@s060 Function
+@@s061 A post-condition (from the slides)
+@@s062 Is it the strongest?
+@@s063 <code>size(t: Tree[A])</code>
+@@s064 size(t) ≥ 1
+@@s065 no: it does not say how many nodes
+@@s066 <code>depth(t: Tree[A])</code>
+@@s067 depth(t) ≥ 0
+@@s068 no
+@@s069 <code>maximum(t: Tree[Int])</code>
+@@s070 maximum(t) ≥ get(t) (get = a random leaf)
+@@s071 no, and it uses another function: post-conditions can link several functions
+@@s072 <code>nextInt</code>
+@@s073 true
+@@s074 no: it guarantees nothing
+@@s075 abs: the post-condition finds the overflow
+@@s076 Contracts
+@@s077 A <b>contract</b> of a function is the pair <b>pre-condition + post-condition</b>. The caller must guarantee the pre at the moment of the call; the function, if the pre was true, must guarantee the post when it ends. If the pre was false, the function promises nothing.
+@@s078 Three contracts of the slides (slide 12)
+@@s079 <code>=&gt;</code> here means "implies": if the Option is full, orElse returns itself; if it is empty, it returns the alternative. Pre true: it can always be called.
+@@s080 Two halves: the maximum is ≥ all elements, and it is one of the elements. With one half only it would be weaker: "≥ all" would also be respected by Int.MaxValue.
+@@s081 A <b>partial</b> function (does not work on all inputs): the pre is not true. All three use again the <b>algebraic laws</b>: one describes a function by saying how it behaves together with the others of the API.
+@@s082 Ideal contract
+@@s083 Pre <b>weaker</b> (I ask for the minimum) and post <b>stronger</b> (I promise the maximum). Hard to write everything.
+@@s084 In tests
+@@s085 One breaks it into many pieces: "if φ holds before, then ψ holds after", with stronger pres and weaker posts. Each piece becomes a test.
+@@s086 The weakest of all
+@@s087 <code>false =&gt; true</code>: it asks for nothing realisable and promises nothing. Every function that terminates respects it.
+@@s088 get: whoever calls guarantees the pre, the function the post
+@@s089 Invariants
+@@s090 An <b>invariant</b> is a property that must hold <b>always</b>, for an object or a data structure while the program runs. Two types in the slides:
+@@s091 <b>Loop invariant</b>: holds at each turn of a loop. Example: in insertion sort the elements to the left of the current index are already sorted. In FP there are no loops: its place is taken by the <b>contract of the recursive function</b> that replaces the loop.
+@@s092 <b>Invariant of a data structure</b>: holds for every value of that type. Example: in an AVL tree, at each node the heights of the two subtrees differ by at most 1. Or: "this list is sorted".
+@@s093 The invariant &quot;sorted list&quot; checked on 100 random lists
+@@s094 The invariant written as a function: each element is ≤ the next. <code>l.zip(l.drop(1))</code> pairs each element with the one after it.
+@@s095 <code>insert</code> runs through the list and puts x before the first larger element.
+@@s096 I start from a sorted list (<code>l.sorted</code>), insert, and check that it is still sorted. ScalaCheck: <code>+ OK, passed 100 tests.</code> With the wrong insert <code>x :: l</code>: <code>! Falsified after 3 passed tests</code>, counterexample l = List(0), x = 1. <code>forAll</code> is explained on the <a href="s06-pbt.html">next page</a>.
+@@s097 insert must leave the list sorted

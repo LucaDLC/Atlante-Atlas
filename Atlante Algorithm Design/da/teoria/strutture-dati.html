@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Datastrukturer: hvilken man vælger, og hvad den koster</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+const seq = [0,1,2,3,4,5,6,7,8].map(n => n.toString(2).padStart(4,'0').split(''));
+const cc = (k) => seq[k].map(String);
+SCENE.cont = {
+  w: 540, h: 230, lato: true,
+  legenda: 'ora:bit der ændrer sig i denne forøgelse,dato:uændret bit,ok:resultat',
+  oggetti: [
+    {id:'g',tipo:'celle',x:40,y:60,cw:58,ch:40,valori:cc(0),indici:false},
+    {id:'lab',tipo:'testo',x:40,y:40,t:'bit 3  bit 2  bit 1  bit 0',size:11,anchor:'start'},
+    {id:'c1',tipo:'testo',x:40,y:150,t:'',size:13,bold:true,anchor:'start'},
+    {id:'c2',tipo:'testo',x:40,y:180,t:'',size:12,anchor:'start'}
+  ],
+  passi: [
+    { nota: 'Binær tæller: en forøgelse vender bittene fra bunden, indtil den finder et 0, som bliver til 1. <b>Omkostning ved en forøgelse</b>: hvor mange bit der ændrer sig.', set:{} },
+    { nota: '0000 → 0001: 1 bit ændrer sig.', set:{g:{valori:cc(1),toni:{3:'ora'}},c1:{t:'0000 → 0001: 1 bit'}} },
+    { nota: '0001 → 0010: 2 bit ændrer sig (1 nulstilles, 0 bliver til 1).', set:{g:{valori:cc(2),toni:{2:'ora',3:'no'}},c1:{t:'0001 → 0010: 2 bit'}} },
+    { nota: '0011 → 0100: 3 bit. Kun ét ændrer sig "altid", det laveste; de andre ændrer sig sjældent.', set:{g:{valori:cc(4),toni:{1:'ora',2:'no',3:'no'}},c1:{t:'0011 → 0100: 3 bit'}} },
+    { nota: 'I 8 forøgelser (0 → 8) ændrer bit 0 sig 8 gange, bit 1 fire gange, bit 2 to gange, bit 3 én gang: i alt <b>15 ændringer</b> for 8 operationer, altså cirka 2 pr. operation.', set:{g:{valori:cc(8),toni:{0:'ok'}},c1:{t:'totale 15 cambi in 8 incrementi',tono:'ok'},c2:{t:'costo ammortizzato: O(1) per incremento'}} }
+  ]
+};
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Datastrukturer: hvilken man vælger, og hvad den koster</h1>
+  <p class="lede">Til eksamen tjener datastrukturerne til at begrunde tiden. Vælg strukturen ud fra den operation, du gentager oftest, og gang dens omkostning med, hvor mange gange du gentager den.</p>
+</header>
+
+<section>
+  <h2>At vælge ud fra operationen</h2>
+<table class="tab"><thead><tr><th>den operation du gentager</th><th>struktur</th><th>omkostning</th></tr></thead><tbody>
+<tr><td>at gennemløbe naboerne til en knude</td><td>nabolisten</td><td>O(grad)</td></tr>
+<tr><td>at spørge "findes kanten u–v?" (tæt graf)</td><td>nabomatricen</td><td>O(1), plads O(n²)</td></tr>
+<tr><td>at oversætte et navn til et indeks</td><td>hash-tabel</td><td>O(1) i gennemsnit</td></tr>
+<tr><td>at udtrække minimum og sænke nøgler</td><td>binær heap (Dijkstra, Prim)</td><td>O(log n) pr. operation</td></tr>
+<tr><td>at fusionere mængder og spørge "samme mængde?"</td><td>union-find</td><td>næsten konstant</td></tr>
+<tr><td>besøg lag for lag / i dybden</td><td>FIFO-kø / stak</td><td>O(1) pr. operation</td></tr>
+</tbody></table>
+</section>
+<section>
+  <h2>Amortiseret omkostning</h2>
+<p>En <b>amortiseret</b> omkostning er en grænse for <i>summen</i> af omkostningerne i en række operationer, divideret med antallet af operationer. En enkelt operation kan koste meget, men følgen gør ikke. Eksempel: den binære tæller. Hver forøgelse ændrer mange bit, men i 8 forøgelser er de samlede ændringer 15: cirka 2 pr. operation, derfor <code>O(1)</code> amortiseret.</p>
+  <figure class="scena" data-scena="cont" data-titolo="Den binære tæller: hvor mange bit der ændrer sig"></figure>
+</section>
+<section>
+  <h2>Dijkstra og køen</h2>
+<p>Dijkstra med binær heap: <code>O(m log n)</code>. Med et usorteret array: <code>O(n²)</code>, godt til tætte grafer. Med en Fibonacci-heap: <code>O(m + n log n)</code>, mere teoretisk. Eksamen accepterer den binære heap som standardsvar.</p>
+</section>
+<section>
+  <h2>Til eksamen</h2>
+<div class="box esame" data-tit="Til eksamen">
+<p>Skriv strukturen og dens omkostning pr. operation, og gang derefter. Sætning: <i>"We store the graph as adjacency lists; scanning the neighbours of v costs O(deg(v)), so the total over all vertices is O(m)."</i></p>
+</div>
+</section>
+<section>
+  <h2>Hurtig oversigt</h2>
+<div class="tab-wrap"><table class="tab"><thead><tr><th>struktur</th><th>omkostning</th><th>brug</th></tr></thead><tbody><tr><td>nabolisten</td><td>O(n + m) plads</td><td>gennemløbe naboerne</td></tr><tr><td>binær heap</td><td>O(log n) pr. operation</td><td>Dijkstra, Prim</td></tr><tr><td>union-find</td><td>O(m α(m, n))</td><td>Kruskal</td></tr><tr><td>amortiseret</td><td>sum / operationer</td><td>tæller, dynamisk tabel</td></tr></tbody></table></div>
+</section>
+
+</main>
+</body>
+</html>

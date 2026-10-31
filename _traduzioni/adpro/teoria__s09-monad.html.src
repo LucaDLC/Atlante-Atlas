@@ -1,0 +1,57 @@
+@@s001 Monad: unit e flatMap
+@@s002 ora:passo in esecuzione,ok:valore che passa,no:fallimento,spento:passo saltato
+@@s003 <b>flatMap</b> concatena calcoli che possono fallire. Parto da <code>Some(3)</code>.
+@@s004 <code>flatMap(raddoppiaSePositivo)</code>: 3 è positivo, quindi il risultato è Some(6). Il passo dopo riceve il valore <b>dentro</b> il contenitore.
+@@s005 <code>flatMap(dimezza)</code>: 6 è pari, quindi il risultato è Some(3).
+@@s006 Con <code>Some(-3)</code>: raddoppiaSePositivo restituisce <b>None</b>. Un flatMap su None è None, quindi il passo successivo non viene eseguito.
+@@s007 Il controllo del flusso (se un passo fallisce, fermati) sta dentro <code>flatMap</code>, non nel codice che lo usa. È la forza della monad.
+@@s008 dato:input,ora:passo che cambia,ok:uguale
+@@s009 <b>Identità a sinistra</b>: <code>unit(y).flatMap(f) === f(y)</code>. unit mette y dentro il contenitore, e flatMap lo passa a f: è come chiamare f direttamente. Con List e f = raddoppia: List(7).flatMap(f) = List(14) = f(7).
+@@s010 <b>Identità a destra</b>: <code>x.flatMap(unit) === x</code>. Passare ogni valore a unit lo rimette dentro lo stesso contenitore: List(1, 2, 3) resta List(1, 2, 3).
+@@s011 <b>Associatività</b>: <code>x.flatMap(f).flatMap(g) === x.flatMap(a => f(a).flatMap(g))</code>. Concatenare due passi a sinistra o annidarli a destra dà lo stesso risultato. È la stessa regola che abbiamo visto con il monoide.
+@@s012 dato:input,ora:scelta in corso,ok:risultato
+@@s013 <b>sequence</b> prende una lista di contenitori, List(List(1, 2), List(3, 4)), e restituisce un contenitore di liste. Vuol dire: "da ogni contenitore prendi un valore, in tutti i modi possibili".
+@@s014 Prima scelta: 1 dalla prima lista e 3 dalla seconda. Ottengo List(1, 3).
+@@s015 Le altre combinazioni: 1 con 4, 2 con 3, 2 con 4. Quattro liste in tutto.
+@@s016 Stessa idea con Option: <code>sequence(List(Some(1), Some(2)))</code> = Some(List(1, 2)), ma <code>sequence(List(Some(1), None))</code> = None: basta un None per perdere tutto.
+@@s017 dato:scelte possibili,ora:scelta in corso,ok:risultato
+@@s018 <b>replicateM(n, ma)</b> ripete il contenitore <code>ma</code> n volte e raccoglie i risultati in una lista. Con List(0, 1) e n = 2 ogni passo può scegliere 0 o 1.
+@@s019 Primo passo: scelgo 0 o 1. Due rami possibili.
+@@s020 Secondo passo: da ciascun ramo, di nuovo 0 o 1. Quattro risultati, tutti i modi possibili.
+@@s021 Con Option: <code>replicateM(2, Some(1))</code> = Some(List(1, 1)); con None il risultato è None. Il significato dipende dal contenitore: in una lista si moltiplicano le scelte, in un Option si ripete lo stesso valore.
+@@s022 dato:funzione di partenza,ora:passo in corso,ok:risultato
+@@s023 <b>compose</b> (composizione di Kleisli): f va da A a un contenitore F[B], g va da B a F[C]. Non si possono comporre direttamente, perché g non accetta F[B].
+@@s024 Applico f ad <code>a</code>: ottengo un contenitore F[B]. Il valore B sta dentro, e f non si può chiamare su di lui direttamente.
+@@s025 Con <code>flatMap(g)</code> il valore B viene estratto e passato a g: ottengo F[C]. La composizione è quindi una funzione <b>nuova</b> da A a F[C].
+@@s026 <span>Settimana 9</span>
+@@s027 Monad: unit e flatMap
+@@s028 La monad è il concetto più generale della settimana: un tipo con <code>unit</code> (mettere un valore dentro) e <code>flatMap</code> (concatenare calcoli che dipendono dal valore precedente). Option, List, LazyList, Gen, Parser e <a href="s05-state.html">State</a> sono tutti monadi.
+@@s029 Il trait Monad
+@@s030 Nelle slide il trait è questo (semplificato):
+@@s031 <code>trait Monad[F[_]] extends Functor[F]</code>, con due metodi:
+@@s032 <code>unit[A](a: =&gt; A): F[A]</code>: mette un valore dentro il contenitore. Per Option è <code>Some(a)</code>, per List è <code>List(a)</code>. Il tipo <code>=&gt; A</code> significa che l’argomento è passato per nome, cioè valutato solo quando serve.
+@@s033 <code>flatMap[B](f: A =&gt; F[B]): F[B]</code>: prende il valore dentro il contenitore e passa a <code>f</code>, che sceglie il calcolo successivo in base a quel valore. <code>f</code> restituisce già un contenitore, e <code>flatMap</code> lo appiattisce in uno solo.
+@@s034 Da questi due si ricava <code>map</code>: <code>fa.flatMap(a =&gt; unit(f(a)))</code>. Per questo una monad è anche un functor: il trait la estende.
+@@s035 flatMap concatena passi che possono fallire
+@@s036 L’idea
+@@s037 Le slide notano che il nome potrebbe essere <i>FlatMappable</i>: un contenitore sul quale puoi concatenare calcoli, dove ogni passo dipende dal valore del passo prima.
+@@s038 Le leggi
+@@s039 Le leggi (dalle slide e dal libro) riguardano <code>unit</code> e <code>flatMap</code>:
+@@s040 <b>Identità a sinistra</b>: <code>unit(y).flatMap(f) === f(y)</code>;
+@@s041 <b>Identità a destra</b>: <code>x.flatMap(unit) === x</code>;
+@@s042 <b>Associatività</b>: <code>x.flatMap(f).flatMap(g) === x.flatMap(a =&gt; f(a).flatMap(g))</code>.
+@@s043 Le leggi si leggono così: <code>unit</code> è l’elemento neutro della concatenazione (come lo 0 del monoide), e <code>flatMap</code> è associativo. Nelle slide sono scritte come proprietà ScalaCheck, come per il monoide.
+@@s044 Le tre leggi con List
+@@s045 sequence: lo zip generalizzato
+@@s046 <code>sequence(lfa: List[F[A]]): F[List[A]]</code> prende una lista di contenitori e restituisce un contenitore di liste. Per la List monad significa tutte le scelte possibili; per Option significa “tutti presenti o niente”. Nelle slide il risultato è descritto come una <i>n-ary zip</i> generalizzata: un zip di n contenitori invece di due.
+@@s047 Il codice di <code>sequence</code> è l’esercizio 17 del corso: qui vedi solo il comportamento.
+@@s048 sequence: da una lista di liste alle sue combinazioni
+@@s049 replicateM e compose
+@@s050 <code>replicateM(n, ma)</code> ripete il contenitore <code>n</code> volte e raccoglie i valori in una lista dentro il contenitore: <code>F[List[A]]</code>. Il significato cambia con la monad, come mostra la scena.
+@@s051 replicateM con List: quattro risultati
+@@s052 <b>compose</b> (composizione di Kleisli) combina due funzioni che restituiscono un contenitore: <code>f: A =&gt; F[B]</code> e <code>g: B =&gt; F[C]</code> danno una nuova funzione <code>A =&gt; F[C]</code>. Si ottiene con <code>flatMap</code>: applichi f, poi passi il valore dentro a g. L’implementazione è l’esercizio 19.
+@@s053 Composizione: f poi g, con flatMap in mezzo
+@@s054 Dove si usa
+@@s055 Il codice di <code>unit</code>, <code>flatMap</code> e degli esempi con Option e List è nella <a href="../esempi/s09-monad.html">pagina di esempi affiancata</a>. State, già visto nella <a href="s05-state.html">settimana 5</a>, è un’altra monad: <code>flatMap</code> su State concatena automi.
+@@s056 All’esame
+@@s057 Se un esercizio chiede di "sequenziare" contenitori, pensa a <code>flatMap</code> e alle leggi: scrivi quale monad stai usando e quale comportamento ti aspetti (tutti presenti, tutte le combinazioni, il primo che fallisce).

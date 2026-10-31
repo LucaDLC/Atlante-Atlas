@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Code: Bellman-Ford in Java</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Code: Bellman-Ford in Java</h1>
+  <p class="lede">Shortest paths with negative weights: n − 1 rounds of relaxation over all the edges, and the negative-cycle check with one more round.</p>
+</header>
+
+<section>
+  <h2>The relaxation rounds</h2>
+  <p>Each round scans all the edges. After n − 1 rounds the distances are final, if there are no negative cycles.</p>
+  <figure class="codice" data-titolo="The relaxation rounds">
+<pre data-lang="java">import java.io.*;
+import java.util.*;
+
+public class Main {
+    public static void main(String[] args) throws IOException {
+        BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
+        StringTokenizer st = new StringTokenizer(in.readLine());
+        int n = Integer.parseInt(st.nextToken());
+        int m = Integer.parseInt(st.nextToken());
+        int s = Integer.parseInt(st.nextToken());
+
+        // Archi diretti {u, v, peso}: il peso puo essere negativo.
+        int[][] archi = new int[m][3];
+        for (int i = 0; i &lt; m; i++) {
+            st = new StringTokenizer(in.readLine());
+            archi[i][0] = Integer.parseInt(st.nextToken());
+            archi[i][1] = Integer.parseInt(st.nextToken());
+            archi[i][2] = Integer.parseInt(st.nextToken());
+        }
+
+        final long INF = Long.MAX_VALUE / 4;     // infinito che non va in overflow sommando un peso
+        long[] dist = new long[n];
+        Arrays.fill(dist, INF);
+        dist[s] = 0;
+
+        // n-1 giri: ogni giro rilassa tutti gli archi.
+        for (int giro = 1; giro &lt; n; giro++) {
+            for (int[] a : archi) {
+                if (dist[a[0]] != INF &amp;&amp; dist[a[0]] + a[2] &lt; dist[a[1]]) {
+                    dist[a[1]] = dist[a[0]] + a[2];
+                }
+            }
+        }
+        // Un giro in piu: se una distanza migliora ancora, c e un ciclo negativo.
+        for (int[] a : archi) {
+            if (dist[a[0]] != INF &amp;&amp; dist[a[0]] + a[2] &lt; dist[a[1]]) {
+                System.out.println("ciclo negativo raggiungibile");
+                return;
+            }
+        }
+        StringBuilder out = new StringBuilder();
+        for (int v = 0; v &lt; n; v++) {
+            out.append(v).append(' ').append(dist[v] == INF ? "inf" : String.valueOf(dist[v])).append('\n');
+        }
+        System.out.print(out);
+    }
+}</pre>
+    <ol class="spiega">
+    <li data-righe="21"><p>Infinity as a <code>long</code> divided by 4: adding a negative weight to it does not cause an overflow.</p></li>
+    <li data-righe="27"><p>n − 1 rounds: a simple path has at most n − 1 edges.</p></li>
+    <li data-righe="30"><p>Relaxing an edge: if going through u is cheaper, I update v.</p></li>
+    </ol>
+  </figure>
+  <div class="box basi" data-tit="Syntax notes"><ul><li><code>final</code> on the variable: the value no longer changes after the assignment.</li><li>Negative weights are not a problem for Java: they are integers like the others.</li></ul></div>
+</section>
+<section>
+  <h2>The negative cycle</h2>
+  <p>One more round: if a distance still improves, there is a negative cycle reachable from the source.</p>
+  <figure class="codice" data-titolo="The negative cycle">
+<pre data-lang="java">import java.io.*;
+import java.util.*;
+
+public class Main {
+    public static void main(String[] args) throws IOException {
+        BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
+        StringTokenizer st = new StringTokenizer(in.readLine());
+        int n = Integer.parseInt(st.nextToken());
+        int m = Integer.parseInt(st.nextToken());
+        int s = Integer.parseInt(st.nextToken());
+
+        // Archi diretti {u, v, peso}: il peso puo essere negativo.
+        int[][] archi = new int[m][3];
+        for (int i = 0; i &lt; m; i++) {
+            st = new StringTokenizer(in.readLine());
+            archi[i][0] = Integer.parseInt(st.nextToken());
+            archi[i][1] = Integer.parseInt(st.nextToken());
+            archi[i][2] = Integer.parseInt(st.nextToken());
+        }
+
+        final long INF = Long.MAX_VALUE / 4;     // infinito che non va in overflow sommando un peso
+        long[] dist = new long[n];
+        Arrays.fill(dist, INF);
+        dist[s] = 0;
+
+        // n-1 giri: ogni giro rilassa tutti gli archi.
+        for (int giro = 1; giro &lt; n; giro++) {
+            for (int[] a : archi) {
+                if (dist[a[0]] != INF &amp;&amp; dist[a[0]] + a[2] &lt; dist[a[1]]) {
+                    dist[a[1]] = dist[a[0]] + a[2];
+                }
+            }
+        }
+        // Un giro in piu: se una distanza migliora ancora, c e un ciclo negativo.
+        for (int[] a : archi) {
+            if (dist[a[0]] != INF &amp;&amp; dist[a[0]] + a[2] &lt; dist[a[1]]) {
+                System.out.println("ciclo negativo raggiungibile");
+                return;
+            }
+        }
+        StringBuilder out = new StringBuilder();
+        for (int v = 0; v &lt; n; v++) {
+            out.append(v).append(' ').append(dist[v] == INF ? "inf" : String.valueOf(dist[v])).append('\n');
+        }
+        System.out.print(out);
+    }
+}</pre>
+    <ol class="spiega">
+    <li data-righe="34"><p>If an edge still improves after n − 1 rounds, there is a negative cycle: the shortest path does not exist.</p></li>
+    </ol>
+  </figure>
+  <div class="box basi" data-tit="Syntax notes"><ul><li><code>return</code> inside <code>main</code> stops the program.</li></ul></div>
+</section>
+<section>
+  <h2>Running it</h2>
+  <p>Example of input and output (actually compiled and run).</p>
+  <pre class="cod">4 5 0
+0 1 4
+0 2 5
+1 2 -3
+2 3 2
+1 3 6
+
+(output)
+0 0
+1 4
+2 1
+3 3</pre>
+</section>
+<section>
+  <h2>The theory, side by side</h2>
+  <p><a href="../teoria/bellman-ford.html"><b>← Back to the theory of this topic</b></a></p>
+</section>
+
+</main>
+</body>
+</html>

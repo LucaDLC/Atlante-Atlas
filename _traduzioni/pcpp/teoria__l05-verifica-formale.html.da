@@ -1,0 +1,37 @@
+@@s001 Formel verifikation og JavaPathFinder
+@@s002 ok:counter = 2 (rigtigt),no:counter = 1 (tabt forøgelse),ora:det fundne modeksempel
+@@s003 To tråde laver <code>counter++</code> én gang hver. Hver forøgelse er en læsning (<b>R</b>: temp = counter) og en skrivning (<b>W</b>: counter = temp + 1). En model checker starter fra starttilstanden…
+@@s004 …og prøver <b>alle</b> schedulerens valg: i første trin kan t1 (R1) eller t2 (R2) køre.
+@@s005 Andet trin: for hver gren igen alle mulighederne.
+@@s006 Tredje trin.
+@@s007 Fjerde trin: 6 interleavings i alt. Kun de 2 sekventielle (på siderne) giver counter = <b>2</b>; i de andre 4 læser begge 0, før de skriver, og counter er <b>1</b>.
+@@s008 Modeksemplet til egenskaben "til sidst counter = 2": <b>R1, R2, W1, W2</b>. En test finder det kun, hvis det tilfældigvis sker; model checkeren finder det altid, fordi den besøger dem alle.
+@@s009 dato:producent,due:konsument,no:deadlock,ok:løst
+@@s010 dato:interleaving der skal udforskes,no:for mange at besøge
+@@s011 Formel verifikation og JavaPathFinder
+@@s012 Forelæsning 5, sidste del. Tests kører programmet og ser kun de interleavings, der tilfældigvis opstår. <b>Formel verifikation</b> behandler program og egenskab som matematiske objekter og kontrollerer <b>alle</b> interleavings. JavaPathFinder (NASA) gør det for Java-programmer med <b>model checking</b>.
+@@s013 At udforske alle interleavings
+@@s014 Træet af to counter++
+@@s015 Træet bygget i hånden; resultaterne (2 rigtige slutværdier ud af 6) er bekræftet af en udtømmende udforskning i Python.
+@@s016 Programmet fra slidene: CounterAct.java, N = 10 forøgelser pr. tråd
+@@s017 Spørgsmålet "HARDer" fra slidene: minimum er <b>2</b>, ikke 10. Interleavingen: t1 læser 0; t2 laver alle sine gennemløb undtagen det sidste; t1 skriver 1; t2 læser 1; t1 færdiggør sine gennemløb; t2 skriver 2. Byg den selv på siden <a href="l01-interleaving.html">Interleaving</a>.
+@@s018 At prøve dem én for én er umuligt: det er <b>tilstandseksplosionen</b> (state explosion).
+@@s019 Mange interleavings fører til den samme tilstand (samme værdier af counter, temp og punkt i koden): en model checker som JPF genkender dem og udforsker dem ikke igen (state matching). Derfor bliver problemet håndterligt.
+@@s020 Med minimum 2 overtrædes assertionen i <code>CounterAct</code> aldrig: JPF <b>beviser</b>, at den er sand. Med <code>counter &gt; 2</code> ville JPF udskrive modeksemplet, der når 2.
+@@s021 Tal beregnet med en lille tilstandsudforsker i Python, som for dette program gør det samme som en model checker.
+@@s022 Deadlock i JPF's bounded buffer
+@@s023 Eksemplet <code>jpf_examples/deadlock/BoundedBuffer.java</code> bruger en enkelt monitor (<code>synchronized</code>, <code>wait()</code>) med <code>notify()</code> i stedet for <code>notifyAll()</code>. Producenter og konsumenter venter i det samme venteset, og <code>notify()</code> vækker <b>en vilkårlig</b>. Et scenarie med en buffer på 1, producenter P1, P2 og konsumenter C1, C2:
+@@s024 Alle står stille (scenariet genspillet trin for trin)
+@@s025 Konsumenterne kommer først.
+@@s026 Venter: [C2, P1, P2].
+@@s027 Den "forkerte venter": den vækker en anden konsument i stedet for en producent. Venter: [P1, P2].
+@@s028 Venter: <b>[P1, P2, C1, C2]</b>. Ingen kan længere underrette nogen: <mark class="no">deadlock</mark>.
+@@s029 En vækket producent finder plads og låser situationen op. Med tests sker et sådant scenarie sjældent; JPF finder det ved at udforske tilstandene (konfigurationen <code>target.args = 2,4,1</code> i .jpf-filen).
+@@s030 notify() vækker den forkerte venter
+@@s031 Hvorfor det ikke altid bruges
+@@s032 <b>Tilstandseksplosion</b>: selv små programmer kan have flere tilstande, end der kan besøges. Den reduceres med abstraktioner, approksimationer og ved at indskrænke problemet.
+@@s033 Værktøjer: interaktive bevisværktøjer (Rocq, Isabelle, Lean), model checkere, SAT/SMT-løsere, statisk analyse. Eksempel fra underviserens forskning: at finde data races i store Java-kodebaser med CodeQL (200 000 linjer på under 2 minutter).
+@@s034 Industrien bruger det stadig mere (Intel til hardware; NASA brugte JPF til en del af roveren Curiosity).
+@@s035 Til eksamen
+@@s036 Tests = generatorer af interleavings: de finder modeksempler, men beviser ikke fraværet af fejl. Formel verifikation = alle interleavings, med omkostningen ved tilstandseksplosionen. At kunne sige, hvilken slags egenskab der kontrolleres (<a href="l05-proprieta.html">safety eller liveness</a>), og hvordan dens modeksempel ser ud.
+@@s037 Tilstandseksplosion

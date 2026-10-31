@@ -1,0 +1,51 @@
+@@s001 Foldable: reducing with a monoid
+@@s002 ora:element entering,ok:accumulator,dato:elements of the list
+@@s003 <code>foldLeft(0)(+)</code> on List(1, 2, 3, 4). It starts from the neutral 0 and takes one element at a time, from the left. The accumulator is the value carried forward.
+@@s004 First step: 0 + 1 = 1. The accumulator becomes 1.
+@@s005 Second step: 1 + 2 = 3.
+@@s006 Third step: 3 + 3 = 6.
+@@s007 Last step: 6 + 4 = 10. Sum and 0 form a monoid, so the result 10 does not depend on the order in which the steps are done.
+@@s008 dato:elements,ora:transformation or combination,ok:partial or final result
+@@s009 <b>foldMap</b> with f(x) = x · x and the monoid of the sum (Int, +, 0). First I transform each element with f, then I combine everything with the monoid.
+@@s010 <b>map</b>: f is applied to each element. The values become 1, 4, 9, 16: now they are values of B = Int, ready for the monoid.
+@@s011 The monoid allows splitting the values into <b>groups</b>. Each group reduces by itself, even on another processor: 1 ⊕ 4 = 5 and 9 ⊕ 16 = 25.
+@@s012 The two halves are recombined: 5 ⊕ 25 = 30. Any grouping gives 30, by associativity.
+@@s013 dato:pieces of the list,ora:work in progress,ok:result
+@@s014 A list of six values, split into two <b>pieces</b>. The monoid allows each piece to be reduced by itself.
+@@s015 Two workers work <b>at the same time</b>: one reduces 1, 2, 3, the other 4, 5, 6.
+@@s016 Each has a partial result: 6 and 15. Neither waits for the other.
+@@s017 Last step: 6 ⊕ 15 = 21. The same result as a serial reduction, whatever the number of pieces. It is the idea of MapReduce (Spark).
+@@s018 ora:container under examination,ok:everyone uses the same foldMap
+@@s019 Foldable is a type class over a <b>type constructor</b>: F[_] is not a concrete type, but a container to be filled. <code>F[A]</code> is "an F of A".
+@@s020 F = <b>List</b>: a sequence of many values A.
+@@s021 F = <b>Option</b>: at most one value A. If it is None the fold returns the neutral element.
+@@s022 F = <b>Tree</b>: leaves with values and branches. The fold visits all the leaves.
+@@s023 The trait <code>Foldable[F[_]]</code> describes the behaviour for <b>every</b> F: a single interface, with <code>foldMap</code>, <code>foldLeft</code> and <code>foldRight</code>.
+@@s024 <span>Week 9</span>
+@@s025 Foldable: reducing with a monoid
+@@s026 A fold reduces a collection to a single value. If the operation is a <a href="s09-monoid.html">monoid</a>, the result no longer depends on the order and the groupings: the work can be reordered, or split among several processors.
+@@s027 From the fold to the monoid
+@@s028 <code>foldLeft(z)(f)</code> takes an initial value <code>z</code> and an operation <code>f</code>, and reduces the collection from the left; <code>foldRight(z)(f)</code> reduces from the right. With any operation the direction counts. Example with subtraction on List(1, 2, 3):
+@@s029 <code>foldLeft(0)(_ - _)</code> does ((0 − 1) − 2) − 3 = <b>−6</b>;
+@@s030 <code>foldRight(0)(_ - _)</code> does 1 − (2 − (3 − 0)) = <b>2</b>.
+@@s031 With a monoid, <code>z</code> is the neutral element and <code>f</code> is <code>combine</code>. The <b>associativity</b> makes the grouping irrelevant, and the <b>neutral element</b> makes the starting value harmless. That is why <code>foldLeft</code> and <code>foldRight</code> give the same result on the sum.
+@@s032 foldLeft with the sum: the accumulator starts from 0
+@@s033 foldMap: map and then reduce
+@@s034 The signature is <code>def foldMap[B: Monoid](f: A =&gt; B): B</code>. Read it this way:
+@@s035 <code>f: A =&gt; B</code> transforms each element into a value of another type B;
+@@s036 <code>[B: Monoid]</code> says that B is a monoid: there is an instance of <code>Monoid[B]</code> to use for combining;
+@@s037 the result is a single value of type B.
+@@s038 In practice <code>foldMap</code> is <code>map(f)</code> followed by <code>concatenate</code>. The type B can be different from A: here A = Int and B = Int, but in other cases B is a string, a length, a maximum. The implementation of <code>foldMap</code> is exercise 5 of the course: here you see the idea.
+@@s039 foldMap: transform, then combine in groups
+@@s040 F[_]: the container is a parameter
+@@s041 In <code>Foldable[F[_]]</code> the letter F is not a type, but a <b>type constructor</b>: a rule that, given a type A, produces a type such as <code>List[A]</code>, <code>Option[A]</code>, <code>Tree[A]</code>. The symbol <code>[_]</code> says that F takes a type as argument. It is called a <i>higher-kinded type</i>.
+@@s042 Why it is useful: a single interface covers all the containers. Lists, options, trees, <code>LazyList</code> and iterators are all foldable: they can be reduced with the same <code>foldMap</code>.
+@@s043 Three containers, one interface
+@@s044 concatenate and reductions in pieces
+@@s045 <code>concatenate(as)</code> reduces a collection of values already in a monoid: it starts from the neutral element and combines all the elements with <code>combine</code>. It is the basis of the fold: <code>foldLeft(m.empty)(m.combine)</code>.
+@@s046 The advantage of the monoid is that the work can be split. Each piece reduces to a value, and the values are recombined. On several processors it is the principle of <b>MapReduce</b> (used by Spark): each worker does its part, then the partial results are combined.
+@@s047 Two workers, two pieces, one result
+@@s048 Warning
+@@s049 Parallelism works only if the type really is a monoid. With subtraction, splitting the list changes the result: the compiler does not signal it.
+@@s050 Where it is used
+@@s051 The code of the folds on a monoid, with <code>foldMap</code> done as <code>map</code> followed by <code>concatenate</code>, is in the <a href="../esempi/s09-foldable.html">side-by-side examples page</a>. The next step, which does the <code>map</code> on containers, is the <a href="s09-functor.html">functor page</a>.

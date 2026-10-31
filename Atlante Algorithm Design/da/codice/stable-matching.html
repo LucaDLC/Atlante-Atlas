@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Kode: Gale-Shapley i Java</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Kode: Gale-Shapley i Java</h1>
+  <p class="lede">Forslagsalgoritmen i Java: præferencer som arrays, rang for modtagerne, kø af de frie forslagsstillere.</p>
+</header>
+
+<section>
+  <h2>Præferencer og rang</h2>
+  <p>Hver forslagsstiller har en liste over præferencer. Hver modtager har derimod brug for et hurtigt spørgsmål: <i>hvem foretrækker jeg af to?</i> Derfor bygger jeg rangen.</p>
+  <figure class="codice" data-titolo="Præferencer og rang">
+<pre data-lang="java">import java.io.*;
+import java.util.*;
+
+public class Main {
+    public static void main(String[] args) throws IOException {
+        BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
+        int n = Integer.parseInt(in.readLine().trim());
+
+        // pref[p][k] = k-esimo ricevente preferito da p (0 = il migliore).
+        int[][] pref = new int[n][n];
+        for (int p = 0; p &lt; n; p++) {
+            StringTokenizer st = new StringTokenizer(in.readLine());
+            for (int k = 0; k &lt; n; k++) {
+                pref[p][k] = Integer.parseInt(st.nextToken());
+            }
+        }
+        // rango[r][p] = posizione di p nella lista di r: più piccolo vuol dire più gradito.
+        int[][] rango = new int[n][n];
+        for (int r = 0; r &lt; n; r++) {
+            StringTokenizer st = new StringTokenizer(in.readLine());
+            for (int k = 0; k &lt; n; k++) {
+                rango[r][Integer.parseInt(st.nextToken())] = k;
+            }
+        }
+
+        int[] prossimo = new int[n];      // prossimo[p]: prossima posizione nella lista di p
+        int[] partnerDi = new int[n];     // partnerDi[r] = proponente accettato da r, -1 se libero
+        Arrays.fill(partnerDi, -1);
+        int[] partnerOf = new int[n];     // partnerOf[p] = ricevente di p, -1 se libero
+        Arrays.fill(partnerOf, -1);
+
+        Deque&lt;Integer&gt; liberi = new ArrayDeque&lt;&gt;();
+        for (int p = 0; p &lt; n; p++) {
+            liberi.add(p);
+        }
+
+        while (!liberi.isEmpty()) {
+            int p = liberi.poll();
+            int r = pref[p][prossimo[p]++];      // propone al ricevente successivo della sua lista
+            if (partnerDi[r] == -1) {            // r è libero: accetta
+                partnerDi[r] = p;
+                partnerOf[p] = r;
+            } else if (rango[r][p] &lt; rango[r][partnerDi[r]]) {  // r preferisce p al partner attuale
+                int vecchio = partnerDi[r];
+                partnerOf[vecchio] = -1;
+                liberi.add(vecchio);          // il vecchio partner torna libero
+                partnerDi[r] = p;
+                partnerOf[p] = r;
+            } else {
+                liberi.add(p);                // r rifiuta: p resta libero e propone altrove
+            }
+        }
+
+        StringBuilder out = new StringBuilder();
+        for (int p = 0; p &lt; n; p++) {
+            out.append(p).append(" - ").append(partnerOf[p]).append('\n');
+        }
+        System.out.print(out);
+    }
+}</pre>
+    <ol class="spiega">
+    <li data-righe="10"><p>Præferencelisten for forslagsstillerne: <code>pref[p][k]</code> er den k-te modtager, som <code>p</code> foretrækker.</p></li>
+    <li data-righe="22"><p>Rangen vender listen: nu giver <code>rango[r][p]</code> positionen for <code>p</code>, og sammenligningen er ét enkelt opslag.</p></li>
+    </ol>
+  </figure>
+  <div class="box basi" data-tit="Syntaksnoter"><ul><li><code>StringTokenizer</code> læser heltallene på en linje; <code>trim()</code> fjerner mellemrummene i linjens kanter.</li></ul></div>
+</section>
+<section>
+  <h2>Forslagsløkken</h2>
+  <p>Så længe der er en fri forslagsstiller, foreslår denne den næste modtager på listen. Modtageren afgør, om den vil beholde ham.</p>
+  <figure class="codice" data-titolo="Forslagsløkken">
+<pre data-lang="java">import java.io.*;
+import java.util.*;
+
+public class Main {
+    public static void main(String[] args) throws IOException {
+        BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
+        int n = Integer.parseInt(in.readLine().trim());
+
+        // pref[p][k] = k-esimo ricevente preferito da p (0 = il migliore).
+        int[][] pref = new int[n][n];
+        for (int p = 0; p &lt; n; p++) {
+            StringTokenizer st = new StringTokenizer(in.readLine());
+            for (int k = 0; k &lt; n; k++) {
+                pref[p][k] = Integer.parseInt(st.nextToken());
+            }
+        }
+        // rango[r][p] = posizione di p nella lista di r: più piccolo vuol dire più gradito.
+        int[][] rango = new int[n][n];
+        for (int r = 0; r &lt; n; r++) {
+            StringTokenizer st = new StringTokenizer(in.readLine());
+            for (int k = 0; k &lt; n; k++) {
+                rango[r][Integer.parseInt(st.nextToken())] = k;
+            }
+        }
+
+        int[] prossimo = new int[n];      // prossimo[p]: prossima posizione nella lista di p
+        int[] partnerDi = new int[n];     // partnerDi[r] = proponente accettato da r, -1 se libero
+        Arrays.fill(partnerDi, -1);
+        int[] partnerOf = new int[n];     // partnerOf[p] = ricevente di p, -1 se libero
+        Arrays.fill(partnerOf, -1);
+
+        Deque&lt;Integer&gt; liberi = new ArrayDeque&lt;&gt;();
+        for (int p = 0; p &lt; n; p++) {
+            liberi.add(p);
+        }
+
+        while (!liberi.isEmpty()) {
+            int p = liberi.poll();
+            int r = pref[p][prossimo[p]++];      // propone al ricevente successivo della sua lista
+            if (partnerDi[r] == -1) {            // r è libero: accetta
+                partnerDi[r] = p;
+                partnerOf[p] = r;
+            } else if (rango[r][p] &lt; rango[r][partnerDi[r]]) {  // r preferisce p al partner attuale
+                int vecchio = partnerDi[r];
+                partnerOf[vecchio] = -1;
+                liberi.add(vecchio);          // il vecchio partner torna libero
+                partnerDi[r] = p;
+                partnerOf[p] = r;
+            } else {
+                liberi.add(p);                // r rifiuta: p resta libero e propone altrove
+            }
+        }
+
+        StringBuilder out = new StringBuilder();
+        for (int p = 0; p &lt; n; p++) {
+            out.append(p).append(" - ").append(partnerOf[p]).append('\n');
+        }
+        System.out.print(out);
+    }
+}</pre>
+    <ol class="spiega">
+    <li data-righe="39"><p><code>prossimo[p]++</code> bruger den nuværende værdi og øger derefter: det næste forslag fra <code>p</code> bliver det følgende.</p></li>
+    <li data-righe="43"><p>Modtageren sammenligner rangen: et mindre tal betyder, at den foretrækkes.</p></li>
+    <li data-righe="46"><p>Den forladte partner vender tilbage til køen af de frie.</p></li>
+    </ol>
+  </figure>
+  <div class="box basi" data-tit="Syntaksnoter"><ul><li><code>partnerDi[r] == -1</code>: værdien <code>-1</code> betyder "fri", fordi de rigtige indeks går fra 0 til n−1.</li></ul></div>
+</section>
+<section>
+  <h2>Kør det</h2>
+  <p>Eksempel på input og output (faktisk kompileret og kørt).</p>
+  <pre class="cod">3
+0 1 2
+1 0 2
+0 1 2
+2 0 1
+0 1 2
+0 1 2
+
+(output: proponente - ricevente)
+0 - 1
+1 - 2
+2 - 0</pre>
+</section>
+<section>
+  <h2>Teorien side om side</h2>
+  <p><a href="../teoria/stable-matching.html"><b>← Tilbage til teorien om dette emne</b></a></p>
+</section>
+
+</main>
+</body>
+</html>

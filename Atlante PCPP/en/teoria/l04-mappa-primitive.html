@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Map of the primitives</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  const D = [['q1', 'Il valore cambia dopo il costruttore?', 'no → final'], ['q2', 'Solo un flag scritto da uno, letto dagli altri?', 'sì → volatile'],
+             ['q3', 'Leggi-e-poi-scrivi o più campi insieme?', 'sì → lock'], ['q4', 'Bisogna aspettare che lo stato diventi giusto?', 'sì → monitor (while)'],
+             ['q5', 'Al massimo c thread insieme?', 'sì → Semaphore'], ['q6', 'Tutti devono arrivare allo stesso punto?', 'sì → CyclicBarrier']];
+  const ogg = [];
+  D.forEach(([id, q, r], k) => {
+    ogg.push({ id, tipo: 'testo', x: 20, y: 40 + k * 38, t: q, size: 13, anchor: 'start' });
+    ogg.push({ id: id + 'r', tipo: 'testo', x: 420, y: 40 + k * 38, t: r, size: 13, bold: true, anchor: 'start', nascosto: true });
+  });
+  ogg.push({ id: 'n', tipo: 'testo', x: 300, y: 285, t: 'Caso: un contatore condiviso, count++ da più thread', size: 13, bold: true, tono: 'ora' });
+  SCENE.scegli = {
+    w: 600, h: 300, lato: false,
+    legenda: 'ora:current question,no:answer no: go down,ok:the chosen primitive',
+    oggetti: ogg,
+    passi: [
+      { nota: 'One starts from what is needed, not from the primitive. The case: several threads do <code>count++</code> on the same counter.' },
+      { nota: 'The value changes: final is not enough.', set: { q1: { tono: 'no' }, q1r: { nascosto: false, tono: 'spento' } } },
+      { nota: 'It is not a flag written once: count++ is <b>read-then-write</b>. volatile would give visibility but not atomicity (exercise 3.1.8).', set: { q2: { tono: 'no' }, q2r: { nascosto: false, tono: 'spento' } } },
+      { nota: 'Read-then-write: <b>lock</b> (synchronized if it is enough; ReentrantLock for fairness, more conditions or tryLock).', set: { q3: { tono: 'ok' }, q3r: { nascosto: false, tono: 'ok' }, n: { t: 'risposta: synchronized / ReentrantLock', tono: 'ok' } } },
+      { nota: 'The other questions serve other cases: waiting for a condition (bounded buffer) → monitor with while; limiting to c threads → Semaphore; waiting for everybody → CyclicBarrier.', set: { q4r: { nascosto: false }, q5r: { nascosto: false }, q6r: { nascosto: false } } }
+    ]
+  };
+})();
+</script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  const T = (id, x, y, t, extra) => Object.assign({ id, tipo: 'testo', x, y, t, size: 13 }, extra || {});
+  const R = (id, x, y, w, h, t, extra) => Object.assign({ id, tipo: 'rett', x, y, w, h, t }, extra || {});
+  const N = (id, x, y, t, tono, extra) => Object.assign({ id, tipo: 'nodo', x, y, t, tono, r: 18 }, extra || {});
+  const F = (id, x1, y1, x2, y2, t, extra) => Object.assign({ id, tipo: 'vett', x1, y1, x2, y2, t }, extra || {});
+
+    // tre famiglie
+    SCENE.famiglie = {
+      w: 620, h: 250, lato: true,
+      legenda: 'ora:inside / has the permit,no:blocked,ok:sees the last write,dato:thread',
+      oggetti: [
+        T('h1', 105, 24, '1 · lock', { bold: true }), T('h2', 310, 24, '2 · attesa di una condizione', { bold: true }), T('h3', 515, 24, '3 · solo visibilità', { bold: true }),
+        R('s1', 45, 50, 120, 100, '', { tono: 'spento' }), T('l1', 105, 72, 'sezione critica', { size: 12 }), N('a1', 70, 180, 'A', 'dato'), N('a2', 140, 180, 'B', 'dato'),
+        R('s2', 250, 50, 120, 100, '', { tono: 'spento' }), T('l2', 310, 72, 'buffer vuoto', { size: 12 }), N('b1', 310, 180, 'C', 'dato'),
+        R('s3', 455, 50, 120, 100, '', { tono: 'spento' }), T('l3', 515, 72, 'volatile v = 0', { size: 12 }), N('c1', 480, 180, 'W', 'dato'), N('c2', 550, 180, 'R', 'dato'),
+        T('k', 310, 236, '', { size: 12, bold: true })
+      ],
+      passi: [
+        { nota: "Le primitive di sincronizzazione del corso si dividono in <b>tre famiglie</b>, secondo il problema che risolvono." },
+        { nota: "<b>1 · Lock</b> (synchronized, ReentrantLock): <b>un thread alla volta</b> nella sezione critica. A entra, B aspetta. Dà mutua esclusione e, con la regola del monitor, anche visibilità.", set: { a1: { x: 105, y: 115, tono: 'ora' }, a2: { tono: 'no' }, k: { t: 'lock: uno alla volta' } } },
+        { nota: "<b>2 · Attesa di una condizione</b> (monitor con condition, Semaphore, CyclicBarrier): un thread aspetta che lo <b>stato</b> cambi. C vuole prendere da un buffer vuoto: si blocca finché qualcuno non inserisce.", set: { b1: { tono: 'no' }, k: { t: 'condizione: aspetta che lo stato cambi' } } },
+        { nota: "…qualcuno inserisce un elemento e segnala: C riparte.", set: { l2: { t: 'buffer: 1 elemento' }, b1: { x: 310, y: 115, tono: 'ora' } } },
+        { nota: "<b>3 · Solo visibilità</b> (volatile, final): <b>nessuna</b> mutua esclusione, solo la garanzia che chi legge veda l'ultima scrittura. W scrive v = 1, R legge 1. Ma W e R possono stare \"dentro\" insieme.", set: { s3: { tono: 'ok' }, l3: { t: 'volatile v = 1' }, c1: { x: 490, y: 115, tono: 'ok' }, c2: { x: 540, y: 115, tono: 'ok' }, k: { t: 'visibilità: nessuna esclusione, solo l’ultima scrittura' } } }
+      ]
+    };
+
+    // la tabella come griglia
+    const P = ['synchronized', 'ReentrantLock', 'Condition / wait', 'Semaphore', 'CyclicBarrier', 'volatile', 'final'];
+    const og = [T('hme', 330, 24, 'mutua esclusione', { bold: true, size: 12 }), T('hhb', 500, 24, 'da dove viene happens-before', { bold: true, size: 12 })];
+    P.forEach((p, i) => {
+      og.push(R('p' + i, 20, 36 + i * 30, 180, 26, p, { tono: 'spento' }));
+      og.push(R('m' + i, 250, 36 + i * 30, 160, 26, '', { tono: 'spento' }), R('h' + i, 420, 36 + i * 30, 180, 26, '', { tono: 'spento' }));
+    });
+    const riga = (i, me, hb, tme) => ({ ['p' + i]: { tono: 'ora' }, ['m' + i]: { t: me, tono: tme }, ['h' + i]: { t: hb, tono: 'dato' } });
+    SCENE.tabella = {
+      w: 620, h: 256, lato: true,
+      legenda: 'ora:line added,ok:yes,no:no,due:depends,dato:rule',
+      oggetti: og,
+      passi: [
+        { nota: "Le due colonne più importanti della tabella: la primitiva dà <b>mutua esclusione</b>? E quale regola crea <b>happens-before</b>?" },
+        { nota: "<b>synchronized</b> e <b>ReentrantLock</b>: mutua esclusione sì; happens-before dalla regola del monitor (unlock → lock successivo sullo stesso lock). Entrambi rientranti, con proprietario.", set: Object.assign(riga(0, 'sì', 'unlock → lock', 'ok'), riga(1, 'sì', 'unlock → lock', 'ok')) },
+        { nota: "<b>Condition</b> e <b>wait/notifyAll</b>: si usano tenendo il lock; l'happens-before passa dal lock (await rilascia e riprende).", set: riga(2, 'con il lock', 'passa dal lock', 'due') },
+        { nota: "<b>Semaphore</b>: mutua esclusione solo con 1 permesso (mutex); happens-before da release() a un acquire() riuscito. Nessun proprietario: chiunque può fare release.", set: riga(3, 'solo con 1 permesso', 'release → acquire', 'due') },
+        { nota: "<b>CyclicBarrier</b>: nessuna mutua esclusione; le azioni prima di await() happens-before quelle dopo il ritorno da await() negli altri thread.", set: riga(4, 'no', 'prima → dopo await()', 'no') },
+        { nota: "<b>volatile</b> e <b>final</b>: solo visibilità. volatile: scrittura → letture successive (e accessi mai in conflitto). final: inizializzazione → ogni uso a costruttore finito.", set: Object.assign(riga(5, 'no', 'scrittura → letture', 'no'), riga(6, 'no', 'init → ogni uso', 'no')) }
+      ]
+    };
+
+    // gli errori classici: sbagliato → giusto
+    const E = [
+      ['volatile int count; count++', 'AtomicInteger o lock', 'volatile non rende count++ atomico'],
+      ['synchronized di istanza su campo static', 'static synchronized', 'oggetti diversi = lock diversi'],
+      ['lock(); …; unlock();', 'lock(); try { … } finally { unlock(); }', 'un’eccezione lascerebbe il lock preso'],
+      ['if (!ok) c.await();', 'while (!ok) c.await();', 'al risveglio la condizione può essere falsa'],
+      ['while (!ok) { }', 'await() / wait() / acquire()', 'busy-wait: CPU sprecata, vietato'],
+      ['mutex.acquire(); spaces.acquire();', 'spaces.acquire(); mutex.acquire();', 'bloccarsi tenendo il mutex: deadlock'],
+      ['release() senza acquire()', 'release() solo dopo acquire()', 'i permessi superano la capacità']
+    ];
+    SCENE.errori = {
+      w: 620, h: 220, lato: true,
+      legenda: 'no:wrong,ok:right',
+      oggetti: [
+        T('n', 310, 30, '', { bold: true }),
+        R('sb', 20, 60, 280, 50, '', { tono: 'no' }), R('gi', 320, 60, 280, 50, '', { tono: 'ok' }),
+        T('ls', 160, 128, 'sbagliato', { size: 12 }), T('lg', 460, 128, 'giusto', { size: 12 }),
+        T('p', 310, 180, '', { size: 12, bold: true })
+      ],
+      passi: [{ nota: "Sette errori che tornano sempre, ognuno con la versione giusta e il perché." }].concat(E.map(([s, g, p], i) => ({
+        nota: ['<b>Contatore volatile</b>: niente data race, ma count++ è lettura + scrittura: race condition (esercizio 3.1.8).',
+          '<b>Lock sbagliato</b>: un metodo synchronized d\'istanza usa il lock di this, diverso per ogni oggetto. Un campo static va protetto con il lock della classe.',
+          '<b>lock() senza finally</b>: se la sezione critica lancia un\'eccezione, unlock() non viene mai eseguito e il lock resta preso per sempre.',
+          '<b>if al posto di while</b>: dopo il risveglio un altro thread può aver cambiato di nuovo lo stato, o il risveglio è spurio. Ricontrolla sempre.',
+          '<b>Attesa attiva</b>: un ciclo vuoto consuma CPU per controllare uno stato che non cambia. Negli esercizi del corso non è accettata.',
+          '<b>Ordine dei semafori</b> nel bounded buffer: prima il posto, poi il mutex. Al contrario, a buffer pieno il produttore blocca tutti.',
+          '<b>release() in più</b>: Java non controlla chi rilascia. Un release() senza acquire() aggiunge un permesso che non esisteva.'][i],
+        set: { n: { t: 'errore ' + (i + 1) + ' di 7' }, sb: { t: s }, gi: { t: g }, p: { t: p } }
+      })))
+    };
+  })();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Map of the primitives</h1>
+  <p class="lede">All the synchronization tools seen up to lecture 4, in one place: what they guarantee, which happens-before rule they give, and when to use them.</p>
+</header>
+
+<div class="box domanda-tua" data-tit="You had asked (10 September)">
+  <p>"Explain to me the various kinds of lock we used, I do not remember the various categories." This page is the answer, updated up to lecture 4.</p>
+</div>
+
+<section>
+  <h2>Three families</h2>
+  <div class="colonne">
+    <div class="carta"><h4>1 · Lock</h4><p>One thread at a time in the critical section: <b>mutual exclusion</b>. <code>synchronized</code>, <code>ReentrantLock</code>.</p></div>
+    <div class="carta"><h4>2 · Waiting for a condition</h4><p>A thread waits for the state to change: <b>monitor</b> (lock + condition variable), <code>Semaphore</code>, <code>CyclicBarrier</code>.</p></div>
+    <div class="carta"><h4>3 · Visibility only</h4><p>No mutual exclusion, only "whoever reads sees the last write": <code>volatile</code>, <code>final</code>.</p></div>
+  </div>
+  <figure class="scena" data-scena="famiglie" data-titolo="Lock, waiting for a condition, visibility only"></figure>
+</section>
+
+<section>
+  <h2>The table</h2>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Primitive</th><th>How it is written</th><th>Mutual exclusion</th><th>Happens-before</th><th>Owner / reentrant</th><th>Fairness</th></tr></thead>
+    <tbody>
+      <tr><td><b>Intrinsic lock</b> (monitor lock)</td><td><code>synchronized (o) { … }</code>, <code>synchronized</code> method (lock of <code>this</code>), <code>static synchronized</code> (lock of <code>X.class</code>)</td><td>yes</td><td>monitor rule: unlock → next lock on the same object</td><td>yes / yes</td><td>no guarantee, not configurable</td></tr>
+      <tr><td><b><code>ReentrantLock</code></b></td><td><code>l.lock(); try { … } finally { l.unlock(); }</code></td><td>yes</td><td>like the monitor</td><td>yes / yes</td><td><code>new ReentrantLock(true)</code>: favours the thread that has waited longest</td></tr>
+      <tr><td><b>Condition</b> (of a <code>ReentrantLock</code>)</td><td><code>c = l.newCondition()</code>; <code>while (!ok) c.await();</code> · <code>c.signal()</code> / <code>c.signalAll()</code></td><td>used while holding the lock</td><td>goes through the lock: <code>await()</code> releases it and takes it again</td><td>—</td><td>who is woken is not specified in general</td></tr>
+      <tr><td><b><code>wait</code>/<code>notifyAll</code></b></td><td>inside <code>synchronized</code>: <code>while (!ok) wait();</code> · <code>notifyAll()</code></td><td>used while holding the intrinsic lock</td><td>goes through the intrinsic lock</td><td>—</td><td>only one condition per object</td></tr>
+      <tr><td><b><code>Semaphore</code></b></td><td><code>s.acquire(); try { … } finally { s.release(); }</code></td><td>only if c = 1 (mutex)</td><td><code>release()</code> → a successful <code>acquire()</code> in another thread</td><td><b>no</b> / <b>no</b></td><td><code>new Semaphore(c, true)</code></td></tr>
+      <tr><td><b><code>CyclicBarrier</code></b></td><td><code>cb.await()</code></td><td>no</td><td>actions before <code>await()</code> → actions after the return from <code>await()</code> in the other threads</td><td>—</td><td>—</td></tr>
+      <tr><td><b><code>volatile</code></b></td><td><code>volatile int x;</code></td><td><b>no</b></td><td>volatile rule: write → later reads; volatile accesses never in conflict</td><td>—</td><td>—</td></tr>
+      <tr><td><b><code>final</code></b></td><td><code>final int x;</code></td><td>no</td><td>initialisation → every action after the constructor</td><td>—</td><td>—</td></tr>
+      <tr><td><b><code>start</code>/<code>join</code></b></td><td><code>t.start()</code>, <code>t.join()</code></td><td>no</td><td>start → first action of t; last action of t → join</td><td>—</td><td>—</td></tr>
+    </tbody>
+  </table></div>
+  <p class="piccolo">The happens-before guarantees of <code>Semaphore</code> and <code>CyclicBarrier</code> are written in the Java documentation ("memory consistency effects"). The others are the rules seen in lecture.</p>
+  <figure class="scena" data-scena="tabella" data-titolo="Mutual exclusion and the origin of happens-before"></figure>
+</section>
+
+<section>
+  <h2>Which one to use?</h2>
+  <figure class="passi" data-titolo="Start from what you need">
+    <div class="passo"><div class="espr">il valore non cambia mai dopo il costruttore  →  <mark class="ok">final</mark></div><p class="nota">No lock needed to read it. <a href="l04-pubblicazione.html">Immutability</a>.</p></div>
+    <div class="passo"><div class="espr">un thread scrive un flag, gli altri lo leggono e basta  →  <mark class="dato">volatile</mark></div><p class="nota">Example: the <code>while (!stop)</code> that must see <code>stop = true</code>. It is not enough if the write depends on a read (<code>count++</code>).</p></div>
+    <div class="passo"><div class="espr">leggi-e-poi-scrivi, check-then-act, più campi da cambiare insieme  →  <mark class="ora">lock</mark></div><p class="nota"><code>synchronized</code> if it is enough; <code>ReentrantLock</code> if you need fairness, more conditions or <code>tryLock</code>.</p></div>
+    <div class="passo"><div class="espr">aspettare che lo stato diventi "giusto" (buffer non pieno, nessuno scrittore)  →  <mark class="due">monitor</mark></div><p class="nota">Lock + condition, always with <code>while</code>. <a href="l02-monitor.html">Monitor</a>.</p></div>
+    <div class="passo"><div class="espr">al massimo c thread insieme, o contare risorse  →  <mark class="due">Semaphore</mark></div><p class="nota"><a href="l04-semafori.html">Semaphores</a> and bounded buffer.</p></div>
+    <div class="passo"><div class="espr">aspettare che tutti arrivino allo stesso punto  →  <mark class="due">CyclicBarrier</mark></div><p class="nota">For example: everybody has initialised their part of the array.</p></div>
+  </figure>
+  <figure class="scena" data-scena="scegli" data-titolo="Choosing the primitive, one question at a time"></figure>
+</section>
+
+<section>
+  <h2>The classic errors</h2>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Error</th><th>Why it is wrong</th></tr></thead>
+    <tbody>
+      <tr><td><code>volatile int count</code> for a shared counter</td><td>no data race, but <code>count++</code> remains a race condition (<a href="l03-esercizio-31.html">exercise 3.1.8</a>)</td></tr>
+      <tr><td>instance <code>synchronized</code> to protect a <code>static</code> field</td><td>different objects, different locks: no mutual exclusion (<a href="l02-synchronized.html">synchronized</a>)</td></tr>
+      <tr><td><code>lock()</code> without <code>try/finally</code></td><td>an exception in the critical section leaves the lock taken for ever</td></tr>
+      <tr><td><code>if (!ok) c.await();</code></td><td>after waking the condition can be false again (spurious wakeup, other threads): <code>while</code> is needed</td></tr>
+      <tr><td>active waiting: <code>while (!ok) { }</code></td><td>busy-wait, forbidden in the course exercises: it uses CPU instead of blocking</td></tr>
+      <tr><td>mutex before <code>spaces.acquire()</code></td><td>blocking while holding the mutex: deadlock (<a href="l04-semafori.html">bounded buffer</a>)</td></tr>
+      <tr><td><code>release()</code> of a semaphore by a thread that did not do <code>acquire()</code></td><td>Java allows it: the permits grow beyond the capacity</td></tr>
+    </tbody>
+  </table></div>
+  <figure class="scena" data-scena="errori" data-titolo="Wrong → right, one at a time"></figure>
+</section>
+
+</main>
+</body>
+</html>

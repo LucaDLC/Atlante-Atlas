@@ -1,0 +1,50 @@
+@@s001 Platform threads and virtual threads
+@@s002 <span>Week 9 · Performance</span>
+@@s003 Platform threads and virtual threads
+@@s004 The lecture of 26 October starts here: which thread to use, and why. A virtual thread that waits does not occupy a system thread; a platform thread does. The example code is compiled and run.
+@@s005 Two kinds of thread
+@@s006 A <b>platform thread</b> is an operating-system thread: heavy, and the system has a limited number of them. A <b>virtual thread</b> is a thread managed by Java: many can exist together. Java runs them on a small group of platform threads (the <i>carriers</i>) only while they work. When a virtual thread blocks (network, file, <code>sleep</code>), it is detached and the carrier serves another one.
+@@s007 They are created like this: <code>Thread.ofVirtual().start(task)</code> and <code>Thread.ofPlatform().start(task)</code>. <code>Thread.ofVirtual()</code> returns a <b>Thread.Builder</b>, that is the object that knows how to build threads of that kind.
+@@s008 Platform or virtual: what happens when a thread waits
+@@s009 dato:thread,ora:what changes,ok:consequence
+@@s010 Expensive: creating thousands of them slows the system down, and each thread takes a place in the scheduler.
+@@s011 Java keeps them in memory and mounts them on a carrier only when they run.
+@@s012 It is detached from the carrier, which passes to another virtual thread.
+@@s013 That is why virtual threads suit jobs that spend time waiting.
+@@s014 When to use what
+@@s015 The indications of the lecture, in order of priority:
+@@s016 situation
+@@s017 choice
+@@s018 you want many platform threads
+@@s019 no: do not create many of them
+@@s020 operations that wait (I/O, database, network)
+@@s021 virtual threads
+@@s022 work that uses the CPU, and performance matters
+@@s023 tasks of the executor (next page)
+@@s024 everything else, for simplicity
+@@s025 virtual threads for everything
+@@s026 Warning
+@@s027 The virtual thread does not make a pure computation faster. In the lecture, up to 64 threads, platform and virtual threads take the same time on the count of primes; the difference shows with 2048 threads, where the platform threads are much slower.
+@@s028 Example: downloading pages in parallel
+@@s029 The code of the lecture: one request per URL, each request in a virtual thread, then waiting for all. Here the request is simulated by a <code>sleep</code> of 100 ms, so the example runs without network.
+@@s030 Virtuali.java
+@@s031 <code>scarica</code> simulates a web request. <code>Thread.sleep(100)</code> stops the thread for 100 ms. The thread does not work: it waits. This is the case for which virtual threads are needed.
+@@s032 Four URLs in an immutable list. <code>List.of</code> creates it already full: it cannot be modified.
+@@s033 The list of the started threads, so that they can be waited for afterwards.
+@@s034 The start time, with <code>System.nanoTime()</code>: it measures in nanoseconds.
+@@s035 One round per URL. <code>url</code> is the loop variable: in a for-each it is already constant inside the round.
+@@s036 Local copy: each thread receives its URL in a variable declared <code>final</code>. Lambdas capture only variables that do not change; the copy makes explicit that each thread has its own value.
+@@s037 Starts a virtual thread with the lambda <code>() -&gt; scarica(mioUrl)</code>. <code>start</code> returns immediately: the thread works in parallel.
+@@s038 <code>join</code> waits for the end of each thread. Without join the program could print the time before the requests finish.
+@@s039 The time in milliseconds. With 4 requests of 100 ms in parallel the total is close to 100 ms, not to 400: the check <code>ms &lt; 300</code> prints <code>true</code>.
+@@s040 The time in parallel
+@@s041 Four pages of 100 ms each
+@@s042 dato:time of a request,ora:when it starts,ok:end
+@@s043 The classic loop, without threads: each request waits for the previous one.
+@@s044 Each one blocks for 100 ms. Nobody occupies a system thread while waiting.
+@@s045 The total time is that of the slowest request, not the sum of all of them.
+@@s046 Practical rules
+@@s047 Rule
+@@s048 For operations that wait, one virtual thread per operation. For heavy computations, use the executor with a fixed number of threads (next page).
+@@s049 Sentence for the oral
+@@s050 Virtual threads are cheap to create and block without holding an OS thread, so they suit I/O-bound work; platform threads are costly and should not be created in large numbers.

@@ -1,0 +1,74 @@
+@@s001 Rand[A]: composable generators
+@@s002 dato:RNG state,ora:generator at work,due:values produced,ok:result of map2
+@@s003 <code>map2(ra, rb)(f)</code> does not produce a number at once: it is a new <code>Rand</code>, a function that <b>waits</b> for a state <code>rng</code>.
+@@s004 When it receives <code>SimpleRNG(42)</code>, it <b>first</b> makes <code>ra</code> work (here <code>nonNegativeInt</code>): it comes out <b>a = 16159453</b> and the state <code>r1</code>.
+@@s005 Then <code>rb</code> (here <code>double</code>) works on the <b>new</b> state <code>r1</code>, not on <code>rng</code>: it comes out <b>b = 0.5967…</b> and the state <code>r2</code>.
+@@s006 The values are combined with <code>f</code> and the final state <code>r2</code> is returned: ((16159453, 0.5967…), r2). It is exactly <code>intDouble</code>, but without ever naming the states in the code of whoever uses it.
+@@s007 dato:state (RNG),ora:generator,ok:value
+@@s008 dato:state being passed on,ok:number generated
+@@s009 ora:first generator,due:second generator (chosen on the basis of a),ok:result,no:piece discarded
+@@s010 Rand[A]: composable generators
+@@s011 Week 5, exercises 5–8. All the generators of the <a href="s05-rng-puro.html">previous page</a> have the form <span class="m">RNG =&gt; (A, RNG)</span>. One gives a name to that type and builds a small API (unit, map, map2, sequence, flatMap) that passes the state on your behalf. It is the same idea as <code>Option</code> of week 3, applied to the state.
+@@s012 The type and the two basic functions
+@@s013 From the exercise file
+@@s014 A <b>type alias</b>: <code>Rand[A]</code> is just a shorter name for "function from RNG to pair (value, new RNG)". A <code>Rand[A]</code> is read "a random A" or "a generator of A".
+@@s015 <code>_.nextInt</code> is <code>rng =&gt; rng.nextInt</code>: the method of <code>RNG</code> already has the right form.
+@@s016 <code>unit</code>: a generator that always gives <code>a</code> and leaves the state <b>as it is</b>.
+@@s017 <code>map</code>: makes <code>s</code> work, applies <code>f</code> to the value, passes the state on. Whoever uses it never sees <code>rng</code>.
+@@s018 Example from the book: a non-negative even number, removing the remainder of the division by 2.
+@@s019 Exercise 5: double with map
+@@s020 No <code>val (i, r) = …</code>, no state: <code>map</code> passes it on by itself. The test <code>Ex05.01</code> checks that it gives the same numbers as <code>double</code>.
+@@s021 Doubt: is the second bracket not the argument of nonNegativeInt?
+@@s022 No: both brackets are of <code>map</code>. After <code>nonNegativeInt</code> there is no bracket, so you are not <b>calling</b> it: you hand it to <code>map</code>, which will pass it the state when it arrives.
+@@s023 Substituting inside the body of <code>map</code> one gets <code>rng =&gt; { val (a, rng2) = nonNegativeInt(rng); (a / 2147483648.0, rng2) }</code>: that is exactly the <code>double</code> written by hand in exercise 2. The <code>rng =&gt;</code> at the head is the parameter that seemed to be missing, and <code>map</code> wrote it.
+@@s024 Doubt: that initial rng, what value does it have if nobody gives it?
+@@s025 Nobody: it is the parameter of a function, like the <code>x</code> in <code>x =&gt; x + 1</code>. <code>val gen = map2(int, int)(_ + _)</code> generates <b>no</b> number: it is only the description of the calculation. The numbers are born when someone calls <code>gen(SimpleRNG(42))</code> — in the exercises the tests do it, with <code>forAll { (rng: RNG) =&gt; … }</code>. It is the same idea as the <code>LazyList</code>: first describe, then run.
+@@s026 Rand[A], unit, map
+@@s027 map2: two generators in a row (exercise 6)
+@@s028 map2(nonNegativeInt, double)((_, _)) on SimpleRNG(42)
+@@s029 The order matters
+@@s030 In <code>map2</code> <code>ra</code> runs first, then <code>rb</code> on the state that <code>ra</code> has left. If it were inverted, the numbers would change: the test <code>Ex07.03</code> ("ints2 &amp; ints are the same") passes only if <code>ints</code> and <code>sequence</code> use the same order.
+@@s031 sequence (exercise 7)
+@@s032 A list of generators → a generator of lists
+@@s033 The same "turning of the types" of <code>sequence</code> for Option: from a list of generators to a generator of a list.
+@@s034 One starts from the generator of the empty list and adds an element at the head at a time with <code>map2</code>. Your recursive version with <code>case h :: t =&gt; map2(h, sequence(t))(_ :: _)</code> does the same thing and is right.
+@@s035 <code>List.fill(n)(x)</code> repeats x n times: a list of n identical generators. With <code>SimpleRNG(42)</code>, <code>ints2(3)</code> = List(16159453, −1281479697, −340305902), equal to <code>ints(3)</code>.
+@@s036 Doubt: what are h, t and _ :: _?
+@@s037 In the recursive version <code>case h :: t =&gt;</code>, the two names are born in the pattern: <code>h</code> is the first generator, <code>t</code> the list of all the others. After <code>case</code>, <code>::</code> <b>takes apart</b> the list instead of building it.
+@@s038 <code>_ :: _</code> is the short form of <code>(a, b) =&gt; a :: b</code>: each <code>_</code> is a parameter, in the order it appears. It is the function that <code>map2</code> uses to put the value of <code>h</code> in front of the list produced by the others.
+@@s039 ints2 does not need an if for size ≤ 0
+@@s040 <code>List.fill(0)(int)</code> and also <code>List.fill(-3)(int)</code> give the empty list, and <code>sequence(Nil)</code> is <code>unit(Nil)</code>: the base case is already inside <code>sequence</code>. <code>ints2(0)(SimpleRNG(42))._1</code> = <code>List()</code> (checked).
+@@s041 The state passes from one generator to the next
+@@s042 flatMap and nonNegativeLessThan (exercise 8)
+@@s043 The second generator depends on the first value
+@@s044 Like <code>map</code>, but <code>g</code> does not return a value: it returns <b>another generator</b>, chosen on the basis of <code>a</code>. It is run at once on the new state <code>r1</code>. With map2 the two generators were fixed; with flatMap the second depends on the result of the first.
+@@s045 A number between 0 and bound − 1: the remainder of the division. Alone, however, it is not enough.
+@@s046 The non-negatives are 2³¹ = 2147483648 values; with bound = 6, 2147483648 mod 6 = 2 values are left over at the top, and 0 and 1 would come out a bit more often. If <code>i</code> falls in that last incomplete piece, <code>i + (bound − 1) − mod</code> exceeds Int.MaxValue and becomes negative (overflow): then one must <b>retry</b> with a new number. Retrying needs the new state, that is <code>flatMap</code>.
+@@s047 Five dice throws (<code>nonNegativeLessThan(6)</code> + 1) from <code>SimpleRNG(42)</code>: 2, 3, 2, 4, 5. Checked.
+@@s048 Your flatMap
+@@s049 In your file <code>flatMap</code> was copied from the LazyList (<code>foldRight(empty)(…append…)</code>) and does not compile: "Not found: foldRight". On <code>Rand</code> there is no sequence to go through: there is <b>one</b> function to run and then the second generator. Above, the right version.
+@@s050 Update (26 Sep): your new version <code>rng =&gt; val (a, rng2) = f(rng)</code> with <code>g(a)(rng2)</code> on the line below compiles and passes tests Ex08.01–03. However <code>g(a)(rng2)</code> sits in the same column as <code>rng =&gt;</code> and seems outside the lambda: better to break the line after <code>=&gt;</code> and indent the two lines, as in the code above.
+@@s051 Doubt: why isn't it enough to retry while n &lt; bound?
+@@s052 It is your first idea: <code>if n &gt;= bound then nonNegativeLessThan(bound) else unit(n)</code>. If it ends, the result is right (a number &lt; bound), but it almost never ends.
+@@s053 With bound = 6 and <code>SimpleRNG(42)</code>: first number 16159453 → it is ≥ 6 → retry. The numbers &lt; 6 are 6 out of 2³¹ = 2147483648: on average about 358 million attempts are needed. Each attempt is a call inside another (<code>flatMap</code> → <code>g</code> → <code>nonNegativeLessThan</code> → <code>flatMap</code> …) and the stack runs out much earlier.
+@@s054 The solution: do not discard 16159453, <b>reduce</b> it with the remainder. 16159453 % 6 = <b>1</b>, and the check 16159453 + 5 − 1 ≥ 0 is true → result (1, SimpleRNG(1059025964525)). One retries only in the little piece at the top, almost never.
+@@s055 A die without infinite recursions
+@@s056 The check n + (bound − 1) − mod, step by step
+@@s057 dato:number that came out,ora:what changes,ok:accepted,no:retry
+@@s058 Small example: a generator that gives only 0…7, and bound = 3. The last block is incomplete: 0 and 1 come out 3 times, 2 only 2. The plain <code>%</code> gives a loaded die.
+@@s059 If the last of the block exceeds the maximum, the block is incomplete and one retries.
+@@s060 The block {3, 4, 5} is complete; the block {6, 7, 8} is not, because 8 never comes out.
+@@s061 With the real Ints and bound = 6. The maximum is Int.MaxValue: "&gt; Int.MaxValue" cannot be written, because an Int that exceeds it overflows and becomes <b>negative</b>. That is why the code checks <code>&gt;= 0</code>.
+@@s062 Values printed by Scala 3.8.4.
+@@s063 The "retry" case run for real, with a fake RNG that gives first 2147483647 and then 16. The second attempt runs on the <b>new</b> state: it is the work of <code>flatMap</code>. With <code>map</code> the function should return a number, and "another attempt" is not a number but a generator.
+@@s064 Doubt: is there a way without %? We have not seen it
+@@s065 <code>%</code> is the remainder of the division (17 % 6 = 5, because 17 = 6 × 2 + 5). It is not in the slides, but it is already in the exercise file: <code>nonNegativeEven</code> does <code>i - i % 2</code>. If you do not like it, you can use <code>double</code> of exercise 2, which gives a number in [0, 1):
+@@s066 <code>d * bound</code> lies in [0, bound); <code>.toInt</code> cuts off the decimals (it does not round), so the result goes from 0 to bound − 1. With <code>SimpleRNG(42)</code>: d = 0.0075…, × 6 = 0.045…, toInt = <b>0</b>. The highest case: 0.99999… × 6 = 5.99999…, toInt = 5, never 6. All 44 tests pass (checked). It never retries, so <code>flatMap</code> is not indispensable here (<code>map</code> would suffice), and it has the same small imbalance as the plain <code>%</code>. Five dice from SimpleRNG(42): 1, 4, 1, 6, 5.
+@@s067 Why (d * bound).toInt works: the ruler in 6 slices
+@@s068 dato:d,ora:d × 6,ok:slice chosen
+@@s069 The ruler [0, 1) divided into 6 equal slices. <code>double</code> falls on a random point of the ruler: every slice is equally long, so it has the same probability.
+@@s070 0.2 lies between 1/6 = 0.166… and 2/6 = 0.333…: slice 1. Multiplying by 6 says how many whole slices there are before d; <code>.toInt</code> throws away the piece of slice.
+@@s071 The result is always between 0 and 5 because d never reaches 1 (guaranteed by exercise 2). Values printed by Scala 3.8.4.
+@@s072 Doubt: why double and not nonNegativeInt? And what does exercise 8 ask, in plain words?
+@@s073 <b>In plain words:</b> (1) write <code>flatMap</code>, that is a <code>map</code> in which the function returns a <b>generator</b> instead of a value; (2) use it to make a die with <code>bound</code> faces: a random number between 0 and bound − 1. The tests check only that the result is ≥ 0 and &lt; bound.
+@@s074 <b>double or nonNegativeInt:</b> from the same <code>SimpleRNG(42)</code> come out 16159453 (nonNegativeInt) and 0.0075248… (double), which is 16159453 / 2147483648. They are the same number on two different scales. The trick "× 6 then toInt" works only on the small scale [0, 1). On the large scale: 16159453 × 6 = 96956718, which is not a die, and Int.MaxValue × 6 = −6 (overflow). A large number must be <b>scaled down</b>, and for that <code>%</code> is needed: 16159453 % 6 = 1. So: with nonNegativeInt one uses <code>%</code>, with double one uses <code>× bound</code> and <code>.toInt</code>.

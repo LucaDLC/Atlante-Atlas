@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Evaluation metrics</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  const V = [['TP  50', 'FP  10'], ['FN  5', 'TN  100']];
+  const giro = (toni, testo, nota) => ({ nota, set: { M: { toni }, n: { t: testo, tono: 'ok' } } });
+  SCENE.confusione = {
+    w: 520, h: 230, lato: false,
+    legenda: 'ok:cells in the numerator,no:cells that are added to the denominator',
+    oggetti: [
+      { id: 'M', tipo: 'griglia', x: 110, y: 20, cw: 130, ch: 54, valori: V, intR: ['previsto +', 'previsto −'], intC: ['vero +', 'vero −'], cwR: 100 },
+      { id: 'n', tipo: 'testo', x: 260, y: 212, t: '', size: 14, bold: true }
+    ],
+    passi: [
+      { nota: 'Example 15.1 of DW, in the layout of DW: rows = prediction, columns = truth. 165 cases in all.' },
+      giro({ '0,0': 'ok', '1,1': 'ok', '0,1': 'no', '1,0': 'no' }, 'accuracy = (50 + 100) / 165 = 0.909', '<b>Accuracy</b>: la diagonale (risposte giuste) diviso tutto.'),
+      giro({ '0,0': 'ok', '0,1': 'no' }, 'precision = 50 / (50 + 10) = 0.833', '<b>Precision</b>: la riga "previsto +". Di tutte le volte che ho detto positivo, quante erano giuste?'),
+      giro({ '0,0': 'ok', '1,0': 'no' }, 'recall = 50 / (50 + 5) = 0.909', '<b>Recall</b>: la colonna "vero +". Di tutti i positivi veri, quanti ne ho trovati?'),
+      giro({ '1,1': 'ok', '0,1': 'no' }, 'specificity = 100 / (100 + 10) = 0.909', '<b>Specificity</b>: la colonna "vero −", cioè il true negative rate (non il "false negative rate" delle note).'),
+      giro({ '0,0': 'ok', '1,1': 'ok' }, 'F1 = 0.870    MCC = 0.802', '<b>F1</b> combina precision e recall; <b>MCC</b> usa tutte e quattro le caselle. Tutti i valori sono verificati con sklearn.')
+    ]
+  };
+  const fpr = [0, 0, 0, 1 / 3, 1 / 3, 1], tpr = [0, 1 / 3, 2 / 3, 2 / 3, 1, 1], soglie = ['∞', '0.9', '0.8', '0.4', '0.35', '0.1'];
+  const og = [{ id: 'ax', tipo: 'assi', box: [50, 20, 250, 230], dom: [0, 1, 0, 1], tacche: 0.5, etX: 'FPR', etY: 'TPR' }];
+  og.push({ id: 'area', tipo: 'poli', in: 'ax', punti: [[0, 0], [0, 1 / 3], [0, 2 / 3], [1 / 3, 2 / 3], [1 / 3, 1], [1, 1], [1, 0]], tono: 'ok', nascosto: true });
+  og.push({ id: 'diag', tipo: 'linea', in: 'ax', x1: 0, y1: 0, x2: 1, y2: 1, tratt: true, tono: 'spento' });
+  fpr.forEach((x, i) => {
+    og.push({ id: 'p' + i, tipo: 'punto', in: 'ax', x, y: tpr[i], r: 4.5, tono: 'ora', nascosto: i > 0 });
+    if (i > 0) og.push({ id: 's' + i, tipo: 'linea', in: 'ax', x1: fpr[i - 1], y1: tpr[i - 1], x2: x, y2: tpr[i], tono: 'ora', nascosto: true });
+  });
+  og.push({ id: 'n', tipo: 'testo', x: 175, y: 290, t: '', size: 13, bold: true });
+  const passo = i => ({ nota: `Threshold ${soglie[i]}: FPR = ${fpr[i].toFixed(2)}, TPR = ${tpr[i].toFixed(2)}.`, set: { ['p' + i]: { nascosto: false }, ['s' + i]: { nascosto: false }, n: { t: 'soglia ' + soglie[i], tono: 'ora' } } });
+  SCENE.roc = {
+    w: 350, h: 300, lato: true,
+    legenda: 'ora:one point per threshold,ok:area under the curve (AUC),spento:random classifier',
+    oggetti: og,
+    passi: [
+      { nota: 'Six points, labels [0, 0, 1, 0, 1, 1], scores [0.1, 0.4, 0.35, 0.2, 0.8, 0.9]. The threshold is lowered one step at a time. With a very high threshold nobody is positive: (0, 0).' }
+    ].concat([1, 2, 3, 4, 5].map(passo)).concat([
+      { nota: 'The area under the curve: <b>AUC = 0.889</b> (sklearn). The dashed diagonal is a random classifier (AUC 0.5). 8 pairs (positive, negative) out of 9 are ordered well.', set: { area: { nascosto: false }, n: { t: 'AUC = 0.889', tono: 'ok' } } }
+    ])
+  };
+})();
+</script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  const D = {"c2": [0.035, 1.061, 29.212], "v2": 0.7853981633974483, "c10": [0.483, 1.713, 2.544], "v10": 0.00249039457019272, "c100": [3.376, 4.771, 0.413], "v100": 1.8681820538375915e-70, "c1000": [12.203, 13.53, 0.109], "v1000": 0.0, "f2": 0.7851, "f3": 0.5225, "f10": 0.0024, "griglia": {"1": 10, "2": 100, "3": 1000, "10": 10000000000}, "eig": [1.0, 3.0], "V": [[-0.7071, 0.7071], [0.7071, 0.7071]], "metr": {"a": [1.5, 2.5, 1.58, 0.5], "b": [2.5, 10.5, 3.24, -1.1]}, "sbil": [0.95, 0.0, 0.0, 0.0]};
+  const T = (id, x, y, t, extra) => Object.assign({ id, tipo: 'testo', x, y, t, size: 13 }, extra || {});
+  const R = (id, x, y, w, h, t, extra) => Object.assign({ id, tipo: 'rett', x, y, w, h, t }, extra || {});
+  const P = (id, x, y, t, extra) => Object.assign({ id, tipo: 'punto', in: 'ax', x, y, t }, extra || {});
+  const L = (id, x1, y1, x2, y2, extra) => Object.assign({ id, tipo: 'linea', in: 'ax', x1, y1, x2, y2 }, extra || {});
+  const V = (id, x1, y1, x2, y2, t, extra) => Object.assign({ id, tipo: 'vett', in: 'ax', x1, y1, x2, y2, t }, extra || {});
+  const C = (id, x, y, valori, extra) => Object.assign({ id, tipo: 'celle', x, y, cw: 52, ch: 36, valori, indici: false }, extra || {});
+
+    const cella = (id, x, y, t, tono) => R(id, x, y, 110, 50, t, { tono });
+    SCENE.convenzioni = {
+      w: 640, h: 260, lato: true,
+      legenda: 'ok:the model is right,no:the model is wrong',
+      oggetti: [T('hd', 150, 24, 'DW: [[TP, FP], [FN, TN]]', { bold: true, size: 12 }), cella('a00', 40, 40, 'TP = 40', 'ok'), cella('a01', 150, 40, 'FP = 10', 'no'), cella('a10', 40, 90, 'FN = 5', 'no'), cella('a11', 150, 90, 'TN = 45', 'ok'),
+        T('hs', 470, 24, 'sklearn: [[TN, FP], [FN, TP]]', { bold: true, size: 12, nascosto: true }), cella('b00', 360, 40, 'TN = 45', 'ok'), cella('b01', 470, 40, 'FP = 10', 'no'), cella('b10', 360, 90, 'FN = 5', 'no'), cella('b11', 470, 90, 'TP = 40', 'ok'),
+        T('c', 320, 175, '', { size: 12 }), T('c2', 320, 205, '', { size: 12 }), T('c3', 320, 235, '', { size: 12, bold: true })]
+        .map(o => (o.id[0] === 'b' && o.id.length === 3) ? Object.assign(o, { nascosto: true }) : o),
+      passi: [
+        { nota: "100 casi, 45 positivi veri e 55 negativi veri. La <b>matrice di confusione</b> conta i quattro esiti possibili." },
+        { nota: "<b>TP</b> (vero positivo) e <b>TN</b> (vero negativo): il modello ha ragione.", set: { c: { t: 'TP: dice positivo a un positivo · TN: negativo a un negativo' } } },
+        { nota: "<b>FP</b> (falso positivo, falso allarme): dice \"malato\" a un sano. <b>FN</b> (falso negativo, mancato): dice \"sano\" a un malato. Quale costa di più dipende dal problema.", set: { c2: { t: 'FP: falso allarme · FN: caso mancato' } } },
+        { nota: "Attenzione alla <b>convenzione</b>: confusion_matrix di sklearn mette le etichette vere sulle righe, in ordine 0 poi 1: i TN finiscono in alto a sinistra. Stessi numeri, posizioni diverse. Prima di leggere una matrice, controlla quale convenzione usa.", set: { hs: { nascosto: false }, b00: { nascosto: false }, b01: { nascosto: false }, b10: { nascosto: false }, b11: { nascosto: false }, c3: { t: 'controlla la convenzione prima di leggere', tono: 'no' } } }
+      ]
+    };
+
+    const og = [];
+    for (let i = 0; i < 100; i++) og.push({ id: 'd' + i, tipo: 'nodo', x: 30 + (i % 20) * 16, y: 40 + Math.floor(i / 20) * 18, t: '', r: 6, tono: i >= 95 ? 'no' : 'dato' });
+    og.push(T('c', 500, 50, '', { size: 12 }), T('c2', 500, 80, '', { size: 12 }), T('c3', 500, 110, '', { size: 12 }), T('c4', 500, 140, '', { size: 12 }), T('c5', 320, 175, '', { size: 12 }), T('c6', 320, 205, '', { size: 12 }), T('c7', 320, 235, '', { size: 12 }));
+    SCENE.sbilanciate = {
+      w: 640, h: 260, lato: true,
+      legenda: 'dato:negative,no:positive (rare)',
+      oggetti: og,
+      passi: [
+        { nota: "95 negativi e 5 positivi. Un modello che dice <b>sempre \"negativo\"</b> non ha imparato niente." },
+        { nota: "Accuratezza = 95/100 = <b>" + D.sbil[0] + "</b>: sembra ottima.", set: { c: { t: 'accuracy = ' + D.sbil[0], tono: 'ok' } } },
+        { nota: "Ma recall = " + D.sbil[1] + " (nessun positivo trovato), F1 = " + D.sbil[2] + ", MCC = " + D.sbil[3] + ": le altre metriche dicono la verità (verificato con sklearn). È il <b>paradosso dell'accuratezza</b>.", set: { c2: { t: 'recall = ' + D.sbil[1], tono: 'no' }, c3: { t: 'F1 = ' + D.sbil[2], tono: 'no' }, c4: { t: 'MCC = ' + D.sbil[3], tono: 'no' } } },
+        { nota: "Rimedi: <b>undersampling</b> (togliere negativi a caso: si butta informazione), <b>oversampling</b> (duplicare i positivi: overfitting sui duplicati), <b>SMOTE</b> (positivi sintetici fra vicini: esempi poco realistici). Più metriche adatte (F1, MCC, curva PR), stratified CV, pesi alle classi.", set: { c5: { t: 'under / oversampling, SMOTE' }, c6: { t: 'F1, MCC, PR · stratified CV · pesi' } } },
+        { nota: "Il ricampionamento si fa <b>solo sul training</b>: il test deve restare com'è nella realtà, con i suoi 5 positivi su 100.", set: { c7: { t: 'ricampionare solo il training', tono: 'no' } } }
+      ]
+    };
+
+    const a = D.metr.a, b = D.metr.b;
+    const ogr = [T('h', 320, 24, 'y = [3, 5, 7, 9]', { bold: true }), T('rl', 90, 72, 'errori', { anchor: 'end', size: 12 }), C('e', 100, 54, ['1', '−1', '2', '−2']),
+      T('m1', 470, 60, '', { size: 12 }), T('m2', 470, 90, '', { size: 12 }), T('m3', 470, 120, '', { size: 12 }), T('m4', 470, 150, '', { size: 12 }), T('c', 320, 210, '', { size: 12 }), T('c2', 320, 238, '', { size: 12 })];
+    const mostra = (m, tono) => ({ m1: { t: 'MAE = ' + m[0], tono }, m2: { t: 'MSE = ' + m[1], tono }, m3: { t: 'RMSE = ' + m[2], tono }, m4: { t: 'R² = ' + m[3], tono } });
+    SCENE.metricheregr = {
+      w: 640, h: 250, lato: true,
+      legenda: 'dato:errors yᵢ − ŷᵢ,no:a large error',
+      oggetti: ogr,
+      passi: [
+        { nota: "Le metriche per la regressione, sugli stessi errori. Errori: 1, −1, 2, −2." },
+        { nota: "<b>MAE</b> = media dei valori assoluti = 1.5 (nell'unità dei dati). <b>MSE</b> = media dei quadrati = 2.5 (unità al quadrato). <b>RMSE</b> = √MSE = 1.58 (di nuovo nell'unità dei dati). <b>R²</b> = 1 − SSres/SStot = 1 − 10/20 = 0.5.", set: mostra(a, null) },
+        { nota: "Ora un solo errore diventa grande: −2 → −6. MAE sale di 1 (2.5): cresce in proporzione. MSE quadruplica (10.5) e RMSE raddoppia (3.24): i quadrati puniscono molto gli errori grandi. R² diventa negativo (−1.1): peggio che prevedere sempre la media.", set: Object.assign({ e: { valori: ['1', '−1', '2', '−6'], toni: { 3: 'no' } } }, mostra(b, 'no')) },
+        { nota: "Quale usare: MAE è robusta agli outlier (come la norma L1); MSE/RMSE sono sensibili agli errori grandi (norma L2), RMSE si legge nell'unità dei dati; R² confronta con la media. Esempio completo sui dati veri: la valutazione dell'Assignment 1 (MAE, distanza media, RMSE).", set: { c: { t: 'MAE: robusta · MSE/RMSE: puniscono i grandi' }, c2: { t: 'R²: rispetto a prevedere la media' } } }
+      ]
+    };
+  
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Evaluation metrics</h1>
+  <p class="lede">Lecture 10 and the exercises of week 11 (<i>Metrics</i>, <i>Evaluating confusion</i>). How to measure how well a model works, why accuracy alone deceives and what to do with unbalanced classes. Exam question <b>Q9</b>. DW chapter 15.</p>
+</header>
+
+<section>
+  <h2>The confusion matrix</h2>
+  <figure class="passi" data-titolo="Four cells">
+    <div class="passo"><div class="espr"><mark class="ok">TP</mark> vero positivo    <mark class="ok">TN</mark> vero negativo</div><p class="nota">The model is right: it says positive to a positive, negative to a negative.</p></div>
+    <div class="passo"><div class="espr"><mark class="no">FP</mark> falso positivo (falso allarme)    <mark class="no">FN</mark> falso negativo (mancato)</div><p class="nota">FP: it says "sick" to a healthy one. FN: it says "healthy" to a sick one.</p></div>
+    <div class="passo"><div class="espr">DW:  [[<mark class="ok">TP</mark>, <mark class="no">FP</mark>], [<mark class="no">FN</mark>, <mark class="ok">TN</mark>]]      sklearn:  [[<mark class="ok">TN</mark>, <mark class="no">FP</mark>], [<mark class="no">FN</mark>, <mark class="ok">TP</mark>]]</div><p class="nota">Watch out: sklearn's <code>confusion_matrix</code> puts the true labels on the rows, in order 0 then 1, so the TN are at the top left. Before reading a matrix, check the convention.</p></div>
+  </figure>
+  <figure class="scena" data-scena="convenzioni" data-titolo="TP, TN, FP, FN and the two conventions"></figure>
+</section>
+
+<section>
+  <h2>The metrics, on example 15.1 of DW</h2>
+  <p>TP = 50, FP = 10, FN = 5, TN = 100 (165 cases). All the values below are verified with sklearn.</p>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Metric</th><th>Formula</th><th>Value</th><th>Question it answers</th></tr></thead>
+    <tbody>
+      <tr><td><b>accuracy</b></td><td>(TP + TN) / all</td><td>150/165 = <b>0.909</b></td><td>how many right answers in total?</td></tr>
+      <tr><td><b>precision</b></td><td>TP / (TP + FP)</td><td>50/60 = <b>0.833</b></td><td>when I say "positive", how often am I right?</td></tr>
+      <tr><td><b>recall</b> (sensitivity, TPR)</td><td>TP / (TP + FN)</td><td>50/55 = <b>0.909</b></td><td>of the true positives, how many do I find?</td></tr>
+      <tr><td><b>specificity</b> (TNR)</td><td>TN / (TN + FP)</td><td>100/110 = <b>0.909</b></td><td>of the true negatives, how many do I recognise?</td></tr>
+      <tr><td>FPR</td><td>FP / (FP + TN) = 1 − specificity</td><td>0.091</td><td>how many false alarms on the negatives?</td></tr>
+      <tr><td><b>F1</b></td><td>2 · P · R / (P + R)</td><td><b>0.870</b></td><td>harmonic mean of precision and recall</td></tr>
+      <tr><td><b>MCC</b></td><td>(TP·TN − FP·FN) / √((TP+FP)(TP+FN)(TN+FP)(TN+FN))</td><td><b>0.802</b></td><td>correlation between predictions and truth, from −1 to 1</td></tr>
+    </tbody>
+  </table></div>
+  <div class="box attenzione" data-tit="Error in the notes (DW 15)">
+    <p>The specificity in the notes is called "False Negative Rate". This is wrong: the specificity is the <b>True Negative Rate</b>, TN / (TN + FP). The false negative rate is FN / (FN + TP) = 1 − recall.</p>
+  </div>
+  <figure class="scena" data-scena="confusione" data-titolo="Which cells each metric uses"></figure>
+  <figure class="passi" data-titolo="Which metric? It depends on the cost of the errors">
+    <div class="passo"><div class="espr">spam:  conta la <mark class="ok">precision</mark></div><p class="nota">A false positive sends an important mail to spam: better let some spam through.</p></div>
+    <div class="passo"><div class="espr">malattia:  conta la <mark class="ok">recall</mark></div><p class="nota">A false negative is a sick person not treated: better a few more false alarms.</p></div>
+    <div class="passo"><div class="espr">F1: nessuna delle due è sufficiente da sola</div><p class="nota">Recall 1 is obtained by always saying "positive"; high precision by saying "positive" only when very sure. F1 is high only if both are. MCC also uses the TN: it is the most honest with unbalanced classes.</p></div>
+  </figure>
+</section>
+
+<section>
+  <h2>Threshold, ROC and AUC</h2>
+  <p>A probabilistic classifier (logistic regression) gives a score; the class depends on the <b>threshold</b>. Example with 6 points, labels [0, 0, 1, 0, 1, 1] and scores [0.1, 0.4, 0.35, 0.2, 0.8, 0.9]:</p>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Threshold</th><th>0.3</th><th>0.5</th><th>0.85</th></tr></thead>
+    <tbody>
+      <tr><td>precision</td><td>0.75</td><td>1.0</td><td>1.0</td></tr>
+      <tr><td>recall</td><td><b>1.0</b></td><td>0.667</td><td>0.333</td></tr>
+    </tbody>
+  </table></div>
+  <figure class="passi" data-titolo="From the threshold to the curve">
+    <div class="passo"><div class="espr">soglia ↓  ⇒  più "positivo"  ⇒  recall ↑, precision di solito ↓</div><p class="nota">Precision and recall are in conflict: the threshold is chosen according to the application.</p></div>
+    <div class="passo"><div class="espr"><mark class="ora">ROC</mark>: per ogni soglia un punto (FPR, TPR)</div><p class="nota">x axis: false alarms on the negatives. y axis: positives found. A random classifier sits on the diagonal.</p></div>
+    <div class="passo"><div class="espr"><mark class="ok">AUC</mark> = area sotto la ROC = 0.889 qui</div><p class="nota">1 = perfect, 0.5 = random. It is read as: the probability that a positive taken at random has a higher score than a negative taken at random (here 8 pairs out of 9). With very unbalanced classes one also looks at the precision-recall curve.</p></div>
+  </figure>
+  <figure class="scena" data-scena="roc" data-titolo="The ROC curve, threshold by threshold"></figure>
+</section>
+
+<section>
+  <h2>Unbalanced classes</h2>
+  <figure class="passi" data-titolo="The accuracy paradox">
+    <div class="passo"><div class="espr">95 negativi, 5 positivi;  il modello dice sempre "negativo"</div><p class="nota">It has learned nothing.</p></div>
+    <div class="passo"><div class="espr">accuracy = <mark class="no">0.95</mark>,  recall = 0,  F1 = 0,  MCC = 0</div><p class="nota">The accuracy looks excellent; the other metrics say the truth (verified with sklearn).</p></div>
+  </figure>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Remedy</th><th>How</th><th>Risk</th></tr></thead>
+    <tbody>
+      <tr><td>undersampling</td><td>remove examples of the large class at random</td><td>information is thrown away</td></tr>
+      <tr><td>oversampling</td><td>duplicate examples of the small class at random</td><td>overfitting on the duplicates</td></tr>
+      <tr><td><b>SMOTE</b> (data augmentation)</td><td>create synthetic examples between neighbours of the small class</td><td>unrealistic examples</td></tr>
+      <tr><td>suitable metrics, stratified CV, class weights</td><td>F1, MCC, PR-curve; folds with the same proportions</td><td>–</td></tr>
+    </tbody>
+  </table></div>
+  <p class="piccolo">The three techniques are those of the reading <i>Class Imbalance: Random Sampling and Data Augmentation with Imbalanced-Learn</i>. The resampling is done <b>only on the training</b>: the test must stay as it is in reality.</p>
+  <figure class="scena" data-scena="sbilanciate" data-titolo="Accuracy 0.95 without having learned anything"></figure>
+</section>
+
+<section>
+  <h2>Metrics for regression (Q9 b)</h2>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Metric</th><th>Formula</th><th>Note</th></tr></thead>
+    <tbody>
+      <tr><td>MAE</td><td>mean |yᵢ − ŷᵢ|</td><td>in the unit of the data; robust to outliers (like the L1 norm)</td></tr>
+      <tr><td>MSE</td><td>mean (yᵢ − ŷᵢ)²</td><td>squared units; punishes large errors a lot (L2 norm)</td></tr>
+      <tr><td>RMSE</td><td>√MSE</td><td>back in the unit of the data: easier to read</td></tr>
+      <tr><td>R²</td><td>1 − SS<sub>res</sub> / SS<sub>tot</sub></td><td>comparison with whoever always predicts the mean (<a href="w07-validazione.html">validation</a>)</td></tr>
+    </tbody>
+  </table></div>
+  <p>A complete example with MAE, RMSE and mean distance on the real data: the evaluation of <a href="w06-assignment1-gaze.html">Assignment 1</a>. The Mahalanobis distance, mentioned among the review questions, is on the page on <a href="w09-dati-mancanti-outlier.html">outliers</a>.</p>
+  <div class="box esame" data-tit="Q9">
+    <p>(a) metrics of classifiers: confusion matrix, the formulas, when to use which, threshold, ROC/AUC. (b) regression: MAE, MSE, RMSE, R², with Assignment 1 as example. (c) unbalanced data: the accuracy paradox and the remedies.</p>
+  </div>
+  <figure class="scena" data-scena="metricheregr" data-titolo="MAE, MSE, RMSE, R² and an outlier"></figure>
+</section>
+
+</main>
+</body>
+</html>

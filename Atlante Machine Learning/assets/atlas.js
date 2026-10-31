@@ -40,6 +40,7 @@
     en: {
       'Mostra gli altri atlanti': 'Show the other atlases',
       'atlante di': 'atlas of',
+      'Atlante': 'Atlas',
       "Indice dell'atlante": 'Atlas index',
       'Cerca un argomento…': 'Search a topic…',
       'Cerca un argomento': 'Search a topic',
@@ -103,6 +104,7 @@
     da: {
       'Mostra gli altri atlanti': 'Vis de andre atlas',
       'atlante di': 'atlas for',
+      'Atlante': 'Atlas',
       "Indice dell'atlante": 'Atlas-indeks',
       'Cerca un argomento…': 'Søg et emne…',
       'Cerca un argomento': 'Søg et emne',
@@ -214,11 +216,18 @@
   /* ---------------------------------------------------------------------
      Pagina corrente e menu appiattito
      --------------------------------------------------------------------- */
+  // Pagina italiana di questa pagina: le copie in en/ e da/ hanno lo stesso percorso senza il prefisso di lingua
   const qui = (() => {
     let h = location.href.split('#')[0].split('?')[0];
     if (h.endsWith('/')) h += 'index.html';
-    return h.startsWith(BASE) ? decodeURIComponent(h.slice(BASE.length)) : '';
+    return h.startsWith(BASE) ? decodeURIComponent(h.slice(BASE.length)).replace(/^(en|da)\//, '') : '';
   })();
+
+  // Link alla stessa pagina nella lingua data: la copia tradotta se esiste (SITO.tradotte, creato da traduci.py), altrimenti l'italiana
+  const verso = (h, lingua = LINGUA_UI) => {
+    const tradotte = (SITO.tradotte && SITO.tradotte[lingua]) || [];
+    return BASE + (lingua !== 'it' && tradotte.includes(h) ? lingua + '/' : '') + h;
+  };
 
   const piatti = [];   // tutte le pagine linkabili in ordine
   (function appiattisci(voci, percorso) {
@@ -257,7 +266,7 @@
           esc(tv(v.t)) + `<em>${esc(tq(v.arriva))}</em>`));
         continue;
       }
-      const a = el('a', { href: BASE + v.h, 'aria-current': v.h === qui ? 'page' : null },
+      const a = el('a', { href: verso(v.h), 'aria-current': v.h === qui ? 'page' : null },
         esc(tv(v.t)) + (capiti.includes(v.h) ? `<span class="spunta" title="${tr('Segnata come capita')}">✓</span>` : ''));
       contenitore.appendChild(a);
     }
@@ -298,7 +307,7 @@
 
     $$('[data-lingua]', piede).forEach(b => b.addEventListener('click', () => {
       try { localStorage.setItem('atlante:lingua', b.dataset.lingua); } catch (e) { }
-      location.reload();
+      location.replace(verso(qui, b.dataset.lingua) + location.hash);
     }));
     $('.btn-tema', piede).addEventListener('click', () => {
       const r = document.documentElement;
@@ -335,7 +344,7 @@
     if (testa && !$('.occhiello', testa) && paginaQui && paginaQui.percorso.length) {
       testa.insertBefore(el('div', { class: 'occhiello' }, paginaQui.percorso.map(p => `<span>${esc(p)}</span>`).join('')), testa.firstChild);
     }
-    if (paginaQui && !document.title.includes(SITO.sigla)) document.title += ' · Atlante ' + SITO.sigla;
+    if (paginaQui && !document.title.includes(SITO.sigla)) document.title += ' · ' + tr('Atlante') + ' ' + SITO.sigla;
 
     const h2 = $$(':scope > section > h2', pagina);
     h2.forEach(h => { if (!h.id) h.id = slug(h.textContent); });
@@ -368,8 +377,8 @@
     }
     const vicine = el('nav', { class: 'pagine-vicine', 'aria-label': tr('Pagine vicine') });
     const prima = piatti[indiceQui - 1], dopo = piatti[indiceQui + 1];
-    if (prima) vicine.appendChild(el('a', { href: BASE + prima.h, class: 'prima' }, `<small>${tr('← Prima')}</small>${esc(tv(prima.t))}`));
-    if (dopo) vicine.appendChild(el('a', { href: BASE + dopo.h, class: 'dopo' }, `<small>${tr('Dopo →')}</small>${esc(tv(dopo.t))}`));
+    if (prima) vicine.appendChild(el('a', { href: verso(prima.h), class: 'prima' }, `<small>${tr('← Prima')}</small>${esc(tv(prima.t))}`));
+    if (dopo) vicine.appendChild(el('a', { href: verso(dopo.h), class: 'dopo' }, `<small>${tr('Dopo →')}</small>${esc(tv(dopo.t))}`));
     fondo.appendChild(vicine);
     pagina.appendChild(fondo);
   }
@@ -1060,7 +1069,7 @@
       if (s.pausa) { stato += ' pausa'; etichetta = tr('pausa'); }
       if (s.esame) { etichetta = stato === 'fatta' ? tr('passato') : tr('esame'); }
       const giorno = (!s.etichetta && !s.pausa && !s.esame && !s.giorni) ? piuGiorni(da, dopo) : da;
-      const titolo = s.h ? `<a href="${BASE + s.h}">${esc(tv(s.t))}</a>` : esc(tv(s.t));
+      const titolo = s.h ? `<a href="${verso(s.h)}">${esc(tv(s.t))}</a>` : esc(tv(s.t));
       ul.appendChild(el('li', { class: stato }, `<span class="quando">${esc(tq(s.etichetta) || fmt(giorno, { weekday: 'short', day: 'numeric', month: 'short' }))}</span>` +
         `<span class="cosa">${titolo}${s.sub ? `<small>${s.sub}</small>` : ''}</span><span class="stato">${etichetta}</span>`));
     });
@@ -1150,7 +1159,7 @@
       const primo = pronte[0];
       const fatte = pronte.filter(p => capiti.includes(p.h)).length;
       const nomi = pagine.map(p => tv(p.t)).join(' · ');
-      box.appendChild(el(primo ? 'a' : 'div', { href: primo ? BASE + primo.h : null, class: primo ? null : 'arriva-carta' },
+      box.appendChild(el(primo ? 'a' : 'div', { href: primo ? verso(primo.h) : null, class: primo ? null : 'arriva-carta' },
         `<small>${esc(tq(v.quando || ''))}${pronte.length ? ` · ${fatte}/${pronte.length} ${tr('capite')}` : ` · ${tr('in arrivo')}`}</small><b>${esc(tv(v.g))}</b><span>${esc(nomi)}</span>`));
     }
   }
@@ -1159,6 +1168,9 @@
      Avvio
      --------------------------------------------------------------------- */
   async function avvia() {
+    // Se la pagina non è nella lingua scelta (o è in en/ e si è scelto IT), si va alla copia giusta prima di montare il guscio
+    const giusta = verso(qui);
+    if (giusta !== location.href.split('#')[0].split('?')[0]) { location.replace(giusta + location.hash); return; }
     await sincronizzaCapiti();
     guscio();
     testata();

@@ -1,0 +1,86 @@
+@@s001 Trees and folds on trees
+@@s002 <p>The tree <code>Branch(Branch(Leaf(1), Leaf(5)), Leaf(3))</code>. The squares B are the <code>Branch</code>, the circles the <code>Leaf</code>. <code>size</code> counts <b>all</b> the nodes.</p>
+@@s003 <p>The root is a Branch: to answer it needs <code>size(left)</code> and <code>size(right)</code>. I go down on the left.</p>
+@@s004 <p>This too is a Branch: I go down again.</p>
+@@s005 <p>A leaf: <code>case Leaf(_) => 1</code>. The value 1 inside the leaf does not count, I discard it with <code>_</code>.</p>
+@@s006 <p>The other leaf: 1.</p>
+@@s007 <p>Now the left Branch has the two answers: <b>1 + 1 + 1 = 3</b>. The extra <b>1</b> is the Branch itself.</p>
+@@s008 <p>The right branch of the root is a leaf: 1.</p>
+@@s009 <p>The root: <b>1 + 3 + 1 = 5</b>. There are 5 nodes: 2 Branch and 3 Leaf (checked).</p>
+@@s010 <p>Same tree, another question: the largest value.</p>
+@@s011 <p>Leaf 1: <code>case Leaf(value) => value</code>. Here the value <b>is needed</b>, so I give it a name.</p>
+@@s012 <p>Leaf 5: 5.</p>
+@@s013 <p>Left Branch: <code>1.max(5)</code> = 5.</p>
+@@s014 <p>Leaf 3: 3.</p>
+@@s015 <p>Root: <code>5.max(3)</code> = <b>5</b>.</p>
+@@s016 dato:Leaf (a value),due:Branch (two trees),no:does not exist
+@@s017 due:branch,dato:leaf before,ok:leaf after,no:error
+@@s018 dato:leaf (uses g),due:branch (uses f),ok:result
+@@s019 spento:discard (value thrown away),ora:placeholder (new parameter),ok:the function that comes out
+@@s020 Trees and folds on trees
+@@s021 Exercises 2–5 of week 3. A tree is another algebraic type: a leaf with a value, or a branch with two subtrees. You write <code>size</code>, <code>maximum</code> and <code>map</code>, then you discover that they are the same function: <code>fold</code>.
+@@s022 The type
+@@s023 Tree
+@@s024 A <b>leaf</b> contains a value.
+@@s025 A <b>branch</b> contains two trees. It does not contain a value.
+@@s026 There is no "empty tree" and there is no <code>null</code>: a branch <b>always</b> has two children. That is why <code>maximum</code> always has an answer and <code>Option</code> is not needed.
+@@s027 Frequent doubt: and if a branch has only the right child?
+@@s028 It cannot happen. One does not write <code>t.left != null</code>: one asks the shape with <code>match</code>. If it is a <code>Leaf</code> you have the value, if it is a <code>Branch</code> you have both children.
+@@s029 Leaves with a value, branches with two children
+@@s030 <code>size</code>: counting the nodes
+@@s031 size climbs from the leaves to the root
+@@s032 <code>maximum</code>: the largest value
+@@s033 maximum on the same tree
+@@s034 Error seen in the exercises
+@@s035 <code>case Branch(left, right) => size(left).max(size(right))</code> compares the <b>sizes</b> of the subtrees, not the values. It must call <code>maximum</code> on both.
+@@s036 <code>map</code>: same shape, values transformed
+@@s037 map(Branch(Leaf(1), Leaf(2)))(_ * 10)
+@@s038 It is a Branch.
+@@s039 The branch stays a branch; the <code>map</code> goes down into the two children with the same <code>f</code>.
+@@s040 In the leaves <code>f</code> is applied to the value and it is <b>put back in a Leaf</b>.
+@@s041 Same shape as before.
+@@s042 map(t)(_ * 10) and the toString error
+@@s043 <code>fold</code>: the function that contains them all
+@@s044 Look at what <code>size</code>, <code>maximum</code> and <code>map</code> have in common: they all do something with the leaves and something to combine the two results of a branch. Only <b>what</b> changes.
+@@s045 Exercise 5
+@@s046 <code>A</code> is what is in the leaves, <code>B</code> is what I want to obtain.
+@@s047 <code>g</code>: what to do with <b>a leaf</b>. It transforms its value A into a result B.
+@@s048 <code>f</code>: how to <b>combine</b> the two results of a branch's children.
+@@s049 Leaf: I use <code>g</code>.
+@@s050 Branch: I fold the two children and combine with <code>f</code>.
+@@s051 Function
+@@s052 g (leaf)
+@@s053 f (branch)
+@@s054 Code
+@@s055 <code>size1</code>
+@@s056 counts 1, ignores the value
+@@s057 1 + left + right
+@@s058 <code>fold[A, Int](t)((l, r) => 1 + l + r)(_ => 1)</code>
+@@s059 <code>maximum1</code>
+@@s060 the value itself
+@@s061 the larger of the two
+@@s062 <code>fold[Int, Int](t)(_ max _)(identity)</code>
+@@s063 <code>map1</code>
+@@s064 put f(value) back in a leaf
+@@s065 put the two trees back in a branch
+@@s066 <code>fold[A, Tree[B]](t)(Branch(_, _))(a => Leaf(f(a)))</code>
+@@s067 size1(Branch(Leaf(7), Leaf(9))) with fold
+@@s068 It is a branch: I will use <code>f</code>.
+@@s069 First the two children.
+@@s070 Leaves: <code>g</code> gives 1 whatever the value.
+@@s071 One branch and two leaves.
+@@s072 size, maximum and map as folds
+@@s073 Three pieces of syntax that appear here
+@@s074 <code>identity</code>
+@@s075 It is the function that returns its argument as it is: <code>identity(42)</code> is worth 42. It is already in Scala, it does not need to be imported. In <code>maximum1</code> the value of a leaf is already the result, so <code>g</code> must do nothing: <code>identity</code> is like writing <code>v => v</code>.
+@@s076 <code>Branch(_, _)</code>: placeholders
+@@s077 Discard or placeholder?
+@@s078 After <code>case</code>: the value is there, but I <b>throw it away</b>.
+@@s079 Before an arrow: a parameter that arrives and that I ignore.
+@@s080 Inside an expression, without an arrow: they are <b>placeholders</b>. Scala builds a function.
+@@s081 Each <code>_</code> becomes a parameter, in order. It is the <code>f</code> of <code>map1</code>: it takes two trees and puts them back in a branch.
+@@s082 A trick to tell them apart
+@@s083 Try replacing <code>_</code> with <code>x</code>. If the code makes sense as it is, it was a <b>discard</b>. If to make sense you must add <code>x =></code> in front, it was a <b>placeholder</b>.
+@@s084 <code>fold[A, Tree[B]]</code>: types written by hand
+@@s085 Sometimes Scala cannot guess <code>B</code> and it must be written in square brackets. The exercise sheet recommends it, and here it is really needed:
+@@s086 identity, the three uses of _, types by hand

@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Code: graphs as adjacency lists</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Code: graphs as adjacency lists</h1>
+  <p class="lede">How to build a graph in Java, how to compute the degree of a node, how to check an edge. It is the basic code on which BFS, DFS and topological sort rest.</p>
+</header>
+
+<section>
+  <h2>Reading the graph</h2>
+  <p>The graph arrives as text: first line <code>n m</code>, then <code>m</code> lines with the edges. I store it as an adjacency list: a list of neighbours for each node.</p>
+  <figure class="codice" data-titolo="Reading the graph">
+<pre data-lang="java">import java.io.*;
+import java.util.*;
+
+public class Main {
+    public static void main(String[] args) throws IOException {
+        BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
+        StringTokenizer st = new StringTokenizer(in.readLine());
+        int n = Integer.parseInt(st.nextToken());
+        int m = Integer.parseInt(st.nextToken());
+
+        // Lista di adiacenza: una lista di vicini per ogni nodo.
+        List&lt;List&lt;Integer&gt;&gt; adj = new ArrayList&lt;&gt;();
+        for (int i = 0; i &lt; n; i++) {
+            adj.add(new ArrayList&lt;&gt;());
+        }
+        for (int i = 0; i &lt; m; i++) {
+            st = new StringTokenizer(in.readLine());
+            int u = Integer.parseInt(st.nextToken());
+            int v = Integer.parseInt(st.nextToken());
+            adj.get(u).add(v);
+            adj.get(v).add(u);
+        }
+
+        // Grado di ogni nodo = lunghezza della sua lista.
+        StringBuilder out = new StringBuilder();
+        out.append("n = ").append(n).append(", m = ").append(m).append('\n');
+        for (int u = 0; u &lt; n; u++) {
+            out.append("grado(").append(u).append(") = ").append(adj.get(u).size()).append('\n');
+        }
+
+        // Domanda: c'è l'arco u–v? Scorro la lista di u: costa il grado di u.
+        int u = 0, v = 3;
+        boolean c = adj.get(u).contains(v);
+        out.append("arco ").append(u).append('-').append(v).append(": ").append(c).append('\n');
+        System.out.print(out);
+    }
+}</pre>
+    <ol class="spiega">
+    <li data-righe="6"><p><code>BufferedReader</code> reads the input one line at a time. It is faster than <code>Scanner</code> on large inputs.</p></li>
+    <li data-righe="8"><p>I read <code>n</code> (nodes) from the first line. <code>Integer.parseInt</code> turns the text into an <code>int</code>.</p></li>
+    <li data-righe="12"><p>A list of lists. <code>adj.get(u)</code> is the list of neighbours of <code>u</code>. The generics <code>&lt;…&gt;</code> state the type of the elements.</p></li>
+    <li data-righe="20"><p>I add <code>v</code> to the neighbours of <code>u</code>.</p></li>
+    <li data-righe="21"><p>The graph is undirected: the edge counts in both directions, so I also add <code>u</code> to the neighbours of <code>v</code>.</p></li>
+    </ol>
+  </figure>
+  <div class="box basi" data-tit="Syntax notes"><ul><li><code>import java.io.*;</code> and <code>import java.util.*;</code> import all the classes of the two packages.</li><li><code>throws IOException</code>: <code>readLine()</code> can fail, and Java requires you to declare it (a <i>checked</i> exception).</li><li><code>new ArrayList&lt;&gt;()</code>: the diamond <code>&lt;&gt;</code> tells Java to infer the type from the context.</li></ul></div>
+</section>
+<section>
+  <h2>Degree and the edge question</h2>
+  <p>The degree of <code>u</code> is the size of its list. Checking the edge <code>u–v</code> means searching for <code>v</code> in the list of <code>u</code>: it costs the degree of <code>u</code>.</p>
+  <figure class="codice" data-titolo="Degree and the edge question">
+<pre data-lang="java">import java.io.*;
+import java.util.*;
+
+public class Main {
+    public static void main(String[] args) throws IOException {
+        BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
+        StringTokenizer st = new StringTokenizer(in.readLine());
+        int n = Integer.parseInt(st.nextToken());
+        int m = Integer.parseInt(st.nextToken());
+
+        // Lista di adiacenza: una lista di vicini per ogni nodo.
+        List&lt;List&lt;Integer&gt;&gt; adj = new ArrayList&lt;&gt;();
+        for (int i = 0; i &lt; n; i++) {
+            adj.add(new ArrayList&lt;&gt;());
+        }
+        for (int i = 0; i &lt; m; i++) {
+            st = new StringTokenizer(in.readLine());
+            int u = Integer.parseInt(st.nextToken());
+            int v = Integer.parseInt(st.nextToken());
+            adj.get(u).add(v);
+            adj.get(v).add(u);
+        }
+
+        // Grado di ogni nodo = lunghezza della sua lista.
+        StringBuilder out = new StringBuilder();
+        out.append("n = ").append(n).append(", m = ").append(m).append('\n');
+        for (int u = 0; u &lt; n; u++) {
+            out.append("grado(").append(u).append(") = ").append(adj.get(u).size()).append('\n');
+        }
+
+        // Domanda: c'è l'arco u–v? Scorro la lista di u: costa il grado di u.
+        int u = 0, v = 3;
+        boolean c = adj.get(u).contains(v);
+        out.append("arco ").append(u).append('-').append(v).append(": ").append(c).append('\n');
+        System.out.print(out);
+    }
+}</pre>
+    <ol class="spiega">
+    <li data-righe="28"><p>The degree is the <code>size()</code> of the list. Cost <code>O(1)</code>, because the list already knows its length.</p></li>
+    <li data-righe="33"><p><code>contains</code> scans the list: cost <code>O(degree(u))</code>. With an adjacency matrix it would be <code>O(1)</code>, but at the space cost <code>O(n²)</code>.</p></li>
+    </ol>
+  </figure>
+  <div class="box basi" data-tit="Syntax notes"><ul><li><code>.size()</code> is the number of elements of a list; <code>.length</code> is only for arrays.</li><li><code>int u = 0, v = 3;</code> declares several variables of the same type on one line.</li></ul></div>
+</section>
+<section>
+  <h2>Running it</h2>
+  <p>Example of input and output (actually compiled and run).</p>
+  <pre class="cod">4 4
+0 1
+0 3
+1 2
+2 3
+
+(output)
+n = 4, m = 4
+grado(0) = 2
+grado(1) = 2
+grado(2) = 2
+grado(3) = 2
+arco 0-3: true</pre>
+</section>
+<section>
+  <h2>The theory, side by side</h2>
+  <p><a href="../teoria/basi-grafi.html"><b>← Back to the theory of this topic</b></a></p>
+</section>
+
+</main>
+</body>
+</html>

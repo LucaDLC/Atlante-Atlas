@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Kode: mergesort i Java</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Kode: mergesort i Java</h1>
+  <p class="lede">Del og hersk i Java: rekursion over indeksene, fletningen med to fronter og kopieringen af resultatet.</p>
+</header>
+
+<section>
+  <h2>Del og kald rekursivt</h2>
+  <p>Funktionen sorterer delintervallet <code>a[lo..hi)</code>. Den deler i to og kalder sig selv på de to halvdele.</p>
+  <figure class="codice" data-titolo="Del og kald rekursivt">
+<pre data-lang="java">import java.io.*;
+import java.util.*;
+
+public class Main {
+    // Divide et impera: ordina a[lo..hi) dividendo a metà e fondendo.
+    static void ordina(int[] a, int lo, int hi, int[] tmp) {
+        if (hi - lo &lt;= 1) {
+            return;                            // caso base: un elemento è già ordinato
+        }
+        int mid = (lo + hi) / 2;
+        ordina(a, lo, mid, tmp);
+        ordina(a, mid, hi, tmp);
+        int i = lo, j = mid, k = lo;
+        while (i &lt; mid &amp;&amp; j &lt; hi) {            // fusione: sposto il più piccolo dei due fronti
+            tmp[k++] = (a[i] &lt;= a[j]) ? a[i++] : a[j++];
+        }
+        while (i &lt; mid) tmp[k++] = a[i++];
+        while (j &lt; hi) tmp[k++] = a[j++];
+        System.arraycopy(tmp, lo, a, lo, hi - lo);   // ricopio la parte fusa nell'array originale
+    }
+
+    public static void main(String[] args) throws IOException {
+        BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
+        int n = Integer.parseInt(in.readLine().trim());
+        StringTokenizer st = new StringTokenizer(in.readLine());
+        int[] a = new int[n];
+        for (int i = 0; i &lt; n; i++) {
+            a[i] = Integer.parseInt(st.nextToken());
+        }
+        ordina(a, 0, n, new int[n]);
+        StringBuilder out = new StringBuilder();
+        for (int i = 0; i &lt; n; i++) {
+            out.append(a[i]).append(i + 1 &lt; n ? " " : "\n");
+        }
+        System.out.print(out);
+    }
+}</pre>
+    <ol class="spiega">
+    <li data-righe="7"><p>Grundtilfælde: et enkelt element eller ingen er allerede sorteret.</p></li>
+    <li data-righe="10"><p>Delepunktet. Med heltal afkorter divisionen: det er midten rundet ned.</p></li>
+    <li data-righe="11"><p>Jeg sorterer venstre halvdel og derefter højre. Rekursionen er første del af del og hersk.</p></li>
+    </ol>
+  </figure>
+  <div class="box basi" data-tit="Syntaksnoter"><ul><li>Intervallerne er halvåbne: <code>[lo, hi)</code> inkluderer <code>lo</code> og udelukker <code>hi</code>. Det er Javas konvention for indeks.</li></ul></div>
+</section>
+<section>
+  <h2>Fletning</h2>
+  <p>To fronter, en for hver halvdel. Hvert trin kopierer jeg den mindste over i det midlertidige array.</p>
+  <figure class="codice" data-titolo="Fletning">
+<pre data-lang="java">import java.io.*;
+import java.util.*;
+
+public class Main {
+    // Divide et impera: ordina a[lo..hi) dividendo a metà e fondendo.
+    static void ordina(int[] a, int lo, int hi, int[] tmp) {
+        if (hi - lo &lt;= 1) {
+            return;                            // caso base: un elemento è già ordinato
+        }
+        int mid = (lo + hi) / 2;
+        ordina(a, lo, mid, tmp);
+        ordina(a, mid, hi, tmp);
+        int i = lo, j = mid, k = lo;
+        while (i &lt; mid &amp;&amp; j &lt; hi) {            // fusione: sposto il più piccolo dei due fronti
+            tmp[k++] = (a[i] &lt;= a[j]) ? a[i++] : a[j++];
+        }
+        while (i &lt; mid) tmp[k++] = a[i++];
+        while (j &lt; hi) tmp[k++] = a[j++];
+        System.arraycopy(tmp, lo, a, lo, hi - lo);   // ricopio la parte fusa nell'array originale
+    }
+
+    public static void main(String[] args) throws IOException {
+        BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
+        int n = Integer.parseInt(in.readLine().trim());
+        StringTokenizer st = new StringTokenizer(in.readLine());
+        int[] a = new int[n];
+        for (int i = 0; i &lt; n; i++) {
+            a[i] = Integer.parseInt(st.nextToken());
+        }
+        ordina(a, 0, n, new int[n]);
+        StringBuilder out = new StringBuilder();
+        for (int i = 0; i &lt; n; i++) {
+            out.append(a[i]).append(i + 1 &lt; n ? " " : "\n");
+        }
+        System.out.print(out);
+    }
+}</pre>
+    <ol class="spiega">
+    <li data-righe="15"><p>Jeg sammenligner de to fronter og kopierer den mindste. <code>k++</code> bruger værdien og går så videre.</p></li>
+    <li data-righe="19"><p>Jeg kopierer den flettede del tilbage: <code>arraycopy</code> kopierer blokke af arrays.</p></li>
+    </ol>
+  </figure>
+  <div class="box basi" data-tit="Syntaksnoter"><ul><li><code>i++</code> inde i et udtryk bruger værdien før forøgelsen: her flytter det fronten et skridt frem.</li></ul></div>
+</section>
+<section>
+  <h2>Kør det</h2>
+  <p>Eksempel på input og output (faktisk kompileret og kørt).</p>
+  <pre class="cod">8
+5 2 4 7 1 3 2 6
+
+(output)
+1 2 2 3 4 5 6 7</pre>
+</section>
+<section>
+  <h2>Teorien side om side</h2>
+  <p><a href="../teoria/mergesort.html"><b>← Tilbage til teorien om dette emne</b></a></p>
+</section>
+
+</main>
+</body>
+</html>

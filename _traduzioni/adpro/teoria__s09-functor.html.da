@@ -1,0 +1,53 @@
+@@s001 Functor: map på hver container
+@@s002 dato:startcontainer,ora:f i aktion,ok:resultat,no:ingen værdi at transformere
+@@s003 <code>map</code> anvender f på det, der er indeni, og lader <b>formen</b> være, som den er. Her er f = x · 2, og containeren er en liste med tre værdier.
+@@s004 Hvert element transformeres: 1 → 2, 2 → 4, 3 → 6. Listen er stadig tre lang.
+@@s005 <b>Some(3)</b>: f anvendes på værdien indeni. Resultatet er <b>Some(6)</b>, stadig en Option.
+@@s006 <b>None</b> har ingen værdier: map gør ingenting og returnerer None. Formen er den samme som før, en container.
+@@s007 dato:input,ok:lig med input'et,ora:sammensætning
+@@s008 <b>Identitetsloven</b>: <code>fa.map(identity) === fa</code>. <code>identity</code> er funktionen x ↦ x, som ikke ændrer noget. Resultatet skal være lig med input'et: strukturen røres ikke.
+@@s009 Jeg anvender map(identity) på List(1, 2, 3): jeg får List(1, 2, 3). Lig med input'et: loven gælder.
+@@s010 <b>Sammensætningsloven</b>: to <code>map</code> efter hinanden giver samme resultat som ét <code>map</code> med sammensætningen af funktionerne. Med x + 1 og derefter x · 2 er det som x ↦ (x + 1) · 2. Begge giver List(4, 6, 8).
+@@s011 dato:startpar,ora:projektion i gang,ok:resultat
+@@s012 <b>distribute</b> tager et F af par og returnerer et par af F: en liste af (navn, alder) bliver til (liste af navne, liste af aldre).
+@@s013 <code>fab.map(_._1)</code> tager det første element i hvert par: listen af navne.
+@@s014 <code>fab.map(_._2)</code> tager det andet element: listen af aldre.
+@@s015 Resultatet er et par af lister. Den samme definition for List, LazyList, Gen og Par: den bruger kun <code>map</code>, så den gælder for enhver functor.
+@@s016 dato:containere,ora:kombination,ok:resultat,no:resultat None
+@@s017 <b>map2</b> kombinerer to containere med en funktion f(a, b). For at kombinere dem skal <b>begge</b> værdier være der. Et enkelt <code>map</code>, på én container, er ikke nok.
+@@s018 Hvis fa er Some(a) og fb er Some(b), er resultatet Some(f(a, b)). Her forener f navn og alder til en streng.
+@@s019 Resultat: <b>Some("John (35)")</b>. Resultatet bliver en Option: map2 forlader ikke containeren.
+@@s020 Hvis en af de to er <b>None</b>, er resultatet None: der er intet at kombinere. På sliden skrives map2 med <code>flatMap</code>, som er emnet på monadesiden.
+@@s021 <span>Uge 9</span>
+@@s022 Functor: map på hver container
+@@s023 Lister, options, generatorer, parsere, træer: de har alle en <code>map</code> med samme form. Functor er navnet på denne fælles grænseflade, og dens lov siger, at <code>map</code> ikke ændrer strukturen.
+@@s024 Den samme form overalt
+@@s025 I de foregående uger har du skrevet <code>map</code> flere gange. Signaturerne er næsten ens:
+@@s026 container
+@@s027 signatur for map
+@@s028 Gen
+@@s029 <code>def map[A,B](ga: Gen[A])(f: A =&gt; B): Gen[B]</code>
+@@s030 List
+@@s031 <code>def map[A,B](la: List[A])(f: A =&gt; B): List[B]</code>
+@@s032 Option
+@@s033 <code>def map[A,B](oa: Option[A])(f: A =&gt; B): Option[B]</code>
+@@s034 Også <code>State</code>, <code>Par</code>, <code>Parser</code> og <code>Tree</code> følger samme mønster. Derfor kan man skrive én enkelt grænseflade. Navnet <i>Functor</i> er det traditionelle (sliderne indrømmer, at <i>Mappable</i> ville være tydeligere).
+@@s035 map: formen bliver, værdierne ændrer sig
+@@s036 Traiten Functor og dens lov
+@@s037 Traiten har en typekonstruktør <code>F[_]</code> (som i foldable) og en udvidelse <code>map</code>:
+@@s038 <code>trait Functor[F[_]]</code> med <code>extension [A](fa: F[A]) def map[B](f: A =&gt; B): F[B]</code>. <code>map</code> tager en <code>F[A]</code>, anvender f på det, der er indeni, og returnerer en <code>F[B]</code>.
+@@s039 <b>Identitetsloven</b> (fra sliderne): <code>fa.map(identity) === fa</code>. Med <code>identity</code> ændres intet, så strukturen må ikke ændre sig. Sammensætningsloven er den samme idé med to funktioner: to maps efter hinanden svarer til ét map med sammensætningen.
+@@s040 Loven: map(identity) ændrer intet
+@@s041 Pas på
+@@s042 Compileren kontrollerer ikke loven. En <code>map</code>, der gør underlige ting (for eksempel kasserer elementer), kompilerer alligevel, men den er ikke en functor.
+@@s043 distribute: en generel unzipper
+@@s044 <code>distribute</code> tager en <code>F[(A, B)]</code> og returnerer et par <code>(F[A], F[B])</code>: den adskiller komponenterne. Med en liste af par er det en unzip. Definitionen bruger kun <code>map</code>:
+@@s045 <code>(fab.map { _._1 }, fab.map { _._2 })</code>.
+@@s046 En liste af par bliver til to lister
+@@s047 map2: at kombinere to containere
+@@s048 Med et enkelt <code>map</code> kan du ikke kombinere to containere: der skal <code>map2</code> til, som tager <code>F[A]</code> og <code>F[B]</code> og en funktion <code>f(a, b)</code>. På sliderne er den defineret med <code>flatMap</code> for Option, List og Gen:
+@@s049 <code>fa.flatMap(a =&gt; fb.map(b =&gt; f(a, b)))</code>
+@@s050 Det er den generaliserede "zip" (en slags <code>zipWith</code>). For Option er opførslen klar: hvis en værdi mangler, mangler resultatet. For lister og generatorer ændrer betydningen sig, og derfor advarer sliden om, at hver type har sin egen intuition.
+@@s051 map2 med to Option: begge skal være der
+@@s052 Hvor det bruges
+@@s053 Koden til <code>map</code>, <code>distribute</code> og <code>map2</code> på kursets typer står på <a href="../esempi/s09-functor.html">siden med eksempler side om side</a>. <code>map2</code> på generatorer og på parseren, og dens generelle form med <code>flatMap</code>, er på <a href="s09-monad.html">monadesiden</a>.

@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Monitor og condition variable</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+SCENE.mesa = {
+  w: 600, h: 270, lato: false,
+  legenda: 'dato:læser,due:skriver,ora:hvem der bevæger sig nu,no:regel overtrådt,ok:korrekt adfærd',
+  oggetti: [
+    { id: 'zE', tipo: 'testo', x: 95, y: 30, t: 'entry queue', size: 13, bold: true },
+    { id: 'zM', tipo: 'testo', x: 300, y: 30, t: 'dentro il monitor (lock)', size: 13, bold: true },
+    { id: 'zW', tipo: 'testo', x: 505, y: 30, t: 'wait set (condition)', size: 13, bold: true },
+    { id: 'b1', tipo: 'linea', x1: 190, y1: 45, x2: 190, y2: 200, tratt: true, tono: 'spento' },
+    { id: 'b2', tipo: 'linea', x1: 410, y1: 45, x2: 410, y2: 200, tratt: true, tono: 'spento' },
+    { id: 'W1', tipo: 'nodo', r: 22, x: 300, y: 90, t: 'W1', tono: 'due' },
+    { id: 'R1', tipo: 'nodo', r: 22, x: 95, y: 90, t: 'R1', tono: 'dato' },
+    { id: 'W2', tipo: 'nodo', r: 22, x: 95, y: 160, t: 'W2', tono: 'due', nascosto: true },
+    { id: 'st', tipo: 'testo', x: 300, y: 225, t: 'writer = true', size: 14, bold: true },
+    { id: 'n', tipo: 'testo', x: 300, y: 255, t: '', size: 13, bold: true }
+  ],
+  passi: [
+    { nota: 'Skriveren W1 har låsen og skriver: writer = true. Læseren R1 kalder readLock().' },
+    { nota: 'R1 kommer ind, ser writer = true og laver <code>await()</code>: den frigiver låsen og går ind i wait set.', set: { R1: { x: 505, y: 90, tono: 'ora' } } },
+    { nota: 'W1 er færdig: writeUnlock() sætter writer = false og laver <code>signalAll()</code>. R1 starter ikke straks: den vender tilbage til <b>entry queue</b> for at konkurrere om låsen (Mesa-semantikken, den som Java har).', set: { W1: { x: 540, y: 170, tono: 'spento' }, R1: { x: 95, y: 90, tono: 'dato' }, st: { t: 'writer = false' } } },
+    { nota: 'En anden skriver, W2, tager låsen <b>før</b> R1: writer = true igen.', set: { W1: { nascosto: true }, W2: { nascosto: false, x: 300, y: 110, tono: 'ora' }, st: { t: 'writer = true' } } },
+    { nota: 'Med <code>if (writer) await();</code> kontrollerer R1, når den genoptager låsen, <b>ikke igen</b>: den laver readers++ og læser, mens W2 skriver.', set: { W2: { tono: 'due' }, R1: { x: 300, y: 170, tono: 'no' }, n: { t: 'if: R1 e W2 insieme dentro, violazione', tono: 'no' } } },
+    { nota: 'Med <code>while (writer) await();</code> kontrollerer R1 betingelsen igen, finder den sand og venter igen. Derfor er reglen: <b>altid while</b>.', set: { R1: { x: 505, y: 90, tono: 'ok' }, n: { t: 'while: R1 ricontrolla e aspetta di nuovo', tono: 'ok' } } }
+  ]
+};
+</script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  const T = (id, x, y, t, extra) => Object.assign({ id, tipo: 'testo', x, y, t, size: 13 }, extra || {});
+  const R = (id, x, y, w, h, t, extra) => Object.assign({ id, tipo: 'rett', x, y, w, h, t }, extra || {});
+  const N = (id, x, y, t, tono, extra) => Object.assign({ id, tipo: 'nodo', x, y, t, tono, r: 20 }, extra || {});
+
+  // 1. lettori e scrittori
+  SCENE.lettscritt = {
+    w: 600, h: 240, lato: true,
+    legenda: 'dato:læsere,due:skrivere,ok:tilladt,no:skal vente',
+    oggetti: [
+      R('res', 230, 50, 160, 130, 'dati condivisi', { tono: 'spento' }),
+      N('r1', 80, 60, 'R1', 'dato'), N('r2', 80, 120, 'R2', 'dato'), N('w1', 80, 180, 'W1', 'due'), N('r3', 520, 60, 'R3', 'dato', { nascosto: true }),
+      T('c', 310, 218, '', { bold: true })
+    ],
+    passi: [
+      { nota: "Una struttura dati condivisa. I <b>lettori</b> (R) la leggono, gli <b>scrittori</b> (W) la modificano." },
+      { nota: "R1 e R2 leggono <b>insieme</b>: nessuno modifica niente, quindi non si danno fastidio.", set: { r1: { x: 280, y: 90, tono: 'ok' }, r2: { x: 340, y: 90, tono: 'ok' }, c: { t: 'più lettori insieme: sì', tono: 'ok' } } },
+      { nota: "W1 vuole scrivere, ma ci sono lettori: deve <b>aspettare</b>. Scriverebbe mentre gli altri leggono dati a metà.", set: { w1: { tono: 'no' }, c: { t: 'scrittore con lettori: no', tono: 'no' } } },
+      { nota: "I lettori escono, W1 entra <b>da solo</b>. Ora anche un nuovo lettore R3 deve aspettare.", set: { r1: { x: 520, y: 150, tono: 'dato' }, r2: { x: 520, y: 200, tono: 'dato' }, w1: { x: 310, y: 155, tono: 'ok' }, r3: { nascosto: false, x: 520, y: 60, tono: 'no' }, c: { t: 'uno scrittore, da solo', tono: 'ok' } } },
+      { nota: "Un lock normale darebbe la sicurezza, ma escluderebbe anche lettore contro lettore, buttando via il parallelismo permesso. Serve qualcosa che decida <b>chi</b> entra in base allo <b>stato</b> (quanti lettori, c'è uno scrittore?): un <b>monitor</b>.", set: { c: { t: 'serve decidere in base allo stato' } } }
+    ]
+  };
+
+  // 2. il monitor come stanza
+  SCENE.stanzamon = {
+    w: 600, h: 262, lato: true,
+    legenda: 'dato:tråd,ora:har låsen,due:venter på betingelsen',
+    oggetti: [
+      R('eq', 20, 60, 130, 150, 'entry queue', { tono: 'spento' }), R('mon', 220, 60, 160, 150, 'monitor (1 alla volta)', { tono: 'spento' }), R('cq', 450, 60, 130, 150, 'coda della condition', { tono: 'spento' }),
+      N('a', 85, 100, 'A', 'dato'), N('b', 85, 160, 'B', 'dato'),
+      T('c', 300, 238, '', { bold: true, size: 12 })
+    ],
+    passi: [
+      { nota: "Un <b>monitor</b>: stato privato, metodi tutti in mutua esclusione (un thread alla volta dentro), e una o più <b>condition variable</b>, code dove i thread aspettano. Chi vuole entrare aspetta nella <b>entry queue</b>, la coda del lock." },
+      { nota: "A prende il lock ed entra nel monitor.", set: { a: { x: 300, y: 110, tono: 'ora' }, c: { t: 'lock() → A dentro' } } },
+      { nota: "La condizione di A non è vera (per esempio c'è uno scrittore). <code>await()</code> fa due cose <b>insieme</b>: rilascia il lock e mette A nella coda della condition.", set: { a: { x: 515, y: 110, tono: 'due' }, c: { t: 'await(): rilascia il lock + aspetta' } } },
+      { nota: "Il lock è libero: entra B.", set: { b: { x: 300, y: 178, tono: 'ora' }, c: { t: 'B dentro' } } },
+      { nota: "B cambia lo stato e chiama <code>signalAll()</code> (o <code>signal()</code> per uno solo): A esce dalla coda della condition, ma <b>non</b> entra subito. Torna nella entry queue e deve ricompetere per il lock.", set: { a: { x: 85, y: 110, tono: 'dato' }, c: { t: 'signalAll(): A torna in entry queue' } } },
+      { nota: "Quando B esce (unlock), A riprende il lock e continua dopo il suo <code>await()</code>. Da blocked non si passa mai direttamente a running: si passa sempre per la coda del lock.", set: { b: { x: 85, y: 180, tono: 'dato' }, a: { x: 300, y: 110, tono: 'ora' }, c: { t: 'A riprende il lock e continua' } } }
+    ]
+  };
+
+  // 3. ReadWriteMonitor: lo stato
+  const st = (r, w, testo) => ({ s1: { t: 'readers = ' + r }, s2: { t: 'writer = ' + w }, c: { t: testo } });
+  SCENE.rwstato = {
+    w: 600, h: 230, lato: true,
+    legenda: 'ora:kald,no:tråd der venter,ok:tilstand opdateret',
+    oggetti: [
+      R('st', 380, 30, 190, 90, '', { tono: 'ok' }), T('s1', 475, 58, 'readers = 0', { bold: true }), T('s2', 475, 90, 'writer = false', { bold: true }),
+      T('c', 190, 60, '', { size: 12 }), T('w', 190, 110, '', { size: 12 }), T('n', 300, 190, '', { size: 12 })
+    ],
+    passi: [
+      { nota: "Lo stato del ReadWriteMonitor: <code>readers</code>, quanti lettori ci sono, e <code>writer</code>, se c'è uno scrittore." },
+      { nota: "R1 chiama <code>readLock()</code>: writer è false, quindi non aspetta; readers++.", set: st(1, 'false', 'R1.readLock()') },
+      { nota: "R2 fa lo stesso: readers = 2. Due lettori insieme.", set: st(2, 'false', 'R2.readLock()') },
+      { nota: "W1 chiama <code>writeLock()</code>: <code>while (readers &gt; 0 || writer)</code> è vero, quindi <code>await()</code>. W1 aspetta nella coda.", set: Object.assign(st(2, 'false', 'W1.writeLock()'), { w: { t: 'W1 in attesa (readers > 0)', tono: 'no' } }) },
+      { nota: "R1 e R2 chiamano <code>readUnlock()</code>. Quando readers arriva a 0, l'ultimo chiama <code>signalAll()</code>.", set: Object.assign(st(0, 'false', 'readUnlock() × 2 → signalAll()'), { w: { t: 'W1 svegliato' } }) },
+      { nota: "W1 riprende il lock, <b>ricontrolla</b> la condizione nel while (ora falsa) e mette writer = true. Un lettore che arriva adesso aspetterà. Alla fine <code>writeUnlock()</code> rimette writer = false e sveglia tutti.", set: Object.assign(st(0, 'true', 'W1 scrive'), { w: { t: 'nuovi lettori: aspettano', tono: 'no' }, n: { t: 'writeUnlock(): writer = false, signalAll()' } }) }
+    ]
+  };
+
+  // 4. versione synchronized, fair con gli scrittori
+  SCENE.rwsync = {
+    w: 600, h: 240, lato: true,
+    legenda: 'dato:Lock og Condition,ok:indre lås,no:venter',
+    oggetti: [
+      T('h1', 150, 24, 'ReentrantLock', { bold: true, tono: 'dato' }), T('h2', 450, 24, 'synchronized', { bold: true, tono: 'ok' }),
+      T('a1', 150, 60, 'lock() … unlock()', { size: 12 }), T('b1', 450, 60, '', { size: 12 }),
+      T('a2', 150, 90, 'condition.await()', { size: 12 }), T('b2', 450, 90, '', { size: 12 }),
+      T('a3', 150, 120, 'condition.signalAll()', { size: 12 }), T('b3', 450, 120, '', { size: 12 }),
+      T('c', 300, 175, '', { size: 12, bold: true }), T('c2', 300, 205, '', { size: 12 })
+    ],
+    passi: [
+      { nota: "Ogni oggetto Java ha già dentro un <b>lock</b> e una <b>condition variable</b>. L'esercizio 2.1 chiede di riscrivere il monitor con questi." },
+      { nota: "Il metodo <code>synchronized</code> prende e rilascia il lock dell'oggetto da solo, anche con le eccezioni: sostituisce lock/try/finally/unlock.", set: { b1: { t: 'metodo synchronized' } } },
+      { nota: "<code>this.wait()</code> e <code>this.notifyAll()</code> sostituiscono <code>await()</code> e <code>signalAll()</code>. C'è <b>una sola</b> condition, quella dell'oggetto (esercizio 2.1.3).", set: { b2: { t: 'this.wait()' }, b3: { t: 'this.notifyAll()' } } },
+      { nota: "Il trucco della versione fair: in <code>writeLock()</code> lo scrittore mette <b>subito</b> writer = true, poi aspetta che i lettori già dentro escano. I lettori <b>nuovi</b> vedono writer = true e aspettano: lo scrittore non può essere scavalcato all'infinito (niente starvation, <a href=\"l02-fairness.html\">fairness</a>).", set: { c: { t: 'writer = true prima, poi aspetta i lettori', tono: 'ok' }, c2: { t: 'i lettori nuovi si mettono in fila dietro' } } }
+    ]
+  };
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Monitor og condition variable</h1>
+  <p class="lede">En simpel lås siger "én ad gangen". Men nogle problemer vil have rigere regler: <b>mange læsere sammen, eller én enkelt skriver</b>. Derfor skal man bruge en <b>monitor</b>: delt tilstand, metoder i gensidig udelukkelse og <b>ventekøer</b> til dem, der skal vente.</p>
+</header>
+
+<section>
+  <h2>Læser- og skriverproblemet</h2>
+  <ul>
+    <li>En delt datastruktur, som trådene læser fra eller skriver til.</li>
+    <li><b>Mange</b> tråde kan læse samtidig, så længe ingen skriver.</li>
+    <li><b>Højst én</b> kan skrive, og kun hvis ingen læser.</li>
+  </ul>
+  <div class="box domanda-tua" data-tit="Spørgsmål fra slidet: er en almindelig lås nok?">
+    <p>En lås ville garantere sikkerhed, men den ville også udelukke <b>læser mod læser</b>: man ville smide netop den parallelisme væk, problemet tillader. Der skal noget, der bestemmer <i>hvem</i> der må komme ind ud fra tilstanden.</p>
+  </div>
+  <figure class="scena" data-scena="lettscritt" data-titolo="Læsere sammen ja, en skriver alene"></figure>
+</section>
+
+<section>
+  <h2>Hvad en monitor er</h2>
+  <div class="box regola" data-tit="Definition (Brinch Hansen, Hoare)">
+    <p>En <b>monitor</b> er en delt tilstand plus meningsfulde operationer på den tilstand, der beskytter den mod ødelæggelse, selv når de udføres samtidigt.</p>
+  </div>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Del</th><th>Hvad den gør</th><th>I Java</th></tr></thead>
+    <tbody>
+      <tr><td><b>Intern tilstand</b></td><td>data, der kun er tilgængelige for monitorens metoder</td><td><code>private</code>-felter</td></tr>
+      <tr><td><b>Metoder</b></td><td>alle i gensidig udelukkelse med hinanden</td><td>hver metode laver <code>lock()</code> … <code>unlock()</code></td></tr>
+      <tr><td><b>Condition variable</b></td><td>køer hvor monitoren sætter trådene til at vente</td><td><code>Condition c = lock.newCondition()</code></td></tr>
+    </tbody>
+  </table></div>
+  <h3>De tre operationer på en condition variable</h3>
+  <div class="colonne">
+    <div class="carta"><h4><code>await()</code></h4><p>Frigiver låsen <b>og</b> blokerer tråden i betingelsens kø. Begge ting sammen.</p></div>
+    <div class="carta"><h4><code>signal()</code></h4><p>Vækker <b>én</b> tråd i køen, hvis der er en. Hvilken, er ikke bestemt.</p></div>
+    <div class="carta"><h4><code>signalAll()</code></h4><p>Vækker <b>alle</b> trådene i køen.</p></div>
+  </div>
+  <p>En vakt tråd skal <b>tage låsen igen</b>, før den gør noget andet. Forveksl ikke <i>condition variable</i> med betingelserne i <code>if</code> og <code>while</code>: det er en kø.</p>
+  <figure class="scena" data-scena="stanzamon" data-titolo="Entry queue, monitor, betingelsens kø"></figure>
+</section>
+
+<section>
+  <h2><code>ReadWriteMonitor</code>, metode for metode</h2>
+  <p>Monitoren fra forelæsningen for læser-skriver-problemet. Tilstanden er to private felter: <code>readers</code> (hvor mange læsere der er inde) og <code>writer</code> (er der en skriver?). De fire metoder tager låsen, kontrollerer tilstanden i en <code>while</code>, venter med <code>await()</code>, så længe det er nødvendigt, opdaterer tilstanden og frigiver låsen. Den, der frigiver ressourcen, vækker de andre med <code>signalAll()</code>.</p>
+  <figure class="codice" data-titolo="week02/code-lecture/.../ReadWriteMonitor.java">
+<pre data-lang="java">public class ReadWriteMonitor {
+    private int readers = 0;
+    private boolean writer = false;
+    private Lock lock = new ReentrantLock();
+    private Condition condition = lock.newCondition();
+
+    public void readLock() {
+        lock.lock();
+        try {
+            while (writer)
+                condition.await();
+            readers++;
+        } catch (InterruptedException e) { e.printStackTrace(); }
+        finally { lock.unlock(); }
+    }
+
+    public void readUnlock() {
+        lock.lock();
+        try {
+            readers--;
+            if (readers == 0)
+                condition.signalAll();
+        } finally { lock.unlock(); }
+    }
+
+    public void writeLock() {
+        lock.lock();
+        try {
+            while (readers &gt; 0 || writer)
+                condition.await();
+            writer = true;
+        } catch (InterruptedException e) { e.printStackTrace(); }
+        finally { lock.unlock(); }
+    }
+
+    public void writeUnlock() {
+        lock.lock();
+        try {
+            writer = false;
+            condition.signalAll();
+        } finally { lock.unlock(); }
+    }
+}</pre>
+    <div class="intro"><p>Monitoren indeholder ikke ressourcen: den regulerer, hvem der må bruge den. Trådene laver <code>readLock()</code> / læser / <code>readUnlock()</code>, eller <code>writeLock()</code> / skriver / <code>writeUnlock()</code>.</p></div>
+    <ol class="spiega">
+      <li data-righe="2-3" data-segna="readers@dato|writer@due"><p><b>Tilstand</b>: hvor mange læsere der er inde, og om der er en skriver.</p></li>
+      <li data-righe="4-5" data-segna="new ReentrantLock()@ora|lock.newCondition()@ora"><p>En lås til gensidig udelukkelse af metoderne, og <b>én</b> condition variable knyttet til den lås.</p></li>
+      <li data-righe="8,14" data-segna="lock.lock();@ora|finally { lock.unlock(); }@ok"><p>Hver metode starter med <code>lock()</code> og frigiver i <code>finally</code>: metoderne er gensidigt udelukkende.</p></li>
+      <li data-righe="10-11" data-segna="while (writer)@due|condition.await();@ora"><p>En læser skal kun vente, hvis der er en skriver. <code>await()</code> frigiver låsen, mens den venter, så de andre kan komme ind i monitoren.</p></li>
+      <li data-righe="12" data-segna="readers++;@ok"><p>Når den kan, registrerer den sig som læser og går: monitorens lås er fri, og andre læsere kan komme ind og læse <b>sammen</b> med den.</p></li>
+      <li data-righe="20-22" data-segna="readers--;@dato|if (readers == 0)@due|signalAll()@ora"><p>En læser der er færdig, fjerner sig selv fra tællingen. Hvis det var den sidste, vækker den dem, der venter (måske en skriver).</p></li>
+      <li data-righe="29-31" data-segna="while (readers &gt; 0 || writer)@due|writer = true;@ok"><p>En skriver venter, så længe der er læsere <b>eller</b> en anden skriver. Derefter registrerer den sig.</p></li>
+      <li data-righe="39-40" data-segna="writer = false;@dato|condition.signalAll();@ora"><p>Skriveren der er færdig, vækker <b>altid</b> alle: der kan komme mange læsere eller en anden skriver ind.</p></li>
+    </ol>
+  </figure>
+  <figure class="scena" data-scena="rwstato" data-titolo="readers og writer, kald for kald"></figure>
+</section>
+
+<section>
+  <h2>Hvorfor <code>while</code> og ikke <code>if</code></h2>
+  <figure class="passi" data-titolo="Med if kan en læser komme ind, mens der er en skriver">
+    <div class="passo"><div class="espr">if (writer) condition.await();
+readers++;</div><p class="nota">Version med <code>if</code>: den kontrollerer kun én gang.</p></div>
+    <div class="passo"><div class="espr"><mark class="dato">R1</mark>: writer è true  →  await()</div><p class="nota">Læseren R1 venter.</p></div>
+    <div class="passo"><div class="espr"><mark class="due">W1</mark>: writeUnlock()  →  writer = false, <mark class="ora">signalAll()</mark></div><p class="nota">Skriveren er færdig og vækker alle. R1 vender tilbage til <b>entry queue</b>: den skal konkurrere om låsen igen.</p></div>
+    <div class="passo"><div class="espr"><mark class="no">W2</mark> prende il lock prima di R1  →  writer = true</div><p class="nota"><b>Mesa</b>-semantik (den som Java har): en anden skriver kan komme ind før R1.</p></div>
+    <div class="passo"><div class="espr"><mark class="dato">R1</mark> riprende il lock  →  <mark class="no">readers++</mark> senza ricontrollare</div><p class="nota">Med <code>if</code> kontrollerer R1 ikke igen: den læser, mens W2 skriver. Specifikationen er overtrådt.</p></div>
+    <div class="passo"><div class="espr">while (writer) condition.await();   <mark class="ok">→ R1 ricontrolla e riaspetta</mark></div><p class="nota">Med <code>while</code> kontrolleres betingelsen igen ved hver vækning. Desuden kan tråde vågne uden et signal (<b>spurious wakeup</b>): while beskytter også mod det.</p></div>
+  </figure>
+  <figure class="scena" data-scena="mesa" data-titolo="Hvorfor while og ikke if"></figure>
+  <div class="box domanda-tua" data-tit="Spørgsmål fra slidet: er det nødvendigt at kontrollere readers == 0 før signalAll?">
+    <p>For <b>korrektheden</b> nej: den der vækkes, kontrollerer sin betingelse igen i <code>while</code> og, hvis den ikke kan komme ind, venter den igen. Kontrollen undgår kun <b>unødvendige</b> vækkelser: hvis der stadig er læsere, kunne ingen skriver alligevel komme ind.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Øvelse 2.1: den samme monitor med <code>synchronized</code></h2>
+  <p>Hvert Java-objekt har allerede en lås <b>og en condition variable</b> indeni. Med <code>synchronized</code> bruger man <code>wait()</code>, <code>notify()</code>, <code>notifyAll()</code> i stedet for <code>await()</code>, <code>signal()</code>, <code>signalAll()</code>.</p>
+  <figure class="codice" data-titolo="Version med indre lås, allerede fair over for skriverne (kompileret og kørt)">
+<pre data-lang="java">public class RWSync {
+    private int readers = 0;
+    private boolean writer = false;
+
+    public synchronized void readLock() throws InterruptedException {
+        while (writer) this.wait();
+        readers++;
+    }
+    public synchronized void readUnlock() {
+        readers--;
+        if (readers == 0) this.notifyAll();
+    }
+    public synchronized void writeLock() throws InterruptedException {
+        while (writer) this.wait();
+        writer = true;
+        while (readers &gt; 0) this.wait();
+    }
+    public synchronized void writeUnlock() {
+        writer = false;
+        this.notifyAll();
+    }
+}</pre>
+    <ol class="spiega">
+      <li data-righe="5,9,13,18" data-segna="synchronized*@ora"><p><code>synchronized</code> på metoderne: de bruger alle låsen på objektet <code>this</code>, så de er gensidigt udelukkende.</p></li>
+      <li data-righe="6" data-segna="this.wait()@due"><p><code>wait()</code> gør det, <code>await()</code> gjorde: den frigiver låsen på <code>this</code> og venter i sin kø. Også her i en <code>while</code>.</p></li>
+      <li data-righe="14-16" data-segna="writer = true;@ok|while (readers &gt; 0)@due"><p>Ændringen "fair": skriveren <b>reserverer</b> straks (<code>writer = true</code>) og venter derefter på, at de læsere, der allerede er inde, går ud. Fra det øjeblik stopper de nye læsere ved <code>while (writer)</code>. Det er ideen i <code>FairReadWriteMonitor.java</code>.</p></li>
+      <li data-righe="11,20" data-segna="notifyAll()*@ora"><p><code>notifyAll()</code> vækker alle tråde, der venter på <code>this</code>.</p></li>
+    </ol>
+  </figure>
+  <div class="box esame" data-tit="Øvelse 2.1.3: hvor mange condition variables?">
+    <p><b>Én</b>: den indre på objektet, hvor du laver <code>synchronized</code>. Læsere og skrivere venter alle i den samme kø, med <code>wait()</code>, og vækkes med <code>notifyAll()</code>. Med <code>ReentrantLock</code> kan man derimod oprette flere betingelser (<code>lock.newCondition()</code> to gange), for eksempel én for læserne og én for skriverne (øvelse 2.1.5).</p>
+  </div>
+  <p class="piccolo">Kontrolleret: 15 læsere og 5 skrivere, 200 adgange hver, ingen overtrædelse af specifikationen.</p>
+  <figure class="scena" data-scena="rwsync" data-titolo="Fra den eksplicitte Lock til den indre lås"></figure>
+</section>
+
+</main>
+</body>
+</html>

@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lock striping and LongAdder</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <div class="occhiello"><span>Week 9 · Performance</span></div>
+  <h1>Lock striping and LongAdder</h1>
+  <p class="lede">The lecture's case study: a shared counter, with nine implementations. The key step is to split a single lock into many independent locks, with padding that keeps each one on its own cache line.</p>
+</header>
+
+<section>
+  <h2>One counter, one lock</h2>
+  <p>The case study: a 64-bit <code>long</code> counter, shared by several threads, with <code>add</code> and <code>longValue</code>. The first version uses a single lock (<code>synchronized</code> on an object). It is correct, but all the threads compete for the same lock and its cache line: the ping-pong of the previous page.</p>
+</section>
+
+<section>
+  <h2>Lock striping: one lock for each stripe</h2>
+  <p><b>Lock striping</b> means splitting the state into several parts (stripes), each with its own lock. Different threads usually take different locks, so they compete less. The code of the lecture uses 64 stripes.</p>
+  <figure class="codice" data-titolo="Striping.java">
+<pre data-lang="java">public class Striping {
+    static class SyncLongArrayAdder {
+        private static final int logS = 6, stripeCount = 1 &lt;&lt; logS, stripeMask = stripeCount - 1;
+        private final long[] counts = new long[stripeCount];
+        private final Object[] locks = new Object[stripeCount];
+
+        SyncLongArrayAdder() {
+            for (int s = 0; s &lt; stripeCount; s++)
+                locks[s] = new Object();
+        }
+
+        void add(long delta) {
+            int s = (int) Thread.currentThread().threadId() &amp; stripeMask;
+            synchronized (locks[s]) {
+                counts[s] += delta;
+            }
+        }
+
+        long longValue() {
+            long somma = 0;
+            for (int s = 0; s &lt; stripeCount; s++)
+                synchronized (locks[s]) {
+                    somma += counts[s];
+                }
+            return somma;
+        }
+    }
+
+    public static void main(String[] args) throws InterruptedException {
+        SyncLongArrayAdder adder = new SyncLongArrayAdder();
+        Thread[] threads = new Thread[4];
+        for (int t = 0; t &lt; threads.length; t++) {
+            threads[t] = Thread.ofPlatform().start(() -&gt; {
+                for (int i = 1; i &lt;= 100_000; i++)
+                    adder.add(1);
+            });
+        }
+        for (Thread t : threads)
+            t.join();
+        System.out.println("somma: " + adder.longValue());
+    }
+}</pre>
+    <ol class="spiega">
+      <li data-righe="3" data-segna="stripeMask = stripeCount - 1@ora"><p><code>logS = 6</code>, so <code>stripeCount = 2^6 = 64</code>. <code>stripeMask = 63</code> is the binary number 111111: with the AND, each value becomes an index from 0 to 63.</p></li>
+      <li data-righe="7-9" data-segna="SyncLongArrayAdder()@ora"><p>The constructor creates a lock object for each stripe. Each lock protects its element of the <code>counts</code> array.</p></li>
+      <li data-righe="13" data-segna="int s = (int) Thread.currentThread().threadId() &amp; stripeMask@ora"><p><code>threadId()</code> gives a number for each thread. The AND with <code>stripeMask</code> reduces it to 0–63: it is like <code>% 64</code>, but faster. Different threads usually end up on different stripes.</p></li>
+      <li data-righe="14-16" data-segna="synchronized (locks[s])@ora"><p>The thread takes the lock of <b>its</b> stripe, and only that. The other threads, on different stripes, do not wait for it.</p></li>
+      <li data-righe="20" data-segna="long somma = 0@ora"><p>The reading of the total adds up all the stripes. Each one is read under its own lock, because another thread might be writing to it.</p></li>
+      <li data-righe="33" data-segna="Thread.ofPlatform().start@ora"><p>Four platform threads, each with 100 000 increments of 1. The correct result is 400 000.</p></li>
+      <li data-righe="35" data-segna="adder.add(1)@ok"><p>One increment. The <code>add</code> chooses the stripe according to the thread that calls it.</p></li>
+    </ol>
+  </figure>
+</section>
+
+<section>
+  <h2>Padding: locks and data on different lines</h2>
+  <p>Even with 64 stripes, the counters and the locks are in arrays: adjacent elements in an array share a cache line. Two neighbouring stripes can therefore do false sharing. The solution of the lecture is <b>padding</b>: only the indices that are multiples of 16 are used (<code>padding = 16</code>), and the other elements stay empty. So each counter and each lock sits on a line of its own.</p>
+  <figure class="passi" data-titolo="How a thread chooses its counter" data-legenda="dato:thread,ora:step in progress,ok:result">
+    <div class="passo"><div class="espr">Il thread ha un <mark class="dato">id</mark>, per esempio 37</div><p class="nota"><code>threadId()</code> is unique for each thread.</p></div>
+    <div class="passo"><div class="espr"><mark class="ora">37 AND 63</mark> = 37: la stripe è la 37</div><p class="nota">The AND keeps only the 6 low bits: the result is always between 0 and 63.</p></div>
+    <div class="passo"><div class="espr">Il thread prende il <mark class="ora">lock della stripe 37</mark> e aggiunge a <mark class="ok">counts[37]</mark></div><p class="nota">No other thread uses stripe 37, unless it has the same remainder.</p></div>
+  </figure>
+</section>
+
+<section>
+  <h2>The results of the lecture</h2>
+  <p>The lecture compares nine versions of the counter, on an Apple M3 Pro laptop and an AMD EPYC 7313 server. The conclusions, from the slide:</p>
+  <ul>
+    <li>using a lock is not slow in itself, but a single lock creates <b>contention</b> and a lot of traffic between the caches;</li>
+    <li>striping improves concurrent code, but the stripes must sit on different cache lines: padding is needed;</li>
+    <li>the library's <code>java.util.concurrent.atomic.LongAdder</code> does all this correctly, and it is the choice to use;</li>
+    <li>the conclusions hold for five CPU architectures, from 2014 to 2023.</li>
+  </ul>
+  <div class="box regola" data-tit="Practical rule">For a shared counter, use <code>LongAdder</code>. Do not write a single lock, and do not copy striping unless you have measured the need for it.</div>
+</section>
+
+</main>
+</body>
+</html>

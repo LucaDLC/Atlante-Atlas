@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Monoid: kombinere og have et neutralt element</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  const N = (id, x, y, t, extra) => Object.assign({ id, tipo: 'rett', x, y, w: 150, h: 56, t }, extra || {});
+  const P = (id, x, y, t, extra) => Object.assign({ id, tipo: 'nodo', x, y, r: 21, t }, extra || {});
+  const A = (id, da, a, extra) => Object.assign({ id, tipo: 'arco', da, a, dir: true, t: '' }, extra || {});
+  const T = (id, x, y, t, extra) => Object.assign({ id, tipo: 'testo', x, y, t, size: 13, bold: true, anchor: 'start' }, extra || {});
+
+  SCENE.def = {
+    w: 540, h: 180, lato: true,
+    legenda: 'ora:hvad jeg forklarer nu,ok:resultat,dato:eksempel',
+    oggetti: [
+      N('A', 40, 40, 'A = Int'),
+      N('op', 195, 40, '⊕ = +'),
+      N('zero', 350, 40, '0 = zero'),
+      T('ex', 40, 150, '', { size: 14 })
+    ],
+    passi: [
+      { nota: `En <b>monoid</b> består af en <b>type A</b> og to ting om A: en operation <b>⊕</b> (i Scala <code>combine</code>) og et <b>neutralt element 0</b> (i Scala <code>empty</code>). Her er A Int.`, set: { A: { tono: 'ora' } } },
+      { nota: `<b>⊕</b> tager to værdier af A og returnerer én. For Int er ⊕ summen <code>+</code>.`, set: { A: { tono: null }, op: { tono: 'ora' } } },
+      { nota: `<b>0</b> er det neutrale element: kombineret med en anden værdi ændrer det den ikke. For summen er det neutrale element 0, fordi x + 0 = x.`, set: { op: { tono: null }, zero: { tono: 'ora' } } },
+      { nota: `Eksempel fra sliderne, (Int, 0, +): 2 + 3 = 5 og 5 + 0 = 5. Det neutrale element ændrer ingenting.`, set: { zero: { tono: null }, ex: { t: '2 ⊕ 3 = 5 · 5 ⊕ 0 = 5', tono: 'ok' } } },
+      { nota: `Samme mønster med produktet: (Int, 1, *). Operationen ændrer sig, og det neutrale element også (1, ikke 0), men typen A bliver Int.`, set: { ex: { t: '2 ⊕ 3 = 6 · 6 ⊕ 1 = 6', tono: 'ok' }, op: { t: '⊕ = *', tono: 'ora' }, zero: { t: '1', tono: 'ora' } } }
+    ]
+  };
+
+  SCENE.assoc = {
+    w: 540, h: 290, lato: true,
+    legenda: 'dato:værdier,ora:par der kombineres,ok:delresultat eller endeligt resultat,spento:gruppering ikke brugt',
+    oggetti: [
+      P('l1', 60, 200, '1', { tono: null }), P('l2', 180, 200, '2'), P('l3', 300, 200, '3'), P('l4', 420, 200, '4'),
+      P('p12', 120, 120, '3', { nascosto: true }), P('p34', 360, 120, '7', { nascosto: true }),
+      P('root', 240, 40, '10', { nascosto: true }),
+      A('a1', 'l1', 'p12', { nascosto: true }), A('a2', 'l2', 'p12', { nascosto: true }),
+      A('a3', 'l3', 'p34', { nascosto: true }), A('a4', 'l4', 'p34', { nascosto: true }),
+      A('a5', 'p12', 'root', { nascosto: true }), A('a6', 'p34', 'root', { nascosto: true }),
+      T('alt', 40, 262, '', { size: 14 })
+    ],
+    passi: [
+      { nota: `Fire værdier: 1, 2, 3, 4. Jeg vil kombinere dem med ⊕. Jeg kan vælge, hvilke to der kombineres først.`, set: { l1: { tono: 'dato' }, l2: { tono: 'dato' }, l3: { tono: 'dato' }, l4: { tono: 'dato' } } },
+      { nota: `Første halvdel: <b>1 ⊕ 2 = 3</b>. Pilene viser, hvilke værdier der indgår i beregningen.`, set: { l1: { tono: 'ora' }, l2: { tono: 'ora' }, a1: { nascosto: false }, a2: { nascosto: false }, p12: { nascosto: false, tono: 'ok' } } },
+      { nota: `Anden halvdel: <b>3 ⊕ 4 = 7</b>. De to halvdele afhænger ikke af hinanden: de kan beregnes <b>parallelt</b>.`, set: { l1: { tono: 'dato' }, l2: { tono: 'dato' }, l3: { tono: 'ora' }, l4: { tono: 'ora' }, a3: { nascosto: false }, a4: { nascosto: false }, p34: { nascosto: false, tono: 'ok' } } },
+      { nota: `Jeg kombinerer de to resultater igen: <b>3 ⊕ 7 = 10</b>. Det endelige svar er 10.`, set: { l3: { tono: 'dato' }, l4: { tono: 'dato' }, p12: { tono: 'spento' }, p34: { tono: 'spento' }, a5: { nascosto: false }, a6: { nascosto: false }, root: { nascosto: false, tono: 'ok' } } },
+      { nota: `Samme svar, når man grupperer til venstre: <b>((1 ⊕ 2) ⊕ 3) ⊕ 4 = 10</b>. <b>Associativiteten</b> garanterer, at grupperingen ikke ændrer resultatet, så jeg kan vælge den mest praktiske.`, set: { root: { tono: 'spento' }, p12: { tono: null }, p34: { tono: null }, alt: { t: '((1 ⊕ 2) ⊕ 3) ⊕ 4 = 10', tono: 'ok' } } }
+    ]
+  };
+
+  SCENE.tc = {
+    w: 540, h: 260, lato: true,
+    legenda: 'ora:hvad der kommer ind nu,dato:instanser,ok:kald med instansen',
+    oggetti: [
+      N('trait', 150, 20, 'trait Monoid[A]', { w: 240, h: 50 }),
+      N('si', 40, 130, 'stringMonoid', { w: 200, h: 50, tono: 'dato', nascosto: true }),
+      N('mi', 300, 130, 'maxMonoid', { w: 200, h: 50, tono: 'dato', nascosto: true }),
+      A('ai', 'si', 'trait', { nascosto: true }), A('am', 'mi', 'trait', { nascosto: true }),
+      N('cc', 120, 200, 'concatenate(lista, istanza)', { w: 300, h: 44, tono: 'ora', nascosto: true })
+    ],
+    passi: [
+      { nota: `<b>trait Monoid[A]</b> beskriver grænsefladen: <code>combine</code> og <code>empty</code> for en type A. Det er en <b>type class</b>: en form, der skal udfyldes for hver type, man vil gøre til monoid.`, set: { trait: { tono: 'ora' } } },
+      { nota: `<b>stringMonoid</b> er en <b>værdi</b> af typen Monoid[String]: instansen, der siger, hvordan String bliver en monoid (sammenkædning og "").`, set: { trait: { tono: null }, si: { nascosto: false }, ai: { nascosto: false } } },
+      { nota: `<b>maxMonoid</b> er en anden instans, Monoid[Int]: ⊕ er maksimum, og det neutrale element er Int.MinValue. Den samme type Int kan have forskellige instanser.`, set: { mi: { nascosto: false }, am: { nascosto: false } } },
+      { nota: `<b>concatenate</b> modtager instansen som argument sammen med listen. Den samme kode virker med forskellige typer og operationer, fordi instansen sendes med som en værdi.`, set: { si: { tono: 'dato' }, mi: { tono: 'dato' }, cc: { nascosto: false } } }
+    ]
+  };
+
+  SCENE.omo = {
+    w: 540, h: 290, lato: true,
+    legenda: 'dato:startværdier,due:trin,ora:beregning lige udført,ok:resultat,spento:endnu ikke',
+    oggetti: [
+      T('ml', 40, 22, 'M: stringhe, con concatenazione e ""', { size: 12 }),
+      N('x', 40, 50, '"foo"', { w: 120, h: 50, tono: 'dato' }),
+      N('y', 190, 50, '"bar"', { w: 120, h: 50, tono: 'dato' }),
+      N('xy', 340, 50, '"foobar"', { w: 150, h: 50, tono: 'spento', nascosto: true }),
+      T('nl', 40, 150, 'N: interi, con + e 0', { size: 12 }),
+      N('fx', 40, 180, '3', { w: 120, h: 50, tono: 'spento', nascosto: true }),
+      N('fy', 190, 180, '3', { w: 120, h: 50, tono: 'spento', nascosto: true }),
+      N('fxy', 340, 180, '6', { w: 150, h: 50, tono: 'spento', nascosto: true }),
+      A('f1', 'x', 'fx', { nascosto: true, t: 'f' }), A('f2', 'y', 'fy', { nascosto: true, t: 'f' }),
+      A('f3', 'xy', 'fxy', { nascosto: true, t: 'f' }),
+      T('c', 40, 262, '', { size: 14 })
+    ],
+    passi: [
+      { nota: `En <b>homomorfi</b> f: M → N er en funktion, der <b>respekterer</b> de to strukturer. M og N er monoider: her er M = strenge, N = heltal. f = <code>length</code>.`, set: { x: { tono: 'dato' }, y: { tono: 'dato' } } },
+      { nota: `Jeg anvender f på hver værdi: f("foo") = 3 og f("bar") = 3.`, set: { f1: { nascosto: false }, f2: { nascosto: false }, fx: { nascosto: false, tono: 'due' }, fy: { nascosto: false, tono: 'due' } } },
+      { nota: `Først kombinerer jeg i M: "foo" ⊕ "bar" = "foobar". Derefter anvender jeg f: f("foobar") = 6.`, set: { xy: { nascosto: false, tono: 'ora' }, f3: { nascosto: false }, c: { t: '"foo" ⊕ "bar" = "foobar"' } } },
+      { nota: `Reglen kræver f(x ⊕ y) = f(x) ⊗ f(y). Her er 6 = 3 + 3, så den holder. Det neutrale element skal også respekteres: f("") = 0.`, set: { fxy: { nascosto: false, tono: 'ok' }, xy: { tono: 'dato' }, fx: { tono: 'dato' }, fy: { tono: 'dato' }, c: { t: 'f(x ⊕ y) = f(x) + f(y): 6 = 3 + 3', tono: 'ok' } } },
+      { nota: `En <b>isomorfi</b> er en homomorfi, der kan vendes: f og dens inverse er begge homomorfier. Eksempel: String og List[Char] med <code>toList</code> og <code>mkString</code>. Intet går tabt.`, set: { f1: { tono: 'spento' }, f2: { tono: 'spento' }, f3: { tono: 'spento' }, c: { t: 'isomorfismo: String ↔ List[Char]', tono: 'ok' } } }
+    ]
+  };
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <div class="occhiello"><span>Uge 9</span></div>
+  <h1>Monoid: kombinere og have et neutralt element</h1>
+  <p class="lede">Det første af ugens fire begreber (monoid, foldable, functor, monad). En monoid er det enkleste, der kan reduceres i stykker: en operation, der kombinerer to værdier, og en værdi, der ikke ændrer noget. Herfra kommer <a href="s09-foldable.html">folds og parallelle reduktioner</a>.</p>
+</header>
+
+<section>
+  <h2>Definition</h2>
+  <p>En <b>monoid</b> på en type <code>A</code> har to dele:</p>
+  <ul>
+    <li>en <b>binær operation</b> <b>⊕</b>, i Scala <code>combine</code>: den tager to værdier af A og returnerer én. Symbolet ⊕ betyder "kombiner".</li>
+    <li>et <b>neutralt element</b> <b>0</b>, i Scala <code>empty</code>: en værdi af A, som ikke ændrer en anden værdi, når den kombineres med den.</li>
+  </ul>
+  <p>Eksempler fra sliderne, skrevet som en tripel (type, neutralt element, operation):</p>
+  <div class="tab-wrap"><table class="tab"><thead><tr><th>type A</th><th>neutralt 0</th><th>operation ⊕</th></tr></thead><tbody>
+    <tr><td>Int</td><td>0</td><td>+</td></tr>
+    <tr><td>Int</td><td>1</td><td>*</td></tr>
+    <tr><td>String</td><td>""</td><td>sammenkædning</td></tr>
+  </tbody></table></div>
+  <figure class="scena" data-scena="def" data-titolo="En monoid er type, neutralt element og operation"></figure>
+</section>
+
+<section>
+  <h2>De to love</h2>
+  <p>For at kombinationen er nyttig, skal <code>combine</code> og <code>empty</code> overholde to love, for alle værdier x, y, z af A:</p>
+  <ul>
+    <li><b>Associativitet</b>: <code>(x ⊕ y) ⊕ z = x ⊕ (y ⊕ z)</code>. Det er ligegyldigt, hvor man sætter parenteserne. Det gør det muligt at dele en liste i to halvdele og reducere dem hver for sig.</li>
+    <li><b>Identitet (neutralt element)</b>: <code>x ⊕ 0 = x</code> og <code>0 ⊕ x = x</code>. Det neutrale element ændrer intet på nogen side.</li>
+  </ul>
+  <p>Scala-compileren kontrollerer ikke disse love: den accepterer enhver <code>combine</code>. Lovene kontrolleres med tests (property-based, se <a href="s06-pbt.html">Property-based testing</a>).</p>
+  <figure class="scena" data-scena="assoc" data-titolo="Fire værdier, to måder at gruppere på, det samme resultat"></figure>
+  <div class="box attenzione" data-tit="Pas på">Associativitet betyder ikke kommutativitet. Monoiden kræver ikke <code>x ⊕ y = y ⊕ x</code>: subtraktion er ikke en monoid, fordi den ikke er associativ: (5 − 3) − 1 ≠ 5 − (3 − 1). Strenge med sammenkædning er en monoid, selv om "ab" ≠ "ba".</div>
+</section>
+
+<section>
+  <h2>Typeklassen i Scala</h2>
+  <p>En <b>type class</b> er en grænseflade parametriseret over typen. <code>Monoid[A]</code> beskriver, hvordan en type <code>A</code> opfører sig, uden at A skal "vide", at den er en monoid. Hver <b>instans</b> er en værdi, der sendes med sammen med dataene.</p>
+  <figure class="codice" data-titolo="trait Monoid[A] (fra sliderne, forenklet)">
+<pre data-lang="scala">trait Monoid[A]:
+  def combine(a1: A, a2: A): A
+  def empty: A
+  object laws:
+    def associative(using Arbitrary[A], Equality[A]): Prop = ...</pre>
+    <ol class="spiega">
+      <li data-righe="1" data-segna="trait@due|Monoid[A]@ora"><p><code>trait</code> definerer en grænseflade. <code>[A]</code> er en <b>typeparameter</b>: den type, monoiden kombinerer. <code>Monoid</code> alene er ikke nok: man skal altid bruge <code>Monoid[noget]</code>.</p></li>
+      <li data-righe="2" data-segna="combine@ora"><p><code>def combine(a1: A, a2: A): A</code> er signaturen for ⊕: to A som input, ét A som output. <code>def</code> introducerer en funktion, <code>a1</code> og <code>a2</code> er navnene på de to argumenter.</p></li>
+      <li data-righe="3" data-segna="empty@ora"><p><code>def empty: A</code> er det neutrale element. Det tager ingen argumenter: det er en fast værdi for hver instans.</p></li>
+      <li data-righe="4-5" data-segna="object laws@due"><p><code>object laws</code> er et indlejret objekt: det indeholder lovene som egenskaber, der skal testes. Det har adgang til <code>combine</code> og <code>empty</code>, fordi det står inde i traiten.</p></li>
+      <li data-righe="5" data-segna="using Arbitrary[A]@due"><p><code>using</code> angiver en <b>implicit parameter</b>. <code>Arbitrary[A]</code> fortæller ScalaCheck, hvordan den genererer værdier af A til testene. <code>Equality[A]</code> fortæller, hvordan de sammenlignes.</p></li>
+    </ol>
+  </figure>
+  <h3>Instanser: én værdi for hver type</h3>
+  <p>For at gøre <code>String</code> til en monoid skriver du en værdi af typen <code>Monoid[String]</code>. En instans er en værdi: den oprettes ved at instansiere traiten.</p>
+  <figure class="scena" data-scena="tc" data-titolo="Traiten, to instanser og en funktion, der modtager dem"></figure>
+  <div class="box regola" data-tit="Sådan skrives en instans">Skriv <code>val stringMonoid: Monoid[String] = new Monoid[String]: …</code>, med <code>combine</code> og <code>empty</code> inde i. Typen efter kolonet siger, hvilken type der bliver til monoid.</div>
+</section>
+
+<section>
+  <h2>Homomorfier og isomorfier</h2>
+  <p>En <b>homomorfi</b> mellem en monoid <code>(M, ⊕, 0)</code> og en monoid <code>(N, ⊗, 1)</code> er en funktion <code>f: M → N</code>, der respekterer strukturen:</p>
+  <ul>
+    <li>distributivitet: <code>f(x ⊕ y) = f(x) ⊗ f(y)</code> for alle x, y i M;</li>
+    <li>neutralt element: <code>f(0) = 1</code>.</li>
+  </ul>
+  <p>Så du kan kombinere først og anvende f bagefter, eller anvende f først og kombinere bagefter: resultatet er det samme. Eksempel fra sliderne: f(s) = <code>s.size</code> fra String (med sammenkædning og "") til Int (med + og 0). Det gælder, at <code>"foo".size + "bar".size = ("foo" + "bar").size</code>.</p>
+  <figure class="scena" data-scena="omo" data-titolo="Længden respekterer sammenkædningen"></figure>
+  <p>En <b>isomorfi</b> er en homomorfi i begge retninger: f og dens inverse g er begge homomorfier. Eksempler fra sliderne:</p>
+  <ul>
+    <li>String og <code>List[Char]</code>, med <code>toList</code> og <code>mkString</code>: man går fra den ene til den anden uden at miste information;</li>
+    <li><code>(Boolean, false, ||)</code> og <code>(Boolean, true, &amp;&amp;)</code>, med negationen: De Morgans lov siger <code>¬(x ∨ y) = ¬x ∧ ¬y</code>, og <code>¬false = true</code>.</li>
+  </ul>
+  <div class="box idea" data-tit="Hvorfor det interesserer os">Hvis to monoider er isomorfe, kan en beregning udført i den ene overføres til den anden. Det er grunden til, at en streng og en liste af tegn behandles ens i beregninger i stykker.</div>
+</section>
+
+<section>
+  <h2>Hvor det bruges</h2>
+  <p>Monoiden er det minimale krav for at reducere en samling <b>i enhver rækkefølge og i stykker</b>. På den <a href="s09-foldable.html">næste side</a> ser du <code>fold</code> og <code>foldMap</code> bygget på en monoid. Koden til begreberne står på <a href="../esempi/s09-monoid.html">siden med eksempler side om side</a>.</p>
+</section>
+
+</main>
+</body>
+</html>

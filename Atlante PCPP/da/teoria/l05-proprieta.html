@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Egenskaber og modeksempler</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+SCENE.controesempi = {
+  w: 600, h: 250, lato: false,
+  legenda: 'dato:handlinger der er i orden,no:handling der overtræder,ora:del der gentager sig for evigt,ok:det der aldrig kommer',
+  oggetti: [
+    { id: 't1', tipo: 'testo', x: 20, y: 30, t: 'safety: "size non è mai negativo"', size: 13, bold: true, anchor: 'start' },
+    { id: 'S', tipo: 'celle', x: 20, y: 44, cw: 78, ch: 38, valori: ['add', 'remove', 'remove', 'size=−1', '…', '…', '…'], indici: false },
+    { id: 'p1', tipo: 'testo', x: 176, y: 100, t: '', size: 12, bold: true },
+    { id: 't2', tipo: 'testo', x: 20, y: 140, t: 'liveness: "w2 prima o poi scrive"', size: 13, bold: true, anchor: 'start' },
+    { id: 'L', tipo: 'celle', x: 20, y: 154, cw: 78, ch: 38, valori: ['w1 scrive', 'w2 attende', 'w3 scrive', 'w1 scrive', 'w3 scrive', 'w1 scrive', '…'], indici: false },
+    { id: 'p2', tipo: 'testo', x: 300, y: 214, t: '', size: 12, bold: true }
+  ],
+  passi: [
+    { nota: 'To egenskaber fra kurset. Ovenfor en egenskab af <b>safety</b> ("noget slemt sker aldrig"), nedenfor en af <b>liveness</b> ("noget godt sker til sidst").' },
+    { nota: 'Safety: det er nok at nå <b>én handling</b>, der overtræder den. Her er size efter tre handlinger −1: modeksemplet er det <b>endelige præfiks</b> add, remove, remove. Det, der sker efterpå, betyder ikke noget.', set: { S: { toni: { 0: 'dato', 1: 'dato', 2: 'dato', 3: 'no' } }, p1: { t: 'prefisso finito: basta questo', tono: 'no' } } },
+    { nota: 'Liveness: intet endeligt præfiks er nok, for w2 kunne altid skrive senere. Modeksemplet er en <b>uendelig</b> udførelse, hvor w1 og w3 skiftes til at køre for evigt, og w2 bliver ved at vente (eksemplet fra slides, med tre skrivere).', set: { L: { toni: { 0: 'ora', 1: 'ok', 2: 'ora', 3: 'ora', 4: 'ora', 5: 'ora', 6: 'ora' } }, p2: { t: '[w1 scrive, w3 scrive]* all\'infinito: w2 non scrive mai', tono: 'ora' } } }
+  ]
+};
+</script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  const T = (id, x, y, t, extra) => Object.assign({ id, tipo: 'testo', x, y, t, size: 13 }, extra || {});
+  const R = (id, x, y, w, h, t, extra) => Object.assign({ id, tipo: 'rett', x, y, w, h, t }, extra || {});
+  const N = (id, x, y, t, tono, extra) => Object.assign({ id, tipo: 'nodo', x, y, t, tono, r: 18 }, extra || {});
+
+    const pas = (id, i, riga, t, tono) => R(id, 60 + i * 88, riga === 1 ? 60 : 130, 80, 34, t, { tono, nascosto: true });
+    const og = [T('l1', 30, 77, 't1', { bold: true }), T('l2', 30, 147, 't2', { bold: true }), R('cnt', 440, 190, 150, 34, 'counter = 0', { tono: 'spento' }), T('c', 220, 207, '', { size: 12, bold: true })];
+    for (let i = 0; i < 6; i++) og.push(pas('x' + i, i, 1, '', 'ora'));
+    SCENE.daltest = {
+      w: 600, h: 240, lato: true,
+      legenda: 'ora:t1,due:t2,ok:egenskaben er opfyldt,no:modeksempel',
+      oggetti: og,
+      passi: [
+        { nota: "Proprietà da controllare: <b>dopo k incrementi, counter vale k</b>. Ogni thread fa (1) temp = counter, (2) temp + 1, (3) counter = temp." },
+        { nota: "Interleaving <b>sequenziale</b>: t1 fa i suoi tre passi, poi t2 i suoi. t2 legge 1 e scrive 2: nessun incremento perso.", set: { x0: { nascosto: false, t: 't1(1): 0', y: 60, tono: 'ora' }, x1: { nascosto: false, t: 't1(2)', y: 60, tono: 'ora' }, x2: { nascosto: false, t: 't1(3): 1', y: 60, tono: 'ora' }, x3: { nascosto: false, t: 't2(1): 1', y: 130, tono: 'due' }, x4: { nascosto: false, t: 't2(2)', y: 130, tono: 'due' }, x5: { nascosto: false, t: 't2(3): 2', y: 130, tono: 'due' }, cnt: { t: 'counter = 2', tono: 'ok' }, c: { t: '2 incrementi → 2: va bene', tono: 'ok' } } },
+        { nota: "Interleaving <b>cattivo</b>: t1(1), t2(1), t1(2), t2(2), t1(3), t2(3). Tutti e due leggono 0 e scrivono 1: un incremento perso. È il <b>controesempio</b> alla proprietà.", set: { x0: { t: 't1(1): 0', y: 60 }, x1: { t: 't2(1): 0', y: 130, tono: 'due' }, x2: { t: 't1(2)', y: 60, tono: 'ora' }, x3: { t: 't2(2)', y: 130, tono: 'due' }, x4: { t: 't1(3): 1', y: 60, tono: 'ora' }, x5: { t: 't2(3): 1', y: 130, tono: 'no' }, cnt: { t: 'counter = 1', tono: 'no' }, c: { t: '2 incrementi → 1: race condition', tono: 'no' } } },
+        { nota: "Un test <b>non sceglie</b> l'interleaving: lo decide lo scheduler. Può solo rendere più probabile quello cattivo (tanti thread, tante iterazioni, partenza insieme). Testare = <b>cercare</b> interleaving cattivi; per esplorarli <b>tutti</b> serve la verifica formale.", set: { c: { t: 'test: rende probabili gli interleaving cattivi', tono: null } } }
+      ]
+    };
+  })();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>Egenskaber og modeksempler</h1>
+  <p class="lede">Forelæsning 5 (<i>Testing &amp; Verification</i>), første del. Et samtidigt program er korrekt, hvis det overholder sin <b>specifikation</b>, altså et sæt egenskaber. For at teste det skal man vide, hvilken form et <b>modeksempel</b> har: en interleaving, der overtræder egenskaben. Goetz, kapitel 12.</p>
+</header>
+
+<section>
+  <h2>Safety og liveness</h2>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th></th><th>Safety</th><th>Liveness</th></tr></thead>
+    <tbody>
+      <tr><td>intuition</td><td>"noget slemt sker aldrig"</td><td>"noget godt sker til sidst"</td></tr>
+      <tr><td>eksempler fra slides</td><td>to trafiklys i et kryds er aldrig grønne samtidig; feltet size i en samling er aldrig &lt; 0</td><td>lyset bliver til sidst rødt; det vil altid til sidst være muligt at tilføje elementer til samlingen</td></tr>
+      <tr><td><b>modeksempel</b> (den rigtige definition)</td><td>et <b>endeligt præfiks</b> af en interleaving, der slutter med handlingen, der overtræder egenskaben</td><td>en <b>uendelig</b> interleaving, hvor det gode aldrig kommer</td></tr>
+    </tbody>
+  </table></div>
+  <figure class="scena" data-scena="controesempi" data-titolo="Sådan ser et modeksempel ud"></figure>
+  <div class="box regola" data-tit="Deadlock: safety eller liveness?">
+    <p>Deadlock-frihed er en egenskab af <b>safety</b>: en deadlock er en <b>tilstand</b>, hvor ingen tråd kan komme videre, og man når den med en endelig interleaving (filosofferne, der alle tager højre gaffel først). Fravær af sult ("hver tråd kommer til sidst ind") er derimod <b>liveness</b>: modeksemplet er en uendelig udførelse, hvor en tråd bliver udenfor for evigt, som w2 ovenfor.</p>
+  </div>
+  <div class="box esame" data-tit="Sætningen at huske">
+    <p>"Program testing can be used to show the presence of bugs, but never to show their absence!" (Dijkstra, i slides). En test, der fejler, viser et modeksempel; en test, der går igennem, beviser ingenting. For safety-egenskaber kan en test finde modeksemplet, fordi det er endeligt. Forelæsningen fokuserer kun på safety.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Fra interleaving til test</h2>
+  <figure class="passi" data-titolo="Tælleren fra slides (tre atomare trin pr. tråd)">
+    <div class="passo"><div class="espr">(1) int temp = counter;  (2) temp = counter + 1;  (3) counter = temp;</div><p class="nota">To tråde gentager disse trin for evigt.</p></div>
+    <div class="passo"><div class="espr">t1(1), t1(2), t1(3), t2(1), t2(2), t2(3), …   <mark class="ok">va bene</mark></div><p class="nota">Sekventielle interleavings: ingen tabt forøgelse.</p></div>
+    <div class="passo"><div class="espr">t1(1), t2(1), t1(2), t2(2), t1(3), t2(3), …   <mark class="no">race condition</mark></div><p class="nota">Begge læser den samme værdi: én forøgelse går tabt. Det er modeksemplet til egenskaben "efter k forøgelser er counter lig med k".</p></div>
+    <div class="passo"><div class="espr">testare = cercare gli interleaving <mark class="no">cattivi</mark></div><p class="nota">Udførelsen er ikke-deterministisk: en test vælger ikke interleavingen, den kan kun gøre de dårlige mere sandsynlige. Hvordan, på siden <a href="l05-test-concorrenti.html">Skrivning af samtidige tests</a>. For at udforske dem alle skal man bruge <a href="l05-verifica-formale.html">formel verifikation</a>.</p></div>
+  </figure>
+  <figure class="scena" data-scena="daltest" data-titolo="God interleaving, dårlig interleaving"></figure>
+</section>
+
+</main>
+</body>
+</html>
