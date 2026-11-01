@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>k-nearest neighbour: the exercise</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  const A = [[3, 4], [4, 4], [0, 3], [3, 7], [1, 1], [0, 1], [1, 6], [2, 7], [0, 6], [4, 7]];
+  const B = [[5, 3], [5, 4], [6, 3], [6, 5], [7, 2], [7, 4], [5, 6], [6, 1], [7, 6], [6, 7]];
+  const Q = [[3, 3], [2, 4], [5, 2], [4, 5], [4, 2]];
+  const T = (id, x, y, t, extra) => Object.assign({ id, tipo: 'testo', x, y, t, size: 13 }, extra || {});
+  const tutti = A.map((p, i) => ({ p, n: 'A' + (i + 1), tono: 'due' })).concat(B.map((p, i) => ({ p, n: 'B' + (i + 1), tono: 'dato' })));
+  const d2 = (p, q) => (p[0] - q[0]) ** 2 + (p[1] - q[1]) ** 2;
+  /* i punti entro la distanza del quinto più vicino, pari merito compresi */
+  const vicini = q => { const ds = tutti.map(t => d2(t.p, q)).sort((a, b) => a - b); return tutti.map((t, i) => i).filter(i => d2(tutti[i].p, q) <= ds[4]); };
+
+  const ogg = [{ id: 'ax', tipo: 'assi', box: [40, 15, 330, 330], dom: [0, 8, 0, 8], tacche: 1, etX: 'x₁', etY: 'x₂' }];
+  tutti.forEach((t, i) => ogg.push({ id: 'p' + i, tipo: 'punto', in: 'ax', x: t.p[0], y: t.p[1], r: 6, t: t.n, tono: t.tono }));
+  Q.forEach((q, j) => ogg.push({ id: 'q' + j, tipo: 'punto', in: 'ax', x: q[0], y: q[1], r: 7, t: 'Q' + (j + 1), tono: 'ora' }));
+  const linee = [];
+  Q.forEach((q, j) => vicini(q).forEach(i => {
+    const id = 'l' + j + '_' + i;
+    linee.push([id, j]);
+    ogg.push({ id, tipo: 'linea', in: 'ax', x1: q[0], y1: q[1], x2: tutti[i].p[0], y2: tutti[i].p[1], tono: 'ora', tratt: true, nascosto: true });
+  }));
+  ['c', 'c2', 'c3', 'c4'].forEach((id, m) => ogg.push(T(id, 505, 60 + m * 45, '', { size: 14, bold: m === 0 })));
+  const solo = (j, testi) => {
+    const s = {};
+    linee.forEach(([id, jj]) => { s[id] = { nascosto: jj !== j }; });
+    return Object.assign(s, testi);
+  };
+  SCENE.knn20 = {
+    w: 640, h: 360, lato: true,
+    legenda: 'due:class A,dato:class B,ora:point to classify and its neighbours',
+    oggetti: ogg,
+    passi: [
+      { nota: `The 20 training points (10 of class A, 10 of class B) and the five points to classify, Q1…Q5. The distance is the Euclidean one. For each Q we look for the closest points and let the majority vote.` },
+      { nota: `<b>Q1 = (3, 3)</b>. Neighbours in order: A1 at distance 1, A2 at √2, B1 at 2, B2 at √5, A5 at √8. With k = 2, 3, 5 the votes are 2–0, 2–1, 3–2: always <b>A</b>. A stable answer.`, set: solo(0, { c: { t: 'Q1 = (3, 3)' }, c2: { t: 'k = 2 → A' }, c3: { t: 'k = 3 → A' }, c4: { t: 'k = 5 → A' } }) },
+      { nota: `<b>Q2 = (2, 4)</b>. The five closest are all A (distances 1, 2, √5, √5, √8). A3 and A7 are tied, but both are A: nothing changes. Always <b>A</b>.`, set: solo(1, { c: { t: 'Q2 = (2, 4)' }, c2: { t: 'k = 2 → A' }, c3: { t: 'k = 3 → A' }, c4: { t: 'k = 5 → A' } }) },
+      { nota: `<b>Q3 = (5, 2)</b>. Neighbours: B1 at 1, B3 and B8 at √2, B2 and B5 at 2: all B. Always <b>B</b>.`, set: solo(2, { c: { t: 'Q3 = (5, 2)' }, c2: { t: 'k = 2 → B' }, c3: { t: 'k = 3 → B' }, c4: { t: 'k = 5 → B' } }) },
+      { nota: `<b>Q4 = (4, 5)</b> lies between the two groups. The closest is A2 (distance 1). Then A1, B2 and B7 are <b>all three at √2</b>, and A10 and B4 at 2. With k = 2 the second place goes to one of the three: A1 gives 2–0, B2 or B7 give 1–1. With k = 3 and k = 5 the result depends on which of the tied points you pick: A or B.`, set: solo(3, { c: { t: 'Q4 = (4, 5)' }, c2: { t: 'k = 2 → A / 1–1' }, c3: { t: 'k = 3 → A / B' }, c4: { t: 'k = 5 → A / B' } }) },
+      { nota: `<b>Q5 = (4, 2)</b>. First B1 (√2), second A2 (2), then <b>four points at √5</b>: A1, B2, B3, B8. k = 1: B. k = 2: B1 and A2, one each, a tied vote. k = 3: the third is one of the four tied points, so A or B. k = 5: B in every case (at most A2 and A1 against three B).`, set: solo(4, { c: { t: 'Q5 = (4, 2)' }, c2: { t: 'k = 2 → 1–1' }, c3: { t: 'k = 3 → A / B' }, c4: { t: 'k = 5 → B' } }) },
+      { nota: `Q1, Q2, Q3 lie inside a group: the answer does not depend on k. Q4 and Q5 lie between the two groups, close to the boundary: there k and the ties make the difference.`, set: solo(-1, { c: { t: '' }, c2: { t: '' }, c3: { t: '' }, c4: { t: '' } }) }
+    ]
+  };
+
+  /* quattro dimensioni */
+  const nomi = ['A1', 'A2', 'B1', 'B2', 'B3', 'A3', 'A4', 'B4'];
+  const dq = ['1', '2', '4', '5', '8', '9', '17', '18'];
+  const toni = { 0: 'due', 1: 'due', 2: 'dato', 3: 'dato', 4: 'dato', 5: 'due', 6: 'due', 7: 'dato' };
+  const sot = k => ({ sot: { x2: 60 + k * 66 } });
+  SCENE.knn4d = {
+    w: 620, h: 220, lato: true,
+    legenda: 'due:class A,dato:class B,ora:same x₁ and x₂',
+    oggetti: [
+      { id: 'nomi', tipo: 'celle', x: 60, y: 24, cw: 66, ch: 40, valori: nomi, toni, indici: false },
+      { id: 'dist', tipo: 'celle', x: 60, y: 84, cw: 66, ch: 40, valori: dq, toni, indici: false },
+      T('ld', 30, 104, 'd²', { size: 14 }),
+      { id: 'sot', tipo: 'linea', x1: 60, y1: 146, x2: 60, y2: 146, tono: 'ok', nascosto: true },
+      T('esito', 310, 186, '', { size: 15, bold: true, tono: 'ok' })
+    ],
+    passi: [
+      { nota: `The point to classify is the origin, Q = (0, 0, 0, 0). With Q = 0 the squared distance of a point is the sum of the squares of its coordinates: A3 = (2, 2, 1, 0) gives 4 + 4 + 1 = 9. The points are put in order of distance; we compare the squares, because the root is increasing and the order does not change.` },
+      { nota: `<b>k = 2</b>: the two closest are A1 and A2. Two A: class <b>A</b>.`, set: Object.assign(sot(2), { sot: { nascosto: false, x2: 60 + 2 * 66 }, esito: { t: 'k = 2 → A' } }) },
+      { nota: `<b>k = 3</b>: A1, A2 and B1. Votes 2–1: class <b>A</b>.`, set: { sot: { x2: 60 + 3 * 66 }, esito: { t: 'k = 3 → A' } } },
+      { nota: `<b>k = 5</b>: A1, A2, B1, B2, B3. Votes 2–3: class <b>B</b>. The answer changed because after B1 two more B entered.`, set: { sot: { x2: 60 + 5 * 66 }, esito: { t: 'k = 5 → B' } } },
+      { nota: `A3 = (2, 2, 1, 0) and B3 = (2, 2, 0, 0) have equal x₁ and x₂: in the plane they would be the <b>same point</b>, both at √8 from Q, tied for fifth place (with A3 A would win, with B3 B would win). What separates them is x₃: it moves A3 from √8 ≈ 2.83 to 3 and lets B3 in. The fourth coordinate is 0 for everyone and does not count.`, set: { nomi: { toni: { 0: 'due', 1: 'due', 2: 'dato', 3: 'dato', 4: 'ora', 5: 'ora', 6: 'due', 7: 'dato' } }, dist: { toni: { 0: 'due', 1: 'due', 2: 'dato', 3: 'dato', 4: 'ora', 5: 'ora', 6: 'due', 7: 'dato' } } } }
+    ]
+  };
+
+  /* confini: retta dei minimi quadrati, k = 1 e k = 5 */
+  const MAPPA = { k1: 'AAAAAAAAAAAAAABBBBBBBBBBBBBBBBBBAAAAAAAAAAAAAABBBBBBBBBBBBBBBBBBAAAAAAAAAAAAAABBBBBBBBBBBBBBBBBBAAAAAAAAAAAAAABBBBBBBBBBBBBBBBBBAAAAAAAAAAAAAABBBBBBBBBBBBBBBBBBAAAAAAAAAAAAABBBBBBBBBBBBBBBBBBBAAAAAAAAAAAAABBBBBBBBBBBBBBBBBBBAAAAAAAAAAAAABBBBBBBBBBBBBBBBBBBAAAAAAAAAAAAABBBBBBBBBBBBBBBBBBBAAAAAAAAAAAAAABBBBBBBBBBBBBBBBBBAAAAAAAAAAAAAAABBBBBBBBBBBBBBBBBAAAAAAAAAAAAAAAABBBBBBBBBBBBBBBBAAAAAAAAAAAAAAAAABBBBBBBBBBBBBBBAAAAAAAAAAAAAAAAAABBBBBBBBBBBBBBAAAAAAAAAAAAAAAAAABBBBBBBBBBBBBBAAAAAAAAAAAAAAAAAABBBBBBBBBBBBBBAAAAAAAAAAAAAAAAAABBBBBBBBBBBBBBAAAAAAAAAAAAAAAAAABBBBBBBBBBBBBBAAAAAAAAAAAAAAAAAABBBBBBBBBBBBBBAAAAAAAAAAAAAAAAAABBBBBBBBBBBBBBAAAAAAAAAAAAAAAAABBBBBBBBBBBBBBBAAAAAAAAAAAAAAABBBBBBBBBBBBBBBBBAAAAAAAAAAAAAAABBBBBBBBBBBBBBBBBAAAAAAAAAAAAAAAABBBBBBBBBBBBBBBBAAAAAAAAAAAAAAAAABBBBBBBBBBBBBBBAAAAAAAAAAAAAAAAAABBBBBBBBBBBBBBAAAAAAAAAAAAAAAAAAABBBBBBBBBBBBBAAAAAAAAAAAAAAAAAAAABBBBBBBBBBBBAAAAAAAAAAAAAAAAAAAABBBBBBBBBBBBAAAAAAAAAAAAAAAAAAAABBBBBBBBBBBBAAAAAAAAAAAAAAAAAAAABBBBBBBBBBBBAAAAAAAAAAAAAAAAAAAABBBBBBBBBBBB', k5: 'AAAAAAAAAAAAAABBBBBBBBBBBBBBBBBBAAAAAAAAAAAAAABBBBBBBBBBBBBBBBBBAAAAAAAAAAAAAABBBBBBBBBBBBBBBBBBAAAAAAAAAAAAAAABBBBBBBBBBBBBBBBBAAAAAAAAAAAAAAABBBBBBBBBBBBBBBBBAAAAAAAAAAAAAAABBBBBBBBBBBBBBBBBAAAAAAAAAAAAAAABBBBBBBBBBBBBBBBBAAAAAAAAAAAAAABBBBBBBBBBBBBBBBBBAAAAAAAAAAAAAABBBBBBBBBBBBBBBBBBAAAAAAAAAAAAABBBBBBBBBBBBBBBBBBBAAAAAAAAAAAAABBBBBBBBBBBBBBBBBBBAAAAAAAAAAAAABBBBBBBBBBBBBBBBBBBAAAAAAAAAAAABBBBBBBBBBBBBBBBBBBBAAAAAAAAAAAABBBBBBBBBBBBBBBBBBBBAAAAAAAAAAAABBBBBBBBBBBBBBBBBBBBAAAAAAAAAAAABBBBBBBBBBBBBBBBBBBBAAAAAAAAAAAABBBBBBBBBBBBBBBBBBBBAAAAAAAAAAAABBBBBBBBBBBBBBBBBBBBAAAAAAAAAAAAABBBBBBBBBBBBBBBBBBBAAAAAAAAAAAAAAAABBBBBBBBBBBBBBBBAAAAAAAAAAAAAAAAABBBBBBBBBBBBBBBAAAAAAAAAAAAAAAAABBBBBBBBBBBBBBBAAAAAAAAAAAAAAAAABBBBBBBBBBBBBBBAAAAAAAAAAAAAAAAAABBBBBBBBBBBBBBAAAAAAAAAAAAAAAAABBBBBBBBBBBBBBBAAAAAAAAAAAAAAAAABBBBBBBBBBBBBBBAAAAAAAAAAAAAAAAABBBBBBBBBBBBBBBAAAAAAAAAAAAAAAAAABBBBBBBBBBBBBBAAAAAAAAAAAAAAAAAABBBBBBBBBBBBBBAAAAAAAAAAAAAAAAAAABBBBBBBBBBBBBAAAAAAAAAAAAAAAAAAABBBBBBBBBBBBBAAAAAAAAAAAAAAAAAAABBBBBBBBBBBBB' };
+  const scala = (s, id, tono) => {
+    const n = 32, h = 8 / n, out = [];
+    for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) {
+      const v = s[r * n + c];
+      if (c < n - 1 && v !== s[r * n + c + 1]) out.push([(c + 1) * h, r * h, (c + 1) * h, (r + 1) * h]);
+      if (r < n - 1 && v !== s[(r + 1) * n + c]) out.push([c * h, (r + 1) * h, (c + 1) * h, (r + 1) * h]);
+    }
+    return out.map((g, k) => ({ id: id + k, tipo: 'linea', in: 'ax', x1: g[0], y1: g[1], x2: g[2], y2: g[3], tono, nascosto: true }));
+  };
+  const og3 = [{ id: 'ax', tipo: 'assi', box: [40, 15, 330, 330], dom: [0, 8, 0, 8], tacche: 1, etX: 'x₁', etY: 'x₂' }];
+  tutti.forEach((t, i) => og3.push({ id: 'p' + i, tipo: 'punto', in: 'ax', x: t.p[0], y: t.p[1], r: 6, tono: t.tono }));
+  /* w = [−1.074, 0.359, −0.075]: x₁ = 2.993 + 0.2085·x₂ */
+  og3.push({ id: 'lin', tipo: 'linea', in: 'ax', x1: 2.993, y1: 0, x2: 2.993 + 0.2085 * 8, y2: 8, tono: 'spento', nascosto: true });
+  const s1 = scala(MAPPA.k1, 'u', 'ora'), s5 = scala(MAPPA.k5, 'v', 'ok');
+  s1.concat(s5).forEach(o => og3.push(o));
+  ['c', 'c2', 'c3'].forEach((id, m) => og3.push(T(id, 505, 80 + m * 45, '', { size: 14, bold: true })));
+  const mostra = (lista, v) => Object.fromEntries(lista.map(o => [o.id, { nascosto: !v }]));
+  SCENE.confini = {
+    w: 640, h: 360, lato: true,
+    legenda: 'due:class A,dato:class B,spento:least-squares line,ora:boundary with k = 1,ok:boundary with k = 5,no:wrong point',
+    oggetti: og3,
+    passi: [
+      { nota: `The same 20 points. Which boundary separates A from B?` },
+      { nota: `<b>Linear classifier</b> (least squares on the labels ±1): w = [−1.074, 0.359, −0.075], that is the line x₁ = 2.993 + 0.2085·x₂. A single line for the whole plane. It gets one point wrong, A2 = (4, 4): 19 out of 20, accuracy 0.95.`, set: { lin: { nascosto: false }, p1: { tono: 'no' }, c: { t: 'retta: 19/20', tono: 'spento' } } },
+      { nota: `<b>k = 1</b>: every point of the plane takes the class of the closest training point. The boundary is one step after another and bends around single points (a bulge towards B around A2). 20 out of 20 on the training: memory never makes a mistake.`, set: Object.assign(mostra(s1, true), { p1: { tono: 'due' }, c2: { t: 'k = 1: 20/20', tono: 'ora' } }) },
+      { nota: `<b>k = 5</b>: the vote of five neighbours smooths the boundary and the bulge around A2 disappears: A2 is now classified B (19 out of 20 on the training). The boundary looks more like the line.`, set: Object.assign(mostra(s5, true), { p1: { tono: 'no' }, c3: { t: 'k = 5: 19/20', tono: 'ok' } }) }
+    ]
+  };
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>k-nearest neighbour: the exercise</h1>
+  <p class="lede">Exercise of week 10 <i>K-Nearest-Neighbour Classifier</i> (Tasks 1–4) and lecture 9. A new point takes the class of the majority of its k neighbours. Here we calculate by hand, with the data of the notebook, the ties that the eye misses, the effect of k, the effect of the dimensions and the comparison with the linear classifier.</p>
+</header>
+
+<section>
+  <h2>The k-nearest neighbour in four steps</h2>
+  <figure class="passi" data-titolo="How a point q is classified">
+    <div class="passo"><div class="espr"><mark class="dato">memorizza</mark> i dati: (x₁, y₁), …, (x<sub>N</sub>, y<sub>N</sub>)</div><p class="nota">There is no training and there are no weights: the model is the training set itself (<i>memory-based</i>). x is the vector of features of a point, y its class, N how many points there are.</p></div>
+    <div class="passo"><div class="espr">d(<mark class="ora">q</mark>, <mark class="dato">xᵢ</mark>) = √( (q₁ − xᵢ₁)² + (q₂ − xᵢ₂)² + … )</div><p class="nota">q is the new point, xᵢ the point i of the training set; the second index says which feature we mean. It is the Euclidean distance, that is the norm of q − xᵢ (page <a href="w02-norme-distanze.html">Norms and distances</a>). It is computed for all N points.</p></div>
+    <div class="passo"><div class="espr">si ordinano le distanze e si tengono i <mark class="ora">k</mark> punti più vicini</div><p class="nota">k is chosen by whoever uses the method: it is a <b>hyperparameter</b>, not learned from the data.</p></div>
+    <div class="passo"><div class="espr">classe di q = la più frequente fra i k vicini: <mark class="ok">voto di maggioranza</mark></div><p class="nota">With two classes and odd k a tied vote is impossible. With even k it can happen.</p></div>
+  </figure>
+</section>
+
+<section>
+  <h2>Tasks 1–2: the 20 points and the five questions</h2>
+  <p>The notebook gives 10 points of class A, 10 of class B and five points to classify. Task 1 only asks to look at them; Task 2 asks for the class of each Q with k = 2, 3, 5 "by eye". Here we calculate the distances, and see where the eye is not enough.</p>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Class A</th><th>A1</th><th>A2</th><th>A3</th><th>A4</th><th>A5</th><th>A6</th><th>A7</th><th>A8</th><th>A9</th><th>A10</th></tr></thead>
+    <tbody>
+      <tr><td>(x₁, x₂)</td><td>(3, 4)</td><td>(4, 4)</td><td>(0, 3)</td><td>(3, 7)</td><td>(1, 1)</td><td>(0, 1)</td><td>(1, 6)</td><td>(2, 7)</td><td>(0, 6)</td><td>(4, 7)</td></tr>
+    </tbody>
+  </table></div>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Class B</th><th>B1</th><th>B2</th><th>B3</th><th>B4</th><th>B5</th><th>B6</th><th>B7</th><th>B8</th><th>B9</th><th>B10</th></tr></thead>
+    <tbody>
+      <tr><td>(x₁, x₂)</td><td>(5, 3)</td><td>(5, 4)</td><td>(6, 3)</td><td>(6, 5)</td><td>(7, 2)</td><td>(7, 4)</td><td>(5, 6)</td><td>(6, 1)</td><td>(7, 6)</td><td>(6, 7)</td></tr>
+    </tbody>
+  </table></div>
+  <p class="piccolo">The names A1…A10 and B1…B10 are the ones the notebook writes on the plot, in the order in which they appear in the lists <code>class_A</code> and <code>class_B</code>. The five questions are Q1 = (3, 3), Q2 = (2, 4), Q3 = (5, 2), Q4 = (4, 5), Q5 = (4, 2).</p>
+  <figure class="scena" data-scena="knn20" data-titolo="The five questions, one at a time"></figure>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Point</th><th>k = 2</th><th>k = 3</th><th>k = 5</th></tr></thead>
+    <tbody>
+      <tr><td>Q1 = (3, 3)</td><td><b>A</b> (2–0)</td><td><b>A</b> (2–1)</td><td><b>A</b> (3–2)</td></tr>
+      <tr><td>Q2 = (2, 4)</td><td><b>A</b> (2–0)</td><td><b>A</b> (3–0)</td><td><b>A</b> (5–0)</td></tr>
+      <tr><td>Q3 = (5, 2)</td><td><b>B</b> (0–2)</td><td><b>B</b> (0–3)</td><td><b>B</b> (0–5)</td></tr>
+      <tr><td>Q4 = (4, 5)</td><td>A, or a tied vote 1–1</td><td>A / B</td><td>A / B</td></tr>
+      <tr><td>Q5 = (4, 2)</td><td>tied vote 1–1</td><td>A / B</td><td><b>B</b> (2–3)</td></tr>
+    </tbody>
+  </table></div>
+  <p class="piccolo">The votes are written as "how many A – how many B". Where the cell says "A / B" the result is A or B, depending on how the tie explained below is resolved.</p>
+  <div class="box attenzione" data-tit="The ties: what the eye misses">
+    <p>With integer coordinates distances repeat: from Q4 three points are all at √2. If the k-th place is contested by several points at the same distance, <b>the method alone does not decide</b>: a rule is needed. The most common: keep all the tied points (then there are more than k neighbours), choose by the order of the data, or weight the votes by distance. In the exercise the honest thing is to say that there is a tie and that the answer depends on how it is resolved.</p>
+  </div>
+  <p class="piccolo">With <code>KNeighborsClassifier</code> of scikit-learn 1.9.0 the output is: for Q4, A with k = 2, 3, 5; for Q5, A with k = 2 and 3, B with k = 5. It picks among the tied points itself and, on a tied vote, gave A: this is an implementation detail, not a rule of the method.</p>
+  <div class="box idea" data-tit="Safe points and points on the boundary">
+    <p>Q1, Q2 and Q3 lie inside a group: the neighbours are almost all of the same class and changing k does not change the answer. Q4 and Q5 lie between the two groups, close to the <b>decision boundary</b>: there any change of k, of distance or of tie can flip the class.</p>
+  </div>
+</section>
+
+<section>
+  <h2>How the answer changes with k (Task 2)</h2>
+  <p>The question of the notebook: what happens when k is very small or very large, and how does it relate to overfitting and underfitting?</p>
+  <ul>
+    <li><b>Small k</b> (at the limit 1): a single point decides. A point out of place, because of noise or measurement error, changes the answer all around it. The boundary is jagged and follows the noise: <b>overfitting</b>.</li>
+    <li><b>Large k</b>: every answer is an average over many points. The boundary smooths out; real details are lost. At the limit k = N all the points vote for every Q: here 10–10, a single class everywhere, 0.5 accuracy: <b>underfitting</b>.</li>
+    <li><b>In between</b> there is the right k, and it is chosen with a validation set (<a href="w07-validazione.html">Validation</a>), because k is a hyperparameter.</li>
+  </ul>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>k</th><th>training points got wrong</th><th>accuracy on the training</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>none</td><td>1.0</td></tr>
+      <tr><td>3</td><td>none</td><td>1.0</td></tr>
+      <tr><td>5</td><td>A2 = (4, 4)</td><td>0.95</td></tr>
+      <tr><td>20</td><td>all the B</td><td>0.5</td></tr>
+    </tbody>
+  </table></div>
+  <p class="piccolo"><code>KNeighborsClassifier(n_neighbors=k).fit(X, y).predict(X)</code>. In the training set every point is also a neighbour of itself (distance 0): that is why k = 1 always gives 1.0. An accuracy of 1.0 on the training says nothing about generalisation.</p>
+  <figure class="codice" data-titolo="knn(q, k): the votes of the k neighbours (verified with the data of the notebook)">
+<pre data-lang="python">X = np.vstack([class_A, class_B])                    # 20 × 2: prima gli A, poi i B
+y = np.r_[np.zeros(10), np.ones(10)].astype(int)    # 0 = A, 1 = B
+def knn(q, k):
+    d = np.linalg.norm(X - q, axis=1)               # distanza di q da ogni punto
+    vicini = np.argsort(d, kind="stable")[:k]       # indici dei k più vicini
+    return np.bincount(y[vicini], minlength=2)      # voti: [quanti A, quanti B]</pre>
+    <ol class="spiega">
+      <li data-righe="1-2" data-segna="np.vstack@dato|np.r_@due"><p>All the points in a 20 × 2 matrix and, in the same order, their classes: 0 for A, 1 for B. Both are needed because the vote reads the class of a point from its index.</p></li>
+      <li data-righe="4" data-segna="X - q@ora|axis=1@ok"><p><code>X - q</code> subtracts q from every row of X (broadcasting): these are the vectors from q to every point. <code>norm</code> with <code>axis=1</code> computes their length row by row: 20 distances.</p></li>
+      <li data-righe="5" data-segna="argsort@ora|stable@due|[:k]@ok"><p><code>argsort</code> gives the indices of the points from the closest to the farthest; <code>[:k]</code> keeps the first k. With <code>kind="stable"</code> at equal distance the order of the data stays, that is the A before the B: this is the tie rule of this code.</p></li>
+      <li data-righe="6" data-segna="y[vicini]@dato|np.bincount@ok"><p><code>y[vicini]</code> are the classes of the k neighbours; <code>np.bincount</code> counts them. <code>minlength=2</code> guarantees two slots even if no neighbour is B. Result for Q4 with k = 3: <code>[2 1]</code>, two A and one B.</p></li>
+    </ol>
+  </figure>
+  <p class="piccolo">With this rule (A before B) the code gives, for k = 2, 3, 5: Q1 [2 0], [2 1], [3 2]; Q2 [2 0], [3 0], [5 0]; Q3 [0 2], [0 3], [0 5]; Q4 [2 0], [2 1], [3 2]; Q5 [1 1], [2 1], [2 3]. The "A / B" cells of the table are those where another rule would give a different result.</p>
+</section>
+
+<section>
+  <h2>Task 3: more dimensions</h2>
+  <p>The notebook gives a second set, in four dimensions, with a single point to classify, Q = [0, 0, 0, 0]. The distance is computed as before, with four terms under the root.</p>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Class A</th><th>A1</th><th>A2</th><th>A3</th><th>A4</th></tr></thead>
+    <tbody><tr><td>(x₁, x₂, x₃, x₄)</td><td>(1, 0, 0, 0)</td><td>(1, 1, 0, 0)</td><td>(2, 2, 1, 0)</td><td>(3, 2, 2, 0)</td></tr></tbody>
+  </table></div>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Class B</th><th>B1</th><th>B2</th><th>B3</th><th>B4</th></tr></thead>
+    <tbody><tr><td>(x₁, x₂, x₃, x₄)</td><td>(2, 0, 0, 0)</td><td>(2, 1, 0, 0)</td><td>(2, 2, 0, 0)</td><td>(3, 3, 0, 0)</td></tr></tbody>
+  </table></div>
+  <figure class="scena" data-scena="knn4d" data-titolo="From the closest to the farthest, in four dimensions"></figure>
+  <ul>
+    <li><b>k = 2</b>: A1, A2 → <b>A</b>. <b>k = 3</b>: A1, A2, B1 → <b>A</b> (2–1). <b>k = 5</b>: A1, A2, B1, B2, B3 → <b>B</b> (2–3).</li>
+    <li>In this example no distance repeats, so there is no tie.</li>
+    <li><b>Why the dimension matters</b>: A3 and B3 have the same x₁ and x₂ and differ only in x₃. In two dimensions they would be the same point and the fifth place would be a tie (A or B). The third coordinate separates them and decides the fifth place: one more feature changes the answer, even if it says nothing useful about the class.</li>
+  </ul>
+  <div class="box idea" data-tit="More features, less informative distances">
+    <p>Every extra coordinate adds a term to the distance and can move the neighbours. A useless feature (or one on a much larger scale than the others) brings noise into the distance. With many dimensions, moreover, distances become almost all equal and the "closest" is not much closer than the others: see the curse of dimensionality in <a href="w12-pca.html">PCA</a>.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Task 4: linear classifier versus neighbours</h2>
+  <p>The question of the notebook: how do the decision boundaries differ, and how do they differ from the point of view of computation? On the same 20 points:</p>
+  <figure class="scena" data-scena="confini" data-titolo="A line, or the neighbours"></figure>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th></th><th>Linear classifier</th><th>k-nearest neighbour</th></tr></thead>
+    <tbody>
+      <tr><td>What it learns</td><td>the weights w: d + 1 numbers (d features)</td><td>nothing: it keeps the whole training set, N × d numbers</td></tr>
+      <tr><td>Boundary</td><td>just one, a hyperplane (here a line)</td><td>made of pieces, follows the data; for small k it bends around single points</td></tr>
+      <tr><td>Training</td><td>yes: least squares or gradient descent, cost paid once</td><td>none (it is memorised)</td></tr>
+      <tr><td>Prediction</td><td>one inner product: cost proportional to d</td><td>distances from all N points: cost proportional to N · d, plus choosing the k</td></tr>
+      <tr><td>Scale of the features</td><td>the weight w compensates for a different scale</td><td>matters a lot: a feature on a large scale dominates the distance</td></tr>
+      <tr><td>Shape of the data</td><td>good if the classes are separable by a hyperplane</td><td>good also with boundaries of any shape, if there is enough data</td></tr>
+      <tr><td>On the 20 points</td><td>19 out of 20 (0.95), gets A2 wrong</td><td>k = 1: 20 out of 20; k = 5: 19 out of 20</td></tr>
+    </tbody>
+  </table></div>
+  <p class="piccolo">The line is the least-squares one on the labels ±1, as in the page <a href="w10-classificatore-lineare.html">Linear classifier and logistic regression</a>. The boundaries of k = 1 and k = 5 are computed with scikit-learn on a grid of 32 × 32 cells.</p>
+  <div class="box inglese" data-tit="At the exam, in English">
+    <p>"k-nearest neighbour <b>stores the training set</b> and classifies a new point by a <b>majority vote among its k closest training points</b>, using a distance such as the Euclidean one. A small k gives a jagged boundary and overfits; a large k smooths it and can underfit; I choose k on a validation set."</p>
+  </div>
+</section>
+
+</main>
+</body>
+</html>

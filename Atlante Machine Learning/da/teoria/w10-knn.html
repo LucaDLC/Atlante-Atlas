@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>k-nearest neighbour: øvelsen</title>
+<link rel="stylesheet" href="../../assets/atlas.css">
+<link rel="stylesheet" href="../../assets/tema.css">
+<script src="../../assets/sito.js"></script>
+<script src="../../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  const A = [[3, 4], [4, 4], [0, 3], [3, 7], [1, 1], [0, 1], [1, 6], [2, 7], [0, 6], [4, 7]];
+  const B = [[5, 3], [5, 4], [6, 3], [6, 5], [7, 2], [7, 4], [5, 6], [6, 1], [7, 6], [6, 7]];
+  const Q = [[3, 3], [2, 4], [5, 2], [4, 5], [4, 2]];
+  const T = (id, x, y, t, extra) => Object.assign({ id, tipo: 'testo', x, y, t, size: 13 }, extra || {});
+  const tutti = A.map((p, i) => ({ p, n: 'A' + (i + 1), tono: 'due' })).concat(B.map((p, i) => ({ p, n: 'B' + (i + 1), tono: 'dato' })));
+  const d2 = (p, q) => (p[0] - q[0]) ** 2 + (p[1] - q[1]) ** 2;
+  /* i punti entro la distanza del quinto più vicino, pari merito compresi */
+  const vicini = q => { const ds = tutti.map(t => d2(t.p, q)).sort((a, b) => a - b); return tutti.map((t, i) => i).filter(i => d2(tutti[i].p, q) <= ds[4]); };
+
+  const ogg = [{ id: 'ax', tipo: 'assi', box: [40, 15, 330, 330], dom: [0, 8, 0, 8], tacche: 1, etX: 'x₁', etY: 'x₂' }];
+  tutti.forEach((t, i) => ogg.push({ id: 'p' + i, tipo: 'punto', in: 'ax', x: t.p[0], y: t.p[1], r: 6, t: t.n, tono: t.tono }));
+  Q.forEach((q, j) => ogg.push({ id: 'q' + j, tipo: 'punto', in: 'ax', x: q[0], y: q[1], r: 7, t: 'Q' + (j + 1), tono: 'ora' }));
+  const linee = [];
+  Q.forEach((q, j) => vicini(q).forEach(i => {
+    const id = 'l' + j + '_' + i;
+    linee.push([id, j]);
+    ogg.push({ id, tipo: 'linea', in: 'ax', x1: q[0], y1: q[1], x2: tutti[i].p[0], y2: tutti[i].p[1], tono: 'ora', tratt: true, nascosto: true });
+  }));
+  ['c', 'c2', 'c3', 'c4'].forEach((id, m) => ogg.push(T(id, 505, 60 + m * 45, '', { size: 14, bold: m === 0 })));
+  const solo = (j, testi) => {
+    const s = {};
+    linee.forEach(([id, jj]) => { s[id] = { nascosto: jj !== j }; });
+    return Object.assign(s, testi);
+  };
+  SCENE.knn20 = {
+    w: 640, h: 360, lato: true,
+    legenda: 'due:klasse A,dato:klasse B,ora:punkt der skal klassificeres og dets naboer',
+    oggetti: ogg,
+    passi: [
+      { nota: `De 20 punkter i træningen (10 af klasse A, 10 af klasse B) og de fem punkter, der skal klassificeres, Q1…Q5. Afstanden er den euklidiske. For hvert Q finder man de nærmeste punkter og lader flertallet stemme.` },
+      { nota: `<b>Q1 = (3, 3)</b>. Naboer i rækkefølge: A1 i afstand 1, A2 i √2, B1 i 2, B2 i √5, A5 i √8. Med k = 2, 3, 5 er stemmerne 2–0, 2–1, 3–2: altid <b>A</b>. Et stabilt svar.`, set: solo(0, { c: { t: 'Q1 = (3, 3)' }, c2: { t: 'k = 2 → A' }, c3: { t: 'k = 3 → A' }, c4: { t: 'k = 5 → A' } }) },
+      { nota: `<b>Q2 = (2, 4)</b>. De fem nærmeste er alle af A (afstande 1, 2, √5, √5, √8). A3 og A7 har samme afstand, men begge er A: intet ændrer sig. Altid <b>A</b>.`, set: solo(1, { c: { t: 'Q2 = (2, 4)' }, c2: { t: 'k = 2 → A' }, c3: { t: 'k = 3 → A' }, c4: { t: 'k = 5 → A' } }) },
+      { nota: `<b>Q3 = (5, 2)</b>. Naboer: B1 i 1, B3 og B8 i √2, B2 og B5 i 2: alle af B. Altid <b>B</b>.`, set: solo(2, { c: { t: 'Q3 = (5, 2)' }, c2: { t: 'k = 2 → B' }, c3: { t: 'k = 3 → B' }, c4: { t: 'k = 5 → B' } }) },
+      { nota: `<b>Q4 = (4, 5)</b> ligger mellem de to grupper. Den nærmeste er A2 (afstand 1). Derefter er A1, B2 og B7 <b>alle tre i √2</b>, og A10 og B4 i 2. Med k = 2 går andenpladsen til en af de tre: A1 giver 2–0, B2 eller B7 giver 1–1. Med k = 3 og k = 5 afhænger resultatet af, hvilke af punkterne med samme afstand man vælger: A eller B.`, set: solo(3, { c: { t: 'Q4 = (4, 5)' }, c2: { t: 'k = 2 → A / 1–1' }, c3: { t: 'k = 3 → A / B' }, c4: { t: 'k = 5 → A / B' } }) },
+      { nota: `<b>Q5 = (4, 2)</b>. Først B1 (√2), så A2 (2), derefter <b>fire punkter i √5</b>: A1, B2, B3, B8. k = 1: B. k = 2: B1 og A2, én hver, uafgjort stemmetal. k = 3: den tredje er et af de fire punkter med samme afstand, altså A eller B. k = 5: B i alle tilfælde (højst A2 og A1 mod tre B).`, set: solo(4, { c: { t: 'Q5 = (4, 2)' }, c2: { t: 'k = 2 → 1–1' }, c3: { t: 'k = 3 → A / B' }, c4: { t: 'k = 5 → B' } }) },
+      { nota: `Q1, Q2, Q3 ligger inde i en gruppe: svaret afhænger ikke af k. Q4 og Q5 ligger mellem de to grupper, tæt på grænsen: dér gør k og punkterne med samme afstand forskellen.`, set: solo(-1, { c: { t: '' }, c2: { t: '' }, c3: { t: '' }, c4: { t: '' } }) }
+    ]
+  };
+
+  /* quattro dimensioni */
+  const nomi = ['A1', 'A2', 'B1', 'B2', 'B3', 'A3', 'A4', 'B4'];
+  const dq = ['1', '2', '4', '5', '8', '9', '17', '18'];
+  const toni = { 0: 'due', 1: 'due', 2: 'dato', 3: 'dato', 4: 'dato', 5: 'due', 6: 'due', 7: 'dato' };
+  const sot = k => ({ sot: { x2: 60 + k * 66 } });
+  SCENE.knn4d = {
+    w: 620, h: 220, lato: true,
+    legenda: 'due:klasse A,dato:klasse B,ora:samme x₁ og x₂',
+    oggetti: [
+      { id: 'nomi', tipo: 'celle', x: 60, y: 24, cw: 66, ch: 40, valori: nomi, toni, indici: false },
+      { id: 'dist', tipo: 'celle', x: 60, y: 84, cw: 66, ch: 40, valori: dq, toni, indici: false },
+      T('ld', 30, 104, 'd²', { size: 14 }),
+      { id: 'sot', tipo: 'linea', x1: 60, y1: 146, x2: 60, y2: 146, tono: 'ok', nascosto: true },
+      T('esito', 310, 186, '', { size: 15, bold: true, tono: 'ok' })
+    ],
+    passi: [
+      { nota: `Punktet, der skal klassificeres, er origo, Q = (0, 0, 0, 0). Med Q = 0 er et punkts kvadrerede afstand summen af kvadraterne på dets koordinater: A3 = (2, 2, 1, 0) giver 4 + 4 + 1 = 9. Punkterne er sat i rækkefølge efter afstand; man sammenligner kvadraterne, fordi kvadratroden er voksende, og rækkefølgen ikke ændrer sig.` },
+      { nota: `<b>k = 2</b>: de to nærmeste er A1 og A2. To A: klasse <b>A</b>.`, set: Object.assign(sot(2), { sot: { nascosto: false, x2: 60 + 2 * 66 }, esito: { t: 'k = 2 → A' } }) },
+      { nota: `<b>k = 3</b>: A1, A2 og B1. Stemmer 2–1: klasse <b>A</b>.`, set: { sot: { x2: 60 + 3 * 66 }, esito: { t: 'k = 3 → A' } } },
+      { nota: `<b>k = 5</b>: A1, A2, B1, B2, B3. Stemmer 2–3: klasse <b>B</b>. Svaret ændrede sig, fordi der efter B1 kom yderligere to B med.`, set: { sot: { x2: 60 + 5 * 66 }, esito: { t: 'k = 5 → B' } } },
+      { nota: `A3 = (2, 2, 1, 0) og B3 = (2, 2, 0, 0) har ens x₁ og x₂: i planen ville de være det <b>samme punkt</b>, begge i √8 fra Q og dermed lige gode kandidater til femtepladsen (med A3 ville A vinde, med B3 ville B vinde). Det er x₃, der skiller dem ad: den flytter A3 fra √8 ≈ 2.83 til 3 og lukker B3 ind. Den fjerde koordinat er 0 for alle og tæller ikke.`, set: { nomi: { toni: { 0: 'due', 1: 'due', 2: 'dato', 3: 'dato', 4: 'ora', 5: 'ora', 6: 'due', 7: 'dato' } }, dist: { toni: { 0: 'due', 1: 'due', 2: 'dato', 3: 'dato', 4: 'ora', 5: 'ora', 6: 'due', 7: 'dato' } } } }
+    ]
+  };
+
+  /* confini: retta dei minimi quadrati, k = 1 e k = 5 */
+  const MAPPA = { k1: 'AAAAAAAAAAAAAABBBBBBBBBBBBBBBBBBAAAAAAAAAAAAAABBBBBBBBBBBBBBBBBBAAAAAAAAAAAAAABBBBBBBBBBBBBBBBBBAAAAAAAAAAAAAABBBBBBBBBBBBBBBBBBAAAAAAAAAAAAAABBBBBBBBBBBBBBBBBBAAAAAAAAAAAAABBBBBBBBBBBBBBBBBBBAAAAAAAAAAAAABBBBBBBBBBBBBBBBBBBAAAAAAAAAAAAABBBBBBBBBBBBBBBBBBBAAAAAAAAAAAAABBBBBBBBBBBBBBBBBBBAAAAAAAAAAAAAABBBBBBBBBBBBBBBBBBAAAAAAAAAAAAAAABBBBBBBBBBBBBBBBBAAAAAAAAAAAAAAAABBBBBBBBBBBBBBBBAAAAAAAAAAAAAAAAABBBBBBBBBBBBBBBAAAAAAAAAAAAAAAAAABBBBBBBBBBBBBBAAAAAAAAAAAAAAAAAABBBBBBBBBBBBBBAAAAAAAAAAAAAAAAAABBBBBBBBBBBBBBAAAAAAAAAAAAAAAAAABBBBBBBBBBBBBBAAAAAAAAAAAAAAAAAABBBBBBBBBBBBBBAAAAAAAAAAAAAAAAAABBBBBBBBBBBBBBAAAAAAAAAAAAAAAAAABBBBBBBBBBBBBBAAAAAAAAAAAAAAAAABBBBBBBBBBBBBBBAAAAAAAAAAAAAAABBBBBBBBBBBBBBBBBAAAAAAAAAAAAAAABBBBBBBBBBBBBBBBBAAAAAAAAAAAAAAAABBBBBBBBBBBBBBBBAAAAAAAAAAAAAAAAABBBBBBBBBBBBBBBAAAAAAAAAAAAAAAAAABBBBBBBBBBBBBBAAAAAAAAAAAAAAAAAAABBBBBBBBBBBBBAAAAAAAAAAAAAAAAAAAABBBBBBBBBBBBAAAAAAAAAAAAAAAAAAAABBBBBBBBBBBBAAAAAAAAAAAAAAAAAAAABBBBBBBBBBBBAAAAAAAAAAAAAAAAAAAABBBBBBBBBBBBAAAAAAAAAAAAAAAAAAAABBBBBBBBBBBB', k5: 'AAAAAAAAAAAAAABBBBBBBBBBBBBBBBBBAAAAAAAAAAAAAABBBBBBBBBBBBBBBBBBAAAAAAAAAAAAAABBBBBBBBBBBBBBBBBBAAAAAAAAAAAAAAABBBBBBBBBBBBBBBBBAAAAAAAAAAAAAAABBBBBBBBBBBBBBBBBAAAAAAAAAAAAAAABBBBBBBBBBBBBBBBBAAAAAAAAAAAAAAABBBBBBBBBBBBBBBBBAAAAAAAAAAAAAABBBBBBBBBBBBBBBBBBAAAAAAAAAAAAAABBBBBBBBBBBBBBBBBBAAAAAAAAAAAAABBBBBBBBBBBBBBBBBBBAAAAAAAAAAAAABBBBBBBBBBBBBBBBBBBAAAAAAAAAAAAABBBBBBBBBBBBBBBBBBBAAAAAAAAAAAABBBBBBBBBBBBBBBBBBBBAAAAAAAAAAAABBBBBBBBBBBBBBBBBBBBAAAAAAAAAAAABBBBBBBBBBBBBBBBBBBBAAAAAAAAAAAABBBBBBBBBBBBBBBBBBBBAAAAAAAAAAAABBBBBBBBBBBBBBBBBBBBAAAAAAAAAAAABBBBBBBBBBBBBBBBBBBBAAAAAAAAAAAAABBBBBBBBBBBBBBBBBBBAAAAAAAAAAAAAAAABBBBBBBBBBBBBBBBAAAAAAAAAAAAAAAAABBBBBBBBBBBBBBBAAAAAAAAAAAAAAAAABBBBBBBBBBBBBBBAAAAAAAAAAAAAAAAABBBBBBBBBBBBBBBAAAAAAAAAAAAAAAAAABBBBBBBBBBBBBBAAAAAAAAAAAAAAAAABBBBBBBBBBBBBBBAAAAAAAAAAAAAAAAABBBBBBBBBBBBBBBAAAAAAAAAAAAAAAAABBBBBBBBBBBBBBBAAAAAAAAAAAAAAAAAABBBBBBBBBBBBBBAAAAAAAAAAAAAAAAAABBBBBBBBBBBBBBAAAAAAAAAAAAAAAAAAABBBBBBBBBBBBBAAAAAAAAAAAAAAAAAAABBBBBBBBBBBBBAAAAAAAAAAAAAAAAAAABBBBBBBBBBBBB' };
+  const scala = (s, id, tono) => {
+    const n = 32, h = 8 / n, out = [];
+    for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) {
+      const v = s[r * n + c];
+      if (c < n - 1 && v !== s[r * n + c + 1]) out.push([(c + 1) * h, r * h, (c + 1) * h, (r + 1) * h]);
+      if (r < n - 1 && v !== s[(r + 1) * n + c]) out.push([c * h, (r + 1) * h, (c + 1) * h, (r + 1) * h]);
+    }
+    return out.map((g, k) => ({ id: id + k, tipo: 'linea', in: 'ax', x1: g[0], y1: g[1], x2: g[2], y2: g[3], tono, nascosto: true }));
+  };
+  const og3 = [{ id: 'ax', tipo: 'assi', box: [40, 15, 330, 330], dom: [0, 8, 0, 8], tacche: 1, etX: 'x₁', etY: 'x₂' }];
+  tutti.forEach((t, i) => og3.push({ id: 'p' + i, tipo: 'punto', in: 'ax', x: t.p[0], y: t.p[1], r: 6, tono: t.tono }));
+  /* w = [−1.074, 0.359, −0.075]: x₁ = 2.993 + 0.2085·x₂ */
+  og3.push({ id: 'lin', tipo: 'linea', in: 'ax', x1: 2.993, y1: 0, x2: 2.993 + 0.2085 * 8, y2: 8, tono: 'spento', nascosto: true });
+  const s1 = scala(MAPPA.k1, 'u', 'ora'), s5 = scala(MAPPA.k5, 'v', 'ok');
+  s1.concat(s5).forEach(o => og3.push(o));
+  ['c', 'c2', 'c3'].forEach((id, m) => og3.push(T(id, 505, 80 + m * 45, '', { size: 14, bold: true })));
+  const mostra = (lista, v) => Object.fromEntries(lista.map(o => [o.id, { nascosto: !v }]));
+  SCENE.confini = {
+    w: 640, h: 360, lato: true,
+    legenda: 'due:klasse A,dato:klasse B,spento:linje fra mindste kvadrater,ora:grænse med k = 1,ok:grænse med k = 5,no:forkert punkt',
+    oggetti: og3,
+    passi: [
+      { nota: `De samme 20 punkter. Hvilken grænse skiller A fra B?` },
+      { nota: `<b>Lineær klassifikator</b> (mindste kvadrater på etiketterne ±1): w = [−1.074, 0.359, −0.075], altså linjen x₁ = 2.993 + 0.2085·x₂. Én enkelt linje for hele planen. Den tager fejl på ét punkt, A2 = (4, 4): 19 ud af 20, nøjagtighed 0.95.`, set: { lin: { nascosto: false }, p1: { tono: 'no' }, c: { t: 'retta: 19/20', tono: 'spento' } } },
+      { nota: `<b>k = 1</b>: hvert punkt i planen får klassen af det nærmeste træningspunkt. Grænsen er et trin efter det andet og bøjer sig omkring enkelte punkter (en udbulning mod B omkring A2). 20 ud af 20 på træningen: hukommelsen tager aldrig fejl.`, set: Object.assign(mostra(s1, true), { p1: { tono: 'due' }, c2: { t: 'k = 1: 20/20', tono: 'ora' } }) },
+      { nota: `<b>k = 5</b>: afstemningen mellem fem naboer glatter grænsen, og udbulningen omkring A2 forsvinder: A2 klassificeres nu som B (19 ud af 20 på træningen). Grænsen ligner mere linjen.`, set: Object.assign(mostra(s5, true), { p1: { tono: 'no' }, c3: { t: 'k = 5: 19/20', tono: 'ok' } }) }
+    ]
+  };
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <h1>k-nearest neighbour: øvelsen</h1>
+  <p class="lede">Øvelsen i uge 10 <i>K-Nearest-Neighbour Classifier</i> (Task 1–4) og forelæsning 9. Et nyt punkt får klassen af flertallet af sine k naboer. Her regnes der i hånden, med notebookens data, på punkterne med samme afstand, som øjet overser, på effekten af k, på effekten af dimensionerne og på sammenligningen med den lineære klassifikator.</p>
+</header>
+
+<section>
+  <h2>k-nearest neighbour i fire trin</h2>
+  <figure class="passi" data-titolo="Sådan klassificeres et punkt q">
+    <div class="passo"><div class="espr"><mark class="dato">memorizza</mark> i dati: (x₁, y₁), …, (x<sub>N</sub>, y<sub>N</sub>)</div><p class="nota">Der er ingen træning og ingen vægte: modellen er selve træningsmængden (<i>memory-based</i>). x er vektoren af features for et punkt, y dets klasse, N hvor mange punkter der er.</p></div>
+    <div class="passo"><div class="espr">d(<mark class="ora">q</mark>, <mark class="dato">xᵢ</mark>) = √( (q₁ − xᵢ₁)² + (q₂ − xᵢ₂)² + … )</div><p class="nota">q er det nye punkt, xᵢ punkt i i træningen; det andet indeks siger, hvilken feature der menes. Det er den euklidiske afstand, altså normen af q − xᵢ (siden <a href="w02-norme-distanze.html">Normer og afstande</a>). Den beregnes for alle N punkter.</p></div>
+    <div class="passo"><div class="espr">si ordinano le distanze e si tengono i <mark class="ora">k</mark> punti più vicini</div><p class="nota">k vælges af den, der bruger metoden: det er en <b>hyperparameter</b>, den læres ikke fra dataene.</p></div>
+    <div class="passo"><div class="espr">classe di q = la più frequente fra i k vicini: <mark class="ok">voto di maggioranza</mark></div><p class="nota">Med to klasser og ulige k er uafgjort stemmetal umuligt. Med lige k kan det ske.</p></div>
+  </figure>
+</section>
+
+<section>
+  <h2>Task 1–2: de 20 punkter og de fem spørgsmål</h2>
+  <p>Notebooken giver 10 punkter af klasse A, 10 af klasse B og fem punkter, der skal klassificeres. Task 1 beder kun om at se på dem; Task 2 beder om klassen for hvert Q med k = 2, 3, 5 "på øjemål". Her beregnes afstandene, og man ser, hvor øjet ikke rækker.</p>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Klasse A</th><th>A1</th><th>A2</th><th>A3</th><th>A4</th><th>A5</th><th>A6</th><th>A7</th><th>A8</th><th>A9</th><th>A10</th></tr></thead>
+    <tbody>
+      <tr><td>(x₁, x₂)</td><td>(3, 4)</td><td>(4, 4)</td><td>(0, 3)</td><td>(3, 7)</td><td>(1, 1)</td><td>(0, 1)</td><td>(1, 6)</td><td>(2, 7)</td><td>(0, 6)</td><td>(4, 7)</td></tr>
+    </tbody>
+  </table></div>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Klasse B</th><th>B1</th><th>B2</th><th>B3</th><th>B4</th><th>B5</th><th>B6</th><th>B7</th><th>B8</th><th>B9</th><th>B10</th></tr></thead>
+    <tbody>
+      <tr><td>(x₁, x₂)</td><td>(5, 3)</td><td>(5, 4)</td><td>(6, 3)</td><td>(6, 5)</td><td>(7, 2)</td><td>(7, 4)</td><td>(5, 6)</td><td>(6, 1)</td><td>(7, 6)</td><td>(6, 7)</td></tr>
+    </tbody>
+  </table></div>
+  <p class="piccolo">Navnene A1…A10 og B1…B10 er dem, notebooken skriver på grafen, i den rækkefølge de står i listerne <code>class_A</code> og <code>class_B</code>. De fem spørgsmål er Q1 = (3, 3), Q2 = (2, 4), Q3 = (5, 2), Q4 = (4, 5), Q5 = (4, 2).</p>
+  <figure class="scena" data-scena="knn20" data-titolo="De fem spørgsmål, ét ad gangen"></figure>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Punkt</th><th>k = 2</th><th>k = 3</th><th>k = 5</th></tr></thead>
+    <tbody>
+      <tr><td>Q1 = (3, 3)</td><td><b>A</b> (2–0)</td><td><b>A</b> (2–1)</td><td><b>A</b> (3–2)</td></tr>
+      <tr><td>Q2 = (2, 4)</td><td><b>A</b> (2–0)</td><td><b>A</b> (3–0)</td><td><b>A</b> (5–0)</td></tr>
+      <tr><td>Q3 = (5, 2)</td><td><b>B</b> (0–2)</td><td><b>B</b> (0–3)</td><td><b>B</b> (0–5)</td></tr>
+      <tr><td>Q4 = (4, 5)</td><td>A, eller uafgjort 1–1</td><td>A / B</td><td>A / B</td></tr>
+      <tr><td>Q5 = (4, 2)</td><td>uafgjort 1–1</td><td>A / B</td><td><b>B</b> (2–3)</td></tr>
+    </tbody>
+  </table></div>
+  <p class="piccolo">Stemmerne er skrevet som "hvor mange A – hvor mange B". Hvor cellen siger "A / B", er resultatet A eller B, afhængigt af hvordan man løser tilfældet med samme afstand, som forklares nedenfor.</p>
+  <div class="box attenzione" data-tit="Punkter med samme afstand: det, øjet overser">
+    <p>Med heltalskoordinater gentager afstandene sig: fra Q4 ligger tre punkter alle i √2. Hvis den k'te plads kæmpes om af flere punkter i samme afstand, <b>afgør metoden ikke selv</b>: der skal bruges en regel. De mest almindelige: beholde alle punkter med samme afstand (så er der flere end k naboer), vælge efter dataenes rækkefølge eller veje stemmerne med afstanden. I øvelsen er det ærlige at sige, at der er et tilfælde med samme afstand, og at svaret afhænger af, hvordan det løses.</p>
+  </div>
+  <p class="piccolo">Med <code>KNeighborsClassifier</code> fra scikit-learn 1.9.0 kommer der: for Q4 A med k = 2, 3, 5; for Q5 A med k = 2 og 3, B med k = 5. Den vælger selv blandt punkterne med samme afstand og har ved uafgjort stemmetal givet A: det er en implementeringsdetalje, ikke en regel i metoden.</p>
+  <div class="box idea" data-tit="Sikre punkter og punkter på grænsen">
+    <p>Q1, Q2 og Q3 ligger inde i en gruppe: naboerne er næsten alle af samme klasse, og en ændring af k ændrer ikke svaret. Q4 og Q5 ligger mellem de to grupper, tæt på <b>beslutningsgrænsen</b>: dér kan enhver ændring af k, af afstand eller af valget blandt punkter med samme afstand vende klassen.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Hvordan svaret ændrer sig med k (Task 2)</h2>
+  <p>Notebookens spørgsmål: hvad sker der, når k er meget lille eller meget stor, og hvordan hænger det sammen med overfitting og underfitting?</p>
+  <ul>
+    <li><b>Lille k</b> (i grænsen 1): ét enkelt punkt afgør. Et punkt, der ligger forkert, på grund af støj eller målefejl, ændrer svaret rundt om sig. Grænsen er takket og følger støjen: <b>overfitting</b>.</li>
+    <li><b>Stor k</b>: hvert svar er et gennemsnit over mange punkter. Grænsen bliver glat; de rigtige detaljer går tabt. I grænsen k = N stemmer alle punkter for hvert Q: her 10–10, én klasse overalt, nøjagtighed 0.5: <b>underfitting</b>.</li>
+    <li><b>Midt imellem</b> ligger det rigtige k, og det vælges med et valideringssæt (<a href="w07-validazione.html">Validering</a>), fordi k er en hyperparameter.</li>
+  </ul>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>k</th><th>træningspunkter med fejl</th><th>nøjagtighed på træningen</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>ingen</td><td>1.0</td></tr>
+      <tr><td>3</td><td>ingen</td><td>1.0</td></tr>
+      <tr><td>5</td><td>A2 = (4, 4)</td><td>0.95</td></tr>
+      <tr><td>20</td><td>alle B</td><td>0.5</td></tr>
+    </tbody>
+  </table></div>
+  <p class="piccolo"><code>KNeighborsClassifier(n_neighbors=k).fit(X, y).predict(X)</code>. I træningen er hvert punkt også nabo til sig selv (afstand 0): derfor giver k = 1 altid 1.0. En nøjagtighed på 1.0 på træningen siger intet om generalisering.</p>
+  <figure class="codice" data-titolo="knn(q, k): stemmerne fra de k naboer (verificeret med notebookens data)">
+<pre data-lang="python">X = np.vstack([class_A, class_B])                    # 20 × 2: prima gli A, poi i B
+y = np.r_[np.zeros(10), np.ones(10)].astype(int)    # 0 = A, 1 = B
+def knn(q, k):
+    d = np.linalg.norm(X - q, axis=1)               # distanza di q da ogni punto
+    vicini = np.argsort(d, kind="stable")[:k]       # indici dei k più vicini
+    return np.bincount(y[vicini], minlength=2)      # voti: [quanti A, quanti B]</pre>
+    <ol class="spiega">
+      <li data-righe="1-2" data-segna="np.vstack@dato|np.r_@due"><p>Alle punkterne i en matrix på 20 × 2 og, i samme rækkefølge, deres klasser: 0 for A, 1 for B. Begge dele skal bruges, fordi afstemningen læser et punkts klasse ud fra dets indeks.</p></li>
+      <li data-righe="4" data-segna="X - q@ora|axis=1@ok"><p><code>X - q</code> trækker q fra hver række i X (broadcasting): det er vektorerne fra q til hvert punkt. <code>norm</code> med <code>axis=1</code> beregner deres længde række for række: 20 afstande.</p></li>
+      <li data-righe="5" data-segna="argsort@ora|stable@due|[:k]@ok"><p><code>argsort</code> giver punkternes indekser fra det nærmeste til det fjerneste; <code>[:k]</code> beholder de første k. Med <code>kind="stable"</code> bevares dataenes rækkefølge ved samme afstand, altså A før B: det er denne kodes regel for samme afstand.</p></li>
+      <li data-righe="6" data-segna="y[vicini]@dato|np.bincount@ok"><p><code>y[vicini]</code> er klasserne for de k naboer; <code>np.bincount</code> tæller dem. <code>minlength=2</code> sikrer to pladser, også hvis ingen nabo er B. Resultat for Q4 med k = 3: <code>[2 1]</code>, to A og ét B.</p></li>
+    </ol>
+  </figure>
+  <p class="piccolo">Med denne regel (A før B) giver koden, for k = 2, 3, 5: Q1 [2 0], [2 1], [3 2]; Q2 [2 0], [3 0], [5 0]; Q3 [0 2], [0 3], [0 5]; Q4 [2 0], [2 1], [3 2]; Q5 [1 1], [2 1], [2 3]. Cellerne "A / B" i tabellen er dem, hvor en anden regel ville give et andet resultat.</p>
+</section>
+
+<section>
+  <h2>Task 3: flere dimensioner</h2>
+  <p>Notebooken giver et andet sæt, i fire dimensioner, med ét enkelt punkt, der skal klassificeres, Q = [0, 0, 0, 0]. Afstanden beregnes som før, med fire led under kvadratroden.</p>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Klasse A</th><th>A1</th><th>A2</th><th>A3</th><th>A4</th></tr></thead>
+    <tbody><tr><td>(x₁, x₂, x₃, x₄)</td><td>(1, 0, 0, 0)</td><td>(1, 1, 0, 0)</td><td>(2, 2, 1, 0)</td><td>(3, 2, 2, 0)</td></tr></tbody>
+  </table></div>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Klasse B</th><th>B1</th><th>B2</th><th>B3</th><th>B4</th></tr></thead>
+    <tbody><tr><td>(x₁, x₂, x₃, x₄)</td><td>(2, 0, 0, 0)</td><td>(2, 1, 0, 0)</td><td>(2, 2, 0, 0)</td><td>(3, 3, 0, 0)</td></tr></tbody>
+  </table></div>
+  <figure class="scena" data-scena="knn4d" data-titolo="Fra det nærmeste til det fjerneste, i fire dimensioner"></figure>
+  <ul>
+    <li><b>k = 2</b>: A1, A2 → <b>A</b>. <b>k = 3</b>: A1, A2, B1 → <b>A</b> (2–1). <b>k = 5</b>: A1, A2, B1, B2, B3 → <b>B</b> (2–3).</li>
+    <li>I dette eksempel gentager ingen afstand sig, så der er ingen punkter med samme afstand.</li>
+    <li><b>Hvorfor dimensionen betyder noget</b>: A3 og B3 har samme x₁ og x₂ og adskiller sig kun i x₃. I to dimensioner ville de være det samme punkt, og femtepladsen ville være et tilfælde med samme afstand (A eller B). Den tredje koordinat skiller dem ad og afgør femtepladsen: én feature mere ændrer svaret, selv om den ikke fortæller noget nyttigt om klassen.</li>
+  </ul>
+  <div class="box idea" data-tit="Flere features, mindre informative afstande">
+    <p>Hver ekstra koordinat lægger et led til afstanden og kan flytte naboerne. En ubrugelig feature (eller en i en meget større skala end de andre) bringer støj ind i afstanden. Med mange dimensioner bliver afstandene desuden næsten alle ens, og det "nærmeste" er ikke meget nærmere end de andre: se dimensionalitetens forbandelse i <a href="w12-pca.html">PCA</a>.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Task 4: lineær klassifikator mod naboer</h2>
+  <p>Notebookens spørgsmål: hvordan adskiller beslutningsgrænserne sig, og hvordan adskiller de sig i beregningen? På de samme 20 punkter:</p>
+  <figure class="scena" data-scena="confini" data-titolo="En linje, eller naboerne"></figure>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th></th><th>Lineær klassifikator</th><th>k-nearest neighbour</th></tr></thead>
+    <tbody>
+      <tr><td>Hvad den lærer</td><td>vægtene w: d + 1 tal (d features)</td><td>ingenting: den beholder hele træningsmængden, N × d tal</td></tr>
+      <tr><td>Grænse</td><td>kun én, et hyperplan (her en linje)</td><td>sat sammen af stykker, følger dataene; ved lille k bøjer den sig omkring enkelte punkter</td></tr>
+      <tr><td>Træning</td><td>ja: mindste kvadrater eller gradientnedstigning, omkostningen betales én gang</td><td>ingen (den huskes)</td></tr>
+      <tr><td>Forudsigelse</td><td>ét indre produkt: omkostning proportional med d</td><td>afstande fra alle N punkter: omkostning proportional med N · d, plus valget af de k</td></tr>
+      <tr><td>Featurenes skala</td><td>vægten w kompenserer for en anden skala</td><td>betyder meget: en feature i stor skala dominerer afstanden</td></tr>
+      <tr><td>Dataenes form</td><td>godt, hvis klasserne kan adskilles af et hyperplan</td><td>godt også med grænser af enhver form, hvis der er data nok</td></tr>
+      <tr><td>På de 20 punkter</td><td>19 ud af 20 (0.95), tager fejl på A2</td><td>k = 1: 20 ud af 20; k = 5: 19 ud af 20</td></tr>
+    </tbody>
+  </table></div>
+  <p class="piccolo">Linjen er den fra mindste kvadrater på etiketterne ±1, som på siden <a href="w10-classificatore-lineare.html">Lineær klassifikator og logistisk regression</a>. Grænserne for k = 1 og k = 5 er beregnet med scikit-learn på et gitter af 32 × 32 celler.</p>
+  <div class="box inglese" data-tit="Til eksamen, på engelsk">
+    <p>"k-nearest neighbour <b>stores the training set</b> and classifies a new point by a <b>majority vote among its k closest training points</b>, using a distance such as the Euclidean one. A small k gives a jagged boundary and overfits; a large k smooths it and can underfit; I choose k on a validation set."</p>
+  </div>
+</section>
+
+</main>
+</body>
+</html>

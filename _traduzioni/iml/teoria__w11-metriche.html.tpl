@@ -187,29 +187,30 @@ window.SCENE = window.SCENE || {};
       <tr><td>{{s|s068|}}</td><td>{{s|s069|}}</td><td>{{s|s070|}}</td></tr>
       <tr><td>{{s|s071|}}</td><td>{{s|s072|}}</td><td>{{s|s073|}}</td></tr>
       <tr><td>{{s|s074|}}</td><td>{{s|s075|}}</td><td>{{s|s076|}}</td></tr>
-      <tr><td>{{s|s077|}}</td><td>{{s|s078|}}</td><td>–</td></tr>
+      <tr><td>{{s|s077|}}</td><td>{{s|s078|}}</td><td>{{s|s079|}}</td></tr>
+      <tr><td>{{s|s080|}}</td><td>{{s|s081|}}</td><td>–</td></tr>
     </tbody>
   </table></div>
-  <p class="piccolo">{{s|s079|}}</p>
-  <figure class="scena" data-scena="sbilanciate" data-titolo="{{a|s080|}}"></figure>
+  <p class="piccolo">{{s|s082|}}</p>
+  <figure class="scena" data-scena="sbilanciate" data-titolo="{{a|s083|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s081|}}</h2>
+  <h2>{{s|s084|}}</h2>
   <div class="tab-wrap"><table class="tab">
-    <thead><tr><th>{{s|s082|}}</th><th>{{s|s083|}}</th><th>{{s|s084|}}</th></tr></thead>
+    <thead><tr><th>{{s|s085|}}</th><th>{{s|s086|}}</th><th>{{s|s087|}}</th></tr></thead>
     <tbody>
-      <tr><td>{{s|s085|}}</td><td>{{s|s086|}}</td><td>{{s|s087|}}</td></tr>
       <tr><td>{{s|s088|}}</td><td>{{s|s089|}}</td><td>{{s|s090|}}</td></tr>
       <tr><td>{{s|s091|}}</td><td>{{s|s092|}}</td><td>{{s|s093|}}</td></tr>
-      <tr><td>R²</td><td>{{s|s094|}}</td><td>{{s|s095|}}</td></tr>
+      <tr><td>{{s|s094|}}</td><td>{{s|s095|}}</td><td>{{s|s096|}}</td></tr>
+      <tr><td>R²</td><td>{{s|s097|}}</td><td>{{s|s098|}}</td></tr>
     </tbody>
   </table></div>
-  <p>{{s|s096|}}</p>
-  <div class="box esame" data-tit="{{a|s097|}}">
-    <p>{{s|s098|}}</p>
+  <p>{{s|s099|}}</p>
+  <div class="box esame" data-tit="{{a|s100|}}">
+    <p>{{s|s101|}}</p>
   </div>
-  <figure class="scena" data-scena="metricheregr" data-titolo="{{a|s099|}}"></figure>
+  <figure class="scena" data-scena="metricheregr" data-titolo="{{a|s102|}}"></figure>
 </section>
 
 </main>
