@@ -182,136 +182,135 @@ window.SCENE = window.SCENE || {};
       <p class="nota">{{s|s023|}}</p>
     </div>
     <div class="passo">
-      <div class="espr">def isSorted[A](as: Array[A], ordered: (A, A) => Boolean): Boolean <mark class="ora">=</mark>
-  …il corpo…</div>
-      <p class="nota">{{s|s024|}}</p>
+      <div class="espr">{{s|s024|}}</div>
+      <p class="nota">{{s|s025|}}</p>
     </div>
   </figure>
 
-  <div class="box basi" data-tit="{{a|s025|}}">
-    <p>{{s|s026|}}</p>
+  <div class="box basi" data-tit="{{a|s026|}}">
+    <p>{{s|s027|}}</p>
   </div>
-  <figure class="scena" data-scena="firma" data-titolo="{{a|s027|}}"></figure>
+  <figure class="scena" data-scena="firma" data-titolo="{{a|s028|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s028|}}</h2>
-  <p>{{s|s029|}}</p>
+  <h2>{{s|s029|}}</h2>
+  <p>{{s|s030|}}</p>
   <div class="colonne">
     <div class="carta">
-      <h4>{{s|s030|}}</h4>
+      <h4>{{s|s031|}}</h4>
       <pre class="cod" data-lang="scala">def abs(n: Int): Int =
   if n &lt; 0 then -n else n</pre>
-      <p>{{s|s031|}}</p>
+      <p>{{s|s032|}}</p>
     </div>
     <div class="carta">
-      <h4>{{s|s032|}}</h4>
+      <h4>{{s|s033|}}</h4>
       <pre class="cod" data-lang="scala">def isSorted[A](as: Array[A],
     ordered: (A, A) => Boolean): Boolean</pre>
-      <p>{{s|s033|}}</p>
+      <p>{{s|s034|}}</p>
     </div>
   </div>
-  <p>{{s|s034|}}</p>
+  <p>{{s|s035|}}</p>
 
-  <figure class="passi" data-titolo="{{a|s035|}}">
+  <figure class="passi" data-titolo="{{a|s036|}}">
     <div class="passo">
       <div class="espr">isSorted[<mark class="dato">Int</mark>](Array(1, 2, 3), (x, y) => x &lt;= y)</div>
-      <p class="nota">{{s|s036|}}</p>
+      <p class="nota">{{s|s037|}}</p>
     </div>
     <div class="passo">
       <div class="espr">def isSorted(as: Array[<mark class="dato">Int</mark>], ordered: (<mark class="dato">Int</mark>, <mark class="dato">Int</mark>) => Boolean): Boolean</div>
-      <p class="nota">{{s|s037|}}</p>
+      <p class="nota">{{s|s038|}}</p>
     </div>
     <div class="passo">
       <div class="espr">as      = <mark class="due">Array(1, 2, 3)</mark>
 ordered = <mark class="ora">(x, y) => x &lt;= y</mark></div>
-      <p class="nota">{{s|s038|}}</p>
+      <p class="nota">{{s|s039|}}</p>
     </div>
     <div class="passo">
       <div class="espr"><mark class="ora">ordered</mark>(<mark class="due">as(0)</mark>, <mark class="due">as(1)</mark>)
 = <mark class="ora">(x, y) => x &lt;= y</mark> applicata a (1, 2)
 = 1 &lt;= 2
 = <mark class="ok">true</mark></div>
-      <p class="nota">{{s|s039|}}</p>
+      <p class="nota">{{s|s040|}}</p>
     </div>
   </figure>
-  <figure class="scena" data-scena="sostituisci" data-titolo="{{a|s040|}}"></figure>
+  <figure class="scena" data-scena="sostituisci" data-titolo="{{a|s041|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s041|}}</h2>
-  <p>{{s|s042|}}</p>
+  <h2>{{s|s042|}}</h2>
+  <p>{{s|s043|}}</p>
   <div class="tab-wrap"><table class="tab">
-    <thead><tr><th>{{s|s043|}}</th><th>{{s|s044|}}</th><th>{{s|s045|}}</th></tr></thead>
+    <thead><tr><th>{{s|s044|}}</th><th>{{s|s045|}}</th><th>{{s|s046|}}</th></tr></thead>
     <tbody>
-      <tr><td>{{s|s046|}}</td><td>{{s|s047|}}</td><td>{{s|s048|}}</td></tr>
-      <tr><td>{{s|s049|}}</td><td>{{s|s050|}}</td><td><code>(x, y) => x + y</code></td></tr>
-      <tr><td>{{s|s051|}}</td><td>{{s|s052|}}</td><td>{{s|s053|}}</td></tr>
-      <tr><td><code>A => B</code></td><td>{{s|s054|}}</td><td>{{s|s055|}}</td></tr>
-      <tr><td><code>() => A</code></td><td>{{s|s056|}}</td><td>{{s|s057|}}</td></tr>
+      <tr><td>{{s|s047|}}</td><td>{{s|s048|}}</td><td>{{s|s049|}}</td></tr>
+      <tr><td>{{s|s050|}}</td><td>{{s|s051|}}</td><td><code>(x, y) => x + y</code></td></tr>
+      <tr><td>{{s|s052|}}</td><td>{{s|s053|}}</td><td>{{s|s054|}}</td></tr>
+      <tr><td><code>A => B</code></td><td>{{s|s055|}}</td><td>{{s|s056|}}</td></tr>
+      <tr><td><code>() => A</code></td><td>{{s|s057|}}</td><td>{{s|s058|}}</td></tr>
     </tbody>
   </table></div>
-  <div class="box regola" data-tit="{{a|s058|}}">
-    <p>{{s|s059|}}</p>
+  <div class="box regola" data-tit="{{a|s059|}}">
+    <p>{{s|s060|}}</p>
   </div>
-  <figure class="scena" data-scena="freccia" data-titolo="{{a|s060|}}"></figure>
+  <figure class="scena" data-scena="freccia" data-titolo="{{a|s061|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s061|}}</h2>
-  <p>{{s|s062|}}</p>
+  <h2>{{s|s062|}}</h2>
+  <p>{{s|s063|}}</p>
   <pre class="cod" data-lang="scala">def isSortedCurried[A]: Array[A] => ((A, A) => Boolean) => Boolean</pre>
 
-  <figure class="passi" data-titolo="{{a|s063|}}">
+  <figure class="passi" data-titolo="{{a|s064|}}">
     <div class="passo">
       <div class="espr"><mark class="dato">Array[A]</mark> => ((A, A) => Boolean) => Boolean</div>
-      <p class="nota">{{s|s064|}}</p>
-    </div>
-    <div class="passo">
-      <div class="espr">Array[A] => <mark class="due">( ((A, A) => Boolean) => Boolean )</mark></div>
       <p class="nota">{{s|s065|}}</p>
     </div>
     <div class="passo">
-      <div class="espr">Array[A] => ( <mark class="ora">((A, A) => Boolean)</mark> => Boolean )</div>
+      <div class="espr">Array[A] => <mark class="due">( ((A, A) => Boolean) => Boolean )</mark></div>
       <p class="nota">{{s|s066|}}</p>
     </div>
     <div class="passo">
-      <div class="espr">Array[A] => ( ((A, A) => Boolean) => <mark class="ok">Boolean</mark> )</div>
+      <div class="espr">Array[A] => ( <mark class="ora">((A, A) => Boolean)</mark> => Boolean )</div>
       <p class="nota">{{s|s067|}}</p>
     </div>
     <div class="passo">
-      <div class="espr">isSortedCurried(<mark class="dato">Array(1, 2, 3)</mark>)(<mark class="ora">_ &lt;= _</mark>)   →   <mark class="ok">true</mark></div>
+      <div class="espr">Array[A] => ( ((A, A) => Boolean) => <mark class="ok">Boolean</mark> )</div>
       <p class="nota">{{s|s068|}}</p>
     </div>
+    <div class="passo">
+      <div class="espr">isSortedCurried(<mark class="dato">Array(1, 2, 3)</mark>)(<mark class="ora">_ &lt;= _</mark>)   →   <mark class="ok">true</mark></div>
+      <p class="nota">{{s|s069|}}</p>
+    </div>
   </figure>
-  <figure class="scena" data-scena="matrioska" data-titolo="{{a|s069|}}"></figure>
+  <figure class="scena" data-scena="matrioska" data-titolo="{{a|s070|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s070|}}</h2>
-  <p>{{s|s071|}}</p>
-  <figure class="codice" data-titolo="{{a|s072|}}">
+  <h2>{{s|s071|}}</h2>
+  <p>{{s|s072|}}</p>
+  <figure class="codice" data-titolo="{{a|s073|}}">
 <pre data-lang="scala">def map[A, B](t: Tree[A])(f: A => B): Tree[B]
 
 map(albero)(_.toString)</pre>
     <ol class="spiega">
-      <li data-righe="1" data-segna="[A, B]@due">{{s|s073|}}</li>
-      <li data-righe="1" data-segna="(t: Tree[A])@dato">{{s|s074|}}</li>
-      <li data-righe="1" data-segna="(f: A => B)">{{s|s075|}}</li>
-      <li data-righe="3" data-segna="(_.toString)|(albero)@dato">{{s|s076|}}</li>
-      <li data-righe="1" data-segna="Tree[B]@ok">{{s|s077|}}</li>
+      <li data-righe="1" data-segna="[A, B]@due">{{s|s074|}}</li>
+      <li data-righe="1" data-segna="(t: Tree[A])@dato">{{s|s075|}}</li>
+      <li data-righe="1" data-segna="(f: A => B)">{{s|s076|}}</li>
+      <li data-righe="3" data-segna="(_.toString)|(albero)@dato">{{s|s077|}}</li>
+      <li data-righe="1" data-segna="Tree[B]@ok">{{s|s078|}}</li>
     </ol>
   </figure>
-  <div class="box attenzione" data-tit="{{a|s078|}}">
-    <p>{{s|s079|}}</p>
+  <div class="box attenzione" data-tit="{{a|s079|}}">
+    <p>{{s|s080|}}</p>
   </div>
-  <figure class="scena" data-scena="liste" data-titolo="{{a|s080|}}"></figure>
+  <figure class="scena" data-scena="liste" data-titolo="{{a|s081|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s081|}}</h2>
-  <p>{{s|s082|}}</p>
-  <figure class="codice" data-titolo="{{a|s083|}}">
+  <h2>{{s|s082|}}</h2>
+  <p>{{s|s083|}}</p>
+  <figure class="codice" data-titolo="{{a|s084|}}">
 <pre data-lang="scala">enum Option[+A]:
   case Some(get: A)
   case None
@@ -320,12 +319,12 @@ map(albero)(_.toString)</pre>
     case None    => None
     case Some(a) => Some(f(a))</pre>
     <ol class="spiega">
-      <li data-righe="1" data-segna="[+A]@due">{{s|s084|}}</li>
-      <li data-righe="5" data-segna="A@due|[B]">{{s|s085|}}</li>
-      <li data-righe="5" data-segna="this">{{s|s086|}}</li>
+      <li data-righe="1" data-segna="[+A]@due">{{s|s085|}}</li>
+      <li data-righe="5" data-segna="A@due|[B]">{{s|s086|}}</li>
+      <li data-righe="5" data-segna="this">{{s|s087|}}</li>
     </ol>
   </figure>
-  <figure class="scena" data-scena="metodoenum" data-titolo="{{a|s087|}}"></figure>
+  <figure class="scena" data-scena="metodoenum" data-titolo="{{a|s088|}}"></figure>
 </section>
 
 </main>

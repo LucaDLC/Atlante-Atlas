@@ -230,22 +230,22 @@ window.SCENE = window.SCENE || {};
   <figure class="passi" data-titolo="{{a|s060|}}">
     <div class="passo"><div class="espr">if (writer) condition.await();
 readers++;</div><p class="nota">{{s|s061|}}</p></div>
-    <div class="passo"><div class="espr"><mark class="dato">R1</mark>: writer è true  →  await()</div><p class="nota">{{s|s062|}}</p></div>
-    <div class="passo"><div class="espr"><mark class="due">W1</mark>: writeUnlock()  →  writer = false, <mark class="ora">signalAll()</mark></div><p class="nota">{{s|s063|}}</p></div>
-    <div class="passo"><div class="espr"><mark class="no">W2</mark> prende il lock prima di R1  →  writer = true</div><p class="nota">{{s|s064|}}</p></div>
-    <div class="passo"><div class="espr"><mark class="dato">R1</mark> riprende il lock  →  <mark class="no">readers++</mark> senza ricontrollare</div><p class="nota">{{s|s065|}}</p></div>
-    <div class="passo"><div class="espr">while (writer) condition.await();   <mark class="ok">→ R1 ricontrolla e riaspetta</mark></div><p class="nota">{{s|s066|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s062|}}</div><p class="nota">{{s|s063|}}</p></div>
+    <div class="passo"><div class="espr"><mark class="due">W1</mark>: writeUnlock()  →  writer = false, <mark class="ora">signalAll()</mark></div><p class="nota">{{s|s064|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s065|}}</div><p class="nota">{{s|s066|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s067|}}</div><p class="nota">{{s|s068|}}</p></div>
+    <div class="passo"><div class="espr">while (writer) condition.await();   <mark class="ok">→ R1 ricontrolla e riaspetta</mark></div><p class="nota">{{s|s069|}}</p></div>
   </figure>
-  <figure class="scena" data-scena="mesa" data-titolo="{{a|s067|}}"></figure>
-  <div class="box domanda-tua" data-tit="{{a|s068|}}">
-    <p>{{s|s069|}}</p>
+  <figure class="scena" data-scena="mesa" data-titolo="{{a|s070|}}"></figure>
+  <div class="box domanda-tua" data-tit="{{a|s071|}}">
+    <p>{{s|s072|}}</p>
   </div>
 </section>
 
 <section>
-  <h2>{{s|s070|}}</h2>
-  <p>{{s|s071|}}</p>
-  <figure class="codice" data-titolo="{{a|s072|}}">
+  <h2>{{s|s073|}}</h2>
+  <p>{{s|s074|}}</p>
+  <figure class="codice" data-titolo="{{a|s075|}}">
 <pre data-lang="java">public class RWSync {
     private int readers = 0;
     private boolean writer = false;
@@ -269,17 +269,17 @@ readers++;</div><p class="nota">{{s|s061|}}</p></div>
     }
 }</pre>
     <ol class="spiega">
-      <li data-righe="5,9,13,18" data-segna="synchronized*@ora"><p>{{s|s073|}}</p></li>
-      <li data-righe="6" data-segna="this.wait()@due"><p>{{s|s074|}}</p></li>
-      <li data-righe="14-16" data-segna="writer = true;@ok|while (readers &gt; 0)@due"><p>{{s|s075|}}</p></li>
-      <li data-righe="11,20" data-segna="notifyAll()*@ora"><p>{{s|s076|}}</p></li>
+      <li data-righe="5,9,13,18" data-segna="synchronized*@ora"><p>{{s|s076|}}</p></li>
+      <li data-righe="6" data-segna="this.wait()@due"><p>{{s|s077|}}</p></li>
+      <li data-righe="14-16" data-segna="writer = true;@ok|while (readers &gt; 0)@due"><p>{{s|s078|}}</p></li>
+      <li data-righe="11,20" data-segna="notifyAll()*@ora"><p>{{s|s079|}}</p></li>
     </ol>
   </figure>
-  <div class="box esame" data-tit="{{a|s077|}}">
-    <p>{{s|s078|}}</p>
+  <div class="box esame" data-tit="{{a|s080|}}">
+    <p>{{s|s081|}}</p>
   </div>
-  <p class="piccolo">{{s|s079|}}</p>
-  <figure class="scena" data-scena="rwsync" data-titolo="{{a|s080|}}"></figure>
+  <p class="piccolo">{{s|s082|}}</p>
+  <figure class="scena" data-scena="rwsync" data-titolo="{{a|s083|}}"></figure>
 </section>
 
 </main>

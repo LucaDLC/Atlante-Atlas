@@ -138,46 +138,46 @@ window.SCENE = window.SCENE || {};
   </table></div>
   <figure class="passi" data-titolo="{{a|s049|}}">
     <div class="passo"><div class="espr">zeri:  MSE = <mark class="no">0.0536</mark></div><p class="nota">{{s|s050|}}</p></div>
-    <div class="passo"><div class="espr">media della feature:  MSE = <mark class="ora">0.00393</mark></div><p class="nota">{{s|s051|}}</p></div>
-    <div class="passo"><div class="espr">interpolazione nel tempo:  MSE = <mark class="ok">0.00134</mark></div><p class="nota">{{s|s052|}}</p></div>
-    <div class="passo"><div class="espr">dopo l'imputazione con la media, la varianza di una feature scende al <mark class="no">71%</mark></div><p class="nota">{{s|s053|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s051|}}</div><p class="nota">{{s|s052|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s053|}}</div><p class="nota">{{s|s054|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s055|}}</div><p class="nota">{{s|s056|}}</p></div>
   </figure>
-  <p class="piccolo">{{s|s054|}}</p>
-  <figure class="scena" data-scena="riempire" data-titolo="{{a|s055|}}"></figure>
+  <p class="piccolo">{{s|s057|}}</p>
+  <figure class="scena" data-scena="riempire" data-titolo="{{a|s058|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s056|}}</h2>
+  <h2>{{s|s059|}}</h2>
   <div class="tab-wrap"><table class="tab">
-    <thead><tr><th>{{s|s057|}}</th><th>{{s|s058|}}</th><th>{{s|s059|}}</th></tr></thead>
+    <thead><tr><th>{{s|s060|}}</th><th>{{s|s061|}}</th><th>{{s|s062|}}</th></tr></thead>
     <tbody>
-      <tr><td>{{s|s060|}}</td><td>{{s|s061|}}</td><td>{{s|s062|}}</td></tr>
       <tr><td>{{s|s063|}}</td><td>{{s|s064|}}</td><td>{{s|s065|}}</td></tr>
-      <tr><td>{{s|s066|}}</td><td>d = √((x − μ)ᵀ C⁻¹ (x − μ))</td><td>{{s|s067|}}</td></tr>
+      <tr><td>{{s|s066|}}</td><td>{{s|s067|}}</td><td>{{s|s068|}}</td></tr>
+      <tr><td>{{s|s069|}}</td><td>d = √((x − μ)ᵀ C⁻¹ (x − μ))</td><td>{{s|s070|}}</td></tr>
     </tbody>
   </table></div>
-  <figure class="scena" data-scena="maha" data-titolo="{{a|s068|}}"></figure>
-  <p class="piccolo">{{s|s069|}}</p>
-  <div class="box attenzione" data-tit="{{a|s070|}}">
-    <p>{{s|s071|}}</p>
+  <figure class="scena" data-scena="maha" data-titolo="{{a|s071|}}"></figure>
+  <p class="piccolo">{{s|s072|}}</p>
+  <div class="box attenzione" data-tit="{{a|s073|}}">
+    <p>{{s|s074|}}</p>
   </div>
 </section>
 
 <section>
-  <h2>{{s|s072|}}</h2>
-  <figure class="passi" data-titolo="{{a|s073|}}">
-    <div class="passo"><div class="espr">1D:  𝒩(<mark class="dato">μ</mark>, <mark class="due">σ²</mark>)   entro 1σ: <mark class="ok">68.3%</mark>,  2σ: 95.4%,  3σ: 99.7%</div><p class="nota">{{s|s074|}}</p></div>
-    <div class="passo"><div class="espr">nD:  𝒩(<mark class="dato">μ</mark>, <mark class="due">Σ</mark>)   μ vettore medio,  Σ matrice di covarianza</div><p class="nota">{{s|s075|}}</p></div>
-    <div class="passo"><div class="espr">le curve di livello sono <mark class="ok">ellissi</mark>, inclinate dalla correlazione</div><p class="nota">{{s|s076|}}</p></div>
-    <div class="passo"><div class="espr">generare dati correlati: x = <mark class="ora">L</mark> z,   con L Lᵀ = Σ (Cholesky)</div><p class="nota">{{s|s077|}}</p></div>
+  <h2>{{s|s075|}}</h2>
+  <figure class="passi" data-titolo="{{a|s076|}}">
+    <div class="passo"><div class="espr">1D:  𝒩(<mark class="dato">μ</mark>, <mark class="due">σ²</mark>)   entro 1σ: <mark class="ok">68.3%</mark>,  2σ: 95.4%,  3σ: 99.7%</div><p class="nota">{{s|s077|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s078|}}</div><p class="nota">{{s|s079|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s080|}}</div><p class="nota">{{s|s081|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s082|}}</div><p class="nota">{{s|s083|}}</p></div>
   </figure>
-  <div class="box idea" data-tit="{{a|s078|}}">
-    <p>{{s|s079|}}</p>
+  <div class="box idea" data-tit="{{a|s084|}}">
+    <p>{{s|s085|}}</p>
   </div>
-  <div class="box esame" data-tit="{{a|s080|}}">
-    <p>{{s|s081|}}</p>
+  <div class="box esame" data-tit="{{a|s086|}}">
+    <p>{{s|s087|}}</p>
   </div>
-  <figure class="scena" data-scena="normalemv" data-titolo="{{a|s082|}}"></figure>
+  <figure class="scena" data-scena="normalemv" data-titolo="{{a|s088|}}"></figure>
 </section>
 
 </main>

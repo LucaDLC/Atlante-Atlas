@@ -120,67 +120,67 @@ window.SCENE = window.SCENE || {};
   <figure class="passi" data-titolo="{{a|s024|}}">
     <div class="passo"><div class="espr"><mark class="dato">memorizza</mark> i dati: (x₁, y₁), …, (x<sub>N</sub>, y<sub>N</sub>)</div><p class="nota">{{s|s025|}}</p></div>
     <div class="passo"><div class="espr">d(<mark class="ora">q</mark>, <mark class="dato">xᵢ</mark>) = √( (q₁ − xᵢ₁)² + (q₂ − xᵢ₂)² + … )</div><p class="nota">{{s|s026|}}</p></div>
-    <div class="passo"><div class="espr">si ordinano le distanze e si tengono i <mark class="ora">k</mark> punti più vicini</div><p class="nota">{{s|s027|}}</p></div>
-    <div class="passo"><div class="espr">classe di q = la più frequente fra i k vicini: <mark class="ok">voto di maggioranza</mark></div><p class="nota">{{s|s028|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s027|}}</div><p class="nota">{{s|s028|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s029|}}</div><p class="nota">{{s|s030|}}</p></div>
   </figure>
 </section>
 
 <section>
-  <h2>{{s|s029|}}</h2>
-  <p>{{s|s030|}}</p>
+  <h2>{{s|s031|}}</h2>
+  <p>{{s|s032|}}</p>
   <div class="tab-wrap"><table class="tab">
-    <thead><tr><th>{{s|s031|}}</th><th>A1</th><th>A2</th><th>A3</th><th>A4</th><th>A5</th><th>A6</th><th>A7</th><th>A8</th><th>A9</th><th>A10</th></tr></thead>
+    <thead><tr><th>{{s|s033|}}</th><th>A1</th><th>A2</th><th>A3</th><th>A4</th><th>A5</th><th>A6</th><th>A7</th><th>A8</th><th>A9</th><th>A10</th></tr></thead>
     <tbody>
       <tr><td>(x₁, x₂)</td><td>(3, 4)</td><td>(4, 4)</td><td>(0, 3)</td><td>(3, 7)</td><td>(1, 1)</td><td>(0, 1)</td><td>(1, 6)</td><td>(2, 7)</td><td>(0, 6)</td><td>(4, 7)</td></tr>
     </tbody>
   </table></div>
   <div class="tab-wrap"><table class="tab">
-    <thead><tr><th>{{s|s032|}}</th><th>B1</th><th>B2</th><th>B3</th><th>B4</th><th>B5</th><th>B6</th><th>B7</th><th>B8</th><th>B9</th><th>B10</th></tr></thead>
+    <thead><tr><th>{{s|s034|}}</th><th>B1</th><th>B2</th><th>B3</th><th>B4</th><th>B5</th><th>B6</th><th>B7</th><th>B8</th><th>B9</th><th>B10</th></tr></thead>
     <tbody>
       <tr><td>(x₁, x₂)</td><td>(5, 3)</td><td>(5, 4)</td><td>(6, 3)</td><td>(6, 5)</td><td>(7, 2)</td><td>(7, 4)</td><td>(5, 6)</td><td>(6, 1)</td><td>(7, 6)</td><td>(6, 7)</td></tr>
     </tbody>
   </table></div>
-  <p class="piccolo">{{s|s033|}}</p>
-  <figure class="scena" data-scena="knn20" data-titolo="{{a|s034|}}"></figure>
+  <p class="piccolo">{{s|s035|}}</p>
+  <figure class="scena" data-scena="knn20" data-titolo="{{a|s036|}}"></figure>
   <div class="tab-wrap"><table class="tab">
-    <thead><tr><th>{{s|s035|}}</th><th>k = 2</th><th>k = 3</th><th>k = 5</th></tr></thead>
+    <thead><tr><th>{{s|s037|}}</th><th>k = 2</th><th>k = 3</th><th>k = 5</th></tr></thead>
     <tbody>
       <tr><td>Q1 = (3, 3)</td><td><b>A</b> (2–0)</td><td><b>A</b> (2–1)</td><td><b>A</b> (3–2)</td></tr>
       <tr><td>Q2 = (2, 4)</td><td><b>A</b> (2–0)</td><td><b>A</b> (3–0)</td><td><b>A</b> (5–0)</td></tr>
       <tr><td>Q3 = (5, 2)</td><td><b>B</b> (0–2)</td><td><b>B</b> (0–3)</td><td><b>B</b> (0–5)</td></tr>
-      <tr><td>Q4 = (4, 5)</td><td>{{s|s036|}}</td><td>A / B</td><td>A / B</td></tr>
-      <tr><td>Q5 = (4, 2)</td><td>{{s|s037|}}</td><td>A / B</td><td><b>B</b> (2–3)</td></tr>
+      <tr><td>Q4 = (4, 5)</td><td>{{s|s038|}}</td><td>A / B</td><td>A / B</td></tr>
+      <tr><td>Q5 = (4, 2)</td><td>{{s|s039|}}</td><td>A / B</td><td><b>B</b> (2–3)</td></tr>
     </tbody>
   </table></div>
-  <p class="piccolo">{{s|s038|}}</p>
-  <div class="box attenzione" data-tit="{{a|s039|}}">
-    <p>{{s|s040|}}</p>
+  <p class="piccolo">{{s|s040|}}</p>
+  <div class="box attenzione" data-tit="{{a|s041|}}">
+    <p>{{s|s042|}}</p>
   </div>
-  <p class="piccolo">{{s|s041|}}</p>
-  <div class="box idea" data-tit="{{a|s042|}}">
-    <p>{{s|s043|}}</p>
+  <p class="piccolo">{{s|s043|}}</p>
+  <div class="box idea" data-tit="{{a|s044|}}">
+    <p>{{s|s045|}}</p>
   </div>
 </section>
 
 <section>
-  <h2>{{s|s044|}}</h2>
-  <p>{{s|s045|}}</p>
+  <h2>{{s|s046|}}</h2>
+  <p>{{s|s047|}}</p>
   <ul>
-    <li>{{s|s046|}}</li>
-    <li>{{s|s047|}}</li>
     <li>{{s|s048|}}</li>
+    <li>{{s|s049|}}</li>
+    <li>{{s|s050|}}</li>
   </ul>
   <div class="tab-wrap"><table class="tab">
-    <thead><tr><th>k</th><th>{{s|s049|}}</th><th>{{s|s050|}}</th></tr></thead>
+    <thead><tr><th>k</th><th>{{s|s051|}}</th><th>{{s|s052|}}</th></tr></thead>
     <tbody>
-      <tr><td>1</td><td>{{s|s051|}}</td><td>1.0</td></tr>
-      <tr><td>3</td><td>{{s|s052|}}</td><td>1.0</td></tr>
+      <tr><td>1</td><td>{{s|s053|}}</td><td>1.0</td></tr>
+      <tr><td>3</td><td>{{s|s054|}}</td><td>1.0</td></tr>
       <tr><td>5</td><td>A2 = (4, 4)</td><td>0.95</td></tr>
-      <tr><td>20</td><td>{{s|s053|}}</td><td>0.5</td></tr>
+      <tr><td>20</td><td>{{s|s055|}}</td><td>0.5</td></tr>
     </tbody>
   </table></div>
-  <p class="piccolo">{{s|s054|}}</p>
-  <figure class="codice" data-titolo="{{a|s055|}}">
+  <p class="piccolo">{{s|s056|}}</p>
+  <figure class="codice" data-titolo="{{a|s057|}}">
 <pre data-lang="python">X = np.vstack([class_A, class_B])                    # 20 × 2: prima gli A, poi i B
 y = np.r_[np.zeros(10), np.ones(10)].astype(int)    # 0 = A, 1 = B
 def knn(q, k):
@@ -188,56 +188,56 @@ def knn(q, k):
     vicini = np.argsort(d, kind="stable")[:k]       # indici dei k più vicini
     return np.bincount(y[vicini], minlength=2)      # voti: [quanti A, quanti B]</pre>
     <ol class="spiega">
-      <li data-righe="1-2" data-segna="np.vstack@dato|np.r_@due"><p>{{s|s056|}}</p></li>
-      <li data-righe="4" data-segna="X - q@ora|axis=1@ok"><p>{{s|s057|}}</p></li>
-      <li data-righe="5" data-segna="argsort@ora|stable@due|[:k]@ok"><p>{{s|s058|}}</p></li>
-      <li data-righe="6" data-segna="y[vicini]@dato|np.bincount@ok"><p>{{s|s059|}}</p></li>
+      <li data-righe="1-2" data-segna="np.vstack@dato|np.r_@due"><p>{{s|s058|}}</p></li>
+      <li data-righe="4" data-segna="X - q@ora|axis=1@ok"><p>{{s|s059|}}</p></li>
+      <li data-righe="5" data-segna="argsort@ora|stable@due|[:k]@ok"><p>{{s|s060|}}</p></li>
+      <li data-righe="6" data-segna="y[vicini]@dato|np.bincount@ok"><p>{{s|s061|}}</p></li>
     </ol>
   </figure>
-  <p class="piccolo">{{s|s060|}}</p>
+  <p class="piccolo">{{s|s062|}}</p>
 </section>
 
 <section>
-  <h2>{{s|s061|}}</h2>
-  <p>{{s|s062|}}</p>
+  <h2>{{s|s063|}}</h2>
+  <p>{{s|s064|}}</p>
   <div class="tab-wrap"><table class="tab">
-    <thead><tr><th>{{s|s063|}}</th><th>A1</th><th>A2</th><th>A3</th><th>A4</th></tr></thead>
+    <thead><tr><th>{{s|s065|}}</th><th>A1</th><th>A2</th><th>A3</th><th>A4</th></tr></thead>
     <tbody><tr><td>(x₁, x₂, x₃, x₄)</td><td>(1, 0, 0, 0)</td><td>(1, 1, 0, 0)</td><td>(2, 2, 1, 0)</td><td>(3, 2, 2, 0)</td></tr></tbody>
   </table></div>
   <div class="tab-wrap"><table class="tab">
-    <thead><tr><th>{{s|s064|}}</th><th>B1</th><th>B2</th><th>B3</th><th>B4</th></tr></thead>
+    <thead><tr><th>{{s|s066|}}</th><th>B1</th><th>B2</th><th>B3</th><th>B4</th></tr></thead>
     <tbody><tr><td>(x₁, x₂, x₃, x₄)</td><td>(2, 0, 0, 0)</td><td>(2, 1, 0, 0)</td><td>(2, 2, 0, 0)</td><td>(3, 3, 0, 0)</td></tr></tbody>
   </table></div>
-  <figure class="scena" data-scena="knn4d" data-titolo="{{a|s065|}}"></figure>
+  <figure class="scena" data-scena="knn4d" data-titolo="{{a|s067|}}"></figure>
   <ul>
     <li><b>k = 2</b>: A1, A2 → <b>A</b>. <b>k = 3</b>: A1, A2, B1 → <b>A</b> (2–1). <b>k = 5</b>: A1, A2, B1, B2, B3 → <b>B</b> (2–3).</li>
-    <li>{{s|s066|}}</li>
-    <li>{{s|s067|}}</li>
+    <li>{{s|s068|}}</li>
+    <li>{{s|s069|}}</li>
   </ul>
-  <div class="box idea" data-tit="{{a|s068|}}">
-    <p>{{s|s069|}}</p>
+  <div class="box idea" data-tit="{{a|s070|}}">
+    <p>{{s|s071|}}</p>
   </div>
 </section>
 
 <section>
-  <h2>{{s|s070|}}</h2>
-  <p>{{s|s071|}}</p>
-  <figure class="scena" data-scena="confini" data-titolo="{{a|s072|}}"></figure>
+  <h2>{{s|s072|}}</h2>
+  <p>{{s|s073|}}</p>
+  <figure class="scena" data-scena="confini" data-titolo="{{a|s074|}}"></figure>
   <div class="tab-wrap"><table class="tab">
-    <thead><tr><th></th><th>{{s|s073|}}</th><th>{{s|s074|}}</th></tr></thead>
+    <thead><tr><th></th><th>{{s|s075|}}</th><th>{{s|s076|}}</th></tr></thead>
     <tbody>
-      <tr><td>{{s|s075|}}</td><td>{{s|s076|}}</td><td>{{s|s077|}}</td></tr>
-      <tr><td>{{s|s078|}}</td><td>{{s|s079|}}</td><td>{{s|s080|}}</td></tr>
-      <tr><td>{{s|s081|}}</td><td>{{s|s082|}}</td><td>{{s|s083|}}</td></tr>
-      <tr><td>{{s|s084|}}</td><td>{{s|s085|}}</td><td>{{s|s086|}}</td></tr>
-      <tr><td>{{s|s087|}}</td><td>{{s|s088|}}</td><td>{{s|s089|}}</td></tr>
-      <tr><td>{{s|s090|}}</td><td>{{s|s091|}}</td><td>{{s|s092|}}</td></tr>
-      <tr><td>{{s|s093|}}</td><td>{{s|s094|}}</td><td>{{s|s095|}}</td></tr>
+      <tr><td>{{s|s077|}}</td><td>{{s|s078|}}</td><td>{{s|s079|}}</td></tr>
+      <tr><td>{{s|s080|}}</td><td>{{s|s081|}}</td><td>{{s|s082|}}</td></tr>
+      <tr><td>{{s|s083|}}</td><td>{{s|s084|}}</td><td>{{s|s085|}}</td></tr>
+      <tr><td>{{s|s086|}}</td><td>{{s|s087|}}</td><td>{{s|s088|}}</td></tr>
+      <tr><td>{{s|s089|}}</td><td>{{s|s090|}}</td><td>{{s|s091|}}</td></tr>
+      <tr><td>{{s|s092|}}</td><td>{{s|s093|}}</td><td>{{s|s094|}}</td></tr>
+      <tr><td>{{s|s095|}}</td><td>{{s|s096|}}</td><td>{{s|s097|}}</td></tr>
     </tbody>
   </table></div>
-  <p class="piccolo">{{s|s096|}}</p>
-  <div class="box inglese" data-tit="{{a|s097|}}">
-    <p>{{s|s098|}}</p>
+  <p class="piccolo">{{s|s098|}}</p>
+  <div class="box inglese" data-tit="{{a|s099|}}">
+    <p>{{s|s100|}}</p>
   </div>
 </section>
 

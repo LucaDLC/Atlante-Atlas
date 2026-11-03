@@ -180,68 +180,68 @@ w, res, rank, sv = np.linalg.lstsq(X, y, rcond=None)` },
   <h2>{{s|s019|}}</h2>
   <p>{{s|s020|}}</p>
   <figure class="passi" data-titolo="{{a|s021|}}">
-    <div class="passo"><div class="espr">residuo del punto i:  <mark class="no">rᵢ = yᵢ − (w₀ + w₁xᵢ)</mark></div><p class="nota">{{s|s022|}}</p></div>
-    <div class="passo"><div class="espr">L(w) = Σᵢ rᵢ² = <mark class="ok">‖y − Xw‖²</mark></div><p class="nota">{{s|s023|}}</p></div>
-    <div class="passo"><div class="espr">w* = argmin<sub>w</sub> ‖y − Xw‖²</div><p class="nota">{{s|s024|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s022|}}</div><p class="nota">{{s|s023|}}</p></div>
+    <div class="passo"><div class="espr">L(w) = Σᵢ rᵢ² = <mark class="ok">‖y − Xw‖²</mark></div><p class="nota">{{s|s024|}}</p></div>
+    <div class="passo"><div class="espr">w* = argmin<sub>w</sub> ‖y − Xw‖²</div><p class="nota">{{s|s025|}}</p></div>
   </figure>
-  <p>{{s|s025|}}</p>
-  <figure class="scena" data-scena="lossmat" data-titolo="{{a|s026|}}"></figure>
+  <p>{{s|s026|}}</p>
+  <figure class="scena" data-scena="lossmat" data-titolo="{{a|s027|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s027|}}</h2>
-  <p>{{s|s028|}}</p>
+  <h2>{{s|s028|}}</h2>
   <p>{{s|s029|}}</p>
-  <figure class="scena" data-scena="ls" data-titolo="{{a|s030|}}"></figure>
+  <p>{{s|s030|}}</p>
+  <figure class="scena" data-scena="ls" data-titolo="{{a|s031|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s031|}}</h2>
-  <p>{{s|s032|}}</p>
-  <figure class="passi" data-titolo="{{a|s033|}}">
-    <div class="passo"><div class="espr">Xw = w₀·<mark class="dato">colonna 1</mark> + w₁·<mark class="dato">colonna x</mark></div><p class="nota">{{s|s034|}}</p></div>
-    <div class="passo"><div class="espr">y di solito <mark class="no">non sta</mark> in quel sottospazio</div><p class="nota">{{s|s035|}}</p></div>
-    <div class="passo"><div class="espr">il punto del sottospazio più vicino a y è la sua <mark class="ok">proiezione ortogonale</mark> ŷ = Xw*</div><p class="nota">{{s|s036|}}</p></div>
-    <div class="passo"><div class="espr">il residuo r = y − Xw* è <mark class="ok">ortogonale</mark> a ogni colonna di X</div><p class="nota">{{s|s037|}}</p></div>
+  <h2>{{s|s032|}}</h2>
+  <p>{{s|s033|}}</p>
+  <figure class="passi" data-titolo="{{a|s034|}}">
+    <div class="passo"><div class="espr">Xw = w₀·<mark class="dato">colonna 1</mark> + w₁·<mark class="dato">colonna x</mark></div><p class="nota">{{s|s035|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s036|}}</div><p class="nota">{{s|s037|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s038|}}</div><p class="nota">{{s|s039|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s040|}}</div><p class="nota">{{s|s041|}}</p></div>
   </figure>
-  <div class="box attenzione" data-tit="{{a|s038|}}">
-    <p>{{s|s039|}}</p>
+  <div class="box attenzione" data-tit="{{a|s042|}}">
+    <p>{{s|s043|}}</p>
   </div>
-  <figure class="scena" data-scena="proiezioneY" data-titolo="{{a|s040|}}"></figure>
-</section>
-
-<section>
-  <h2>{{s|s041|}}</h2>
-  <p>{{s|s042|}}</p>
-  <div class="mblock"><span class="m">XᵀX w = Xᵀy</span></div>
-  <p>{{s|s043|}}</p>
-  <figure class="scena" data-scena="normali" data-titolo="{{a|s044|}}"></figure>
+  <figure class="scena" data-scena="proiezioneY" data-titolo="{{a|s044|}}"></figure>
 </section>
 
 <section>
   <h2>{{s|s045|}}</h2>
   <p>{{s|s046|}}</p>
-  <div class="mblock"><span class="m">X⁺ = (XᵀX)⁻¹Xᵀ</span></div>
+  <div class="mblock"><span class="m">XᵀX w = Xᵀy</span></div>
   <p>{{s|s047|}}</p>
-  <p>{{s|s048|}}</p>
-  <figure class="scena" data-scena="pinv" data-titolo="{{a|s049|}}"></figure>
+  <figure class="scena" data-scena="normali" data-titolo="{{a|s048|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s050|}}</h2>
-  <figure class="codice" data-titolo="{{a|s051|}}">
+  <h2>{{s|s049|}}</h2>
+  <p>{{s|s050|}}</p>
+  <div class="mblock"><span class="m">X⁺ = (XᵀX)⁻¹Xᵀ</span></div>
+  <p>{{s|s051|}}</p>
+  <p>{{s|s052|}}</p>
+  <figure class="scena" data-scena="pinv" data-titolo="{{a|s053|}}"></figure>
+</section>
+
+<section>
+  <h2>{{s|s054|}}</h2>
+  <figure class="codice" data-titolo="{{a|s055|}}">
 <pre data-lang="python">X = np.c_[np.ones(4), x]                   # colonne [1, x]
 w = np.linalg.solve(X.T @ X, X.T @ y)      # equazioni normali
 w = np.linalg.pinv(X) @ y                  # pseudoinversa
 w = np.linalg.lstsq(X, y, rcond=None)[0]   # la scelta consigliata</pre>
     <ol class="spiega">
-      <li data-righe="1" data-segna="np.c_[np.ones(4), x]@dato"><p>{{s|s052|}}</p></li>
-      <li data-righe="2" data-segna="X.T @ X@ora|X.T @ y@ora"><p>{{s|s053|}}</p></li>
-      <li data-righe="3" data-segna="np.linalg.pinv(X)@due"><p>{{s|s054|}}</p></li>
-      <li data-righe="4" data-segna="np.linalg.lstsq@ok"><p>{{s|s055|}}</p></li>
+      <li data-righe="1" data-segna="np.c_[np.ones(4), x]@dato"><p>{{s|s056|}}</p></li>
+      <li data-righe="2" data-segna="X.T @ X@ora|X.T @ y@ora"><p>{{s|s057|}}</p></li>
+      <li data-righe="3" data-segna="np.linalg.pinv(X)@due"><p>{{s|s058|}}</p></li>
+      <li data-righe="4" data-segna="np.linalg.lstsq@ok"><p>{{s|s059|}}</p></li>
     </ol>
   </figure>
-  <figure class="scena" data-scena="tremodi" data-titolo="{{a|s056|}}"></figure>
+  <figure class="scena" data-scena="tremodi" data-titolo="{{a|s060|}}"></figure>
 </section>
 
 </main>

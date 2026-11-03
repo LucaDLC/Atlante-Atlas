@@ -163,25 +163,22 @@ window.SCENE = window.SCENE || {};
       <p class="nota">{{s|s023|}}</p>
     </div>
     <div class="passo">
-      <div class="espr">def doWork(result: Int)(x: Int): Int =
-  <mark class="ora">if x &gt; 1</mark>
-  then ???   <span class="mano">// il corpo del ciclo</span>
-  else ???   <span class="mano">// quello che veniva dopo il ciclo</span></div>
-      <p class="nota">{{s|s024|}}</p>
+      <div class="espr">{{s|s024|}}</div>
+      <p class="nota">{{s|s025|}}</p>
     </div>
     <div class="passo">
       <div class="espr">def doWork(result: Int)(x: Int): Int =
   if x &gt; 1
   then <mark class="ora">doWork(result * x)(x - 1)</mark>
   else ???</div>
-      <p class="nota">{{s|s025|}}</p>
+      <p class="nota">{{s|s026|}}</p>
     </div>
     <div class="passo">
       <div class="espr">def doWork(result: Int)(x: Int): Int =
   if x &gt; 1
   then doWork(result * x)(x - 1)
   else <mark class="ora">result</mark></div>
-      <p class="nota">{{s|s026|}}</p>
+      <p class="nota">{{s|s027|}}</p>
     </div>
     <div class="passo">
       <div class="espr"><mark class="ok">def factorial(n: Int): Int =
@@ -190,59 +187,59 @@ window.SCENE = window.SCENE || {};
     then doWork(result * x)(x - 1)
     else result
   doWork(1)(n)</mark></div>
-      <p class="nota">{{s|s027|}}</p>
+      <p class="nota">{{s|s028|}}</p>
     </div>
   </figure>
-  <figure class="scena" data-scena="purifica" data-titolo="{{a|s028|}}"></figure>
+  <figure class="scena" data-scena="purifica" data-titolo="{{a|s029|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s029|}}</h2>
-  <p>{{s|s030|}}</p>
+  <h2>{{s|s030|}}</h2>
+  <p>{{s|s031|}}</p>
   <pre class="cod" data-lang="scala">def factorial(n: Int): Int =
   if n &lt;= 1 then 1
   else n * factorial(n - 1)</pre>
-  <figure class="passi" data-titolo="{{a|s031|}}">
-    <div class="passo"><div class="espr"><mark class="dato">factorial(4)</mark></div><p class="nota">{{s|s032|}}</p></div>
-    <div class="passo"><div class="espr">4 * <mark class="ora">factorial(3)</mark></div><p class="nota">{{s|s033|}}</p></div>
-    <div class="passo"><div class="espr">4 * (3 * <mark class="ora">factorial(2)</mark>)</div><p class="nota">{{s|s034|}}</p></div>
-    <div class="passo"><div class="espr">4 * (3 * (2 * <mark class="ora">factorial(1)</mark>))</div><p class="nota">{{s|s035|}}</p></div>
-    <div class="passo"><div class="espr">4 * (3 * (2 * <mark class="ok">1</mark>))</div><p class="nota">{{s|s036|}}</p></div>
-    <div class="passo"><div class="espr">4 * (3 * <mark class="ora">2</mark>)</div><p class="nota">{{s|s037|}}</p></div>
+  <figure class="passi" data-titolo="{{a|s032|}}">
+    <div class="passo"><div class="espr"><mark class="dato">factorial(4)</mark></div><p class="nota">{{s|s033|}}</p></div>
+    <div class="passo"><div class="espr">4 * <mark class="ora">factorial(3)</mark></div><p class="nota">{{s|s034|}}</p></div>
+    <div class="passo"><div class="espr">4 * (3 * <mark class="ora">factorial(2)</mark>)</div><p class="nota">{{s|s035|}}</p></div>
+    <div class="passo"><div class="espr">4 * (3 * (2 * <mark class="ora">factorial(1)</mark>))</div><p class="nota">{{s|s036|}}</p></div>
+    <div class="passo"><div class="espr">4 * (3 * (2 * <mark class="ok">1</mark>))</div><p class="nota">{{s|s037|}}</p></div>
+    <div class="passo"><div class="espr">4 * (3 * <mark class="ora">2</mark>)</div><p class="nota">{{s|s038|}}</p></div>
     <div class="passo"><div class="espr">4 * <mark class="ora">6</mark></div><p class="nota">…</p></div>
-    <div class="passo"><div class="espr"><mark class="ok">24</mark></div><p class="nota">{{s|s038|}}</p></div>
+    <div class="passo"><div class="espr"><mark class="ok">24</mark></div><p class="nota">{{s|s039|}}</p></div>
   </figure>
-  <figure class="scena" data-scena="srotola" data-titolo="{{a|s039|}}"></figure>
+  <figure class="scena" data-scena="srotola" data-titolo="{{a|s040|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s040|}}</h2>
-  <div class="box regola" data-tit="{{a|s041|}}">
-    <p>{{s|s042|}}</p>
+  <h2>{{s|s041|}}</h2>
+  <div class="box regola" data-tit="{{a|s042|}}">
+    <p>{{s|s043|}}</p>
   </div>
   <div class="colonne">
     <div class="carta cattiva">
-      <h4>{{s|s043|}}</h4>
+      <h4>{{s|s044|}}</h4>
       <pre class="cod" data-lang="scala" data-segna="n * @no">else n * factorial(n - 1)</pre>
-      <p>{{s|s044|}}</p>
+      <p>{{s|s045|}}</p>
     </div>
     <div class="carta buona">
-      <h4>{{s|s045|}}</h4>
+      <h4>{{s|s046|}}</h4>
       <pre class="cod" data-lang="scala" data-segna="f(n - 1, n * acc)@ok">else f(n - 1, n * acc)</pre>
-      <p>{{s|s046|}}</p>
+      <p>{{s|s047|}}</p>
     </div>
   </div>
-  <p>{{s|s047|}}</p>
-  <figure class="scena" data-scena="pila" data-titolo="{{a|s048|}}"></figure>
-  <p>{{s|s049|}}</p>
-  <div class="box attenzione" data-tit="{{a|s050|}}">
-    <p>{{s|s051|}}</p>
+  <p>{{s|s048|}}</p>
+  <figure class="scena" data-scena="pila" data-titolo="{{a|s049|}}"></figure>
+  <p>{{s|s050|}}</p>
+  <div class="box attenzione" data-tit="{{a|s051|}}">
+    <p>{{s|s052|}}</p>
   </div>
 </section>
 
 <section>
-  <h2>{{s|s052|}}</h2>
-  <p>{{s|s053|}}</p>
+  <h2>{{s|s053|}}</h2>
+  <p>{{s|s054|}}</p>
   <div class="errori">
     <div class="errore">
       <pre data-lang="scala" data-segna="bonacci(n-1, acc)@no|bonacci(n-2, acc)@no">def fib(n: Int): Int =
@@ -253,11 +250,11 @@ window.SCENE = window.SCENE || {};
     else bonacci(n-1, acc) + bonacci(n-2, acc)
   bonacci(n, 0)</pre>
       <pre class="msg">Cannot rewrite recursive call: it is not in tail position</pre>
-      <div class="fix">Dopo le due chiamate resta da fare il <code>+</code>: nessuna delle due è in coda. E anche senza <code>@tailrec</code> sarebbe lentissima, perché ricalcola gli stessi numeri moltissime volte.</div>
+      <div class="fix">{{s|s055|}}</div>
     </div>
   </div>
-  <p>{{s|s054|}}</p>
-  <figure class="codice" data-titolo="{{a|s055|}}">
+  <p>{{s|s056|}}</p>
+  <figure class="codice" data-titolo="{{a|s057|}}">
 <pre data-lang="scala">def fib(n: Int): Int =
   @annotation.tailrec
   def bonacci(n: Int, curr: Int, next: Int): Int =
@@ -265,27 +262,27 @@ window.SCENE = window.SCENE || {};
     else bonacci(n - 1, next, next + curr)
   bonacci(n, 0, 1)</pre>
     <ol class="spiega">
-      <li data-righe="3" data-segna="curr@dato|next@due"><p>{{s|s056|}}</p></li>
-      <li data-righe="6" data-segna="0@dato|1@due"><p>{{s|s057|}}</p></li>
-      <li data-righe="5" data-segna="next@ok|next + curr@ok"><p>{{s|s058|}}</p></li>
-      <li data-righe="4" data-segna="curr@ok"><p>{{s|s059|}}</p></li>
+      <li data-righe="3" data-segna="curr@dato|next@due"><p>{{s|s058|}}</p></li>
+      <li data-righe="6" data-segna="0@dato|1@due"><p>{{s|s059|}}</p></li>
+      <li data-righe="5" data-segna="next@ok|next + curr@ok"><p>{{s|s060|}}</p></li>
+      <li data-righe="4" data-segna="curr@ok"><p>{{s|s061|}}</p></li>
     </ol>
   </figure>
-  <figure class="passi" data-titolo="{{a|s060|}}">
-    <div class="passo"><div class="espr">bonacci(6, <mark class="dato">0</mark>, <mark class="due">1</mark>)</div><p class="nota">{{s|s061|}}</p></div>
-    <div class="passo"><div class="espr">bonacci(5, <mark class="dato">1</mark>, <mark class="due">1</mark>)</div><p class="nota">{{s|s062|}}</p></div>
-    <div class="passo"><div class="espr">bonacci(4, <mark class="dato">1</mark>, <mark class="due">2</mark>)</div><p class="nota">{{s|s063|}}</p></div>
-    <div class="passo"><div class="espr">bonacci(3, <mark class="dato">2</mark>, <mark class="due">3</mark>)</div><p class="nota">{{s|s064|}}</p></div>
-    <div class="passo"><div class="espr">bonacci(2, <mark class="dato">3</mark>, <mark class="due">5</mark>)</div><p class="nota">{{s|s065|}}</p></div>
-    <div class="passo"><div class="espr">bonacci(1, <mark class="ok">5</mark>, 8)</div><p class="nota">{{s|s066|}}</p></div>
+  <figure class="passi" data-titolo="{{a|s062|}}">
+    <div class="passo"><div class="espr">bonacci(6, <mark class="dato">0</mark>, <mark class="due">1</mark>)</div><p class="nota">{{s|s063|}}</p></div>
+    <div class="passo"><div class="espr">bonacci(5, <mark class="dato">1</mark>, <mark class="due">1</mark>)</div><p class="nota">{{s|s064|}}</p></div>
+    <div class="passo"><div class="espr">bonacci(4, <mark class="dato">1</mark>, <mark class="due">2</mark>)</div><p class="nota">{{s|s065|}}</p></div>
+    <div class="passo"><div class="espr">bonacci(3, <mark class="dato">2</mark>, <mark class="due">3</mark>)</div><p class="nota">{{s|s066|}}</p></div>
+    <div class="passo"><div class="espr">bonacci(2, <mark class="dato">3</mark>, <mark class="due">5</mark>)</div><p class="nota">{{s|s067|}}</p></div>
+    <div class="passo"><div class="espr">bonacci(1, <mark class="ok">5</mark>, 8)</div><p class="nota">{{s|s068|}}</p></div>
   </figure>
-  <figure class="scena" data-scena="finestra" data-titolo="{{a|s067|}}"></figure>
+  <figure class="scena" data-scena="finestra" data-titolo="{{a|s069|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s068|}}</h2>
-  <p>{{s|s069|}}</p>
-  <figure class="codice" data-titolo="{{a|s070|}}">
+  <h2>{{s|s070|}}</h2>
+  <p>{{s|s071|}}</p>
+  <figure class="codice" data-titolo="{{a|s072|}}">
 <pre data-lang="scala">def isSorted[A](as: Array[A], ordered: (A, A) => Boolean): Boolean =
   @annotation.tailrec
   def go(i: Int): Boolean =
@@ -294,17 +291,17 @@ window.SCENE = window.SCENE || {};
     else go(i + 1)
   go(0)</pre>
     <ol class="spiega">
-      <li data-righe="3" data-segna="i@dato"><p>{{s|s071|}}</p></li>
-      <li data-righe="4" data-segna="i &gt;= as.length - 1@ora|true@ok"><p>{{s|s072|}}</p></li>
-      <li data-righe="5" data-segna="ordered(as(i), as(i + 1))@ora|false@no"><p>{{s|s073|}}</p></li>
-      <li data-righe="6" data-segna="go(i + 1)@ok"><p>{{s|s074|}}</p></li>
-      <li data-righe="7" data-segna="go(0)@dato"><p>{{s|s075|}}</p></li>
+      <li data-righe="3" data-segna="i@dato"><p>{{s|s073|}}</p></li>
+      <li data-righe="4" data-segna="i &gt;= as.length - 1@ora|true@ok"><p>{{s|s074|}}</p></li>
+      <li data-righe="5" data-segna="ordered(as(i), as(i + 1))@ora|false@no"><p>{{s|s075|}}</p></li>
+      <li data-righe="6" data-segna="go(i + 1)@ok"><p>{{s|s076|}}</p></li>
+      <li data-righe="7" data-segna="go(0)@dato"><p>{{s|s077|}}</p></li>
     </ol>
   </figure>
-  <div class="box domanda-tua" data-tit="{{a|s076|}}">
-    <p>{{s|s077|}}</p>
+  <div class="box domanda-tua" data-tit="{{a|s078|}}">
+    <p>{{s|s079|}}</p>
   </div>
-  <figure class="scena" data-scena="indici" data-titolo="{{a|s078|}}"></figure>
+  <figure class="scena" data-scena="indici" data-titolo="{{a|s080|}}"></figure>
 </section>
 
 </main>

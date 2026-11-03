@@ -143,72 +143,72 @@ window.SCENE = window.SCENE || {};
   <figure class="passi" data-titolo="{{a|s027|}}">
     <div class="passo"><div class="espr">w<sub>nuovo</sub> = w − <mark class="ora">η</mark> · <mark class="due">∇L(w)</mark></div><p class="nota">{{s|s028|}}</p></div>
     <div class="passo"><div class="espr">L(w) = (w − 3)²,  ∇L = 2(w − 3),  η = 0.1,  w₀ = 0:   0 → <mark class="ok">0.6</mark> → 1.08 → 1.464 → …</div><p class="nota">{{s|s029|}}</p></div>
-    <div class="passo"><div class="espr">serve quando <mark class="no">non c'è una formula chiusa</mark></div><p class="nota">{{s|s030|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s030|}}</div><p class="nota">{{s|s031|}}</p></div>
   </figure>
-  <figure class="scena" data-scena="discesa" data-titolo="{{a|s031|}}"></figure>
-  <p class="piccolo">{{s|s032|}}</p>
-  <figure class="passi" data-titolo="{{a|s033|}}">
-    <div class="passo"><div class="espr">∇f = [x₁ − x₂ − 2,  5x₂ − x₁ − 2]  = 0  ⇒  minimo in <mark class="ok">(3, 1)</mark>, f = −4</div><p class="nota">{{s|s034|}}</p></div>
-    <div class="passo"><div class="espr">da (0, 0) con η = 0.1:  (0.2, 0.2) → (0.4, 0.32) → (0.592, 0.4) → …</div><p class="nota">{{s|s035|}}</p></div>
-    <div class="passo"><div class="espr">η = 0.3: <mark class="ok">(3, 1)</mark> in 50 passi;   η = 0.4: <mark class="no">diverge</mark> (f = 1747 dopo 50 passi)</div><p class="nota">{{s|s036|}}</p></div>
+  <figure class="scena" data-scena="discesa" data-titolo="{{a|s032|}}"></figure>
+  <p class="piccolo">{{s|s033|}}</p>
+  <figure class="passi" data-titolo="{{a|s034|}}">
+    <div class="passo"><div class="espr">∇f = [x₁ − x₂ − 2,  5x₂ − x₁ − 2]  = 0  ⇒  minimo in <mark class="ok">(3, 1)</mark>, f = −4</div><p class="nota">{{s|s035|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s036|}}</div><p class="nota">{{s|s037|}}</p></div>
+    <div class="passo"><div class="espr">η = 0.3: <mark class="ok">(3, 1)</mark> in 50 passi;   η = 0.4: <mark class="no">diverge</mark> (f = 1747 dopo 50 passi)</div><p class="nota">{{s|s038|}}</p></div>
   </figure>
-  <div class="box regola" data-tit="{{a|s037|}}">
-    <p>{{s|s038|}}</p>
+  <div class="box regola" data-tit="{{a|s039|}}">
+    <p>{{s|s040|}}</p>
   </div>
 </section>
 
 <section>
-  <h2>{{s|s039|}}</h2>
-  <figure class="passi" data-titolo="{{a|s040|}}">
-    <div class="passo"><div class="espr">x = [1, 2]      z₁ = <mark class="ora">W₁</mark>x + b₁ = [[0.5, −1], [1, 0.5]]·[1, 2] + [0, 1] = <mark class="dato">[−1.5, 3]</mark></div><p class="nota">{{s|s041|}}</p></div>
-    <div class="passo"><div class="espr">h = ReLU(z₁) = max(0, z₁) = <mark class="dato">[0, 3]</mark></div><p class="nota">{{s|s042|}}</p></div>
-    <div class="passo"><div class="espr">z₂ = [1, −2]·[0, 3] + 0.5 = −5.5      p = σ(−5.5) = <mark class="ok">0.0041</mark></div><p class="nota">{{s|s043|}}</p></div>
+  <h2>{{s|s041|}}</h2>
+  <figure class="passi" data-titolo="{{a|s042|}}">
+    <div class="passo"><div class="espr">x = [1, 2]      z₁ = <mark class="ora">W₁</mark>x + b₁ = [[0.5, −1], [1, 0.5]]·[1, 2] + [0, 1] = <mark class="dato">[−1.5, 3]</mark></div><p class="nota">{{s|s043|}}</p></div>
+    <div class="passo"><div class="espr">h = ReLU(z₁) = max(0, z₁) = <mark class="dato">[0, 3]</mark></div><p class="nota">{{s|s044|}}</p></div>
+    <div class="passo"><div class="espr">z₂ = [1, −2]·[0, 3] + 0.5 = −5.5      p = σ(−5.5) = <mark class="ok">0.0041</mark></div><p class="nota">{{s|s045|}}</p></div>
   </figure>
-  <figure class="scena" data-scena="rete" data-titolo="{{a|s044|}}"></figure>
+  <figure class="scena" data-scena="rete" data-titolo="{{a|s046|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s045|}}</h2>
-  <p>{{s|s046|}}</p>
-  <p>{{s|s047|}}</p>
+  <h2>{{s|s047|}}</h2>
   <p>{{s|s048|}}</p>
-  <figure class="scena" data-scena="attivazioni" data-titolo="{{a|s049|}}"></figure>
+  <p>{{s|s049|}}</p>
+  <p>{{s|s050|}}</p>
+  <figure class="scena" data-scena="attivazioni" data-titolo="{{a|s051|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s050|}}</h2>
-  <figure class="passi" data-titolo="{{a|s051|}}">
-    <div class="passo"><div class="espr">avanti:  q = x + y = <mark class="dato">3</mark>,   f = q · z = <mark class="ok">9</mark></div><p class="nota">{{s|s052|}}</p></div>
-    <div class="passo"><div class="espr">indietro:  ∂f/∂z = q = <mark class="ora">3</mark>,   ∂f/∂q = z = <mark class="ora">3</mark></div><p class="nota">{{s|s053|}}</p></div>
-    <div class="passo"><div class="espr">∂f/∂x = ∂f/∂q · ∂q/∂x = 3 · 1 = <mark class="ok">3</mark>,   ∂f/∂y = 3 · 1 = <mark class="ok">3</mark></div><p class="nota">{{s|s054|}}</p></div>
+  <h2>{{s|s052|}}</h2>
+  <figure class="passi" data-titolo="{{a|s053|}}">
+    <div class="passo"><div class="espr">avanti:  q = x + y = <mark class="dato">3</mark>,   f = q · z = <mark class="ok">9</mark></div><p class="nota">{{s|s054|}}</p></div>
+    <div class="passo"><div class="espr">indietro:  ∂f/∂z = q = <mark class="ora">3</mark>,   ∂f/∂q = z = <mark class="ora">3</mark></div><p class="nota">{{s|s055|}}</p></div>
+    <div class="passo"><div class="espr">∂f/∂x = ∂f/∂q · ∂q/∂x = 3 · 1 = <mark class="ok">3</mark>,   ∂f/∂y = 3 · 1 = <mark class="ok">3</mark></div><p class="nota">{{s|s056|}}</p></div>
   </figure>
-  <figure class="scena" data-scena="grafo" data-titolo="{{a|s055|}}"></figure>
-  <figure class="passi" data-titolo="{{a|s056|}}">
-    <div class="passo"><div class="espr">p = σ(wᵀx),   L = −[y log p + (1 − y) log(1 − p)]</div><p class="nota">{{s|s057|}}</p></div>
-    <div class="passo"><div class="espr">∂L/∂w = ∂L/∂p · ∂p/∂z · ∂z/∂w = <mark class="ok">(p − y) · x</mark></div><p class="nota">{{s|s058|}}</p></div>
-    <div class="passo"><div class="espr">rete intera: stessa cosa, strato per strato, <mark class="ora">dall'uscita all'ingresso</mark></div><p class="nota">{{s|s059|}}</p></div>
+  <figure class="scena" data-scena="grafo" data-titolo="{{a|s057|}}"></figure>
+  <figure class="passi" data-titolo="{{a|s058|}}">
+    <div class="passo"><div class="espr">p = σ(wᵀx),   L = −[y log p + (1 − y) log(1 − p)]</div><p class="nota">{{s|s059|}}</p></div>
+    <div class="passo"><div class="espr">∂L/∂w = ∂L/∂p · ∂p/∂z · ∂z/∂w = <mark class="ok">(p − y) · x</mark></div><p class="nota">{{s|s060|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s061|}}</div><p class="nota">{{s|s062|}}</p></div>
   </figure>
 </section>
 
 <section>
-  <h2>{{s|s060|}}</h2>
+  <h2>{{s|s063|}}</h2>
   <div class="tab-wrap"><table class="tab">
-    <thead><tr><th></th><th>{{s|s061|}}</th><th>{{s|s062|}}</th></tr></thead>
+    <thead><tr><th></th><th>{{s|s064|}}</th><th>{{s|s065|}}</th></tr></thead>
     <tbody>
-      <tr><td>{{s|s063|}}</td><td>{{s|s064|}}</td><td>{{s|s065|}}</td></tr>
       <tr><td>{{s|s066|}}</td><td>{{s|s067|}}</td><td>{{s|s068|}}</td></tr>
       <tr><td>{{s|s069|}}</td><td>{{s|s070|}}</td><td>{{s|s071|}}</td></tr>
+      <tr><td>{{s|s072|}}</td><td>{{s|s073|}}</td><td>{{s|s074|}}</td></tr>
     </tbody>
   </table></div>
   <ul>
-    <li>{{s|s072|}}</li>
-    <li>{{s|s073|}}</li>
-    <li>{{s|s074|}}</li>
+    <li>{{s|s075|}}</li>
+    <li>{{s|s076|}}</li>
+    <li>{{s|s077|}}</li>
   </ul>
-  <div class="box esame" data-tit="{{a|s075|}}">
-    <p>{{s|s076|}}</p>
+  <div class="box esame" data-tit="{{a|s078|}}">
+    <p>{{s|s079|}}</p>
   </div>
-  <figure class="scena" data-scena="mlpcnn" data-titolo="{{a|s077|}}"></figure>
+  <figure class="scena" data-scena="mlpcnn" data-titolo="{{a|s080|}}"></figure>
 </section>
 
 </main>

@@ -66,62 +66,69 @@
 @@s066 To await() pr. tråd: går sammen, slutter sammen (test i uge 5)
 @@s067 dato:worker,due:main,ok:barriere åben
 @@s068 N workers + tråden <mark class="due">main</mark>: main skal også tælle, ellers ville den aldrig vide, hvornår workerne er færdige.
-@@s069 Workerne starter én ad gangen og stopper ved den første <code>await()</code>. Der mangler stadig en ankomst.
-@@s070 Main er den sidste ankomst: alle starter igen <b>på samme tidspunkt</b>. Det er "start", der maksimerer konflikterne.
-@@s071 Samme barriere, anden runde (den er cyklisk). Den der er færdig først, venter på de andre.
-@@s072 Når main passerer den anden <code>await()</code>, er <b>alle</b> workerne færdige: nu kan den kontrollere resultatet (<code>assertEquals</code>). Uden mains <code>await()</code> står barrieren på N / N+1, og workerne bliver blokerede for evigt.
-@@s073 Er det fint at have barrieren som felt i testklassen?
-@@s074 Ja: <code>private CyclicBarrier barrier = new CyclicBarrier(N + 1);</code> som felt virker. JUnit 5 opretter en <b>ny instans af testklassen for hver kørsel</b> (også for hver gentagelse af <code>@RepeatedTest</code>), så hver gentagelse har sin egen nye barriere: hvis en går i stykker (<code>BrokenBarrierException</code>), påvirkes den næste ikke.
-@@s075 Den skal oprettes inde i testmetoden (som i <code>CounterTest</code> i forelæsningen), når antallet af tråde <b>ændrer sig</b> fra den ene kørsel til den næste, for eksempel med <code>@ParameterizedTest</code>.
-@@s076 Producent-konsument-problemet
-@@s077 En delt datastruktur med <b>fast størrelse</b>.
-@@s078 <b>Producenterne</b> tilføjer elementer, indtil den er fuld; hvis den er fuld, <b>blokeres de</b>, til nogen fjerner et element.
-@@s079 <b>Konsumenterne</b> fjerner elementer, indtil den er tom; hvis den er tom, <b>blokeres de</b>, til nogen tilføjer et.
-@@s080 En god løsning er <b>deadlock-fri</b> og <b>minimerer sult</b>.
-@@s081 Det optræder overalt: afgrænsede datastrukturer, trådpuljer, asynkron I/O (tastatur og mus producerer, IoT-enheder konsumerer).
-@@s082 Bounded buffer med to tællende semaforer
-@@s083 Øvelse 4.1 · Bounded buffer med kun semaforer
-@@s084 Teksten kræver: kun <code>Semaphore</code> (ingen <code>Lock</code>, ingen <code>synchronized</code>), FIFO-kø, tilstand kun med samlinger, der <b>ikke</b> er trådsikre, som <code>LinkedList</code> eller arrays.
-@@s085 En løsning (verificeret: FIFO på 100 000 elementer; 4 producenter + 4 konsumenter uden tab)
-@@s086 Den implementerer kursets grænseflade (navnet har faktisk stavefejlen <code>Inteface</code>). <code>&lt;T&gt;</code>: bufferen indeholder elementer af en hvilken som helst type.
-@@s087 Selve køen: en <code>LinkedList</code>, ikke trådsikker, som krævet.
-@@s088 Tre semaforer, tre opgaver: <code>items</code> tæller de klare elementer (starter ved 0), <code>spaces</code> de frie pladser, <code>mutex</code> (kapacitet 1) beskytter <code>LinkedList</code>.
-@@s089 I starten er alle pladserne frie: <code>capacity</code>.
-@@s090 Jeg tager en fri plads. Hvis der ingen er, blokeres jeg: <b>buffer fuld ⇒ producenten venter</b>.
-@@s091 Kun én tråd ad gangen rører listen. Jeg tilføjer <b>bagerst</b>. <code>release</code> står i <code>finally</code>: det er try/finally-idiomet også med semaforer.
-@@s092 Der er ét element mere: hvis en konsument ventede, vågner den.
-@@s093 Jeg venter på et element: <b>tom buffer ⇒ konsumenten venter</b>.
-@@s094 Jeg tager det <b>første</b>: tilføjer bagerst og fjerner forrest giver FIFO-rækkefølgen.
-@@s095 En plads er blevet frigjort: en blokeret producent kan starte igen.
-@@s096 <b>Rækkefølgen betyder noget.</b> Først <code>spaces</code>, derefter <code>mutex</code>. Omvendt ville en producent med en fuld buffer blokere på <code>spaces</code> <b>mens den holder mutex</b>, og ingen konsument kunne komme ind for at frigøre en plads: deadlock. Afprøvet: med omvendt rækkefølge bliver producent og konsument blokeret for evigt.
-@@s097 4.1.2 · Hvorfor den er trådsikker
-@@s098 Tjeklisten anvendt
-@@s099 Elementerne af type T er ikke klassens tilstand: de er objekter tilhørende den, der bruger bufferen.
-@@s100 <code>take()</code> returnerer et element, ikke listen.
-@@s101 Også <code>spaces</code>, tildelt i konstruktøren.
-@@s102 Den eneste foranderlige tilstand, der ikke er beskyttet af sig selv, er indholdet af <code>LinkedList</code>.
-@@s103 Mutex lader én tråd ad gangen ind, og release → næste acquire er happens-before: alle adgange til listen er ordnede. Ingen data race.
-@@s104 Modelsvar (4.1.2)
-@@s105 "The class state consists of <i>queue</i>, <i>items</i>, <i>spaces</i> and <i>mutex</i>. All fields are private and final, so they are safely published, and no method returns a reference to <i>queue</i>, so the state does not escape. The semaphores are thread-safe library classes. The only mutable non-thread-safe state is the content of <i>queue</i>, and every access to it happens between <i>mutex.acquire()</i> and <i>mutex.release()</i>. Since <i>mutex</i> has one permit, the accesses are mutually exclusive, and a release happens-before the next successful acquire, so all conflicting accesses to <i>queue</i> are ordered by happens-before."
-@@s106 4.1.3 · Med barrierer?
-@@s107 <b>Nej.</b> En barriere blokerer, til et <b>fast</b> antal tråde er ankommet, uanset hvad bufferen indeholder. Bufferen skal derimod blokere en producent <b>kun hvis den er fuld</b>, og en konsument <b>kun hvis den er tom</b>: den skal tælle pladser og elementer, og den skal have gensidig udelukkelse på listen. Barrieren tilbyder hverken det ene eller det andet.
-@@s108 4.1.4 · Fair-flaget (udfordrende)
-@@s109 <code>new Semaphore(n, true)</code>: når en tilladelse frigøres, går den til den tråd, der har ventet <b>længst</b> (FIFO). Uden <code>fair</code> (standard <code>false</code>) kan en tråd, der lige er ankommet, "springe køen over" (barging).
-@@s110 I den afgrænsede buffer <b>ændrer det ikke korrektheden</b>: trådsikkerhed, blokering ved fuld/tom og FIFO-rækkefølgen af elementerne gælder under alle omstændigheder.
-@@s111 Det ændrer <b>sult</b>: med mange producenter kan en af dem i teorien altid tabe kampen om tilladelsen, hvis den ikke er fair. Hvor det betyder noget: grænsen på 5 læsere i slide 57, hvor kurset netop bruger <code>true</code>, så den læser, der har ventet længst, kommer ind først.
-@@s112 spaces, items, mutex
-@@s113 Øvelse 4.3 · Bygge dem fra bunden (udfordrende)
-@@s114 Monitorerne er den mest generelle primitiv: med en <code>Lock</code> og en <code>Condition</code> bygger man en semafor, og med semaforer en barriere.
-@@s115 4.3.1 · Semafor med Lock (verificeret: med 3 tilladelser og 16 tråde, aldrig mere end 3 inde)
-@@s116 Tilstand: tælleren <code>permits</code>, beskyttet af låsen. Conditionen <code>positive</code> = "der er tilladelser".
-@@s117 <code>permits</code> kan ikke være final (den ændrer sig). Skrivningen mens man holder låsen gør, at monitorreglen ordner den med enhver senere adgang: startværdien er synlig for alle.
-@@s118 Hvis der ikke er tilladelser, venter jeg. <code>while</code>, ikke <code>if</code>: når jeg vågner (også en spurious), kontrollerer jeg igen (<a href="l02-monitor.html">monitor</a>).
-@@s119 Jeg tager en tilladelse.
-@@s120 Jeg giver en tilladelse tilbage og vækker en ventende tråd. Det er Mesa-versionen fra slidet: i stedet for at "overdrage" tilladelsen til den vækkede tråd, lægger jeg den tilbage i tælleren, og den vækkede tråd tager den. Set udefra er adfærden den samme.
-@@s121 4.3.2 · Ikke-cyklisk barriere med semaforer (verificeret: 2000 forsøg, ingen passerer for tidligt)
-@@s122 En tæller af de ankomne, en mutex der beskytter den, og en lukket "port" (0 tilladelser).
-@@s123 Jeg ankommer og tæller mig selv, gensidigt udelukkende.
-@@s124 Hvis vi ikke er alle endnu, frigiver jeg mutex (<b>før</b> jeg blokerer, ellers kunne ingen andre tælle sig selv) og venter ved porten.
-@@s125 Den sidste ankomne åbner porten: <code>parties - 1</code> tilladelser, én til hver ventende tråd. Den fortsætter uden at vente.
-@@s126 Hvorfor det virker, også hvis den sidste åbner porten <b>før</b> en anden ankommer dertil: en semafor <b>husker</b> tilladelserne. Et <code>signal()</code> på en condition derimod går tabt, hvis ingen venter.
-@@s127 En semafor lavet med en monitor, derefter en barriere
+@@s069 <mark class="dato">worker</mark>: await() → N / N+1, alle blokerede
+@@s070 Workerne starter én ad gangen og stopper ved den første <code>await()</code>. Der mangler stadig en ankomst.
+@@s071 Main er den sidste ankomst: alle starter igen <b>på samme tidspunkt</b>. Det er "start", der maksimerer konflikterne.
+@@s072 <mark class="dato">worker</mark>: de arbejder, så await() → én ad gangen, blokerede
+@@s073 Samme barriere, anden runde (den er cyklisk). Den der er færdig først, venter på de andre.
+@@s074 <mark class="due">main</mark>: andet await() → når alle er kommet: <mark class="ok">åben</mark>
+@@s075 Når main passerer den anden <code>await()</code>, er <b>alle</b> workerne færdige: nu kan den kontrollere resultatet (<code>assertEquals</code>). Uden mains <code>await()</code> står barrieren på N / N+1, og workerne bliver blokerede for evigt.
+@@s076 Er det fint at have barrieren som felt i testklassen?
+@@s077 Ja: <code>private CyclicBarrier barrier = new CyclicBarrier(N + 1);</code> som felt virker. JUnit 5 opretter en <b>ny instans af testklassen for hver kørsel</b> (også for hver gentagelse af <code>@RepeatedTest</code>), så hver gentagelse har sin egen nye barriere: hvis en går i stykker (<code>BrokenBarrierException</code>), påvirkes den næste ikke.
+@@s078 Den skal oprettes inde i testmetoden (som i <code>CounterTest</code> i forelæsningen), når antallet af tråde <b>ændrer sig</b> fra den ene kørsel til den næste, for eksempel med <code>@ParameterizedTest</code>.
+@@s079 Producent-konsument-problemet
+@@s080 En delt datastruktur med <b>fast størrelse</b>.
+@@s081 <b>Producenterne</b> tilføjer elementer, indtil den er fuld; hvis den er fuld, <b>blokeres de</b>, til nogen fjerner et element.
+@@s082 <b>Konsumenterne</b> fjerner elementer, indtil den er tom; hvis den er tom, <b>blokeres de</b>, til nogen tilføjer et.
+@@s083 En god løsning er <b>deadlock-fri</b> og <b>minimerer sult</b>.
+@@s084 Det optræder overalt: afgrænsede datastrukturer, trådpuljer, asynkron I/O (tastatur og mus producerer, IoT-enheder konsumerer).
+@@s085 Bounded buffer med to tællende semaforer
+@@s086 Øvelse 4.1 · Bounded buffer med kun semaforer
+@@s087 Teksten kræver: kun <code>Semaphore</code> (ingen <code>Lock</code>, ingen <code>synchronized</code>), FIFO-kø, tilstand kun med samlinger, der <b>ikke</b> er trådsikre, som <code>LinkedList</code> eller arrays.
+@@s088 En løsning (verificeret: FIFO på 100 000 elementer; 4 producenter + 4 konsumenter uden tab)
+@@s089 Den implementerer kursets grænseflade (navnet har faktisk stavefejlen <code>Inteface</code>). <code>&lt;T&gt;</code>: bufferen indeholder elementer af en hvilken som helst type.
+@@s090 Selve køen: en <code>LinkedList</code>, ikke trådsikker, som krævet.
+@@s091 Tre semaforer, tre opgaver: <code>items</code> tæller de klare elementer (starter ved 0), <code>spaces</code> de frie pladser, <code>mutex</code> (kapacitet 1) beskytter <code>LinkedList</code>.
+@@s092 I starten er alle pladserne frie: <code>capacity</code>.
+@@s093 Jeg tager en fri plads. Hvis der ingen er, blokeres jeg: <b>buffer fuld ⇒ producenten venter</b>.
+@@s094 Kun én tråd ad gangen rører listen. Jeg tilføjer <b>bagerst</b>. <code>release</code> står i <code>finally</code>: det er try/finally-idiomet også med semaforer.
+@@s095 Der er ét element mere: hvis en konsument ventede, vågner den.
+@@s096 Jeg venter på et element: <b>tom buffer ⇒ konsumenten venter</b>.
+@@s097 Jeg tager det <b>første</b>: tilføjer bagerst og fjerner forrest giver FIFO-rækkefølgen.
+@@s098 En plads er blevet frigjort: en blokeret producent kan starte igen.
+@@s099 <b>Rækkefølgen betyder noget.</b> Først <code>spaces</code>, derefter <code>mutex</code>. Omvendt ville en producent med en fuld buffer blokere på <code>spaces</code> <b>mens den holder mutex</b>, og ingen konsument kunne komme ind for at frigøre en plads: deadlock. Afprøvet: med omvendt rækkefølge bliver producent og konsument blokeret for evigt.
+@@s100 4.1.2 · Hvorfor den er trådsikker
+@@s101 Tjeklisten anvendt
+@@s102 Elementerne af type T er ikke klassens tilstand: de er objekter tilhørende den, der bruger bufferen.
+@@s103 2. <mark class="dato">escaping</mark>: alle private, ingen metode returnerer queue
+@@s104 <code>take()</code> returnerer et element, ikke listen.
+@@s105 3. <mark class="ora">sikker publicering</mark>: alle felter er final
+@@s106 Også <code>spaces</code>, tildelt i konstruktøren.
+@@s107 4. <mark class="ok">uforanderlighed</mark>: referencerne ændrer sig ikke; semaforerne er trådsikre klasser i biblioteket
+@@s108 Den eneste foranderlige tilstand, der ikke er beskyttet af sig selv, er indholdet af <code>LinkedList</code>.
+@@s109 5. <mark class="due">gensidig udelukkelse</mark>: hver adgang til queue ligger mellem mutex.acquire() og mutex.release()
+@@s110 Mutex lader én tråd ad gangen ind, og release → næste acquire er happens-before: alle adgange til listen er ordnede. Ingen data race.
+@@s111 Modelsvar (4.1.2)
+@@s112 "The class state consists of <i>queue</i>, <i>items</i>, <i>spaces</i> and <i>mutex</i>. All fields are private and final, so they are safely published, and no method returns a reference to <i>queue</i>, so the state does not escape. The semaphores are thread-safe library classes. The only mutable non-thread-safe state is the content of <i>queue</i>, and every access to it happens between <i>mutex.acquire()</i> and <i>mutex.release()</i>. Since <i>mutex</i> has one permit, the accesses are mutually exclusive, and a release happens-before the next successful acquire, so all conflicting accesses to <i>queue</i> are ordered by happens-before."
+@@s113 4.1.3 · Med barrierer?
+@@s114 <b>Nej.</b> En barriere blokerer, til et <b>fast</b> antal tråde er ankommet, uanset hvad bufferen indeholder. Bufferen skal derimod blokere en producent <b>kun hvis den er fuld</b>, og en konsument <b>kun hvis den er tom</b>: den skal tælle pladser og elementer, og den skal have gensidig udelukkelse på listen. Barrieren tilbyder hverken det ene eller det andet.
+@@s115 4.1.4 · Fair-flaget (udfordrende)
+@@s116 <code>new Semaphore(n, true)</code>: når en tilladelse frigøres, går den til den tråd, der har ventet <b>længst</b> (FIFO). Uden <code>fair</code> (standard <code>false</code>) kan en tråd, der lige er ankommet, "springe køen over" (barging).
+@@s117 I den afgrænsede buffer <b>ændrer det ikke korrektheden</b>: trådsikkerhed, blokering ved fuld/tom og FIFO-rækkefølgen af elementerne gælder under alle omstændigheder.
+@@s118 Det ændrer <b>sult</b>: med mange producenter kan en af dem i teorien altid tabe kampen om tilladelsen, hvis den ikke er fair. Hvor det betyder noget: grænsen på 5 læsere i slide 57, hvor kurset netop bruger <code>true</code>, så den læser, der har ventet længst, kommer ind først.
+@@s119 spaces, items, mutex
+@@s120 Øvelse 4.3 · Bygge dem fra bunden (udfordrende)
+@@s121 Monitorerne er den mest generelle primitiv: med en <code>Lock</code> og en <code>Condition</code> bygger man en semafor, og med semaforer en barriere.
+@@s122 4.3.1 · Semafor med Lock (verificeret: med 3 tilladelser og 16 tråde, aldrig mere end 3 inde)
+@@s123 Tilstand: tælleren <code>permits</code>, beskyttet af låsen. Conditionen <code>positive</code> = "der er tilladelser".
+@@s124 <code>permits</code> kan ikke være final (den ændrer sig). Skrivningen mens man holder låsen gør, at monitorreglen ordner den med enhver senere adgang: startværdien er synlig for alle.
+@@s125 Hvis der ikke er tilladelser, venter jeg. <code>while</code>, ikke <code>if</code>: når jeg vågner (også en spurious), kontrollerer jeg igen (<a href="l02-monitor.html">monitor</a>).
+@@s126 Jeg tager en tilladelse.
+@@s127 Jeg giver en tilladelse tilbage og vækker en ventende tråd. Det er Mesa-versionen fra slidet: i stedet for at "overdrage" tilladelsen til den vækkede tråd, lægger jeg den tilbage i tælleren, og den vækkede tråd tager den. Set udefra er adfærden den samme.
+@@s128 4.3.2 · Ikke-cyklisk barriere med semaforer (verificeret: 2000 forsøg, ingen passerer for tidligt)
+@@s129 En tæller af de ankomne, en mutex der beskytter den, og en lukket "port" (0 tilladelser).
+@@s130 Jeg ankommer og tæller mig selv, gensidigt udelukkende.
+@@s131 Hvis vi ikke er alle endnu, frigiver jeg mutex (<b>før</b> jeg blokerer, ellers kunne ingen andre tælle sig selv) og venter ved porten.
+@@s132 Den sidste ankomne åbner porten: <code>parties - 1</code> tilladelser, én til hver ventende tråd. Den fortsætter uden at vente.
+@@s133 Hvorfor det virker, også hvis den sidste åbner porten <b>før</b> en anden ankommer dertil: en semafor <b>husker</b> tilladelserne. Et <code>signal()</code> på en condition derimod går tabt, hvis ingen venter.
+@@s134 En semafor lavet med en monitor, derefter en barriere

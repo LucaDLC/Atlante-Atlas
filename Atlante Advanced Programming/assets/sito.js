@@ -117,6 +117,7 @@ window.SITO = {
       "Homework: come si passano": "Homework: how to pass",
       "Errori del compilatore": "Compiler errors",
       "Vecchie prove e allenamento": "Past exams and practice",
+      "Formulario rapido": "Quick formulary",
       "scritto in presenza, 4 ore": "written, on campus, 4 hours"
     },
     "da": {
@@ -187,6 +188,7 @@ window.SITO = {
       "Homework: come si passano": "Homework: sådan består du",
       "Errori del compilatore": "Compilerfejl",
       "Vecchie prove e allenamento": "Gamle eksamener og træning",
+      "Formulario rapido": "Hurtigt formularium",
       "scritto in presenza, 4 ore": "skriftlig, på campus, 4 timer"
     }
   },
@@ -267,6 +269,7 @@ window.SITO = {
     { t: 'Regole e divieti', h: 'esame/regole.html' },
     { t: 'Homework: come si passano', h: 'esame/homework.html', noCapito: true },
     { t: 'Errori del compilatore', h: 'esame/errori.html' },
-    { t: 'Vecchie prove e allenamento', h: 'esame/prove.html' }
+    { t: 'Vecchie prove e allenamento', h: 'esame/prove.html' },
+    { t: 'Formulario rapido', h: 'esame/formulario.html', noCapito: true }
   ]
 };

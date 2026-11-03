@@ -106,38 +106,38 @@ window.SCENE = window.SCENE || {};
   <figure class="scena" data-scena="albero" data-titolo="{{a|s014|}}"></figure>
   <p class="piccolo">{{s|s015|}}</p>
   <figure class="passi" data-titolo="{{a|s016|}}">
-    <div class="passo"><div class="espr">valori finali possibili di counter:  da <mark class="no">2</mark> a 20</div><p class="nota">{{s|s017|}}</p></div>
-    <div class="passo"><div class="espr">interleaving diversi:  C(40, 20) = <mark class="no">137 846 528 820</mark></div><p class="nota">{{s|s018|}}</p></div>
-    <div class="passo"><div class="espr">stati diversi raggiungibili:  <mark class="ok">45 525</mark></div><p class="nota">{{s|s019|}}</p></div>
-    <div class="passo"><div class="espr">assert (counter &gt; 1)   →   <mark class="ok">vera in tutte le esecuzioni</mark></div><p class="nota">{{s|s020|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s017|}}</div><p class="nota">{{s|s018|}}</p></div>
+    <div class="passo"><div class="espr">interleaving diversi:  C(40, 20) = <mark class="no">137 846 528 820</mark></div><p class="nota">{{s|s019|}}</p></div>
+    <div class="passo"><div class="espr">stati diversi raggiungibili:  <mark class="ok">45 525</mark></div><p class="nota">{{s|s020|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s021|}}</div><p class="nota">{{s|s022|}}</p></div>
   </figure>
-  <p class="piccolo">{{s|s021|}}</p>
+  <p class="piccolo">{{s|s023|}}</p>
 </section>
 
 <section>
-  <h2>{{s|s022|}}</h2>
-  <p>{{s|s023|}}</p>
-  <figure class="passi" data-titolo="{{a|s024|}}">
-    <div class="passo"><div class="espr">C1 get: vuoto → wait.   C2 get: vuoto → wait.          in attesa: [C1, C2]</div><p class="nota">{{s|s025|}}</p></div>
-    <div class="passo"><div class="espr">P1 put: count = 1, <mark class="dato">notify → C1</mark>.   P1 put: pieno → wait.   P2 put: pieno → wait.</div><p class="nota">{{s|s026|}}</p></div>
-    <div class="passo"><div class="espr">C1 get: count = 0, <mark class="no">notify → C2</mark></div><p class="nota">{{s|s027|}}</p></div>
-    <div class="passo"><div class="espr">C1 get: vuoto → wait.   C2 si sveglia: vuoto → wait.</div><p class="nota">{{s|s028|}}</p></div>
-    <div class="passo"><div class="espr">con <mark class="ok">notifyAll()</mark> si svegliano tutti e ognuno ricontrolla la sua condizione nel while</div><p class="nota">{{s|s029|}}</p></div>
+  <h2>{{s|s024|}}</h2>
+  <p>{{s|s025|}}</p>
+  <figure class="passi" data-titolo="{{a|s026|}}">
+    <div class="passo"><div class="espr">C1 get: vuoto → wait.   C2 get: vuoto → wait.          in attesa: [C1, C2]</div><p class="nota">{{s|s027|}}</p></div>
+    <div class="passo"><div class="espr">P1 put: count = 1, <mark class="dato">notify → C1</mark>.   P1 put: pieno → wait.   P2 put: pieno → wait.</div><p class="nota">{{s|s028|}}</p></div>
+    <div class="passo"><div class="espr">C1 get: count = 0, <mark class="no">notify → C2</mark></div><p class="nota">{{s|s029|}}</p></div>
+    <div class="passo"><div class="espr">C1 get: vuoto → wait.   C2 si sveglia: vuoto → wait.</div><p class="nota">{{s|s030|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s031|}}</div><p class="nota">{{s|s032|}}</p></div>
   </figure>
-  <figure class="scena" data-scena="jpfdead" data-titolo="{{a|s030|}}"></figure>
+  <figure class="scena" data-scena="jpfdead" data-titolo="{{a|s033|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s031|}}</h2>
+  <h2>{{s|s034|}}</h2>
   <ul>
-    <li>{{s|s032|}}</li>
-    <li>{{s|s033|}}</li>
-    <li>{{s|s034|}}</li>
+    <li>{{s|s035|}}</li>
+    <li>{{s|s036|}}</li>
+    <li>{{s|s037|}}</li>
   </ul>
-  <div class="box esame" data-tit="{{a|s035|}}">
-    <p>{{s|s036|}}</p>
+  <div class="box esame" data-tit="{{a|s038|}}">
+    <p>{{s|s039|}}</p>
   </div>
-  <figure class="scena" data-scena="esplosione" data-titolo="{{a|s037|}}"></figure>
+  <figure class="scena" data-scena="esplosione" data-titolo="{{a|s040|}}"></figure>
 </section>
 
 </main>

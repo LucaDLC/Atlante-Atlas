@@ -84,16 +84,16 @@
     <h2>{{s|s057|}}</h2>
     <p>{{s|s058|}}</p>
     <div class="legenda">
-      <span class="l-ora"><i></i>arancio &middot; la cosa che cambia adesso</span>
-      <span class="l-dato"><i></i>blu &middot; il dato di partenza</span>
-      <span class="l-due"><i></i>viola &middot; un secondo ruolo</span>
-      <span class="l-ok"><i></i>verde &middot; il risultato</span>
-      <span class="l-no"><i></i>rosso &middot; scartato o sbagliato</span>
+      <span class="l-ora">{{s|s059|}}</span>
+      <span class="l-dato">{{s|s060|}}</span>
+      <span class="l-due">{{s|s061|}}</span>
+      <span class="l-ok">{{s|s062|}}</span>
+      <span class="l-no">{{s|s063|}}</span>
     </div>
   </section>
 
   <section>
-    <h2>{{s|s059|}}</h2>
+    <h2>{{s|s064|}}</h2>
     <div class="mappa" data-auto data-sezione="Teoria"></div>
   </section>
 

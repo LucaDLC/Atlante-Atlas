@@ -182,42 +182,41 @@ System.out.println("(" + x + "," + y + ")");</pre>
   <figure class="interleaving" data-prog="riordino" data-titolo="{{a|s040|}}"></figure>
   <figure class="passi" data-titolo="{{a|s041|}}">
     <div class="passo"><div class="espr">interleaving possibili → <mark class="ok">(0,1)  (1,0)  (1,1)</mark></div><p class="nota">{{s|s042|}}</p></div>
-    <div class="passo"><div class="espr">x == 0  richiede  <mark class="dato">x=b</mark> prima di <mark class="due">b=1</mark>
-y == 0  richiede  <mark class="due">y=a</mark> prima di <mark class="dato">a=1</mark></div><p class="nota">{{s|s043|}}</p></div>
-    <div class="passo"><div class="espr">a=1 → x=b → b=1 → y=a → <mark class="no">a=1</mark></div><p class="nota">{{s|s044|}}</p></div>
-    <div class="passo"><div class="espr">x = b;   a = 1;        y = a;   b = 1;   <span class="mano">// riordinato</span></div><p class="nota">{{s|s045|}}</p></div>
-    <div class="passo"><div class="espr"><mark class="no">(0,0)</mark>  è possibile</div><p class="nota">{{s|s046|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s043|}}</div><p class="nota">{{s|s044|}}</p></div>
+    <div class="passo"><div class="espr">a=1 → x=b → b=1 → y=a → <mark class="no">a=1</mark></div><p class="nota">{{s|s045|}}</p></div>
+    <div class="passo"><div class="espr">x = b;   a = 1;        y = a;   b = 1;   <span class="mano">// riordinato</span></div><p class="nota">{{s|s046|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s047|}}</div><p class="nota">{{s|s048|}}</p></div>
   </figure>
-  <h3>{{s|s047|}}</h3>
-  <figure class="interleaving" data-prog="riordinoSync" data-titolo="{{a|s048|}}"></figure>
+  <h3>{{s|s049|}}</h3>
+  <figure class="interleaving" data-prog="riordinoSync" data-titolo="{{a|s050|}}"></figure>
   <div class="tab-wrap"><table class="tab">
-    <thead><tr><th>{{s|s049|}}</th><th>(0,0)</th><th>(0,1)</th><th>(1,0)</th><th>(1,1)</th></tr></thead>
+    <thead><tr><th>{{s|s051|}}</th><th>(0,0)</th><th>(0,1)</th><th>(1,0)</th><th>(1,1)</th></tr></thead>
     <tbody>
-      <tr><td>{{s|s050|}}</td><td class="t-no">{{s|s051|}}</td><td>{{s|s052|}}</td><td>{{s|s053|}}</td><td>{{s|s054|}}</td></tr>
-      <tr><td>{{s|s055|}}</td><td class="t-ok">{{s|s056|}}</td><td>{{s|s057|}}</td><td>{{s|s058|}}</td><td class="t-ok">{{s|s059|}}</td></tr>
-      <tr><td>{{s|s060|}}</td><td class="t-ok">{{s|s061|}}</td><td>{{s|s062|}}</td><td>{{s|s063|}}</td><td>{{s|s064|}}</td></tr>
+      <tr><td>{{s|s052|}}</td><td class="t-no">{{s|s053|}}</td><td>{{s|s054|}}</td><td>{{s|s055|}}</td><td>{{s|s056|}}</td></tr>
+      <tr><td>{{s|s057|}}</td><td class="t-ok">{{s|s058|}}</td><td>{{s|s059|}}</td><td>{{s|s060|}}</td><td class="t-ok">{{s|s061|}}</td></tr>
+      <tr><td>{{s|s062|}}</td><td class="t-ok">{{s|s063|}}</td><td>{{s|s064|}}</td><td>{{s|s065|}}</td><td>{{s|s066|}}</td></tr>
     </tbody>
   </table></div>
-  <p class="piccolo">{{s|s065|}}</p>
+  <p class="piccolo">{{s|s067|}}</p>
 </section>
 
 <section>
-  <h2>{{s|s066|}}</h2>
-  <p>{{s|s067|}}</p>
+  <h2>{{s|s068|}}</h2>
+  <p>{{s|s069|}}</p>
   <ul>
-    <li>{{s|s068|}}</li>
-    <li>{{s|s069|}}</li>
     <li>{{s|s070|}}</li>
     <li>{{s|s071|}}</li>
+    <li>{{s|s072|}}</li>
+    <li>{{s|s073|}}</li>
   </ul>
   <div class="tab-wrap"><table class="tab">
-    <thead><tr><th></th><th>{{s|s072|}}</th><th>{{s|s073|}}</th><th>{{s|s074|}}</th></tr></thead>
+    <thead><tr><th></th><th>{{s|s074|}}</th><th>{{s|s075|}}</th><th>{{s|s076|}}</th></tr></thead>
     <tbody>
-      <tr><td>{{s|s075|}}</td><td class="t-ok">{{s|s076|}}</td><td class="t-ok">{{s|s077|}}</td><td class="t-no">{{s|s078|}}</td></tr>
-      <tr><td>{{s|s079|}}</td><td class="t-ok">{{s|s080|}}</td><td class="t-ok">{{s|s081|}}</td><td class="t-ok">{{s|s082|}}</td></tr>
+      <tr><td>{{s|s077|}}</td><td class="t-ok">{{s|s078|}}</td><td class="t-ok">{{s|s079|}}</td><td class="t-no">{{s|s080|}}</td></tr>
+      <tr><td>{{s|s081|}}</td><td class="t-ok">{{s|s082|}}</td><td class="t-ok">{{s|s083|}}</td><td class="t-ok">{{s|s084|}}</td></tr>
     </tbody>
   </table></div>
-  <figure class="scena" data-scena="volatilecount" data-titolo="{{a|s083|}}"></figure>
+  <figure class="scena" data-scena="volatilecount" data-titolo="{{a|s085|}}"></figure>
 </section>
 
 </main>

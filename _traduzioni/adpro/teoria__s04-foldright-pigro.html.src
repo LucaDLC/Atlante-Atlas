@@ -85,28 +85,32 @@
 @@s085 Dubbio: z è il valore di partenza? Allora in append that va prima?
 @@s086 Con <code>foldRight</code> <code>z</code> finisce <b>in fondo</b>: è quello che c'è quando la lista finisce. Quindi in <code>append</code> <code>that</code> va <b>dopo</b> <code>this</code>:
 @@s087 Per <code>map</code>, <code>filter</code> e <code>flatMap</code> "cosa c'è quando la lista finisce" è <code>empty</code>; solo per <code>append</code> è <code>that</code>.
-@@s088 Caso di prova del testo
-@@s089 Risultato (verificato)
-@@s090 <code>naturals.map(_*2).drop(30).take(5).toList</code>
-@@s091 <code>List(62, 64, 66, 68, 70)</code>
-@@s092 <code>naturals.drop(42).filter(_%2 == 0).take(5).toList</code>
-@@s093 <code>List(44, 46, 48, 50, 52)</code>
-@@s094 <code>naturals.take(3).append(naturals).take(6).toList</code>
-@@s095 <code>List(1, 2, 3, 1, 2, 3)</code>
-@@s096 <code>naturals.flatMap(to).take(10).toList</code>
-@@s097 <code>List(1, 0, -1, …, -8)</code>
-@@s098 Perché flatMap(to) non arriva mai a 2
-@@s099 <code>to(1)</code> è infinita: 1, 0, −1, … . <code>flatMap</code> attacca <code>to(2)</code> <b>dopo</b> la fine di <code>to(1)</code>, che non arriva mai. Con <code>take(10)</code> ottieni solo pezzi di <code>to(1)</code>.
-@@s100 Dettaglio misurato: <code>from(0).map(_ * 2)</code>, anche senza <code>toList</code>, calcola già la prima testa, perché <code>foldRight</code> esegue <code>h()</code> subito. Nessuna coda viene toccata.
-@@s101 Cosa va in z: empty, oppure that
-@@s102 Esercizio 9: perché <code>find</code> con <code>filter</code> va bene qui
-@@s103 Su LazyList
-@@s104 <code>from(0).find(_ &gt; 2)</code>: <code>filter</code> costruisce il risultato pigramente, <code>headOption</code> chiede solo il primo. Calcolati 0, 1, 2, 3 e basta (verificato).
-@@s105 Su List
-@@s106 <code>List(1, 2, 3, 4).filter(_ &gt; 2).headOption</code>: <code>filter</code> è strict, controlla <b>tutti</b> e 4 gli elementi e crea una lista intera, poi se ne usa uno (verificato stampando).
-@@s107 Risposta in inglese (l'esame può avere domande aperte)
-@@s108 "On a lazy list, filter does not traverse the whole list: it only produces elements when they are demanded. headOption demands just the first one, so find stops as soon as it meets the first element satisfying p. On a strict List, filter would first test every element and build a new list, only to keep its head, which wastes time and memory, and would not terminate on an infinite structure."
-@@s109 Dubbio: perché Some? Posso scrivere Some(x > 2)?
-@@s110 <code>find</code> può non trovare niente, quindi restituisce un <code>Option</code>: <code>LazyList(1, 2, 3).find(_ &gt; 10)</code> → <code>None</code>. Dentro <code>Some</code> c'è <b>l'elemento trovato</b>, non la condizione: <code>find(_ &gt; 2)</code> → <code>Some(3)</code>. <code>Some(x &gt; 2)</code> sarebbe <code>Some(true)</code>: un <code>Option[Boolean]</code>.
-@@s111 È il <b>primo</b> elemento che soddisfa <code>p</code>: <code>LazyList(1, 2, 3, 4).find(_ &gt; 2)</code> → <code>Some(3)</code>, il 4 non viene nemmeno guardato. Se ti serve solo sapere se esiste, c'è <code>exists</code>, che dà <code>true</code>/<code>false</code>.
-@@s112 filter + headOption: pigro contro strict
+@@s088 <code>B</code> è usato ma mai dichiarato. Va fra quadre dopo il nome: <code>def map[B](f: A => B)</code>.
+@@s089 Parentesi della lambda al posto sbagliato: Scala legge una coppia <code>(a, acc => …)</code> e <code>a</code> non è definito. Si scrive <code>(a, acc) => …</code>: parametri dentro le parentesi, freccia subito dopo.
+@@s090 <code>cons</code> prende due argomenti; con le parentesi doppie gli arriva <b>una</b> tripla, nello slot della testa. In <code>append</code> <code>that</code> non va nel passo ma in <code>z</code>: <code>foldRight(that)((a, acc) => cons(a, acc))</code>.
+@@s091 Copiato da <code>map</code>, ma qui <code>f(a)</code> è già una <b>lista</b>: non può fare da testa. Si attacca al resto: <code>f(a).append(acc)</code>.
+@@s092 Caso di prova del testo
+@@s093 Risultato (verificato)
+@@s094 <code>naturals.map(_*2).drop(30).take(5).toList</code>
+@@s095 <code>List(62, 64, 66, 68, 70)</code>
+@@s096 <code>naturals.drop(42).filter(_%2 == 0).take(5).toList</code>
+@@s097 <code>List(44, 46, 48, 50, 52)</code>
+@@s098 <code>naturals.take(3).append(naturals).take(6).toList</code>
+@@s099 <code>List(1, 2, 3, 1, 2, 3)</code>
+@@s100 <code>naturals.flatMap(to).take(10).toList</code>
+@@s101 <code>List(1, 0, -1, …, -8)</code>
+@@s102 Perché flatMap(to) non arriva mai a 2
+@@s103 <code>to(1)</code> è infinita: 1, 0, −1, … . <code>flatMap</code> attacca <code>to(2)</code> <b>dopo</b> la fine di <code>to(1)</code>, che non arriva mai. Con <code>take(10)</code> ottieni solo pezzi di <code>to(1)</code>.
+@@s104 Dettaglio misurato: <code>from(0).map(_ * 2)</code>, anche senza <code>toList</code>, calcola già la prima testa, perché <code>foldRight</code> esegue <code>h()</code> subito. Nessuna coda viene toccata.
+@@s105 Cosa va in z: empty, oppure that
+@@s106 Esercizio 9: perché <code>find</code> con <code>filter</code> va bene qui
+@@s107 Su LazyList
+@@s108 <code>from(0).find(_ &gt; 2)</code>: <code>filter</code> costruisce il risultato pigramente, <code>headOption</code> chiede solo il primo. Calcolati 0, 1, 2, 3 e basta (verificato).
+@@s109 Su List
+@@s110 <code>List(1, 2, 3, 4).filter(_ &gt; 2).headOption</code>: <code>filter</code> è strict, controlla <b>tutti</b> e 4 gli elementi e crea una lista intera, poi se ne usa uno (verificato stampando).
+@@s111 Risposta in inglese (l'esame può avere domande aperte)
+@@s112 "On a lazy list, filter does not traverse the whole list: it only produces elements when they are demanded. headOption demands just the first one, so find stops as soon as it meets the first element satisfying p. On a strict List, filter would first test every element and build a new list, only to keep its head, which wastes time and memory, and would not terminate on an infinite structure."
+@@s113 Dubbio: perché Some? Posso scrivere Some(x > 2)?
+@@s114 <code>find</code> può non trovare niente, quindi restituisce un <code>Option</code>: <code>LazyList(1, 2, 3).find(_ &gt; 10)</code> → <code>None</code>. Dentro <code>Some</code> c'è <b>l'elemento trovato</b>, non la condizione: <code>find(_ &gt; 2)</code> → <code>Some(3)</code>. <code>Some(x &gt; 2)</code> sarebbe <code>Some(true)</code>: un <code>Option[Boolean]</code>.
+@@s115 È il <b>primo</b> elemento che soddisfa <code>p</code>: <code>LazyList(1, 2, 3, 4).find(_ &gt; 2)</code> → <code>Some(3)</code>, il 4 non viene nemmeno guardato. Se ti serve solo sapere se esiste, c'è <code>exists</code>, che dà <code>true</code>/<code>false</code>.
+@@s116 filter + headOption: pigro contro strict

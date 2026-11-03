@@ -45,50 +45,56 @@
 @@s045 3.1.5 · Proving the data race
 @@s046 Find a conflicting unordered pair
 @@s047 Same variable count, at least one write, different threads.
-@@s048 The only happens-before, because there is only one synchronization order.
-@@s049 After t1(2) there are only actions of the main that come after the joins. None of these leads to t2(2).
-@@s050 Symmetric.
-@@s051 It holds in all the executions, because the HB is only one. The program is not correctly synchronized.
-@@s052 On your answer to 3.1.5
-@@s053 You wrote "there may be a <b>race condition</b> between…". Here the right word is <b>data race</b> between <b>conflicting actions</b>: race condition is something else (<a href="l01-lock.html">lock page</a>). And "count == 1" does not prove the data race: the proof is to show that neither of the two arrows is in the HB, that is, that from the sets PO, S, T no path leaves between the actions of t1 and those of t2.
-@@s054 No path between the two writes
-@@s055 3.1.6 – 3.1.7 · With a lock
-@@s056 What changes and why there is no data race any more
-@@s057 Program order: the main creates the lock, the threads have 4 actions.
-@@s058 The first and last action have changed: now they are lock and unlock.
-@@s059 Now the synchronization orders are different, but they split into <b>two</b> families: t1 takes the lock first, or t2. So two happens-before sets.
-@@s060 <b>3.1.7</b> I order each conflicting pair. In HB<sub>1</sub> all the actions of t1 come before those of t2.
-@@s061 In HB<sub>2</sub> the opposite. The same holds for (t1(1), t2(2)) and (t1(2), t2(1)).
-@@s062 The program is correctly synchronized, and always prints 2.
-@@s063 The lock adds an arc
-@@s064 On your answers to 3.1.6 and 3.1.7
-@@s065 In 3.1.6 you wrote the two complete chains t1 → t2 and t2 → t1 and spoke of "two different interleavings". The question asks whether <b>more happens-before sets</b> arise: the answer is "yes, two", HB<sub>1</sub> and HB<sub>2</sub>, each with <b>one</b> extra pair given by the monitor rule (unlock of one → lock of the other).
-@@s066 In 3.1.7 you listed pairs inside the same thread (program order). Those were already there: the proof must take the <b>conflicting pairs between t1 and t2</b> and show the path that orders them, in HB<sub>1</sub> and in HB<sub>2</sub>, as in the two steps above.
-@@s067 3.1.8 – 3.1.9 · With <code>volatile count</code>
-@@s068 No data race, but result not guaranteed
-@@s069 The program is the one without lock.
-@@s070 By definition: "accesses on volatile variables are never conflicting" (slide on the conflicting actions). The only actions that could be in conflict were the accesses to count.
-@@s071 <b>3.1.8</b> Answer: <b>yes</b>, all the executions are free of data race.
-@@s072 <b>3.1.9</b> But this order is possible: the volatile rule orders a write with the <b>later</b> reads, and here both reads come before both writes. No rule forbids it.
-@@s073 They print different values. Moral: <b>data race free does not mean race condition free</b>. <code>volatile</code> gives visibility, not mutual exclusion.
-@@s074 On your answer to 3.1.8
-@@s075 You answered <b>No</b> and wrote that the reads and writes of a volatile variable are "synchronization actions". Both things must be corrected: they are <b>variable access</b>, and the definition of conflicting actions excludes volatile variables. So no data race. The count == 1 that you described is true, but it is a <b>race condition</b>: it is exactly the point of 3.1.9.
-@@s076 In English (3.1.8)
-@@s077 "Yes, all executions are data race free. By definition in the Java memory model, accesses to volatile variables are never conflicting actions, and the only shared variable, count, is volatile. Therefore there is no pair of conflicting actions and hence no data race. This does not prevent the race condition: both threads may read 0 before either writes, so the program may still print count=1."
-@@s078 Data race free, but count can be 1
-@@s079 3.1.10 – 3.1.11 · Mutual exclusion with happens-before (challenging)
-@@s080 <b>3.1.10</b> Mutual exclusion for this program: in every execution <code>t1(3) → t2(0)</code> <b>or</b> <code>t2(3) → t1(0)</code> holds. That is: the critical section of one thread ends (unlock) before the other enters (lock).
-@@s081 <b>3.1.11</b> With the body in a <code>while(true)</code>: each iteration <i>i</i> of t1 has actions <code>t1(0<sub>i</sub>) … t1(3<sub>i</sub>)</code>. For any iteration <i>i</i> of t1 and <i>j</i> of t2, the synchronization order puts one of the two locks before the other unlock; the monitor rule gives <code>t1(3<sub>i</sub>) → t2(0<sub>j</sub>)</code> or <code>t2(3<sub>j</sub>) → t1(0<sub>i</sub>)</code>, and with the program order all the conflicting pairs of the two iterations come out ordered. Since it holds for every pair of iterations, no execution (even an infinite one) has a data race.
-@@s082 Mutual exclusion as unlock → lock pairs
-@@s083 3.2 · <code>StringSet</code> in brief
-@@s084 <b>3.2.1</b> In conflict: <code>t1(b)</code> (add = write) and <code>t2(c)</code> (indexOf = read). t2 makes no synchronization actions on the monitor of <code>s</code>: the only pairs that link t1 and t2 go through the main (start), and give only <code>m(start(t1)) → …</code> and <code>m(start(t2)) → t2(c)</code>. No order between <code>t1(b)</code> and <code>t2(c)</code>: data race, the program is not correctly synchronized.
-@@s085 <b>3.2.2</b> With <code>find</code> synchronized, t2 does lock/unlock on the same monitor. Two cases: <code>t1(unlock) → t2(lock)</code> or <code>t2(unlock) → t1(lock)</code> (monitor rule), so <code>t1(b)</code> and <code>t2(c)</code> are always ordered: correctly synchronized. <code>find</code> can return 0 or -1 depending on who enters first: it is a race condition, not a data race.
-@@s086 <b>3.2.3</b> The data race of 3.2.1 is present in <b>all</b> the executions: the list starts empty, so <code>add</code> is always executed, and no synchronization order introduces pairs between t1 and t2.
-@@s087 find without lock and with lock
-@@s088 3.3 · The loop that may not end, in brief
-@@s089 <b>3.3.1</b> To prevent infinite executions <code>m(w) → t1(r)</code> must hold for a read of t1 that comes after the write: the write <code>x = 42</code> must happen-before a read of the <code>while</code>, so that this read sees 42 and exits.
-@@s090 <b>3.3.2</b> It does not hold: the only rule linking m and t1 is the start rule, <code>m(start(t1)) → t1(r<sub>1</sub>)</code>. But <code>m(w)</code> comes <b>after</b> <code>m(start(t1))</code> in the program order of the main, and there is no lock, volatile or join linking <code>m(w)</code> to the reads of t1. No execution has <code>m(w) → t1(r)</code>.
-@@s091 <b>3.3.3</b> Declare <code>volatile int x</code>. <code>m(w)</code> is a write to a volatile variable; each read <code>t1(r)</code> of the <code>while</code> that in the execution comes <b>after</b> <code>m(w)</code> is a "subsequent read": by the volatile rule <code>m(w) → t1(r)</code>. That read sees 42 and the loop ends. Alternatively: read and write inside <code>synchronized</code> on the same object (monitor rule).
-@@s092 On your answer to 3.3.1
-@@s093 The question asks <b>which pair</b> must be ordered, not the whole happens-before of the program: it is enough to say "the write <code>x=42</code> of the main must happen-before a read of <code>x</code> in the <code>while</code> of t1", and explain why with that pair the loop ends.
-@@s094 Need w → r: volatile
+@@s048 HB = transitive closure of ( PO<sub>m</sub> ∪ PO<sub>1</sub> ∪ PO<sub>2</sub> ∪ S ∪ T )
+@@s049 The only happens-before, because there is only one synchronization order.
+@@s050 from <mark class="ora">t1(2)</mark> you only reach: m(join(t1)) → m(join(t2)) → m(p)
+@@s051 After t1(2) there are only actions of the main that come after the joins. None of these leads to t2(2).
+@@s052 from <mark class="due">t2(2)</mark> you only reach: m(join(t2)) → m(p)
+@@s053 Symmetric.
+@@s054 It holds in all the executions, because the HB is only one. The program is not correctly synchronized.
+@@s055 On your answer to 3.1.5
+@@s056 You wrote "there may be a <b>race condition</b> between…". Here the right word is <b>data race</b> between <b>conflicting actions</b>: race condition is something else (<a href="l01-lock.html">lock page</a>). And "count == 1" does not prove the data race: the proof is to show that neither of the two arrows is in the HB, that is, that from the sets PO, S, T no path leaves between the actions of t1 and those of t2.
+@@s057 No path between the two writes
+@@s058 3.1.6 – 3.1.7 · With a lock
+@@s059 What changes and why there is no data race any more
+@@s060 Program order: the main creates the lock, the threads have 4 actions.
+@@s061 The first and last action have changed: now they are lock and unlock.
+@@s062 Now the synchronization orders are different, but they split into <b>two</b> families: t1 takes the lock first, or t2. So two happens-before sets.
+@@s063 <b>3.1.7</b> I order each conflicting pair. In HB<sub>1</sub> all the actions of t1 come before those of t2.
+@@s064 In HB<sub>2</sub> the opposite. The same holds for (t1(1), t2(2)) and (t1(2), t2(1)).
+@@s065 <mark class="ok">all conflicting pairs are ordered in HB₁ and in HB₂ ⇒ no data race</mark>
+@@s066 The program is correctly synchronized, and always prints 2.
+@@s067 The lock adds an arc
+@@s068 On your answers to 3.1.6 and 3.1.7
+@@s069 In 3.1.6 you wrote the two complete chains t1 → t2 and t2 → t1 and spoke of "two different interleavings". The question asks whether <b>more happens-before sets</b> arise: the answer is "yes, two", HB<sub>1</sub> and HB<sub>2</sub>, each with <b>one</b> extra pair given by the monitor rule (unlock of one → lock of the other).
+@@s070 In 3.1.7 you listed pairs inside the same thread (program order). Those were already there: the proof must take the <b>conflicting pairs between t1 and t2</b> and show the path that orders them, in HB<sub>1</sub> and in HB<sub>2</sub>, as in the two steps above.
+@@s071 3.1.8 – 3.1.9 · With <code>volatile count</code>
+@@s072 No data race, but result not guaranteed
+@@s073 count is <mark class="dato">volatile</mark>
+@@s074 The program is the one without lock.
+@@s075 By definition: "accesses on volatile variables are never conflicting" (slide on the conflicting actions). The only actions that could be in conflict were the accesses to count.
+@@s076 <b>3.1.8</b> Answer: <b>yes</b>, all the executions are free of data race.
+@@s077 <b>3.1.9</b> But this order is possible: the volatile rule orders a write with the <b>later</b> reads, and here both reads come before both writes. No rule forbids it.
+@@s078 lock: <mark class="ok">count = 2</mark> always volatile: count = 1 <mark class="no">or</mark> 2
+@@s079 They print different values. Moral: <b>data race free does not mean race condition free</b>. <code>volatile</code> gives visibility, not mutual exclusion.
+@@s080 On your answer to 3.1.8
+@@s081 You answered <b>No</b> and wrote that the reads and writes of a volatile variable are "synchronization actions". Both things must be corrected: they are <b>variable access</b>, and the definition of conflicting actions excludes volatile variables. So no data race. The count == 1 that you described is true, but it is a <b>race condition</b>: it is exactly the point of 3.1.9.
+@@s082 In English (3.1.8)
+@@s083 "Yes, all executions are data race free. By definition in the Java memory model, accesses to volatile variables are never conflicting actions, and the only shared variable, count, is volatile. Therefore there is no pair of conflicting actions and hence no data race. This does not prevent the race condition: both threads may read 0 before either writes, so the program may still print count=1."
+@@s084 Data race free, but count can be 1
+@@s085 3.1.10 – 3.1.11 · Mutual exclusion with happens-before (challenging)
+@@s086 <b>3.1.10</b> Mutual exclusion for this program: in every execution <code>t1(3) → t2(0)</code> <b>or</b> <code>t2(3) → t1(0)</code> holds. That is: the critical section of one thread ends (unlock) before the other enters (lock).
+@@s087 <b>3.1.11</b> With the body in a <code>while(true)</code>: each iteration <i>i</i> of t1 has actions <code>t1(0<sub>i</sub>) … t1(3<sub>i</sub>)</code>. For any iteration <i>i</i> of t1 and <i>j</i> of t2, the synchronization order puts one of the two locks before the other unlock; the monitor rule gives <code>t1(3<sub>i</sub>) → t2(0<sub>j</sub>)</code> or <code>t2(3<sub>j</sub>) → t1(0<sub>i</sub>)</code>, and with the program order all the conflicting pairs of the two iterations come out ordered. Since it holds for every pair of iterations, no execution (even an infinite one) has a data race.
+@@s088 Mutual exclusion as unlock → lock pairs
+@@s089 3.2 · <code>StringSet</code> in brief
+@@s090 <b>3.2.1</b> In conflict: <code>t1(b)</code> (add = write) and <code>t2(c)</code> (indexOf = read). t2 makes no synchronization actions on the monitor of <code>s</code>: the only pairs that link t1 and t2 go through the main (start), and give only <code>m(start(t1)) → …</code> and <code>m(start(t2)) → t2(c)</code>. No order between <code>t1(b)</code> and <code>t2(c)</code>: data race, the program is not correctly synchronized.
+@@s091 <b>3.2.2</b> With <code>find</code> synchronized, t2 does lock/unlock on the same monitor. Two cases: <code>t1(unlock) → t2(lock)</code> or <code>t2(unlock) → t1(lock)</code> (monitor rule), so <code>t1(b)</code> and <code>t2(c)</code> are always ordered: correctly synchronized. <code>find</code> can return 0 or -1 depending on who enters first: it is a race condition, not a data race.
+@@s092 <b>3.2.3</b> The data race of 3.2.1 is present in <b>all</b> the executions: the list starts empty, so <code>add</code> is always executed, and no synchronization order introduces pairs between t1 and t2.
+@@s093 find without lock and with lock
+@@s094 3.3 · The loop that may not end, in brief
+@@s095 <b>3.3.1</b> To prevent infinite executions <code>m(w) → t1(r)</code> must hold for a read of t1 that comes after the write: the write <code>x = 42</code> must happen-before a read of the <code>while</code>, so that this read sees 42 and exits.
+@@s096 <b>3.3.2</b> It does not hold: the only rule linking m and t1 is the start rule, <code>m(start(t1)) → t1(r<sub>1</sub>)</code>. But <code>m(w)</code> comes <b>after</b> <code>m(start(t1))</code> in the program order of the main, and there is no lock, volatile or join linking <code>m(w)</code> to the reads of t1. No execution has <code>m(w) → t1(r)</code>.
+@@s097 <b>3.3.3</b> Declare <code>volatile int x</code>. <code>m(w)</code> is a write to a volatile variable; each read <code>t1(r)</code> of the <code>while</code> that in the execution comes <b>after</b> <code>m(w)</code> is a "subsequent read": by the volatile rule <code>m(w) → t1(r)</code>. That read sees 42 and the loop ends. Alternatively: read and write inside <code>synchronized</code> on the same object (monitor rule).
+@@s098 On your answer to 3.3.1
+@@s099 The question asks <b>which pair</b> must be ordered, not the whole happens-before of the program: it is enough to say "the write <code>x=42</code> of the main must happen-before a read of <code>x</code> in the <code>while</code> of t1", and explain why with that pair the loop ends.
+@@s100 Need w → r: volatile

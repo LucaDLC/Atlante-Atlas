@@ -123,13 +123,13 @@ B: --|         <mark class="due">q.deq(y)</mark>          |-></div><p class="not
     <div class="passo"><div class="espr">&lt;<mark class="due">q.deq(y)</mark>,q.enq(x),q.enq(y)&gt;     [ ] → deq(y)?   <mark class="no">✗</mark></div><p class="nota">{{s|s061|}}</p></div>
     <div class="passo"><div class="espr">&lt;q.enq(x),<mark class="due">q.deq(y)</mark>,q.enq(y)&gt;     [x] → deq restituirebbe x   <mark class="no">✗</mark></div><p class="nota">{{s|s062|}}</p></div>
     <div class="passo"><div class="espr">&lt;q.enq(x),q.enq(y),<mark class="due">q.deq(y)</mark>&gt;     [x, y] → deq restituirebbe x   <mark class="no">✗</mark></div><p class="nota">{{s|s063|}}</p></div>
-    <div class="passo"><div class="espr"><mark class="no">nessuna posizione funziona → non linearizzabile</mark></div><p class="nota">{{s|s064|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s064|}}</div><p class="nota">{{s|s065|}}</p></div>
   </figure>
-  <div class="box domanda-tua" data-tit="{{a|s065|}}">
-    <p>{{s|s066|}}</p>
+  <div class="box domanda-tua" data-tit="{{a|s066|}}">
+    <p>{{s|s067|}}</p>
   </div>
-  <div class="box inglese" data-tit="{{a|s067|}}">
-    <p>{{s|s068|}}</p>
+  <div class="box inglese" data-tit="{{a|s068|}}">
+    <p>{{s|s069|}}</p>
   </div>
 </section>
 

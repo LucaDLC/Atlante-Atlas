@@ -42,22 +42,22 @@
 <section>
   <h2>{{s|s023|}}</h2>
   <figure class="passi" data-titolo="{{a|s024|}}" data-legenda="{{a|s025|}}">
-    <div class="passo"><div class="espr"><mark class="dato">Mark0</mark>: <mark class="no">una sola chiamata</mark> a multiply(10), cronometrata</div><p class="nota">{{s|s026|}}</p></div>
-    <div class="passo"><div class="espr"><mark class="dato">Mark1</mark>: <mark class="ok">100 milioni di chiamate</mark>, ma <mark class="no">il risultato viene buttato</mark></div><p class="nota">{{s|s027|}}</p></div>
-    <div class="passo"><div class="espr"><mark class="dato">Mark2</mark>: <mark class="ok">dummy += multiply(i)</mark> e si restituisce dummy</div><p class="nota">{{s|s028|}}</p></div>
-    <div class="passo"><div class="espr"><mark class="dato">Mark3</mark>: <mark class="ok">10 ripetizioni</mark>, ognuna stampata</div><p class="nota">{{s|s029|}}</p></div>
-    <div class="passo"><div class="espr"><mark class="dato">Mark4</mark>: <mark class="ok">media ± deviazione standard</mark> delle 10 ripetizioni</div><p class="nota">{{s|s030|}}</p></div>
-    <div class="passo"><div class="espr"><mark class="dato">Mark5</mark>: <mark class="ora">count</mark> raddoppia (2, 4, 8, …) <mark class="ok">finché un giro dura almeno 0,25 s</mark></div><p class="nota">{{s|s031|}}</p></div>
-    <div class="passo"><div class="espr"><mark class="dato">Mark6</mark>: come Mark5 ma <mark class="ora">generico</mark>: unità, messaggio e funzione <mark class="ora">f</mark> come argomenti</div><p class="nota">{{s|s032|}}</p></div>
-    <div class="passo"><div class="espr"><mark class="dato">Mark7</mark>: come Mark6 ma <mark class="ok">stampa solo l'ultimo giro</mark></div><p class="nota">{{s|s033|}}</p></div>
-    <div class="passo"><div class="espr"><mark class="dato">Mark8</mark>: Mark7 con una colonna <mark class="ora">info</mark> in più</div><p class="nota">{{s|s034|}}</p></div>
-    <div class="passo"><div class="espr"><mark class="dato">Mark8Setup</mark>: <mark class="ora">setup.run()</mark> tra <mark class="ora">t.pause()</mark> e <mark class="ora">t.play()</mark></div><p class="nota">{{s|s035|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s026|}}</div><p class="nota">{{s|s027|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s028|}}</div><p class="nota">{{s|s029|}}</p></div>
+    <div class="passo"><div class="espr"><mark class="dato">Mark2</mark>: <mark class="ok">dummy += multiply(i)</mark> e si restituisce dummy</div><p class="nota">{{s|s030|}}</p></div>
+    <div class="passo"><div class="espr"><mark class="dato">Mark3</mark>: <mark class="ok">10 ripetizioni</mark>, ognuna stampata</div><p class="nota">{{s|s031|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s032|}}</div><p class="nota">{{s|s033|}}</p></div>
+    <div class="passo"><div class="espr"><mark class="dato">Mark5</mark>: <mark class="ora">count</mark> raddoppia (2, 4, 8, …) <mark class="ok">finché un giro dura almeno 0,25 s</mark></div><p class="nota">{{s|s034|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s035|}}</div><p class="nota">{{s|s036|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s037|}}</div><p class="nota">{{s|s038|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s039|}}</div><p class="nota">{{s|s040|}}</p></div>
+    <div class="passo"><div class="espr"><mark class="dato">Mark8Setup</mark>: <mark class="ora">setup.run()</mark> tra <mark class="ora">t.pause()</mark> e <mark class="ora">t.play()</mark></div><p class="nota">{{s|s041|}}</p></div>
   </figure>
 </section>
 
 <section>
-  <h2>{{s|s036|}}</h2>
-  <figure class="codice" data-titolo="{{a|s037|}}">
+  <h2>{{s|s042|}}</h2>
+  <figure class="codice" data-titolo="{{a|s043|}}">
 <pre data-lang="java">public static double Mark7(char tunit, String msg, LongToDoubleFunction f) {
     long n = 10, count = 1, totalCount = 0;
     double dummy = 0.0, runningTime = 0.0, st = 0.0, sst = 0.0;
@@ -79,43 +79,43 @@
     System.out.printf("%-25s %15.1f %cs %10.2f %10d%n", msg, mean, tunit, sdev, count);
     return dummy / totalCount;
 }</pre>
-    <div class="intro"><p>{{s|s038|}}</p></div>
+    <div class="intro"><p>{{s|s044|}}</p></div>
     <ol class="spiega">
-      <li data-righe="2" data-segna="n = 10@dato|count = 1@ora"><p>{{s|s039|}}</p></li>
-      <li data-righe="3" data-segna="dummy@ok|st@dato|sst@due"><p>{{s|s040|}}</p></li>
-      <li data-righe="4-5" data-segna="count *= 2@ora"><p>{{s|s041|}}</p></li>
-      <li data-righe="6" data-segna="st = sst = 0.0@ora"><p>{{s|s042|}}</p></li>
-      <li data-righe="7-8,11" data-segna="Timer t = new Timer();@dato|t.check()@ok"><p>{{s|s043|}}</p></li>
-      <li data-righe="9-10" data-segna="dummy += f.applyAsDouble(i);@ora"><p>{{s|s044|}}</p></li>
-      <li data-righe="12" data-segna="runningTime * scale(tunit) / count@ok"><p>{{s|s045|}}</p></li>
-      <li data-righe="13-15" data-segna="time * time@due"><p>{{s|s046|}}</p></li>
-      <li data-righe="17" data-segna="runningTime &lt; 0.25@no"><p>{{s|s047|}}</p></li>
-      <li data-righe="18" data-segna="mean@ok|sdev@due"><p>{{s|s048|}}</p></li>
-      <li data-righe="19" data-segna="mean@ok|sdev@due|count@ora"><p>{{s|s049|}}</p></li>
-      <li data-righe="20" data-segna="dummy / totalCount@ok"><p>{{s|s050|}}</p></li>
+      <li data-righe="2" data-segna="n = 10@dato|count = 1@ora"><p>{{s|s045|}}</p></li>
+      <li data-righe="3" data-segna="dummy@ok|st@dato|sst@due"><p>{{s|s046|}}</p></li>
+      <li data-righe="4-5" data-segna="count *= 2@ora"><p>{{s|s047|}}</p></li>
+      <li data-righe="6" data-segna="st = sst = 0.0@ora"><p>{{s|s048|}}</p></li>
+      <li data-righe="7-8,11" data-segna="Timer t = new Timer();@dato|t.check()@ok"><p>{{s|s049|}}</p></li>
+      <li data-righe="9-10" data-segna="dummy += f.applyAsDouble(i);@ora"><p>{{s|s050|}}</p></li>
+      <li data-righe="12" data-segna="runningTime * scale(tunit) / count@ok"><p>{{s|s051|}}</p></li>
+      <li data-righe="13-15" data-segna="time * time@due"><p>{{s|s052|}}</p></li>
+      <li data-righe="17" data-segna="runningTime &lt; 0.25@no"><p>{{s|s053|}}</p></li>
+      <li data-righe="18" data-segna="mean@ok|sdev@due"><p>{{s|s054|}}</p></li>
+      <li data-righe="19" data-segna="mean@ok|sdev@due|count@ora"><p>{{s|s055|}}</p></li>
+      <li data-righe="20" data-segna="dummy / totalCount@ok"><p>{{s|s056|}}</p></li>
     </ol>
   </figure>
 </section>
 
 <section>
-  <h2>{{s|s051|}}</h2>
-  <p>{{s|s052|}}</p>
-  <figure class="passi" data-titolo="{{a|s053|}}" data-legenda="{{a|s054|}}">
-    <div class="passo"><div class="espr">tempi: <mark class="dato">9, 10, 10, 11</mark> µs      n = 4</div><p class="nota">{{s|s055|}}</p></div>
-    <div class="passo"><div class="espr">st = <mark class="dato">9 + 10 + 10 + 11 = 40</mark></div><p class="nota">{{s|s056|}}</p></div>
-    <div class="passo"><div class="espr">sst = <mark class="due">81 + 100 + 100 + 121 = 402</mark></div><p class="nota">{{s|s057|}}</p></div>
-    <div class="passo"><div class="espr">mean = st / n = 40 / 4 = <mark class="ok">10</mark></div><p class="nota">{{s|s058|}}</p></div>
-    <div class="passo"><div class="espr">sdev = √( (<mark class="due">sst</mark> − mean²·n) / (n−1) ) = √( (402 − 100·4) / 3 )</div><p class="nota">{{s|s059|}}</p></div>
-    <div class="passo"><div class="espr">sdev = √(2/3) = <mark class="ok">0,82</mark></div><p class="nota">{{s|s060|}}</p></div>
+  <h2>{{s|s057|}}</h2>
+  <p>{{s|s058|}}</p>
+  <figure class="passi" data-titolo="{{a|s059|}}" data-legenda="{{a|s060|}}">
+    <div class="passo"><div class="espr">tempi: <mark class="dato">9, 10, 10, 11</mark> µs      n = 4</div><p class="nota">{{s|s061|}}</p></div>
+    <div class="passo"><div class="espr">st = <mark class="dato">9 + 10 + 10 + 11 = 40</mark></div><p class="nota">{{s|s062|}}</p></div>
+    <div class="passo"><div class="espr">sst = <mark class="due">81 + 100 + 100 + 121 = 402</mark></div><p class="nota">{{s|s063|}}</p></div>
+    <div class="passo"><div class="espr">mean = st / n = 40 / 4 = <mark class="ok">10</mark></div><p class="nota">{{s|s064|}}</p></div>
+    <div class="passo"><div class="espr">sdev = √( (<mark class="due">sst</mark> − mean²·n) / (n−1) ) = √( (402 − 100·4) / 3 )</div><p class="nota">{{s|s065|}}</p></div>
+    <div class="passo"><div class="espr">sdev = √(2/3) = <mark class="ok">0,82</mark></div><p class="nota">{{s|s066|}}</p></div>
   </figure>
-  <div class="box regola" data-tit="{{a|s061|}}">
-    <p>{{s|s062|}}</p>
+  <div class="box regola" data-tit="{{a|s067|}}">
+    <p>{{s|s068|}}</p>
   </div>
 </section>
 
 <section>
-  <h2>{{s|s063|}}</h2>
-  <figure class="codice" data-titolo="{{a|s064|}}">
+  <h2>{{s|s069|}}</h2>
+  <figure class="codice" data-titolo="{{a|s070|}}">
 <pre data-lang="java">public class Timer {
   private long start, spent = 0;
   public Timer() { play(); }
@@ -130,36 +130,36 @@ setup.run();
 t.play();
 dummy += f.applyAsDouble(i);</pre>
     <ol class="spiega">
-      <li data-righe="2" data-segna="start@dato|spent@due"><p>{{s|s065|}}</p></li>
-      <li data-righe="4" data-segna="System.nanoTime()@ora|/1e9@ok"><p>{{s|s066|}}</p></li>
-      <li data-righe="5" data-segna="spent += System.nanoTime()-start@due"><p>{{s|s067|}}</p></li>
-      <li data-righe="6" data-segna="start = System.nanoTime()@dato"><p>{{s|s068|}}</p></li>
-      <li data-righe="10-13" data-segna="t.pause();@ora|setup.run();@due|t.play();@ora|f.applyAsDouble(i)@ok"><p>{{s|s069|}}</p></li>
+      <li data-righe="2" data-segna="start@dato|spent@due"><p>{{s|s071|}}</p></li>
+      <li data-righe="4" data-segna="System.nanoTime()@ora|/1e9@ok"><p>{{s|s072|}}</p></li>
+      <li data-righe="5" data-segna="spent += System.nanoTime()-start@due"><p>{{s|s073|}}</p></li>
+      <li data-righe="6" data-segna="start = System.nanoTime()@dato"><p>{{s|s074|}}</p></li>
+      <li data-righe="10-13" data-segna="t.pause();@ora|setup.run();@due|t.play();@ora|f.applyAsDouble(i)@ok"><p>{{s|s075|}}</p></li>
     </ol>
   </figure>
 </section>
 
 <section>
-  <h2>{{s|s070|}}</h2>
-  <p>{{s|s071|}}</p>
-  <figure class="passi" data-titolo="{{a|s072|}}" data-legenda="{{a|s073|}}">
-    <div class="passo"><div class="espr"><mark class="dato">8.1</mark> funzioni matematiche (pow, exp, sin…): <mark class="ok">6–23 ns a chiamata</mark></div><p class="nota">{{s|s074|}}</p></div>
-    <div class="passo"><div class="espr"><mark class="dato">8.2</mark> thread: platform <mark class="ok">≈110 µs</mark> contro virtual <mark class="ok">≈11,6 µs</mark> (crea + avvia + join)</div><p class="nota">{{s|s075|}}</p></div>
-    <div class="passo"><div class="espr"><mark class="dato">8.3</mark> ordinamento di 100 000 interi: quicksort <mark class="ok">7,8 ms</mark>, <code>Arrays.sort</code> <mark class="ok">6,0 ms</mark>, <code>parallelSort</code> <mark class="ok">2,3 ms</mark></div><p class="nota">{{s|s076|}}</p></div>
-    <div class="passo"><div class="espr"><mark class="dato">8.4</mark> campo <code>volatile</code>: <code>add</code> <mark class="ok">≈0,3 ns</mark> contro <code>addVolatile</code> <mark class="ok">5,6–8,5 ns</mark></div><p class="nota">{{s|s077|}}</p></div>
+  <h2>{{s|s076|}}</h2>
+  <p>{{s|s077|}}</p>
+  <figure class="passi" data-titolo="{{a|s078|}}" data-legenda="{{a|s079|}}">
+    <div class="passo"><div class="espr"><mark class="dato">8.1</mark> funzioni matematiche (pow, exp, sin…): <mark class="ok">6–23 ns a chiamata</mark></div><p class="nota">{{s|s080|}}</p></div>
+    <div class="passo"><div class="espr"><mark class="dato">8.2</mark> thread: platform <mark class="ok">≈110 µs</mark> contro virtual <mark class="ok">≈11,6 µs</mark> (crea + avvia + join)</div><p class="nota">{{s|s081|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s082|}}</div><p class="nota">{{s|s083|}}</p></div>
+    <div class="passo"><div class="espr"><mark class="dato">8.4</mark> campo <code>volatile</code>: <code>add</code> <mark class="ok">≈0,3 ns</mark> contro <code>addVolatile</code> <mark class="ok">5,6–8,5 ns</mark></div><p class="nota">{{s|s084|}}</p></div>
   </figure>
-  <div class="box idea" data-tit="{{a|s078|}}">
-    <p>{{s|s079|}}</p>
+  <div class="box idea" data-tit="{{a|s085|}}">
+    <p>{{s|s086|}}</p>
   </div>
 </section>
 
 <section>
-  <h2>{{s|s080|}}</h2>
-  <div class="box attenzione" data-tit="{{a|s081|}}">
-    <p>{{s|s082|}}</p>
+  <h2>{{s|s087|}}</h2>
+  <div class="box attenzione" data-tit="{{a|s088|}}">
+    <p>{{s|s089|}}</p>
   </div>
-  <div class="box basi" data-tit="{{a|s083|}}">
-    <p>{{s|s084|}}</p>
+  <div class="box basi" data-tit="{{a|s090|}}">
+    <p>{{s|s091|}}</p>
   </div>
 </section>
 

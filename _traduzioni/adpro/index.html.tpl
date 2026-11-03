@@ -67,63 +67,63 @@
     <p>{{s|s035|}}</p>
     <p>{{s|s036|}}</p>
     <div class="legenda">
-      <span class="l-ora"><i></i>arancio · la cosa che cambia adesso</span>
-      <span class="l-dato"><i></i>blu · il dato da cui parti</span>
-      <span class="l-due"><i></i>viola · un secondo ruolo</span>
-      <span class="l-ok"><i></i>verde · il risultato</span>
-      <span class="l-no"><i></i>rosso · scartato o sbagliato</span>
+      <span class="l-ora">{{s|s037|}}</span>
+      <span class="l-dato">{{s|s038|}}</span>
+      <span class="l-due">{{s|s039|}}</span>
+      <span class="l-ok">{{s|s040|}}</span>
+      <span class="l-no">{{s|s041|}}</span>
     </div>
 
-    <figure class="passi" data-titolo="{{a|s037|}}">
+    <figure class="passi" data-titolo="{{a|s042|}}">
       <div class="passo">
         <div class="espr">def abs(n: Int): Int =
   if n &lt; 0 then -n else n
 
 abs(<mark class="dato">-42</mark>)</div>
-        <p class="nota">{{s|s038|}}</p>
+        <p class="nota">{{s|s043|}}</p>
       </div>
       <div class="passo">
         <div class="espr">if <mark class="ora">-42</mark> &lt; 0 then -(-42) else -42</div>
-        <p class="nota">{{s|s039|}}</p>
+        <p class="nota">{{s|s044|}}</p>
       </div>
       <div class="passo">
         <div class="espr">if <mark class="ora">true</mark> then -(-42) <mark class="no barra">else -42</mark></div>
-        <p class="nota">{{s|s040|}}</p>
+        <p class="nota">{{s|s045|}}</p>
       </div>
       <div class="passo">
         <div class="espr"><mark class="ok">42</mark></div>
-        <p class="nota">{{s|s041|}}</p>
+        <p class="nota">{{s|s046|}}</p>
       </div>
     </figure>
 
-    <p>{{s|s042|}}</p>
+    <p>{{s|s047|}}</p>
   </section>
 
   <section>
-    <h2>{{s|s043|}}</h2>
+    <h2>{{s|s048|}}</h2>
     <div class="mappa" data-auto data-sezione="Teoria"></div>
-    <h3>{{s|s044|}}</h3>
+    <h3>{{s|s049|}}</h3>
     <div class="mappa">
-      <a href="esame/formato.html"><small>esame</small><b>Com'è l'esame</b><span>Formato, data, cosa puoi portare, riesame</span></a>
-      <a href="esame/regole.html"><small>esame</small><b>Regole e divieti</b><span>Niente var, return, cicli, eccezioni: la scala di stile</span></a>
-      <a href="esame/homework.html"><small>ammissione</small><b>Homework</b><span>Quando passa, scadenze, come leggere i test</span></a>
-      <a href="esame/errori.html"><small>pratica</small><b>Errori del compilatore</b><span>Messaggi veri, cosa vogliono dire, come si sistemano</span></a>
-      <a href="esame/prove.html"><small>allenamento</small><b>Vecchie prove</b><span>Stato delle prove e domande in stile esame</span></a>
+      <a href="esame/formato.html">{{s|s050|}}</a>
+      <a href="esame/regole.html">{{s|s051|}}</a>
+      <a href="esame/homework.html">{{s|s052|}}</a>
+      <a href="esame/errori.html">{{s|s053|}}</a>
+      <a href="esame/prove.html">{{s|s054|}}</a>
     </div>
   </section>
 
   <section>
-    <h2>{{s|s045|}}</h2>
-    <p>{{s|s046|}}</p>
+    <h2>{{s|s055|}}</h2>
+    <p>{{s|s056|}}</p>
     <ul>
-      <li>{{s|s047|}}</li>
-      <li>{{s|s048|}}</li>
-      <li>{{s|s049|}}</li>
-      <li>{{s|s050|}}</li>
-      <li>{{s|s051|}}</li>
-      <li>{{s|s052|}}</li>
+      <li>{{s|s057|}}</li>
+      <li>{{s|s058|}}</li>
+      <li>{{s|s059|}}</li>
+      <li>{{s|s060|}}</li>
+      <li>{{s|s061|}}</li>
+      <li>{{s|s062|}}</li>
     </ul>
-    <p class="piccolo">{{s|s053|}}</p>
+    <p class="piccolo">{{s|s063|}}</p>
   </section>
 
 </main>

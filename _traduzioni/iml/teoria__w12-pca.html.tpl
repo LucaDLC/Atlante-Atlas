@@ -119,31 +119,31 @@ window.SCENE = window.SCENE || {};
   <h2>{{s|s014|}}</h2>
   <figure class="passi" data-titolo="{{a|s015|}}">
     <div class="passo"><div class="espr">A <mark class="ora">v</mark> = <mark class="due">λ</mark> <mark class="ora">v</mark></div><p class="nota">{{s|s016|}}</p></div>
-    <div class="passo"><div class="espr">C = [[2, 1], [1, 2]]:  λ = <mark class="due">3</mark> con v = (1, 1)/√2;   λ = <mark class="due">1</mark> con v = (−1, 1)/√2</div><p class="nota">{{s|s017|}}</p></div>
-    <div class="passo"><div class="espr">riflessione [[0, 1], [1, 0]]:  λ = 1 e −1;   det = 1 · (−1) = <mark class="ok">−1</mark></div><p class="nota">{{s|s018|}}</p></div>
-    <div class="passo"><div class="espr">matrice <mark class="ok">simmetrica</mark> (come la covarianza):  autovalori reali, autovettori <mark class="ok">ortogonali</mark></div><p class="nota">{{s|s019|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s017|}}</div><p class="nota">{{s|s018|}}</p></div>
+    <div class="passo"><div class="espr">riflessione [[0, 1], [1, 0]]:  λ = 1 e −1;   det = 1 · (−1) = <mark class="ok">−1</mark></div><p class="nota">{{s|s019|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s020|}}</div><p class="nota">{{s|s021|}}</p></div>
   </figure>
-  <div class="box regola" data-tit="{{a|s020|}}">
-    <p>{{s|s021|}}</p>
+  <div class="box regola" data-tit="{{a|s022|}}">
+    <p>{{s|s023|}}</p>
   </div>
-  <figure class="scena" data-scena="autovettori" data-titolo="{{a|s022|}}"></figure>
+  <figure class="scena" data-scena="autovettori" data-titolo="{{a|s024|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s023|}}</h2>
-  <figure class="passi" data-titolo="{{a|s024|}}">
-    <div class="passo"><div class="espr">1. <mark class="dato">μ</mark> = media delle righe;  Xc = X − μ</div><p class="nota">{{s|s025|}}</p></div>
-    <div class="passo"><div class="espr">2. C = XcᵀXc / N</div><p class="nota">{{s|s026|}}</p></div>
-    <div class="passo"><div class="espr">3. autovettori e autovalori di C,  4. ordinati per λ decrescente</div><p class="nota">{{s|s027|}}</p></div>
-    <div class="passo"><div class="espr">5. <mark class="ora">Φ</mark> = i primi k autovettori (colonne), d × k</div><p class="nota">{{s|s028|}}</p></div>
+  <h2>{{s|s025|}}</h2>
+  <figure class="passi" data-titolo="{{a|s026|}}">
+    <div class="passo"><div class="espr">{{s|s027|}}</div><p class="nota">{{s|s028|}}</p></div>
+    <div class="passo"><div class="espr">2. C = XcᵀXc / N</div><p class="nota">{{s|s029|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s030|}}</div><p class="nota">{{s|s031|}}</p></div>
+    <div class="passo"><div class="espr">5. <mark class="ora">Φ</mark> = i primi k autovettori (colonne), d × k</div><p class="nota">{{s|s032|}}</p></div>
   </figure>
-  <figure class="scena" data-scena="pca" data-titolo="{{a|s029|}}"></figure>
-  <p class="piccolo">{{s|s030|}}</p>
-  <figure class="passi" data-titolo="{{a|s031|}}">
-    <div class="passo"><div class="espr">a = <mark class="ora">Φ</mark>ᵀ(x − <mark class="dato">μ</mark>)    (k × d)(d) → <mark class="ok">k</mark> numeri</div><p class="nota">{{s|s032|}}</p></div>
-    <div class="passo"><div class="espr">x̂ = <mark class="ora">Φ</mark>a + <mark class="dato">μ</mark>    (d × k)(k) → d numeri</div><p class="nota">{{s|s033|}}</p></div>
+  <figure class="scena" data-scena="pca" data-titolo="{{a|s033|}}"></figure>
+  <p class="piccolo">{{s|s034|}}</p>
+  <figure class="passi" data-titolo="{{a|s035|}}">
+    <div class="passo"><div class="espr">a = <mark class="ora">Φ</mark>ᵀ(x − <mark class="dato">μ</mark>)    (k × d)(d) → <mark class="ok">k</mark> numeri</div><p class="nota">{{s|s036|}}</p></div>
+    <div class="passo"><div class="espr">x̂ = <mark class="ora">Φ</mark>a + <mark class="dato">μ</mark>    (d × k)(k) → d numeri</div><p class="nota">{{s|s037|}}</p></div>
   </figure>
-  <figure class="codice" data-titolo="{{a|s034|}}">
+  <figure class="codice" data-titolo="{{a|s038|}}">
 <pre data-lang="python">mu = X.mean(axis=0)
 Xc = X - mu
 C = Xc.T @ Xc / len(X)
@@ -154,43 +154,43 @@ Phi = vec[:, :k]
 a = (x - mu) @ Phi            # nello spazio latente
 x_hat = Phi @ a + mu          # ricostruzione</pre>
     <ol class="spiega">
-      <li data-righe="1-3" data-segna="X.mean(axis=0)@dato|Xc.T @ Xc@ora"><p>{{s|s035|}}</p></li>
-      <li data-righe="4-6" data-segna="np.linalg.eigh@ok|[::-1]@due"><p>{{s|s036|}}</p></li>
-      <li data-righe="7-9" data-segna="vec[:, :k]@ora|Phi @ a + mu@ok"><p>{{s|s037|}}</p></li>
+      <li data-righe="1-3" data-segna="X.mean(axis=0)@dato|Xc.T @ Xc@ora"><p>{{s|s039|}}</p></li>
+      <li data-righe="4-6" data-segna="np.linalg.eigh@ok|[::-1]@due"><p>{{s|s040|}}</p></li>
+      <li data-righe="7-9" data-segna="vec[:, :k]@ora|Phi @ a + mu@ok"><p>{{s|s041|}}</p></li>
     </ol>
   </figure>
 </section>
 
 <section>
-  <h2>{{s|s038|}}</h2>
-  <p>{{s|s039|}}</p>
+  <h2>{{s|s042|}}</h2>
+  <p>{{s|s043|}}</p>
   <div class="tab-wrap"><table class="tab">
-    <thead><tr><th>{{s|s040|}}</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th><th>8</th></tr></thead>
+    <thead><tr><th>{{s|s044|}}</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th><th>8</th></tr></thead>
     <tbody>
-      <tr><td>{{s|s041|}}</td><td>36.9%</td><td>64.9%</td><td>75.9%</td><td>82.8%</td><td><b>87.4%</b></td><td><b>91.2%</b></td><td>≥ 95%</td></tr>
+      <tr><td>{{s|s045|}}</td><td>36.9%</td><td>64.9%</td><td>75.9%</td><td>82.8%</td><td><b>87.4%</b></td><td><b>91.2%</b></td><td>≥ 95%</td></tr>
     </tbody>
   </table></div>
-  <p class="piccolo">{{s|s042|}}</p>
-  <figure class="passi" data-titolo="{{a|s043|}}">
-    <div class="passo"><div class="espr">a = <mark class="dato">0</mark>  ⇒  x = μ</div><p class="nota">{{s|s044|}}</p></div>
-    <div class="passo"><div class="espr">a = (0, …, <mark class="ora">t · σᵢ</mark>, …, 0),  t ∈ [−3, 3]</div><p class="nota">{{s|s045|}}</p></div>
-    <div class="passo"><div class="espr">a(t) = (1 − t)·a₁ + t·a₂   ⇒   interpolazione tra due volti</div><p class="nota">{{s|s046|}}</p></div>
-    <div class="passo"><div class="espr">|aᵢ| ≫ 3σᵢ  ⇒  <mark class="no">fuori distribuzione</mark></div><p class="nota">{{s|s047|}}</p></div>
+  <p class="piccolo">{{s|s046|}}</p>
+  <figure class="passi" data-titolo="{{a|s047|}}">
+    <div class="passo"><div class="espr">a = <mark class="dato">0</mark>  ⇒  x = μ</div><p class="nota">{{s|s048|}}</p></div>
+    <div class="passo"><div class="espr">a = (0, …, <mark class="ora">t · σᵢ</mark>, …, 0),  t ∈ [−3, 3]</div><p class="nota">{{s|s049|}}</p></div>
+    <div class="passo"><div class="espr">a(t) = (1 − t)·a₁ + t·a₂   ⇒   interpolazione tra due volti</div><p class="nota">{{s|s050|}}</p></div>
+    <div class="passo"><div class="espr">|aᵢ| ≫ 3σᵢ  ⇒  <mark class="no">fuori distribuzione</mark></div><p class="nota">{{s|s051|}}</p></div>
   </figure>
-  <div class="box esame" data-tit="{{a|s048|}}">
-    <p>{{s|s049|}}</p>
+  <div class="box esame" data-tit="{{a|s052|}}">
+    <p>{{s|s053|}}</p>
   </div>
-  <figure class="scena" data-scena="volti" data-titolo="{{a|s050|}}"></figure>
+  <figure class="scena" data-scena="volti" data-titolo="{{a|s054|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s051|}}</h2>
-  <p>{{s|s052|}}</p>
-  <p>{{s|s053|}}</p>
-  <p>{{s|s054|}}</p>
-  <p>{{s|s055|}}</p>
+  <h2>{{s|s055|}}</h2>
   <p>{{s|s056|}}</p>
-  <figure class="scena" data-scena="maledizione" data-titolo="{{a|s057|}}"></figure>
+  <p>{{s|s057|}}</p>
+  <p>{{s|s058|}}</p>
+  <p>{{s|s059|}}</p>
+  <p>{{s|s060|}}</p>
+  <figure class="scena" data-scena="maledizione" data-titolo="{{a|s061|}}"></figure>
 </section>
 
 </main>

@@ -7,50 +7,56 @@
 @@s007 Una lettura da memoria
 @@s008 dato:indirizzo richiesto,ora:passo in corso,ok:veloce,no:lento
 @@s009 Il primo passo è sempre cercarlo in cache.
-@@s010 È il caso buono: il dato è già lì, e la RAM non viene toccata.
-@@s011 La cache copia un blocco intero, non un solo byte: così i dati vicini sono già pronti.
-@@s012 Più core, più cache
-@@s013 Ogni core ha le sue cache. Lo stesso indirizzo di memoria può quindi essere in più cache contemporaneamente. Il blocco di memoria che la cache copia si chiama <b>linea di cache</b>: di solito 64 byte. Le cache devono concordare il valore di ogni linea: il meccanismo si chiama <b>protocollo di coerenza</b>, e nelle slide è il <b>MESI</b>, dal nome dei suoi quattro stati.
-@@s014 Gli stati MESI
-@@s015 Ogni linea di cache, in ogni core, è in uno di quattro stati:
-@@s016 stato
-@@s017 significato
-@@s018 la RAM è aggiornata?
-@@s019 <b>M</b> Modified
-@@s020 copia modificata, presente solo in questa cache
-@@s021 no: la RAM ha il valore vecchio
-@@s022 <b>E</b> Exclusive
-@@s023 copia non modificata, presente solo qui
-@@s024 sì
-@@s025 <b>S</b> Shared
-@@s026 copia non modificata, presente in più cache
-@@s027 sì
-@@s028 <b>I</b> Invalid
-@@s029 la linea non è valida: va riletta
-@@s030 Per scrivere su una linea in stato S, il core deve prima mandare un messaggio <b>invalidate</b> alle altre cache, e aspettare la loro conferma (<i>ack</i>). Solo allora la linea diventa M.
-@@s031 Veloce o lento
-@@s032 La velocità dipende da cosa il core vuole fare e dallo stato della linea nella sua cache. Le righe più importanti della slide:
-@@s033 stato attuale
-@@s034 il core vuole
-@@s035 velocità
-@@s036 leggere o scrivere
-@@s037 veloce: il dato è già suo
-@@s038 leggere
-@@s039 veloce: la copia è valida
+@@s010 Se è in cache: <mark class="ok">lettura veloce</mark>
+@@s011 È il caso buono: il dato è già lì, e la RAM non viene toccata.
+@@s012 Se non è in cache: <mark class="no">lettura lenta</mark> dalla RAM, e la <mark class="ora">linea</mark> viene copiata in cache
+@@s013 La cache copia un blocco intero, non un solo byte: così i dati vicini sono già pronti.
+@@s014 Più core, più cache
+@@s015 Ogni core ha le sue cache. Lo stesso indirizzo di memoria può quindi essere in più cache contemporaneamente. Il blocco di memoria che la cache copia si chiama <b>linea di cache</b>: di solito 64 byte. Le cache devono concordare il valore di ogni linea: il meccanismo si chiama <b>protocollo di coerenza</b>, e nelle slide è il <b>MESI</b>, dal nome dei suoi quattro stati.
+@@s016 Gli stati MESI
+@@s017 Ogni linea di cache, in ogni core, è in uno di quattro stati:
+@@s018 stato
+@@s019 significato
+@@s020 la RAM è aggiornata?
+@@s021 <b>M</b> Modified
+@@s022 copia modificata, presente solo in questa cache
+@@s023 no: la RAM ha il valore vecchio
+@@s024 <b>E</b> Exclusive
+@@s025 copia non modificata, presente solo qui
+@@s026 sì
+@@s027 <b>S</b> Shared
+@@s028 copia non modificata, presente in più cache
+@@s029 sì
+@@s030 <b>I</b> Invalid
+@@s031 la linea non è valida: va riletta
+@@s032 Per scrivere su una linea in stato S, il core deve prima mandare un messaggio <b>invalidate</b> alle altre cache, e aspettare la loro conferma (<i>ack</i>). Solo allora la linea diventa M.
+@@s033 Veloce o lento
+@@s034 La velocità dipende da cosa il core vuole fare e dallo stato della linea nella sua cache. Le righe più importanti della slide:
+@@s035 stato attuale
+@@s036 il core vuole
+@@s037 velocità
+@@s038 leggere o scrivere
+@@s039 veloce: il dato è già suo
 @@s040 leggere
-@@s041 lenta: va presa da un’altra cache o dalla RAM
-@@s042 scrivere
-@@s043 molto lenta: invalidate a tutte le altre copie
+@@s041 veloce: la copia è valida
+@@s042 leggere
+@@s043 lenta: va presa da un’altra cache o dalla RAM
 @@s044 scrivere
-@@s045 molto lenta: prima leggere, poi invalidare
-@@s046 Due core sulla stessa linea
-@@s047 dato:valore,ora:cosa cambia,ok:stato stabile,no:costo alto
-@@s048 Nessun altro la ha: la copia è sua e la RAM è aggiornata.
-@@s049 Due copie identiche e pulite: letture veloci per tutti e due.
-@@s050 Scrivere su S costa: il messaggio invalidate deve arrivare all’altro core.
-@@s051 Ogni scambio di scrittura e lettura tra due core costa un giro sul bus: il ping-pong della pagina successiva.
-@@s052 Cosa ne segue per il codice
-@@s053 L’idea
-@@s054 Il costo non è nel calcolo, è nel movimento delle linee tra cache. Un dato scritto solo da un thread resta in M nella sua cache: veloce. Un dato scritto da più thread va avanti e indietro: lento.
-@@s055 Se vieni da…
-@@s056 Se hai usato solo thread senza pensare alla memoria, questa è la parte che ti manca: non esiste un unico "valore" in memoria, esistono copie in più cache che devono restare d’accordo.
+@@s045 molto lenta: invalidate a tutte le altre copie
+@@s046 scrivere
+@@s047 molto lenta: prima leggere, poi invalidare
+@@s048 Due core sulla stessa linea
+@@s049 dato:valore,ora:cosa cambia,ok:stato stabile,no:costo alto
+@@s050 Core 0 <mark class="ora">legge</mark> la linea: stato <mark class="dato">E</mark>
+@@s051 Nessun altro la ha: la copia è sua e la RAM è aggiornata.
+@@s052 Core 1 <mark class="ora">legge</mark> la stessa linea: entrambi in <mark class="ok">S</mark>
+@@s053 Due copie identiche e pulite: letture veloci per tutti e due.
+@@s054 Core 0 <mark class="no">scrive</mark>: invalida la copia di core 1 (I), lui passa a <mark class="ora">M</mark>
+@@s055 Scrivere su S costa: il messaggio invalidate deve arrivare all’altro core.
+@@s056 Core 1 <mark class="no">rilegge</mark>: la sua copia è I, la prende da core 0 e tutti e due tornano in S
+@@s057 Ogni scambio di scrittura e lettura tra due core costa un giro sul bus: il ping-pong della pagina successiva.
+@@s058 Cosa ne segue per il codice
+@@s059 L’idea
+@@s060 Il costo non è nel calcolo, è nel movimento delle linee tra cache. Un dato scritto solo da un thread resta in M nella sua cache: veloce. Un dato scritto da più thread va avanti e indietro: lento.
+@@s061 Se vieni da…
+@@s062 Se hai usato solo thread senza pensare alla memoria, questa è la parte che ti manca: non esiste un unico "valore" in memoria, esistono copie in più cache che devono restare d’accordo.

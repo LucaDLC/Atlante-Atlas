@@ -26,7 +26,13 @@ ATLANTI = {
 }
 LINGUE = ("en", "da")
 TAG_TESTO = {"p", "li", "h1", "h2", "h3", "h4", "h5", "dt", "dd", "td", "th", "summary", "figcaption", "blockquote"}
-DIV_TESTO = {"box", "lede", "occhiello", "nota", "testo", "idea"}
+DIV_TESTO = {"box", "lede", "occhiello", "nota", "testo", "idea", "fix"}
+# parole italiane di funzione: un <div class="espr"> con almeno una di queste è prosa, non solo formula o codice
+PAROLE_IT = ("il", "lo", "la", "gli", "le", "di", "che", "per", "con", "sono", "non", "una", "uno", "nel", "nella",
+             "nelle", "nei", "della", "delle", "degli", "del", "dal", "dalla", "da", "se", "ma", "oppure", "quindi",
+             "poi", "come", "ogni", "tutti", "tutte", "anche", "solo", "quando", "dove", "cioè", "è", "può", "sul", "sui",
+             "questo", "questa")
+RE_PROSA_IT = re.compile(r"(?<![\wÀ-ÿ])(?:%s)(?![\wÀ-ÿ])" % "|".join(PAROLE_IT))
 ATTR_TESTO = ("data-tit", "data-titolo", "data-legenda")
 VUOTI = {"area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "param", "source", "track", "wbr"}
 RE_ATTR = re.compile(r'(data-tit|data-titolo|data-legenda)="([^"]*)"')
@@ -77,7 +83,8 @@ class Albero(HTMLParser):
     def _nuovo(self, tag, attrs, s):
         e = fine_tag(self.src, s)
         nodo = {"tag": tag, "start": s, "aperto": e, "chiuso": None, "figli": [],
-                "attrs": dict(attrs), "in_pre": any(p["tag"] == "pre" for p in self.pila)}
+                "attrs": dict(attrs), "in_pre": any(p["tag"] == "pre" for p in self.pila),
+                "in_mappa": any("mappa" in (p["attrs"].get("class") or "").split() for p in self.pila)}
         if self.pila:
             self.pila[-1]["figli"].append(nodo)
         return nodo
@@ -99,6 +106,7 @@ class Albero(HTMLParser):
             if self.pila[k]["tag"] == tag:
                 nodo = self.pila[k]
                 nodo["chiuso"] = s
+                nodo["interno"] = self.src[nodo["aperto"]:s]
                 del self.pila[k:]
                 self.nodi.append(nodo)
                 return
@@ -110,8 +118,16 @@ def e_testo(nodo):
         return False
     if t in TAG_TESTO:
         return True
+    classi = (nodo["attrs"].get("class") or "").split()
     if t == "div":
-        return any(c in DIV_TESTO for c in (nodo["attrs"].get("class") or "").split())
+        if any(c in DIV_TESTO for c in classi):
+            return True
+        return "espr" in classi and bool(RE_PROSA_IT.search(re.sub(r"<[^>]+>", " ", nodo.get("interno", ""))))
+    # voci della mappa degli argomenti (<a> dentro <div class="mappa">) e legende della home (<span class="l-…">)
+    if t == "a":
+        return nodo["in_mappa"]
+    if t == "span":
+        return any(c.startswith("l-") for c in classi)
     return False
 
 
@@ -192,22 +208,38 @@ def cartella_dati(sigla):
 
 
 def comando_estrai(siglas):
+    """Riscrive .src e .tpl. I segmenti il cui testo non è cambiato tengono la traduzione già scritta
+    (anche se gli ID sono cambiati perché ne è comparso uno nuovo prima); gli altri restano vuoti."""
     for sigla in siglas:
         cart = cartella_dati(sigla)
         os.makedirs(cart, exist_ok=True)
-        n = 0
+        n = nuovi = 0
         for rel in pagine_di(ATLANTI[sigla]):
             src = open(os.path.join(RADICE, ATLANTI[sigla], rel), encoding="utf-8").read()
             segs = estrai_segmenti(src)
             base = os.path.join(cart, nome_file(rel))
-            open(base + ".tpl", "w", encoding="utf-8", newline="").write(crea_template(src, segs))
-            righe = []
+            vecchio_src = leggi_traduzioni(base + ".src")
+            vecchie = {lingua: leggi_traduzioni(base + "." + lingua) for lingua in LINGUE}
+            ids_per_testo = {}
+            for sid, testo in vecchio_src.items():
+                ids_per_testo.setdefault(testo, []).append(sid)
+            righe_src, righe_tra = [], {lingua: [] for lingua in LINGUE}
             for s in segs:
-                testo = s["testo"] if s["tipo"] != "j" else s["testo"]
-                righe.append("@@%s %s" % (s["id"], testo.replace("\n", " ")))
-            open(base + ".src", "w", encoding="utf-8", newline="").write("\n".join(righe) + "\n")
+                testo = s["testo"].replace("\n", " ").strip()
+                righe_src.append("@@%s %s" % (s["id"], testo))
+                vecchio = ids_per_testo.get(testo)
+                vecchio_id = vecchio.pop(0) if vecchio else None
+                for lingua in LINGUE:
+                    t = vecchie[lingua].get(vecchio_id, "") if vecchio_id else ""
+                    righe_tra[lingua].append("@@%s %s" % (s["id"], t))
+                if vecchio_id is None:
+                    nuovi += 1
+            open(base + ".tpl", "w", encoding="utf-8", newline="").write(crea_template(src, segs))
+            open(base + ".src", "w", encoding="utf-8", newline="").write("\n".join(righe_src) + "\n")
+            for lingua in LINGUE:
+                open(base + "." + lingua, "w", encoding="utf-8", newline="").write("\n".join(righe_tra[lingua]) + "\n")
             n += len(segs)
-        print(ATLANTI[sigla], "segmenti estratti:", n)
+        print(ATLANTI[sigla], "segmenti estratti:", n, "da tradurre:", nuovi)
 
 
 def leggi_traduzioni(percorso):
@@ -223,6 +255,10 @@ def leggi_traduzioni(percorso):
 
 def controlla_pagina(sigla, rel, lingua):
     base = os.path.join(cartella_dati(sigla), nome_file(rel))
+    if not os.path.exists(base + ".src"):
+        return ["manca il file .src (pagina nuova: lancia estrai)"], 0
+    if not os.path.exists(base + "." + lingua):
+        return ["manca il file .%s" % lingua], 0
     src = leggi_traduzioni(base + ".src")
     tra = leggi_traduzioni(base + "." + lingua)
     errori = []

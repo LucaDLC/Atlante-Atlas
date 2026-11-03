@@ -234,26 +234,26 @@ public void readerUnlock() {
   <h2>{{s|s087|}}</h2>
   <p>{{s|s088|}}</p>
   <figure class="passi" data-titolo="{{a|s089|}}" data-legenda="{{a|s090|}}">
-    <div class="passo"><div class="espr">tutto lo stato = <mark class="dato">un solo riferimento</mark> (holders)</div><p class="nota">{{s|s091|}}</p></div>
-    <div class="passo"><div class="espr">h = holders.get()   →   <mark class="dato">fotografia</mark></div><p class="nota">{{s|s092|}}</p></div>
-    <div class="passo"><div class="espr">newList = new ReaderList(current, h)   →   <mark class="due">copia nuova, a parte</mark></div><p class="nota">{{s|s093|}}</p></div>
-    <div class="passo"><div class="espr"><mark class="ora">compareAndSet(h, newList)</mark></div><p class="nota">{{s|s094|}}</p></div>
-    <div class="passo"><div class="espr">riesce → <mark class="ok">come se lettura, decisione e scrittura fossero un solo passo atomico</mark></div><p class="nota">{{s|s095|}}</p></div>
-    <div class="passo"><div class="espr">fallisce → butto la copia e ricomincio dalla fotografia</div><p class="nota">{{s|s096|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s091|}}</div><p class="nota">{{s|s092|}}</p></div>
+    <div class="passo"><div class="espr">h = holders.get()   →   <mark class="dato">fotografia</mark></div><p class="nota">{{s|s093|}}</p></div>
+    <div class="passo"><div class="espr">newList = new ReaderList(current, h)   →   <mark class="due">copia nuova, a parte</mark></div><p class="nota">{{s|s094|}}</p></div>
+    <div class="passo"><div class="espr"><mark class="ora">compareAndSet(h, newList)</mark></div><p class="nota">{{s|s095|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s096|}}</div><p class="nota">{{s|s097|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s098|}}</div><p class="nota">{{s|s099|}}</p></div>
   </figure>
   <div class="colonne">
-    <div class="carta cattiva"><h4>{{s|s097|}}</h4><p>{{s|s098|}}</p></div>
-    <div class="carta buona"><h4>{{s|s099|}}</h4><p>{{s|s100|}}</p></div>
+    <div class="carta cattiva"><h4>{{s|s100|}}</h4><p>{{s|s101|}}</p></div>
+    <div class="carta buona"><h4>{{s|s102|}}</h4><p>{{s|s103|}}</p></div>
   </div>
-  <div class="box regola" data-tit="{{a|s101|}}">
-    <p>{{s|s102|}}</p>
+  <div class="box regola" data-tit="{{a|s104|}}">
+    <p>{{s|s105|}}</p>
   </div>
 </section>
 
 <section>
-  <h2>{{s|s103|}}</h2>
-  <p>{{s|s104|}}</p>
-  <figure class="codice" data-titolo="{{a|s105|}}">
+  <h2>{{s|s106|}}</h2>
+  <p>{{s|s107|}}</p>
+  <figure class="codice" data-titolo="{{a|s108|}}">
 <pre data-lang="java">@Test
 public void cannotTakeReadLockWhileHoldingWriteLock() {
     ReadWriteCASLock lock = new ReadWriteCASLock();
@@ -295,18 +295,18 @@ public void lockIsFreeAgainAfterUnlock() {
     lock.writerUnlock();
 }</pre>
     <ol class="spiega">
-      <li data-righe="1-7" data-segna="assertTrue@ok|assertFalse@no"><p>{{s|s106|}}</p></li>
-      <li data-righe="9-15"><p>{{s|s107|}}</p></li>
-      <li data-righe="17-28" data-segna="assertThrows*@no|lock::writerUnlock#1@dato"><p>{{s|s108|}}</p></li>
-      <li data-righe="30-40"><p>{{s|s109|}}</p></li>
+      <li data-righe="1-7" data-segna="assertTrue@ok|assertFalse@no"><p>{{s|s109|}}</p></li>
+      <li data-righe="9-15"><p>{{s|s110|}}</p></li>
+      <li data-righe="17-28" data-segna="assertThrows*@no|lock::writerUnlock#1@dato"><p>{{s|s111|}}</p></li>
+      <li data-righe="30-40"><p>{{s|s112|}}</p></li>
     </ol>
   </figure>
 </section>
 
 <section>
-  <h2>{{s|s110|}}</h2>
-  <p>{{s|s111|}}</p>
-  <figure class="codice" data-titolo="{{a|s112|}}">
+  <h2>{{s|s113|}}</h2>
+  <p>{{s|s114|}}</p>
+  <figure class="codice" data-titolo="{{a|s115|}}">
 <pre data-lang="java">@RepeatedTest(10)
 public void writersAreMutuallyExclusive() {
     final int THREADS = 16;
@@ -354,21 +354,21 @@ public void writersAreMutuallyExclusive() {
     assertEquals(0, errors.get(), "a writer could not release a lock it had acquired");
 }</pre>
     <ol class="spiega">
-      <li data-righe="1" data-segna="@RepeatedTest(10)@ora"><p>{{s|s113|}}</p></li>
-      <li data-righe="6-9" data-segna="holding@dato|overlaps@no"><p>{{s|s114|}}</p></li>
-      <li data-righe="18-23" data-segna="holding.incrementAndGet() &gt; 1@ora"><p>{{s|s115|}}</p></li>
-      <li data-righe="16,28-29,36-38" data-segna="barrier.await()*@dato|thread.join()@ok|IllegalStateException@no"><p>{{s|s116|}}</p></li>
-      <li data-righe="43-45"><p>{{s|s117|}}</p></li>
+      <li data-righe="1" data-segna="@RepeatedTest(10)@ora"><p>{{s|s116|}}</p></li>
+      <li data-righe="6-9" data-segna="holding@dato|overlaps@no"><p>{{s|s117|}}</p></li>
+      <li data-righe="18-23" data-segna="holding.incrementAndGet() &gt; 1@ora"><p>{{s|s118|}}</p></li>
+      <li data-righe="16,28-29,36-38" data-segna="barrier.await()*@dato|thread.join()@ok|IllegalStateException@no"><p>{{s|s119|}}</p></li>
+      <li data-righe="43-45"><p>{{s|s120|}}</p></li>
     </ol>
   </figure>
-  <figure class="passi" data-titolo="{{a|s118|}}" data-legenda="{{a|s119|}}">
-    <div class="passo"><div class="espr">lock sbagliato: if (holders.get() == null) holders.set(new Writer(current));</div><p class="nota">{{s|s120|}}</p></div>
-    <div class="passo"><div class="espr"><mark class="due">W1</mark>, <mark class="due">W2</mark> entrano insieme; W2 sovrascrive il Writer di W1</div><p class="nota">{{s|s121|}}</p></div>
-    <div class="passo"><div class="espr"><mark class="due">W1</mark>: writerUnlock() → <mark class="no">IllegalStateException</mark></div><p class="nota">{{s|s122|}}</p></div>
-    <div class="passo"><div class="espr"><mark class="dato">main</mark>: seconda barrier.await() → <mark class="no">aspetta per sempre</mark></div><p class="nota">{{s|s123|}}</p></div>
-    <div class="passo"><div class="espr"><mark class="ok">thread.join()</mark> + catch (IllegalStateException e)</div><p class="nota">{{s|s124|}}</p></div>
+  <figure class="passi" data-titolo="{{a|s121|}}" data-legenda="{{a|s122|}}">
+    <div class="passo"><div class="espr">lock sbagliato: if (holders.get() == null) holders.set(new Writer(current));</div><p class="nota">{{s|s123|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s124|}}</div><p class="nota">{{s|s125|}}</p></div>
+    <div class="passo"><div class="espr"><mark class="due">W1</mark>: writerUnlock() → <mark class="no">IllegalStateException</mark></div><p class="nota">{{s|s126|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s127|}}</div><p class="nota">{{s|s128|}}</p></div>
+    <div class="passo"><div class="espr"><mark class="ok">thread.join()</mark> + catch (IllegalStateException e)</div><p class="nota">{{s|s129|}}</p></div>
   </figure>
-  <figure class="codice" data-titolo="{{a|s125|}}">
+  <figure class="codice" data-titolo="{{a|s130|}}">
 <pre data-lang="java">new Thread(() -> {
     try {
         barrier.await();
@@ -383,18 +383,18 @@ public void writersAreMutuallyExclusive() {
         }
     }
 }).start();</pre>
-    <div class="intro"><p>{{s|s126|}}</p></div>
+    <div class="intro"><p>{{s|s131|}}</p></div>
     <ol class="spiega">
-      <li data-righe="7" data-segna="finally@ok"><p>{{s|s127|}}</p></li>
-      <li data-righe="8-12" data-segna="barrier.await();@ora|catch (@ok"><p>{{s|s128|}}</p></li>
-      <li data-righe="7-12"><p>{{s|s129|}}</p></li>
+      <li data-righe="7" data-segna="finally@ok"><p>{{s|s132|}}</p></li>
+      <li data-righe="8-12" data-segna="barrier.await();@ora|catch (@ok"><p>{{s|s133|}}</p></li>
+      <li data-righe="7-12"><p>{{s|s134|}}</p></li>
     </ol>
   </figure>
 </section>
 
 <section>
-  <h2>{{s|s130|}}</h2>
-  <figure class="codice" data-titolo="{{a|s131|}}">
+  <h2>{{s|s135|}}</h2>
+  <figure class="codice" data-titolo="{{a|s136|}}">
 <pre data-lang="java">public boolean readerTryLock() {
     final Thread current = Thread.currentThread();
     while (true) {
@@ -409,19 +409,19 @@ public void writersAreMutuallyExclusive() {
     }
 }</pre>
     <ol class="spiega">
-      <li data-righe="7-9" data-segna="readers.contains(current)@ora|throw@no"><p>{{s|s132|}}</p></li>
-      <li data-righe="10-11" data-segna="compareAndSet(h, new ReaderList(current, readers))@ok"><p>{{s|s133|}}</p></li>
+      <li data-righe="7-9" data-segna="readers.contains(current)@ora|throw@no"><p>{{s|s137|}}</p></li>
+      <li data-righe="10-11" data-segna="compareAndSet(h, new ReaderList(current, readers))@ok"><p>{{s|s138|}}</p></li>
     </ol>
   </figure>
-  <div class="box regola" data-tit="{{a|s134|}}">
-    <p>{{s|s135|}}</p>
-    <p>{{s|s136|}}</p>
-  </div>
-  <div class="box attenzione" data-tit="{{a|s137|}}">
-    <p>{{s|s138|}}</p>
-  </div>
-  <div class="box inglese" data-tit="{{a|s139|}}">
+  <div class="box regola" data-tit="{{a|s139|}}">
     <p>{{s|s140|}}</p>
+    <p>{{s|s141|}}</p>
+  </div>
+  <div class="box attenzione" data-tit="{{a|s142|}}">
+    <p>{{s|s143|}}</p>
+  </div>
+  <div class="box inglese" data-tit="{{a|s144|}}">
+    <p>{{s|s145|}}</p>
   </div>
 </section>
 

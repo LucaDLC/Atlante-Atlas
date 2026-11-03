@@ -45,50 +45,56 @@
 @@s045 3.1.5 · At bevise data race
 @@s046 Find et konflikterende uordnet par
 @@s047 Samme variabel count, mindst én skrivning, forskellige tråde.
-@@s048 Den eneste happens-before, fordi der kun er én synchronization order.
-@@s049 Efter t1(2) er der kun handlinger fra main efter join'ene. Ingen af dem fører til t2(2).
-@@s050 Symmetrisk.
-@@s051 Det gælder i alle udførelser, fordi HB kun er én. Programmet er ikke korrekt synkroniseret.
-@@s052 Om dit svar på 3.1.5
-@@s053 Du skrev "there may be a <b>race condition</b> between…". Her er det rigtige ord <b>data race</b> mellem <b>konflikterende handlinger</b>: race condition er noget andet (<a href="l01-lock.html">side om lås</a>). Og "count == 1" beviser ikke data race'en: beviset er at vise, at ingen af de to pile er i HB, altså at der fra mængderne PO, S, T ikke går nogen sti mellem handlingerne i t1 og dem i t2.
-@@s054 Ingen sti mellem de to skrivninger
-@@s055 3.1.6 – 3.1.7 · Med en lås
-@@s056 Hvad der ændrer sig, og hvorfor der ikke længere er en data race
-@@s057 Program order: main opretter låsen, trådene har 4 handlinger.
-@@s058 Første og sidste handling er ændret: nu er det lock og unlock.
-@@s059 Nu er synchronization orders forskellige, men de deler sig i <b>to</b> familier: t1 tager låsen først, eller t2. Altså to happens-before-mængder.
-@@s060 <b>3.1.7</b> Jeg ordner hvert konflikterende par. I HB<sub>1</sub> kommer alle handlingerne i t1 før dem i t2.
-@@s061 I HB<sub>2</sub> det modsatte. Det samme gælder for (t1(1), t2(2)) og (t1(2), t2(1)).
-@@s062 Programmet er korrekt synkroniseret og udskriver altid 2.
-@@s063 Låsen tilføjer en kant
-@@s064 Om dine svar på 3.1.6 og 3.1.7
-@@s065 I 3.1.6 skrev du de to fulde kæder t1 → t2 og t2 → t1 og talte om "two different interleavings". Spørgsmålet er, om der opstår <b>flere happens-before-sæt</b>: svaret er "ja, to", HB<sub>1</sub> og HB<sub>2</sub>, hver med <b>ét</b> ekstra par givet af monitorreglen (unlock af den ene → lock af den anden).
-@@s066 I 3.1.7 listede du par inde i samme tråd (program order). Dem var der allerede: beviset skal tage de <b>konflikterende par mellem t1 og t2</b> og vise stien, der ordner dem, i HB<sub>1</sub> og i HB<sub>2</sub>, som i de to trin ovenfor.
-@@s067 3.1.8 – 3.1.9 · Med <code>volatile count</code>
-@@s068 Ingen data race, men resultatet er ikke garanteret
-@@s069 Programmet er det uden lås.
-@@s070 Ifølge definitionen: "accesses on volatile variables are never conflicting" (slide om konflikterende handlinger). De eneste handlinger, der kunne være i konflikt, var adgangene til count.
-@@s071 <b>3.1.8</b> Svar: <b>ja</b>, alle udførelser er fri for data race.
-@@s072 <b>3.1.9</b> Men denne rækkefølge er mulig: volatile-reglen ordner en skrivning med de <b>senere</b> læsninger, og her kommer begge læsninger før begge skrivninger. Ingen regel forbyder det.
-@@s073 De udskriver forskellige værdier. Moralen: <b>fri for data race betyder ikke fri for race condition</b>. <code>volatile</code> giver synlighed, ikke gensidig udelukkelse.
-@@s074 Om dit svar på 3.1.8
-@@s075 Du svarede <b>Nej</b> og skrev, at læsninger og skrivninger af en volatile-variabel er "synchronization actions". Begge dele skal rettes: de er <b>variable access</b>, og definitionen af konflikterende handlinger udelukker volatile-variable. Altså ingen data race. Den count == 1, du beskrev, er sand, men det er en <b>race condition</b>: det er netop pointen i 3.1.9.
-@@s076 På engelsk (3.1.8)
-@@s077 "Yes, all executions are data race free. By definition in the Java memory model, accesses to volatile variables are never conflicting actions, and the only shared variable, count, is volatile. Therefore there is no pair of conflicting actions and hence no data race. This does not prevent the race condition: both threads may read 0 before either writes, so the program may still print count=1."
-@@s078 Fri for data race, men count kan være 1
-@@s079 3.1.10 – 3.1.11 · Gensidig udelukkelse med happens-before (udfordrende)
-@@s080 <b>3.1.10</b> Gensidig udelukkelse for dette program: i enhver udførelse gælder <code>t1(3) → t2(0)</code> <b>eller</b> <code>t2(3) → t1(0)</code>. Altså: en tråds kritiske sektion slutter (unlock), før den anden kommer ind (lock).
-@@s081 <b>3.1.11</b> Med kroppen i en <code>while(true)</code>: hver iteration <i>i</i> af t1 har handlingerne <code>t1(0<sub>i</sub>) … t1(3<sub>i</sub>)</code>. For enhver iteration <i>i</i> af t1 og <i>j</i> af t2 sætter synchronization order den ene af de to lock før den anden unlock; monitorreglen giver <code>t1(3<sub>i</sub>) → t2(0<sub>j</sub>)</code> eller <code>t2(3<sub>j</sub>) → t1(0<sub>i</sub>)</code>, og med program order bliver alle de konflikterende par i de to iterationer ordnede. Da det gælder for ethvert par af iterationer, har ingen udførelse (heller ikke en uendelig) en data race.
-@@s082 Gensidig udelukkelse som par unlock → lock
-@@s083 3.2 · <code>StringSet</code> kort
-@@s084 <b>3.2.1</b> I konflikt: <code>t1(b)</code> (add = skrivning) og <code>t2(c)</code> (indexOf = læsning). t2 laver ingen synkroniseringshandlinger på monitoren for <code>s</code>: de eneste par, der forbinder t1 og t2, går gennem main (start), og giver kun <code>m(start(t1)) → …</code> og <code>m(start(t2)) → t2(c)</code>. Ingen orden mellem <code>t1(b)</code> og <code>t2(c)</code>: data race, programmet er ikke korrekt synkroniseret.
-@@s085 <b>3.2.2</b> Med <code>find</code> synchronized laver t2 lock/unlock på samme monitor. To tilfælde: <code>t1(unlock) → t2(lock)</code> eller <code>t2(unlock) → t1(lock)</code> (monitorreglen), så <code>t1(b)</code> og <code>t2(c)</code> er altid ordnede: korrekt synkroniseret. <code>find</code> kan returnere 0 eller -1 afhængig af, hvem der kommer ind først: det er en race condition, ikke en data race.
-@@s086 <b>3.2.3</b> Data race'en fra 3.2.1 er til stede i <b>alle</b> udførelser: listen starter tom, så <code>add</code> udføres altid, og ingen synchronization order indfører par mellem t1 og t2.
-@@s087 find uden lås og med lås
-@@s088 3.3 · Løkken der måske ikke ender, kort
-@@s089 <b>3.3.1</b> For at forhindre uendelige udførelser skal <code>m(w) → t1(r)</code> gælde for en læsning i t1, der kommer efter skrivningen: skrivningen <code>x = 42</code> skal happens-before en læsning i <code>while</code>-løkken, så den læsning ser 42 og afslutter.
-@@s090 <b>3.3.2</b> Det gælder ikke: den eneste regel, der forbinder m og t1, er start-reglen, <code>m(start(t1)) → t1(r<sub>1</sub>)</code>. Men <code>m(w)</code> kommer <b>efter</b> <code>m(start(t1))</code> i main's program order, og der er ingen lås, volatile eller join, der binder <code>m(w)</code> til læsningerne i t1. Ingen udførelse har <code>m(w) → t1(r)</code>.
-@@s091 <b>3.3.3</b> Erklær <code>volatile int x</code>. <code>m(w)</code> er en skrivning til en volatile-variabel; hver læsning <code>t1(r)</code> i <code>while</code>, som i udførelsen kommer <b>efter</b> <code>m(w)</code>, er en "subsequent read": efter volatile-reglen <code>m(w) → t1(r)</code>. Den læsning ser 42, og løkken slutter. Alternativt: læsning og skrivning inde i <code>synchronized</code> på det samme objekt (monitorreglen).
-@@s092 Om dit svar på 3.3.1
-@@s093 Spørgsmålet spørger om <b>hvilket par</b>, der skal ordnes, ikke om hele programmets happens-before: det er nok at sige "skrivningen <code>x=42</code> i main skal happens-before en læsning af <code>x</code> i <code>while</code> i t1", og forklare, hvorfor løkken slutter med det par.
-@@s094 Behov for w → r: volatile
+@@s048 HB = den transitive lukning af ( PO<sub>m</sub> ∪ PO<sub>1</sub> ∪ PO<sub>2</sub> ∪ S ∪ T )
+@@s049 Den eneste happens-before, fordi der kun er én synchronization order.
+@@s050 fra <mark class="ora">t1(2)</mark> kommer man kun til: m(join(t1)) → m(join(t2)) → m(p)
+@@s051 Efter t1(2) er der kun handlinger fra main efter join'ene. Ingen af dem fører til t2(2).
+@@s052 fra <mark class="due">t2(2)</mark> kommer man kun til: m(join(t2)) → m(p)
+@@s053 Symmetrisk.
+@@s054 Det gælder i alle udførelser, fordi HB kun er én. Programmet er ikke korrekt synkroniseret.
+@@s055 Om dit svar på 3.1.5
+@@s056 Du skrev "there may be a <b>race condition</b> between…". Her er det rigtige ord <b>data race</b> mellem <b>konflikterende handlinger</b>: race condition er noget andet (<a href="l01-lock.html">side om lås</a>). Og "count == 1" beviser ikke data race'en: beviset er at vise, at ingen af de to pile er i HB, altså at der fra mængderne PO, S, T ikke går nogen sti mellem handlingerne i t1 og dem i t2.
+@@s057 Ingen sti mellem de to skrivninger
+@@s058 3.1.6 – 3.1.7 · Med en lås
+@@s059 Hvad der ændrer sig, og hvorfor der ikke længere er en data race
+@@s060 Program order: main opretter låsen, trådene har 4 handlinger.
+@@s061 Første og sidste handling er ændret: nu er det lock og unlock.
+@@s062 Nu er synchronization orders forskellige, men de deler sig i <b>to</b> familier: t1 tager låsen først, eller t2. Altså to happens-before-mængder.
+@@s063 <b>3.1.7</b> Jeg ordner hvert konflikterende par. I HB<sub>1</sub> kommer alle handlingerne i t1 før dem i t2.
+@@s064 I HB<sub>2</sub> det modsatte. Det samme gælder for (t1(1), t2(2)) og (t1(2), t2(1)).
+@@s065 <mark class="ok">alle konfliktende par er ordnet i HB₁ og i HB₂ ⇒ ingen data race</mark>
+@@s066 Programmet er korrekt synkroniseret og udskriver altid 2.
+@@s067 Låsen tilføjer en kant
+@@s068 Om dine svar på 3.1.6 og 3.1.7
+@@s069 I 3.1.6 skrev du de to fulde kæder t1 → t2 og t2 → t1 og talte om "two different interleavings". Spørgsmålet er, om der opstår <b>flere happens-before-sæt</b>: svaret er "ja, to", HB<sub>1</sub> og HB<sub>2</sub>, hver med <b>ét</b> ekstra par givet af monitorreglen (unlock af den ene → lock af den anden).
+@@s070 I 3.1.7 listede du par inde i samme tråd (program order). Dem var der allerede: beviset skal tage de <b>konflikterende par mellem t1 og t2</b> og vise stien, der ordner dem, i HB<sub>1</sub> og i HB<sub>2</sub>, som i de to trin ovenfor.
+@@s071 3.1.8 – 3.1.9 · Med <code>volatile count</code>
+@@s072 Ingen data race, men resultatet er ikke garanteret
+@@s073 count er <mark class="dato">volatile</mark>
+@@s074 Programmet er det uden lås.
+@@s075 Ifølge definitionen: "accesses on volatile variables are never conflicting" (slide om konflikterende handlinger). De eneste handlinger, der kunne være i konflikt, var adgangene til count.
+@@s076 <b>3.1.8</b> Svar: <b>ja</b>, alle udførelser er fri for data race.
+@@s077 <b>3.1.9</b> Men denne rækkefølge er mulig: volatile-reglen ordner en skrivning med de <b>senere</b> læsninger, og her kommer begge læsninger før begge skrivninger. Ingen regel forbyder det.
+@@s078 lock: <mark class="ok">count = 2</mark> altid volatile: count = 1 <mark class="no">eller</mark> 2
+@@s079 De udskriver forskellige værdier. Moralen: <b>fri for data race betyder ikke fri for race condition</b>. <code>volatile</code> giver synlighed, ikke gensidig udelukkelse.
+@@s080 Om dit svar på 3.1.8
+@@s081 Du svarede <b>Nej</b> og skrev, at læsninger og skrivninger af en volatile-variabel er "synchronization actions". Begge dele skal rettes: de er <b>variable access</b>, og definitionen af konflikterende handlinger udelukker volatile-variable. Altså ingen data race. Den count == 1, du beskrev, er sand, men det er en <b>race condition</b>: det er netop pointen i 3.1.9.
+@@s082 På engelsk (3.1.8)
+@@s083 "Yes, all executions are data race free. By definition in the Java memory model, accesses to volatile variables are never conflicting actions, and the only shared variable, count, is volatile. Therefore there is no pair of conflicting actions and hence no data race. This does not prevent the race condition: both threads may read 0 before either writes, so the program may still print count=1."
+@@s084 Fri for data race, men count kan være 1
+@@s085 3.1.10 – 3.1.11 · Gensidig udelukkelse med happens-before (udfordrende)
+@@s086 <b>3.1.10</b> Gensidig udelukkelse for dette program: i enhver udførelse gælder <code>t1(3) → t2(0)</code> <b>eller</b> <code>t2(3) → t1(0)</code>. Altså: en tråds kritiske sektion slutter (unlock), før den anden kommer ind (lock).
+@@s087 <b>3.1.11</b> Med kroppen i en <code>while(true)</code>: hver iteration <i>i</i> af t1 har handlingerne <code>t1(0<sub>i</sub>) … t1(3<sub>i</sub>)</code>. For enhver iteration <i>i</i> af t1 og <i>j</i> af t2 sætter synchronization order den ene af de to lock før den anden unlock; monitorreglen giver <code>t1(3<sub>i</sub>) → t2(0<sub>j</sub>)</code> eller <code>t2(3<sub>j</sub>) → t1(0<sub>i</sub>)</code>, og med program order bliver alle de konflikterende par i de to iterationer ordnede. Da det gælder for ethvert par af iterationer, har ingen udførelse (heller ikke en uendelig) en data race.
+@@s088 Gensidig udelukkelse som par unlock → lock
+@@s089 3.2 · <code>StringSet</code> kort
+@@s090 <b>3.2.1</b> I konflikt: <code>t1(b)</code> (add = skrivning) og <code>t2(c)</code> (indexOf = læsning). t2 laver ingen synkroniseringshandlinger på monitoren for <code>s</code>: de eneste par, der forbinder t1 og t2, går gennem main (start), og giver kun <code>m(start(t1)) → …</code> og <code>m(start(t2)) → t2(c)</code>. Ingen orden mellem <code>t1(b)</code> og <code>t2(c)</code>: data race, programmet er ikke korrekt synkroniseret.
+@@s091 <b>3.2.2</b> Med <code>find</code> synchronized laver t2 lock/unlock på samme monitor. To tilfælde: <code>t1(unlock) → t2(lock)</code> eller <code>t2(unlock) → t1(lock)</code> (monitorreglen), så <code>t1(b)</code> og <code>t2(c)</code> er altid ordnede: korrekt synkroniseret. <code>find</code> kan returnere 0 eller -1 afhængig af, hvem der kommer ind først: det er en race condition, ikke en data race.
+@@s092 <b>3.2.3</b> Data race'en fra 3.2.1 er til stede i <b>alle</b> udførelser: listen starter tom, så <code>add</code> udføres altid, og ingen synchronization order indfører par mellem t1 og t2.
+@@s093 find uden lås og med lås
+@@s094 3.3 · Løkken der måske ikke ender, kort
+@@s095 <b>3.3.1</b> For at forhindre uendelige udførelser skal <code>m(w) → t1(r)</code> gælde for en læsning i t1, der kommer efter skrivningen: skrivningen <code>x = 42</code> skal happens-before en læsning i <code>while</code>-løkken, så den læsning ser 42 og afslutter.
+@@s096 <b>3.3.2</b> Det gælder ikke: den eneste regel, der forbinder m og t1, er start-reglen, <code>m(start(t1)) → t1(r<sub>1</sub>)</code>. Men <code>m(w)</code> kommer <b>efter</b> <code>m(start(t1))</code> i main's program order, og der er ingen lås, volatile eller join, der binder <code>m(w)</code> til læsningerne i t1. Ingen udførelse har <code>m(w) → t1(r)</code>.
+@@s097 <b>3.3.3</b> Erklær <code>volatile int x</code>. <code>m(w)</code> er en skrivning til en volatile-variabel; hver læsning <code>t1(r)</code> i <code>while</code>, som i udførelsen kommer <b>efter</b> <code>m(w)</code>, er en "subsequent read": efter volatile-reglen <code>m(w) → t1(r)</code>. Den læsning ser 42, og løkken slutter. Alternativt: læsning og skrivning inde i <code>synchronized</code> på det samme objekt (monitorreglen).
+@@s098 Om dit svar på 3.3.1
+@@s099 Spørgsmålet spørger om <b>hvilket par</b>, der skal ordnes, ikke om hele programmets happens-before: det er nok at sige "skrivningen <code>x=42</code> i main skal happens-before en læsning af <code>x</code> i <code>while</code> i t1", og forklare, hvorfor løkken slutter med det par.
+@@s100 Behov for w → r: volatile

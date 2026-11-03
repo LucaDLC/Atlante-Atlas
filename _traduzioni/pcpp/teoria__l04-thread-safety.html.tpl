@@ -250,14 +250,14 @@ new Thread(() -> { c.i++; }).start();         // (2) i++ senza lock</pre>
     <div class="passo"><div class="espr"><mark class="ora">t1(lock)</mark> → t1(1) → <mark class="ora">t1(unlock)</mark>      <mark class="no">t2(2)</mark></div><p class="nota">{{s|s078|}}</p></div>
     <div class="passo"><div class="espr">t1(1) e t2(2): stessa variabile <mark class="dato">i</mark>, due scritture</div><p class="nota">{{s|s079|}}</p></div>
     <div class="passo"><div class="espr">m(start(t1)) → t1(lock)      m(start(t2)) → t2(2)</div><p class="nota">{{s|s080|}}</p></div>
-    <div class="passo"><div class="espr">regola del monitor: serve <mark class="no">un lock anche in t2</mark></div><p class="nota">{{s|s081|}}</p></div>
-    <div class="passo"><div class="espr">t1(1) ↛ t2(2)  e  t2(2) ↛ t1(1)  ⇒  <mark class="no">data race sul campo i</mark>  ⇒  Counter non thread-safe</div><p class="nota">{{s|s082|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s081|}}</div><p class="nota">{{s|s082|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s083|}}</div><p class="nota">{{s|s084|}}</p></div>
   </figure>
-  <p>{{s|s083|}}</p>
-
-  <h3>{{s|s084|}}</h3>
   <p>{{s|s085|}}</p>
-  <figure class="codice" data-titolo="{{a|s086|}}">
+
+  <h3>{{s|s086|}}</h3>
+  <p>{{s|s087|}}</p>
+  <figure class="codice" data-titolo="{{a|s088|}}">
 <pre data-lang="java">class IntArrayList {
     private final List&lt;Integer&gt; a = new ArrayList&lt;Integer&gt;();
     public synchronized void set(Integer index, Integer elem) { a.set(index, elem); }
@@ -268,22 +268,22 @@ IntArrayList array = new IntArrayList();
 new Thread(() -> { array.set(0, 1); }).start();        // con lock
 new Thread(() -> { array.get().set(0, 42); }).start(); // senza lock</pre>
     <ol class="spiega">
-      <li data-righe="2" data-segna="private final@ok|a = new@dato"><p>{{s|s087|}}</p></li>
-      <li data-righe="4" data-segna="return a;@no"><p>{{s|s088|}}</p></li>
-      <li data-righe="9" data-segna=".set(0, 42)@no"><p>{{s|s089|}}</p></li>
+      <li data-righe="2" data-segna="private final@ok|a = new@dato"><p>{{s|s089|}}</p></li>
+      <li data-righe="4" data-segna="return a;@no"><p>{{s|s090|}}</p></li>
+      <li data-righe="9" data-segna=".set(0, 42)@no"><p>{{s|s091|}}</p></li>
     </ol>
   </figure>
-  <figure class="scena" data-scena="fuga" data-titolo="{{a|s090|}}"></figure>
-  <div class="box regola" data-tit="{{a|s091|}}">
-    <p>{{s|s092|}}</p>
-  </div>
-  <div class="box inglese" data-tit="{{a|s093|}}">
+  <figure class="scena" data-scena="fuga" data-titolo="{{a|s092|}}"></figure>
+  <div class="box regola" data-tit="{{a|s093|}}">
     <p>{{s|s094|}}</p>
   </div>
-  <div class="box domanda-tua" data-tit="{{a|s095|}}">
+  <div class="box inglese" data-tit="{{a|s095|}}">
     <p>{{s|s096|}}</p>
-    <p>{{s|s097|}}</p>
+  </div>
+  <div class="box domanda-tua" data-tit="{{a|s097|}}">
     <p>{{s|s098|}}</p>
+    <p>{{s|s099|}}</p>
+    <p>{{s|s100|}}</p>
   </div>
 </section>
 

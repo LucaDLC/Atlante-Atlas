@@ -16,50 +16,52 @@
 @@s016 Definition
 @@s017 Given two actions <code>a</code>, <code>b</code> of an execution, <b><code>a</code> happens-before <code>b</code></b> (written <code>a → b</code>) if the pair is obtained from one of the rules below. If <code>a → b</code>, the effect of <code>a</code> is <b>visible</b> to <code>b</code>.
 @@s018 How the pairs are read
-@@s019 Same thing, two writes: a comes before b, guaranteed.
-@@s020 A chain also contains the "skipped" pairs: transitivity holds.
-@@s021 If neither pair is there, the actions are <b>not ordered</b>: they can happen in any order, and neither is guaranteed to see the effect of the other.
-@@s022 "Partial": not all pairs of actions are comparable. The program order of a thread, instead, is <b>total</b>.
-@@s023 Pairs, transitivity, unordered actions
-@@s024 The eight rules
-@@s025 Happens-before is not "felt": it is <b>built</b>, and only with these eight rules. A pair (a, b) is in the set only if a rule produces it. Three rules work <b>inside</b> a thread or before everything (program order, default init, final field init). Four link <b>different threads</b> and are the only ones that allow a thread to see the writes of another (monitor, volatile, start, termination). The last, the transitive one, glues the others into chains. If between two actions of different threads you cannot build a chain with these rules, those actions are not ordered.
-@@s026 Rule
-@@s027 a → b when…
-@@s028 Example
-@@s029 <b>Program order</b>
-@@s030 a and b are of the same thread and a comes first in the code
-@@s031 <b>Monitor</b>
-@@s032 a is an <code>unlock()</code> and b a later <code>lock()</code> on the <b>same</b> monitor (lock, semaphore, barrier…)
-@@s033 <code>t1(unlock) → t2(lock)</code>
-@@s034 <b>Volatile</b>
-@@s035 a is a write to a volatile variable and b a later read of the same variable
-@@s036 <code>m(v=42) → t(read v)</code>
-@@s037 <b>Default init</b>
-@@s038 the default initialisation (0, false, null) comes before any other action
-@@s039 field <code>int i;</code>
-@@s040 <b>Final field init</b>
-@@s041 the initialisation of the <code>final</code> (and static) fields comes before any other use, once the constructor has finished
-@@s042 <code>final Object o</code>
-@@s043 <b>Thread start</b>
-@@s044 a is <code>start()</code> and b is the <b>first</b> action of the started thread
-@@s045 <code>m(start(t1)) → t1(1)</code>
-@@s046 <b>Thread termination</b>
-@@s047 a is the <b>last</b> action of a thread and b the <code>join()</code> on that thread, from any other thread
-@@s048 <code>t1(2) → m(join(t1))</code>
-@@s049 <b>Transitive</b>
-@@s050 chains
-@@s051 The eight rules, one at a time
-@@s052 The graph, rule by rule
-@@s053 Happens-before in PossibleReordering
-@@s054 Question from the slide: which pairs give start and termination?
-@@s055 Start rule: <code>m(start(t1)) → t1(1)</code>, <code>m(start(t2)) → t2(3)</code>. Termination rule: <code>t1(2) → m(join(t1))</code>, <code>t2(4) → m(join(t2))</code>. Careful: the start rule links <code>start</code> only to the <b>first</b> action of the thread, the termination rule only the <b>last</b>. The others follow by transitivity with the program order.
-@@s056 Building the sets as in the slides
-@@s057 At the exam the graph is written as <b>sets of pairs</b>: one for each rule that applies (POm, PO1, PO2 for the program order, S for start, T for termination, then possibly M for the monitor and V for volatile). The happens-before is the <b>transitive closure</b> of the union, indicated with ⁺: one adds all the pairs that follow from a chain. To decide whether two actions are ordered it is enough to look for a path in the graph, in one direction or the other.
-@@s058 The sets of pairs of PossibleReordering (slide 27)
-@@s059 Program order of the main.
-@@s060 Program order of the threads.
-@@s061 Pairs of the start rule.
-@@s062 Pairs of the termination rule.
-@@s063 The complete happens-before: all the pairs, plus those that follow by transitivity. Here it is the same for <b>all</b> the executions, because there is only one possible order for start and join.
-@@s064 No pair links actions of t1 to actions of t2 (except going through the main in the wrong direction). Conclusion: data race between <code>t1(1)</code> and <code>t2(4)</code> in <b>every</b> execution.
-@@s065 From POm, PO1, PO2, S, T to HB
+@@s019 (<mark class="dato">a</mark>, <mark class="ok">b</mark>) or <mark class="dato">a</mark> → <mark class="ok">b</mark>
+@@s020 Same thing, two writes: a comes before b, guaranteed.
+@@s021 A chain also contains the "skipped" pairs: transitivity holds.
+@@s022 If neither pair is there, the actions are <b>not ordered</b>: they can happen in any order, and neither is guaranteed to see the effect of the other.
+@@s023 "Partial": not all pairs of actions are comparable. The program order of a thread, instead, is <b>total</b>.
+@@s024 Pairs, transitivity, unordered actions
+@@s025 The eight rules
+@@s026 Happens-before is not "felt": it is <b>built</b>, and only with these eight rules. A pair (a, b) is in the set only if a rule produces it. Three rules work <b>inside</b> a thread or before everything (program order, default init, final field init). Four link <b>different threads</b> and are the only ones that allow a thread to see the writes of another (monitor, volatile, start, termination). The last, the transitive one, glues the others into chains. If between two actions of different threads you cannot build a chain with these rules, those actions are not ordered.
+@@s027 Rule
+@@s028 a → b when…
+@@s029 Example
+@@s030 <b>Program order</b>
+@@s031 a and b are of the same thread and a comes first in the code
+@@s032 <b>Monitor</b>
+@@s033 a is an <code>unlock()</code> and b a later <code>lock()</code> on the <b>same</b> monitor (lock, semaphore, barrier…)
+@@s034 <code>t1(unlock) → t2(lock)</code>
+@@s035 <b>Volatile</b>
+@@s036 a is a write to a volatile variable and b a later read of the same variable
+@@s037 <code>m(v=42) → t(read v)</code>
+@@s038 <b>Default init</b>
+@@s039 the default initialisation (0, false, null) comes before any other action
+@@s040 field <code>int i;</code>
+@@s041 <b>Final field init</b>
+@@s042 the initialisation of the <code>final</code> (and static) fields comes before any other use, once the constructor has finished
+@@s043 <code>final Object o</code>
+@@s044 <b>Thread start</b>
+@@s045 a is <code>start()</code> and b is the <b>first</b> action of the started thread
+@@s046 <code>m(start(t1)) → t1(1)</code>
+@@s047 <b>Thread termination</b>
+@@s048 a is the <b>last</b> action of a thread and b the <code>join()</code> on that thread, from any other thread
+@@s049 <code>t1(2) → m(join(t1))</code>
+@@s050 <b>Transitive</b>
+@@s051 chains
+@@s052 The eight rules, one at a time
+@@s053 The graph, rule by rule
+@@s054 Happens-before in PossibleReordering
+@@s055 Question from the slide: which pairs give start and termination?
+@@s056 Start rule: <code>m(start(t1)) → t1(1)</code>, <code>m(start(t2)) → t2(3)</code>. Termination rule: <code>t1(2) → m(join(t1))</code>, <code>t2(4) → m(join(t2))</code>. Careful: the start rule links <code>start</code> only to the <b>first</b> action of the thread, the termination rule only the <b>last</b>. The others follow by transitivity with the program order.
+@@s057 Building the sets as in the slides
+@@s058 At the exam the graph is written as <b>sets of pairs</b>: one for each rule that applies (POm, PO1, PO2 for the program order, S for start, T for termination, then possibly M for the monitor and V for volatile). The happens-before is the <b>transitive closure</b> of the union, indicated with ⁺: one adds all the pairs that follow from a chain. To decide whether two actions are ordered it is enough to look for a path in the graph, in one direction or the other.
+@@s059 The sets of pairs of PossibleReordering (slide 27)
+@@s060 Program order of the main.
+@@s061 Program order of the threads.
+@@s062 Pairs of the start rule.
+@@s063 Pairs of the termination rule.
+@@s064 HB = transitive closure of ( PO<sub>m</sub> ∪ PO<sub>1</sub> ∪ PO<sub>2</sub> ∪ S ∪ T )
+@@s065 The complete happens-before: all the pairs, plus those that follow by transitivity. Here it is the same for <b>all</b> the executions, because there is only one possible order for start and join.
+@@s066 No pair links actions of t1 to actions of t2 (except going through the main in the wrong direction). Conclusion: data race between <code>t1(1)</code> and <code>t2(4)</code> in <b>every</b> execution.
+@@s067 From POm, PO1, PO2, S, T to HB

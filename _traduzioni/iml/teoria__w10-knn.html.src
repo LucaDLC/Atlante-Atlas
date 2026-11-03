@@ -24,75 +24,77 @@
 @@s024 Come si classifica un punto q
 @@s025 Non c'è allenamento e non ci sono pesi: il modello è il training stesso (<i>memory-based</i>). x è il vettore delle feature di un punto, y la sua classe, N quanti sono i punti.
 @@s026 q è il punto nuovo, xᵢ il punto i del training; il secondo indice dice di quale feature si parla. È la distanza euclidea, cioè la norma di q − xᵢ (pagina <a href="w02-norme-distanze.html">Norme e distanze</a>). Si calcola per tutti gli N punti.
-@@s027 k lo sceglie chi usa il metodo: è un <b>iperparametro</b>, non si impara dai dati.
-@@s028 Con due classi e k dispari una parità di voti è impossibile. Con k pari può capitare.
-@@s029 Task 1–2: i 20 punti e le cinque domande
-@@s030 Il notebook dà 10 punti di classe A, 10 di classe B e cinque punti da classificare. Il Task 1 chiede solo di guardarli; il Task 2 chiede la classe di ogni Q con k = 2, 3, 5 «a occhio». Qui si calcolano le distanze, e si vede dove l'occhio non basta.
-@@s031 Classe A
-@@s032 Classe B
-@@s033 I nomi A1…A10 e B1…B10 sono quelli che il notebook scrive sul grafico, nell'ordine in cui compaiono nelle liste <code>class_A</code> e <code>class_B</code>. Le cinque domande sono Q1 = (3, 3), Q2 = (2, 4), Q3 = (5, 2), Q4 = (4, 5), Q5 = (4, 2).
-@@s034 Le cinque domande, una alla volta
-@@s035 Punto
-@@s036 A, oppure parità 1–1
-@@s037 parità 1–1
-@@s038 I voti sono scritti come «quanti A – quanti B». Dove la cella dice «A / B» il risultato è A oppure B, a seconda di come si scioglie il pari merito spiegato qui sotto.
-@@s039 I pari merito: il punto che a occhio si perde
-@@s040 Con coordinate intere le distanze si ripetono: da Q4 tre punti stanno tutti a √2. Se il k-esimo posto è conteso fra più punti alla stessa distanza, <b>il metodo da solo non decide</b>: serve una regola. Le più usate: tenere tutti i punti a pari merito (allora i vicini sono più di k), scegliere in base all'ordine dei dati, oppure pesare i voti con la distanza. Nell'esercizio la cosa onesta è dire che c'è un pari merito e che la risposta dipende da come lo si scioglie.
-@@s041 Con <code>KNeighborsClassifier</code> di scikit-learn 1.9.0 escono: per Q4, A con k = 2, 3, 5; per Q5, A con k = 2 e 3, B con k = 5. Sceglie lui il pari merito e, in parità di voti, ha dato A: è un dettaglio dell'implementazione, non una regola del metodo.
-@@s042 Punti sicuri e punti sul confine
-@@s043 Q1, Q2 e Q3 stanno dentro un gruppo: i vicini sono quasi tutti della stessa classe e cambiare k non cambia la risposta. Q4 e Q5 stanno fra i due gruppi, vicino al <b>confine di decisione</b>: lì ogni variazione di k, di distanza o di pari merito può capovolgere la classe.
-@@s044 Come cambia la risposta con k (Task 2)
-@@s045 La domanda del notebook: che cosa succede quando k è molto piccolo o molto grande, e che rapporto c'è con overfitting e underfitting?
-@@s046 <b>k piccolo</b> (al limite 1): decide un solo punto. Un punto fuori posto, per rumore o errore di misura, cambia la risposta tutto attorno a sé. Il confine è frastagliato e segue il rumore: <b>overfitting</b>.
-@@s047 <b>k grande</b>: ogni risposta è una media su tanti punti. Il confine si liscia; si perdono i dettagli veri. Al limite k = N tutti i punti votano per ogni Q: qui 10–10, una sola classe ovunque, 0.5 di accuratezza: <b>underfitting</b>.
-@@s048 <b>In mezzo</b> c'è il k giusto, e si sceglie con un insieme di validazione (<a href="w07-validazione.html">Validazione</a>), perché k è un iperparametro.
-@@s049 punti del training sbagliati
-@@s050 accuratezza sul training
-@@s051 nessuno
-@@s052 nessuno
-@@s053 tutti i B
-@@s054 <code>KNeighborsClassifier(n_neighbors=k).fit(X, y).predict(X)</code>. Nel training ogni punto è anche vicino di sé stesso (distanza 0): per questo k = 1 dà sempre 1.0. Un'accuratezza di 1.0 sul training non dice niente sulla generalizzazione.
-@@s055 knn(q, k): i voti dei k vicini (verificato con i dati del notebook)
-@@s056 Tutti i punti in una matrice 20 × 2 e, nello stesso ordine, le loro classi: 0 per A, 1 per B. Servono entrambe perché il voto legge la classe di un punto dal suo indice.
-@@s057 <code>X - q</code> toglie q da ogni riga di X (broadcasting): sono i vettori da q a ogni punto. <code>norm</code> con <code>axis=1</code> ne calcola la lunghezza riga per riga: 20 distanze.
-@@s058 <code>argsort</code> dà gli indici dei punti dal più vicino al più lontano; <code>[:k]</code> tiene i primi k. Con <code>kind="stable"</code> a pari distanza resta l'ordine dei dati, cioè gli A prima dei B: è la regola di pari merito di questo codice.
-@@s059 <code>y[vicini]</code> sono le classi dei k vicini; <code>np.bincount</code> le conta. <code>minlength=2</code> garantisce due posti anche se nessun vicino è di B. Risultato per Q4 con k = 3: <code>[2 1]</code>, due A e un B.
-@@s060 Con questa regola (A prima dei B) il codice dà, per k = 2, 3, 5: Q1 [2 0], [2 1], [3 2]; Q2 [2 0], [3 0], [5 0]; Q3 [0 2], [0 3], [0 5]; Q4 [2 0], [2 1], [3 2]; Q5 [1 1], [2 1], [2 3]. Le celle «A / B» della tabella sono quelle in cui un'altra regola darebbe un risultato diverso.
-@@s061 Task 3: più dimensioni
-@@s062 Il notebook dà un secondo insieme, in quattro dimensioni, con un solo punto da classificare, Q = [0, 0, 0, 0]. La distanza si calcola come prima, con quattro termini sotto la radice.
-@@s063 Classe A
-@@s064 Classe B
-@@s065 Dal più vicino al più lontano, in quattro dimensioni
-@@s066 In questo esempio nessuna distanza si ripete, quindi non c'è pari merito.
-@@s067 <b>Perché la dimensione conta</b>: A3 e B3 hanno le stesse x₁ e x₂ e differiscono solo in x₃. In due dimensioni sarebbero lo stesso punto e il quinto posto sarebbe un pari merito (A o B). La terza coordinata li separa e decide il quinto posto: una feature in più cambia la risposta, anche se non dice niente di utile sulla classe.
-@@s068 Più feature, distanze meno informative
-@@s069 Ogni coordinata in più aggiunge un termine alla distanza e può spostare i vicini. Una feature inutile (o in una scala molto più grande delle altre) porta rumore nella distanza. Con tante dimensioni, poi, le distanze diventano quasi tutte uguali e il «più vicino» non è molto più vicino degli altri: vedi la maledizione della dimensionalità in <a href="w12-pca.html">PCA</a>.
-@@s070 Task 4: classificatore lineare contro vicini
-@@s071 La domanda del notebook: come differiscono i confini di decisione, e come differiscono dal punto di vista del calcolo? Sugli stessi 20 punti:
-@@s072 Una retta, oppure i vicini
-@@s073 Classificatore lineare
-@@s074 k-nearest neighbour
-@@s075 Cosa impara
-@@s076 i pesi w: d + 1 numeri (d feature)
-@@s077 niente: tiene tutto il training, N × d numeri
-@@s078 Confine
-@@s079 uno solo, un iperpiano (qui una retta)
-@@s080 fatto a pezzi, segue i dati; per k piccolo si piega attorno ai singoli punti
-@@s081 Allenamento
-@@s082 sì: minimi quadrati o discesa del gradiente, costo una volta sola
-@@s083 nessuno (si memorizza)
-@@s084 Previsione
-@@s085 un prodotto interno: costo proporzionale a d
-@@s086 distanze da tutti gli N punti: costo proporzionale a N · d, più la scelta dei k
-@@s087 Scala delle feature
-@@s088 il peso w compensa una scala diversa
-@@s089 conta molto: una feature in scala grande domina la distanza
-@@s090 Forma dei dati
-@@s091 bene se le classi sono separabili da un iperpiano
-@@s092 bene anche con confini di forma qualsiasi, se i dati sono abbastanza
-@@s093 Sui 20 punti
-@@s094 19 su 20 (0.95), sbaglia A2
-@@s095 k = 1: 20 su 20; k = 5: 19 su 20
-@@s096 La retta è quella dei minimi quadrati sulle etichette ±1, come nella pagina <a href="w10-classificatore-lineare.html">Classificatore lineare e regressione logistica</a>. I confini di k = 1 e k = 5 sono calcolati con scikit-learn su una griglia di 32 × 32 celle.
-@@s097 All'esame, in inglese
-@@s098 "k-nearest neighbour <b>stores the training set</b> and classifies a new point by a <b>majority vote among its k closest training points</b>, using a distance such as the Euclidean one. A small k gives a jagged boundary and overfits; a large k smooths it and can underfit; I choose k on a validation set."
+@@s027 si ordinano le distanze e si tengono i <mark class="ora">k</mark> punti più vicini
+@@s028 k lo sceglie chi usa il metodo: è un <b>iperparametro</b>, non si impara dai dati.
+@@s029 classe di q = la più frequente fra i k vicini: <mark class="ok">voto di maggioranza</mark>
+@@s030 Con due classi e k dispari una parità di voti è impossibile. Con k pari può capitare.
+@@s031 Task 1–2: i 20 punti e le cinque domande
+@@s032 Il notebook dà 10 punti di classe A, 10 di classe B e cinque punti da classificare. Il Task 1 chiede solo di guardarli; il Task 2 chiede la classe di ogni Q con k = 2, 3, 5 «a occhio». Qui si calcolano le distanze, e si vede dove l'occhio non basta.
+@@s033 Classe A
+@@s034 Classe B
+@@s035 I nomi A1…A10 e B1…B10 sono quelli che il notebook scrive sul grafico, nell'ordine in cui compaiono nelle liste <code>class_A</code> e <code>class_B</code>. Le cinque domande sono Q1 = (3, 3), Q2 = (2, 4), Q3 = (5, 2), Q4 = (4, 5), Q5 = (4, 2).
+@@s036 Le cinque domande, una alla volta
+@@s037 Punto
+@@s038 A, oppure parità 1–1
+@@s039 parità 1–1
+@@s040 I voti sono scritti come «quanti A – quanti B». Dove la cella dice «A / B» il risultato è A oppure B, a seconda di come si scioglie il pari merito spiegato qui sotto.
+@@s041 I pari merito: il punto che a occhio si perde
+@@s042 Con coordinate intere le distanze si ripetono: da Q4 tre punti stanno tutti a √2. Se il k-esimo posto è conteso fra più punti alla stessa distanza, <b>il metodo da solo non decide</b>: serve una regola. Le più usate: tenere tutti i punti a pari merito (allora i vicini sono più di k), scegliere in base all'ordine dei dati, oppure pesare i voti con la distanza. Nell'esercizio la cosa onesta è dire che c'è un pari merito e che la risposta dipende da come lo si scioglie.
+@@s043 Con <code>KNeighborsClassifier</code> di scikit-learn 1.9.0 escono: per Q4, A con k = 2, 3, 5; per Q5, A con k = 2 e 3, B con k = 5. Sceglie lui il pari merito e, in parità di voti, ha dato A: è un dettaglio dell'implementazione, non una regola del metodo.
+@@s044 Punti sicuri e punti sul confine
+@@s045 Q1, Q2 e Q3 stanno dentro un gruppo: i vicini sono quasi tutti della stessa classe e cambiare k non cambia la risposta. Q4 e Q5 stanno fra i due gruppi, vicino al <b>confine di decisione</b>: lì ogni variazione di k, di distanza o di pari merito può capovolgere la classe.
+@@s046 Come cambia la risposta con k (Task 2)
+@@s047 La domanda del notebook: che cosa succede quando k è molto piccolo o molto grande, e che rapporto c'è con overfitting e underfitting?
+@@s048 <b>k piccolo</b> (al limite 1): decide un solo punto. Un punto fuori posto, per rumore o errore di misura, cambia la risposta tutto attorno a sé. Il confine è frastagliato e segue il rumore: <b>overfitting</b>.
+@@s049 <b>k grande</b>: ogni risposta è una media su tanti punti. Il confine si liscia; si perdono i dettagli veri. Al limite k = N tutti i punti votano per ogni Q: qui 10–10, una sola classe ovunque, 0.5 di accuratezza: <b>underfitting</b>.
+@@s050 <b>In mezzo</b> c'è il k giusto, e si sceglie con un insieme di validazione (<a href="w07-validazione.html">Validazione</a>), perché k è un iperparametro.
+@@s051 punti del training sbagliati
+@@s052 accuratezza sul training
+@@s053 nessuno
+@@s054 nessuno
+@@s055 tutti i B
+@@s056 <code>KNeighborsClassifier(n_neighbors=k).fit(X, y).predict(X)</code>. Nel training ogni punto è anche vicino di sé stesso (distanza 0): per questo k = 1 dà sempre 1.0. Un'accuratezza di 1.0 sul training non dice niente sulla generalizzazione.
+@@s057 knn(q, k): i voti dei k vicini (verificato con i dati del notebook)
+@@s058 Tutti i punti in una matrice 20 × 2 e, nello stesso ordine, le loro classi: 0 per A, 1 per B. Servono entrambe perché il voto legge la classe di un punto dal suo indice.
+@@s059 <code>X - q</code> toglie q da ogni riga di X (broadcasting): sono i vettori da q a ogni punto. <code>norm</code> con <code>axis=1</code> ne calcola la lunghezza riga per riga: 20 distanze.
+@@s060 <code>argsort</code> dà gli indici dei punti dal più vicino al più lontano; <code>[:k]</code> tiene i primi k. Con <code>kind="stable"</code> a pari distanza resta l'ordine dei dati, cioè gli A prima dei B: è la regola di pari merito di questo codice.
+@@s061 <code>y[vicini]</code> sono le classi dei k vicini; <code>np.bincount</code> le conta. <code>minlength=2</code> garantisce due posti anche se nessun vicino è di B. Risultato per Q4 con k = 3: <code>[2 1]</code>, due A e un B.
+@@s062 Con questa regola (A prima dei B) il codice dà, per k = 2, 3, 5: Q1 [2 0], [2 1], [3 2]; Q2 [2 0], [3 0], [5 0]; Q3 [0 2], [0 3], [0 5]; Q4 [2 0], [2 1], [3 2]; Q5 [1 1], [2 1], [2 3]. Le celle «A / B» della tabella sono quelle in cui un'altra regola darebbe un risultato diverso.
+@@s063 Task 3: più dimensioni
+@@s064 Il notebook dà un secondo insieme, in quattro dimensioni, con un solo punto da classificare, Q = [0, 0, 0, 0]. La distanza si calcola come prima, con quattro termini sotto la radice.
+@@s065 Classe A
+@@s066 Classe B
+@@s067 Dal più vicino al più lontano, in quattro dimensioni
+@@s068 In questo esempio nessuna distanza si ripete, quindi non c'è pari merito.
+@@s069 <b>Perché la dimensione conta</b>: A3 e B3 hanno le stesse x₁ e x₂ e differiscono solo in x₃. In due dimensioni sarebbero lo stesso punto e il quinto posto sarebbe un pari merito (A o B). La terza coordinata li separa e decide il quinto posto: una feature in più cambia la risposta, anche se non dice niente di utile sulla classe.
+@@s070 Più feature, distanze meno informative
+@@s071 Ogni coordinata in più aggiunge un termine alla distanza e può spostare i vicini. Una feature inutile (o in una scala molto più grande delle altre) porta rumore nella distanza. Con tante dimensioni, poi, le distanze diventano quasi tutte uguali e il «più vicino» non è molto più vicino degli altri: vedi la maledizione della dimensionalità in <a href="w12-pca.html">PCA</a>.
+@@s072 Task 4: classificatore lineare contro vicini
+@@s073 La domanda del notebook: come differiscono i confini di decisione, e come differiscono dal punto di vista del calcolo? Sugli stessi 20 punti:
+@@s074 Una retta, oppure i vicini
+@@s075 Classificatore lineare
+@@s076 k-nearest neighbour
+@@s077 Cosa impara
+@@s078 i pesi w: d + 1 numeri (d feature)
+@@s079 niente: tiene tutto il training, N × d numeri
+@@s080 Confine
+@@s081 uno solo, un iperpiano (qui una retta)
+@@s082 fatto a pezzi, segue i dati; per k piccolo si piega attorno ai singoli punti
+@@s083 Allenamento
+@@s084 sì: minimi quadrati o discesa del gradiente, costo una volta sola
+@@s085 nessuno (si memorizza)
+@@s086 Previsione
+@@s087 un prodotto interno: costo proporzionale a d
+@@s088 distanze da tutti gli N punti: costo proporzionale a N · d, più la scelta dei k
+@@s089 Scala delle feature
+@@s090 il peso w compensa una scala diversa
+@@s091 conta molto: una feature in scala grande domina la distanza
+@@s092 Forma dei dati
+@@s093 bene se le classi sono separabili da un iperpiano
+@@s094 bene anche con confini di forma qualsiasi, se i dati sono abbastanza
+@@s095 Sui 20 punti
+@@s096 19 su 20 (0.95), sbaglia A2
+@@s097 k = 1: 20 su 20; k = 5: 19 su 20
+@@s098 La retta è quella dei minimi quadrati sulle etichette ±1, come nella pagina <a href="w10-classificatore-lineare.html">Classificatore lineare e regressione logistica</a>. I confini di k = 1 e k = 5 sono calcolati con scikit-learn su una griglia di 32 × 32 celle.
+@@s099 All'esame, in inglese
+@@s100 "k-nearest neighbour <b>stores the training set</b> and classifies a new point by a <b>majority vote among its k closest training points</b>, using a distance such as the Euclidean one. A small k gives a jagged boundary and overfits; a large k smooths it and can underfit; I choose k on a validation set."

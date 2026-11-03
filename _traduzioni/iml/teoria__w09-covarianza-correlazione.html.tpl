@@ -155,16 +155,16 @@ def correlation_matrix(X):
   <h2>{{s|s046|}}</h2>
   <figure class="passi" data-titolo="{{a|s047|}}">
     <div class="passo"><div class="espr">altezza in metri:  Cov 160 → <mark class="no">1.6</mark>,   Corr 0.9948 → <mark class="ok">0.9948</mark></div><p class="nota">{{s|s048|}}</p></div>
-    <div class="passo"><div class="espr">y = x² con x simmetrico attorno a 0:  Corr = <mark class="no">0.0</mark></div><p class="nota">{{s|s049|}}</p></div>
-    <div class="passo"><div class="espr">correlazione ≠ <mark class="no">causalità</mark></div><p class="nota">{{s|s050|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s049|}}</div><p class="nota">{{s|s050|}}</p></div>
+    <div class="passo"><div class="espr">correlazione ≠ <mark class="no">causalità</mark></div><p class="nota">{{s|s051|}}</p></div>
   </figure>
-  <div class="box idea" data-tit="{{a|s051|}}">
-    <p>{{s|s052|}}</p>
+  <div class="box idea" data-tit="{{a|s052|}}">
+    <p>{{s|s053|}}</p>
   </div>
-  <div class="box esame" data-tit="{{a|s053|}}">
-    <p>{{s|s054|}}</p>
+  <div class="box esame" data-tit="{{a|s054|}}">
+    <p>{{s|s055|}}</p>
   </div>
-  <figure class="scena" data-scena="trappole" data-titolo="{{a|s055|}}"></figure>
+  <figure class="scena" data-scena="trappole" data-titolo="{{a|s056|}}"></figure>
 </section>
 
 </main>

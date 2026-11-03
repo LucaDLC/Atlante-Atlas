@@ -271,22 +271,22 @@ resto @ u               # 0.0` },
   <figure class="passi" data-titolo="{{a|s063|}}">
     <div class="passo"><div class="espr">input x = [<mark class="dato">x₁</mark>, <mark class="dato">x₂</mark>, <mark class="dato">x₃</mark>]    pesi w = [<mark class="ora">w₁</mark>, <mark class="ora">w₂</mark>, <mark class="ora">w₃</mark>]</div><p class="nota">{{s|s064|}}</p></div>
     <div class="passo"><div class="espr">y = <mark class="ora">w₁</mark><mark class="dato">x₁</mark> + <mark class="ora">w₂</mark><mark class="dato">x₂</mark> + <mark class="ora">w₃</mark><mark class="dato">x₃</mark> = <mark class="ok">w · x</mark></div><p class="nota">{{s|s065|}}</p></div>
-    <div class="passo"><div class="espr">imparare il modello = trovare <mark class="ora">w</mark></div><p class="nota">{{s|s066|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s066|}}</div><p class="nota">{{s|s067|}}</p></div>
   </figure>
-  <figure class="scena" data-scena="neurone" data-titolo="{{a|s067|}}"></figure>
+  <figure class="scena" data-scena="neurone" data-titolo="{{a|s068|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s068|}}</h2>
-  <p>{{s|s069|}}</p>
-  <div class="mblock"><span class="m">y = w₀ + w₁x + w₂x² + w₃x³ = [w₀, w₁, w₂, w₃] · [1, x, x², x³]</span></div>
+  <h2>{{s|s069|}}</h2>
   <p>{{s|s070|}}</p>
-  <figure class="scena" data-scena="polidot" data-titolo="{{a|s071|}}"></figure>
+  <div class="mblock"><span class="m">y = w₀ + w₁x + w₂x² + w₃x³ = [w₀, w₁, w₂, w₃] · [1, x, x², x³]</span></div>
+  <p>{{s|s071|}}</p>
+  <figure class="scena" data-scena="polidot" data-titolo="{{a|s072|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s072|}}</h2>
-  <figure class="codice" data-titolo="{{a|s073|}}">
+  <h2>{{s|s073|}}</h2>
+  <figure class="codice" data-titolo="{{a|s074|}}">
 <pre data-lang="python">a = np.array([1, 2, 3])
 b = np.array([2, 0, 1])
 np.dot(a, b)      # 5
@@ -294,13 +294,13 @@ a @ b             # 5
 np.sum(a * b)     # 5
 a * b             # array([2, 0, 3])  (non è il prodotto interno)</pre>
     <ol class="spiega">
-      <li data-righe="3-4" data-segna="np.dot(a, b)@ok|a @ b@ok"><p>{{s|s074|}}</p></li>
-      <li data-righe="5" data-segna="a * b@due|np.sum@ok"><p>{{s|s075|}}</p></li>
-      <li data-righe="6" data-segna="a * b@no"><p>{{s|s076|}}</p></li>
+      <li data-righe="3-4" data-segna="np.dot(a, b)@ok|a @ b@ok"><p>{{s|s075|}}</p></li>
+      <li data-righe="5" data-segna="a * b@due|np.sum@ok"><p>{{s|s076|}}</p></li>
+      <li data-righe="6" data-segna="a * b@no"><p>{{s|s077|}}</p></li>
     </ol>
   </figure>
-  <p class="piccolo">{{s|s077|}}</p>
-  <figure class="scena" data-scena="numpydot" data-titolo="{{a|s078|}}"></figure>
+  <p class="piccolo">{{s|s078|}}</p>
+  <figure class="scena" data-scena="numpydot" data-titolo="{{a|s079|}}"></figure>
 </section>
 
 </main>

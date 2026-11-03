@@ -273,7 +273,7 @@ window.SCENE = window.SCENE || {};
   case Cons(h, t) => if t == Nil then h else init(h)</pre>
       <pre class="msg">Found:    (h : A)
 Required: List[A]</pre>
-      <div class="fix"><code>h</code> è un <b>elemento</b>, ma <code>init</code> deve restituire una <b>lista</b> e riceve una lista. Ricostruisci: <code>Cons(h, init(t))</code>, con il caso <code>Cons(_, Nil) => Nil</code> sopra.</div>
+      <div class="fix">{{s|s086|}}</div>
     </div>
     <div class="errore">
       <pre data-lang="scala">def length[A](l: List[A]): Int = l match
@@ -281,10 +281,10 @@ Required: List[A]</pre>
   case Cons(_, t) => 1 + length(t)</pre>
       <pre class="msg">Found:    (List.Nil : List[Nothing])
 Required: Int</pre>
-      <div class="fix">Ogni caso deve dare il tipo di ritorno. La lunghezza della lista vuota è il numero <code>0</code>, non la lista <code>Nil</code>.</div>
+      <div class="fix">{{s|s087|}}</div>
     </div>
   </div>
-  <figure class="scena" data-scena="erroriliste" data-titolo="{{a|s086|}}"></figure>
+  <figure class="scena" data-scena="erroriliste" data-titolo="{{a|s088|}}"></figure>
 </section>
 
 </main>

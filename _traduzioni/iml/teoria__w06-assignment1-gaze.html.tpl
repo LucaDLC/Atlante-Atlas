@@ -184,19 +184,19 @@ window.SCENE = window.SCENE || {};
   <h2>{{s|s031|}}</h2>
   <figure class="passi" data-titolo="{{a|s032|}}">
     <div class="passo"><div class="espr">x' = <mark class="ora">a</mark>·<mark class="dato">x</mark> + <mark class="ora">b</mark>·<mark class="dato">y</mark> + <mark class="ora">c</mark>      y' = <mark class="ora">d</mark>·<mark class="dato">x</mark> + <mark class="ora">e</mark>·<mark class="dato">y</mark> + <mark class="ora">f</mark></div><p class="nota">{{s|s033|}}</p></div>
-    <div class="passo"><div class="espr">due modelli separati:  w₁ = [<mark class="ora">a, b, c</mark>] per x',   w₂ = [<mark class="ora">d, e, f</mark>] per y'</div><p class="nota">{{s|s034|}}</p></div>
-    <div class="passo"><div class="espr">punto i  →  riga [<mark class="dato">xᵢ, yᵢ, 1</mark>]    con   [xᵢ, yᵢ, 1] · w₁ = <mark class="ok">x'ᵢ</mark></div><p class="nota">{{s|s035|}}</p></div>
-    <div class="passo"><div class="espr"><mark class="dato">A</mark> (9 × 3) · <mark class="ora">w₁</mark> (3) = <mark class="ok">b</mark> (9)</div><p class="nota">{{s|s036|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s034|}}</div><p class="nota">{{s|s035|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s036|}}</div><p class="nota">{{s|s037|}}</p></div>
+    <div class="passo"><div class="espr"><mark class="dato">A</mark> (9 × 3) · <mark class="ora">w₁</mark> (3) = <mark class="ok">b</mark> (9)</div><p class="nota">{{s|s038|}}</p></div>
   </figure>
-  <div class="box regola" data-tit="{{a|s037|}}">
-    <p>{{s|s038|}}</p>
+  <div class="box regola" data-tit="{{a|s039|}}">
+    <p>{{s|s040|}}</p>
   </div>
-  <figure class="scena" data-scena="affine" data-titolo="{{a|s039|}}"></figure>
+  <figure class="scena" data-scena="affine" data-titolo="{{a|s041|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s040|}}</h2>
-  <figure class="codice" data-titolo="{{a|s041|}}">
+  <h2>{{s|s042|}}</h2>
+  <figure class="codice" data-titolo="{{a|s043|}}">
 <pre data-lang="python">def get_design_matrix(pupils):             # pupils: N × 2
     return np.c_[pupils[:, 0], pupils[:, 1], np.ones(len(pupils))]
 
@@ -207,74 +207,74 @@ wy = np.linalg.lstsq(A, screen_train[:, 1], rcond=None)[0]   # [d, e, f]
 B = get_design_matrix(pupils_test)         # N × 3
 pred = np.c_[B @ wx, B @ wy]               # N × 2</pre>
     <ol class="spiega">
-      <li data-righe="1-2" data-segna="pupils[:, 0]@dato|pupils[:, 1]@dato|np.ones(len(pupils))@ora"><p>{{s|s042|}}</p></li>
-      <li data-righe="4-6" data-segna="screen_train[:, 0]@ok|screen_train[:, 1]@ok|[0]#2@ora"><p>{{s|s043|}}</p></li>
-      <li data-righe="8-9" data-segna="B @ wx@ok|B @ wy@ok"><p>{{s|s044|}}</p></li>
+      <li data-righe="1-2" data-segna="pupils[:, 0]@dato|pupils[:, 1]@dato|np.ones(len(pupils))@ora"><p>{{s|s044|}}</p></li>
+      <li data-righe="4-6" data-segna="screen_train[:, 0]@ok|screen_train[:, 1]@ok|[0]#2@ora"><p>{{s|s045|}}</p></li>
+      <li data-righe="8-9" data-segna="B @ wx@ok|B @ wy@ok"><p>{{s|s046|}}</p></li>
     </ol>
   </figure>
-  <figure class="passi" data-titolo="{{a|s045|}}">
-    <div class="passo"><div class="espr">w₁ ≈ [<mark class="ora">−49.3</mark>, −2.5, 16410.8]    w₂ ≈ [2.2, <mark class="ora">44.2</mark>, −10070.7]</div><p class="nota">{{s|s046|}}</p></div>
-    <div class="passo"><div class="espr">a ≈ −49:  pupilla <mark class="dato">+1 px</mark> a destra  ⇒  sguardo <mark class="no">≈ 49 px</mark> a sinistra</div><p class="nota">{{s|s047|}}</p></div>
-    <div class="passo"><div class="espr">errore di <mark class="dato">1 px</mark> sul centro pupilla  ⇒  <mark class="no">~50 px</mark> sullo schermo</div><p class="nota">{{s|s048|}}</p></div>
+  <figure class="passi" data-titolo="{{a|s047|}}">
+    <div class="passo"><div class="espr">w₁ ≈ [<mark class="ora">−49.3</mark>, −2.5, 16410.8]    w₂ ≈ [2.2, <mark class="ora">44.2</mark>, −10070.7]</div><p class="nota">{{s|s048|}}</p></div>
+    <div class="passo"><div class="espr">a ≈ −49:  pupilla <mark class="dato">+1 px</mark> a destra  ⇒  sguardo <mark class="no">≈ 49 px</mark> a sinistra</div><p class="nota">{{s|s049|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s050|}}</div><p class="nota">{{s|s051|}}</p></div>
   </figure>
-  <figure class="scena" data-scena="codicegaze" data-titolo="{{a|s049|}}"></figure>
+  <figure class="scena" data-scena="codicegaze" data-titolo="{{a|s052|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s050|}}</h2>
-  <figure class="codice" data-titolo="{{a|s051|}}">
+  <h2>{{s|s053|}}</h2>
+  <figure class="codice" data-titolo="{{a|s054|}}">
 <pre data-lang="python">err = np.abs(pred - truth)                  # N × 2
 mae = err.mean(axis=0)                      # [MAE_x, MAE_y]
 d = np.linalg.norm(pred - truth, axis=1)    # distanza di ogni punto
 dist = d.mean()
 rmse = np.sqrt(np.mean(d ** 2))</pre>
     <ol class="spiega">
-      <li data-righe="1-2" data-segna="np.abs@ora|axis=0@ora"><p>{{s|s052|}}</p></li>
-      <li data-righe="3-4" data-segna="axis=1@due"><p>{{s|s053|}}</p></li>
-      <li data-righe="5" data-segna="d ** 2@no|np.sqrt@ok"><p>{{s|s054|}}</p></li>
+      <li data-righe="1-2" data-segna="np.abs@ora|axis=0@ora"><p>{{s|s055|}}</p></li>
+      <li data-righe="3-4" data-segna="axis=1@due"><p>{{s|s056|}}</p></li>
+      <li data-righe="5" data-segna="d ** 2@no|np.sqrt@ok"><p>{{s|s057|}}</p></li>
     </ol>
   </figure>
-  <p class="piccolo">{{s|s055|}}</p>
+  <p class="piccolo">{{s|s058|}}</p>
   <div class="tab-wrap"><table class="tab">
-    <thead><tr><th>{{s|s056|}}</th><th>{{s|s057|}}</th><th>{{s|s058|}}</th><th>{{s|s059|}}</th><th>{{s|s060|}}</th></tr></thead>
+    <thead><tr><th>{{s|s059|}}</th><th>{{s|s060|}}</th><th>{{s|s061|}}</th><th>{{s|s062|}}</th><th>{{s|s063|}}</th></tr></thead>
     <tbody>
-      <tr><td>{{s|s061|}}</td><td>62.4</td><td>68.1</td><td><b>25.8</b></td><td><b>29.1</b></td></tr>
-      <tr><td>{{s|s062|}}</td><td><b>123.6</b></td><td><b>136.7</b></td><td>149.6</td><td>165.0</td></tr>
-      <tr><td>{{s|s063|}}</td><td>362.4</td><td>381.3</td><td>384.7</td><td>392.0</td></tr>
-      <tr><td>{{s|s064|}}</td><td>410.9</td><td>461.6</td><td>409.2</td><td>433.3</td></tr>
+      <tr><td>{{s|s064|}}</td><td>62.4</td><td>68.1</td><td><b>25.8</b></td><td><b>29.1</b></td></tr>
+      <tr><td>{{s|s065|}}</td><td><b>123.6</b></td><td><b>136.7</b></td><td>149.6</td><td>165.0</td></tr>
+      <tr><td>{{s|s066|}}</td><td>362.4</td><td>381.3</td><td>384.7</td><td>392.0</td></tr>
+      <tr><td>{{s|s067|}}</td><td>410.9</td><td>461.6</td><td>409.2</td><td>433.3</td></tr>
     </tbody>
   </table></div>
-  <p class="piccolo">{{s|s065|}}</p>
-  <div class="box attenzione" data-tit="{{a|s066|}}">
-    <p>{{s|s067|}}</p>
+  <p class="piccolo">{{s|s068|}}</p>
+  <div class="box attenzione" data-tit="{{a|s069|}}">
+    <p>{{s|s070|}}</p>
   </div>
-  <figure class="passi" data-titolo="{{a|s068|}}">
-    <div class="passo"><div class="espr">grid: errore più basso, ma è <mark class="no">training</mark></div><p class="nota">{{s|s069|}}</p></div>
-    <div class="passo"><div class="espr">quadratico: grid 62 → <mark class="ok">26</mark>,  circle 124 → <mark class="no">150</mark></div><p class="nota">{{s|s070|}}</p></div>
-    <div class="passo"><div class="espr">line: target (100, 540) → pupilla x = 318.1 nella griglia, <mark class="no">329.4</mark> nella registrazione line</div><p class="nota">{{s|s071|}}</p></div>
-    <div class="passo"><div class="espr">errore medio con segno su line:  x <mark class="no">−338</mark>, y +123</div><p class="nota">{{s|s072|}}</p></div>
+  <figure class="passi" data-titolo="{{a|s071|}}">
+    <div class="passo"><div class="espr">{{s|s072|}}</div><p class="nota">{{s|s073|}}</p></div>
+    <div class="passo"><div class="espr">quadratico: grid 62 → <mark class="ok">26</mark>,  circle 124 → <mark class="no">150</mark></div><p class="nota">{{s|s074|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s075|}}</div><p class="nota">{{s|s076|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s077|}}</div><p class="nota">{{s|s078|}}</p></div>
   </figure>
-  <div class="box esame" data-tit="{{a|s073|}}">
-    <p>{{s|s074|}}</p>
-  </div>
-  <div class="box regola" data-tit="{{a|s075|}}">
-    <p>{{s|s076|}}</p>
-    <p>{{s|s077|}}</p>
-    <p>{{s|s078|}}</p>
-  </div>
-  <div class="box attenzione" data-tit="{{a|s079|}}">
+  <div class="box esame" data-tit="{{a|s079|}}">
     <p>{{s|s080|}}</p>
-    <p>{{s|s081|}}</p>
   </div>
-  <figure class="scena" data-scena="valutagaze" data-titolo="{{a|s082|}}"></figure>
+  <div class="box regola" data-tit="{{a|s081|}}">
+    <p>{{s|s082|}}</p>
+    <p>{{s|s083|}}</p>
+    <p>{{s|s084|}}</p>
+  </div>
+  <div class="box attenzione" data-tit="{{a|s085|}}">
+    <p>{{s|s086|}}</p>
+    <p>{{s|s087|}}</p>
+  </div>
+  <figure class="scena" data-scena="valutagaze" data-titolo="{{a|s088|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s083|}}</h2>
-  <figure class="passi" data-titolo="{{a|s084|}}">
-    <div class="passo"><div class="espr">f(x, y) = <mark class="ora">a</mark>x² + <mark class="ora">b</mark>y² + <mark class="ora">c</mark>xy + <mark class="ora">d</mark>x + <mark class="ora">e</mark>y + <mark class="ora">f</mark></div><p class="nota">{{s|s085|}}</p></div>
-    <div class="passo"><div class="espr">riga i = [<mark class="dato">xᵢ², yᵢ², xᵢyᵢ, xᵢ, yᵢ, 1</mark>]</div><p class="nota">{{s|s086|}}</p></div>
-    <div class="passo"><div class="espr">6 parametri per coordinata  ⇒  almeno <mark class="ok">6 punti</mark>;  la griglia ne ha 9</div><p class="nota">{{s|s087|}}</p></div>
+  <h2>{{s|s089|}}</h2>
+  <figure class="passi" data-titolo="{{a|s090|}}">
+    <div class="passo"><div class="espr">f(x, y) = <mark class="ora">a</mark>x² + <mark class="ora">b</mark>y² + <mark class="ora">c</mark>xy + <mark class="ora">d</mark>x + <mark class="ora">e</mark>y + <mark class="ora">f</mark></div><p class="nota">{{s|s091|}}</p></div>
+    <div class="passo"><div class="espr">riga i = [<mark class="dato">xᵢ², yᵢ², xᵢyᵢ, xᵢ, yᵢ, 1</mark>]</div><p class="nota">{{s|s092|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s093|}}</div><p class="nota">{{s|s094|}}</p></div>
   </figure>
   <div class="errori">
     <div class="errore">
@@ -282,24 +282,24 @@ rmse = np.sqrt(np.mean(d ** 2))</pre>
 w = np.linalg.lstsq(A, targets, rcond=None)[0]
 quad(w, pupil)   # param[0] + param[1]*x + param[2]*y + param[3]*x*y + ...</pre>
 <pre class="msg">stima per il primo punto della griglia: 2.5e9 px   (vero: 100 px)</pre>
-      <div class="fix"><p>{{s|s088|}}</p></div>
+      <div class="fix"><p>{{s|s095|}}</p></div>
     </div>
   </div>
-  <figure class="scena" data-scena="quadratico" data-titolo="{{a|s089|}}"></figure>
+  <figure class="scena" data-scena="quadratico" data-titolo="{{a|s096|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s090|}}</h2>
-  <figure class="passi" data-titolo="{{a|s091|}}">
-    <div class="passo"><div class="espr">pupille ≈ 280–330,  schermo 100–1820,  x² ≈ 100 000</div><p class="nota">{{s|s092|}}</p></div>
-    <div class="passo"><div class="espr">condizionamento di A:  affine 1.4·10⁴ → <mark class="ok">4.2</mark>,  quadratico 1.9·10⁸ → <mark class="ok">22.8</mark></div><p class="nota">{{s|s093|}}</p></div>
-    <div class="passo"><div class="espr">previsioni (scaler fittato sul training):  <mark class="dato">identiche</mark>  (scarto 10⁻¹¹ px)</div><p class="nota">{{s|s094|}}</p></div>
-    <div class="passo"><div class="espr">scaler rifatto sui dati di test:  line 362 → 303,  random 411 → <mark class="no">141</mark></div><p class="nota">{{s|s095|}}</p></div>
+  <h2>{{s|s097|}}</h2>
+  <figure class="passi" data-titolo="{{a|s098|}}">
+    <div class="passo"><div class="espr">pupille ≈ 280–330,  schermo 100–1820,  x² ≈ 100 000</div><p class="nota">{{s|s099|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s100|}}</div><p class="nota">{{s|s101|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s102|}}</div><p class="nota">{{s|s103|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s104|}}</div><p class="nota">{{s|s105|}}</p></div>
   </figure>
-  <div class="box attenzione" data-tit="{{a|s096|}}">
-    <p>{{s|s097|}}</p>
+  <div class="box attenzione" data-tit="{{a|s106|}}">
+    <p>{{s|s107|}}</p>
   </div>
-  <figure class="scena" data-scena="normalizza" data-titolo="{{a|s098|}}"></figure>
+  <figure class="scena" data-scena="normalizza" data-titolo="{{a|s108|}}"></figure>
 </section>
 
 </main>

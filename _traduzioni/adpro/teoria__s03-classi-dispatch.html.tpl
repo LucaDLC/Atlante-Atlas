@@ -148,21 +148,21 @@ y.hello();
   <figure class="passi" data-titolo="{{a|s025|}}">
     <div class="passo"><div class="espr">Printable y = <mark class="dato">new Triangle()</mark>;</div><p class="nota">{{s|s026|}}</p></div>
     <div class="passo"><div class="espr"><mark class="due">(Printable)</mark> y</div><p class="nota">{{s|s027|}}</p></div>
-    <div class="passo"><div class="espr">.hello()   →   di quale classe? <mark class="ora">Triangle</mark></div><p class="nota">{{s|s028|}}</p></div>
-    <div class="passo"><div class="espr"><mark class="ok">triangle</mark></div><p class="nota">{{s|s029|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s028|}}</div><p class="nota">{{s|s029|}}</p></div>
+    <div class="passo"><div class="espr"><mark class="ok">triangle</mark></div><p class="nota">{{s|s030|}}</p></div>
   </figure>
-  <div class="box regola" data-tit="{{a|s030|}}">
-    <p>{{s|s031|}}</p>
+  <div class="box regola" data-tit="{{a|s031|}}">
+    <p>{{s|s032|}}</p>
   </div>
-  <p>{{s|s032|}}</p>
-  <figure class="scena" data-scena="dispatchjava" data-titolo="{{a|s033|}}"></figure>
+  <p>{{s|s033|}}</p>
+  <figure class="scena" data-scena="dispatchjava" data-titolo="{{a|s034|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s034|}}</h2>
-  <p>{{s|s035|}}</p>
-  <figure class="scena" data-scena="dispatch" data-titolo="{{a|s036|}}"></figure>
-  <figure class="codice" data-titolo="{{a|s037|}}">
+  <h2>{{s|s035|}}</h2>
+  <p>{{s|s036|}}</p>
+  <figure class="scena" data-scena="dispatch" data-titolo="{{a|s037|}}"></figure>
+  <figure class="codice" data-titolo="{{a|s038|}}">
 <pre data-lang="scala">class A:
   def f() = println("A")
   val g = () => println("A")
@@ -176,11 +176,11 @@ val a2: A = b1
 a2.f()
 a2.g()</pre>
     <ol class="spiega">
-      <li data-righe="2-3" data-segna="def f()@ora|val g@due"><p>{{s|s038|}}</p></li>
-      <li data-righe="6-7" data-segna="override def f()@ora|override val g@due"><p>{{s|s039|}}</p></li>
-      <li data-righe="10" data-segna="a2: A@dato"><p>{{s|s040|}}</p></li>
-      <li data-righe="11" data-segna="a2.f()@ok"><p>{{s|s041|}}</p></li>
-      <li data-righe="12" data-segna="a2.g()@ok"><p>{{s|s042|}}</p></li>
+      <li data-righe="2-3" data-segna="def f()@ora|val g@due"><p>{{s|s039|}}</p></li>
+      <li data-righe="6-7" data-segna="override def f()@ora|override val g@due"><p>{{s|s040|}}</p></li>
+      <li data-righe="10" data-segna="a2: A@dato"><p>{{s|s041|}}</p></li>
+      <li data-righe="11" data-segna="a2.f()@ok"><p>{{s|s042|}}</p></li>
+      <li data-righe="12" data-segna="a2.g()@ok"><p>{{s|s043|}}</p></li>
     </ol>
   </figure>
 </section>

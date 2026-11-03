@@ -162,97 +162,87 @@ yield f(a, b)</div>
       <p class="nota">{{s|s033|}}</p>
     </div>
     <div class="passo">
-      <div class="espr">for
-  <mark class="ora">a &lt;- ao</mark>          <span class="mano">// non è l'ultimo</span>
-  b &lt;- bo
-yield f(a, b)
-
-<mark class="ora">ao.flatMap(a =></mark> … <mark class="ora">)</mark></div>
-      <p class="nota">{{s|s034|}}</p>
-    </div>
-    <div class="passo">
-      <div class="espr">for
-  a &lt;- ao
-  <mark class="due">b &lt;- bo</mark>          <span class="mano">// è l'ultimo</span>
-<mark class="due">yield f(a, b)</mark>
-
-ao.flatMap(a => <mark class="due">bo.map(b => f(a, b))</mark>)</div>
+      <div class="espr">{{s|s034|}}</div>
       <p class="nota">{{s|s035|}}</p>
     </div>
+    <div class="passo">
+      <div class="espr">{{s|s036|}}</div>
+      <p class="nota">{{s|s037|}}</p>
+    </div>
   </figure>
-  <div class="box domanda-tua" data-tit="{{a|s036|}}">
-    <p>{{s|s037|}}</p>
-  </div>
-  <div class="box idea" data-tit="{{a|s038|}}">
+  <div class="box domanda-tua" data-tit="{{a|s038|}}">
     <p>{{s|s039|}}</p>
-    <p>{{s|s040|}}</p>
-    <p>{{s|s041|}}</p>
   </div>
-  <figure class="scena" data-scena="traduzione" data-titolo="{{a|s042|}}"></figure>
+  <div class="box idea" data-tit="{{a|s040|}}">
+    <p>{{s|s041|}}</p>
+    <p>{{s|s042|}}</p>
+    <p>{{s|s043|}}</p>
+  </div>
+  <figure class="scena" data-scena="traduzione" data-titolo="{{a|s044|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s043|}}</h2>
+  <h2>{{s|s045|}}</h2>
   <pre class="cod" data-lang="scala">for
   x &lt;- List(3, 4, 5)
   incremented = x + 1
   duplicated &lt;- List(incremented, incremented)
   if incremented % 2 == 0
 yield duplicated</pre>
-  <figure class="passi" data-titolo="{{a|s044|}}">
-    <div class="passo"><div class="espr">x = <mark class="dato">3</mark>   incremented = <mark class="ora">4</mark>   duplicated ∈ (4, 4)   4 pari? <mark class="ok">sì</mark>   →   <mark class="ok">4, 4</mark></div><p class="nota">{{s|s045|}}</p></div>
-    <div class="passo"><div class="espr">x = <mark class="dato">4</mark>   incremented = <mark class="ora">5</mark>   duplicated ∈ (5, 5)   5 pari? <mark class="no">no</mark>   →   niente</div><p class="nota">{{s|s046|}}</p></div>
-    <div class="passo"><div class="espr">x = <mark class="dato">5</mark>   incremented = <mark class="ora">6</mark>   duplicated ∈ (6, 6)   6 pari? <mark class="ok">sì</mark>   →   <mark class="ok">6, 6</mark></div><p class="nota">{{s|s047|}}</p></div>
-    <div class="passo"><div class="espr"><mark class="ok">List(4, 4, 6, 6)</mark></div><p class="nota">{{s|s048|}}</p></div>
+  <figure class="passi" data-titolo="{{a|s046|}}">
+    <div class="passo"><div class="espr">x = <mark class="dato">3</mark>   incremented = <mark class="ora">4</mark>   duplicated ∈ (4, 4)   4 pari? <mark class="ok">sì</mark>   →   <mark class="ok">4, 4</mark></div><p class="nota">{{s|s047|}}</p></div>
+    <div class="passo"><div class="espr">x = <mark class="dato">4</mark>   incremented = <mark class="ora">5</mark>   duplicated ∈ (5, 5)   5 pari? <mark class="no">no</mark>   →   niente</div><p class="nota">{{s|s048|}}</p></div>
+    <div class="passo"><div class="espr">x = <mark class="dato">5</mark>   incremented = <mark class="ora">6</mark>   duplicated ∈ (6, 6)   6 pari? <mark class="ok">sì</mark>   →   <mark class="ok">6, 6</mark></div><p class="nota">{{s|s049|}}</p></div>
+    <div class="passo"><div class="espr"><mark class="ok">List(4, 4, 6, 6)</mark></div><p class="nota">{{s|s050|}}</p></div>
   </figure>
-  <figure class="scena" data-scena="forlista" data-titolo="{{a|s049|}}"></figure>
+  <figure class="scena" data-scena="forlista" data-titolo="{{a|s051|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s050|}}</h2>
-  <p>{{s|s051|}}</p>
-  <figure class="codice" data-titolo="{{a|s052|}}">
+  <h2>{{s|s052|}}</h2>
+  <p>{{s|s053|}}</p>
+  <figure class="codice" data-titolo="{{a|s054|}}">
 <pre data-lang="scala">def headGrade(lst: List[(String, Int)]): Option[Int] =
   headOption(lst).map(_._2)
 
 def headGrade1(lst: List[(String, Int)]): Option[Int] =
   for p &lt;- headOption(lst) yield p._2</pre>
     <ol class="spiega">
-      <li data-righe="1" data-segna="(String, Int)@dato"><p>{{s|s053|}}</p></li>
-      <li data-righe="2" data-segna="headOption(lst)@due"><p>{{s|s054|}}</p></li>
-      <li data-righe="2" data-segna="_@ora"><p>{{s|s055|}}</p></li>
-      <li data-righe="2" data-segna="._2@ok"><p>{{s|s056|}}</p></li>
-      <li data-righe="5" data-segna="p &lt;- headOption(lst)@due|p._2@ok"><p>{{s|s057|}}</p></li>
+      <li data-righe="1" data-segna="(String, Int)@dato"><p>{{s|s055|}}</p></li>
+      <li data-righe="2" data-segna="headOption(lst)@due"><p>{{s|s056|}}</p></li>
+      <li data-righe="2" data-segna="_@ora"><p>{{s|s057|}}</p></li>
+      <li data-righe="2" data-segna="._2@ok"><p>{{s|s058|}}</p></li>
+      <li data-righe="5" data-segna="p &lt;- headOption(lst)@due|p._2@ok"><p>{{s|s059|}}</p></li>
     </ol>
   </figure>
-  <div class="box domanda-tua" data-tit="{{a|s058|}}">
-    <p>{{s|s059|}}</p>
+  <div class="box domanda-tua" data-tit="{{a|s060|}}">
+    <p>{{s|s061|}}</p>
   </div>
   <div class="errori">
     <div class="errore">
       <pre data-lang="scala">headOption(lst).map(_.1)</pre>
       <pre class="msg">',' or ')' expected, but number literal found</pre>
-      <div class="fix">Non è un indice: il metodo si chiama <code>_1</code>, con il trattino basso. Quindi <code>_._1</code>.</div>
+      <div class="fix">{{s|s062|}}</div>
     </div>
     <div class="errore">
       <pre data-lang="scala">def r: Option[Int] = lst.headOption.map(_._1)</pre>
       <pre class="msg">Found:    (_$1._1 : String)
 Required: Int</pre>
-      <div class="fix"><code>_1</code> è il nome, una String. Il voto è <code>_2</code>.</div>
+      <div class="fix">{{s|s063|}}</div>
     </div>
     <div class="errore">
       <pre data-lang="scala">for x &lt;- Some(4) if x % 2 == 0 yield x   // con l'Option del corso</pre>
       <pre class="msg">value withFilter is not a member of Option.Some[Int]</pre>
-      <div class="fix">Un <code>if</code> dentro un <code>for</code> cerca il metodo <code>withFilter</code>, non <code>filter</code>. L'Option degli esercizi non ce l'ha. Nessun esercizio lo richiede: usa <code>.filter</code> fuori dal for.</div>
+      <div class="fix">{{s|s064|}}</div>
     </div>
   </div>
-  <figure class="scena" data-scena="headgrade" data-titolo="{{a|s060|}}"></figure>
+  <figure class="scena" data-scena="headgrade" data-titolo="{{a|s065|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s061|}}</h2>
-  <p>{{s|s062|}}</p>
-  <figure class="codice" data-titolo="{{a|s063|}}">
+  <h2>{{s|s066|}}</h2>
+  <p>{{s|s067|}}</p>
+  <figure class="codice" data-titolo="{{a|s068|}}">
 <pre data-lang="scala">def variance(xs: Seq[Double]): Option[Double] =
   mean(xs).flatMap(m => mean(xs.map(x => math.pow(x - m, 2))))
 
@@ -262,20 +252,20 @@ def variance1(xs: Seq[Double]): Option[Double] =
     v &lt;- mean(xs.map(x => math.pow(x - m, 2)))
   yield v</pre>
     <ol class="spiega">
-      <li data-righe="2" data-segna="mean(xs)@dato"><p>{{s|s064|}}</p></li>
-      <li data-righe="2" data-segna="flatMap(m =>@ora"><p>{{s|s065|}}</p></li>
-      <li data-righe="2" data-segna="xs.map(x => math.pow(x - m, 2))@due"><p>{{s|s066|}}</p></li>
-      <li data-righe="2" data-segna="mean(xs.map@ok"><p>{{s|s067|}}</p></li>
-      <li data-righe="5-8" data-segna="m &lt;- mean(xs)@dato|v &lt;- mean@ok"><p>{{s|s068|}}</p></li>
+      <li data-righe="2" data-segna="mean(xs)@dato"><p>{{s|s069|}}</p></li>
+      <li data-righe="2" data-segna="flatMap(m =>@ora"><p>{{s|s070|}}</p></li>
+      <li data-righe="2" data-segna="xs.map(x => math.pow(x - m, 2))@due"><p>{{s|s071|}}</p></li>
+      <li data-righe="2" data-segna="mean(xs.map@ok"><p>{{s|s072|}}</p></li>
+      <li data-righe="5-8" data-segna="m &lt;- mean(xs)@dato|v &lt;- mean@ok"><p>{{s|s073|}}</p></li>
     </ol>
   </figure>
-  <figure class="passi" data-titolo="{{a|s069|}}">
+  <figure class="passi" data-titolo="{{a|s074|}}">
     <div class="passo"><div class="espr">m &lt;- mean(Seq(1, 2, 3)) = <mark class="dato">Some(2.0)</mark></div><p class="nota">(1 + 2 + 3) / 3 = 2.</p></div>
-    <div class="passo"><div class="espr">xs.map(x => (x - <mark class="dato">2</mark>)²) = Seq(<mark class="due">1.0</mark>, <mark class="due">0.0</mark>, <mark class="due">1.0</mark>)</div><p class="nota">{{s|s070|}}</p></div>
+    <div class="passo"><div class="espr">xs.map(x => (x - <mark class="dato">2</mark>)²) = Seq(<mark class="due">1.0</mark>, <mark class="due">0.0</mark>, <mark class="due">1.0</mark>)</div><p class="nota">{{s|s075|}}</p></div>
     <div class="passo"><div class="espr">v &lt;- mean(Seq(1, 0, 1)) = Some(0.666…)</div><p class="nota">2 / 3.</p></div>
-    <div class="passo"><div class="espr"><mark class="ok">Some(0.6666666666666666)</mark></div><p class="nota">{{s|s071|}}</p></div>
+    <div class="passo"><div class="espr"><mark class="ok">Some(0.6666666666666666)</mark></div><p class="nota">{{s|s076|}}</p></div>
   </figure>
-  <figure class="scena" data-scena="varianza" data-titolo="{{a|s072|}}"></figure>
+  <figure class="scena" data-scena="varianza" data-titolo="{{a|s077|}}"></figure>
 </section>
 
 </main>

@@ -272,54 +272,54 @@ whenByValue(false) { println("By value") }</div>
       <p class="nota">{{s|s082|}}</p>
     </div>
     <div class="passo">
-      <div class="espr"><mark class="no">By value</mark>          <span class="mano">stampato anche se cond è false!</span></div>
-      <p class="nota">{{s|s083|}}</p>
+      <div class="espr">{{s|s083|}}</div>
+      <p class="nota">{{s|s084|}}</p>
     </div>
     <div class="passo">
       <div class="espr">def whenByName(cond: Boolean)(body: <mark class="ora">=> Unit</mark>): Unit = if cond then body
 whenByName(false) { println("By name") }          <span class="mano">niente</span></div>
-      <p class="nota">{{s|s084|}}</p>
+      <p class="nota">{{s|s085|}}</p>
     </div>
   </figure>
-  <figure class="scena" data-scena="strategie3" data-titolo="{{a|s085|}}"></figure>
+  <figure class="scena" data-scena="strategie3" data-titolo="{{a|s086|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s086|}}</h2>
+  <h2>{{s|s087|}}</h2>
   <ul>
-    <li>{{s|s087|}}</li>
     <li>{{s|s088|}}</li>
     <li>{{s|s089|}}</li>
     <li>{{s|s090|}}</li>
+    <li>{{s|s091|}}</li>
   </ul>
-  <figure class="scena" data-scena="acosaserve" data-titolo="{{a|s091|}}"></figure>
+  <figure class="scena" data-scena="acosaserve" data-titolo="{{a|s092|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s092|}}</h2>
+  <h2>{{s|s093|}}</h2>
   <div class="errori">
     <div class="errore">
       <pre data-lang="scala">case Cons(h, t) => h :: t().toList</pre>
       <pre class="msg">Found:    (h : () => A)
 Required: A</pre>
-      <div class="fix"><code>h</code> è la ricetta, <code>h()</code> è il valore. <code>::</code> vuole il valore: <code>h()</code>.</div>
+      <div class="fix">{{s|s094|}}</div>
     </div>
     <div class="errore">
       <pre data-lang="scala">case Cons(h, t) => if p(h()) then cons(h(), t.takeWhile(p)) else empty</pre>
       <pre class="msg">value takeWhile is not a member of () => LazyList[A]</pre>
-      <div class="fix"><code>t</code> è una funzione, e le funzioni non hanno il metodo <code>takeWhile</code>. Prima esegui la ricetta: <code>t().takeWhile(p)</code>.</div>
+      <div class="fix">{{s|s095|}}</div>
     </div>
     <div class="errore">
       <pre data-lang="scala">enum LazyList[+A]:
   case Cons(h: => A, t: => LazyList[A])</pre>
       <pre class="msg">val parameters may not be call-by-name</pre>
-      <div class="fix">Ecco perché il <code>Cons</code> del corso usa <code>() => A</code>: i campi di un <code>case</code> non possono essere by-name. Il costruttore comodo <code>cons</code> (<a href="s04-lazylist.html">pagina successiva</a>) risolve il problema.</div>
+      <div class="fix">{{s|s096|}}</div>
     </div>
   </div>
-  <div class="box regola" data-tit="{{a|s093|}}">
-    <p>{{s|s094|}}</p>
+  <div class="box regola" data-tit="{{a|s097|}}">
+    <p>{{s|s098|}}</p>
   </div>
-  <figure class="scena" data-scena="hcontroh" data-titolo="{{a|s095|}}"></figure>
+  <figure class="scena" data-scena="hcontroh" data-titolo="{{a|s099|}}"></figure>
 </section>
 
 </main>

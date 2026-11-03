@@ -31,70 +31,74 @@
 @@s031 Leggere la firma
 @@s032 <code>S</code> è il tipo dello <b>stato</b>: cosa devo ricordare tra un passo e l'altro. <code>z</code> è lo stato iniziale.
 @@s033 <code>f</code> guarda lo stato e risponde con una <b>coppia</b>: il prossimo valore da emettere (<code>A</code>) e il nuovo stato (<code>S</code>).
-@@s034 È dentro un Option: <code>None</code> vuol dire "la lista finisce qui".
-@@s035 Il risultato è la lista dei valori emessi, uno per passo.
-@@s036 Senza pattern matching: map e getOrElse della settimana 3
-@@s037 Chiedo a <code>f</code> cosa fare con lo stato attuale: ottengo un <code>Option[(A, S)]</code>.
-@@s038 Se c'è una coppia, la apro: <code>a</code> il valore, <code>s</code> il nuovo stato. (Scala 3 permette di scrivere <code>(a, s) =></code> per una funzione che riceve una coppia.)
-@@s039 Emetto <code>a</code> e, come coda pigra, lo <code>unfold</code> dal nuovo stato.
-@@s040 Se <code>f</code> ha detto <code>None</code>, la lista è vuota. Il risultato di <code>map</code> è un <code>Option[LazyList[A]]</code>: <code>getOrElse</code> lo "apre".
-@@s041 unfold(0)(n => if n < 3 then Some((n * 10, n + 1)) else None).toList
-@@s042 Emetto 0, nuovo stato 1.
-@@s043 Emetto 10.
-@@s044 Emetto 20.
-@@s045 Fine.
-@@s046 Lo stato serve a ricordare; il valore è quello che esce.
-@@s047 Stato dopo stato
-@@s048 Perché <code>unfold</code>?
-@@s049 Fa la stessa cosa della ricorsione scritta a mano, ma la ricorsione la scrive lui: tu descrivi <b>un passo solo</b>.
-@@s050 A mano
-@@s051 Con unfold
-@@s052 Cambiano due cose: dove scrivevi <code>cons(valore, &lt;ricorsione&gt;)</code> scrivi <code>Some((valore, nuovoStato))</code>; dove scrivevi <code>empty</code> scrivi <code>None</code>. <code>cons</code> e la chiamata ricorsiva li mette <code>unfold</code>, nella sua ultima riga: <code>case Some((a, s)) => cons(a, unfold(s)(f))</code>.
-@@s053 Il gemello di fold
-@@s054 <code>foldRight</code> <b>consuma</b> una lista e dà un valore (esercizio 8). <code>unfold</code> parte da un valore (lo stato) e <b>costruisce</b> una lista (esercizio 13). In entrambi i casi non scrivi la ricorsione: nella scala di stile del corso è il passo da <i>forgivable</i> a <i>enlightened</i>.
-@@s055 Dubbio: unfold è ufficiale come cons?
-@@s056 No. Nel file il docente ha scritto <code>empty</code>, <code>cons</code>, <code>apply</code> (companion) e <code>headOption</code>, <code>tail</code>, <code>foldRight</code>, <code>foldLeft</code>, <code>find</code> (nell'enum). <code>unfold</code> l'hai scritto tu nell'esercizio 11. La <code>LazyList</code> della libreria standard di Scala, che il corso <b>non</b> usa, ne ha uno suo: <code>scala.collection.immutable.LazyList.unfold(1)(n => if n &gt; 4 then None else Some((n, n * 2)))</code> → <code>List(1, 2, 4)</code> (verificato).
-@@s057 Misurato: unfold è avanti di un passo
-@@s058 ora:calcolato prima del necessario
-@@s059 Stampo dentro la f dell'utente e chiedo 2 elementi su 3: <code>.map(…)</code> contro <code>.mapUnfold(…)</code>, poi <code>.take(2).toList</code>.
-@@s060 Stessa lista, stessa funzione.
-@@s061 <code>unfold</code> deve chiamare <code>f</code> <b>prima</b>, per sapere se la risposta è <code>None</code> (lista finita) o <code>Some</code>. <code>foldRight</code> + <code>cons</code> invece tiene sospesa anche la testa. Output reale.
-@@s062 map contro mapUnfold: chi calcola prima
-@@s063 Tutto con <code>unfold</code> (esercizi 12–13)
-@@s064 Funzione
-@@s065 Stato
-@@s066 Regola
-@@s067 <code>from(n)</code>
-@@s068 il numero attuale
-@@s069 <code>unfold(n)(k => Some((k, k + 1)))</code>
-@@s070 <code>fibsUnfold</code>
-@@s071 la coppia (a, b)
-@@s072 <code>unfold((0, 1))((a, b) => Some((a, (b, a + b))))</code>
-@@s073 <code>mapUnfold(f)</code>
-@@s074 la lista rimanente
-@@s075 se è un Cons, emetti <code>f(h())</code> e passa a <code>t()</code>
-@@s076 <code>takeUnfold(n)</code>
-@@s077 (lista, quanti mancano)
-@@s078 se c'è una cella e mancano &gt; 0, emetti e scala di 1
-@@s079 <code>zipWith</code>
-@@s080 (lista 1, lista 2)
-@@s081 se entrambe hanno una cella, emetti <code>ope(h1(), h2())</code>
-@@s082 Le versioni con unfold (verificate)
-@@s083 Lo stato è la finestra (a, b). Emetto <code>a</code>, il nuovo stato è <code>(b, a + b)</code>. <code>fibsUnfold.take(100).toList == fibs.take(100).toList</code> è vero.
-@@s084 Lo stato è "la parte di lista che devo ancora leggere". Le graffe con dei <code>case</code> sono una funzione che fa pattern matching sul suo argomento.
-@@s085 Lo stato è una coppia: la lista e quanti elementi mancano. Scrivi le parentesi doppie <code>unfold((this, n))</code>: si vede che è <b>un</b> argomento, lo stato.
-@@s086 Da dove viene <code>k</code>? Non lo dichiari: nasce nel pattern, quando il <code>case</code> smonta la coppia. <code>n</code> resta fisso (è il parametro del metodo); quello che scende è il contatore <b>dentro lo stato</b>.
-@@s087 <code>case _</code> raccoglie i due modi di finire: lista vuota <b>oppure</b> contatore a 0. Va per <b>ultimo</b>: i case si provano dall'alto.
-@@s088 <code>takeWhileUnfold</code>: come <code>mapUnfold</code>, ma la guardia decide se continuare. Predicato falso → si cade in <code>case _</code> → fine.
-@@s089 Il testo sceglie un'operazione non strict: <code>ope</code> può ignorare un argomento senza calcolarlo (utile con <code>||</code> e <code>&amp;&amp;</code>).
-@@s090 Lo stato sono le due liste. Si ferma appena una finisce.
-@@s091 Caso di prova del testo
-@@s092 Risultato (verificato)
-@@s093 <code>naturals.zipWith[Int, Int](_+_)(naturals).take(2000000000).take(5).toList</code>
-@@s094 <code>List(2, 4, 6, 8, 10)</code>
-@@s095 <code>naturals.map(_%2==0).zipWith[Boolean, Boolean](_||_)(naturals.map(_%2==1)).take(4).toList</code>
-@@s096 <code>List(true, true, true, true)</code>
-@@s097 Il secondo: ogni numero è pari <b>oppure</b> dispari, quindi sempre <code>true</code>. Pensaci prima di eseguire, come chiede il testo.
-@@s098 Esercizio 13: cosa devono dare i due casi di prova
-@@s099 "naturals.zipWith(_ + _)(naturals) adds each number to itself, so it gives the even numbers 2, 4, 6, …; take(2000000000) costs nothing, because it builds one node at a time. The Boolean one gives only true: every number is either even or odd. Since ope takes its operands by name, || never evaluates the second one once the first is true."
-@@s100 Lo stato (lista, k) di takeUnfold
+@@s034 Option[…] → <mark class="ok">Some((valore, stato))</mark> oppure <mark class="no">None</mark>
+@@s035 È dentro un Option: <code>None</code> vuol dire "la lista finisce qui".
+@@s036 Il risultato è la lista dei valori emessi, uno per passo.
+@@s037 Senza pattern matching: map e getOrElse della settimana 3
+@@s038 Chiedo a <code>f</code> cosa fare con lo stato attuale: ottengo un <code>Option[(A, S)]</code>.
+@@s039 Se c'è una coppia, la apro: <code>a</code> il valore, <code>s</code> il nuovo stato. (Scala 3 permette di scrivere <code>(a, s) =></code> per una funzione che riceve una coppia.)
+@@s040 Emetto <code>a</code> e, come coda pigra, lo <code>unfold</code> dal nuovo stato.
+@@s041 Se <code>f</code> ha detto <code>None</code>, la lista è vuota. Il risultato di <code>map</code> è un <code>Option[LazyList[A]]</code>: <code>getOrElse</code> lo "apre".
+@@s042 unfold(0)(n => if n < 3 then Some((n * 10, n + 1)) else None).toList
+@@s043 Emetto 0, nuovo stato 1.
+@@s044 Emetto 10.
+@@s045 Emetto 20.
+@@s046 Fine.
+@@s047 Lo stato serve a ricordare; il valore è quello che esce.
+@@s048 Stato dopo stato
+@@s049 Perché <code>unfold</code>?
+@@s050 Fa la stessa cosa della ricorsione scritta a mano, ma la ricorsione la scrive lui: tu descrivi <b>un passo solo</b>.
+@@s051 A mano
+@@s052 Con unfold
+@@s053 Cambiano due cose: dove scrivevi <code>cons(valore, &lt;ricorsione&gt;)</code> scrivi <code>Some((valore, nuovoStato))</code>; dove scrivevi <code>empty</code> scrivi <code>None</code>. <code>cons</code> e la chiamata ricorsiva li mette <code>unfold</code>, nella sua ultima riga: <code>case Some((a, s)) => cons(a, unfold(s)(f))</code>.
+@@s054 Il gemello di fold
+@@s055 <code>foldRight</code> <b>consuma</b> una lista e dà un valore (esercizio 8). <code>unfold</code> parte da un valore (lo stato) e <b>costruisce</b> una lista (esercizio 13). In entrambi i casi non scrivi la ricorsione: nella scala di stile del corso è il passo da <i>forgivable</i> a <i>enlightened</i>.
+@@s056 Dubbio: unfold è ufficiale come cons?
+@@s057 No. Nel file il docente ha scritto <code>empty</code>, <code>cons</code>, <code>apply</code> (companion) e <code>headOption</code>, <code>tail</code>, <code>foldRight</code>, <code>foldLeft</code>, <code>find</code> (nell'enum). <code>unfold</code> l'hai scritto tu nell'esercizio 11. La <code>LazyList</code> della libreria standard di Scala, che il corso <b>non</b> usa, ne ha uno suo: <code>scala.collection.immutable.LazyList.unfold(1)(n => if n &gt; 4 then None else Some((n, n * 2)))</code> → <code>List(1, 2, 4)</code> (verificato).
+@@s058 Misurato: unfold è avanti di un passo
+@@s059 ora:calcolato prima del necessario
+@@s060 Stampo dentro la f dell'utente e chiedo 2 elementi su 3: <code>.map(…)</code> contro <code>.mapUnfold(…)</code>, poi <code>.take(2).toList</code>.
+@@s061 Stessa lista, stessa funzione.
+@@s062 <code>unfold</code> deve chiamare <code>f</code> <b>prima</b>, per sapere se la risposta è <code>None</code> (lista finita) o <code>Some</code>. <code>foldRight</code> + <code>cons</code> invece tiene sospesa anche la testa. Output reale.
+@@s063 map contro mapUnfold: chi calcola prima
+@@s064 Tutto con <code>unfold</code> (esercizi 12–13)
+@@s065 Funzione
+@@s066 Stato
+@@s067 Regola
+@@s068 <code>from(n)</code>
+@@s069 il numero attuale
+@@s070 <code>unfold(n)(k => Some((k, k + 1)))</code>
+@@s071 <code>fibsUnfold</code>
+@@s072 la coppia (a, b)
+@@s073 <code>unfold((0, 1))((a, b) => Some((a, (b, a + b))))</code>
+@@s074 <code>mapUnfold(f)</code>
+@@s075 la lista rimanente
+@@s076 se è un Cons, emetti <code>f(h())</code> e passa a <code>t()</code>
+@@s077 <code>takeUnfold(n)</code>
+@@s078 (lista, quanti mancano)
+@@s079 se c'è una cella e mancano &gt; 0, emetti e scala di 1
+@@s080 <code>zipWith</code>
+@@s081 (lista 1, lista 2)
+@@s082 se entrambe hanno una cella, emetti <code>ope(h1(), h2())</code>
+@@s083 Le versioni con unfold (verificate)
+@@s084 Lo stato è la finestra (a, b). Emetto <code>a</code>, il nuovo stato è <code>(b, a + b)</code>. <code>fibsUnfold.take(100).toList == fibs.take(100).toList</code> è vero.
+@@s085 Lo stato è "la parte di lista che devo ancora leggere". Le graffe con dei <code>case</code> sono una funzione che fa pattern matching sul suo argomento.
+@@s086 Lo stato è una coppia: la lista e quanti elementi mancano. Scrivi le parentesi doppie <code>unfold((this, n))</code>: si vede che è <b>un</b> argomento, lo stato.
+@@s087 Da dove viene <code>k</code>? Non lo dichiari: nasce nel pattern, quando il <code>case</code> smonta la coppia. <code>n</code> resta fisso (è il parametro del metodo); quello che scende è il contatore <b>dentro lo stato</b>.
+@@s088 <code>case _</code> raccoglie i due modi di finire: lista vuota <b>oppure</b> contatore a 0. Va per <b>ultimo</b>: i case si provano dall'alto.
+@@s089 <code>takeWhileUnfold</code>: come <code>mapUnfold</code>, ma la guardia decide se continuare. Predicato falso → si cade in <code>case _</code> → fine.
+@@s090 Il testo sceglie un'operazione non strict: <code>ope</code> può ignorare un argomento senza calcolarlo (utile con <code>||</code> e <code>&amp;&amp;</code>).
+@@s091 Lo stato sono le due liste. Si ferma appena una finisce.
+@@s092 Caso di prova del testo
+@@s093 Risultato (verificato)
+@@s094 <code>naturals.zipWith[Int, Int](_+_)(naturals).take(2000000000).take(5).toList</code>
+@@s095 <code>List(2, 4, 6, 8, 10)</code>
+@@s096 <code>naturals.map(_%2==0).zipWith[Boolean, Boolean](_||_)(naturals.map(_%2==1)).take(4).toList</code>
+@@s097 <code>List(true, true, true, true)</code>
+@@s098 Il secondo: ogni numero è pari <b>oppure</b> dispari, quindi sempre <code>true</code>. Pensaci prima di eseguire, come chiede il testo.
+@@s099 Esercizio 13: cosa devono dare i due casi di prova
+@@s100 "naturals.zipWith(_ + _)(naturals) adds each number to itself, so it gives the even numbers 2, 4, 6, …; take(2000000000) costs nothing, because it builds one node at a time. The Boolean one gives only true: every number is either even or odd. Since ope takes its operands by name, || never evaluates the second one once the first is true."
+@@s101 Copiato da <code>mapUnfold</code>: qui non c'è nessuna <code>f</code>, l'elemento esce così com'è. E sotto ci sono altri tre problemi che il compilatore non vede ancora: lo stato è una coppia, quindi il case deve essere <code>(Cons(h, t), k)</code>; <code>n</code> non scende mai, scende <code>k</code>; manca il controllo <code>if k &gt; 0</code>, senza il quale <code>naturals.takeUnfold(3)</code> non finisce.
+@@s102 <code>case _</code> combacia con tutto: i case sotto non vengono mai provati. Con <code>-Werror</code> il file non compila. <code>case _</code> va per ultimo.
+@@s103 Senza <code>unfold</code> il metodo restituisce l'<code>Option</code>, che è la risposta di <code>f</code> a <code>unfold</code>, non la lista. Il <code>match</code> va <b>dentro</b> <code>unfold(this) { … }</code>: le graffe con i case sono proprio la funzione <code>f</code>.
+@@s104 Lo stato (lista, k) di takeUnfold

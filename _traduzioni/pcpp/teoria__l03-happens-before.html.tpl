@@ -143,53 +143,53 @@ window.SCENE = window.SCENE || {};
     <p>{{s|s017|}}</p>
   </div>
   <figure class="passi" data-titolo="{{a|s018|}}">
-    <div class="passo"><div class="espr">(<mark class="dato">a</mark>, <mark class="ok">b</mark>)    oppure    <mark class="dato">a</mark> → <mark class="ok">b</mark></div><p class="nota">{{s|s019|}}</p></div>
-    <div class="passo"><div class="espr"><mark class="dato">a</mark> → <mark class="due">b</mark> → <mark class="ok">c</mark>    =    (a,b), (b,c), <mark class="ora">(a,c)</mark></div><p class="nota">{{s|s020|}}</p></div>
-    <div class="passo"><div class="espr">(a, b) ∉ HB   <b>e</b>   (b, a) ∉ HB</div><p class="nota">{{s|s021|}}</p></div>
-    <div class="passo"><div class="espr">happens-before = <mark class="ora">ordine parziale</mark></div><p class="nota">{{s|s022|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s019|}}</div><p class="nota">{{s|s020|}}</p></div>
+    <div class="passo"><div class="espr"><mark class="dato">a</mark> → <mark class="due">b</mark> → <mark class="ok">c</mark>    =    (a,b), (b,c), <mark class="ora">(a,c)</mark></div><p class="nota">{{s|s021|}}</p></div>
+    <div class="passo"><div class="espr">(a, b) ∉ HB   <b>e</b>   (b, a) ∉ HB</div><p class="nota">{{s|s022|}}</p></div>
+    <div class="passo"><div class="espr">happens-before = <mark class="ora">ordine parziale</mark></div><p class="nota">{{s|s023|}}</p></div>
   </figure>
-  <figure class="scena" data-scena="coppie" data-titolo="{{a|s023|}}"></figure>
+  <figure class="scena" data-scena="coppie" data-titolo="{{a|s024|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s024|}}</h2>
-  <p>{{s|s025|}}</p>
+  <h2>{{s|s025|}}</h2>
+  <p>{{s|s026|}}</p>
   <div class="tab-wrap"><table class="tab">
-    <thead><tr><th>{{s|s026|}}</th><th>{{s|s027|}}</th><th>{{s|s028|}}</th></tr></thead>
+    <thead><tr><th>{{s|s027|}}</th><th>{{s|s028|}}</th><th>{{s|s029|}}</th></tr></thead>
     <tbody>
-      <tr><td>{{s|s029|}}</td><td>{{s|s030|}}</td><td><code>t1(1) → t1(2)</code></td></tr>
-      <tr><td>{{s|s031|}}</td><td>{{s|s032|}}</td><td>{{s|s033|}}</td></tr>
-      <tr><td>{{s|s034|}}</td><td>{{s|s035|}}</td><td>{{s|s036|}}</td></tr>
-      <tr><td>{{s|s037|}}</td><td>{{s|s038|}}</td><td>{{s|s039|}}</td></tr>
-      <tr><td>{{s|s040|}}</td><td>{{s|s041|}}</td><td>{{s|s042|}}</td></tr>
-      <tr><td>{{s|s043|}}</td><td>{{s|s044|}}</td><td>{{s|s045|}}</td></tr>
-      <tr><td>{{s|s046|}}</td><td>{{s|s047|}}</td><td>{{s|s048|}}</td></tr>
-      <tr><td>{{s|s049|}}</td><td>a → c e c → b</td><td>{{s|s050|}}</td></tr>
+      <tr><td>{{s|s030|}}</td><td>{{s|s031|}}</td><td><code>t1(1) → t1(2)</code></td></tr>
+      <tr><td>{{s|s032|}}</td><td>{{s|s033|}}</td><td>{{s|s034|}}</td></tr>
+      <tr><td>{{s|s035|}}</td><td>{{s|s036|}}</td><td>{{s|s037|}}</td></tr>
+      <tr><td>{{s|s038|}}</td><td>{{s|s039|}}</td><td>{{s|s040|}}</td></tr>
+      <tr><td>{{s|s041|}}</td><td>{{s|s042|}}</td><td>{{s|s043|}}</td></tr>
+      <tr><td>{{s|s044|}}</td><td>{{s|s045|}}</td><td>{{s|s046|}}</td></tr>
+      <tr><td>{{s|s047|}}</td><td>{{s|s048|}}</td><td>{{s|s049|}}</td></tr>
+      <tr><td>{{s|s050|}}</td><td>a → c e c → b</td><td>{{s|s051|}}</td></tr>
     </tbody>
   </table></div>
-  <figure class="scena" data-scena="regole" data-titolo="{{a|s051|}}"></figure>
+  <figure class="scena" data-scena="regole" data-titolo="{{a|s052|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s052|}}</h2>
-  <figure class="scena" data-scena="grafo" data-titolo="{{a|s053|}}"></figure>
-  <div class="box domanda-tua" data-tit="{{a|s054|}}">
-    <p>{{s|s055|}}</p>
+  <h2>{{s|s053|}}</h2>
+  <figure class="scena" data-scena="grafo" data-titolo="{{a|s054|}}"></figure>
+  <div class="box domanda-tua" data-tit="{{a|s055|}}">
+    <p>{{s|s056|}}</p>
   </div>
 </section>
 
 <section>
-  <h2>{{s|s056|}}</h2>
-  <p>{{s|s057|}}</p>
-  <figure class="passi" data-titolo="{{a|s058|}}">
-    <div class="passo"><div class="espr">PO<sub>m</sub> = { m(init(x)) → m(init(y)) → m(init(a)) → m(init(b)) → m(start(t1)) → m(start(t2)) → m(join(t1)) → m(join(t2)) → m(5) }</div><p class="nota">{{s|s059|}}</p></div>
-    <div class="passo"><div class="espr"><mark class="ora">PO<sub>1</sub> = { t1(1) → t1(2) }</mark>     <mark class="due">PO<sub>2</sub> = { t2(3) → t2(4) }</mark></div><p class="nota">{{s|s060|}}</p></div>
-    <div class="passo"><div class="espr"><mark class="ok">S = { m(start(t1)) → t1(1),  m(start(t2)) → t2(3) }</mark></div><p class="nota">{{s|s061|}}</p></div>
-    <div class="passo"><div class="espr"><mark class="ok">T = { t1(2) → m(join(t1)),  t2(4) → m(join(t2)) }</mark></div><p class="nota">{{s|s062|}}</p></div>
-    <div class="passo"><div class="espr">HB = chiusura transitiva di ( PO<sub>m</sub> ∪ PO<sub>1</sub> ∪ PO<sub>2</sub> ∪ S ∪ T )</div><p class="nota">{{s|s063|}}</p></div>
-    <div class="passo"><div class="espr">t1(1) → t2(4) ∉ HB   e   <mark class="no">t2(4) → t1(1) ∉ HB</mark></div><p class="nota">{{s|s064|}}</p></div>
+  <h2>{{s|s057|}}</h2>
+  <p>{{s|s058|}}</p>
+  <figure class="passi" data-titolo="{{a|s059|}}">
+    <div class="passo"><div class="espr">PO<sub>m</sub> = { m(init(x)) → m(init(y)) → m(init(a)) → m(init(b)) → m(start(t1)) → m(start(t2)) → m(join(t1)) → m(join(t2)) → m(5) }</div><p class="nota">{{s|s060|}}</p></div>
+    <div class="passo"><div class="espr"><mark class="ora">PO<sub>1</sub> = { t1(1) → t1(2) }</mark>     <mark class="due">PO<sub>2</sub> = { t2(3) → t2(4) }</mark></div><p class="nota">{{s|s061|}}</p></div>
+    <div class="passo"><div class="espr"><mark class="ok">S = { m(start(t1)) → t1(1),  m(start(t2)) → t2(3) }</mark></div><p class="nota">{{s|s062|}}</p></div>
+    <div class="passo"><div class="espr"><mark class="ok">T = { t1(2) → m(join(t1)),  t2(4) → m(join(t2)) }</mark></div><p class="nota">{{s|s063|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s064|}}</div><p class="nota">{{s|s065|}}</p></div>
+    <div class="passo"><div class="espr">t1(1) → t2(4) ∉ HB   e   <mark class="no">t2(4) → t1(1) ∉ HB</mark></div><p class="nota">{{s|s066|}}</p></div>
   </figure>
-  <figure class="scena" data-scena="insiemi" data-titolo="{{a|s065|}}"></figure>
+  <figure class="scena" data-scena="insiemi" data-titolo="{{a|s067|}}"></figure>
 </section>
 
 </main>

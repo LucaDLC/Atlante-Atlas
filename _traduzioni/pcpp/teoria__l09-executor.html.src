@@ -6,35 +6,39 @@
 @@s006 Un <b>task</b> è un pezzo di lavoro da fare (un <code>Runnable</code> o un <code>Callable</code>). Un <b>executor</b> riceve i task e li esegue con un gruppo di thread, il <b>pool</b>. Con <code>Executors.newWorkStealingPool()</code> il pool ha circa un thread per core. Ogni worker ha una sua coda di task: se la sua è vuota, ruba un task dalla coda di un altro (<i>work stealing</i>).
 @@s007 La dinamica dell’executor
 @@s008 dato:task,ora:passo in corso,ok:risultato
-@@s009 Il chiamante non aspetta: submit restituisce subito.
-@@s010 Se la sua coda è vuota, ne ruba uno da un altro worker.
-@@s011 Il codice del task gira su un thread del pool, non sul thread che ha chiamato submit.
-@@s012 <code>future.get()</code> legge il risultato, aspettando se il task non è ancora finito.
-@@s013 Future: il risultato che arriverà
-@@s014 <code>submit</code> restituisce un <b>Future</b>: un contenitore per un valore che arriverà dopo. <code>future.get()</code> blocca finché il task è finito e restituisce il risultato. Con <code>Future&lt;?&gt;</code> il task non restituisce niente: serve solo per aspettare che finisca.
-@@s015 Attenzione
-@@s016 Se il task lancia un’eccezione, <code>get()</code> la rilancia avvolta in <code>ExecutionException</code>. Non ignorare il risultato di <code>get()</code>, altrimenti l’errore sparisce.
-@@s017 Esempio: contare i primi in otto task
-@@s018 Il conteggio dei primi sotto 100 000, diviso in otto pezzi indipendenti. Ogni task conta i primi del suo pezzo e li somma nello stesso <code>LongAdder</code> condiviso (senza lock, vedi la pagina su striping).
-@@s019 Esecutore.java
-@@s020 <code>isPrime</code> prova i divisori fino alla radice di n: basta, perché un divisore oltre la radice ha un complementare sotto. Il cast <code>(long)</code> evita un overflow in <code>d * d</code>.
-@@s021 100 000 numeri divisi per 8 task: 12 500 numeri a testa. I pezzi sono indipendenti, quindi possono girare in parallelo.
-@@s022 Il pool con work stealing. Il numero di worker dipende dai core della macchina, non dal numero di task.
-@@s023 Contatore condiviso senza lock: ogni task fa <code>increment</code> sui primi trovati. È il tema del caso di studio sul LongAdder.
-@@s024 Il ciclo prepara gli otto task. Per ognuno, l’intervallo <code>[da, a)</code> è il suo pezzo di numeri.
-@@s025 Il task è la lambda che conta i primi nell’intervallo. <code>submit</code> lo accoda e restituisce il Future, che si mette nella lista.
-@@s026 Aspetta il risultato di ogni task, uno per uno. Dopo questo ciclo tutti i task sono finiti.
-@@s027 Chiude il pool: non accetta altri task, e i worker si fermano quando finiscono.
-@@s028 Somma dei contributi di tutti i thread: 9 592 primi sotto 100 000. Il risultato è corretto anche se i task girano in parallelo.
-@@s029 Task o thread virtuali?
-@@s030 La lezione confronta le due strade sullo stesso conteggio dei primi. Con 1–64 thread o task: i task sono un po’ più veloci dei thread, mentre thread di piattaforma e virtuali sono ugualmente veloci. Con 2048: i task restano leggermente più veloci dei thread virtuali, e i thread di piattaforma diventano molto più lenti.
-@@s031 lavoro
-@@s032 strumento consigliato
-@@s033 attesa (I/O, rete, database)
-@@s034 thread virtuali: un thread per operazione
-@@s035 calcolo CPU, prestazione importante
-@@s036 task su executor: più controllo e un numero fisso di thread
-@@s037 semplicità
-@@s038 thread virtuali: più semplici da scrivere
-@@s039 Regola della lezione
-@@s040 Non creare molti thread di piattaforma. Per l’I/O, thread virtuali; per il CPU-bound, task. Se non sai, scegli i thread virtuali.
+@@s009 <code>executor.submit(task)</code>: il task entra in una <mark class="ora">coda</mark>
+@@s010 Il chiamante non aspetta: submit restituisce subito.
+@@s011 Un <mark class="ora">worker</mark> prende un task dalla sua coda
+@@s012 Se la sua coda è vuota, ne ruba uno da un altro worker.
+@@s013 Il worker <mark class="dato">esegue</mark> il task
+@@s014 Il codice del task gira su un thread del pool, non sul thread che ha chiamato submit.
+@@s015 Il <mark class="ok">Future</mark> viene completato con il risultato
+@@s016 <code>future.get()</code> legge il risultato, aspettando se il task non è ancora finito.
+@@s017 Future: il risultato che arriverà
+@@s018 <code>submit</code> restituisce un <b>Future</b>: un contenitore per un valore che arriverà dopo. <code>future.get()</code> blocca finché il task è finito e restituisce il risultato. Con <code>Future&lt;?&gt;</code> il task non restituisce niente: serve solo per aspettare che finisca.
+@@s019 Attenzione
+@@s020 Se il task lancia un’eccezione, <code>get()</code> la rilancia avvolta in <code>ExecutionException</code>. Non ignorare il risultato di <code>get()</code>, altrimenti l’errore sparisce.
+@@s021 Esempio: contare i primi in otto task
+@@s022 Il conteggio dei primi sotto 100 000, diviso in otto pezzi indipendenti. Ogni task conta i primi del suo pezzo e li somma nello stesso <code>LongAdder</code> condiviso (senza lock, vedi la pagina su striping).
+@@s023 Esecutore.java
+@@s024 <code>isPrime</code> prova i divisori fino alla radice di n: basta, perché un divisore oltre la radice ha un complementare sotto. Il cast <code>(long)</code> evita un overflow in <code>d * d</code>.
+@@s025 100 000 numeri divisi per 8 task: 12 500 numeri a testa. I pezzi sono indipendenti, quindi possono girare in parallelo.
+@@s026 Il pool con work stealing. Il numero di worker dipende dai core della macchina, non dal numero di task.
+@@s027 Contatore condiviso senza lock: ogni task fa <code>increment</code> sui primi trovati. È il tema del caso di studio sul LongAdder.
+@@s028 Il ciclo prepara gli otto task. Per ognuno, l’intervallo <code>[da, a)</code> è il suo pezzo di numeri.
+@@s029 Il task è la lambda che conta i primi nell’intervallo. <code>submit</code> lo accoda e restituisce il Future, che si mette nella lista.
+@@s030 Aspetta il risultato di ogni task, uno per uno. Dopo questo ciclo tutti i task sono finiti.
+@@s031 Chiude il pool: non accetta altri task, e i worker si fermano quando finiscono.
+@@s032 Somma dei contributi di tutti i thread: 9 592 primi sotto 100 000. Il risultato è corretto anche se i task girano in parallelo.
+@@s033 Task o thread virtuali?
+@@s034 La lezione confronta le due strade sullo stesso conteggio dei primi. Con 1–64 thread o task: i task sono un po’ più veloci dei thread, mentre thread di piattaforma e virtuali sono ugualmente veloci. Con 2048: i task restano leggermente più veloci dei thread virtuali, e i thread di piattaforma diventano molto più lenti.
+@@s035 lavoro
+@@s036 strumento consigliato
+@@s037 attesa (I/O, rete, database)
+@@s038 thread virtuali: un thread per operazione
+@@s039 calcolo CPU, prestazione importante
+@@s040 task su executor: più controllo e un numero fisso di thread
+@@s041 semplicità
+@@s042 thread virtuali: più semplici da scrivere
+@@s043 Regola della lezione
+@@s044 Non creare molti thread di piattaforma. Per l’I/O, thread virtuali; per il CPU-bound, task. Se non sai, scegli i thread virtuali.

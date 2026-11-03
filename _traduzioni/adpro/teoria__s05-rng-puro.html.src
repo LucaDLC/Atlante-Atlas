@@ -11,43 +11,45 @@
 @@s011 Settimana 5, esercizi 1–4 (capitolo 6 del libro). Un generatore di numeri casuali "normale" ha uno stato nascosto che cambia a ogni chiamata: non è puro. La soluzione funzionale è rendere lo stato <b>esplicito</b>: ogni chiamata riceve lo stato e ne restituisce uno nuovo. È il primo passo verso la <a href="s05-state.html">State monad</a>.
 @@s012 Il problema: uno stato nascosto
 @@s013 Perché rollDie non è una funzione pura
-@@s014 Stessa espressione, risultati diversi: dipende da <code>rng</code>, uno stato esterno che cambia a ogni chiamata (e che chiunque può cambiare).
-@@s015 Non posso sostituire un'espressione con il suo valore: manca la <b>trasparenza referenziale</b> (settimana 1). Test e ragionamento diventano difficili.
-@@s016 La funzione non cambia niente: restituisce anche lo stato successivo, e chi la usa lo passa alla chiamata dopo.
-@@s017 var nascosto contro stato esplicito
-@@s018 RNG e SimpleRNG
-@@s019 Dal file dell'esercizio
-@@s020 Un <code>trait</code> (un'interfaccia) con un solo metodo. Il tipo di ritorno è una <b>coppia</b>: il numero e il generatore da usare la prossima volta.
-@@s021 La <code>case class</code> è immutabile: il seed non si cambia, si crea un nuovo <code>SimpleRNG</code>.
-@@s022 Un generatore lineare congruenziale (lo stesso di <code>java.util.Random</code>): moltiplica, somma, e con <code>&amp;</code> (AND bit a bit) tiene solo 48 bit. <code>L</code> vuol dire Long.
-@@s023 <code>&gt;&gt;&gt;</code> sposta i bit a destra riempiendo di zeri; <code>.toInt</code> tiene 32 bit, quindi il numero può essere negativo. Si restituisce il numero con il nuovo stato.
-@@s024 Passare lo stato a mano
-@@s025 Tutti i numeri sono stati ottenuti eseguendo il codice (Scala 3.8.4).
-@@s026 Esercizi 1–4: generatori a mano
-@@s027 Soluzioni (i 27 test RNG del corso passano)
-@@s028 Es. 1. Il caso scomodo: <code>Int.MinValue</code> = −2147483648 non ha un opposto tra gli Int (il massimo è 2147483647). Con <code>-(i + 1)</code> ogni negativo va in un non negativo: −1 → 0, MinValue → 2147483647. Con <code>r1</code> dell'esempio: −1281479697 → 1281479696.
-@@s029 Es. 2. Si divide per MaxValue + 1, non per MaxValue: così 1.0 non esce mai (l'esercizio chiede [0, 1)). Da <code>SimpleRNG(42)</code>: 0.0075…
-@@s030 Es. 3. Lo stato passa come un testimone: <code>rng</code> al primo generatore, <code>r1</code> al secondo, <code>r2</code> a chi viene dopo. Usare due volte <code>rng</code> darebbe numeri non indipendenti.
-@@s031 Riuso: un solo generatore, poi scambio l'ordine della coppia.
-@@s032 Es. 4. Ricorsione: un numero con lo stato attuale, gli altri <code>size − 1</code> con lo stato nuovo. <code>ints(3)(SimpleRNG(42))</code> = List(16159453, −1281479697, −340305902).
-@@s033 Dubbio: Int.MaxValue.toDouble + 1 va in overflow?
-@@s034 No. Il punto <code>.toDouble</code> viene eseguito <b>prima</b> del <code>+</code>: il +1 lo fa un Double, che arriva fino a circa 1.8 × 10³⁰⁸. Va in overflow solo se il +1 lo fa un Int, cioè se sposti la parentesi: <code>(Int.MaxValue + 1).toDouble</code>.
-@@s035 Dove sta la parentesi decide chi fa il +1
-@@s036 dato:Int,ora:conversione,ok:giusto,no:overflow
-@@s037 Il più grande Int: 2³¹ − 1.
-@@s038 Prima si converte: da qui in poi è un Double.
-@@s039 Il +1 tra Double: nessun problema. È il divisore di <code>double</code>.
-@@s040 Senza conversione il +1 lo fa un Int: supera il massimo e ricomincia dal minimo (overflow).
-@@s041 Convertire dopo non salva: il danno è già fatto. Con questo divisore <code>double</code> darebbe numeri negativi (2147483647 / −2147483648.0 = −0.99999…).
-@@s042 Dubbio: lo stato finale di ints è lo stesso della prima ricorsione?
-@@s043 Ogni chiamata ha le <b>sue</b> variabili <code>r1</code> e <code>r2</code> — nomi uguali, caselle diverse — ma il valore che esce è lo stesso in tutti i livelli: lo stato nato dopo l'<b>ultimo</b> numero estratto, che risale.
-@@s044 Deve essere l'ultimo: chi chiama <code>ints(3)</code> e poi vuole altri numeri deve ripartire da dopo i tre già usati. Restituire <code>r1</code> farebbe riuscire di nuovo il secondo numero.
-@@s045 Lo schema che si ripete
-@@s046 Tutte queste funzioni hanno la forma <span class="m">RNG =&gt; (A, RNG)</span>, e tutte hanno la stessa noia: prendere lo stato, chiamare, estrarre la coppia, passare lo stato nuovo. La pagina successiva dà un nome a questa forma, <code>Rand[A]</code>, e la nasconde: <a href="s05-rand.html">Rand[A]: generatori componibili</a>.
-@@s047 Lo stato come testimone di una staffetta
-@@s048 Gli errori nel tuo file
-@@s049 Il tuo <code>Exercises.scala</code> della settimana 5, com'è adesso nel repo (l'ho solo letto e compilato su una copia): Scala 3.8.4 si ferma con 4 errori.
-@@s050 La variabile si chiama <code>num</code>, non <code>i</code>: <code>else num</code>.
-@@s051 Nello stesso blocco un nome si dichiara una volta sola. Il secondo valore è un intero: chiamalo <code>numInt</code> e restituisci <code>((numDouble, numInt), rand2)</code>. Il secondo errore viene dal primo: la coppia conteneva due Double, il tipo di ritorno voleva (Double, Int).
-@@s052 È il <code>flatMap</code> della LazyList della settimana 4, ma qui <code>f</code> è un generatore, non una lista: non c'è niente da "foldare". La soluzione è nella <a href="s05-rand.html">pagina su Rand</a>.
-@@s053 I quattro errori e la correzione
+@@s014 rollDie = <mark class="ok">5</mark>, poi rollDie = <mark class="ok">0</mark>
+@@s015 Stessa espressione, risultati diversi: dipende da <code>rng</code>, uno stato esterno che cambia a ogni chiamata (e che chiunque può cambiare).
+@@s016 Non posso sostituire un'espressione con il suo valore: manca la <b>trasparenza referenziale</b> (settimana 1). Test e ragionamento diventano difficili.
+@@s017 rendere lo stato <mark class="ora">esplicito</mark>: stato → (valore, <mark class="dato">nuovo stato</mark>)
+@@s018 La funzione non cambia niente: restituisce anche lo stato successivo, e chi la usa lo passa alla chiamata dopo.
+@@s019 var nascosto contro stato esplicito
+@@s020 RNG e SimpleRNG
+@@s021 Dal file dell'esercizio
+@@s022 Un <code>trait</code> (un'interfaccia) con un solo metodo. Il tipo di ritorno è una <b>coppia</b>: il numero e il generatore da usare la prossima volta.
+@@s023 La <code>case class</code> è immutabile: il seed non si cambia, si crea un nuovo <code>SimpleRNG</code>.
+@@s024 Un generatore lineare congruenziale (lo stesso di <code>java.util.Random</code>): moltiplica, somma, e con <code>&amp;</code> (AND bit a bit) tiene solo 48 bit. <code>L</code> vuol dire Long.
+@@s025 <code>&gt;&gt;&gt;</code> sposta i bit a destra riempiendo di zeri; <code>.toInt</code> tiene 32 bit, quindi il numero può essere negativo. Si restituisce il numero con il nuovo stato.
+@@s026 Passare lo stato a mano
+@@s027 Tutti i numeri sono stati ottenuti eseguendo il codice (Scala 3.8.4).
+@@s028 Esercizi 1–4: generatori a mano
+@@s029 Soluzioni (i 27 test RNG del corso passano)
+@@s030 Es. 1. Il caso scomodo: <code>Int.MinValue</code> = −2147483648 non ha un opposto tra gli Int (il massimo è 2147483647). Con <code>-(i + 1)</code> ogni negativo va in un non negativo: −1 → 0, MinValue → 2147483647. Con <code>r1</code> dell'esempio: −1281479697 → 1281479696.
+@@s031 Es. 2. Si divide per MaxValue + 1, non per MaxValue: così 1.0 non esce mai (l'esercizio chiede [0, 1)). Da <code>SimpleRNG(42)</code>: 0.0075…
+@@s032 Es. 3. Lo stato passa come un testimone: <code>rng</code> al primo generatore, <code>r1</code> al secondo, <code>r2</code> a chi viene dopo. Usare due volte <code>rng</code> darebbe numeri non indipendenti.
+@@s033 Riuso: un solo generatore, poi scambio l'ordine della coppia.
+@@s034 Es. 4. Ricorsione: un numero con lo stato attuale, gli altri <code>size − 1</code> con lo stato nuovo. <code>ints(3)(SimpleRNG(42))</code> = List(16159453, −1281479697, −340305902).
+@@s035 Dubbio: Int.MaxValue.toDouble + 1 va in overflow?
+@@s036 No. Il punto <code>.toDouble</code> viene eseguito <b>prima</b> del <code>+</code>: il +1 lo fa un Double, che arriva fino a circa 1.8 × 10³⁰⁸. Va in overflow solo se il +1 lo fa un Int, cioè se sposti la parentesi: <code>(Int.MaxValue + 1).toDouble</code>.
+@@s037 Dove sta la parentesi decide chi fa il +1
+@@s038 dato:Int,ora:conversione,ok:giusto,no:overflow
+@@s039 Il più grande Int: 2³¹ − 1.
+@@s040 Prima si converte: da qui in poi è un Double.
+@@s041 Il +1 tra Double: nessun problema. È il divisore di <code>double</code>.
+@@s042 Senza conversione il +1 lo fa un Int: supera il massimo e ricomincia dal minimo (overflow).
+@@s043 Convertire dopo non salva: il danno è già fatto. Con questo divisore <code>double</code> darebbe numeri negativi (2147483647 / −2147483648.0 = −0.99999…).
+@@s044 Dubbio: lo stato finale di ints è lo stesso della prima ricorsione?
+@@s045 Ogni chiamata ha le <b>sue</b> variabili <code>r1</code> e <code>r2</code> — nomi uguali, caselle diverse — ma il valore che esce è lo stesso in tutti i livelli: lo stato nato dopo l'<b>ultimo</b> numero estratto, che risale.
+@@s046 Deve essere l'ultimo: chi chiama <code>ints(3)</code> e poi vuole altri numeri deve ripartire da dopo i tre già usati. Restituire <code>r1</code> farebbe riuscire di nuovo il secondo numero.
+@@s047 Lo schema che si ripete
+@@s048 Tutte queste funzioni hanno la forma <span class="m">RNG =&gt; (A, RNG)</span>, e tutte hanno la stessa noia: prendere lo stato, chiamare, estrarre la coppia, passare lo stato nuovo. La pagina successiva dà un nome a questa forma, <code>Rand[A]</code>, e la nasconde: <a href="s05-rand.html">Rand[A]: generatori componibili</a>.
+@@s049 Lo stato come testimone di una staffetta
+@@s050 Gli errori nel tuo file
+@@s051 Il tuo <code>Exercises.scala</code> della settimana 5, com'è adesso nel repo (l'ho solo letto e compilato su una copia): Scala 3.8.4 si ferma con 4 errori.
+@@s052 La variabile si chiama <code>num</code>, non <code>i</code>: <code>else num</code>.
+@@s053 Nello stesso blocco un nome si dichiara una volta sola. Il secondo valore è un intero: chiamalo <code>numInt</code> e restituisci <code>((numDouble, numInt), rand2)</code>. Il secondo errore viene dal primo: la coppia conteneva due Double, il tipo di ritorno voleva (Double, Int).
+@@s054 È il <code>flatMap</code> della LazyList della settimana 4, ma qui <code>f</code> è un generatore, non una lista: non c'è niente da "foldare". La soluzione è nella <a href="s05-rand.html">pagina su Rand</a>.
+@@s055 I quattro errori e la correzione

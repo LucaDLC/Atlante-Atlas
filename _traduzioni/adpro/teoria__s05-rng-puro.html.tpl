@@ -97,16 +97,16 @@ window.SCENE = window.SCENE || {};
   <pre class="cod" data-lang="scala" data-segna="var rng@no|rng.nextInt(6)@no">var rng = new scala.util.Random
 def rollDie: Int = rng.nextInt(6)</pre>
   <figure class="passi" data-titolo="{{a|s013|}}">
-    <div class="passo"><div class="espr">rollDie = <mark class="ok">5</mark>,  poi rollDie = <mark class="ok">0</mark></div><p class="nota">{{s|s014|}}</p></div>
-    <div class="passo"><div class="espr">rollDie + rollDie  ≠  2 * rollDie</div><p class="nota">{{s|s015|}}</p></div>
-    <div class="passo"><div class="espr">rendere lo stato <mark class="ora">esplicito</mark>:  stato → (valore, <mark class="dato">nuovo stato</mark>)</div><p class="nota">{{s|s016|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s014|}}</div><p class="nota">{{s|s015|}}</p></div>
+    <div class="passo"><div class="espr">rollDie + rollDie  ≠  2 * rollDie</div><p class="nota">{{s|s016|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s017|}}</div><p class="nota">{{s|s018|}}</p></div>
   </figure>
-  <figure class="scena" data-scena="statonascosto" data-titolo="{{a|s017|}}"></figure>
+  <figure class="scena" data-scena="statonascosto" data-titolo="{{a|s019|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s018|}}</h2>
-  <figure class="codice" data-titolo="{{a|s019|}}">
+  <h2>{{s|s020|}}</h2>
+  <figure class="codice" data-titolo="{{a|s021|}}">
 <pre data-lang="scala">trait RNG:
   def nextInt: (Int, RNG)
 
@@ -117,19 +117,19 @@ case class SimpleRNG(seed: Long) extends RNG:
     val n = (newSeed &gt;&gt;&gt; 16).toInt
     (n, nextRNG)</pre>
     <ol class="spiega">
-      <li data-righe="1-2" data-segna="(Int, RNG)@ok"><p>{{s|s020|}}</p></li>
-      <li data-righe="4" data-segna="seed: Long@dato"><p>{{s|s021|}}</p></li>
-      <li data-righe="6" data-segna="0x5DEECE66DL@due|&amp;@due"><p>{{s|s022|}}</p></li>
-      <li data-righe="7-9" data-segna="&gt;&gt;&gt; 16@ora|(n, nextRNG)@ok"><p>{{s|s023|}}</p></li>
+      <li data-righe="1-2" data-segna="(Int, RNG)@ok"><p>{{s|s022|}}</p></li>
+      <li data-righe="4" data-segna="seed: Long@dato"><p>{{s|s023|}}</p></li>
+      <li data-righe="6" data-segna="0x5DEECE66DL@due|&amp;@due"><p>{{s|s024|}}</p></li>
+      <li data-righe="7-9" data-segna="&gt;&gt;&gt; 16@ora|(n, nextRNG)@ok"><p>{{s|s025|}}</p></li>
     </ol>
   </figure>
-  <figure class="scena" data-scena="catena" data-titolo="{{a|s024|}}"></figure>
-  <p class="piccolo">{{s|s025|}}</p>
+  <figure class="scena" data-scena="catena" data-titolo="{{a|s026|}}"></figure>
+  <p class="piccolo">{{s|s027|}}</p>
 </section>
 
 <section>
-  <h2>{{s|s026|}}</h2>
-  <figure class="codice" data-titolo="{{a|s027|}}">
+  <h2>{{s|s028|}}</h2>
+  <figure class="codice" data-titolo="{{a|s029|}}">
 <pre data-lang="scala">def nonNegativeInt(rng: RNG): (Int, RNG) =
   val (i, r) = rng.nextInt
   (if i &lt; 0 then -(i + 1) else i, r)
@@ -154,25 +154,25 @@ def ints(size: Int)(rng: RNG): (List[Int], RNG) =
     val (is, r2) = ints(size - 1)(r1)
     (i :: is, r2)</pre>
     <ol class="spiega">
-      <li data-righe="1-3" data-segna="-(i + 1)@ora"><p>{{s|s028|}}</p></li>
-      <li data-righe="5-7" data-segna="Int.MaxValue.toDouble + 1@due"><p>{{s|s029|}}</p></li>
-      <li data-righe="9-12" data-segna="r1@dato|r2@dato"><p>{{s|s030|}}</p></li>
-      <li data-righe="14-16" data-segna="intDouble(rng)@ok"><p>{{s|s031|}}</p></li>
-      <li data-righe="18-23" data-segna="ints(size - 1)(r1)@ora|(i :: is, r2)@ok"><p>{{s|s032|}}</p></li>
+      <li data-righe="1-3" data-segna="-(i + 1)@ora"><p>{{s|s030|}}</p></li>
+      <li data-righe="5-7" data-segna="Int.MaxValue.toDouble + 1@due"><p>{{s|s031|}}</p></li>
+      <li data-righe="9-12" data-segna="r1@dato|r2@dato"><p>{{s|s032|}}</p></li>
+      <li data-righe="14-16" data-segna="intDouble(rng)@ok"><p>{{s|s033|}}</p></li>
+      <li data-righe="18-23" data-segna="ints(size - 1)(r1)@ora|(i :: is, r2)@ok"><p>{{s|s034|}}</p></li>
     </ol>
   </figure>
-  <div class="box domanda-tua" data-tit="{{a|s033|}}">
-    <p>{{s|s034|}}</p>
+  <div class="box domanda-tua" data-tit="{{a|s035|}}">
+    <p>{{s|s036|}}</p>
   </div>
-  <figure class="passi" data-titolo="{{a|s035|}}" data-legenda="{{a|s036|}}">
-    <div class="passo"><div class="espr"><mark class="dato">Int.MaxValue</mark> = 2147483647</div><p class="nota">{{s|s037|}}</p></div>
-    <div class="passo"><div class="espr"><mark class="ora">Int.MaxValue.toDouble</mark> = 2.147483647E9</div><p class="nota">{{s|s038|}}</p></div>
-    <div class="passo"><div class="espr">Int.MaxValue.toDouble <mark class="ok">+ 1</mark> = 2.147483648E9</div><p class="nota">{{s|s039|}}</p></div>
-    <div class="passo"><div class="espr"><mark class="no">Int.MaxValue + 1</mark> = −2147483648</div><p class="nota">{{s|s040|}}</p></div>
-    <div class="passo"><div class="espr">(<mark class="no">Int.MaxValue + 1</mark>).toDouble = −2.147483648E9</div><p class="nota">{{s|s041|}}</p></div>
+  <figure class="passi" data-titolo="{{a|s037|}}" data-legenda="{{a|s038|}}">
+    <div class="passo"><div class="espr"><mark class="dato">Int.MaxValue</mark> = 2147483647</div><p class="nota">{{s|s039|}}</p></div>
+    <div class="passo"><div class="espr"><mark class="ora">Int.MaxValue.toDouble</mark> = 2.147483647E9</div><p class="nota">{{s|s040|}}</p></div>
+    <div class="passo"><div class="espr">Int.MaxValue.toDouble <mark class="ok">+ 1</mark> = 2.147483648E9</div><p class="nota">{{s|s041|}}</p></div>
+    <div class="passo"><div class="espr"><mark class="no">Int.MaxValue + 1</mark> = −2147483648</div><p class="nota">{{s|s042|}}</p></div>
+    <div class="passo"><div class="espr">(<mark class="no">Int.MaxValue + 1</mark>).toDouble = −2.147483648E9</div><p class="nota">{{s|s043|}}</p></div>
   </figure>
-  <div class="box domanda-tua" data-tit="{{a|s042|}}">
-    <p>{{s|s043|}}</p>
+  <div class="box domanda-tua" data-tit="{{a|s044|}}">
+    <p>{{s|s045|}}</p>
     <pre class="cod" data-lang="pseudo" data-segna="G3*@ok">ints(3)(G0):   r1 = G1  →  chiama ints(2)(G1)
   ints(2)(G1):   r1 = G2  →  chiama ints(1)(G2)
     ints(1)(G2):   r1 = G3  →  chiama ints(0)(G3)
@@ -180,17 +180,17 @@ def ints(size: Int)(rng: RNG): (List[Int], RNG) =
     ints(1):  r2 = G3       →  (i1 :: Nil, G3)
   ints(2):    r2 = G3       →  (i2 :: …,  G3)
 ints(3):      r2 = G3       →  (i3 :: …,  G3)</pre>
-    <p>{{s|s044|}}</p>
-  </div>
-  <div class="box idea" data-tit="{{a|s045|}}">
     <p>{{s|s046|}}</p>
   </div>
-  <figure class="scena" data-scena="testimone" data-titolo="{{a|s047|}}"></figure>
+  <div class="box idea" data-tit="{{a|s047|}}">
+    <p>{{s|s048|}}</p>
+  </div>
+  <figure class="scena" data-scena="testimone" data-titolo="{{a|s049|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s048|}}</h2>
-  <p>{{s|s049|}}</p>
+  <h2>{{s|s050|}}</h2>
+  <p>{{s|s051|}}</p>
   <div class="errori">
     <div class="errore">
 <pre data-lang="scala">val (num,rand) = rng.nextInt
@@ -199,7 +199,7 @@ ints(3):      r2 = G3       →  (i3 :: …,  G3)</pre>
     (if num&lt;0 then -(num+1) else i, rand)
                                  ^
                                  Not found: i</pre>
-      <div class="fix"><p>{{s|s050|}}</p></div>
+      <div class="fix"><p>{{s|s052|}}</p></div>
     </div>
     <div class="errore">
 <pre data-lang="scala">val (numDouble, rand1) = double(rng)
@@ -210,7 +210,7 @@ numDouble is already defined as value numDouble
 -- [E007] Type Mismatch Error: Exercises.scala:53:17
                  Found:    (numDouble : Double)
                  Required: Int</pre>
-      <div class="fix"><p>{{s|s051|}}</p></div>
+      <div class="fix"><p>{{s|s053|}}</p></div>
     </div>
     <div class="errore">
 <pre data-lang="scala">def flatMap[A,B](f: Rand[A])(g: A =&gt; Rand[B]): Rand[B] =
@@ -219,10 +219,10 @@ numDouble is already defined as value numDouble
     foldRight(empty)((a,acc) =&gt; f(a).append(acc))
     ^^^^^^^^^
     Not found: foldRight</pre>
-      <div class="fix"><p>{{s|s052|}}</p></div>
+      <div class="fix"><p>{{s|s054|}}</p></div>
     </div>
   </div>
-  <figure class="scena" data-scena="erroriutente" data-titolo="{{a|s053|}}"></figure>
+  <figure class="scena" data-scena="erroriutente" data-titolo="{{a|s055|}}"></figure>
 </section>
 
 </main>

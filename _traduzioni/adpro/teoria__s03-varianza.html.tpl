@@ -172,88 +172,88 @@ val a: Animal = Cat("Tom")   // ok: un Cat è un Animal</pre>
       <p class="nota">{{s|s036|}}</p>
     </div>
     <div class="passo">
-      <div class="espr">animals<mark class="no">.aggiungi(Dog("Rex"))</mark>   <span class="mano">// non esiste</span></div>
-      <p class="nota">{{s|s037|}}</p>
+      <div class="espr">{{s|s037|}}</div>
+      <p class="nota">{{s|s038|}}</p>
     </div>
     <div class="passo">
       <div class="espr"><mark class="ok">Nil: List[Nothing]  &lt;:  List[Int], List[String], …</mark></div>
-      <p class="nota">{{s|s038|}}</p>
+      <p class="nota">{{s|s039|}}</p>
     </div>
   </figure>
-  <figure class="scena" data-scena="covarianza" data-titolo="{{a|s039|}}"></figure>
+  <figure class="scena" data-scena="covarianza" data-titolo="{{a|s040|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s040|}}</h2>
-  <p>{{s|s041|}}</p>
-  <figure class="passi" data-titolo="{{a|s042|}}">
+  <h2>{{s|s041|}}</h2>
+  <p>{{s|s042|}}</p>
+  <figure class="passi" data-titolo="{{a|s043|}}">
     <div class="passo">
       <div class="espr">class A {}   class B extends A {}   class C extends A {}</div>
-      <p class="nota">{{s|s043|}}</p>
-    </div>
-    <div class="passo">
-      <div class="espr">B[] b = { <mark class="dato">new B()</mark> };</div>
       <p class="nota">{{s|s044|}}</p>
     </div>
     <div class="passo">
-      <div class="espr">A[] a = <mark class="due">b</mark>;</div>
+      <div class="espr">B[] b = { <mark class="dato">new B()</mark> };</div>
       <p class="nota">{{s|s045|}}</p>
     </div>
     <div class="passo">
-      <div class="espr">a[0] = <mark class="no">new C()</mark>;</div>
+      <div class="espr">A[] a = <mark class="due">b</mark>;</div>
       <p class="nota">{{s|s046|}}</p>
     </div>
     <div class="passo">
-      <div class="espr"><mark class="no">ArrayStoreException: C</mark></div>
+      <div class="espr">a[0] = <mark class="no">new C()</mark>;</div>
       <p class="nota">{{s|s047|}}</p>
+    </div>
+    <div class="passo">
+      <div class="espr"><mark class="no">ArrayStoreException: C</mark></div>
+      <p class="nota">{{s|s048|}}</p>
     </div>
     <div class="passo">
       <div class="espr">val animals: Array[Animal] = cats   <span class="mano">// in Scala</span>
 <mark class="ok">Found:    (cats : Array[Cat])
 Required: Array[Animal]</mark></div>
-      <p class="nota">{{s|s048|}}</p>
+      <p class="nota">{{s|s049|}}</p>
     </div>
   </figure>
-  <div class="box regola" data-tit="{{a|s049|}}">
-    <p>{{s|s050|}}</p>
+  <div class="box regola" data-tit="{{a|s050|}}">
+    <p>{{s|s051|}}</p>
   </div>
-  <figure class="scena" data-scena="arrayjava" data-titolo="{{a|s051|}}"></figure>
+  <figure class="scena" data-scena="arrayjava" data-titolo="{{a|s052|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s052|}}</h2>
-  <figure class="passi" data-titolo="{{a|s053|}}">
+  <h2>{{s|s053|}}</h2>
+  <figure class="passi" data-titolo="{{a|s054|}}">
     <div class="passo">
       <div class="espr">trait Printer[<mark class="due">-A</mark>]:
   def print(a: A): String</div>
-      <p class="nota">{{s|s054|}}</p>
-    </div>
-    <div class="passo">
-      <div class="espr">val stampaAnimali: Printer[Animal] = a => "animale " + a.nome</div>
       <p class="nota">{{s|s055|}}</p>
     </div>
     <div class="passo">
-      <div class="espr">val stampaGatti: Printer[<mark class="ora">Cat</mark>] = <mark class="due">stampaAnimali</mark></div>
+      <div class="espr">val stampaAnimali: Printer[Animal] = a => "animale " + a.nome</div>
       <p class="nota">{{s|s056|}}</p>
+    </div>
+    <div class="passo">
+      <div class="espr">val stampaGatti: Printer[<mark class="ora">Cat</mark>] = <mark class="due">stampaAnimali</mark></div>
+      <p class="nota">{{s|s057|}}</p>
     </div>
     <div class="passo">
       <div class="espr">val pa: Printer[Animal] = <mark class="no">pg</mark>   <span class="mano">// pg: Printer[Cat]</span>
 Found:    (pg : Printer[Cat])
 Required: Printer[Animal]</div>
-      <p class="nota">{{s|s057|}}</p>
+      <p class="nota">{{s|s058|}}</p>
     </div>
     <div class="passo">
       <div class="espr">val f: Animal => String = _.nome
 val g: <mark class="due">Cat</mark> => <mark class="ok">Any</mark> = f</div>
-      <p class="nota">{{s|s058|}}</p>
+      <p class="nota">{{s|s059|}}</p>
     </div>
   </figure>
-  <figure class="scena" data-scena="contravarianza" data-titolo="{{a|s059|}}"></figure>
+  <figure class="scena" data-scena="contravarianza" data-titolo="{{a|s060|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s060|}}</h2>
-  <p>{{s|s061|}}</p>
+  <h2>{{s|s061|}}</h2>
+  <p>{{s|s062|}}</p>
   <div class="errori">
     <div class="errore">
       <pre data-lang="scala">class Cell[+T](init: T):
@@ -261,7 +261,7 @@ val g: <mark class="due">Cat</mark> => <mark class="ok">Any</mark> = f</div>
   def get = current
   def set(x: T): Unit = current = x</pre>
       <pre class="msg">covariant type T occurs in contravariant position in type T of parameter x</pre>
-      <div class="fix">Con <code>+T</code> la cella potrebbe diventare una <code>Cell[Any]</code> e ricevere un numero dentro una cella di stringhe. Il compilatore blocca <code>set</code>, dove T entra.</div>
+      <div class="fix">{{s|s063|}}</div>
     </div>
     <div class="errore">
       <pre data-lang="scala">class Cell[-T](init: T):
@@ -269,53 +269,53 @@ val g: <mark class="due">Cat</mark> => <mark class="ok">Any</mark> = f</div>
   def get = current
   def set(x: T): Unit = current = x</pre>
       <pre class="msg">contravariant type T occurs in covariant position in type => T of method get</pre>
-      <div class="fix">La slide 14 propone <code>[-T]</code>, ma compilando con Scala 3.8 anche questo viene rifiutato: ora il problema è <code>get</code>, dove T esce. Una cella che si legge <b>e</b> si scrive può essere solo <b>invariante</b>: <code>class Cell[T]</code>.</div>
+      <div class="fix">{{s|s064|}}</div>
     </div>
   </div>
-  <figure class="scena" data-scena="posizioni" data-titolo="{{a|s062|}}"></figure>
+  <figure class="scena" data-scena="posizioni" data-titolo="{{a|s065|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s063|}}</h2>
-  <p>{{s|s064|}}</p>
-  <figure class="passi" data-titolo="{{a|s065|}}">
+  <h2>{{s|s066|}}</h2>
+  <p>{{s|s067|}}</p>
+  <figure class="passi" data-titolo="{{a|s068|}}">
     <div class="passo">
       <div class="espr">enum Option[+A]:
   def getOrElse(default: <mark class="no">A</mark>): A</div>
-      <p class="nota">{{s|s066|}}</p>
+      <p class="nota">{{s|s069|}}</p>
     </div>
     <div class="passo">
       <div class="espr"><mark class="no">covariant type A occurs in contravariant position in type A of parameter default</mark></div>
-      <p class="nota">{{s|s067|}}</p>
+      <p class="nota">{{s|s070|}}</p>
     </div>
     <div class="passo">
       <div class="espr">def getOrElse[<mark class="ora">B &gt;: A</mark>](default: => <mark class="ora">B</mark>): <mark class="ora">B</mark></div>
-      <p class="nota">{{s|s068|}}</p>
+      <p class="nota">{{s|s071|}}</p>
     </div>
     <div class="passo">
       <div class="espr">val o: Option[<mark class="dato">Cat</mark>] = Some(Cat("Tom"))
 o.getOrElse(<mark class="due">Dog("Rex")</mark>)   <span class="mano">// tipo: Animal</span></div>
-      <p class="nota">{{s|s069|}}</p>
+      <p class="nota">{{s|s072|}}</p>
     </div>
     <div class="passo">
       <div class="espr">Some(42).getOrElse(0)   <span class="mano">// B = A = Int</span></div>
-      <p class="nota">{{s|s070|}}</p>
+      <p class="nota">{{s|s073|}}</p>
     </div>
   </figure>
-  <p>{{s|s071|}}</p>
-  <figure class="scena" data-scena="getorelse" data-titolo="{{a|s072|}}"></figure>
+  <p>{{s|s074|}}</p>
+  <figure class="scena" data-scena="getorelse" data-titolo="{{a|s075|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s073|}}</h2>
+  <h2>{{s|s076|}}</h2>
   <pre class="cod" data-lang="scala">class A
 class B extends A
 val t: T[A] = new T[B]</pre>
-  <p>{{s|s074|}}</p>
-  <div class="box inglese" data-tit="{{a|s075|}}">
-    <p>{{s|s076|}}</p>
+  <p>{{s|s077|}}</p>
+  <div class="box inglese" data-tit="{{a|s078|}}">
+    <p>{{s|s079|}}</p>
   </div>
-  <figure class="scena" data-scena="sondaggiovar" data-titolo="{{a|s077|}}"></figure>
+  <figure class="scena" data-scena="sondaggiovar" data-titolo="{{a|s080|}}"></figure>
 </section>
 
 </main>

@@ -49,57 +49,63 @@
 @@s049 sì
 @@s050 solo se il campo deve essere della classe, non dell'oggetto
 @@s051 Perché funzionano: tre regole happens-before in più
-@@s052 È la regola volatile che già conosci.
-@@s053 I default sono assegnati quando la classe viene caricata.
-@@s054 A livello di JVM: il valore iniziale di un campo final o static non può restare in cache dopo il costruttore.
-@@s055 Queste regole sono definite dal corso partendo dalla JLS e da Goetz: si possono usare negli esercizi.
-@@s056 Da qui in avanti
-@@s057 Le slide avvisano: finora l'inizializzazione era stata ignorata "for clarity and simplicity". Da questa lezione negli esercizi va considerata.
-@@s058 final, default, volatile, static
-@@s059 Immutabilità
-@@s060 Un campo <b>immutabile</b> non cambia valore dopo l'inizializzazione. Pensalo come una costante.
-@@s061 <code>final</code> impedisce di riassegnare il campo. Ma una variabile di tipo oggetto contiene un <b>riferimento</b>: <code>final</code> blocca il riferimento, non l'oggetto puntato.
-@@s062 Se non cambia mai, le data race possono esserci <b>solo durante l'inizializzazione</b>.
-@@s063 Campi immutabili thread-safe: 3 condizioni
-@@s064 1) il campo non si può modificare dopo la pubblicazione; 2) è pubblicato in modo sicuro; 3) non scappa.
-@@s065 ThreeStooges (Goetz p. 47)
-@@s066 <b>Class state</b>: il set <code>stooges</code>. È <code>private</code> e <code>final</code>.
-@@s067 Il set viene riempito <b>solo nel costruttore</b>. <code>final</code> garantisce che chi vede l'oggetto veda il set già inizializzato: <b>safe publication</b>.
-@@s068 L'unico metodo pubblico <b>legge</b> soltanto, e restituisce un <code>boolean</code>, non il set: nessuna scrittura dopo la pubblicazione, nessun <b>escaping</b>.
-@@s069 Quindi <code>isStooge</code> <b>non ha bisogno di <code>synchronized</code></b>: letture concorrenti non sono in conflitto (nessuna scrittura). La classe è thread-safe.
-@@s070 final blocca il riferimento, non il contenuto
-@@s071 Mutua esclusione
-@@s072 Se lo stato è <b>mutabile</b>, ogni accesso va fatto con lo stesso lock.
-@@s073 Stooges: basta un metodo che scrive
-@@s074 <code>addStooge</code> <b>scrive</b> nel set: lo stato diventa mutabile.
-@@s075 Ora sia la scrittura sia la lettura devono avere il lock di <code>this</code>. Se <code>isStooge</code> restasse senza <code>synchronized</code>, <code>contains</code> e <code>add</code> sarebbero in conflitto e non ordinati.
-@@s076 Riassunto: come analizzare una classe
-@@s077 Solo i campi, non i parametri dei metodi.
-@@s078 <a href="l04-thread-safety.html">Pagina precedente</a>.
-@@s079 Così l'inizializzazione happens-before la pubblicazione.
-@@s080 Per questi campi non serve il lock.
-@@s081 La regola del monitor ordina ogni coppia di accessi.
-@@s082 Stato mutabile: stesso lock per letture e scritture
-@@s083 Esercizio 4.2 svolto: <code>Person</code>
-@@s084 Richieste: <code>id</code> non modificabile; <code>zip</code> e <code>address</code> cambiano insieme; tutti i campi leggibili; costruttore senza parametri (id = precedente + 1, il primo è 0); costruttore con l'id iniziale (usato solo se è la prima persona creata).
-@@s085 Una soluzione (verificata: 8 thread × 50 000 persone → 400 000 id distinti)
-@@s086 Il contatore degli id è condiviso da <b>tutte</b> le persone: campo <code>static</code>. Serve anche sapere se è già stata creata una persona.
-@@s087 <code>id</code> non cambia mai: <code>final</code>. È immutabile e pubblicato in modo sicuro.
-@@s088 Gli altri campi cambiano: sono protetti dal lock dell'oggetto (<code>this</code>). Non vengono scritti nel costruttore, quindi partono dal default (<code>null</code>, 0).
-@@s089 I due costruttori chiedono l'id allo stesso metodo. <code>-1</code> significa "nessun id iniziale".
-@@s090 <code>static synchronized</code> usa il lock di <code>Person.class</code>: uno solo per tutta la classe. Due costruttori in parallelo non possono leggere lo stesso <code>nextId</code>. Senza <code>static</code> ognuno userebbe il lock del <b>proprio</b> oggetto e non ci sarebbe mutua esclusione.
-@@s091 <code>getId</code> non ha lock: <code>id</code> è final, nessuno lo scrive dopo il costruttore.
-@@s092 Ogni lettura e scrittura dei campi mutabili passa dal lock di <code>this</code>. <code>setZipAndAddress</code> li cambia <b>insieme</b>, nello stesso blocco. I getter restituiscono <code>String</code> (immutabile) e <code>int</code>: niente escaping.
-@@s093 4.2.2 · Risposta modello
-@@s094 "The class state is <i>id</i>, <i>name</i>, <i>zip</i>, <i>address</i>, plus the static fields <i>nextId</i> and <i>firstCreated</i>. All fields are private and the getters only return primitives or immutable Strings, so no state escapes. The static fields are only accessed inside the static synchronized method <i>assignId</i>, which locks on <i>Person.class</i>: concurrent constructor calls are ordered by the monitor rule, so each gets a distinct id. <i>id</i> is final, so its initialization happens-before any access after the constructor finishes: other threads can never see a partially created Person. The other fields keep their default values until set, and every access to them holds the intrinsic lock of the object, so all conflicting accesses are ordered by happens-before. Hence there are no data races on the class state."
-@@s095 <b>4.2.3</b> Eseguito una volta, il programma non mostra errori (la versione qui sopra: 400 000 id distinti su 400 000).
-@@s096 <b>4.2.4</b> <b>No.</b> Un'esecuzione esplora un solo interleaving tra moltissimi: un test può mostrare la presenza di un errore, mai la sua assenza. La thread-safety si dimostra con il ragionamento (checklist + JMM), come nel 4.2.2.
-@@s097 Un test può nascondere l'errore che dovrebbe trovare
-@@s098 Misurato su questa macchina, 3 thread × 30 000 persone, con le <code>println</code> <b>dentro</b> il ciclo (una per id, nome, zip, address). Tolto <code>synchronized</code> da <code>nextId</code>, quindi con la data race dentro: <b>0 id duplicati</b> in 3 esecuzioni su 3. Il test non vede niente.
-@@s099 Il motivo: <code>System.out.println</code> prende un lock interno sullo stream. I thread passano quasi tutto il tempo in fila su quel lock, quindi eseguono quasi uno alla volta e due <code>nextId</code> non si sovrappongono mai.
-@@s100 Stesso codice senza <code>synchronized</code>, ma con le <code>println</code> fuori dal ciclo e un solo controllo alla fine (<code>new Person().getId()</code> deve valere 90 000): esce <b>52 900 – 58 300</b>, in tutte e 5 le esecuzioni. Con <code>synchronized</code>: 90 000, sempre.
-@@s101 Da citare nel <b>4.2.4</b>: lo stesso codice sbagliato "passa" o "fallisce" a seconda di un dettaglio che con la concorrenza non c'entra. Per questo un test non prova l'assenza di data race.
-@@s102 Sul tuo Assignment 2 (esercizio 4.2)
-@@s103 Il tuo <code>People.java</code> è corretto: stessa struttura (<code>static synchronized nextId</code>, <code>final id</code>, getter e setter <code>synchronized</code>). <code>Person()</code> chiama <code>this(0)</code>: se è la prima persona, id = 0, come chiede il testo.
-@@s104 Da sistemare nelle risposte scritte. <b>4.2.2</b>: hai scritto "race condition free"; la parola giusta è <b>data race</b>, e mancano i punti della checklist (escaping, safe publication con <code>final</code>, lock di <code>Person.class</code> per il costruttore). La domanda chiede esplicitamente <b>perché il costruttore</b> è thread-safe e perché non si vedono oggetti a metà: la risposta è il <code>final</code> su <code>id</code> e il metodo <code>static synchronized</code>. <b>4.2.4</b>: la risposta deve essere un "no" netto, con il motivo (un test non prova l'assenza di data race).
-@@s105 Lock della classe per gli id, lock di this per il resto
+@@s052 <mark class="dato">volatile</mark>: una scrittura su un campo volatile → ogni lettura successiva di quel campo
+@@s053 È la regola volatile che già conosci.
+@@s054 <mark class="dato">default</mark>: l'inizializzazione di default (0, false, null) → ogni altra azione del programma
+@@s055 I default sono assegnati quando la classe viene caricata.
+@@s056 <mark class="ok">final</mark> e <mark class="ok">static</mark>: la loro inizializzazione → ogni altra azione del programma (dopo la fine del costruttore)
+@@s057 A livello di JVM: il valore iniziale di un campo final o static non può restare in cache dopo il costruttore.
+@@s058 Queste regole sono definite dal corso partendo dalla JLS e da Goetz: si possono usare negli esercizi.
+@@s059 Da qui in avanti
+@@s060 Le slide avvisano: finora l'inizializzazione era stata ignorata "for clarity and simplicity". Da questa lezione negli esercizi va considerata.
+@@s061 final, default, volatile, static
+@@s062 Immutabilità
+@@s063 Un campo <b>immutabile</b> non cambia valore dopo l'inizializzazione. Pensalo come una costante.
+@@s064 <code>final</code> impedisce di riassegnare il campo. Ma una variabile di tipo oggetto contiene un <b>riferimento</b>: <code>final</code> blocca il riferimento, non l'oggetto puntato.
+@@s065 Se non cambia mai, le data race possono esserci <b>solo durante l'inizializzazione</b>.
+@@s066 Campi immutabili thread-safe: 3 condizioni
+@@s067 1) il campo non si può modificare dopo la pubblicazione; 2) è pubblicato in modo sicuro; 3) non scappa.
+@@s068 ThreeStooges (Goetz p. 47)
+@@s069 <b>Class state</b>: il set <code>stooges</code>. È <code>private</code> e <code>final</code>.
+@@s070 Il set viene riempito <b>solo nel costruttore</b>. <code>final</code> garantisce che chi vede l'oggetto veda il set già inizializzato: <b>safe publication</b>.
+@@s071 L'unico metodo pubblico <b>legge</b> soltanto, e restituisce un <code>boolean</code>, non il set: nessuna scrittura dopo la pubblicazione, nessun <b>escaping</b>.
+@@s072 Quindi <code>isStooge</code> <b>non ha bisogno di <code>synchronized</code></b>: letture concorrenti non sono in conflitto (nessuna scrittura). La classe è thread-safe.
+@@s073 final blocca il riferimento, non il contenuto
+@@s074 Mutua esclusione
+@@s075 Se lo stato è <b>mutabile</b>, ogni accesso va fatto con lo stesso lock.
+@@s076 Stooges: basta un metodo che scrive
+@@s077 <code>addStooge</code> <b>scrive</b> nel set: lo stato diventa mutabile.
+@@s078 Ora sia la scrittura sia la lettura devono avere il lock di <code>this</code>. Se <code>isStooge</code> restasse senza <code>synchronized</code>, <code>contains</code> e <code>add</code> sarebbero in conflitto e non ordinati.
+@@s079 Riassunto: come analizzare una classe
+@@s080 Solo i campi, non i parametri dei metodi.
+@@s081 <a href="l04-thread-safety.html">Pagina precedente</a>.
+@@s082 3. <mark class="ora">safe publication</mark>: ogni campo è default, final, volatile o static
+@@s083 Così l'inizializzazione happens-before la pubblicazione.
+@@s084 4. <mark class="ok">immutability</mark>: quello che non cambia è final e non viene più scritto
+@@s085 Per questi campi non serve il lock.
+@@s086 5. <mark class="due">mutual exclusion</mark>: lo stato mutabile è letto e scritto sempre con lo stesso lock
+@@s087 La regola del monitor ordina ogni coppia di accessi.
+@@s088 Stato mutabile: stesso lock per letture e scritture
+@@s089 Esercizio 4.2 svolto: <code>Person</code>
+@@s090 Richieste: <code>id</code> non modificabile; <code>zip</code> e <code>address</code> cambiano insieme; tutti i campi leggibili; costruttore senza parametri (id = precedente + 1, il primo è 0); costruttore con l'id iniziale (usato solo se è la prima persona creata).
+@@s091 Una soluzione (verificata: 8 thread × 50 000 persone → 400 000 id distinti)
+@@s092 Il contatore degli id è condiviso da <b>tutte</b> le persone: campo <code>static</code>. Serve anche sapere se è già stata creata una persona.
+@@s093 <code>id</code> non cambia mai: <code>final</code>. È immutabile e pubblicato in modo sicuro.
+@@s094 Gli altri campi cambiano: sono protetti dal lock dell'oggetto (<code>this</code>). Non vengono scritti nel costruttore, quindi partono dal default (<code>null</code>, 0).
+@@s095 I due costruttori chiedono l'id allo stesso metodo. <code>-1</code> significa "nessun id iniziale".
+@@s096 <code>static synchronized</code> usa il lock di <code>Person.class</code>: uno solo per tutta la classe. Due costruttori in parallelo non possono leggere lo stesso <code>nextId</code>. Senza <code>static</code> ognuno userebbe il lock del <b>proprio</b> oggetto e non ci sarebbe mutua esclusione.
+@@s097 <code>getId</code> non ha lock: <code>id</code> è final, nessuno lo scrive dopo il costruttore.
+@@s098 Ogni lettura e scrittura dei campi mutabili passa dal lock di <code>this</code>. <code>setZipAndAddress</code> li cambia <b>insieme</b>, nello stesso blocco. I getter restituiscono <code>String</code> (immutabile) e <code>int</code>: niente escaping.
+@@s099 4.2.2 · Risposta modello
+@@s100 "The class state is <i>id</i>, <i>name</i>, <i>zip</i>, <i>address</i>, plus the static fields <i>nextId</i> and <i>firstCreated</i>. All fields are private and the getters only return primitives or immutable Strings, so no state escapes. The static fields are only accessed inside the static synchronized method <i>assignId</i>, which locks on <i>Person.class</i>: concurrent constructor calls are ordered by the monitor rule, so each gets a distinct id. <i>id</i> is final, so its initialization happens-before any access after the constructor finishes: other threads can never see a partially created Person. The other fields keep their default values until set, and every access to them holds the intrinsic lock of the object, so all conflicting accesses are ordered by happens-before. Hence there are no data races on the class state."
+@@s101 <b>4.2.3</b> Eseguito una volta, il programma non mostra errori (la versione qui sopra: 400 000 id distinti su 400 000).
+@@s102 <b>4.2.4</b> <b>No.</b> Un'esecuzione esplora un solo interleaving tra moltissimi: un test può mostrare la presenza di un errore, mai la sua assenza. La thread-safety si dimostra con il ragionamento (checklist + JMM), come nel 4.2.2.
+@@s103 Un test può nascondere l'errore che dovrebbe trovare
+@@s104 Misurato su questa macchina, 3 thread × 30 000 persone, con le <code>println</code> <b>dentro</b> il ciclo (una per id, nome, zip, address). Tolto <code>synchronized</code> da <code>nextId</code>, quindi con la data race dentro: <b>0 id duplicati</b> in 3 esecuzioni su 3. Il test non vede niente.
+@@s105 Il motivo: <code>System.out.println</code> prende un lock interno sullo stream. I thread passano quasi tutto il tempo in fila su quel lock, quindi eseguono quasi uno alla volta e due <code>nextId</code> non si sovrappongono mai.
+@@s106 Stesso codice senza <code>synchronized</code>, ma con le <code>println</code> fuori dal ciclo e un solo controllo alla fine (<code>new Person().getId()</code> deve valere 90 000): esce <b>52 900 – 58 300</b>, in tutte e 5 le esecuzioni. Con <code>synchronized</code>: 90 000, sempre.
+@@s107 Da citare nel <b>4.2.4</b>: lo stesso codice sbagliato "passa" o "fallisce" a seconda di un dettaglio che con la concorrenza non c'entra. Per questo un test non prova l'assenza di data race.
+@@s108 Sul tuo Assignment 2 (esercizio 4.2)
+@@s109 Il tuo <code>People.java</code> è corretto: stessa struttura (<code>static synchronized nextId</code>, <code>final id</code>, getter e setter <code>synchronized</code>). <code>Person()</code> chiama <code>this(0)</code>: se è la prima persona, id = 0, come chiede il testo.
+@@s110 Da sistemare nelle risposte scritte. <b>4.2.2</b>: hai scritto "race condition free"; la parola giusta è <b>data race</b>, e mancano i punti della checklist (escaping, safe publication con <code>final</code>, lock di <code>Person.class</code> per il costruttore). La domanda chiede esplicitamente <b>perché il costruttore</b> è thread-safe e perché non si vedono oggetti a metà: la risposta è il <code>final</code> su <code>id</code> e il metodo <code>static synchronized</code>. <b>4.2.4</b>: la risposta deve essere un "no" netto, con il motivo (un test non prova l'assenza di data race).
+@@s111 Lock della classe per gli id, lock di this per il resto

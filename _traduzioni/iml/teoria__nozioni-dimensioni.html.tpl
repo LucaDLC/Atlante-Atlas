@@ -181,94 +181,94 @@ np.array([1, 2]) @ A                   # array([ 9, 12, 15])` },
   </div>
   <figure class="passi" data-titolo="{{a|s027|}}">
     <div class="passo"><div class="espr">(2 × <mark class="ora">3</mark>) · (<mark class="ora">3</mark> × 1)</div><p class="nota">{{s|s028|}}</p></div>
-    <div class="passo"><div class="espr">in mezzo:  <mark class="ora">3</mark> = <mark class="ora">3</mark>   <mark class="ok">✓ il prodotto esiste</mark></div><p class="nota">{{s|s029|}}</p></div>
-    <div class="passo"><div class="espr">fuori:  <mark class="dato">2</mark> × <mark class="dato">1</mark>   ⇒  risultato <mark class="ok">2 × 1</mark></div><p class="nota">{{s|s030|}}</p></div>
-    <div class="passo"><div class="espr">(2 × <mark class="no">3</mark>) · (<mark class="no">2</mark> × 1):  3 ≠ 2  ⇒  <mark class="no">non definito</mark></div><p class="nota">{{s|s031|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s029|}}</div><p class="nota">{{s|s030|}}</p></div>
+    <div class="passo"><div class="espr">fuori:  <mark class="dato">2</mark> × <mark class="dato">1</mark>   ⇒  risultato <mark class="ok">2 × 1</mark></div><p class="nota">{{s|s031|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s032|}}</div><p class="nota">{{s|s033|}}</p></div>
   </figure>
-  <div class="box idea" data-tit="{{a|s032|}}">
-    <p>{{s|s033|}}</p>
+  <div class="box idea" data-tit="{{a|s034|}}">
+    <p>{{s|s035|}}</p>
   </div>
-  <figure class="scena" data-scena="regola" data-titolo="{{a|s034|}}"></figure>
+  <figure class="scena" data-scena="regola" data-titolo="{{a|s036|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s035|}}</h2>
-  <p>{{s|s036|}}</p>
-  <figure class="scena" data-scena="destra" data-titolo="{{a|s037|}}"></figure>
+  <h2>{{s|s037|}}</h2>
+  <p>{{s|s038|}}</p>
+  <figure class="scena" data-scena="destra" data-titolo="{{a|s039|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s038|}}</h2>
-  <p>{{s|s039|}}</p>
-  <figure class="scena" data-scena="sinistra" data-titolo="{{a|s040|}}"></figure>
+  <h2>{{s|s040|}}</h2>
+  <p>{{s|s041|}}</p>
+  <figure class="scena" data-scena="sinistra" data-titolo="{{a|s042|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s041|}}</h2>
+  <h2>{{s|s043|}}</h2>
   <div class="tab-wrap"><table class="tab">
-    <thead><tr><th>{{s|s042|}}</th><th>{{s|s043|}}</th><th>{{s|s044|}}</th></tr></thead>
+    <thead><tr><th>{{s|s044|}}</th><th>{{s|s045|}}</th><th>{{s|s046|}}</th></tr></thead>
     <tbody>
-      <tr><td><b>A + B</b>, <b>A − B</b></td><td>{{s|s045|}}</td><td>{{s|s046|}}</td></tr>
-      <tr><td>{{s|s047|}}</td><td>{{s|s048|}}</td><td>{{s|s049|}}</td></tr>
-      <tr><td><b>A · B</b></td><td>{{s|s050|}}</td><td>{{s|s051|}}</td></tr>
-      <tr><td>{{s|s052|}}</td><td>{{s|s053|}}</td><td>{{s|s054|}}</td></tr>
-      <tr><td>{{s|s055|}}</td><td>{{s|s056|}}</td><td>{{s|s057|}}</td></tr>
-      <tr><td>{{s|s058|}}</td><td>{{s|s059|}}</td><td>{{s|s060|}}</td></tr>
-      <tr><td>{{s|s061|}}</td><td>{{s|s062|}}</td><td>{{s|s063|}}</td></tr>
+      <tr><td><b>A + B</b>, <b>A − B</b></td><td>{{s|s047|}}</td><td>{{s|s048|}}</td></tr>
+      <tr><td>{{s|s049|}}</td><td>{{s|s050|}}</td><td>{{s|s051|}}</td></tr>
+      <tr><td><b>A · B</b></td><td>{{s|s052|}}</td><td>{{s|s053|}}</td></tr>
+      <tr><td>{{s|s054|}}</td><td>{{s|s055|}}</td><td>{{s|s056|}}</td></tr>
+      <tr><td>{{s|s057|}}</td><td>{{s|s058|}}</td><td>{{s|s059|}}</td></tr>
+      <tr><td>{{s|s060|}}</td><td>{{s|s061|}}</td><td>{{s|s062|}}</td></tr>
+      <tr><td>{{s|s063|}}</td><td>{{s|s064|}}</td><td>{{s|s065|}}</td></tr>
     </tbody>
   </table></div>
-  <p class="piccolo">{{s|s064|}}</p>
-  <div class="box attenzione" data-tit="{{a|s065|}}">
-    <p>{{s|s066|}}</p>
+  <p class="piccolo">{{s|s066|}}</p>
+  <div class="box attenzione" data-tit="{{a|s067|}}">
+    <p>{{s|s068|}}</p>
     <div class="tab-wrap"><table class="tab">
-      <thead><tr><th>{{s|s067|}}</th><th>A + B</th><th>A · B</th></tr></thead>
+      <thead><tr><th>{{s|s069|}}</th><th>A + B</th><th>A · B</th></tr></thead>
       <tbody>
-        <tr><td>(2 × 3) e (2 × 3)</td><td>{{s|s068|}}</td><td>{{s|s069|}}</td></tr>
-        <tr><td>(2 × 3) e (3 × 2)</td><td>{{s|s070|}}</td><td>{{s|s071|}}</td></tr>
+        <tr><td>(2 × 3) e (2 × 3)</td><td>{{s|s070|}}</td><td>{{s|s071|}}</td></tr>
+        <tr><td>(2 × 3) e (3 × 2)</td><td>{{s|s072|}}</td><td>{{s|s073|}}</td></tr>
       </tbody>
     </table></div>
-    <p>{{s|s072|}}</p>
-  </div>
-  <div class="box domanda-tua" data-tit="{{a|s073|}}">
     <p>{{s|s074|}}</p>
   </div>
-  <p class="piccolo">{{s|s075|}}</p>
-  <div class="box attenzione" data-tit="{{a|s076|}}">
-    <p>{{s|s077|}}</p>
-    <p>{{s|s078|}}</p>
+  <div class="box domanda-tua" data-tit="{{a|s075|}}">
+    <p>{{s|s076|}}</p>
   </div>
-  <div class="box domanda-tua" data-tit="{{a|s079|}}">
+  <p class="piccolo">{{s|s077|}}</p>
+  <div class="box attenzione" data-tit="{{a|s078|}}">
+    <p>{{s|s079|}}</p>
     <p>{{s|s080|}}</p>
   </div>
   <div class="box domanda-tua" data-tit="{{a|s081|}}">
     <p>{{s|s082|}}</p>
   </div>
-  <figure class="scena" data-scena="tabella" data-titolo="{{a|s083|}}"></figure>
+  <div class="box domanda-tua" data-tit="{{a|s083|}}">
+    <p>{{s|s084|}}</p>
+  </div>
+  <figure class="scena" data-scena="tabella" data-titolo="{{a|s085|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s084|}}</h2>
-  <p>{{s|s085|}}</p>
+  <h2>{{s|s086|}}</h2>
+  <p>{{s|s087|}}</p>
   <div class="colonne">
     <div class="carta buona">
-      <h4>{{s|s086|}}</h4>
+      <h4>{{s|s088|}}</h4>
       <p><span class="m">[[4, −4], [4, −1]] · (4, 2)</span></p>
-      <p>{{s|s087|}}</p>
-      <p>{{s|s088|}}</p>
+      <p>{{s|s089|}}</p>
+      <p>{{s|s090|}}</p>
     </div>
     <div class="carta cattiva">
-      <h4>{{s|s089|}}</h4>
-      <p>{{s|s090|}}</p>
-      <p>{{s|s091|}}</p>
+      <h4>{{s|s091|}}</h4>
+      <p>{{s|s092|}}</p>
+      <p>{{s|s093|}}</p>
     </div>
   </div>
-  <figure class="scena" data-scena="errore8" data-titolo="{{a|s092|}}"></figure>
+  <figure class="scena" data-scena="errore8" data-titolo="{{a|s094|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s093|}}</h2>
-  <p>{{s|s094|}}</p>
-  <figure class="codice" data-titolo="{{a|s095|}}">
+  <h2>{{s|s095|}}</h2>
+  <p>{{s|s096|}}</p>
+  <figure class="codice" data-titolo="{{a|s097|}}">
 <pre data-lang="python">import numpy as np
 A = np.array([[1, 2, 3], [4, 5, 6]])
 v = np.array([-1, -2, -3])
@@ -279,38 +279,38 @@ A + np.array([[1, 2], [3, 4]])
 # ValueError: operands could not be broadcast together with shapes (2,3) (2,2)
 np.array([1, 2]) @ A         # array([ 9, 12, 15])</pre>
     <ol class="spiega">
-      <li data-righe="2-4" data-segna="(2, 3)@ora|(3,)@dato"><p>{{s|s096|}}</p></li>
-      <li data-righe="5" data-segna="A @ v@ok|array([-14, -32])@ok"><p>{{s|s097|}}</p></li>
-      <li data-righe="6" data-segna="v @ A@no|(size 2 is different from 3)@no"><p>{{s|s098|}}</p></li>
-      <li data-righe="7-8" data-segna="shapes (2,3) (2,2)@no"><p>{{s|s099|}}</p></li>
-      <li data-righe="9" data-segna="np.array([1, 2]) @ A@ok"><p>{{s|s100|}}</p></li>
+      <li data-righe="2-4" data-segna="(2, 3)@ora|(3,)@dato"><p>{{s|s098|}}</p></li>
+      <li data-righe="5" data-segna="A @ v@ok|array([-14, -32])@ok"><p>{{s|s099|}}</p></li>
+      <li data-righe="6" data-segna="v @ A@no|(size 2 is different from 3)@no"><p>{{s|s100|}}</p></li>
+      <li data-righe="7-8" data-segna="shapes (2,3) (2,2)@no"><p>{{s|s101|}}</p></li>
+      <li data-righe="9" data-segna="np.array([1, 2]) @ A@ok"><p>{{s|s102|}}</p></li>
     </ol>
   </figure>
-  <p class="piccolo">{{s|s101|}}</p>
-  <figure class="scena" data-scena="numpyforme" data-titolo="{{a|s102|}}"></figure>
+  <p class="piccolo">{{s|s103|}}</p>
+  <figure class="scena" data-scena="numpyforme" data-titolo="{{a|s104|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s103|}}</h2>
-  <p>{{s|s104|}}</p>
-  <figure class="passi" data-titolo="{{a|s105|}}">
-    <div class="passo"><div class="espr"><mark class="dato">X</mark>: N × d     <mark class="ora">w</mark>: d     <mark class="ok">y</mark>: N</div><p class="nota">{{s|s106|}}</p></div>
-    <div class="passo"><div class="espr"><mark class="dato">X</mark><mark class="ora">w</mark>: (N × <s>d</s>)(<s>d</s>) → <mark class="ok">N</mark></div><p class="nota">{{s|s107|}}</p></div>
-    <div class="passo"><div class="espr">XᵀX: (d × <s>N</s>)(<s>N</s> × d) → <mark class="ora">d × d</mark></div><p class="nota">{{s|s108|}}</p></div>
-    <div class="passo"><div class="espr">Xᵀy: (d × <s>N</s>)(<s>N</s>) → <mark class="ora">d</mark></div><p class="nota">{{s|s109|}}</p></div>
-    <div class="passo"><div class="espr">(XᵀX)⁻¹ Xᵀy: (d × <s>d</s>)(<s>d</s>) → <mark class="ok">d</mark>  ✓</div><p class="nota">{{s|s110|}}</p></div>
+  <h2>{{s|s105|}}</h2>
+  <p>{{s|s106|}}</p>
+  <figure class="passi" data-titolo="{{a|s107|}}">
+    <div class="passo"><div class="espr"><mark class="dato">X</mark>: N × d     <mark class="ora">w</mark>: d     <mark class="ok">y</mark>: N</div><p class="nota">{{s|s108|}}</p></div>
+    <div class="passo"><div class="espr"><mark class="dato">X</mark><mark class="ora">w</mark>: (N × <s>d</s>)(<s>d</s>) → <mark class="ok">N</mark></div><p class="nota">{{s|s109|}}</p></div>
+    <div class="passo"><div class="espr">XᵀX: (d × <s>N</s>)(<s>N</s> × d) → <mark class="ora">d × d</mark></div><p class="nota">{{s|s110|}}</p></div>
+    <div class="passo"><div class="espr">Xᵀy: (d × <s>N</s>)(<s>N</s>) → <mark class="ora">d</mark></div><p class="nota">{{s|s111|}}</p></div>
+    <div class="passo"><div class="espr">(XᵀX)⁻¹ Xᵀy: (d × <s>d</s>)(<s>d</s>) → <mark class="ok">d</mark>  ✓</div><p class="nota">{{s|s112|}}</p></div>
   </figure>
   <div class="tab-wrap"><table class="tab">
-    <thead><tr><th>{{s|s111|}}</th><th>{{s|s112|}}</th><th>{{s|s113|}}</th></tr></thead>
+    <thead><tr><th>{{s|s113|}}</th><th>{{s|s114|}}</th><th>{{s|s115|}}</th></tr></thead>
     <tbody>
-      <tr><td>{{s|s114|}}</td><td>{{s|s115|}}</td><td>(N × d)(d) → N</td></tr>
-      <tr><td>{{s|s116|}}</td><td>T · [x, y, 1]</td><td>(3 × 3)(3) → 3</td></tr>
-      <tr><td>{{s|s117|}}</td><td>XᵀX / N</td><td>(d × N)(N × d) → d × d</td></tr>
-      <tr><td>{{s|s118|}}</td><td>Φᵀ(x − μ)</td><td>(k × d)(d) → k</td></tr>
-      <tr><td>{{s|s119|}}</td><td>{{s|s120|}}</td><td>{{s|s121|}}</td></tr>
+      <tr><td>{{s|s116|}}</td><td>{{s|s117|}}</td><td>(N × d)(d) → N</td></tr>
+      <tr><td>{{s|s118|}}</td><td>T · [x, y, 1]</td><td>(3 × 3)(3) → 3</td></tr>
+      <tr><td>{{s|s119|}}</td><td>XᵀX / N</td><td>(d × N)(N × d) → d × d</td></tr>
+      <tr><td>{{s|s120|}}</td><td>Φᵀ(x − μ)</td><td>(k × d)(d) → k</td></tr>
+      <tr><td>{{s|s121|}}</td><td>{{s|s122|}}</td><td>{{s|s123|}}</td></tr>
     </tbody>
   </table></div>
-  <figure class="scena" data-scena="catenaforme" data-titolo="{{a|s122|}}"></figure>
+  <figure class="scena" data-scena="catenaforme" data-titolo="{{a|s124|}}"></figure>
 </section>
 
 </main>

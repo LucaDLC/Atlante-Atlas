@@ -19,46 +19,51 @@
 @@s019 <b>Classificazione</b>: l'output è una <b>classe</b> (gatto / non gatto, spam / non spam). Binaria: due classi, etichette y ∈ {−1, 1} (oppure {0, 1}).
 @@s020 Il classificatore lineare (in realtà affine)
 @@s021 Lo stesso prodotto interno della regressione, con x in coordinate omogenee [1, x₁, x₂]. Con w₀ è affine, anche se si chiama "lineare".
-@@s022 La funzione di <b>attivazione</b> sign trasforma il numero in una classe. (Per la regressione l'attivazione è l'identità: z stesso.)
-@@s023 Una retta in 2D, un piano in 3D, un iperpiano in n dimensioni. Da un lato +1, dall'altro −1. I pesi decidono pendenza (w₁/w₂) e posizione (w₀).
-@@s024 Task 2: se etichetta e previsione hanno lo stesso segno il prodotto è positivo (1·1 o −1·−1); se sono diversi è −1.
-@@s025 wᵀx, sign e il confine di decisione
-@@s026 Perché attivazioni diverse, e anche i classificatori fanno overfitting
-@@s027 Nella regressione l'output è un numero qualsiasi, quindi l'attivazione è l'<b>identità</b>: f(x) = z. Nella classificazione l'output deve essere una classe: <b>sign</b> la ricava dal segno di z, la <b>sigmoide</b> dà una probabilità fra 0 e 1. E sì, anche un classificatore può andare in overfitting: un albero senza limite di profondità o un k-nearest neighbour con k = 1 sbagliano zero punti sul training perché lo imparano a memoria, ma non per questo generalizzano (pagine <a href="w10-confini-non-lineari.html">Confini non lineari</a> e <a href="w10-knn.html">k-nearest neighbour</a>).
-@@s028 Imparare w con i minimi quadrati (Task 4)
-@@s029 Il confine di decisione sui dati del notebook
-@@s030 learn_affine_classifier (verificato con i dati del notebook, seed 42)
-@@s031 I dati delle due classi uno sotto l'altro, e le etichette nello stesso ordine. Attenzione: nel notebook il commento dice "-1 for positive class, 0 for negative class", ma il testo chiede <b>1 e −1</b>: vale il testo.
-@@s032 Design matrix con la colonna di 1 (il bias w₀) e minimi quadrati: si cerca w che renda wᵀx il più vicino possibile a ±1.
-@@s033 Classe = segno. Accuratezza 0.8875 (il notebook stampa 0.887).
-@@s034 Task 5: perché a mano si fa meglio (0.925)
-@@s035 I minimi quadrati non contano gli errori di classe: misurano quanto wᵀx dista da ±1. Un punto classificato benissimo, con wᵀx = 1.62, "sbaglia" lo stesso di (1.62 − 1)² = 0.38 e tira il confine verso di sé. Per questo w = [0.5, 1, 1], scelto a occhio, arriva a 0.925. Per la classificazione servono loss pensate apposta: la logistica (sotto) o la hinge delle SVM.
-@@s036 La regressione logistica
-@@s037 Tre pezzi (Task 1–3)
-@@s038 Funzione lineare dell'input.
-@@s039 La <b>sigmoide</b> schiaccia qualsiasi numero tra 0 e 1: si legge come la <b>probabilità</b> che x sia della classe 1.
-@@s040 σ(0) = 0.5: il confine di decisione è di nuovo w₀ + w₁x = 0, lo stesso del classificatore lineare. Con i parametri del notebook [3, 0.15]: x = −3/0.15 = <b>−20</b> (σ(−20·0.15 + 3) = 0.5, verificato).
-@@s041 Se cambi…
-@@s042 la sigmoide…
-@@s043 w₁ piccolo
-@@s044 diventa quasi piatta, simile a una retta: le probabilità cambiano lentamente
-@@s045 w₁ grande
-@@s046 diventa quasi un gradino: si avvicina a sign
-@@s047 è costante: la probabilità non dipende da x
-@@s048 il bias w₀
-@@s049 si sposta a destra o a sinistra, cioè si sposta il confine
-@@s050 Come i parametri cambiano la sigmoide
-@@s051 Come si allena: la loss logistica (log loss, binary cross-entropy)
-@@s052 Per un punto di classe 1 conta solo −log(p).
-@@s053 Poca loss se sei sicuro e hai ragione, tantissima se sei sicuro e hai torto. A differenza dei minimi quadrati, un punto "molto giusto" non viene punito.
-@@s054 Come un'app meteo. Per un punto di classe 0 conta solo −log(1 − p). Dire «99 per cento di pioggia» e restare all'asciutto costa moltissimo; dire «10 per cento» e restare all'asciutto costa poco. La loss premia chi è sicuro quando ha ragione e punisce chi è sicuro quando ha torto.
-@@s055 La sigmoide rende il problema non lineare nei pesi: si parte da un w e lo si migliora a piccoli passi (settimana 14). Con i dati del Task 4, <code>LogisticRegression</code> di sklearn trova w₀ = 0.205, w = [1.791, 1.537], accuratezza 0.8875.
-@@s056 Perché le probabilità sono utili
-@@s057 Una probabilità dice anche <b>quanto</b> il modello è sicuro. Cambiando la soglia 0.5 si scambiano falsi positivi e falsi negativi (settimana 11): in medicina si abbassa la soglia per non perdere malati.
-@@s058 Accuratezza 0.04 in un problema a due classi
-@@s059 Nel Task 5 del notebook compare "accuracy 0.040". Con due classi, un'accuratezza molto sotto 0.5 vuol dire quasi sempre <b>etichette invertite</b> (il modello dice 1 dove la verità è 0): il classificatore è ottimo (0.96) ma confrontato con le classi scambiate.
-@@s060 k-nearest neighbour (lezione 9)
-@@s061 Un nuovo punto prende la classe della <b>maggioranza dei suoi k vicini</b> nel training. Non impara pesi: ricorda tutti i dati (memory-based) e misura distanze, quindi la scelta della <a href="w02-norme-distanze.html">distanza</a> e la scala delle feature contano. k = 1 dà accuratezza 1.0 sul training (ogni punto è il vicino di sé stesso): non dice niente sulla generalizzazione. Pro: nessun allenamento, confini di qualsiasi forma. Contro: lento a prevedere con tanti dati, sensibile a feature non scalate e a quelle inutili. L'esercizio della settimana 10, con i pari merito, le quattro dimensioni e il confronto con la retta, è nella pagina <a href="w10-knn.html">k-nearest neighbour: l'esercizio</a>.
-@@s062 Q8 (a) e (b)
-@@s063 (a) "Linear classification, kernels, and classification boundaries." (b) "Logistic regression and classification boundaries." Da portare: wᵀx e il segno, il confine come iperpiano, y·f(x) &gt; 0, minimi quadrati sulle etichette e il loro limite (Task 5), sigmoide e probabilità, confine a σ = 0.5, log loss e discesa del gradiente.
-@@s064 k = 1, 3, 5: la risposta cambia
+@@s022 f(x) = <mark class="ok">sign</mark>(z): +1 se z &gt; 0, −1 altrimenti
+@@s023 La funzione di <b>attivazione</b> sign trasforma il numero in una classe. (Per la regressione l'attivazione è l'identità: z stesso.)
+@@s024 confine di decisione: w₀ + w₁x₁ + w₂x₂ = <mark class="no">0</mark> ⇒ x₂ = −w₀/w₂ − (w₁/w₂)·x₁
+@@s025 Una retta in 2D, un piano in 3D, un iperpiano in n dimensioni. Da un lato +1, dall'altro −1. I pesi decidono pendenza (w₁/w₂) e posizione (w₀).
+@@s026 Task 2: se etichetta e previsione hanno lo stesso segno il prodotto è positivo (1·1 o −1·−1); se sono diversi è −1.
+@@s027 wᵀx, sign e il confine di decisione
+@@s028 Perché attivazioni diverse, e anche i classificatori fanno overfitting
+@@s029 Nella regressione l'output è un numero qualsiasi, quindi l'attivazione è l'<b>identità</b>: f(x) = z. Nella classificazione l'output deve essere una classe: <b>sign</b> la ricava dal segno di z, la <b>sigmoide</b> dà una probabilità fra 0 e 1. E sì, anche un classificatore può andare in overfitting: un albero senza limite di profondità o un k-nearest neighbour con k = 1 sbagliano zero punti sul training perché lo imparano a memoria, ma non per questo generalizzano (pagine <a href="w10-confini-non-lineari.html">Confini non lineari</a> e <a href="w10-knn.html">k-nearest neighbour</a>).
+@@s030 Imparare w con i minimi quadrati (Task 4)
+@@s031 Il confine di decisione sui dati del notebook
+@@s032 learn_affine_classifier (verificato con i dati del notebook, seed 42)
+@@s033 I dati delle due classi uno sotto l'altro, e le etichette nello stesso ordine. Attenzione: nel notebook il commento dice "-1 for positive class, 0 for negative class", ma il testo chiede <b>1 e −1</b>: vale il testo.
+@@s034 Design matrix con la colonna di 1 (il bias w₀) e minimi quadrati: si cerca w che renda wᵀx il più vicino possibile a ±1.
+@@s035 Classe = segno. Accuratezza 0.8875 (il notebook stampa 0.887).
+@@s036 Task 5: perché a mano si fa meglio (0.925)
+@@s037 I minimi quadrati non contano gli errori di classe: misurano quanto wᵀx dista da ±1. Un punto classificato benissimo, con wᵀx = 1.62, "sbaglia" lo stesso di (1.62 − 1)² = 0.38 e tira il confine verso di sé. Per questo w = [0.5, 1, 1], scelto a occhio, arriva a 0.925. Per la classificazione servono loss pensate apposta: la logistica (sotto) o la hinge delle SVM.
+@@s038 La regressione logistica
+@@s039 Tre pezzi (Task 1–3)
+@@s040 Funzione lineare dell'input.
+@@s041 La <b>sigmoide</b> schiaccia qualsiasi numero tra 0 e 1: si legge come la <b>probabilità</b> che x sia della classe 1.
+@@s042 classe 1 se σ(z) &gt; <mark class="ok">0.5</mark> ⇔ z &gt; 0
+@@s043 σ(0) = 0.5: il confine di decisione è di nuovo w₀ + w₁x = 0, lo stesso del classificatore lineare. Con i parametri del notebook [3, 0.15]: x = −3/0.15 = <b>−20</b> (σ(−20·0.15 + 3) = 0.5, verificato).
+@@s044 Se cambi…
+@@s045 la sigmoide…
+@@s046 w₁ piccolo
+@@s047 diventa quasi piatta, simile a una retta: le probabilità cambiano lentamente
+@@s048 w₁ grande
+@@s049 diventa quasi un gradino: si avvicina a sign
+@@s050 è costante: la probabilità non dipende da x
+@@s051 il bias w₀
+@@s052 si sposta a destra o a sinistra, cioè si sposta il confine
+@@s053 Come i parametri cambiano la sigmoide
+@@s054 Come si allena: la loss logistica (log loss, binary cross-entropy)
+@@s055 L = −[ y·log(p) + (1 − y)·log(1 − p) ] con p = σ(wᵀx), y ∈ {0, 1}
+@@s056 Per un punto di classe 1 conta solo −log(p).
+@@s057 Poca loss se sei sicuro e hai ragione, tantissima se sei sicuro e hai torto. A differenza dei minimi quadrati, un punto "molto giusto" non viene punito.
+@@s058 Come un'app meteo. Per un punto di classe 0 conta solo −log(1 − p). Dire «99 per cento di pioggia» e restare all'asciutto costa moltissimo; dire «10 per cento» e restare all'asciutto costa poco. La loss premia chi è sicuro quando ha ragione e punisce chi è sicuro quando ha torto.
+@@s059 nessuna formula chiusa ⇒ <mark class="ora">discesa del gradiente</mark>
+@@s060 La sigmoide rende il problema non lineare nei pesi: si parte da un w e lo si migliora a piccoli passi (settimana 14). Con i dati del Task 4, <code>LogisticRegression</code> di sklearn trova w₀ = 0.205, w = [1.791, 1.537], accuratezza 0.8875.
+@@s061 Perché le probabilità sono utili
+@@s062 Una probabilità dice anche <b>quanto</b> il modello è sicuro. Cambiando la soglia 0.5 si scambiano falsi positivi e falsi negativi (settimana 11): in medicina si abbassa la soglia per non perdere malati.
+@@s063 Accuratezza 0.04 in un problema a due classi
+@@s064 Nel Task 5 del notebook compare "accuracy 0.040". Con due classi, un'accuratezza molto sotto 0.5 vuol dire quasi sempre <b>etichette invertite</b> (il modello dice 1 dove la verità è 0): il classificatore è ottimo (0.96) ma confrontato con le classi scambiate.
+@@s065 k-nearest neighbour (lezione 9)
+@@s066 Un nuovo punto prende la classe della <b>maggioranza dei suoi k vicini</b> nel training. Non impara pesi: ricorda tutti i dati (memory-based) e misura distanze, quindi la scelta della <a href="w02-norme-distanze.html">distanza</a> e la scala delle feature contano. k = 1 dà accuratezza 1.0 sul training (ogni punto è il vicino di sé stesso): non dice niente sulla generalizzazione. Pro: nessun allenamento, confini di qualsiasi forma. Contro: lento a prevedere con tanti dati, sensibile a feature non scalate e a quelle inutili. L'esercizio della settimana 10, con i pari merito, le quattro dimensioni e il confronto con la retta, è nella pagina <a href="w10-knn.html">k-nearest neighbour: l'esercizio</a>.
+@@s067 Q8 (a) e (b)
+@@s068 (a) "Linear classification, kernels, and classification boundaries." (b) "Logistic regression and classification boundaries." Da portare: wᵀx e il segno, il confine come iperpiano, y·f(x) &gt; 0, minimi quadrati sulle etichette e il loro limite (Task 5), sigmoide e probabilità, confine a σ = 0.5, log loss e discesa del gradiente.
+@@s069 k = 1, 3, 5: la risposta cambia

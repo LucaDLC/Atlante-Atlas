@@ -191,13 +191,13 @@ window.SCENE = window.SCENE || {};
     <div class="passo"><div class="espr">accessi a <mark class="dato">x</mark>:  m(init(x)) scrive · t1(2) scrive · m(5) legge</div><p class="nota">{{s|s030|}}</p></div>
     <div class="passo"><div class="espr">(m(init(x)), t1(2))  (m(init(x)), m(5))  (t1(2), m(5))</div><p class="nota">{{s|s031|}}</p></div>
     <div class="passo"><div class="espr">m(init(x)) → t1(2) <mark class="ok">✓</mark> (start rule)   ·   t1(2) → m(5) <mark class="ok">✓</mark> (termination rule)</div><p class="nota">{{s|s032|}}</p></div>
-    <div class="passo"><div class="espr">accessi ad <mark class="due">a</mark>:  t1(1) scrive · t2(4) legge   →   <mark class="no">non ordinate</mark></div><p class="nota">{{s|s033|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s033|}}</div><p class="nota">{{s|s034|}}</p></div>
   </figure>
-  <figure class="scena" data-scena="hb" data-titolo="{{a|s034|}}"></figure>
+  <figure class="scena" data-scena="hb" data-titolo="{{a|s035|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s035|}}</h2>
+  <h2>{{s|s036|}}</h2>
   <pre class="cod" data-lang="java">l = new ReentrantLock();   // (init(l))
 x = 0; y = 0; a = 0; b = 0;
 Thread one = new Thread(() -> {
@@ -214,62 +214,62 @@ Thread other = new Thread(() -> {
 });
 one.start();   // (start(t1))
 other.start(); // (start(t2))</pre>
-  <figure class="passi" data-titolo="{{a|s036|}}">
-    <div class="passo"><div class="espr">nuove azioni di sincronizzazione:  <mark class="ora">t1(1), t1(4)</mark>, <mark class="due">t2(5), t2(8)</mark></div><p class="nota">{{s|s037|}}</p></div>
+  <figure class="passi" data-titolo="{{a|s037|}}">
+    <div class="passo"><div class="espr">{{s|s038|}}</div><p class="nota">{{s|s039|}}</p></div>
     <div class="passo"><div class="espr">(m(start(t1)), <mark class="ora">t1(1), t1(4)</mark>, m(start(t2)), <mark class="due">t2(5), t2(8)</mark>)
 (m(start(t1)), <mark class="ora">t1(1)</mark>, m(start(t2)), <mark class="ora">t1(4)</mark>, <mark class="due">t2(5), t2(8)</mark>)
 (m(start(t1)), m(start(t2)), <mark class="ora">t1(1), t1(4)</mark>, <mark class="due">t2(5), t2(8)</mark>)
-(m(start(t1)), m(start(t2)), <mark class="due">t2(5), t2(8)</mark>, <mark class="ora">t1(1), t1(4)</mark>)</div><p class="nota">{{s|s038|}}</p></div>
-    <div class="passo"><div class="espr">HB<sub>1</sub> = HB ∪ { <mark class="ora">t1(4)</mark> → <mark class="due">t2(5)</mark> }     se t1 prende il lock per primo</div><p class="nota">{{s|s039|}}</p></div>
-    <div class="passo"><div class="espr">HB<sub>2</sub> = HB ∪ { <mark class="due">t2(8)</mark> → <mark class="ora">t1(1)</mark> }     se t2 prende il lock per primo</div><p class="nota">{{s|s040|}}</p></div>
-    <div class="passo"><div class="espr">in HB<sub>1</sub>:  t1(2) <sub>po</sub>→ t1(3) <sub>po</sub>→ t1(4) <sub>sync</sub>→ t2(5) <sub>po</sub>→ t2(6) <sub>po</sub>→ <mark class="ok">t2(7)</mark></div><p class="nota">{{s|s041|}}</p></div>
-    <div class="passo"><div class="espr">in HB<sub>2</sub>:  t2(7) <sub>po</sub>→ t2(8) <sub>sync</sub>→ t1(1) <sub>po</sub>→ <mark class="ok">t1(2)</mark></div><p class="nota">{{s|s042|}}</p></div>
-    <div class="passo"><div class="espr"><mark class="ok">Nessuna data race</mark> tra t1(2) e t2(7) in nessuna esecuzione</div><p class="nota">{{s|s043|}}</p></div>
+(m(start(t1)), m(start(t2)), <mark class="due">t2(5), t2(8)</mark>, <mark class="ora">t1(1), t1(4)</mark>)</div><p class="nota">{{s|s040|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s041|}}</div><p class="nota">{{s|s042|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s043|}}</div><p class="nota">{{s|s044|}}</p></div>
+    <div class="passo"><div class="espr">in HB<sub>1</sub>:  t1(2) <sub>po</sub>→ t1(3) <sub>po</sub>→ t1(4) <sub>sync</sub>→ t2(5) <sub>po</sub>→ t2(6) <sub>po</sub>→ <mark class="ok">t2(7)</mark></div><p class="nota">{{s|s045|}}</p></div>
+    <div class="passo"><div class="espr">in HB<sub>2</sub>:  t2(7) <sub>po</sub>→ t2(8) <sub>sync</sub>→ t1(1) <sub>po</sub>→ <mark class="ok">t1(2)</mark></div><p class="nota">{{s|s046|}}</p></div>
+    <div class="passo"><div class="espr"><mark class="ok">Nessuna data race</mark> tra t1(2) e t2(7) in nessuna esecuzione</div><p class="nota">{{s|s047|}}</p></div>
   </figure>
-  <figure class="scena" data-scena="lockfix" data-titolo="{{a|s044|}}"></figure>
+  <figure class="scena" data-scena="lockfix" data-titolo="{{a|s048|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s045|}}</h2>
-  <p>{{s|s046|}}</p>
-  <figure class="passi" data-titolo="{{a|s047|}}">
-    <div class="passo"><div class="espr">basta che valga:  m(init(x)) → m(init(b)) → <mark class="due">t2(6)</mark> → <mark class="ora">t1(3)</mark></div><p class="nota">{{s|s048|}}</p></div>
-    <div class="passo"><div class="espr">m(init(x)) <sub>po</sub>→ m(init(b)) <sub>po</sub>→ m(start(t2)) <sub>start</sub>→ t2(5) <sub>po</sub>→ <mark class="due">t2(6)</mark></div><p class="nota">{{s|s049|}}</p></div>
-    <div class="passo"><div class="espr"><mark class="due">t2(6)</mark> <sub>po</sub>→ t2(8) <sub>sync (HB₂)</sub>→ t1(1) <sub>po</sub>→ <mark class="ora">t1(3)</mark></div><p class="nota">{{s|s050|}}</p></div>
-    <div class="passo"><div class="espr"><mark class="ok">x == 1</mark>  esattamente nelle esecuzioni in cui <b>t2 prende il lock per primo</b></div><p class="nota">{{s|s051|}}</p></div>
+  <h2>{{s|s049|}}</h2>
+  <p>{{s|s050|}}</p>
+  <figure class="passi" data-titolo="{{a|s051|}}">
+    <div class="passo"><div class="espr">{{s|s052|}}</div><p class="nota">{{s|s053|}}</p></div>
+    <div class="passo"><div class="espr">m(init(x)) <sub>po</sub>→ m(init(b)) <sub>po</sub>→ m(start(t2)) <sub>start</sub>→ t2(5) <sub>po</sub>→ <mark class="due">t2(6)</mark></div><p class="nota">{{s|s054|}}</p></div>
+    <div class="passo"><div class="espr"><mark class="due">t2(6)</mark> <sub>po</sub>→ t2(8) <sub>sync (HB₂)</sub>→ t1(1) <sub>po</sub>→ <mark class="ora">t1(3)</mark></div><p class="nota">{{s|s055|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s056|}}</div><p class="nota">{{s|s057|}}</p></div>
   </figure>
-  <figure class="scena" data-scena="visibile" data-titolo="{{a|s052|}}"></figure>
+  <figure class="scena" data-scena="visibile" data-titolo="{{a|s058|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s053|}}</h2>
-  <div class="box regola" data-tit="{{a|s054|}}">
-    <p>{{s|s055|}}</p>
+  <h2>{{s|s059|}}</h2>
+  <div class="box regola" data-tit="{{a|s060|}}">
+    <p>{{s|s061|}}</p>
   </div>
   <ul>
-    <li>{{s|s056|}}</li>
-    <li>{{s|s057|}}</li>
+    <li>{{s|s062|}}</li>
+    <li>{{s|s063|}}</li>
   </ul>
-  <p>{{s|s058|}}</p>
-  <div class="box attenzione" data-tit="{{a|s059|}}">
-    <p>{{s|s060|}}</p>
+  <p>{{s|s064|}}</p>
+  <div class="box attenzione" data-tit="{{a|s065|}}">
+    <p>{{s|s066|}}</p>
   </div>
-  <figure class="scena" data-scena="volatileregola" data-titolo="{{a|s061|}}"></figure>
+  <figure class="scena" data-scena="volatileregola" data-titolo="{{a|s067|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s062|}}</h2>
-  <p>{{s|s063|}}</p>
+  <h2>{{s|s068|}}</h2>
+  <p>{{s|s069|}}</p>
   <ol>
-    <li>{{s|s064|}}</li>
-    <li>{{s|s065|}}</li>
-    <li>{{s|s066|}}</li>
-    <li>{{s|s067|}}</li>
-    <li>{{s|s068|}}</li>
-    <li>{{s|s069|}}</li>
+    <li>{{s|s070|}}</li>
+    <li>{{s|s071|}}</li>
+    <li>{{s|s072|}}</li>
+    <li>{{s|s073|}}</li>
+    <li>{{s|s074|}}</li>
+    <li>{{s|s075|}}</li>
   </ol>
-  <p>{{s|s070|}}</p>
-  <figure class="scena" data-scena="strategia" data-titolo="{{a|s071|}}"></figure>
+  <p>{{s|s076|}}</p>
+  <figure class="scena" data-scena="strategia" data-titolo="{{a|s077|}}"></figure>
 </section>
 
 </main>

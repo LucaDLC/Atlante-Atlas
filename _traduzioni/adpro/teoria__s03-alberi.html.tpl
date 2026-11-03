@@ -187,70 +187,70 @@ window.SCENE = window.SCENE || {};
       <pre data-lang="scala">case Leaf(value) => value.toString()</pre>
       <pre class="msg">Found:    String
 Required: Tree[B]</pre>
-      <div class="fix">Due problemi. 1) Non sai che <code>f</code> è <code>toString</code>: lo decide chi chiama, tu scrivi <code>f(value)</code>. 2) Il risultato va rimesso in una foglia: <code>Leaf(f(value))</code>.</div>
+      <div class="fix">{{s|s042|}}</div>
     </div>
   </div>
-  <figure class="scena" data-scena="maptree" data-titolo="{{a|s042|}}"></figure>
+  <figure class="scena" data-scena="maptree" data-titolo="{{a|s043|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s043|}}</h2>
-  <p>{{s|s044|}}</p>
-  <figure class="codice" data-titolo="{{a|s045|}}">
+  <h2>{{s|s044|}}</h2>
+  <p>{{s|s045|}}</p>
+  <figure class="codice" data-titolo="{{a|s046|}}">
 <pre data-lang="scala">def fold[A, B](t: Tree[A])(f: (B, B) => B)(g: A => B): B = t match
   case Leaf(value) => g(value)
   case Branch(left, right) => f(fold(left)(f)(g), fold(right)(f)(g))</pre>
     <ol class="spiega">
-      <li data-righe="1" data-segna="[A, B]@due"><p>{{s|s046|}}</p></li>
-      <li data-righe="1" data-segna="(g: A => B)@dato"><p>{{s|s047|}}</p></li>
-      <li data-righe="1" data-segna="(f: (B, B) => B)@ora"><p>{{s|s048|}}</p></li>
-      <li data-righe="2" data-segna="g(value)@dato"><p>{{s|s049|}}</p></li>
-      <li data-righe="3" data-segna="f(@ora"><p>{{s|s050|}}</p></li>
+      <li data-righe="1" data-segna="[A, B]@due"><p>{{s|s047|}}</p></li>
+      <li data-righe="1" data-segna="(g: A => B)@dato"><p>{{s|s048|}}</p></li>
+      <li data-righe="1" data-segna="(f: (B, B) => B)@ora"><p>{{s|s049|}}</p></li>
+      <li data-righe="2" data-segna="g(value)@dato"><p>{{s|s050|}}</p></li>
+      <li data-righe="3" data-segna="f(@ora"><p>{{s|s051|}}</p></li>
     </ol>
   </figure>
   <div class="tab-wrap"><table class="tab">
-    <thead><tr><th>{{s|s051|}}</th><th>{{s|s052|}}</th><th>{{s|s053|}}</th><th>{{s|s054|}}</th></tr></thead>
+    <thead><tr><th>{{s|s052|}}</th><th>{{s|s053|}}</th><th>{{s|s054|}}</th><th>{{s|s055|}}</th></tr></thead>
     <tbody>
-      <tr><td>{{s|s055|}}</td><td>{{s|s056|}}</td><td>{{s|s057|}}</td><td>{{s|s058|}}</td></tr>
-      <tr><td>{{s|s059|}}</td><td>{{s|s060|}}</td><td>{{s|s061|}}</td><td>{{s|s062|}}</td></tr>
-      <tr><td>{{s|s063|}}</td><td>{{s|s064|}}</td><td>{{s|s065|}}</td><td>{{s|s066|}}</td></tr>
+      <tr><td>{{s|s056|}}</td><td>{{s|s057|}}</td><td>{{s|s058|}}</td><td>{{s|s059|}}</td></tr>
+      <tr><td>{{s|s060|}}</td><td>{{s|s061|}}</td><td>{{s|s062|}}</td><td>{{s|s063|}}</td></tr>
+      <tr><td>{{s|s064|}}</td><td>{{s|s065|}}</td><td>{{s|s066|}}</td><td>{{s|s067|}}</td></tr>
     </tbody>
   </table></div>
-  <figure class="passi" data-titolo="{{a|s067|}}">
-    <div class="passo"><div class="espr">fold(<mark class="dato">Branch(Leaf(7), Leaf(9))</mark>)(<mark class="ora">(l, r) => 1 + l + r</mark>)(<mark class="due">_ => 1</mark>)</div><p class="nota">{{s|s068|}}</p></div>
-    <div class="passo"><div class="espr"><mark class="ora">f</mark>(fold(Leaf(7))(f)(g), fold(Leaf(9))(f)(g))</div><p class="nota">{{s|s069|}}</p></div>
-    <div class="passo"><div class="espr"><mark class="ora">f</mark>(<mark class="due">g(7)</mark>, <mark class="due">g(9)</mark>)  =  f(<mark class="due">1</mark>, <mark class="due">1</mark>)</div><p class="nota">{{s|s070|}}</p></div>
-    <div class="passo"><div class="espr">1 + 1 + 1  =  <mark class="ok">3</mark></div><p class="nota">{{s|s071|}}</p></div>
+  <figure class="passi" data-titolo="{{a|s068|}}">
+    <div class="passo"><div class="espr">fold(<mark class="dato">Branch(Leaf(7), Leaf(9))</mark>)(<mark class="ora">(l, r) => 1 + l + r</mark>)(<mark class="due">_ => 1</mark>)</div><p class="nota">{{s|s069|}}</p></div>
+    <div class="passo"><div class="espr"><mark class="ora">f</mark>(fold(Leaf(7))(f)(g), fold(Leaf(9))(f)(g))</div><p class="nota">{{s|s070|}}</p></div>
+    <div class="passo"><div class="espr"><mark class="ora">f</mark>(<mark class="due">g(7)</mark>, <mark class="due">g(9)</mark>)  =  f(<mark class="due">1</mark>, <mark class="due">1</mark>)</div><p class="nota">{{s|s071|}}</p></div>
+    <div class="passo"><div class="espr">1 + 1 + 1  =  <mark class="ok">3</mark></div><p class="nota">{{s|s072|}}</p></div>
   </figure>
-  <figure class="scena" data-scena="foldtree" data-titolo="{{a|s072|}}"></figure>
+  <figure class="scena" data-scena="foldtree" data-titolo="{{a|s073|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s073|}}</h2>
-  <h3>{{s|s074|}}</h3>
-  <p>{{s|s075|}}</p>
-  <h3>{{s|s076|}}</h3>
-  <figure class="passi" data-titolo="{{a|s077|}}">
-    <div class="passo"><div class="espr">case Leaf(<mark class="no">_</mark>) => 1</div><p class="nota">{{s|s078|}}</p></div>
-    <div class="passo"><div class="espr">(<mark class="no">_</mark>) => 1   <span class="mano">// cioè  _ => 1</span></div><p class="nota">{{s|s079|}}</p></div>
-    <div class="passo"><div class="espr">Branch(<mark class="ora">_</mark>, <mark class="due">_</mark>)</div><p class="nota">{{s|s080|}}</p></div>
-    <div class="passo"><div class="espr">Branch(<mark class="ora">_</mark>, <mark class="due">_</mark>)   =   (<mark class="ora">x</mark>, <mark class="due">y</mark>) => Branch(<mark class="ora">x</mark>, <mark class="due">y</mark>)</div><p class="nota">{{s|s081|}}</p></div>
+  <h2>{{s|s074|}}</h2>
+  <h3>{{s|s075|}}</h3>
+  <p>{{s|s076|}}</p>
+  <h3>{{s|s077|}}</h3>
+  <figure class="passi" data-titolo="{{a|s078|}}">
+    <div class="passo"><div class="espr">case Leaf(<mark class="no">_</mark>) => 1</div><p class="nota">{{s|s079|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s080|}}</div><p class="nota">{{s|s081|}}</p></div>
+    <div class="passo"><div class="espr">Branch(<mark class="ora">_</mark>, <mark class="due">_</mark>)</div><p class="nota">{{s|s082|}}</p></div>
+    <div class="passo"><div class="espr">Branch(<mark class="ora">_</mark>, <mark class="due">_</mark>)   =   (<mark class="ora">x</mark>, <mark class="due">y</mark>) => Branch(<mark class="ora">x</mark>, <mark class="due">y</mark>)</div><p class="nota">{{s|s083|}}</p></div>
   </figure>
-  <div class="box regola" data-tit="{{a|s082|}}">
-    <p>{{s|s083|}}</p>
+  <div class="box regola" data-tit="{{a|s084|}}">
+    <p>{{s|s085|}}</p>
   </div>
-  <h3>{{s|s084|}}</h3>
-  <p>{{s|s085|}}</p>
+  <h3>{{s|s086|}}</h3>
+  <p>{{s|s087|}}</p>
   <div class="errori">
     <div class="errore">
       <pre data-lang="scala">def map1[A, B](t: Tree[A])(f: A => B): Tree[B] =
   fold(t)(Branch(_, _))(a => Leaf(f(a)))</pre>
       <pre class="msg">Found:    Tree[Any]
 Required: Tree[B]</pre>
-      <div class="fix">Senza tipi, Scala deduce un <code>B</code> troppo generico (<code>Tree[Any]</code>). Scrivi <code>fold[A, Tree[B]](t)(…)(…)</code> (verificato: così compila).</div>
+      <div class="fix">{{s|s088|}}</div>
     </div>
   </div>
-  <figure class="scena" data-scena="trattini" data-titolo="{{a|s086|}}"></figure>
+  <figure class="scena" data-scena="trattini" data-titolo="{{a|s089|}}"></figure>
 </section>
 
 </main>

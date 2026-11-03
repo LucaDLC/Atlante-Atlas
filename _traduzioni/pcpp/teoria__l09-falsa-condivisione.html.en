@@ -7,22 +7,28 @@
 @@s007 The lock is also a write to memory: if several threads take the same lock often, the state of its line keeps passing around. That is why a shared lock taken very often is slow even with the "right" lock.
 @@s008 The ping-pong on a shared counter
 @@s009 dato:cache line,ora:write,no:invalidate,ok:stable state
-@@s010 Core 0 has its own copy, modified.
-@@s011 The line moves into the cache of core 1, which holds it in M.
-@@s012 Every write is a trip on the bus. The counter stays correct, but slow.
-@@s013 When writing is fast
-@@s014 Two situations are fine, and they are the ones to look for:
-@@s015 <b>immutable shared data</b>: read by everybody, never written. They stay in S in all the caches, and reading them is fast;
-@@s016 <b>local data</b>: each thread writes only its own datum. It stays in M in its cache, and nobody touches it.
-@@s017 The lecture calls this idea "thread-local updates": a datum that changes must belong to a single thread.
-@@s018 False sharing: two unrelated data on the same line
-@@s019 The cache line is 64 bytes. Two different data, used by different threads, can be on the <b>same line</b>. Even if the threads do not touch each other, writing one of the two invalidates the other's copy: it is <b>false sharing</b>. The code does not show it: two nearby fields in an object can end up on the same line.
-@@s020 Two independent counters on the same line
-@@s021 dato:counters,ora:write,no:damage,ok:solution
-@@s022 The two threads share no logical datum.
-@@s023 The ping-pong of the previous case, with no logical reason.
-@@s024 Padding costs memory, but removes the ping-pong. In Java @Contended does the same, but it can be used only inside the JDK libraries.
-@@s025 How it is measured
-@@s026 False sharing cannot be seen by reading the code: it is seen by measuring. The lecture compares versions with and without padding under the same load, and padding wins where two threads write nearby data. That is why the week's exercises ask you to measure on your own machine.
-@@s027 Warning
-@@s028 Padding is not always useful: if the threads do not write nearby data, it changes nothing. Measure first, then optimise.
+@@s010 Thread 0 writes: the line is in <mark class="ora">M</mark> in the cache of core 0
+@@s011 Core 0 has its own copy, modified.
+@@s012 Thread 1 writes the same data: core 1 <mark class="no">invalidates</mark> core 0's copy
+@@s013 The line moves into the cache of core 1, which holds it in M.
+@@s014 Thread 0 writes again: the line comes back from core 1, <mark class="no">and so on</mark>
+@@s015 Every write is a trip on the bus. The counter stays correct, but slow.
+@@s016 When writing is fast
+@@s017 Two situations are fine, and they are the ones to look for:
+@@s018 <b>immutable shared data</b>: read by everybody, never written. They stay in S in all the caches, and reading them is fast;
+@@s019 <b>local data</b>: each thread writes only its own datum. It stays in M in its cache, and nobody touches it.
+@@s020 The lecture calls this idea "thread-local updates": a datum that changes must belong to a single thread.
+@@s021 False sharing: two unrelated data on the same line
+@@s022 The cache line is 64 bytes. Two different data, used by different threads, can be on the <b>same line</b>. Even if the threads do not touch each other, writing one of the two invalidates the other's copy: it is <b>false sharing</b>. The code does not show it: two nearby fields in an object can end up on the same line.
+@@s023 Two independent counters on the same line
+@@s024 dato:counters,ora:write,no:damage,ok:solution
+@@s025 Thread A writes counter <mark class="dato">a</mark>, Thread B counter <mark class="dato">b</mark>: same line
+@@s026 The two threads share no logical datum.
+@@s027 Every write by A <mark class="no">invalidates</mark> B's copy, and vice versa
+@@s028 The ping-pong of the previous case, with no logical reason.
+@@s029 <mark class="ok">Solution</mark>: <mark class="ok">padding</mark>, that is empty space between the data, so that each one sits on its own line
+@@s030 Padding costs memory, but removes the ping-pong. In Java @Contended does the same, but it can be used only inside the JDK libraries.
+@@s031 How it is measured
+@@s032 False sharing cannot be seen by reading the code: it is seen by measuring. The lecture compares versions with and without padding under the same load, and padding wins where two threads write nearby data. That is why the week's exercises ask you to measure on your own machine.
+@@s033 Warning
+@@s034 Padding is not always useful: if the threads do not write nearby data, it changes nothing. Measure first, then optimise.

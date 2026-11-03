@@ -45,50 +45,56 @@
 @@s045 3.1.5 · Dimostrare la data race
 @@s046 Trova una coppia in conflitto non ordinata
 @@s047 Stessa variabile count, almeno una scrittura, thread diversi.
-@@s048 L'unico happens-before, perché c'è un solo synchronization order.
-@@s049 Dopo t1(2) ci sono solo azioni del main successive ai join. Nessuna di queste porta a t2(2).
-@@s050 Simmetrico.
-@@s051 Vale in tutte le esecuzioni, perché l'HB è uno solo. Il programma non è correttamente sincronizzato.
-@@s052 Sulla tua risposta al 3.1.5
-@@s053 Hai scritto "there may be a <b>race condition</b> between…". Qui la parola giusta è <b>data race</b> tra <b>conflicting actions</b>: race condition è un'altra cosa (<a href="l01-lock.html">pagina lock</a>). E il "count == 1" non dimostra la data race: la dimostrazione è mostrare che nessuna delle due frecce è nell'HB, cioè che dagli insiemi PO, S, T non esce un cammino tra le azioni di t1 e quelle di t2.
-@@s054 Nessun percorso fra le due scritture
-@@s055 3.1.6 – 3.1.7 · Con un lock
-@@s056 Cosa cambia e perché non c'è più la data race
-@@s057 Program order: il main crea il lock, i thread hanno 4 azioni.
-@@s058 Prima e ultima azione sono cambiate: ora sono lock e unlock.
-@@s059 Ora i synchronization order sono diversi, ma si dividono in <b>due</b> famiglie: t1 prende il lock per primo, oppure t2. Quindi due insiemi happens-before.
-@@s060 <b>3.1.7</b> Ordino ogni coppia in conflitto. In HB<sub>1</sub> tutte le azioni di t1 vengono prima di quelle di t2.
-@@s061 In HB<sub>2</sub> il contrario. Lo stesso vale per (t1(1), t2(2)) e (t1(2), t2(1)).
-@@s062 Il programma è correttamente sincronizzato, e stampa sempre 2.
-@@s063 Il lock aggiunge un arco
-@@s064 Sulle tue risposte al 3.1.6 e 3.1.7
-@@s065 Nel 3.1.6 hai scritto le due catene complete t1 → t2 e t2 → t1 e parlato di "two different interleavings". La domanda chiede se nascono <b>più happens-before set</b>: la risposta è "sì, due", HB<sub>1</sub> e HB<sub>2</sub>, ognuno con <b>una</b> coppia in più data dalla regola del monitor (unlock di uno → lock dell'altro).
-@@s066 Nel 3.1.7 hai elencato coppie dentro lo stesso thread (program order). Quelle c'erano già: la dimostrazione deve prendere le <b>coppie in conflitto tra t1 e t2</b> e mostrare il cammino che le ordina, in HB<sub>1</sub> e in HB<sub>2</sub>, come nei due passi qui sopra.
-@@s067 3.1.8 – 3.1.9 · Con <code>volatile count</code>
-@@s068 Nessuna data race, ma risultato non garantito
-@@s069 Il programma è quello senza lock.
-@@s070 Per definizione: "accesses on volatile variables are never conflicting" (slide sulle conflicting actions). Le uniche azioni che potevano essere in conflitto erano gli accessi a count.
-@@s071 <b>3.1.8</b> Risposta: <b>sì</b>, tutte le esecuzioni sono prive di data race.
-@@s072 <b>3.1.9</b> Ma questo ordine è possibile: la regola volatile ordina una scrittura con le letture <b>successive</b>, e qui entrambe le letture vengono prima di entrambe le scritture. Nessuna regola lo vieta.
-@@s073 Stampano valori diversi. Morale: <b>data race free non vuol dire race condition free</b>. <code>volatile</code> dà visibilità, non mutua esclusione.
-@@s074 Sulla tua risposta al 3.1.8
-@@s075 Hai risposto <b>No</b> e scritto che letture e scritture di una variabile volatile sono "synchronization actions". Tutte e due le cose vanno corrette: sono <b>variable access</b>, e la definizione di conflicting actions esclude le variabili volatile. Quindi nessuna data race. Il count == 1 che hai descritto è vero, ma è una <b>race condition</b>: è proprio il punto del 3.1.9.
-@@s076 In inglese (3.1.8)
-@@s077 "Yes, all executions are data race free. By definition in the Java memory model, accesses to volatile variables are never conflicting actions, and the only shared variable, count, is volatile. Therefore there is no pair of conflicting actions and hence no data race. This does not prevent the race condition: both threads may read 0 before either writes, so the program may still print count=1."
-@@s078 Data race free, ma count può valere 1
-@@s079 3.1.10 – 3.1.11 · Mutua esclusione con happens-before (challenging)
-@@s080 <b>3.1.10</b> Mutua esclusione per questo programma: in ogni esecuzione vale <code>t1(3) → t2(0)</code> <b>oppure</b> <code>t2(3) → t1(0)</code>. Cioè: la sezione critica di un thread finisce (unlock) prima che l'altro entri (lock).
-@@s081 <b>3.1.11</b> Con il corpo in un <code>while(true)</code>: ogni iterazione <i>i</i> di t1 ha azioni <code>t1(0<sub>i</sub>) … t1(3<sub>i</sub>)</code>. Per qualsiasi iterazione <i>i</i> di t1 e <i>j</i> di t2, il synchronization order mette uno dei due lock prima dell'altro unlock; la regola del monitor dà <code>t1(3<sub>i</sub>) → t2(0<sub>j</sub>)</code> oppure <code>t2(3<sub>j</sub>) → t1(0<sub>i</sub>)</code>, e con il program order tutte le coppie in conflitto delle due iterazioni risultano ordinate. Essendo vero per ogni coppia di iterazioni, nessuna esecuzione (anche infinita) ha data race.
-@@s082 Mutua esclusione come coppie unlock → lock
-@@s083 3.2 · <code>StringSet</code> in breve
-@@s084 <b>3.2.1</b> In conflitto: <code>t1(b)</code> (add = scrittura) e <code>t2(c)</code> (indexOf = lettura). t2 non fa azioni di sincronizzazione sul monitor di <code>s</code>: le uniche coppie che collegano t1 e t2 passano dal main (start), e danno solo <code>m(start(t1)) → …</code> e <code>m(start(t2)) → t2(c)</code>. Nessun ordine tra <code>t1(b)</code> e <code>t2(c)</code>: data race, programma non correttamente sincronizzato.
-@@s085 <b>3.2.2</b> Con <code>find</code> synchronized, t2 fa lock/unlock sullo stesso monitor. Due casi: <code>t1(unlock) → t2(lock)</code> oppure <code>t2(unlock) → t1(lock)</code> (regola del monitor), quindi <code>t1(b)</code> e <code>t2(c)</code> sono sempre ordinate: correttamente sincronizzato. <code>find</code> può restituire 0 o -1 a seconda di chi entra prima: è una race condition, non una data race.
-@@s086 <b>3.2.3</b> La data race del 3.2.1 c'è in <b>tutte</b> le esecuzioni: la lista parte vuota, quindi <code>add</code> viene sempre eseguita, e nessun synchronization order introduce coppie tra t1 e t2.
-@@s087 find senza lock e con lock
-@@s088 3.3 · Il ciclo che può non finire, in breve
-@@s089 <b>3.3.1</b> Per impedire le esecuzioni infinite deve valere <code>m(w) → t1(r)</code> per una lettura di t1 che viene dopo la scrittura: la scrittura <code>x = 42</code> deve happens-before una lettura del <code>while</code>, così quella lettura vede 42 ed esce.
-@@s090 <b>3.3.2</b> Non vale: l'unica regola che collega m e t1 è la start rule, <code>m(start(t1)) → t1(r<sub>1</sub>)</code>. Ma <code>m(w)</code> viene <b>dopo</b> <code>m(start(t1))</code> nel program order del main, e non c'è lock, volatile o join che leghi <code>m(w)</code> alle letture di t1. Nessuna esecuzione ha <code>m(w) → t1(r)</code>.
-@@s091 <b>3.3.3</b> Dichiara <code>volatile int x</code>. <code>m(w)</code> è una scrittura su una variabile volatile; ogni lettura <code>t1(r)</code> del <code>while</code> che nell'esecuzione viene <b>dopo</b> <code>m(w)</code> è una "subsequent read": per la regola volatile <code>m(w) → t1(r)</code>. Quella lettura vede 42 e il ciclo termina. In alternativa: lettura e scrittura dentro <code>synchronized</code> sullo stesso oggetto (regola del monitor).
-@@s092 Sulla tua risposta al 3.3.1
-@@s093 La domanda chiede <b>quale coppia</b> deve essere ordinata, non tutto l'happens-before del programma: basta dire "la scrittura <code>x=42</code> del main deve happens-before una lettura di <code>x</code> nel <code>while</code> di t1", e spiegare perché con quella coppia il ciclo termina.
-@@s094 Serve w → r: volatile
+@@s048 HB = chiusura transitiva di ( PO<sub>m</sub> ∪ PO<sub>1</sub> ∪ PO<sub>2</sub> ∪ S ∪ T )
+@@s049 L'unico happens-before, perché c'è un solo synchronization order.
+@@s050 da <mark class="ora">t1(2)</mark> si arriva solo a: m(join(t1)) → m(join(t2)) → m(p)
+@@s051 Dopo t1(2) ci sono solo azioni del main successive ai join. Nessuna di queste porta a t2(2).
+@@s052 da <mark class="due">t2(2)</mark> si arriva solo a: m(join(t2)) → m(p)
+@@s053 Simmetrico.
+@@s054 Vale in tutte le esecuzioni, perché l'HB è uno solo. Il programma non è correttamente sincronizzato.
+@@s055 Sulla tua risposta al 3.1.5
+@@s056 Hai scritto "there may be a <b>race condition</b> between…". Qui la parola giusta è <b>data race</b> tra <b>conflicting actions</b>: race condition è un'altra cosa (<a href="l01-lock.html">pagina lock</a>). E il "count == 1" non dimostra la data race: la dimostrazione è mostrare che nessuna delle due frecce è nell'HB, cioè che dagli insiemi PO, S, T non esce un cammino tra le azioni di t1 e quelle di t2.
+@@s057 Nessun percorso fra le due scritture
+@@s058 3.1.6 – 3.1.7 · Con un lock
+@@s059 Cosa cambia e perché non c'è più la data race
+@@s060 Program order: il main crea il lock, i thread hanno 4 azioni.
+@@s061 Prima e ultima azione sono cambiate: ora sono lock e unlock.
+@@s062 Ora i synchronization order sono diversi, ma si dividono in <b>due</b> famiglie: t1 prende il lock per primo, oppure t2. Quindi due insiemi happens-before.
+@@s063 <b>3.1.7</b> Ordino ogni coppia in conflitto. In HB<sub>1</sub> tutte le azioni di t1 vengono prima di quelle di t2.
+@@s064 In HB<sub>2</sub> il contrario. Lo stesso vale per (t1(1), t2(2)) e (t1(2), t2(1)).
+@@s065 <mark class="ok">tutte le coppie in conflitto sono ordinate in HB₁ e in HB₂ ⇒ nessuna data race</mark>
+@@s066 Il programma è correttamente sincronizzato, e stampa sempre 2.
+@@s067 Il lock aggiunge un arco
+@@s068 Sulle tue risposte al 3.1.6 e 3.1.7
+@@s069 Nel 3.1.6 hai scritto le due catene complete t1 → t2 e t2 → t1 e parlato di "two different interleavings". La domanda chiede se nascono <b>più happens-before set</b>: la risposta è "sì, due", HB<sub>1</sub> e HB<sub>2</sub>, ognuno con <b>una</b> coppia in più data dalla regola del monitor (unlock di uno → lock dell'altro).
+@@s070 Nel 3.1.7 hai elencato coppie dentro lo stesso thread (program order). Quelle c'erano già: la dimostrazione deve prendere le <b>coppie in conflitto tra t1 e t2</b> e mostrare il cammino che le ordina, in HB<sub>1</sub> e in HB<sub>2</sub>, come nei due passi qui sopra.
+@@s071 3.1.8 – 3.1.9 · Con <code>volatile count</code>
+@@s072 Nessuna data race, ma risultato non garantito
+@@s073 count è <mark class="dato">volatile</mark>
+@@s074 Il programma è quello senza lock.
+@@s075 Per definizione: "accesses on volatile variables are never conflicting" (slide sulle conflicting actions). Le uniche azioni che potevano essere in conflitto erano gli accessi a count.
+@@s076 <b>3.1.8</b> Risposta: <b>sì</b>, tutte le esecuzioni sono prive di data race.
+@@s077 <b>3.1.9</b> Ma questo ordine è possibile: la regola volatile ordina una scrittura con le letture <b>successive</b>, e qui entrambe le letture vengono prima di entrambe le scritture. Nessuna regola lo vieta.
+@@s078 lock: <mark class="ok">count = 2</mark> sempre volatile: count = 1 <mark class="no">oppure</mark> 2
+@@s079 Stampano valori diversi. Morale: <b>data race free non vuol dire race condition free</b>. <code>volatile</code> dà visibilità, non mutua esclusione.
+@@s080 Sulla tua risposta al 3.1.8
+@@s081 Hai risposto <b>No</b> e scritto che letture e scritture di una variabile volatile sono "synchronization actions". Tutte e due le cose vanno corrette: sono <b>variable access</b>, e la definizione di conflicting actions esclude le variabili volatile. Quindi nessuna data race. Il count == 1 che hai descritto è vero, ma è una <b>race condition</b>: è proprio il punto del 3.1.9.
+@@s082 In inglese (3.1.8)
+@@s083 "Yes, all executions are data race free. By definition in the Java memory model, accesses to volatile variables are never conflicting actions, and the only shared variable, count, is volatile. Therefore there is no pair of conflicting actions and hence no data race. This does not prevent the race condition: both threads may read 0 before either writes, so the program may still print count=1."
+@@s084 Data race free, ma count può valere 1
+@@s085 3.1.10 – 3.1.11 · Mutua esclusione con happens-before (challenging)
+@@s086 <b>3.1.10</b> Mutua esclusione per questo programma: in ogni esecuzione vale <code>t1(3) → t2(0)</code> <b>oppure</b> <code>t2(3) → t1(0)</code>. Cioè: la sezione critica di un thread finisce (unlock) prima che l'altro entri (lock).
+@@s087 <b>3.1.11</b> Con il corpo in un <code>while(true)</code>: ogni iterazione <i>i</i> di t1 ha azioni <code>t1(0<sub>i</sub>) … t1(3<sub>i</sub>)</code>. Per qualsiasi iterazione <i>i</i> di t1 e <i>j</i> di t2, il synchronization order mette uno dei due lock prima dell'altro unlock; la regola del monitor dà <code>t1(3<sub>i</sub>) → t2(0<sub>j</sub>)</code> oppure <code>t2(3<sub>j</sub>) → t1(0<sub>i</sub>)</code>, e con il program order tutte le coppie in conflitto delle due iterazioni risultano ordinate. Essendo vero per ogni coppia di iterazioni, nessuna esecuzione (anche infinita) ha data race.
+@@s088 Mutua esclusione come coppie unlock → lock
+@@s089 3.2 · <code>StringSet</code> in breve
+@@s090 <b>3.2.1</b> In conflitto: <code>t1(b)</code> (add = scrittura) e <code>t2(c)</code> (indexOf = lettura). t2 non fa azioni di sincronizzazione sul monitor di <code>s</code>: le uniche coppie che collegano t1 e t2 passano dal main (start), e danno solo <code>m(start(t1)) → …</code> e <code>m(start(t2)) → t2(c)</code>. Nessun ordine tra <code>t1(b)</code> e <code>t2(c)</code>: data race, programma non correttamente sincronizzato.
+@@s091 <b>3.2.2</b> Con <code>find</code> synchronized, t2 fa lock/unlock sullo stesso monitor. Due casi: <code>t1(unlock) → t2(lock)</code> oppure <code>t2(unlock) → t1(lock)</code> (regola del monitor), quindi <code>t1(b)</code> e <code>t2(c)</code> sono sempre ordinate: correttamente sincronizzato. <code>find</code> può restituire 0 o -1 a seconda di chi entra prima: è una race condition, non una data race.
+@@s092 <b>3.2.3</b> La data race del 3.2.1 c'è in <b>tutte</b> le esecuzioni: la lista parte vuota, quindi <code>add</code> viene sempre eseguita, e nessun synchronization order introduce coppie tra t1 e t2.
+@@s093 find senza lock e con lock
+@@s094 3.3 · Il ciclo che può non finire, in breve
+@@s095 <b>3.3.1</b> Per impedire le esecuzioni infinite deve valere <code>m(w) → t1(r)</code> per una lettura di t1 che viene dopo la scrittura: la scrittura <code>x = 42</code> deve happens-before una lettura del <code>while</code>, così quella lettura vede 42 ed esce.
+@@s096 <b>3.3.2</b> Non vale: l'unica regola che collega m e t1 è la start rule, <code>m(start(t1)) → t1(r<sub>1</sub>)</code>. Ma <code>m(w)</code> viene <b>dopo</b> <code>m(start(t1))</code> nel program order del main, e non c'è lock, volatile o join che leghi <code>m(w)</code> alle letture di t1. Nessuna esecuzione ha <code>m(w) → t1(r)</code>.
+@@s097 <b>3.3.3</b> Dichiara <code>volatile int x</code>. <code>m(w)</code> è una scrittura su una variabile volatile; ogni lettura <code>t1(r)</code> del <code>while</code> che nell'esecuzione viene <b>dopo</b> <code>m(w)</code> è una "subsequent read": per la regola volatile <code>m(w) → t1(r)</code>. Quella lettura vede 42 e il ciclo termina. In alternativa: lettura e scrittura dentro <code>synchronized</code> sullo stesso oggetto (regola del monitor).
+@@s098 Sulla tua risposta al 3.3.1
+@@s099 La domanda chiede <b>quale coppia</b> deve essere ordinata, non tutto l'happens-before del programma: basta dire "la scrittura <code>x=42</code> del main deve happens-before una lettura di <code>x</code> nel <code>while</code> di t1", e spiegare perché con quella coppia il ciclo termina.
+@@s100 Serve w → r: volatile

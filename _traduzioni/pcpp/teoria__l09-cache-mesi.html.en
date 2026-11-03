@@ -7,50 +7,56 @@
 @@s007 A read from memory
 @@s008 dato:requested address,ora:step in progress,ok:fast,no:slow
 @@s009 The first step is always to look for it in the cache.
-@@s010 This is the good case: the datum is already there, and the RAM is not touched.
-@@s011 The cache copies a whole block, not a single byte: so the nearby data are already ready.
-@@s012 More cores, more caches
-@@s013 Each core has its own caches. The same memory address can therefore be in several caches at the same time. The block of memory that a cache copies is called a <b>cache line</b>: usually 64 bytes. The caches must agree on the value of each line: the mechanism is called a <b>coherence protocol</b>, and in the slides it is <b>MESI</b>, from the name of its four states.
-@@s014 The MESI states
-@@s015 Each cache line, in each core, is in one of four states:
-@@s016 state
-@@s017 meaning
-@@s018 is the RAM up to date?
-@@s019 <b>M</b> Modified
-@@s020 modified copy, present only in this cache
-@@s021 no: the RAM has the old value
-@@s022 <b>E</b> Exclusive
-@@s023 unmodified copy, present only here
-@@s024 yes
-@@s025 <b>S</b> Shared
-@@s026 unmodified copy, present in several caches
-@@s027 yes
-@@s028 <b>I</b> Invalid
-@@s029 the line is not valid: it must be read again
-@@s030 To write to a line in state S, the core must first send an <b>invalidate</b> message to the other caches, and wait for their confirmation (<i>ack</i>). Only then does the line become M.
-@@s031 Fast or slow
-@@s032 The speed depends on what the core wants to do and on the state of the line in its cache. The most important rows of the slide:
-@@s033 current state
-@@s034 the core wants
-@@s035 speed
-@@s036 read or write
-@@s037 fast: the datum is already its own
-@@s038 read
-@@s039 fast: the copy is valid
+@@s010 If it is in cache: <mark class="ok">fast read</mark>
+@@s011 This is the good case: the datum is already there, and the RAM is not touched.
+@@s012 If it is not in cache: <mark class="no">slow read</mark> from RAM, and the <mark class="ora">line</mark> is copied into cache
+@@s013 The cache copies a whole block, not a single byte: so the nearby data are already ready.
+@@s014 More cores, more caches
+@@s015 Each core has its own caches. The same memory address can therefore be in several caches at the same time. The block of memory that a cache copies is called a <b>cache line</b>: usually 64 bytes. The caches must agree on the value of each line: the mechanism is called a <b>coherence protocol</b>, and in the slides it is <b>MESI</b>, from the name of its four states.
+@@s016 The MESI states
+@@s017 Each cache line, in each core, is in one of four states:
+@@s018 state
+@@s019 meaning
+@@s020 is the RAM up to date?
+@@s021 <b>M</b> Modified
+@@s022 modified copy, present only in this cache
+@@s023 no: the RAM has the old value
+@@s024 <b>E</b> Exclusive
+@@s025 unmodified copy, present only here
+@@s026 yes
+@@s027 <b>S</b> Shared
+@@s028 unmodified copy, present in several caches
+@@s029 yes
+@@s030 <b>I</b> Invalid
+@@s031 the line is not valid: it must be read again
+@@s032 To write to a line in state S, the core must first send an <b>invalidate</b> message to the other caches, and wait for their confirmation (<i>ack</i>). Only then does the line become M.
+@@s033 Fast or slow
+@@s034 The speed depends on what the core wants to do and on the state of the line in its cache. The most important rows of the slide:
+@@s035 current state
+@@s036 the core wants
+@@s037 speed
+@@s038 read or write
+@@s039 fast: the datum is already its own
 @@s040 read
-@@s041 slow: it must be taken from another cache or from the RAM
-@@s042 write
-@@s043 very slow: invalidate all the other copies
+@@s041 fast: the copy is valid
+@@s042 read
+@@s043 slow: it must be taken from another cache or from the RAM
 @@s044 write
-@@s045 very slow: first read, then invalidate
-@@s046 Two cores on the same line
-@@s047 dato:value,ora:what changes,ok:stable state,no:high cost
-@@s048 Nobody else has it: the copy is its own and the RAM is up to date.
-@@s049 Two identical and clean copies: fast reads for both.
-@@s050 Writing on S costs: the invalidate message must reach the other core.
-@@s051 Every exchange of writes and reads between two cores costs a trip on the bus: the ping-pong of the next page.
-@@s052 What follows for the code
-@@s053 The idea
-@@s054 The cost is not in the computation, it is in the movement of the lines between caches. A datum written only by one thread stays in M in its cache: fast. A datum written by several threads goes back and forth: slow.
-@@s055 If you come from…
-@@s056 If you have used only threads without thinking about memory, this is the part you are missing: there is not one single "value" in memory, there are copies in several caches that must agree.
+@@s045 very slow: invalidate all the other copies
+@@s046 write
+@@s047 very slow: first read, then invalidate
+@@s048 Two cores on the same line
+@@s049 dato:value,ora:what changes,ok:stable state,no:high cost
+@@s050 Core 0 <mark class="ora">reads</mark> the line: state <mark class="dato">E</mark>
+@@s051 Nobody else has it: the copy is its own and the RAM is up to date.
+@@s052 Core 1 <mark class="ora">reads</mark> the same line: both in <mark class="ok">S</mark>
+@@s053 Two identical and clean copies: fast reads for both.
+@@s054 Core 0 <mark class="no">writes</mark>: invalidates core 1's copy (I), and it moves to <mark class="ora">M</mark>
+@@s055 Writing on S costs: the invalidate message must reach the other core.
+@@s056 Core 1 <mark class="no">rereads</mark>: its copy is I, it takes it from core 0 and both go back to S
+@@s057 Every exchange of writes and reads between two cores costs a trip on the bus: the ping-pong of the next page.
+@@s058 What follows for the code
+@@s059 The idea
+@@s060 The cost is not in the computation, it is in the movement of the lines between caches. A datum written only by one thread stays in M in its cache: fast. A datum written by several threads goes back and forth: slow.
+@@s061 If you come from…
+@@s062 If you have used only threads without thinking about memory, this is the part you are missing: there is not one single "value" in memory, there are copies in several caches that must agree.

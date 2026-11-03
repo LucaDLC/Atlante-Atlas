@@ -262,64 +262,64 @@ def flatMap[B](f: A => LazyList[B]): LazyList[B] =
     <div class="errore">
       <pre data-lang="scala">def map(f: A => B): LazyList[B] = …</pre>
       <pre class="msg">Not found: type B</pre>
-      <div class="fix"><code>B</code> è usato ma mai dichiarato. Va fra quadre dopo il nome: <code>def map[B](f: A => B)</code>.</div>
+      <div class="fix">{{s|s088|}}</div>
     </div>
     <div class="errore">
       <pre data-lang="scala">foldRight(empty)((a,acc => cons(f(a), acc)))</pre>
       <pre class="msg">Not found: a</pre>
-      <div class="fix">Parentesi della lambda al posto sbagliato: Scala legge una coppia <code>(a, acc => …)</code> e <code>a</code> non è definito. Si scrive <code>(a, acc) => …</code>: parametri dentro le parentesi, freccia subito dopo.</div>
+      <div class="fix">{{s|s089|}}</div>
     </div>
     <div class="errore">
       <pre data-lang="scala">foldRight(empty)((a,acc) => cons((a,that,acc)))</pre>
       <pre class="msg">Found:    (A, adpro.lazyList.LazyList[B], adpro.lazyList.LazyList[B])
 Required: B</pre>
-      <div class="fix"><code>cons</code> prende due argomenti; con le parentesi doppie gli arriva <b>una</b> tripla, nello slot della testa. In <code>append</code> <code>that</code> non va nel passo ma in <code>z</code>: <code>foldRight(that)((a, acc) => cons(a, acc))</code>.</div>
+      <div class="fix">{{s|s090|}}</div>
     </div>
     <div class="errore">
       <pre data-lang="scala">def flatMap[B](f: A => LazyList[B]): LazyList[B] =
   foldRight(empty)((a,acc) => cons(f(a), acc))</pre>
       <pre class="msg">Found:    adpro.lazyList.LazyList[B]
 Required: B</pre>
-      <div class="fix">Copiato da <code>map</code>, ma qui <code>f(a)</code> è già una <b>lista</b>: non può fare da testa. Si attacca al resto: <code>f(a).append(acc)</code>.</div>
+      <div class="fix">{{s|s091|}}</div>
     </div>
   </div>
   <div class="tab-wrap"><table class="tab">
-    <thead><tr><th>{{s|s088|}}</th><th>{{s|s089|}}</th></tr></thead>
+    <thead><tr><th>{{s|s092|}}</th><th>{{s|s093|}}</th></tr></thead>
     <tbody>
-      <tr><td>{{s|s090|}}</td><td>{{s|s091|}}</td></tr>
-      <tr><td>{{s|s092|}}</td><td>{{s|s093|}}</td></tr>
       <tr><td>{{s|s094|}}</td><td>{{s|s095|}}</td></tr>
       <tr><td>{{s|s096|}}</td><td>{{s|s097|}}</td></tr>
+      <tr><td>{{s|s098|}}</td><td>{{s|s099|}}</td></tr>
+      <tr><td>{{s|s100|}}</td><td>{{s|s101|}}</td></tr>
     </tbody>
   </table></div>
-  <div class="box idea" data-tit="{{a|s098|}}">
-    <p>{{s|s099|}}</p>
+  <div class="box idea" data-tit="{{a|s102|}}">
+    <p>{{s|s103|}}</p>
   </div>
-  <p class="piccolo">{{s|s100|}}</p>
-  <figure class="scena" data-scena="appendz" data-titolo="{{a|s101|}}"></figure>
+  <p class="piccolo">{{s|s104|}}</p>
+  <figure class="scena" data-scena="appendz" data-titolo="{{a|s105|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s102|}}</h2>
+  <h2>{{s|s106|}}</h2>
   <pre class="cod" data-lang="scala">def find(p: A => Boolean): Option[A] = this.filter(p).headOption</pre>
   <div class="colonne">
     <div class="carta buona">
-      <h4>{{s|s103|}}</h4>
-      <p>{{s|s104|}}</p>
+      <h4>{{s|s107|}}</h4>
+      <p>{{s|s108|}}</p>
     </div>
     <div class="carta cattiva">
-      <h4>{{s|s105|}}</h4>
-      <p>{{s|s106|}}</p>
+      <h4>{{s|s109|}}</h4>
+      <p>{{s|s110|}}</p>
     </div>
   </div>
-  <div class="box inglese" data-tit="{{a|s107|}}">
-    <p>{{s|s108|}}</p>
+  <div class="box inglese" data-tit="{{a|s111|}}">
+    <p>{{s|s112|}}</p>
   </div>
-  <div class="box domanda-tua" data-tit="{{a|s109|}}">
-    <p>{{s|s110|}}</p>
-    <p>{{s|s111|}}</p>
+  <div class="box domanda-tua" data-tit="{{a|s113|}}">
+    <p>{{s|s114|}}</p>
+    <p>{{s|s115|}}</p>
   </div>
-  <figure class="scena" data-scena="findlazy" data-titolo="{{a|s112|}}"></figure>
+  <figure class="scena" data-scena="findlazy" data-titolo="{{a|s116|}}"></figure>
 </section>
 
 </main>

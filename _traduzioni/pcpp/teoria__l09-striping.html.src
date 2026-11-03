@@ -18,14 +18,17 @@
 @@s018 Anche con 64 stripe, i contatori e i lock sono in array: elementi vicini in un array condividono la linea di cache. Due stripe vicine possono quindi fare false sharing. La soluzione della lezione è il <b>padding</b>: si usano solo gli indici multipli di 16 (<code>padding = 16</code>), e gli altri elementi restano vuoti. Così ogni contatore e ogni lock stanno su una linea propria.
 @@s019 Come un thread sceglie il suo contatore
 @@s020 dato:thread,ora:passo in corso,ok:risultato
-@@s021 <code>threadId()</code> è unico per ogni thread.
-@@s022 L’AND tiene solo i 6 bit bassi: il risultato è sempre fra 0 e 63.
-@@s023 Nessun altro thread usa la stripe 37, se non ne ha lo stesso resto.
-@@s024 I risultati della lezione
-@@s025 La lezione confronta nove versioni del contatore, su un laptop Apple M3 Pro e su un server AMD EPYC 7313. Le conclusioni, dalla slide:
-@@s026 usare un lock non è di per sé lento, ma un lock solo crea <b>contesa</b> e molto traffico tra le cache;
-@@s027 lo striping migliora il codice concorrente, ma le stripe devono stare su linee di cache diverse: il padding serve;
-@@s028 il <code>java.util.concurrent.atomic.LongAdder</code> della libreria fa tutto questo correttamente, ed è la scelta da usare;
-@@s029 le conclusioni valgono per cinque architetture di CPU, dal 2014 al 2023.
-@@s030 Regola pratica
-@@s031 Per un contatore condiviso, usa <code>LongAdder</code>. Non scrivere un lock solo, e non ricopiare lo striping se non ne hai misurato il bisogno.
+@@s021 Il thread ha un <mark class="dato">id</mark>, per esempio 37
+@@s022 <code>threadId()</code> è unico per ogni thread.
+@@s023 <mark class="ora">37 AND 63</mark> = 37: la stripe è la 37
+@@s024 L’AND tiene solo i 6 bit bassi: il risultato è sempre fra 0 e 63.
+@@s025 Il thread prende il <mark class="ora">lock della stripe 37</mark> e aggiunge a <mark class="ok">counts[37]</mark>
+@@s026 Nessun altro thread usa la stripe 37, se non ne ha lo stesso resto.
+@@s027 I risultati della lezione
+@@s028 La lezione confronta nove versioni del contatore, su un laptop Apple M3 Pro e su un server AMD EPYC 7313. Le conclusioni, dalla slide:
+@@s029 usare un lock non è di per sé lento, ma un lock solo crea <b>contesa</b> e molto traffico tra le cache;
+@@s030 lo striping migliora il codice concorrente, ma le stripe devono stare su linee di cache diverse: il padding serve;
+@@s031 il <code>java.util.concurrent.atomic.LongAdder</code> della libreria fa tutto questo correttamente, ed è la scelta da usare;
+@@s032 le conclusioni valgono per cinque architetture di CPU, dal 2014 al 2023.
+@@s033 Regola pratica
+@@s034 Per un contatore condiviso, usa <code>LongAdder</code>. Non scrivere un lock solo, e non ricopiare lo striping se non ne hai misurato il bisogno.

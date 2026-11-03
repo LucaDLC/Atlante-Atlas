@@ -31,68 +31,78 @@
 @@s031 Den affine model
 @@s032 Fra to ligninger til to lineære systemer
 @@s033 Begge koordinater for pupillen bruges til begge koordinater på skærmen. 6 parametre i alt.
-@@s034 Enklere end at have ét: hver har 3 parametre og samme input.
-@@s035 Hvert par (pupil, mål) giver en lineær ligning i vægtene. Tallet 1 ganger c: det er translationen (<a href="w05-affine-omogenee.html">affin</a>).
-@@s036 9 ligninger, 3 ukendte: et <b>overbestemt</b> system, løst med <a href="w05-minimi-quadrati.html">mindste kvadrater</a> (<code>np.linalg.lstsq</code>, anbefalet af assignmentet for den numeriske stabilitet). Den samme A bruges også til y'.
-@@s037 Task 2: hvor mange punkter skal der bruges? Hvilke?
-@@s038 <b>Mindst 3</b>, fordi hver model har 3 parametre, og hvert punkt giver én ligning pr. model. Og <b>ikke kollineære</b>: med 3 punkter på en linje er rækkerne [x, y, 1] afhængige, og A har rang 2 i stedet for 3 (verificeret), så uendeligt mange løsninger. Også med 3 gyldige punkter har det betydning hvilke: punkter tæt på hinanden gør løsningen meget følsom over for støj; punkter i gitterets hjørner stabiliserer den.
-@@s039 Fra pupillen til skærmen, 6 parametre
-@@s040 Koden, stykke for stykke
-@@s041 Designmatrix, kalibrering og forudsigelse (afprøvet med data fra test_subject_1)
-@@s042 Tre søjler: alle x, alle y, en søjle med 1-taller. <code>np.c_</code> sætter dem ved siden af hinanden (se <a href="nozioni-numpy.html">NumPy</a>). Én række pr. punkt.
-@@s043 To systemer med den <b>samme</b> A og to forskellige vektorer b: x' og y' for målene. <code>lstsq</code> returnerer 4 ting; <code>[0]</code> tager vægtene.
-@@s044 For at forudsige bygger man designmatrixen for de nye punkter med <b>den samme funktion</b>, og ganger: (N × 3)(3) → N forudsigelser pr. koordinat.
-@@s045 Hvad vægtene siger (test_subject_1, kalibrering på gitteret)
-@@s046 Vægte beregnet med de 9 gennemsnitlige pupilcentre for test_subject_1 angivet i preprocessing-øvelsen.
-@@s047 Minustegnet: i kameraets billede er øjet spejlvendt. Størrelsen: hele skærmen (1720 px mellem målene) svarer til ca. 33 px bevægelse af pupillen.
-@@s048 Modellen <b>forstærker</b> enhver unøjagtighed i preprocessingen. Derfor advarer assignmentet om at forvente fejl på ±200 px.
-@@s049 Designmatrix, lstsq, forudsigelser
-@@s050 Evaluering af modellen
-@@s051 Metrikkerne i Task 4
-@@s052 Absolut fejl pr. koordinat, derefter gennemsnittet <b>pr. søjle</b>: man ser separat, hvor meget man tager fejl i x og i y.
-@@s053 For hvert punkt den euklidiske <a href="w02-norme-distanze.html">afstand</a> mellem estimat og mål (normen af hver række), derefter gennemsnittet: "hvor mange pixels tager jeg fejl med i gennemsnit".
-@@s054 <b>RMSE</b>: roden af gennemsnittet af kvadraterne. Kvadraterne vægter store fejl mere, så RMSE ≥ gennemsnitsafstand altid; forskellen vokser, når der er få meget store fejl.
-@@s055 I docstrings er det ikke angivet, om RMSE skal beregnes på afstandene eller på alle koordinaterne samlet: vælg den ene og skriv hvilken. Her er det den på afstandene.
-@@s056 Test på (test_subject_1)
-@@s057 affin: afstand
-@@s058 affin: RMSE
-@@s059 kvadratisk: afstand
-@@s060 kvadratisk: RMSE
-@@s061 grid (det er træningen)
-@@s062 cirkel
-@@s063 linje
-@@s064 tilfældig
-@@s065 Pixels. Modeller kalibreret på de 9 punkter i gitteret; beregnet med de gennemsnitlige pupilcentre og skærmkoordinaterne skrevet i øvelsernes tekst. Med dine data bliver tallene anderledes, aflæsningen gør ikke.
-@@s066 Hvorfor fejlen vokser mønster efter mønster: tiden
-@@s067 Hvert mønster optages efter det foregående. Set i forhold til slutningen af gitteret starter cirkel ca. +25 s og varer 27 s; linje starter ved +52 s; tilfældig starter ved +79 s. Fejlen vokser i samme rækkefølge: 124, 362, 411 px. Det samme mål, (100, 540) på skærmen, har pupillen ved x = 318 i gitteret og x = 329 i linjen: 11 px forskel, som modellen (ca. 50 skærm-px for hver pixel) gør til hundredvis af pixels. Det er en hypotese at kontrollere på billederne (hoved, øjets position), ikke en konklusion.
-@@s068 Sådan læses de
-@@s069 Det evalueres på de samme punkter, der blev brugt til at lære: det siger intet om nye data.
-@@s070 Med 6 parametre på 9 punkter følger modellen træningspunkterne bedre, også deres støj, og på et nyt mønster bliver den dårligere. Det er <b>overfitting</b> (uge 7).
-@@s071 Samme punkt kigget på, pupillen flyttet 11 px: mellem to optagelser har hovedet eller kameraet flyttet sig. 11 px × ~50 = hundredvis af pixels på skærmen.
-@@s072 Estimaterne er alle forskudt <b>til samme side</b>: det er en <b>systematisk</b> fejl, ikke tilfældig støj. Ingen model kalibreret på gitteret kan rette den.
-@@s073 Q4 (c) og Task 6: fejlkilder i den affine model
-@@s074 (1) <b>Modellen er for simpel</b>: øjet drejer på en kugle, så sammenhængen pupil → skærm er ikke lineær. (2) <b>Støj i featuren</b>: tærskel, refleksioner og øjenlåg flytter midten nogle pixels, forstærket ca. 50 gange. (3) <b>Hovedbevægelser</b> mellem kalibrering og test: systematisk fejl. (4) <b>Få kalibreringspunkter</b> (9), og målet på skærmen ikke altid kigget på præcist. <b>MAE vs RMSE</b>: MAE giver den typiske fejl pr. akse, RMSE straffer de meget forkerte punkter hårdere.
-@@s075 Sådan forstår man, hvor fejlen kommer fra: tre kontroller
-@@s076 <b>1. Fejl på kalibreringspunkterne.</b> Beregn afstanden også på de 9 punkter, der blev brugt til træning. Hvis den allerede er høj, er problemet <b>modellen</b> (for simpel), ikke støjen i testen. På <code>test_subject_0</code>, session 0: <b>84 px</b> på træningspunkterne, 166 px på testen.
-@@s077 <b>2. Fortegnet fejl, gennemsnittet.</b> Læg fejlene sammen uden at fjerne fortegnet. Hvis gennemsnittet er langt fra 0, er estimaterne alle forskudt i samme retning: <b>systematisk</b> fejl (hoved, drift). På samme session: <b>+142 px</b> i x.
-@@s078 <b>3. Fordelingens form.</b> Mange små fejl og få enorme: RMSE bevæger sig væk fra MAE. Grafen med pilene viser det samme: ens pile = bias; tilfældige pile = støj; få meget lange pile = punkter udenfor det kalibrerede område.
-@@s079 Generalisering: fra én person til en anden
-@@s080 Kalibrering på <code>test_subject_0</code> (9 punkter, rå pupiller), test på <code>test_subject_1</code> (4 mønstre). Gennemsnitlig afstand: <b>84 px</b> på træningspunkterne for den samme person, <b>96–166 px</b> på testen for den samme person, <b>398–415 px</b> for en anden person. Fortegnet fejl i y: <b>+263 … +384 px</b> for alle 4 mønstre, altså et fast skift, ikke støj.
-@@s081 <b>Advarsel:</b> Task 8 som skrevet i notebooken bruger <code>pupils_n_train</code> (normaliserede koordinater, ca. 84–113) med <code>pupils_test</code> fra <code>test_subject_1</code> (rå, ca. 284–321). Det er forskellige skalaer: fejlen kommer ud på ca. <b>16 000 px</b>. Det er ikke et resultat om generalisering: det er den forkerte værdi, der skal meldes til TA'en.
-@@s082 MAE, gennemsnitlig afstand, RMSE
-@@s083 Den kvadratiske model (Task 20)
-@@s084 Flere features, samme metode
-@@s085 Buet i x og y, men stadig <b>lineær i vægtene</b> (<a href="w04-polinomi.html">polynomier</a>): den læres med de samme mindste kvadrater.
-@@s086 Grunden til designmatrixen i Task 20: hver søjle er det, der ganger en vægt.
-@@s087 Der bliver kun 3 "ekstra" ligninger tilbage til at udligne støjen: få.
-@@s088 Ingen Python-fejl, men et absurd resultat (verificeret). Funktionen <code>quad</code> i notebooken bruger vægtene i rækkefølgen [1, x, y, xy, x², y²], designmatrixen i Task 20 i rækkefølgen [x², y², xy, x, y, 1]: hver vægt havner på den forkerte søjle. Regel: <b>rækkefølgen af søjlerne skal være den samme under træning og forudsigelse</b>. Den sikreste måde: forudsig med <code>get_design_matrix_quad(pupils) @ w</code>, den samme funktion som bruges til træning. (Det samme gælder for <code>linear</code>, som sætter konstanten først.)
-@@s089 6 søjler, og rækkefølgen af vægtene
-@@s090 Normalisering af data (Task 18–19)
-@@s091 Hvad der virkelig ændrer sig med MinMaxScaler
-@@s092 Søjler med meget forskellige størrelser: matricen er "dårligt konditioneret", og regningen mister cifre.
-@@s093 Efter at have bragt alt mellem 0 og 1. Mere stabile tal.
-@@s094 Normalisering er en affin variabelskift: en affin eller kvadratisk model i de normaliserede variable er stadig affin eller kvadratisk i de rigtige. Mindste kvadrater finder den samme funktion.
-@@s095 Det ligner en forbedring, men scaleren har brugt minimum og maksimum af testpunkterne: information, man i virkeligheden ikke ville have. Det er <b>data leakage</b>. Scaleren tilpasses <b>kun</b> på træningen og anvendes derefter på testen.
-@@s096 Task 19: fælderne ved normalisering
-@@s097 Tilpasning af scaleren på testen (leakage). Minimum og maksimum bestemt af en enkelt outlier, som trykker alle de andre punkter sammen. Forudsigelser og fejl skal <b>omregnes til pixels</b> (<code>inverse_transform</code>), før de sammenlignes med de ikke-normaliserede resultater.
-@@s098 Konditionering og data leakage
+@@s034 to separate modeller: w₁ = [<mark class="ora">a, b, c</mark>] for x', w₂ = [<mark class="ora">d, e, f</mark>] for y'
+@@s035 Enklere end at have ét: hver har 3 parametre og samme input.
+@@s036 punkt i → række [<mark class="dato">xᵢ, yᵢ, 1</mark>] med [xᵢ, yᵢ, 1] · w₁ = <mark class="ok">x'ᵢ</mark>
+@@s037 Hvert par (pupil, mål) giver en lineær ligning i vægtene. Tallet 1 ganger c: det er translationen (<a href="w05-affine-omogenee.html">affin</a>).
+@@s038 9 ligninger, 3 ukendte: et <b>overbestemt</b> system, løst med <a href="w05-minimi-quadrati.html">mindste kvadrater</a> (<code>np.linalg.lstsq</code>, anbefalet af assignmentet for den numeriske stabilitet). Den samme A bruges også til y'.
+@@s039 Task 2: hvor mange punkter skal der bruges? Hvilke?
+@@s040 <b>Mindst 3</b>, fordi hver model har 3 parametre, og hvert punkt giver én ligning pr. model. Og <b>ikke kollineære</b>: med 3 punkter på en linje er rækkerne [x, y, 1] afhængige, og A har rang 2 i stedet for 3 (verificeret), så uendeligt mange løsninger. Også med 3 gyldige punkter har det betydning hvilke: punkter tæt på hinanden gør løsningen meget følsom over for støj; punkter i gitterets hjørner stabiliserer den.
+@@s041 Fra pupillen til skærmen, 6 parametre
+@@s042 Koden, stykke for stykke
+@@s043 Designmatrix, kalibrering og forudsigelse (afprøvet med data fra test_subject_1)
+@@s044 Tre søjler: alle x, alle y, en søjle med 1-taller. <code>np.c_</code> sætter dem ved siden af hinanden (se <a href="nozioni-numpy.html">NumPy</a>). Én række pr. punkt.
+@@s045 To systemer med den <b>samme</b> A og to forskellige vektorer b: x' og y' for målene. <code>lstsq</code> returnerer 4 ting; <code>[0]</code> tager vægtene.
+@@s046 For at forudsige bygger man designmatrixen for de nye punkter med <b>den samme funktion</b>, og ganger: (N × 3)(3) → N forudsigelser pr. koordinat.
+@@s047 Hvad vægtene siger (test_subject_1, kalibrering på gitteret)
+@@s048 Vægte beregnet med de 9 gennemsnitlige pupilcentre for test_subject_1 angivet i preprocessing-øvelsen.
+@@s049 Minustegnet: i kameraets billede er øjet spejlvendt. Størrelsen: hele skærmen (1720 px mellem målene) svarer til ca. 33 px bevægelse af pupillen.
+@@s050 fejl på <mark class="dato">1 px</mark> i pupilcentret ⇒ <mark class="no">~50 px</mark> på skærmen
+@@s051 Modellen <b>forstærker</b> enhver unøjagtighed i preprocessingen. Derfor advarer assignmentet om at forvente fejl på ±200 px.
+@@s052 Designmatrix, lstsq, forudsigelser
+@@s053 Evaluering af modellen
+@@s054 Metrikkerne i Task 4
+@@s055 Absolut fejl pr. koordinat, derefter gennemsnittet <b>pr. søjle</b>: man ser separat, hvor meget man tager fejl i x og i y.
+@@s056 For hvert punkt den euklidiske <a href="w02-norme-distanze.html">afstand</a> mellem estimat og mål (normen af hver række), derefter gennemsnittet: "hvor mange pixels tager jeg fejl med i gennemsnit".
+@@s057 <b>RMSE</b>: roden af gennemsnittet af kvadraterne. Kvadraterne vægter store fejl mere, så RMSE ≥ gennemsnitsafstand altid; forskellen vokser, når der er få meget store fejl.
+@@s058 I docstrings er det ikke angivet, om RMSE skal beregnes på afstandene eller på alle koordinaterne samlet: vælg den ene og skriv hvilken. Her er det den på afstandene.
+@@s059 Test på (test_subject_1)
+@@s060 affin: afstand
+@@s061 affin: RMSE
+@@s062 kvadratisk: afstand
+@@s063 kvadratisk: RMSE
+@@s064 grid (det er træningen)
+@@s065 cirkel
+@@s066 linje
+@@s067 tilfældig
+@@s068 Pixels. Modeller kalibreret på de 9 punkter i gitteret; beregnet med de gennemsnitlige pupilcentre og skærmkoordinaterne skrevet i øvelsernes tekst. Med dine data bliver tallene anderledes, aflæsningen gør ikke.
+@@s069 Hvorfor fejlen vokser mønster efter mønster: tiden
+@@s070 Hvert mønster optages efter det foregående. Set i forhold til slutningen af gitteret starter cirkel ca. +25 s og varer 27 s; linje starter ved +52 s; tilfældig starter ved +79 s. Fejlen vokser i samme rækkefølge: 124, 362, 411 px. Det samme mål, (100, 540) på skærmen, har pupillen ved x = 318 i gitteret og x = 329 i linjen: 11 px forskel, som modellen (ca. 50 skærm-px for hver pixel) gør til hundredvis af pixels. Det er en hypotese at kontrollere på billederne (hoved, øjets position), ikke en konklusion.
+@@s071 Sådan læses de
+@@s072 grid: laveste fejl, men den er målt på <mark class="no">træningsdata</mark>
+@@s073 Det evalueres på de samme punkter, der blev brugt til at lære: det siger intet om nye data.
+@@s074 Med 6 parametre på 9 punkter følger modellen træningspunkterne bedre, også deres støj, og på et nyt mønster bliver den dårligere. Det er <b>overfitting</b> (uge 7).
+@@s075 line: mål (100, 540) → pupil x = 318.1 i griddet, <mark class="no">329.4</mark> i line-optagelsen
+@@s076 Samme punkt kigget på, pupillen flyttet 11 px: mellem to optagelser har hovedet eller kameraet flyttet sig. 11 px × ~50 = hundredvis af pixels på skærmen.
+@@s077 gennemsnitlig fejl med fortegn på line: x <mark class="no">−338</mark>, y +123
+@@s078 Estimaterne er alle forskudt <b>til samme side</b>: det er en <b>systematisk</b> fejl, ikke tilfældig støj. Ingen model kalibreret på gitteret kan rette den.
+@@s079 Q4 (c) og Task 6: fejlkilder i den affine model
+@@s080 (1) <b>Modellen er for simpel</b>: øjet drejer på en kugle, så sammenhængen pupil → skærm er ikke lineær. (2) <b>Støj i featuren</b>: tærskel, refleksioner og øjenlåg flytter midten nogle pixels, forstærket ca. 50 gange. (3) <b>Hovedbevægelser</b> mellem kalibrering og test: systematisk fejl. (4) <b>Få kalibreringspunkter</b> (9), og målet på skærmen ikke altid kigget på præcist. <b>MAE vs RMSE</b>: MAE giver den typiske fejl pr. akse, RMSE straffer de meget forkerte punkter hårdere.
+@@s081 Sådan forstår man, hvor fejlen kommer fra: tre kontroller
+@@s082 <b>1. Fejl på kalibreringspunkterne.</b> Beregn afstanden også på de 9 punkter, der blev brugt til træning. Hvis den allerede er høj, er problemet <b>modellen</b> (for simpel), ikke støjen i testen. På <code>test_subject_0</code>, session 0: <b>84 px</b> på træningspunkterne, 166 px på testen.
+@@s083 <b>2. Fortegnet fejl, gennemsnittet.</b> Læg fejlene sammen uden at fjerne fortegnet. Hvis gennemsnittet er langt fra 0, er estimaterne alle forskudt i samme retning: <b>systematisk</b> fejl (hoved, drift). På samme session: <b>+142 px</b> i x.
+@@s084 <b>3. Fordelingens form.</b> Mange små fejl og få enorme: RMSE bevæger sig væk fra MAE. Grafen med pilene viser det samme: ens pile = bias; tilfældige pile = støj; få meget lange pile = punkter udenfor det kalibrerede område.
+@@s085 Generalisering: fra én person til en anden
+@@s086 Kalibrering på <code>test_subject_0</code> (9 punkter, rå pupiller), test på <code>test_subject_1</code> (4 mønstre). Gennemsnitlig afstand: <b>84 px</b> på træningspunkterne for den samme person, <b>96–166 px</b> på testen for den samme person, <b>398–415 px</b> for en anden person. Fortegnet fejl i y: <b>+263 … +384 px</b> for alle 4 mønstre, altså et fast skift, ikke støj.
+@@s087 <b>Advarsel:</b> Task 8 som skrevet i notebooken bruger <code>pupils_n_train</code> (normaliserede koordinater, ca. 84–113) med <code>pupils_test</code> fra <code>test_subject_1</code> (rå, ca. 284–321). Det er forskellige skalaer: fejlen kommer ud på ca. <b>16 000 px</b>. Det er ikke et resultat om generalisering: det er den forkerte værdi, der skal meldes til TA'en.
+@@s088 MAE, gennemsnitlig afstand, RMSE
+@@s089 Den kvadratiske model (Task 20)
+@@s090 Flere features, samme metode
+@@s091 Buet i x og y, men stadig <b>lineær i vægtene</b> (<a href="w04-polinomi.html">polynomier</a>): den læres med de samme mindste kvadrater.
+@@s092 Grunden til designmatrixen i Task 20: hver søjle er det, der ganger en vægt.
+@@s093 6 parametre pr. koordinat ⇒ mindst <mark class="ok">6 punkter</mark>; griddet har 9
+@@s094 Der bliver kun 3 "ekstra" ligninger tilbage til at udligne støjen: få.
+@@s095 Ingen Python-fejl, men et absurd resultat (verificeret). Funktionen <code>quad</code> i notebooken bruger vægtene i rækkefølgen [1, x, y, xy, x², y²], designmatrixen i Task 20 i rækkefølgen [x², y², xy, x, y, 1]: hver vægt havner på den forkerte søjle. Regel: <b>rækkefølgen af søjlerne skal være den samme under træning og forudsigelse</b>. Den sikreste måde: forudsig med <code>get_design_matrix_quad(pupils) @ w</code>, den samme funktion som bruges til træning. (Det samme gælder for <code>linear</code>, som sætter konstanten først.)
+@@s096 6 søjler, og rækkefølgen af vægtene
+@@s097 Normalisering af data (Task 18–19)
+@@s098 Hvad der virkelig ændrer sig med MinMaxScaler
+@@s099 Søjler med meget forskellige størrelser: matricen er "dårligt konditioneret", og regningen mister cifre.
+@@s100 konditionstallet for A: affin 1.4·10⁴ → <mark class="ok">4.2</mark>, kvadratisk 1.9·10⁸ → <mark class="ok">22.8</mark>
+@@s101 Efter at have bragt alt mellem 0 og 1. Mere stabile tal.
+@@s102 forudsigelser (scaler tilpasset på træningen): <mark class="dato">identiske</mark> (afvigelse 10⁻¹¹ px)
+@@s103 Normalisering er en affin variabelskift: en affin eller kvadratisk model i de normaliserede variable er stadig affin eller kvadratisk i de rigtige. Mindste kvadrater finder den samme funktion.
+@@s104 scaler gentilpasset på testdataene: line 362 → 303, random 411 → <mark class="no">141</mark>
+@@s105 Det ligner en forbedring, men scaleren har brugt minimum og maksimum af testpunkterne: information, man i virkeligheden ikke ville have. Det er <b>data leakage</b>. Scaleren tilpasses <b>kun</b> på træningen og anvendes derefter på testen.
+@@s106 Task 19: fælderne ved normalisering
+@@s107 Tilpasning af scaleren på testen (leakage). Minimum og maksimum bestemt af en enkelt outlier, som trykker alle de andre punkter sammen. Forudsigelser og fejl skal <b>omregnes til pixels</b> (<code>inverse_transform</code>), før de sammenlignes med de ikke-normaliserede resultater.
+@@s108 Konditionering og data leakage

@@ -39,51 +39,55 @@
 @@s039 Gli stessi passi, con lock() e unlock()
 @@s040 Cosa cambia (apri “Tutti gli interleaving” nei due costruttori)
 @@s041 Tutti i modi di mescolare 4 passi di t1 con 4 passi di t2. Molti perdono un aggiornamento.
-@@s042 Appena un thread fa <code>lock()</code>, i passi dell'altro restano bloccati fino a <code>unlock()</code>.
-@@s043 Restano solo questi due. Entrambi danno <code>counter = 2</code>.
-@@s044 Il lock non rende <code>counter++</code> atomico per l'hardware: impedisce che un altro thread esegua la <b>sua</b> sezione critica in mezzo.
-@@s045 Questo interleaving è possibile? (slide 59–60)
-@@s046 Domanda tipica: dimostrare che un interleaving non può esistere. Si ragiona <b>per contraddizione</b>, senza eseguire niente.
-@@s047 …, t1(2), …, t2(2), …, t1(3), …, t2(3), …
-@@s048 <b>Assumo</b> che l'interleaving esista (è quello che darebbe il lost update).
-@@s049 t2(2) richiede che t2 abbia preso il lock: <b>t2(1) prima di t2(2)</b>. E t2 può prendere il lock solo se t1 l'ha rilasciato: <b>t1(4) prima di t2(1)</b>.
-@@s050 Ma per il program order di t1, <b>t1(3) viene prima di t1(4)</b>. Quindi t1(3) dovrebbe stare sia prima sia dopo t2(2).
-@@s051 Nel costruttore qui sopra puoi verificarlo con "Prova una sequenza".
-@@s052 Un ciclo di vincoli: impossibile
-@@s053 Deadlock e l'idioma try/finally
-@@s054 Lock preso due volte
-@@s055 Con un lock non rientrante il thread aspetta se stesso. Bug veri di questo tipo esistono nel kernel Linux.
-@@s056 Eccezione con il lock in mano
-@@s057 Il thread esce senza liberare il lock: tutti gli altri restano bloccati per sempre.
-@@s058 L'idioma da usare sempre
-@@s059 <code>lock()</code> <b>prima</b> del <code>try</code>: se fallisse, non devi fare unlock di un lock mai preso.
-@@s060 La sezione critica sta nel <code>try</code>.
-@@s061 <code>finally</code> viene eseguito <b>sempre</b>, anche se nel try parte un'eccezione: il lock viene sempre liberato.
-@@s062 Per gli assignment
-@@s063 Le slide: le soluzioni che non usano questo idioma "cannot be deemed as free from deadlocks (note for assignments)". Usalo ogni volta.
-@@s064 ReentrantLock: riprendere il lock che hai già
-@@s065 Il thread prende il lock.
-@@s066 Stesso thread: un lock <b>rientrante</b> lo lascia passare e conta quante volte l'ha preso.
-@@s067 Un unlock non basta.
-@@s068 Servono tanti unlock quanti lock.
-@@s069 Eccezione con il lock in mano
-@@s070 Controlla-poi-agisci: il tornello Covid (esercizio 1.3)
-@@s071 Al massimo 15 000 persone. Il controllo e l'incremento devono stare <b>nella stessa</b> sezione critica.
-@@s072 Sbagliato
-@@s073 Due thread possono leggere entrambi 14 999, superare il controllo ed entrare tutti e due: 15 001.
-@@s074 Giusto
-@@s075 Tra il controllo e l'incremento nessun altro thread può cambiare <code>counter</code>.
-@@s076 14 999 visto due volte
-@@s077 Come spiegare che la soluzione è corretta (esercizio 1.1.4)
-@@s078 Lo schema della risposta
-@@s079 <mark class="dato">1. Il problema</mark>: <code>count = count + 1</code> non è atomico; esistono interleaving in cui un thread legge un valore vecchio e un incremento si perde (race condition).
-@@s080 Nomina il problema con il vocabolario del corso.
-@@s081 <mark class="ora">2. La sezione critica</mark>: lettura e scrittura di <code>count</code>, protette da <code>lock()</code> / <code>unlock()</code> sullo <b>stesso</b> ReentrantLock, con try/finally.
-@@s082 Di' cosa hai protetto e con che cosa.
-@@s083 <mark class="due">3. Perché funziona</mark>: per la mutua esclusione i passi della sezione critica di un thread non possono mescolarsi con quelli dell'altro; restano solo interleaving in cui ogni incremento legge il valore scritto dal precedente.
-@@s084 Il cuore: quali interleaving sono stati eliminati.
-@@s085 <mark class="ok">4. Perché nessun altro output</mark>: ognuno dei 2 × 10 000 000 incrementi aggiunge esattamente 1, quindi il risultato è sempre 20 000 000.
-@@s086 Chiudi con il risultato e il motivo per cui è l'unico.
-@@s087 Risposta modello
-@@s088 "The increment <code>count = count + 1</code> is not atomic: it is a read followed by a write, so without synchronization some interleavings let a thread read a stale value and lose an update (a race condition). We made the read and the write a critical section protected by the same ReentrantLock, using the lock/try/finally idiom. Mutual exclusion guarantees that the operations of one thread's critical section cannot be interleaved with the other thread's, so every increment reads the value written by the previous one. Hence each of the 20 million increments adds exactly one, and the only possible output is 20,000,000."
-@@s089 La risposta in quattro pezzi
+@@s042 con lock: <mark class="ok">2</mark> interleaving
+@@s043 Appena un thread fa <code>lock()</code>, i passi dell'altro restano bloccati fino a <code>unlock()</code>.
+@@s044 Restano solo questi due. Entrambi danno <code>counter = 2</code>.
+@@s045 <mark class="ok">La sezione critica è diventata indivisibile.</mark>
+@@s046 Il lock non rende <code>counter++</code> atomico per l'hardware: impedisce che un altro thread esegua la <b>sua</b> sezione critica in mezzo.
+@@s047 Questo interleaving è possibile? (slide 59–60)
+@@s048 Domanda tipica: dimostrare che un interleaving non può esistere. Si ragiona <b>per contraddizione</b>, senza eseguire niente.
+@@s049 …, t1(2), …, t2(2), …, t1(3), …, t2(3), …
+@@s050 <b>Assumo</b> che l'interleaving esista (è quello che darebbe il lost update).
+@@s051 t2(2) richiede che t2 abbia preso il lock: <b>t2(1) prima di t2(2)</b>. E t2 può prendere il lock solo se t1 l'ha rilasciato: <b>t1(4) prima di t2(1)</b>.
+@@s052 Ma per il program order di t1, <b>t1(3) viene prima di t1(4)</b>. Quindi t1(3) dovrebbe stare sia prima sia dopo t2(2).
+@@s053 <mark class="no">Contraddizione</mark> → l'interleaving è impossibile.
+@@s054 Nel costruttore qui sopra puoi verificarlo con "Prova una sequenza".
+@@s055 Un ciclo di vincoli: impossibile
+@@s056 Deadlock e l'idioma try/finally
+@@s057 Lock preso due volte
+@@s058 Con un lock non rientrante il thread aspetta se stesso. Bug veri di questo tipo esistono nel kernel Linux.
+@@s059 Eccezione con il lock in mano
+@@s060 Il thread esce senza liberare il lock: tutti gli altri restano bloccati per sempre.
+@@s061 L'idioma da usare sempre
+@@s062 <code>lock()</code> <b>prima</b> del <code>try</code>: se fallisse, non devi fare unlock di un lock mai preso.
+@@s063 La sezione critica sta nel <code>try</code>.
+@@s064 <code>finally</code> viene eseguito <b>sempre</b>, anche se nel try parte un'eccezione: il lock viene sempre liberato.
+@@s065 Per gli assignment
+@@s066 Le slide: le soluzioni che non usano questo idioma "cannot be deemed as free from deadlocks (note for assignments)". Usalo ogni volta.
+@@s067 ReentrantLock: riprendere il lock che hai già
+@@s068 Il thread prende il lock.
+@@s069 l.lock(); <span class="mano">// <mark class="ok">non si blocca</mark> (contatore 2)</span>
+@@s070 Stesso thread: un lock <b>rientrante</b> lo lascia passare e conta quante volte l'ha preso.
+@@s071 Un unlock non basta.
+@@s072 Servono tanti unlock quanti lock.
+@@s073 Eccezione con il lock in mano
+@@s074 Controlla-poi-agisci: il tornello Covid (esercizio 1.3)
+@@s075 Al massimo 15 000 persone. Il controllo e l'incremento devono stare <b>nella stessa</b> sezione critica.
+@@s076 Sbagliato
+@@s077 Due thread possono leggere entrambi 14 999, superare il controllo ed entrare tutti e due: 15 001.
+@@s078 Giusto
+@@s079 Tra il controllo e l'incremento nessun altro thread può cambiare <code>counter</code>.
+@@s080 14 999 visto due volte
+@@s081 Come spiegare che la soluzione è corretta (esercizio 1.1.4)
+@@s082 Lo schema della risposta
+@@s083 <mark class="dato">1. Il problema</mark>: <code>count = count + 1</code> non è atomico; esistono interleaving in cui un thread legge un valore vecchio e un incremento si perde (race condition).
+@@s084 Nomina il problema con il vocabolario del corso.
+@@s085 <mark class="ora">2. La sezione critica</mark>: lettura e scrittura di <code>count</code>, protette da <code>lock()</code> / <code>unlock()</code> sullo <b>stesso</b> ReentrantLock, con try/finally.
+@@s086 Di' cosa hai protetto e con che cosa.
+@@s087 <mark class="due">3. Perché funziona</mark>: per la mutua esclusione i passi della sezione critica di un thread non possono mescolarsi con quelli dell'altro; restano solo interleaving in cui ogni incremento legge il valore scritto dal precedente.
+@@s088 Il cuore: quali interleaving sono stati eliminati.
+@@s089 <mark class="ok">4. Perché nessun altro output</mark>: ognuno dei 2 × 10 000 000 incrementi aggiunge esattamente 1, quindi il risultato è sempre 20 000 000.
+@@s090 Chiudi con il risultato e il motivo per cui è l'unico.
+@@s091 Risposta modello
+@@s092 "The increment <code>count = count + 1</code> is not atomic: it is a read followed by a write, so without synchronization some interleavings let a thread read a stale value and lose an update (a race condition). We made the read and the write a critical section protected by the same ReentrantLock, using the lock/try/finally idiom. Mutual exclusion guarantees that the operations of one thread's critical section cannot be interleaved with the other thread's, so every increment reads the value written by the previous one. Hence each of the 20 million increments adds exactly one, and the only possible output is 20,000,000."
+@@s093 La risposta in quattro pezzi

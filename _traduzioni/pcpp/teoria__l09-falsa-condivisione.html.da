@@ -7,22 +7,28 @@
 @@s007 Også låsen er en skrivning i hukommelsen: hvis flere tråde tager den samme lås ofte, flytter tilstanden af dens linje sig hele tiden. Derfor er en delt lås, der tages meget ofte, langsom, også med den "rigtige" lås.
 @@s008 Ping-pong'en på en delt tæller
 @@s009 dato:cache-linje,ora:skrivning,no:invalidate,ok:stabil tilstand
-@@s010 Kerne 0 har sin egen kopi, ændret.
-@@s011 Linjen flytter sig til cachen i kerne 1, som har den i M.
-@@s012 Hver skrivning er en rejse på bussen. Tælleren forbliver korrekt, men langsom.
-@@s013 Hvornår skrivning er hurtig
-@@s014 To situationer er gode, og det er dem, man skal lede efter:
-@@s015 <b>delte uforanderlige data</b>: læst af alle, aldrig skrevet. De forbliver i S i alle caches, og at læse dem er hurtigt;
-@@s016 <b>lokale data</b>: hver tråd skriver kun sit eget datum. Det forbliver i M i dens cache, og ingen rører ved det.
-@@s017 Forelæsningen kalder denne idé "thread-lokale opdateringer": et datum, der ændrer sig, skal tilhøre én enkelt tråd.
-@@s018 False sharing: to uvedkommende data på samme linje
-@@s019 Cache-linjen er 64 byte. To forskellige data, brugt af forskellige tråde, kan ligge på den <b>samme linje</b>. Selv om trådene ikke rører hinanden, ugyldiggør en skrivning til det ene den andens kopi: det er <b>false sharing</b>, falsk deling. Koden viser det ikke: to felter, der ligger tæt i et objekt, kan ende på samme linje.
-@@s020 To uafhængige tællere på samme linje
-@@s021 dato:tællere,ora:skrivning,no:skade,ok:løsning
-@@s022 De to tråde deler ingen logiske data.
-@@s023 Ping-pong'en fra det forrige tilfælde, uden nogen logisk grund.
-@@s024 Padding koster hukommelse, men fjerner ping-pong'en. I Java gør @Contended det samme, men den kan kun bruges inde i JDK-bibliotekerne.
-@@s025 Sådan måles det
-@@s026 False sharing kan ikke ses ved at læse koden: det ses ved at måle. Forelæsningen sammenligner versioner med og uden padding under den samme belastning, og padding vinder, hvor to tråde skriver tætliggende data. Derfor beder ugens øvelser om at måle på sin egen maskine.
-@@s027 Pas på
-@@s028 Padding er ikke altid nyttig: hvis trådene ikke skriver tætliggende data, ændrer den ikke noget. Mål først, optimer så.
+@@s010 Thread 0 skriver: linjen er i <mark class="ora">M</mark> i cachen hos core 0
+@@s011 Kerne 0 har sin egen kopi, ændret.
+@@s012 Thread 1 skriver de samme data: core 1 <mark class="no">ugyldiggør</mark> core 0's kopi
+@@s013 Linjen flytter sig til cachen i kerne 1, som har den i M.
+@@s014 Thread 0 skriver igen: linjen kommer tilbage fra core 1, <mark class="no">og så videre</mark>
+@@s015 Hver skrivning er en rejse på bussen. Tælleren forbliver korrekt, men langsom.
+@@s016 Hvornår skrivning er hurtig
+@@s017 To situationer er gode, og det er dem, man skal lede efter:
+@@s018 <b>delte uforanderlige data</b>: læst af alle, aldrig skrevet. De forbliver i S i alle caches, og at læse dem er hurtigt;
+@@s019 <b>lokale data</b>: hver tråd skriver kun sit eget datum. Det forbliver i M i dens cache, og ingen rører ved det.
+@@s020 Forelæsningen kalder denne idé "thread-lokale opdateringer": et datum, der ændrer sig, skal tilhøre én enkelt tråd.
+@@s021 False sharing: to uvedkommende data på samme linje
+@@s022 Cache-linjen er 64 byte. To forskellige data, brugt af forskellige tråde, kan ligge på den <b>samme linje</b>. Selv om trådene ikke rører hinanden, ugyldiggør en skrivning til det ene den andens kopi: det er <b>false sharing</b>, falsk deling. Koden viser det ikke: to felter, der ligger tæt i et objekt, kan ende på samme linje.
+@@s023 To uafhængige tællere på samme linje
+@@s024 dato:tællere,ora:skrivning,no:skade,ok:løsning
+@@s025 Thread A skriver tælleren <mark class="dato">a</mark>, Thread B tælleren <mark class="dato">b</mark>: samme linje
+@@s026 De to tråde deler ingen logiske data.
+@@s027 Hver skrivning fra A <mark class="no">ugyldiggør</mark> B's kopi, og omvendt
+@@s028 Ping-pong'en fra det forrige tilfælde, uden nogen logisk grund.
+@@s029 <mark class="ok">Løsning</mark>: <mark class="ok">padding</mark>, altså tomt rum mellem dataene, så hver enkelt ligger på sin egen linje
+@@s030 Padding koster hukommelse, men fjerner ping-pong'en. I Java gør @Contended det samme, men den kan kun bruges inde i JDK-bibliotekerne.
+@@s031 Sådan måles det
+@@s032 False sharing kan ikke ses ved at læse koden: det ses ved at måle. Forelæsningen sammenligner versioner med og uden padding under den samme belastning, og padding vinder, hvor to tråde skriver tætliggende data. Derfor beder ugens øvelser om at måle på sin egen maskine.
+@@s033 Pas på
+@@s034 Padding er ikke altid nyttig: hvis trådene ikke skriver tætliggende data, ændrer den ikke noget. Mål først, optimer så.

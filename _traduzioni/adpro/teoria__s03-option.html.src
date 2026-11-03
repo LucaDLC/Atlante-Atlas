@@ -22,57 +22,59 @@
 @@s022 Una funzione <span class="m">f : A → B</span> è <b>totale</b> se per <b>ogni</b> <span class="m">a</span> in A esiste un risultato in B. Se per qualche input non c'è risposta (crash, eccezione), è <b>parziale</b>.
 @@s023 Rendere totale la media
 @@s024 Parziale: sulla lista vuota non c'è una media. E il tipo <code>Double</code> non lo dice: chi chiama non sa che può esplodere.
-@@s025 Idea: invece di restringere cosa entra, <b>allargo cosa esce</b>. Aggiungo un valore in più, <code>None</code>, che vuol dire "nessun risultato".
-@@s026 Totale: ogni lista ha una risposta. Il possibile fallimento ora è <b>scritto nel tipo</b>, e il compilatore obbliga chi chiama a gestirlo.
-@@s027 <b>Perché non le eccezioni?</b> Un'eccezione non è un valore: rompe la trasparenza referenziale e non compare nel tipo. L'unico vantaggio delle eccezioni, dicono le slide, è poter gestire l'errore <b>lontano</b> da dove succede. Option mantiene questo vantaggio (lo vedi nella catena più sotto) senza i difetti.
-@@s028 Allargare cosa esce: None
-@@s029 Option è un tipo algebrico
-@@s030 Due forme, come la lista: <code>Some</code> contiene un valore, <code>None</code> niente. <code>None</code> ha tipo <code>Option[Nothing]</code> e grazie al <code>+A</code> va bene come <code>Option[Int]</code>, <code>Option[String]</code>… (<a href="s03-varianza.html">varianza</a>).
-@@s031 La libreria standard lo usa ovunque: <code>Map.get(key): Option[V]</code>, <code>List.headOption</code>, <code>List.find(p)</code>.
-@@s032 Some e None nella libreria
-@@s033 L'API: map, flatMap, filter, getOrElse
-@@s034 Esercizio 6: scritte come <b>metodi</b> dentro l'<code>enum</code>, con il pattern matching. È la tua soluzione.
-@@s035 03-option/Exercises.scala, esercizio 6
-@@s036 Sono metodi: il valore su cui lavorano è <code>this</code>. Si chiamano con il punto, <code>Some(3).map(…)</code>.
-@@s037 <b>map</b>: se c'è un valore, applico <code>f</code>. <code>f(a)</code> dà un <code>B</code> nudo, ma devo restituire <code>Option[B]</code>: lo rimetto in un <code>Some</code>.
-@@s038 Su <code>None</code> non c'è niente a cui applicare la funzione: <code>None</code> resta <code>None</code>.
-@@s039 <b>flatMap</b>: qui <code>f</code> restituisce <b>già</b> un <code>Option[B]</code>. Quindi lo restituisco così com'è, senza riavvolgerlo. Serve quando anche il passo successivo può fallire.
-@@s040 <b>filter</b>: tengo il valore solo se soddisfa <code>p</code>. <code>this</code> è l'Option stesso, già un <code>Some(a)</code>. L'ultimo caso senza guardia evita l'errore di esaustività.
-@@s041 <b>getOrElse</b>: serve a <b>uscire</b> dall'Option. <code>B &gt;: A</code> è spiegato nella <a href="s03-varianza.html">pagina sulla varianza</a>. <code>=> B</code> vuol dire che il default viene calcolato solo se serve.
-@@s042 Con <code>None</code> restituisco il default, con <code>Some</code> il valore nudo.
-@@s043 Some(f(a)) oppure f(a)? Guarda il tipo di f
-@@s044 <code>f(a)</code> ha tipo <code>B</code>. Devo restituire <code>Option[B]</code>.
-@@s045 Manca l'involucro: lo aggiungo.
-@@s046 Qui <code>f(a)</code> è <b>già</b> <code>Option[B]</code>: niente da aggiungere.
-@@s047 Riavvolgerlo darebbe due involucri. Il compilatore protesta (messaggio verificato).
-@@s048 Il default di getOrElse si calcola solo se serve
-@@s049 Il default è un blocco che stampa e poi vale 42.
-@@s050 Con <code>None</code> il default serve: viene eseguito.
-@@s051 Con <code>Some</code> il blocco non viene mai eseguito, grazie a <code>=> B</code> (verificato).
-@@s052 map, flatMap, filter, getOrElse su esempi
-@@s053 Una catena che può fallire
-@@s054 Il vantaggio vero: scrivi i passi come se tutto andasse bene. Se un passo fallisce, il <code>None</code> attraversa il resto senza fare danni, e decidi cosa fare <b>alla fine</b>.
-@@s055 headOption, filter, map, getOrElse
-@@s056 Voglio…
-@@s057 La funzione passata restituisce…
-@@s058 Uso
-@@s059 trasformare il valore
-@@s060 un valore normale <code>B</code>
-@@s061 <code>map</code>
-@@s062 fare un altro passo che può fallire
-@@s063 un <code>Option[B]</code>
-@@s064 <code>flatMap</code>
-@@s065 scartare il valore se non va bene
-@@s066 un <code>Boolean</code>
-@@s067 <code>filter</code>
-@@s068 uscire dall'Option con un default
-@@s069 <code>getOrElse</code>
-@@s070 Cosa vuol dire monadico
-@@s071 Nelle slide trovi "the Option monad". Per ora, informalmente: un tipo che fa da <b>contenitore con un contesto</b> (qui: "forse non c'è niente") e ha <code>map</code> e <code>flatMap</code> per concatenare passi senza controllare il contesto ogni volta. List è monadica, Option è monadica. La definizione precisa arriva nella settimana 9.
-@@s072 <code>Either</code>: fallire con un messaggio
-@@s073 <code>None</code> dice che qualcosa è andato storto, ma non <b>cosa</b>. <code>Either</code> porta con sé l'informazione sull'errore, come farebbe un'eccezione.
-@@s074 Left con il messaggio, Right con il risultato
-@@s075 Nil, None e null
-@@s076 Quale "vuoto" usare: <code>Nil</code> per la lista vuota, <code>None</code> per il risultato che può non esserci, <code>null</code> solo come valore che arriva da Java e va subito convertito con <code>Option(x)</code>. Spiegazione e confronto nella <a href="s03-vuoti.html">pagina dedicata</a>.
-@@s077 Errori tipici
-@@s078 Guardie e casi esaustivi
+@@s025 Double → <mark class="ora">Option[Double]</mark> = { Some(d) per ogni d } ∪ { None }
+@@s026 Idea: invece di restringere cosa entra, <b>allargo cosa esce</b>. Aggiungo un valore in più, <code>None</code>, che vuol dire "nessun risultato".
+@@s027 Totale: ogni lista ha una risposta. Il possibile fallimento ora è <b>scritto nel tipo</b>, e il compilatore obbliga chi chiama a gestirlo.
+@@s028 <b>Perché non le eccezioni?</b> Un'eccezione non è un valore: rompe la trasparenza referenziale e non compare nel tipo. L'unico vantaggio delle eccezioni, dicono le slide, è poter gestire l'errore <b>lontano</b> da dove succede. Option mantiene questo vantaggio (lo vedi nella catena più sotto) senza i difetti.
+@@s029 Allargare cosa esce: None
+@@s030 Option è un tipo algebrico
+@@s031 Due forme, come la lista: <code>Some</code> contiene un valore, <code>None</code> niente. <code>None</code> ha tipo <code>Option[Nothing]</code> e grazie al <code>+A</code> va bene come <code>Option[Int]</code>, <code>Option[String]</code>… (<a href="s03-varianza.html">varianza</a>).
+@@s032 La libreria standard lo usa ovunque: <code>Map.get(key): Option[V]</code>, <code>List.headOption</code>, <code>List.find(p)</code>.
+@@s033 Some e None nella libreria
+@@s034 L'API: map, flatMap, filter, getOrElse
+@@s035 Esercizio 6: scritte come <b>metodi</b> dentro l'<code>enum</code>, con il pattern matching. È la tua soluzione.
+@@s036 03-option/Exercises.scala, esercizio 6
+@@s037 Sono metodi: il valore su cui lavorano è <code>this</code>. Si chiamano con il punto, <code>Some(3).map(…)</code>.
+@@s038 <b>map</b>: se c'è un valore, applico <code>f</code>. <code>f(a)</code> dà un <code>B</code> nudo, ma devo restituire <code>Option[B]</code>: lo rimetto in un <code>Some</code>.
+@@s039 Su <code>None</code> non c'è niente a cui applicare la funzione: <code>None</code> resta <code>None</code>.
+@@s040 <b>flatMap</b>: qui <code>f</code> restituisce <b>già</b> un <code>Option[B]</code>. Quindi lo restituisco così com'è, senza riavvolgerlo. Serve quando anche il passo successivo può fallire.
+@@s041 <b>filter</b>: tengo il valore solo se soddisfa <code>p</code>. <code>this</code> è l'Option stesso, già un <code>Some(a)</code>. L'ultimo caso senza guardia evita l'errore di esaustività.
+@@s042 <b>getOrElse</b>: serve a <b>uscire</b> dall'Option. <code>B &gt;: A</code> è spiegato nella <a href="s03-varianza.html">pagina sulla varianza</a>. <code>=> B</code> vuol dire che il default viene calcolato solo se serve.
+@@s043 Con <code>None</code> restituisco il default, con <code>Some</code> il valore nudo.
+@@s044 Some(f(a)) oppure f(a)? Guarda il tipo di f
+@@s045 <code>f(a)</code> ha tipo <code>B</code>. Devo restituire <code>Option[B]</code>.
+@@s046 Manca l'involucro: lo aggiungo.
+@@s047 Qui <code>f(a)</code> è <b>già</b> <code>Option[B]</code>: niente da aggiungere.
+@@s048 Riavvolgerlo darebbe due involucri. Il compilatore protesta (messaggio verificato).
+@@s049 Il default di getOrElse si calcola solo se serve
+@@s050 Il default è un blocco che stampa e poi vale 42.
+@@s051 Con <code>None</code> il default serve: viene eseguito.
+@@s052 Con <code>Some</code> il blocco non viene mai eseguito, grazie a <code>=> B</code> (verificato).
+@@s053 map, flatMap, filter, getOrElse su esempi
+@@s054 Una catena che può fallire
+@@s055 Il vantaggio vero: scrivi i passi come se tutto andasse bene. Se un passo fallisce, il <code>None</code> attraversa il resto senza fare danni, e decidi cosa fare <b>alla fine</b>.
+@@s056 headOption, filter, map, getOrElse
+@@s057 Voglio…
+@@s058 La funzione passata restituisce…
+@@s059 Uso
+@@s060 trasformare il valore
+@@s061 un valore normale <code>B</code>
+@@s062 <code>map</code>
+@@s063 fare un altro passo che può fallire
+@@s064 un <code>Option[B]</code>
+@@s065 <code>flatMap</code>
+@@s066 scartare il valore se non va bene
+@@s067 un <code>Boolean</code>
+@@s068 <code>filter</code>
+@@s069 uscire dall'Option con un default
+@@s070 <code>getOrElse</code>
+@@s071 Cosa vuol dire monadico
+@@s072 Nelle slide trovi "the Option monad". Per ora, informalmente: un tipo che fa da <b>contenitore con un contesto</b> (qui: "forse non c'è niente") e ha <code>map</code> e <code>flatMap</code> per concatenare passi senza controllare il contesto ogni volta. List è monadica, Option è monadica. La definizione precisa arriva nella settimana 9.
+@@s073 <code>Either</code>: fallire con un messaggio
+@@s074 <code>None</code> dice che qualcosa è andato storto, ma non <b>cosa</b>. <code>Either</code> porta con sé l'informazione sull'errore, come farebbe un'eccezione.
+@@s075 Left con il messaggio, Right con il risultato
+@@s076 Nil, None e null
+@@s077 Quale "vuoto" usare: <code>Nil</code> per la lista vuota, <code>None</code> per il risultato che può non esserci, <code>null</code> solo come valore che arriva da Java e va subito convertito con <code>Option(x)</code>. Spiegazione e confronto nella <a href="s03-vuoti.html">pagina dedicata</a>.
+@@s078 Errori tipici
+@@s079 Il compilatore non sa che <code>p(a)</code> e <code>!p(a)</code> coprono tutto. Con <code>-Werror</code> è un errore. Metti l'ultimo caso senza guardia: <code>case _ => None</code>.
+@@s080 Guardie e casi esaustivi

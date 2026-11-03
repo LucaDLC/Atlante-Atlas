@@ -31,42 +31,47 @@
 @@s031 dato:the state,ok:door closed
 @@s032 The state "escapes" if another object obtains a reference to the array or to one of the <code>AtomicInteger</code>s: at that point it could change them without going through the methods of the class.
 @@s033 No other class can read <code>counts</code> directly.
-@@s034 <code>getCount</code>, <code>getSpan</code> and <code>getAndClear</code> return an <code>int</code>, that is a <b>copy</b> of the number, never the array or an <code>AtomicInteger</code>. No method receives an array from outside and keeps it.
-@@s035 The constructor starts no threads and passes <code>this</code> to nobody: nobody can see the object half built.
-@@s036 Ready answer 6.1.1
-@@s037 i) No escaping: the state is the array <code>counts</code> and the <code>AtomicInteger</code> objects in it. The field is <code>private</code>, no method returns the array or one of its <code>AtomicInteger</code>s (they only return <code>int</code> values), and the constructor neither starts threads nor passes <code>this</code> to other objects. ii) Safe publication: <code>counts</code> is <code>final</code>, so any thread that obtains a reference to the object after construction sees the array and all <code>AtomicInteger</code>s initialised to 0. Later updates are visible because each <code>AtomicInteger</code> behaves like a volatile variable. Immutable: the reference <code>counts</code> and, in practice, the array contents (each slot always points to the same <code>AtomicInteger</code>). Only the values inside the <code>AtomicInteger</code>s change.
-@@s038 AtomicIntegerArray is not good here
-@@s039 With <code>AtomicIntegerArray</code> and <code>incrementAndGet</code> / <code>getAndSet</code> the class is thread-safe, but it violates the text: <code>AtomicInteger</code> is required, and <b>only</b> <code>get</code> and <code>compareAndSet</code> may be used.
-@@s040 6.1.2 · Is getAndClear atomic?
-@@s041 The method does two things: <b>get</b> (reads the value) and <b>clear</b> (sets it back to 0). The question: can another thread slip in between the two and make something be lost? With the CAS loop, no.
-@@s042 getAndClear(7) and increment(7) together
-@@s043 dato:value read,ora:CAS,ok:succeeded,no:failed
-@@s044 Two threads on the same bin.
-@@s045 T1 has done the "get". The "clear" is not there yet.
-@@s046 T2 slips in exactly between the get and the clear of T1.
-@@s047 The CAS writes 0 only if the bin is still 5. It is not 5: it zeroes nothing, and T2's increment remains.
-@@s048 The loop tries again. The returned value is <b>exactly</b> the one the CAS replaced with 0: get and clear happen together, in the successful CAS.
-@@s049 get, then set(0)
-@@s050 <code>v = c.get(); c.set(0); return v;</code> If T2 increments between the two lines, <code>set(0)</code> erases its increment and nobody returns it: <b>lost</b>.
-@@s051 get, then CAS(v, 0)
-@@s052 The CAS zeroes only if the value is still <code>v</code>. Otherwise it tries again. Nothing is lost: it behaves as if get and clear were <b>one atomic operation</b>.
-@@s053 Ready answer
-@@s054 Yes. <code>getAndClear</code> reads the value and then calls <code>compareAndSet(oldValue, 0)</code>, which writes 0 only if the bin still contains <code>oldValue</code>. If another thread changes the bin between the read and the CAS, the CAS fails and the loop retries. So when the CAS succeeds, the returned value is exactly the value that was replaced by 0, and no update can happen in between and be lost: the get and the clear take effect together at the successful CAS.
-@@s055 6.1.3 · What the test does
-@@s056 <code>countFactors(p)</code> says into how many primes <i>p</i> decomposes, and it is <b>the bin to increment</b>. With the numbers from 0 to 9:
-@@s057 numbers
-@@s058 decomposition
-@@s059 bin
-@@s060 none
-@@s061 are primes
-@@s062 Resulting histogram: bin 0 → 2, bin 1 → 4, bin 2 → 3, bin 3 → 1. The test does the same with the numbers from 0 to 4999.
-@@s063 The test, step by step
-@@s064 dato:Histogram1 (sequential),due:CasHistogram (parallel),ok:comparison
-@@s065 No race: this is the <b>true</b> result.
-@@s066 The thread of number 8 does <code>increment(3)</code>, that of 9 does <code>increment(2)</code>… In the lambda one needs <code>final int num = p;</code>: a lambda uses only variables that do not change, and <code>p</code> changes at every turn.
-@@s067 The scheme of week 5. Bins 1 and 2 are the most crowded: that is where they collide.
-@@s068 A lost increment would leave a bin with 1 less: <mark class="ok">all equal</mark> means no lost increment in that execution.
-@@s069 A test that discovers little
-@@s070 Tried by putting <code>Histogram1</code> (not thread-safe) in the parallel part: it passed 100 repetitions out of 100. Each thread does a single increment, and the barrier wakes the 5000 threads almost one at a time, so they rarely collide. It is the test the exercise asks for, but it is a good example of "a test that passes proves nothing". Each repetition lasts about a second (creating 5000 threads costs): 20 repetitions are enough.
-@@s071 Where the file goes
-@@s072 The test goes in <code>app/src/test/java/exercises06/TestHistograms.java</code>, with <code>package exercises06;</code>. In <code>src/main</code> JUnit is not available (it is a <code>testImplementation</code> dependency), and without the package <code>Histogram1</code>, which is not <code>public</code>, cannot be seen.
+@@s034 2. methods: they return only <mark class="ok">int</mark>
+@@s035 <code>getCount</code>, <code>getSpan</code> and <code>getAndClear</code> return an <code>int</code>, that is a <b>copy</b> of the number, never the array or an <code>AtomicInteger</code>. No method receives an array from outside and keeps it.
+@@s036 3. constructor: <mark class="ok">this does not escape</mark>
+@@s037 The constructor starts no threads and passes <code>this</code> to nobody: nobody can see the object half built.
+@@s038 Ready answer 6.1.1
+@@s039 i) No escaping: the state is the array <code>counts</code> and the <code>AtomicInteger</code> objects in it. The field is <code>private</code>, no method returns the array or one of its <code>AtomicInteger</code>s (they only return <code>int</code> values), and the constructor neither starts threads nor passes <code>this</code> to other objects. ii) Safe publication: <code>counts</code> is <code>final</code>, so any thread that obtains a reference to the object after construction sees the array and all <code>AtomicInteger</code>s initialised to 0. Later updates are visible because each <code>AtomicInteger</code> behaves like a volatile variable. Immutable: the reference <code>counts</code> and, in practice, the array contents (each slot always points to the same <code>AtomicInteger</code>). Only the values inside the <code>AtomicInteger</code>s change.
+@@s040 AtomicIntegerArray is not good here
+@@s041 With <code>AtomicIntegerArray</code> and <code>incrementAndGet</code> / <code>getAndSet</code> the class is thread-safe, but it violates the text: <code>AtomicInteger</code> is required, and <b>only</b> <code>get</code> and <code>compareAndSet</code> may be used.
+@@s042 6.1.2 · Is getAndClear atomic?
+@@s043 The method does two things: <b>get</b> (reads the value) and <b>clear</b> (sets it back to 0). The question: can another thread slip in between the two and make something be lost? With the CAS loop, no.
+@@s044 getAndClear(7) and increment(7) together
+@@s045 dato:value read,ora:CAS,ok:succeeded,no:failed
+@@s046 Two threads on the same bin.
+@@s047 T1 has done the "get". The "clear" is not there yet.
+@@s048 T2 slips in exactly between the get and the clear of T1.
+@@s049 The CAS writes 0 only if the bin is still 5. It is not 5: it zeroes nothing, and T2's increment remains.
+@@s050 The loop tries again. The returned value is <b>exactly</b> the one the CAS replaced with 0: get and clear happen together, in the successful CAS.
+@@s051 get, then set(0)
+@@s052 <code>v = c.get(); c.set(0); return v;</code> If T2 increments between the two lines, <code>set(0)</code> erases its increment and nobody returns it: <b>lost</b>.
+@@s053 get, then CAS(v, 0)
+@@s054 The CAS zeroes only if the value is still <code>v</code>. Otherwise it tries again. Nothing is lost: it behaves as if get and clear were <b>one atomic operation</b>.
+@@s055 Ready answer
+@@s056 Yes. <code>getAndClear</code> reads the value and then calls <code>compareAndSet(oldValue, 0)</code>, which writes 0 only if the bin still contains <code>oldValue</code>. If another thread changes the bin between the read and the CAS, the CAS fails and the loop retries. So when the CAS succeeds, the returned value is exactly the value that was replaced by 0, and no update can happen in between and be lost: the get and the clear take effect together at the successful CAS.
+@@s057 6.1.3 · What the test does
+@@s058 <code>countFactors(p)</code> says into how many primes <i>p</i> decomposes, and it is <b>the bin to increment</b>. With the numbers from 0 to 9:
+@@s059 numbers
+@@s060 decomposition
+@@s061 bin
+@@s062 none
+@@s063 are primes
+@@s064 Resulting histogram: bin 0 → 2, bin 1 → 4, bin 2 → 3, bin 3 → 1. The test does the same with the numbers from 0 to 4999.
+@@s065 The test, step by step
+@@s066 dato:Histogram1 (sequential),due:CasHistogram (parallel),ok:comparison
+@@s067 No race: this is the <b>true</b> result.
+@@s068 <mark class="due">histogram</mark>: 5000 threads, one per number, all on the same object
+@@s069 The thread of number 8 does <code>increment(3)</code>, that of 9 does <code>increment(2)</code>… In the lambda one needs <code>final int num = p;</code>: a lambda uses only variables that do not change, and <code>p</code> changes at every turn.
+@@s070 barrier of 5000 + 1: start together, then main waits for the end
+@@s071 The scheme of week 5. Bins 1 and 2 are the most crowded: that is where they collide.
+@@s072 for each bin 0…29: assertEquals(<mark class="dato">expected</mark>.getCount(bin), <mark class="due">histogram</mark>.getCount(bin))
+@@s073 A lost increment would leave a bin with 1 less: <mark class="ok">all equal</mark> means no lost increment in that execution.
+@@s074 A test that discovers little
+@@s075 Tried by putting <code>Histogram1</code> (not thread-safe) in the parallel part: it passed 100 repetitions out of 100. Each thread does a single increment, and the barrier wakes the 5000 threads almost one at a time, so they rarely collide. It is the test the exercise asks for, but it is a good example of "a test that passes proves nothing". Each repetition lasts about a second (creating 5000 threads costs): 20 repetitions are enough.
+@@s076 Where the file goes
+@@s077 The test goes in <code>app/src/test/java/exercises06/TestHistograms.java</code>, with <code>package exercises06;</code>. In <code>src/main</code> JUnit is not available (it is a <code>testImplementation</code> dependency), and without the package <code>Histogram1</code>, which is not <code>public</code>, cannot be seen.

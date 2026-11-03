@@ -76,17 +76,17 @@
 <section>
   <h2>{{s|s058|}}</h2>
   <figure class="passi" data-titolo="{{a|s059|}}">
-    <div class="passo"><div class="espr">1. <mark class="dato">scopo</mark>: che problema risolve l'esercizio (30 s)</div><p class="nota">{{s|s060|}}</p></div>
-    <div class="passo"><div class="espr">2. <mark class="ora">modello e teoria</mark>: la formula centrale e cosa significa (1–2 min)</div><p class="nota">{{s|s061|}}</p></div>
-    <div class="passo"><div class="espr">3. <mark class="ora">metodo</mark>: come si imparano i parametri (1 min)</div><p class="nota">{{s|s062|}}</p></div>
-    <div class="passo"><div class="espr">4. <mark class="ok">risultati</mark>: un grafico o un numero dal tuo notebook (1 min)</div><p class="nota">{{s|s063|}}</p></div>
-    <div class="passo"><div class="espr">5. <mark class="no">interpretazione e limiti</mark>: cosa funziona, cosa no, alternative (1 min)</div><p class="nota">{{s|s064|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s060|}}</div><p class="nota">{{s|s061|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s062|}}</div><p class="nota">{{s|s063|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s064|}}</div><p class="nota">{{s|s065|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s066|}}</div><p class="nota">{{s|s067|}}</p></div>
+    <div class="passo"><div class="espr">5. <mark class="no">interpretazione e limiti</mark>: cosa funziona, cosa no, alternative (1 min)</div><p class="nota">{{s|s068|}}</p></div>
   </figure>
-  <div class="box idea" data-tit="{{a|s065|}}">
-    <p>{{s|s066|}}</p>
+  <div class="box idea" data-tit="{{a|s069|}}">
+    <p>{{s|s070|}}</p>
   </div>
-  <div class="box attenzione" data-tit="{{a|s067|}}">
-    <p>{{s|s068|}}</p>
+  <div class="box attenzione" data-tit="{{a|s071|}}">
+    <p>{{s|s072|}}</p>
   </div>
 </section>
 

@@ -26,25 +26,29 @@
 @@s026 To compare them, the lecture uses the same work pattern for all: N threads execute 5 000 000 operations in total (each 5 000 000 / N). Each operation looks for a random key and acts as follows:
 @@s027 One operation of the workload
 @@s028 dato:key,ora:decision,ok:action
-@@s029 This is the first check: <code>containsKey</code>.
-@@s030 If the random number is below addProb, one does <code>put</code>.
-@@s031 If the random number is below removeProb, one does <code>remove</code>.
-@@s032 Changing addProb and removeProb gives different workloads: <b>dominated by reads</b> (60% and 2%) or <b>dominated by writes</b> (90% and 30%).
-@@s033 What the measurements show
-@@s034 The single lock (<code>SynchronizedMap</code>) does not scale: more threads, more time. On the server it is much worse than on the laptop.
-@@s035 With a balanced or write-dominated load, no hand-written version scales well: the library's <code>ConcurrentHashMap</code> wins.
-@@s036 With a read-dominated load, <code>ConcurrentHashMap</code> remains the best; the padding helps the versions with non-blocking reads.
-@@s037 Non-blocking reads (immutable lists) work well only if the map is read much more than it is written.
-@@s038 The non-blocking versions have a memory cost: every write creates a new pair, so a garbage collector and careful management are needed. That is why the lecture says the technique is not practicable in C or C++ without a GC.
-@@s039 The lessons
-@@s040 When a lock is the right choice, and when not
-@@s041 dato:situation,ora:reasoning step,ok:conclusion,no:to avoid
-@@s042 A waiting lock does not keep the CPU busy: that is an advantage.
-@@s043 But only if the mutable data, locks included, mostly stay local to one thread.
-@@s044 Threads retry in a loop of active waiting (busy-wait), and the lines pass M → I → M → I.
-@@s045 @Contended is reserved for the Java libraries: in your code the padding must be done by hand.
-@@s046 How to choose
-@@s047 In practice
-@@s048 Do not write a concurrent map from scratch: use <code>ConcurrentHashMap</code>. Write your own version only to understand the trade-off, or if you measure that the library is not enough for a specific case.
-@@s049 Sentence for the oral
-@@s050 Striped locks and padding keep frequently written data core-local, so the cache lines can stay in the Modified state; ConcurrentHashMap combines these ideas in the library.
+@@s029 <mark class="dato">Key</mark> random. If the map <mark class="ora">does not contain it</mark>…
+@@s030 This is the first check: <code>containsKey</code>.
+@@s031 …it adds it with probability <mark class="ora">addProb</mark>
+@@s032 If the random number is below addProb, one does <code>put</code>.
+@@s033 If the map <mark class="ora">contains</mark> it, it removes it with probability <mark class="ora">removeProb</mark>
+@@s034 If the random number is below removeProb, one does <code>remove</code>.
+@@s035 Changing addProb and removeProb gives different workloads: <b>dominated by reads</b> (60% and 2%) or <b>dominated by writes</b> (90% and 30%).
+@@s036 What the measurements show
+@@s037 The single lock (<code>SynchronizedMap</code>) does not scale: more threads, more time. On the server it is much worse than on the laptop.
+@@s038 With a balanced or write-dominated load, no hand-written version scales well: the library's <code>ConcurrentHashMap</code> wins.
+@@s039 With a read-dominated load, <code>ConcurrentHashMap</code> remains the best; the padding helps the versions with non-blocking reads.
+@@s040 Non-blocking reads (immutable lists) work well only if the map is read much more than it is written.
+@@s041 The non-blocking versions have a memory cost: every write creates a new pair, so a garbage collector and careful management are needed. That is why the lecture says the technique is not practicable in C or C++ without a GC.
+@@s042 The lessons
+@@s043 When a lock is the right choice, and when not
+@@s044 dato:situation,ora:reasoning step,ok:conclusion,no:to avoid
+@@s045 Locks <mark class="ok">can be fast</mark>: a blocked thread does not use CPU
+@@s046 A waiting lock does not keep the CPU busy: that is an advantage.
+@@s047 But only if the mutable data, locks included, mostly stay local to one thread.
+@@s048 Threads retry in a loop of active waiting (busy-wait), and the lines pass M → I → M → I.
+@@s049 @Contended is reserved for the Java libraries: in your code the padding must be done by hand.
+@@s050 How to choose
+@@s051 In practice
+@@s052 Do not write a concurrent map from scratch: use <code>ConcurrentHashMap</code>. Write your own version only to understand the trade-off, or if you measure that the library is not enough for a specific case.
+@@s053 Sentence for the oral
+@@s054 Striped locks and padding keep frequently written data core-local, so the cache lines can stay in the Modified state; ConcurrentHashMap combines these ideas in the library.

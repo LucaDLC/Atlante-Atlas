@@ -164,34 +164,33 @@ def abs(n: Int): Int =
   <figure class="passi" data-titolo="{{a|s049|}}" data-legenda="{{a|s050|}}">
     <div class="passo"><div class="espr"><mark class="dato">n &gt;= 0</mark>:  ammessi 0, 1, 2, 3, …      factorial(0) = 1, factorial(1) = 1, factorial(5) = 120</div><p class="nota">{{s|s051|}}</p></div>
     <div class="passo"><div class="espr"><mark class="dato">n &gt;= 2</mark>:  ammessi 2, 3, …   <mark class="no">esclusi 0 e 1</mark></div><p class="nota">{{s|s052|}}</p></div>
-    <div class="passo"><div class="espr">n &gt;= 2  ⇒  n &gt;= 0      <mark class="ora">n &gt;= 2 è più forte, n &gt;= 0 è più debole</mark></div><p class="nota">{{s|s053|}}</p></div>
-    <div class="passo"><div class="espr">la <mark class="ok">più debole</mark> (weakest pre-condition) = il minimo indispensabile = n &gt;= 0</div><p class="nota">{{s|s054|}}</p></div>
-    <div class="passo"><div class="espr">pre = <mark class="ok">true</mark>  → nessuna richiesta, funziona sempre
-pre = <mark class="no">false</mark> → non funziona mai</div><p class="nota">{{s|s055|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s053|}}</div><p class="nota">{{s|s054|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s055|}}</div><p class="nota">{{s|s056|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s057|}}</div><p class="nota">{{s|s058|}}</p></div>
   </figure>
-  <figure class="scena" data-scena="precondizione" data-titolo="{{a|s056|}}"></figure>
+  <figure class="scena" data-scena="precondizione" data-titolo="{{a|s059|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s057|}}</h2>
-  <p>{{s|s058|}}</p>
-  <p>{{s|s059|}}</p>
+  <h2>{{s|s060|}}</h2>
+  <p>{{s|s061|}}</p>
+  <p>{{s|s062|}}</p>
   <div class="tab-wrap"><table class="tab">
-    <thead><tr><th>{{s|s060|}}</th><th>{{s|s061|}}</th><th>{{s|s062|}}</th></tr></thead>
+    <thead><tr><th>{{s|s063|}}</th><th>{{s|s064|}}</th><th>{{s|s065|}}</th></tr></thead>
     <tbody>
-      <tr><td>{{s|s063|}}</td><td>{{s|s064|}}</td><td>{{s|s065|}}</td></tr>
       <tr><td>{{s|s066|}}</td><td>{{s|s067|}}</td><td>{{s|s068|}}</td></tr>
       <tr><td>{{s|s069|}}</td><td>{{s|s070|}}</td><td>{{s|s071|}}</td></tr>
       <tr><td>{{s|s072|}}</td><td>{{s|s073|}}</td><td>{{s|s074|}}</td></tr>
+      <tr><td>{{s|s075|}}</td><td>{{s|s076|}}</td><td>{{s|s077|}}</td></tr>
     </tbody>
   </table></div>
-  <figure class="scena" data-scena="postcondizione" data-titolo="{{a|s075|}}"></figure>
+  <figure class="scena" data-scena="postcondizione" data-titolo="{{a|s078|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s076|}}</h2>
-  <p>{{s|s077|}}</p>
-  <figure class="codice" data-titolo="{{a|s078|}}">
+  <h2>{{s|s079|}}</h2>
+  <p>{{s|s080|}}</p>
+  <figure class="codice" data-titolo="{{a|s081|}}">
 <pre data-lang="pseudo">def orElse[B &gt;: A](alternative: =&gt; Option[B]): Option[B]
   pre:  true
   post: (!this.isEmpty =&gt; orElse(alternative) == this) &amp;&amp;
@@ -205,27 +204,27 @@ def get[A](oa: Option[A]): A
   pre:  !oa.isEmpty
   post: Some(get(oa)) == oa</pre>
     <ol class="spiega">
-      <li data-righe="1-4" data-segna="=&gt; orElse*@due"><p>{{s|s079|}}</p></li>
-      <li data-righe="6-8" data-segna="a &lt;= maximum(t)@due|a == maximum(t)@due"><p>{{s|s080|}}</p></li>
-      <li data-righe="10-12" data-segna="!oa.isEmpty@dato|Some(get(oa)) == oa@due"><p>{{s|s081|}}</p></li>
+      <li data-righe="1-4" data-segna="=&gt; orElse*@due"><p>{{s|s082|}}</p></li>
+      <li data-righe="6-8" data-segna="a &lt;= maximum(t)@due|a == maximum(t)@due"><p>{{s|s083|}}</p></li>
+      <li data-righe="10-12" data-segna="!oa.isEmpty@dato|Some(get(oa)) == oa@due"><p>{{s|s084|}}</p></li>
     </ol>
   </figure>
   <div class="colonne">
-    <div class="carta buona"><h4>{{s|s082|}}</h4><p>{{s|s083|}}</p></div>
-    <div class="carta media"><h4>{{s|s084|}}</h4><p>{{s|s085|}}</p></div>
-    <div class="carta cattiva"><h4>{{s|s086|}}</h4><p>{{s|s087|}}</p></div>
+    <div class="carta buona"><h4>{{s|s085|}}</h4><p>{{s|s086|}}</p></div>
+    <div class="carta media"><h4>{{s|s087|}}</h4><p>{{s|s088|}}</p></div>
+    <div class="carta cattiva"><h4>{{s|s089|}}</h4><p>{{s|s090|}}</p></div>
   </div>
-  <figure class="scena" data-scena="contratto" data-titolo="{{a|s088|}}"></figure>
+  <figure class="scena" data-scena="contratto" data-titolo="{{a|s091|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s089|}}</h2>
-  <p>{{s|s090|}}</p>
+  <h2>{{s|s092|}}</h2>
+  <p>{{s|s093|}}</p>
   <ul>
-    <li>{{s|s091|}}</li>
-    <li>{{s|s092|}}</li>
+    <li>{{s|s094|}}</li>
+    <li>{{s|s095|}}</li>
   </ul>
-  <figure class="codice" data-titolo="{{a|s093|}}">
+  <figure class="codice" data-titolo="{{a|s096|}}">
 <pre data-lang="scala">def isSorted(l: List[Int]): Boolean =
   l.zip(l.drop(1)).forall((a, b) =&gt; a &lt;= b)
 
@@ -235,12 +234,12 @@ def insert(x: Int, l: List[Int]): List[Int] = l match
 
 forAll { (l: List[Int], x: Int) =&gt; isSorted(insert(x, l.sorted)) }</pre>
     <ol class="spiega">
-      <li data-righe="1-2" data-segna="l.zip(l.drop(1))@dato"><p>{{s|s094|}}</p></li>
-      <li data-righe="4-6"><p>{{s|s095|}}</p></li>
-      <li data-righe="8" data-segna="isSorted@ok|l.sorted@dato"><p>{{s|s096|}}</p></li>
+      <li data-righe="1-2" data-segna="l.zip(l.drop(1))@dato"><p>{{s|s097|}}</p></li>
+      <li data-righe="4-6"><p>{{s|s098|}}</p></li>
+      <li data-righe="8" data-segna="isSorted@ok|l.sorted@dato"><p>{{s|s099|}}</p></li>
     </ol>
   </figure>
-  <figure class="scena" data-scena="invariante" data-titolo="{{a|s097|}}"></figure>
+  <figure class="scena" data-scena="invariante" data-titolo="{{a|s100|}}"></figure>
 </section>
 
 </main>

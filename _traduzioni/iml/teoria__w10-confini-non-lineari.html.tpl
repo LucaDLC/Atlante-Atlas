@@ -138,45 +138,45 @@ window.SCENE = window.SCENE || {};
   <figure class="passi" data-titolo="{{a|s027|}}">
     <div class="passo"><div class="espr">x² + y² − r² = 0</div><p class="nota">{{s|s028|}}</p></div>
     <div class="passo"><div class="espr">= [<mark class="ora">−r²</mark>, 0, 0, <mark class="ora">1</mark>, <mark class="ora">1</mark>, 0] · [<mark class="dato">1, x, y, x², y², xy</mark>]</div><p class="nota">{{s|s029|}}</p></div>
-    <div class="passo"><div class="espr">minimi quadrati su queste 6 feature:  pesi di x² e y² ≈ <mark class="ok">0.18</mark>, costante −0.89  ⇒  cerchio di raggio ≈ 2.24,  accuratezza 0.936</div><p class="nota">{{s|s030|}}</p></div>
-    <div class="passo"><div class="espr">coordinate polari:  r = √(x² + y²)  ⇒  soglia r = <mark class="ok">1.92</mark>,  accuratezza 0.971</div><p class="nota">{{s|s031|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s030|}}</div><p class="nota">{{s|s031|}}</p></div>
+    <div class="passo"><div class="espr">coordinate polari:  r = √(x² + y²)  ⇒  soglia r = <mark class="ok">1.92</mark>,  accuratezza 0.971</div><p class="nota">{{s|s032|}}</p></div>
   </figure>
-  <figure class="scena" data-scena="anello" data-titolo="{{a|s032|}}"></figure>
+  <figure class="scena" data-scena="anello" data-titolo="{{a|s033|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s033|}}</h2>
-  <figure class="passi" data-titolo="{{a|s034|}}">
-    <div class="passo"><div class="espr">tante rette separano i dati: quale scegliere?</div><p class="nota">{{s|s035|}}</p></div>
-    <div class="passo"><div class="espr">vincolo:  yᵢ(wᵀxᵢ + b) ≥ <mark class="ok">1</mark>;  i punti con = 1 sono i <mark class="ora">vettori di supporto</mark></div><p class="nota">{{s|s036|}}</p></div>
-    <div class="passo"><div class="espr">larghezza della strada:  M = <mark class="ok">2 / ‖w‖</mark></div><p class="nota">{{s|s037|}}</p></div>
-    <div class="passo"><div class="espr">esempio: 6 punti separabili → w = [0.5, 0.5], b = 0,  M = 2/0.707 = <mark class="ok">2.83</mark></div><p class="nota">{{s|s038|}}</p></div>
+  <h2>{{s|s034|}}</h2>
+  <figure class="passi" data-titolo="{{a|s035|}}">
+    <div class="passo"><div class="espr">tante rette separano i dati: quale scegliere?</div><p class="nota">{{s|s036|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s037|}}</div><p class="nota">{{s|s038|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s039|}}</div><p class="nota">{{s|s040|}}</p></div>
+    <div class="passo"><div class="espr">esempio: 6 punti separabili → w = [0.5, 0.5], b = 0,  M = 2/0.707 = <mark class="ok">2.83</mark></div><p class="nota">{{s|s041|}}</p></div>
   </figure>
-  <figure class="scena" data-scena="margine" data-titolo="{{a|s039|}}"></figure>
-  <p class="piccolo">{{s|s040|}}</p>
-  <div class="box regola" data-tit="{{a|s041|}}">
-    <p>{{s|s042|}}</p>
+  <figure class="scena" data-scena="margine" data-titolo="{{a|s042|}}"></figure>
+  <p class="piccolo">{{s|s043|}}</p>
+  <div class="box regola" data-tit="{{a|s044|}}">
+    <p>{{s|s045|}}</p>
   </div>
-  <div class="box idea" data-tit="{{a|s043|}}">
-    <p>{{s|s044|}}</p>
+  <div class="box idea" data-tit="{{a|s046|}}">
+    <p>{{s|s047|}}</p>
   </div>
 </section>
 
 <section>
-  <h2>{{s|s045|}}</h2>
-  <p>{{s|s046|}}</p>
+  <h2>{{s|s048|}}</h2>
+  <p>{{s|s049|}}</p>
   <div class="tab-wrap"><table class="tab">
-    <thead><tr><th>{{s|s047|}}</th><th>1</th><th>2</th><th>4</th><th>{{s|s048|}}</th></tr></thead>
+    <thead><tr><th>{{s|s050|}}</th><th>1</th><th>2</th><th>4</th><th>{{s|s051|}}</th></tr></thead>
     <tbody>
-      <tr><td>{{s|s049|}}</td><td>0.66</td><td>0.815</td><td>0.966</td><td><b>1.0</b></td></tr>
-      <tr><td>{{s|s050|}}</td><td>2</td><td>4</td><td>11</td><td>33</td></tr>
+      <tr><td>{{s|s052|}}</td><td>0.66</td><td>0.815</td><td>0.966</td><td><b>1.0</b></td></tr>
+      <tr><td>{{s|s053|}}</td><td>2</td><td>4</td><td>11</td><td>33</td></tr>
     </tbody>
   </table></div>
-  <p class="piccolo">{{s|s051|}}</p>
-  <div class="box esame" data-tit="{{a|s052|}}">
-    <p>{{s|s053|}}</p>
+  <p class="piccolo">{{s|s054|}}</p>
+  <div class="box esame" data-tit="{{a|s055|}}">
+    <p>{{s|s056|}}</p>
   </div>
-  <figure class="scena" data-scena="alberi" data-titolo="{{a|s054|}}"></figure>
+  <figure class="scena" data-scena="alberi" data-titolo="{{a|s057|}}"></figure>
 </section>
 
 </main>

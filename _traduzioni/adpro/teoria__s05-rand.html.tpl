@@ -174,26 +174,26 @@ def ints2(size: Int): Rand[List[Int]] =
     <div class="errore">
       <pre data-lang="scala">map(nonNegativeInt(rng), Int.MaxValue.toDouble)</pre>
       <pre class="msg">Not found: rng</pre>
-      <div class="fix">Dentro un <code>Rand</code> non c'è nessun <code>rng</code> da passare: arriva dopo. E il secondo argomento di <code>map</code> è una <b>funzione</b>, in una seconda coppia di parentesi, non un numero.</div>
+      <div class="fix">{{s|s041|}}</div>
     </div>
     <div class="errore">
       <pre data-lang="scala">case (h, t) =&gt; map2(h, sequence(t))(_ :: _)</pre>
       <pre class="msg">Found:    (h : Any)
 Required: adpro.state.RNG.Rand[Any]</pre>
-      <div class="fix"><code>(h, t)</code> smonta una <b>coppia</b>, non una lista: qui serve <code>h :: t</code>.</div>
+      <div class="fix">{{s|s042|}}</div>
     </div>
     <div class="errore">
       <pre data-lang="scala">case h :: t =&gt; map2(h, sequence(t))(_, _)</pre>
       <pre class="msg">Wrong number of parameters, expected: 1</pre>
-      <div class="fix"><code>(_, _)</code> costruisce una coppia, non una funzione a due argomenti: uscirebbe un <code>Rand[(A, List[A])]</code>. La funzione che unisce è <code>_ :: _</code>.</div>
+      <div class="fix">{{s|s043|}}</div>
     </div>
   </div>
-  <figure class="scena" data-scena="sequence5" data-titolo="{{a|s041|}}"></figure>
+  <figure class="scena" data-scena="sequence5" data-titolo="{{a|s044|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s042|}}</h2>
-  <figure class="codice" data-titolo="{{a|s043|}}">
+  <h2>{{s|s045|}}</h2>
+  <figure class="codice" data-titolo="{{a|s046|}}">
 <pre data-lang="scala">def flatMap[A, B](f: Rand[A])(g: A =&gt; Rand[B]): Rand[B] =
   rng =&gt;
     val (a, r1) = f(rng)
@@ -206,20 +206,20 @@ def nonNegativeLessThan(bound: Int): Rand[Int] =
     else nonNegativeLessThan(bound)
   }</pre>
     <ol class="spiega">
-      <li data-righe="1-4" data-segna="f(rng)@ora|g(a)(r1)@ok"><p>{{s|s044|}}</p></li>
-      <li data-righe="6-8" data-segna="i % bound@due"><p>{{s|s045|}}</p></li>
-      <li data-righe="9-10" data-segna="&gt;= 0@no|nonNegativeLessThan(bound)@ora"><p>{{s|s046|}}</p></li>
+      <li data-righe="1-4" data-segna="f(rng)@ora|g(a)(r1)@ok"><p>{{s|s047|}}</p></li>
+      <li data-righe="6-8" data-segna="i % bound@due"><p>{{s|s048|}}</p></li>
+      <li data-righe="9-10" data-segna="&gt;= 0@no|nonNegativeLessThan(bound)@ora"><p>{{s|s049|}}</p></li>
     </ol>
   </figure>
-  <p class="piccolo">{{s|s047|}}</p>
-  <div class="box domanda-tua" data-tit="{{a|s048|}}">
-    <p>{{s|s049|}}</p>
-    <p>{{s|s050|}}</p>
-  </div>
+  <p class="piccolo">{{s|s050|}}</p>
   <div class="box domanda-tua" data-tit="{{a|s051|}}">
     <p>{{s|s052|}}</p>
     <p>{{s|s053|}}</p>
-    <p>{{s|s054|}}</p>
+  </div>
+  <div class="box domanda-tua" data-tit="{{a|s054|}}">
+    <p>{{s|s055|}}</p>
+    <p>{{s|s056|}}</p>
+    <p>{{s|s057|}}</p>
   </div>
   <div class="errori">
     <div class="errore">
@@ -233,38 +233,38 @@ nonNegativeLessThan(6)(SimpleRNG(42))</pre>
 	at adpro.state.RNG$.nonNegativeLessThan$$anonfun$1(Exercises.scala:114)
 	at adpro.state.RNG$.flatMap$$anonfun$1(Exercises.scala:109)
 	…</pre>
-      <div class="fix">Compila, ma esplode a runtime. Nei test: Ex08.04 e Ex08.05 danno "Exception raised on property evaluation … StackOverflowError" (es. bound = 3053). Si sistema usando <code>n % bound</code> invece di scartare ogni n ≥ bound (versione sopra).</div>
+      <div class="fix">{{s|s058|}}</div>
     </div>
   </div>
-  <figure class="scena" data-scena="flatmapdado" data-titolo="{{a|s055|}}"></figure>
-  <figure class="passi" data-titolo="{{a|s056|}}" data-legenda="{{a|s057|}}">
+  <figure class="scena" data-scena="flatmapdado" data-titolo="{{a|s059|}}"></figure>
+  <figure class="passi" data-titolo="{{a|s060|}}" data-legenda="{{a|s061|}}">
     <div class="passo"><div class="espr">n      0 1 2 | 3 4 5 | 6 7
-n % 3  0 1 2 | 0 1 2 | <mark class="no">0 1</mark></div><p class="nota">{{s|s058|}}</p></div>
-    <div class="passo"><div class="espr"><mark class="dato">n</mark> − mod = primo del suo blocco,   + (bound − 1) = <mark class="ora">ultimo del suo blocco</mark></div><p class="nota">{{s|s059|}}</p></div>
+n % 3  0 1 2 | 0 1 2 | <mark class="no">0 1</mark></div><p class="nota">{{s|s062|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s063|}}</div><p class="nota">{{s|s064|}}</p></div>
     <div class="passo"><div class="espr">n = 4:  4 − 1 + 2 = 5 ≤ 7  → <mark class="ok">unit(1)</mark>
 n = 6:  6 − 0 + 2 = 8 &gt; 7  → <mark class="no">riprova</mark>
-n = 7:  7 − 1 + 2 = 8 &gt; 7  → <mark class="no">riprova</mark></div><p class="nota">{{s|s060|}}</p></div>
-    <div class="passo"><div class="espr">2147483648 = 6 × 357913941 + <mark class="ora">2</mark>   → ultimo blocco: 2147483646, 2147483647</div><p class="nota">{{s|s061|}}</p></div>
+n = 7:  7 − 1 + 2 = 8 &gt; 7  → <mark class="no">riprova</mark></div><p class="nota">{{s|s065|}}</p></div>
+    <div class="passo"><div class="espr">2147483648 = 6 × 357913941 + <mark class="ora">2</mark>   → ultimo blocco: 2147483646, 2147483647</div><p class="nota">{{s|s066|}}</p></div>
     <div class="passo"><div class="espr">n = 2147483645: 2147483645 + 5 − 5 =  2147483645 → <mark class="ok">unit(5)</mark>
 n = 2147483646: 2147483646 + 5 − 0 = <mark class="no">−2147483645</mark> → riprova
-n = 2147483647: 2147483647 + 5 − 1 = <mark class="no">−2147483645</mark> → riprova</div><p class="nota">{{s|s062|}}</p></div>
-    <div class="passo"><div class="espr">Fake(List(2147483647, 16)):  <mark class="no">2147483647</mark> → riprova su rng2 → <mark class="dato">16</mark>, mod 4, 16 + 5 − 4 = 17 ≥ 0 → <mark class="ok">(4, Fake(List()))</mark></div><p class="nota">{{s|s063|}}</p></div>
+n = 2147483647: 2147483647 + 5 − 1 = <mark class="no">−2147483645</mark> → riprova</div><p class="nota">{{s|s067|}}</p></div>
+    <div class="passo"><div class="espr">Fake(List(2147483647, 16)):  <mark class="no">2147483647</mark> → riprova su rng2 → <mark class="dato">16</mark>, mod 4, 16 + 5 − 4 = 17 ≥ 0 → <mark class="ok">(4, Fake(List()))</mark></div><p class="nota">{{s|s068|}}</p></div>
   </figure>
-  <div class="box domanda-tua" data-tit="{{a|s064|}}">
-    <p>{{s|s065|}}</p>
+  <div class="box domanda-tua" data-tit="{{a|s069|}}">
+    <p>{{s|s070|}}</p>
     <pre class="cod" data-lang="scala" data-segna="double@dato|(d * bound).toInt@ok">def nonNegativeLessThan(bound: Int): Rand[Int] =
   flatMap(double) { d =&gt; unit((d * bound).toInt) }</pre>
-    <p>{{s|s066|}}</p>
+    <p>{{s|s071|}}</p>
   </div>
-  <figure class="passi" data-titolo="{{a|s067|}}" data-legenda="{{a|s068|}}">
+  <figure class="passi" data-titolo="{{a|s072|}}" data-legenda="{{a|s073|}}">
     <div class="passo"><div class="espr">0 ─── 1/6 ─── 2/6 ─── 3/6 ─── 4/6 ─── 5/6 ─── 1
-  fetta 0  fetta 1  fetta 2  fetta 3  fetta 4  fetta 5</div><p class="nota">{{s|s069|}}</p></div>
-    <div class="passo"><div class="espr"><mark class="dato">0.2</mark> × 6 = <mark class="ora">1.2</mark> → toInt → <mark class="ok">1</mark></div><p class="nota">{{s|s070|}}</p></div>
-    <div class="passo"><div class="espr"><mark class="dato">0.5</mark> × 6 = <mark class="ora">3.0</mark> → <mark class="ok">3</mark>     <mark class="dato">0.7</mark> × 6 = <mark class="ora">4.19…</mark> → <mark class="ok">4</mark>     <mark class="dato">0.99</mark> × 6 = <mark class="ora">5.94</mark> → <mark class="ok">5</mark></div><p class="nota">{{s|s071|}}</p></div>
+  fetta 0  fetta 1  fetta 2  fetta 3  fetta 4  fetta 5</div><p class="nota">{{s|s074|}}</p></div>
+    <div class="passo"><div class="espr"><mark class="dato">0.2</mark> × 6 = <mark class="ora">1.2</mark> → toInt → <mark class="ok">1</mark></div><p class="nota">{{s|s075|}}</p></div>
+    <div class="passo"><div class="espr"><mark class="dato">0.5</mark> × 6 = <mark class="ora">3.0</mark> → <mark class="ok">3</mark>     <mark class="dato">0.7</mark> × 6 = <mark class="ora">4.19…</mark> → <mark class="ok">4</mark>     <mark class="dato">0.99</mark> × 6 = <mark class="ora">5.94</mark> → <mark class="ok">5</mark></div><p class="nota">{{s|s076|}}</p></div>
   </figure>
-  <div class="box domanda-tua" data-tit="{{a|s072|}}">
-    <p>{{s|s073|}}</p>
-    <p>{{s|s074|}}</p>
+  <div class="box domanda-tua" data-tit="{{a|s077|}}">
+    <p>{{s|s078|}}</p>
+    <p>{{s|s079|}}</p>
   </div>
 </section>
 

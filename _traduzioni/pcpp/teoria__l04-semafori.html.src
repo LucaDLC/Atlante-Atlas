@@ -66,62 +66,69 @@
 @@s066 Due await() per thread: via insieme, poi fine insieme (test della settimana 5)
 @@s067 dato:worker,due:main,ok:barriera aperta
 @@s068 N worker + il thread <mark class="due">main</mark>: anche main deve contare, altrimenti non saprebbe mai quando i worker hanno finito.
-@@s069 I worker partono uno alla volta e si fermano al primo <code>await()</code>. Manca ancora un arrivo.
-@@s070 Main è l'ultimo arrivo: tutti ripartono <b>nello stesso istante</b>. È il "via" che massimizza le collisioni.
-@@s071 Stessa barriera, secondo giro (è ciclica). Chi finisce prima aspetta gli altri.
-@@s072 Quando main supera il secondo <code>await()</code>, <b>tutti</b> i worker hanno finito: ora può controllare il risultato (<code>assertEquals</code>). Senza l'<code>await()</code> di main la barriera resta a N / N+1 e i worker restano bloccati per sempre.
-@@s073 La barriera come campo della classe di test va bene?
-@@s074 Sì: <code>private CyclicBarrier barrier = new CyclicBarrier(N + 1);</code> come campo funziona. JUnit 5 crea una <b>nuova istanza della classe di test per ogni esecuzione</b> (anche per ogni ripetizione di <code>@RepeatedTest</code>), quindi ogni ripetizione ha la sua barriera nuova: se una si rompe (<code>BrokenBarrierException</code>), la successiva non ne risente.
-@@s075 Va creata dentro il metodo di test (come in <code>CounterTest</code> della lezione) quando il numero di thread <b>cambia</b> da un'esecuzione all'altra, per esempio con <code>@ParameterizedTest</code>.
-@@s076 Il problema produttore-consumatore
-@@s077 Una struttura dati condivisa di <b>dimensione fissa</b>.
-@@s078 I <b>produttori</b> aggiungono elementi finché non è piena; se è piena, <b>si bloccano</b> finché qualcuno toglie un elemento.
-@@s079 I <b>consumatori</b> tolgono elementi finché non è vuota; se è vuota, <b>si bloccano</b> finché qualcuno aggiunge.
-@@s080 Una buona soluzione è <b>deadlock free</b> e <b>minimizza la starvation</b>.
-@@s081 Appare ovunque: strutture dati limitate, thread pool, I/O asincrono (tastiera e mouse producono, dispositivi IoT consumano).
-@@s082 Bounded buffer con due semafori contatori
-@@s083 Esercizio 4.1 · Bounded buffer con soli semafori
-@@s084 Vincoli del testo: solo <code>Semaphore</code> (niente <code>Lock</code>, niente <code>synchronized</code>), coda FIFO, stato solo con collezioni <b>non</b> thread-safe come <code>LinkedList</code> o array.
-@@s085 Una soluzione (verificata: FIFO su 100 000 elementi; 4 produttori + 4 consumatori senza perdite)
-@@s086 Implementa l'interfaccia del corso (il nome ha davvero il refuso <code>Inteface</code>). <code>&lt;T&gt;</code>: il buffer contiene elementi di un tipo qualsiasi.
-@@s087 La coda vera e propria: una <code>LinkedList</code>, non thread-safe, come richiesto.
-@@s088 Tre semafori, tre compiti: <code>items</code> conta gli elementi pronti (parte da 0), <code>spaces</code> i posti liberi, <code>mutex</code> (capacità 1) protegge la <code>LinkedList</code>.
-@@s089 All'inizio i posti liberi sono tutti: <code>capacity</code>.
-@@s090 Prendo un posto libero. Se non ce ne sono, mi blocco: <b>buffer pieno ⇒ il produttore aspetta</b>.
-@@s091 Un solo thread alla volta tocca la lista. Aggiungo <b>in fondo</b>. Il <code>release</code> sta nel <code>finally</code>: è l'idioma try/finally anche con i semafori.
-@@s092 C'è un elemento in più: se un consumatore aspettava, si sveglia.
-@@s093 Aspetto un elemento: <b>buffer vuoto ⇒ il consumatore aspetta</b>.
-@@s094 Tolgo il <b>primo</b>: aggiungere in fondo e togliere in testa dà l'ordine FIFO.
-@@s095 Si è liberato un posto: un produttore bloccato può ripartire.
-@@s096 <b>L'ordine conta.</b> Prima <code>spaces</code>, poi <code>mutex</code>. Al contrario, un produttore con buffer pieno si bloccherebbe su <code>spaces</code> <b>tenendo il mutex</b>, e nessun consumatore potrebbe entrare a liberare un posto: deadlock. Provato: con l'ordine invertito, produttore e consumatore restano bloccati per sempre.
-@@s097 4.1.2 · Perché è thread-safe
-@@s098 La checklist applicata
-@@s099 Gli elementi di tipo T non sono stato della classe: sono oggetti di chi usa il buffer.
-@@s100 <code>take()</code> restituisce un elemento, non la lista.
-@@s101 Anche <code>spaces</code>, assegnato nel costruttore.
-@@s102 L'unico stato mutabile non protetto da sé è il contenuto della <code>LinkedList</code>.
-@@s103 Il mutex fa entrare un thread alla volta, e release → acquire successivo è happens-before: tutti gli accessi alla lista sono ordinati. Nessuna data race.
-@@s104 Risposta modello (4.1.2)
-@@s105 "The class state consists of <i>queue</i>, <i>items</i>, <i>spaces</i> and <i>mutex</i>. All fields are private and final, so they are safely published, and no method returns a reference to <i>queue</i>, so the state does not escape. The semaphores are thread-safe library classes. The only mutable non-thread-safe state is the content of <i>queue</i>, and every access to it happens between <i>mutex.acquire()</i> and <i>mutex.release()</i>. Since <i>mutex</i> has one permit, the accesses are mutually exclusive, and a release happens-before the next successful acquire, so all conflicting accesses to <i>queue</i> are ordered by happens-before."
-@@s106 4.1.3 · Con le barriere?
-@@s107 <b>No.</b> Una barriera blocca finché non arriva un numero <b>fisso</b> di thread, qualunque cosa contenga il buffer. Il buffer invece deve bloccare un produttore <b>solo se è pieno</b> e un consumatore <b>solo se è vuoto</b>: serve contare posti ed elementi, e serve mutua esclusione sulla lista. La barriera non offre né l'una né l'altra cosa.
-@@s108 4.1.4 · Il flag fair (challenging)
-@@s109 <code>new Semaphore(n, true)</code>: quando si libera un permesso va al thread che aspetta <b>da più tempo</b> (FIFO). Senza <code>fair</code> (default <code>false</code>) un thread appena arrivato può "passare davanti" (barging).
-@@s110 Nel bounded buffer <b>non cambia la correttezza</b>: thread-safety, blocco su pieno/vuoto e ordine FIFO degli elementi valgono in ogni caso.
-@@s111 Cambia la <b>starvation</b>: con molti produttori, senza fair uno di loro può in teoria perdere sempre la corsa al permesso. Dove conta: il limite ai 5 lettori della slide 57, dove il corso usa proprio <code>true</code> perché il lettore che aspetta da più tempo entri per primo.
-@@s112 spaces, items, mutex
-@@s113 Esercizio 4.3 · Costruirli da zero (challenging)
-@@s114 I monitor sono la primitiva più generale: con un <code>Lock</code> e una <code>Condition</code> si costruisce un semaforo, e con i semafori una barriera.
-@@s115 4.3.1 · Semaforo con Lock (verificato: con 3 permessi e 16 thread, mai più di 3 dentro)
-@@s116 Stato: il contatore <code>permits</code>, protetto dal lock. La condition <code>positive</code> = "ci sono permessi".
-@@s117 <code>permits</code> non può essere final (cambia). Scriverlo tenendo il lock fa sì che la regola del monitor lo ordini con ogni accesso successivo: il valore iniziale è visibile a tutti.
-@@s118 Se non ci sono permessi aspetto. <code>while</code>, non <code>if</code>: al risveglio (anche spurio) ricontrollo (<a href="l02-monitor.html">monitor</a>).
-@@s119 Prendo un permesso.
-@@s120 Restituisco un permesso e sveglio un thread in attesa. È la versione Mesa della slide: invece di "passare" il permesso al thread svegliato, lo rimetto nel contatore e il thread svegliato lo riprende. Visto da fuori è lo stesso comportamento.
-@@s121 4.3.2 · Barriera non ciclica con i semafori (verificata: 2000 prove, nessuno passa in anticipo)
-@@s122 Un contatore degli arrivati, un mutex che lo protegge, e un "cancello" chiuso (0 permessi).
-@@s123 Arrivo e mi conto, in mutua esclusione.
-@@s124 Se non siamo ancora tutti, rilascio il mutex (<b>prima</b> di bloccarmi, altrimenti nessun altro potrebbe contarsi) e aspetto al cancello.
-@@s125 L'ultimo arrivato apre il cancello: <code>parties - 1</code> permessi, uno per ogni thread in attesa. Lui prosegue senza aspettare.
-@@s126 Perché funziona anche se l'ultimo apre il cancello <b>prima</b> che un altro ci arrivi: un semaforo <b>ricorda</b> i permessi. Un <code>signal()</code> su una condition, invece, se nessuno aspetta va perso.
-@@s127 Un semaforo fatto con un monitor, poi una barriera
+@@s069 <mark class="dato">worker</mark>: await() → N / N+1, tutti bloccati
+@@s070 I worker partono uno alla volta e si fermano al primo <code>await()</code>. Manca ancora un arrivo.
+@@s071 Main è l'ultimo arrivo: tutti ripartono <b>nello stesso istante</b>. È il "via" che massimizza le collisioni.
+@@s072 <mark class="dato">worker</mark>: lavorano, poi await() → uno alla volta, bloccati
+@@s073 Stessa barriera, secondo giro (è ciclica). Chi finisce prima aspetta gli altri.
+@@s074 <mark class="due">main</mark>: secondo await() → quando arrivano tutti: <mark class="ok">aperta</mark>
+@@s075 Quando main supera il secondo <code>await()</code>, <b>tutti</b> i worker hanno finito: ora può controllare il risultato (<code>assertEquals</code>). Senza l'<code>await()</code> di main la barriera resta a N / N+1 e i worker restano bloccati per sempre.
+@@s076 La barriera come campo della classe di test va bene?
+@@s077 Sì: <code>private CyclicBarrier barrier = new CyclicBarrier(N + 1);</code> come campo funziona. JUnit 5 crea una <b>nuova istanza della classe di test per ogni esecuzione</b> (anche per ogni ripetizione di <code>@RepeatedTest</code>), quindi ogni ripetizione ha la sua barriera nuova: se una si rompe (<code>BrokenBarrierException</code>), la successiva non ne risente.
+@@s078 Va creata dentro il metodo di test (come in <code>CounterTest</code> della lezione) quando il numero di thread <b>cambia</b> da un'esecuzione all'altra, per esempio con <code>@ParameterizedTest</code>.
+@@s079 Il problema produttore-consumatore
+@@s080 Una struttura dati condivisa di <b>dimensione fissa</b>.
+@@s081 I <b>produttori</b> aggiungono elementi finché non è piena; se è piena, <b>si bloccano</b> finché qualcuno toglie un elemento.
+@@s082 I <b>consumatori</b> tolgono elementi finché non è vuota; se è vuota, <b>si bloccano</b> finché qualcuno aggiunge.
+@@s083 Una buona soluzione è <b>deadlock free</b> e <b>minimizza la starvation</b>.
+@@s084 Appare ovunque: strutture dati limitate, thread pool, I/O asincrono (tastiera e mouse producono, dispositivi IoT consumano).
+@@s085 Bounded buffer con due semafori contatori
+@@s086 Esercizio 4.1 · Bounded buffer con soli semafori
+@@s087 Vincoli del testo: solo <code>Semaphore</code> (niente <code>Lock</code>, niente <code>synchronized</code>), coda FIFO, stato solo con collezioni <b>non</b> thread-safe come <code>LinkedList</code> o array.
+@@s088 Una soluzione (verificata: FIFO su 100 000 elementi; 4 produttori + 4 consumatori senza perdite)
+@@s089 Implementa l'interfaccia del corso (il nome ha davvero il refuso <code>Inteface</code>). <code>&lt;T&gt;</code>: il buffer contiene elementi di un tipo qualsiasi.
+@@s090 La coda vera e propria: una <code>LinkedList</code>, non thread-safe, come richiesto.
+@@s091 Tre semafori, tre compiti: <code>items</code> conta gli elementi pronti (parte da 0), <code>spaces</code> i posti liberi, <code>mutex</code> (capacità 1) protegge la <code>LinkedList</code>.
+@@s092 All'inizio i posti liberi sono tutti: <code>capacity</code>.
+@@s093 Prendo un posto libero. Se non ce ne sono, mi blocco: <b>buffer pieno ⇒ il produttore aspetta</b>.
+@@s094 Un solo thread alla volta tocca la lista. Aggiungo <b>in fondo</b>. Il <code>release</code> sta nel <code>finally</code>: è l'idioma try/finally anche con i semafori.
+@@s095 C'è un elemento in più: se un consumatore aspettava, si sveglia.
+@@s096 Aspetto un elemento: <b>buffer vuoto ⇒ il consumatore aspetta</b>.
+@@s097 Tolgo il <b>primo</b>: aggiungere in fondo e togliere in testa dà l'ordine FIFO.
+@@s098 Si è liberato un posto: un produttore bloccato può ripartire.
+@@s099 <b>L'ordine conta.</b> Prima <code>spaces</code>, poi <code>mutex</code>. Al contrario, un produttore con buffer pieno si bloccherebbe su <code>spaces</code> <b>tenendo il mutex</b>, e nessun consumatore potrebbe entrare a liberare un posto: deadlock. Provato: con l'ordine invertito, produttore e consumatore restano bloccati per sempre.
+@@s100 4.1.2 · Perché è thread-safe
+@@s101 La checklist applicata
+@@s102 Gli elementi di tipo T non sono stato della classe: sono oggetti di chi usa il buffer.
+@@s103 2. <mark class="dato">escaping</mark>: tutti private, nessun metodo restituisce queue
+@@s104 <code>take()</code> restituisce un elemento, non la lista.
+@@s105 3. <mark class="ora">safe publication</mark>: tutti i campi sono final
+@@s106 Anche <code>spaces</code>, assegnato nel costruttore.
+@@s107 4. <mark class="ok">immutability</mark>: i riferimenti non cambiano; i semafori sono classi thread-safe della libreria
+@@s108 L'unico stato mutabile non protetto da sé è il contenuto della <code>LinkedList</code>.
+@@s109 5. <mark class="due">mutual exclusion</mark>: ogni accesso a queue sta tra mutex.acquire() e mutex.release()
+@@s110 Il mutex fa entrare un thread alla volta, e release → acquire successivo è happens-before: tutti gli accessi alla lista sono ordinati. Nessuna data race.
+@@s111 Risposta modello (4.1.2)
+@@s112 "The class state consists of <i>queue</i>, <i>items</i>, <i>spaces</i> and <i>mutex</i>. All fields are private and final, so they are safely published, and no method returns a reference to <i>queue</i>, so the state does not escape. The semaphores are thread-safe library classes. The only mutable non-thread-safe state is the content of <i>queue</i>, and every access to it happens between <i>mutex.acquire()</i> and <i>mutex.release()</i>. Since <i>mutex</i> has one permit, the accesses are mutually exclusive, and a release happens-before the next successful acquire, so all conflicting accesses to <i>queue</i> are ordered by happens-before."
+@@s113 4.1.3 · Con le barriere?
+@@s114 <b>No.</b> Una barriera blocca finché non arriva un numero <b>fisso</b> di thread, qualunque cosa contenga il buffer. Il buffer invece deve bloccare un produttore <b>solo se è pieno</b> e un consumatore <b>solo se è vuoto</b>: serve contare posti ed elementi, e serve mutua esclusione sulla lista. La barriera non offre né l'una né l'altra cosa.
+@@s115 4.1.4 · Il flag fair (challenging)
+@@s116 <code>new Semaphore(n, true)</code>: quando si libera un permesso va al thread che aspetta <b>da più tempo</b> (FIFO). Senza <code>fair</code> (default <code>false</code>) un thread appena arrivato può "passare davanti" (barging).
+@@s117 Nel bounded buffer <b>non cambia la correttezza</b>: thread-safety, blocco su pieno/vuoto e ordine FIFO degli elementi valgono in ogni caso.
+@@s118 Cambia la <b>starvation</b>: con molti produttori, senza fair uno di loro può in teoria perdere sempre la corsa al permesso. Dove conta: il limite ai 5 lettori della slide 57, dove il corso usa proprio <code>true</code> perché il lettore che aspetta da più tempo entri per primo.
+@@s119 spaces, items, mutex
+@@s120 Esercizio 4.3 · Costruirli da zero (challenging)
+@@s121 I monitor sono la primitiva più generale: con un <code>Lock</code> e una <code>Condition</code> si costruisce un semaforo, e con i semafori una barriera.
+@@s122 4.3.1 · Semaforo con Lock (verificato: con 3 permessi e 16 thread, mai più di 3 dentro)
+@@s123 Stato: il contatore <code>permits</code>, protetto dal lock. La condition <code>positive</code> = "ci sono permessi".
+@@s124 <code>permits</code> non può essere final (cambia). Scriverlo tenendo il lock fa sì che la regola del monitor lo ordini con ogni accesso successivo: il valore iniziale è visibile a tutti.
+@@s125 Se non ci sono permessi aspetto. <code>while</code>, non <code>if</code>: al risveglio (anche spurio) ricontrollo (<a href="l02-monitor.html">monitor</a>).
+@@s126 Prendo un permesso.
+@@s127 Restituisco un permesso e sveglio un thread in attesa. È la versione Mesa della slide: invece di "passare" il permesso al thread svegliato, lo rimetto nel contatore e il thread svegliato lo riprende. Visto da fuori è lo stesso comportamento.
+@@s128 4.3.2 · Barriera non ciclica con i semafori (verificata: 2000 prove, nessuno passa in anticipo)
+@@s129 Un contatore degli arrivati, un mutex che lo protegge, e un "cancello" chiuso (0 permessi).
+@@s130 Arrivo e mi conto, in mutua esclusione.
+@@s131 Se non siamo ancora tutti, rilascio il mutex (<b>prima</b> di bloccarmi, altrimenti nessun altro potrebbe contarsi) e aspetto al cancello.
+@@s132 L'ultimo arrivato apre il cancello: <code>parties - 1</code> permessi, uno per ogni thread in attesa. Lui prosegue senza aspettare.
+@@s133 Perché funziona anche se l'ultimo apre il cancello <b>prima</b> che un altro ci arrivi: un semaforo <b>ricorda</b> i permessi. Un <code>signal()</code> su una condition, invece, se nessuno aspetta va perso.
+@@s134 Un semaforo fatto con un monitor, poi una barriera

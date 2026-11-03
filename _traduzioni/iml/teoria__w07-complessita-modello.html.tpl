@@ -190,22 +190,22 @@ window.SCENE = window.SCENE || {};
   <p class="piccolo">{{s|s040|}}</p>
   <figure class="passi" data-titolo="{{a|s041|}}">
     <div class="passo"><div class="espr">lotto fino a 16 200  ⇒  x¹¹ ≈ <mark class="no">2 · 10⁴⁶</mark></div><p class="nota">{{s|s042|}}</p></div>
-    <div class="passo"><div class="espr">numero di condizionamento: ordine 7 → <mark class="no">1.1 · 10³²</mark>,  ordine 11 → <mark class="no">5.6 · 10⁴⁷</mark></div><p class="nota">{{s|s043|}}</p></div>
-    <div class="passo"><div class="espr">senza normalizzare, RMSE training: ordine 4 → 22 489,  ordine 7 → <mark class="no">47 295</mark></div><p class="nota">{{s|s044|}}</p></div>
-    <div class="passo"><div class="espr">x normalizzato in [0, 1]:  condizionamento ordine 7 → <mark class="ok">2.8 · 10⁵</mark></div><p class="nota">{{s|s045|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s043|}}</div><p class="nota">{{s|s044|}}</p></div>
+    <div class="passo"><div class="espr">senza normalizzare, RMSE training: ordine 4 → 22 489,  ordine 7 → <mark class="no">47 295</mark></div><p class="nota">{{s|s045|}}</p></div>
+    <div class="passo"><div class="espr">x normalizzato in [0, 1]:  condizionamento ordine 7 → <mark class="ok">2.8 · 10⁵</mark></div><p class="nota">{{s|s046|}}</p></div>
   </figure>
-  <figure class="scena" data-scena="windsor" data-titolo="{{a|s046|}}"></figure>
+  <figure class="scena" data-scena="windsor" data-titolo="{{a|s047|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s047|}}</h2>
-  <figure class="passi" data-titolo="{{a|s048|}}">
-    <div class="passo"><div class="espr"><mark class="ora">Bias²</mark>: quanto la previsione <b>media</b> sta lontana dalla funzione vera</div><p class="nota">{{s|s049|}}</p></div>
-    <div class="passo"><div class="espr"><mark class="due">Varianza</mark>: quanto cambia il modello se cambi i dati di training</div><p class="nota">{{s|s050|}}</p></div>
-    <div class="passo"><div class="espr"><mark class="no">σ²</mark>: rumore irriducibile</div><p class="nota">{{s|s051|}}</p></div>
+  <h2>{{s|s048|}}</h2>
+  <figure class="passi" data-titolo="{{a|s049|}}">
+    <div class="passo"><div class="espr">{{s|s050|}}</div><p class="nota">{{s|s051|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s052|}}</div><p class="nota">{{s|s053|}}</p></div>
+    <div class="passo"><div class="espr"><mark class="no">σ²</mark>: rumore irriducibile</div><p class="nota">{{s|s054|}}</p></div>
   </figure>
   <div class="tab-wrap"><table class="tab">
-    <thead><tr><th>{{s|s052|}}</th><th>{{s|s053|}}</th><th>{{s|s054|}}</th><th>{{s|s055|}}</th><th>σ²</th><th>{{s|s056|}}</th><th>{{s|s057|}}</th></tr></thead>
+    <thead><tr><th>{{s|s055|}}</th><th>{{s|s056|}}</th><th>{{s|s057|}}</th><th>{{s|s058|}}</th><th>σ²</th><th>{{s|s059|}}</th><th>{{s|s060|}}</th></tr></thead>
     <tbody>
       <tr><td>1</td><td>0.328</td><td><b>0.209</b></td><td>0.014</td><td>0.090</td><td>0.313</td><td>0.313</td></tr>
       <tr><td>3</td><td>0.067</td><td>0.006</td><td>0.025</td><td>0.090</td><td><b>0.121</b></td><td><b>0.121</b></td></tr>
@@ -213,26 +213,26 @@ window.SCENE = window.SCENE || {};
       <tr><td>9</td><td>0.015</td><td>0.000</td><td><b>0.118</b></td><td>0.090</td><td>0.208</td><td>0.207</td></tr>
     </tbody>
   </table></div>
-  <p class="piccolo">{{s|s058|}}</p>
-  <figure class="scena" data-scena="biasvar" data-titolo="{{a|s059|}}"></figure>
+  <p class="piccolo">{{s|s061|}}</p>
+  <figure class="scena" data-scena="biasvar" data-titolo="{{a|s062|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s060|}}</h2>
-  <p>{{s|s061|}}</p>
-  <figure class="passi" data-titolo="{{a|s062|}}">
-    <div class="passo"><div class="espr">grado 1:  training <mark class="no">16.3</mark>,  test <mark class="no">567.6</mark></div><p class="nota">{{s|s063|}}</p></div>
-    <div class="passo"><div class="espr">grado 2:  training <mark class="ok">0.747</mark>,  test 2.925</div><p class="nota">{{s|s064|}}</p></div>
-    <div class="passo"><div class="espr">grado 3:  training 0.731,  test <mark class="ora">1.609</mark></div><p class="nota">{{s|s065|}}</p></div>
+  <h2>{{s|s063|}}</h2>
+  <p>{{s|s064|}}</p>
+  <figure class="passi" data-titolo="{{a|s065|}}">
+    <div class="passo"><div class="espr">grado 1:  training <mark class="no">16.3</mark>,  test <mark class="no">567.6</mark></div><p class="nota">{{s|s066|}}</p></div>
+    <div class="passo"><div class="espr">grado 2:  training <mark class="ok">0.747</mark>,  test 2.925</div><p class="nota">{{s|s067|}}</p></div>
+    <div class="passo"><div class="espr">grado 3:  training 0.731,  test <mark class="ora">1.609</mark></div><p class="nota">{{s|s068|}}</p></div>
   </figure>
-  <div class="box esame" data-tit="{{a|s066|}}">
-    <p>{{s|s067|}}</p>
-  </div>
-  <div class="box inglese" data-tit="{{a|s068|}}">
-    <p>{{s|s069|}}</p>
+  <div class="box esame" data-tit="{{a|s069|}}">
     <p>{{s|s070|}}</p>
   </div>
-  <figure class="scena" data-scena="occam" data-titolo="{{a|s071|}}"></figure>
+  <div class="box inglese" data-tit="{{a|s071|}}">
+    <p>{{s|s072|}}</p>
+    <p>{{s|s073|}}</p>
+  </div>
+  <figure class="scena" data-scena="occam" data-titolo="{{a|s074|}}"></figure>
 </section>
 
 </main>

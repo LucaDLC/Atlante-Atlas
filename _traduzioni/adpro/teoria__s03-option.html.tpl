@@ -132,34 +132,34 @@ window.SCENE = window.SCENE || {};
       <p class="nota">{{s|s024|}}</p>
     </div>
     <div class="passo">
-      <div class="espr">Double   →   <mark class="ora">Option[Double]</mark> = { Some(d) per ogni d } ∪ { None }</div>
-      <p class="nota">{{s|s025|}}</p>
+      <div class="espr">{{s|s025|}}</div>
+      <p class="nota">{{s|s026|}}</p>
     </div>
     <div class="passo">
       <div class="espr">def mean(xs: List[Double]): <mark class="ora">Option[Double]</mark> = xs match
   case Nil => <mark class="ok">None</mark>
   case _   => <mark class="ok">Some(xs.sum / xs.length)</mark></div>
-      <p class="nota">{{s|s026|}}</p>
+      <p class="nota">{{s|s027|}}</p>
     </div>
   </figure>
-  <p>{{s|s027|}}</p>
-  <figure class="scena" data-scena="parziale" data-titolo="{{a|s028|}}"></figure>
+  <p>{{s|s028|}}</p>
+  <figure class="scena" data-scena="parziale" data-titolo="{{a|s029|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s029|}}</h2>
+  <h2>{{s|s030|}}</h2>
   <pre class="cod" data-lang="scala">enum Option[+A]:
   case Some(get: A)
   case None</pre>
-  <p>{{s|s030|}}</p>
   <p>{{s|s031|}}</p>
-  <figure class="scena" data-scena="optionadt" data-titolo="{{a|s032|}}"></figure>
+  <p>{{s|s032|}}</p>
+  <figure class="scena" data-scena="optionadt" data-titolo="{{a|s033|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s033|}}</h2>
-  <p>{{s|s034|}}</p>
-  <figure class="codice" data-titolo="{{a|s035|}}">
+  <h2>{{s|s034|}}</h2>
+  <p>{{s|s035|}}</p>
+  <figure class="codice" data-titolo="{{a|s036|}}">
 <pre data-lang="scala">enum Option[+A]:
   case Some(get: A)
   case None
@@ -180,80 +180,80 @@ window.SCENE = window.SCENE || {};
     case None => default
     case Some(a) => a</pre>
     <ol class="spiega">
-      <li data-righe="5" data-segna="this match@dato"><p>{{s|s036|}}</p></li>
-      <li data-righe="5-7" data-segna="f: A => B@ora|Some(f(a))@ok"><p>{{s|s037|}}</p></li>
-      <li data-righe="6,10" data-segna="None => None*@no"><p>{{s|s038|}}</p></li>
-      <li data-righe="9-11" data-segna="f: A => Option[B]@ora|=> f(a)@ok"><p>{{s|s039|}}</p></li>
-      <li data-righe="13-15" data-segna="if p(a) then this else None@ok|case _ => None@no"><p>{{s|s040|}}</p></li>
-      <li data-righe="17" data-segna="[B &gt;: A]@due|default: => B@dato"><p>{{s|s041|}}</p></li>
-      <li data-righe="18-19" data-segna="default@dato|=> a@ok"><p>{{s|s042|}}</p></li>
+      <li data-righe="5" data-segna="this match@dato"><p>{{s|s037|}}</p></li>
+      <li data-righe="5-7" data-segna="f: A => B@ora|Some(f(a))@ok"><p>{{s|s038|}}</p></li>
+      <li data-righe="6,10" data-segna="None => None*@no"><p>{{s|s039|}}</p></li>
+      <li data-righe="9-11" data-segna="f: A => Option[B]@ora|=> f(a)@ok"><p>{{s|s040|}}</p></li>
+      <li data-righe="13-15" data-segna="if p(a) then this else None@ok|case _ => None@no"><p>{{s|s041|}}</p></li>
+      <li data-righe="17" data-segna="[B &gt;: A]@due|default: => B@dato"><p>{{s|s042|}}</p></li>
+      <li data-righe="18-19" data-segna="default@dato|=> a@ok"><p>{{s|s043|}}</p></li>
     </ol>
   </figure>
 
-  <figure class="passi" data-titolo="{{a|s043|}}">
+  <figure class="passi" data-titolo="{{a|s044|}}">
     <div class="passo">
       <div class="espr">def map[B](f: A => <mark class="dato">B</mark>): Option[B]
   case Some(a) => ???</div>
-      <p class="nota">{{s|s044|}}</p>
+      <p class="nota">{{s|s045|}}</p>
     </div>
     <div class="passo">
       <div class="espr">  case Some(a) => <mark class="ok">Some(</mark>f(a)<mark class="ok">)</mark></div>
-      <p class="nota">{{s|s045|}}</p>
+      <p class="nota">{{s|s046|}}</p>
     </div>
     <div class="passo">
       <div class="espr">def flatMap[B](f: A => <mark class="due">Option[B]</mark>): Option[B]
   case Some(a) => f(a)</div>
-      <p class="nota">{{s|s046|}}</p>
+      <p class="nota">{{s|s047|}}</p>
     </div>
     <div class="passo">
       <div class="espr">  case Some(a) => <mark class="no">Some(f(a))</mark>     <span class="mano">// Option[Option[B]]</span>
 Found:    Option[B]
 Required: B</div>
-      <p class="nota">{{s|s047|}}</p>
+      <p class="nota">{{s|s048|}}</p>
     </div>
   </figure>
 
-  <figure class="passi" data-titolo="{{a|s048|}}">
+  <figure class="passi" data-titolo="{{a|s049|}}">
     <div class="passo">
       <div class="espr">val o: Option[Int] = None
 o.getOrElse { println("valutato!"); 42 }</div>
-      <p class="nota">{{s|s049|}}</p>
+      <p class="nota">{{s|s050|}}</p>
     </div>
     <div class="passo">
       <div class="espr"><mark class="ora">valutato!</mark>
 <mark class="ok">42</mark></div>
-      <p class="nota">{{s|s050|}}</p>
+      <p class="nota">{{s|s051|}}</p>
     </div>
     <div class="passo">
       <div class="espr">Some(7).getOrElse { println("valutato!"); 42 }
 <mark class="ok">7</mark>          <span class="mano">// niente stampa</span></div>
-      <p class="nota">{{s|s051|}}</p>
+      <p class="nota">{{s|s052|}}</p>
     </div>
   </figure>
-  <figure class="scena" data-scena="api" data-titolo="{{a|s052|}}"></figure>
+  <figure class="scena" data-scena="api" data-titolo="{{a|s053|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s053|}}</h2>
-  <p>{{s|s054|}}</p>
-  <figure class="scena" data-scena="catena" data-titolo="{{a|s055|}}"></figure>
+  <h2>{{s|s054|}}</h2>
+  <p>{{s|s055|}}</p>
+  <figure class="scena" data-scena="catena" data-titolo="{{a|s056|}}"></figure>
   <div class="tab-wrap"><table class="tab">
-    <thead><tr><th>{{s|s056|}}</th><th>{{s|s057|}}</th><th>{{s|s058|}}</th></tr></thead>
+    <thead><tr><th>{{s|s057|}}</th><th>{{s|s058|}}</th><th>{{s|s059|}}</th></tr></thead>
     <tbody>
-      <tr><td>{{s|s059|}}</td><td>{{s|s060|}}</td><td>{{s|s061|}}</td></tr>
-      <tr><td>{{s|s062|}}</td><td>{{s|s063|}}</td><td>{{s|s064|}}</td></tr>
-      <tr><td>{{s|s065|}}</td><td>{{s|s066|}}</td><td>{{s|s067|}}</td></tr>
-      <tr><td>{{s|s068|}}</td><td>—</td><td>{{s|s069|}}</td></tr>
+      <tr><td>{{s|s060|}}</td><td>{{s|s061|}}</td><td>{{s|s062|}}</td></tr>
+      <tr><td>{{s|s063|}}</td><td>{{s|s064|}}</td><td>{{s|s065|}}</td></tr>
+      <tr><td>{{s|s066|}}</td><td>{{s|s067|}}</td><td>{{s|s068|}}</td></tr>
+      <tr><td>{{s|s069|}}</td><td>—</td><td>{{s|s070|}}</td></tr>
     </tbody>
   </table></div>
-  <div class="box idea" data-tit="{{a|s070|}}">
-    <p>{{s|s071|}}</p>
+  <div class="box idea" data-tit="{{a|s071|}}">
+    <p>{{s|s072|}}</p>
   </div>
 </section>
 
 <section>
-  <h2>{{s|s072|}}</h2>
-  <p>{{s|s073|}}</p>
+  <h2>{{s|s073|}}</h2>
+  <p>{{s|s074|}}</p>
   <pre class="cod" data-lang="scala">enum Either[+E, +A]:
   case Left(value: E)    // errore
   case Right(value: A)   // risultato corretto ("right" = giusto)
@@ -261,16 +261,16 @@ o.getOrElse { println("valutato!"); 42 }</div>
 def mean(xs: List[Double]): Either[String, Double] =
   if xs.isEmpty then Left("lista vuota")
   else Right(xs.sum / xs.length)</pre>
-  <figure class="scena" data-scena="either" data-titolo="{{a|s074|}}"></figure>
+  <figure class="scena" data-scena="either" data-titolo="{{a|s075|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s075|}}</h2>
-  <p>{{s|s076|}}</p>
+  <h2>{{s|s076|}}</h2>
+  <p>{{s|s077|}}</p>
 </section>
 
 <section>
-  <h2>{{s|s077|}}</h2>
+  <h2>{{s|s078|}}</h2>
   <div class="errori">
     <div class="errore">
       <pre data-lang="scala">def filter(p: A => Boolean): Option[A] = this match
@@ -280,10 +280,10 @@ def mean(xs: List[Double]): Either[String, Double] =
       <pre class="msg">match may not be exhaustive.
 
 It would fail on pattern case: Option.Some(_)</pre>
-      <div class="fix">Il compilatore non sa che <code>p(a)</code> e <code>!p(a)</code> coprono tutto. Con <code>-Werror</code> è un errore. Metti l'ultimo caso senza guardia: <code>case _ => None</code>.</div>
+      <div class="fix">{{s|s079|}}</div>
     </div>
   </div>
-  <figure class="scena" data-scena="erroriopt" data-titolo="{{a|s078|}}"></figure>
+  <figure class="scena" data-scena="erroriopt" data-titolo="{{a|s080|}}"></figure>
 </section>
 
 </main>

@@ -178,48 +178,48 @@ window.SCENE = window.SCENE || {};
   <p>{{s|s026|}}</p>
   <figure class="passi" data-titolo="{{a|s027|}}">
     <div class="passo"><div class="espr">modello lineare: riga i = [<mark class="dato">1, xᵢ</mark>]</div><p class="nota">{{s|s028|}}</p></div>
-    <div class="passo"><div class="espr">con il kernel: riga i = <mark class="ora">φ(xᵢ)</mark> = [<mark class="ora">1, xᵢ, xᵢ²</mark>]</div><p class="nota">{{s|s029|}}</p></div>
-    <div class="passo"><div class="espr"><mark class="ora">Φ</mark> w ≈ y   ⇒   w = <mark class="ok">Φ⁺ y</mark></div><p class="nota">{{s|s030|}}</p></div>
-    <div class="passo"><div class="espr">numero di feature = numero di parametri = <mark class="no">punti minimi</mark></div><p class="nota">{{s|s031|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s029|}}</div><p class="nota">{{s|s030|}}</p></div>
+    <div class="passo"><div class="espr"><mark class="ora">Φ</mark> w ≈ y   ⇒   w = <mark class="ok">Φ⁺ y</mark></div><p class="nota">{{s|s031|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s032|}}</div><p class="nota">{{s|s033|}}</p></div>
   </figure>
   <div class="tab-wrap"><table class="tab">
-    <thead><tr><th>{{s|s032|}}</th><th>{{s|s033|}}</th><th>{{s|s034|}}</th><th>{{s|s035|}}</th></tr></thead>
+    <thead><tr><th>{{s|s034|}}</th><th>{{s|s035|}}</th><th>{{s|s036|}}</th><th>{{s|s037|}}</th></tr></thead>
     <tbody>
-      <tr><td>x (1D)</td><td>{{s|s036|}}</td><td>[1, x, x²]</td><td>{{s|s037|}}</td></tr>
-      <tr><td>x (1D)</td><td>{{s|s038|}}</td><td>[1, x, …, xᵈ]</td><td>{{s|s039|}}</td></tr>
-      <tr><td>(x, y) (2D)</td><td>{{s|s040|}}</td><td>{{s|s041|}}</td><td>{{s|s042|}}</td></tr>
-      <tr><td>{{s|s043|}}</td><td>{{s|s044|}}</td><td>{{s|s045|}}</td><td>{{s|s046|}}</td></tr>
-      <tr><td>(x, y)</td><td>{{s|s047|}}</td><td>{{s|s048|}}</td><td>{{s|s049|}}</td></tr>
+      <tr><td>x (1D)</td><td>{{s|s038|}}</td><td>[1, x, x²]</td><td>{{s|s039|}}</td></tr>
+      <tr><td>x (1D)</td><td>{{s|s040|}}</td><td>[1, x, …, xᵈ]</td><td>{{s|s041|}}</td></tr>
+      <tr><td>(x, y) (2D)</td><td>{{s|s042|}}</td><td>{{s|s043|}}</td><td>{{s|s044|}}</td></tr>
+      <tr><td>{{s|s045|}}</td><td>{{s|s046|}}</td><td>{{s|s047|}}</td><td>{{s|s048|}}</td></tr>
+      <tr><td>(x, y)</td><td>{{s|s049|}}</td><td>{{s|s050|}}</td><td>{{s|s051|}}</td></tr>
     </tbody>
   </table></div>
-  <figure class="scena" data-scena="phimat" data-titolo="{{a|s050|}}"></figure>
+  <figure class="scena" data-scena="phimat" data-titolo="{{a|s052|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s051|}}</h2>
-  <p>{{s|s052|}}</p>
-  <p>{{s|s053|}}</p>
-  <div class="box attenzione" data-tit="{{a|s054|}}">
-    <p>{{s|s055|}}</p>
+  <h2>{{s|s053|}}</h2>
+  <p>{{s|s054|}}</p>
+  <p>{{s|s055|}}</p>
+  <div class="box attenzione" data-tit="{{a|s056|}}">
+    <p>{{s|s057|}}</p>
   </div>
-  <figure class="scena" data-scena="quad2d" data-titolo="{{a|s056|}}"></figure>
+  <figure class="scena" data-scena="quad2d" data-titolo="{{a|s058|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s057|}}</h2>
-  <p>{{s|s058|}}</p>
-  <p>{{s|s059|}}</p>
-  <figure class="scena" data-scena="seni" data-titolo="{{a|s060|}}"></figure>
+  <h2>{{s|s059|}}</h2>
+  <p>{{s|s060|}}</p>
+  <p>{{s|s061|}}</p>
+  <figure class="scena" data-scena="seni" data-titolo="{{a|s062|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s061|}}</h2>
-  <p>{{s|s062|}}</p>
-  <p>{{s|s063|}}</p>
-  <div class="box esame" data-tit="{{a|s064|}}">
-    <p>{{s|s065|}}</p>
+  <h2>{{s|s063|}}</h2>
+  <p>{{s|s064|}}</p>
+  <p>{{s|s065|}}</p>
+  <div class="box esame" data-tit="{{a|s066|}}">
+    <p>{{s|s067|}}</p>
   </div>
-  <figure class="scena" data-scena="prezzo" data-titolo="{{a|s066|}}"></figure>
+  <figure class="scena" data-scena="prezzo" data-titolo="{{a|s068|}}"></figure>
 </section>
 
 </main>

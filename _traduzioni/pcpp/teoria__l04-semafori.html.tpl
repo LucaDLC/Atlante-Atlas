@@ -226,33 +226,33 @@ System.out.println(shared_array[(index + 1) % parties]);</pre>
   </div>
   <figure class="passi" data-titolo="{{a|s066|}}" data-legenda="{{a|s067|}}">
     <div class="passo"><div class="espr">new CyclicBarrier(<mark class="dato">N</mark> + <mark class="due">1</mark>)</div><p class="nota">{{s|s068|}}</p></div>
-    <div class="passo"><div class="espr"><mark class="dato">worker</mark>: await()  → N / N+1, tutti bloccati</div><p class="nota">{{s|s069|}}</p></div>
-    <div class="passo"><div class="espr"><mark class="due">main</mark>: await()    → N+1 / N+1  → <mark class="ok">aperta</mark>, reset a 0</div><p class="nota">{{s|s070|}}</p></div>
-    <div class="passo"><div class="espr"><mark class="dato">worker</mark>: lavorano, poi await()  → uno alla volta, bloccati</div><p class="nota">{{s|s071|}}</p></div>
-    <div class="passo"><div class="espr"><mark class="due">main</mark>: secondo await()  → quando arrivano tutti: <mark class="ok">aperta</mark></div><p class="nota">{{s|s072|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s069|}}</div><p class="nota">{{s|s070|}}</p></div>
+    <div class="passo"><div class="espr"><mark class="due">main</mark>: await()    → N+1 / N+1  → <mark class="ok">aperta</mark>, reset a 0</div><p class="nota">{{s|s071|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s072|}}</div><p class="nota">{{s|s073|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s074|}}</div><p class="nota">{{s|s075|}}</p></div>
   </figure>
-  <div class="box domanda-tua" data-tit="{{a|s073|}}">
-    <p>{{s|s074|}}</p>
-    <p>{{s|s075|}}</p>
+  <div class="box domanda-tua" data-tit="{{a|s076|}}">
+    <p>{{s|s077|}}</p>
+    <p>{{s|s078|}}</p>
   </div>
 </section>
 
 <section>
-  <h2>{{s|s076|}}</h2>
+  <h2>{{s|s079|}}</h2>
   <ul>
-    <li>{{s|s077|}}</li>
-    <li>{{s|s078|}}</li>
-    <li>{{s|s079|}}</li>
     <li>{{s|s080|}}</li>
+    <li>{{s|s081|}}</li>
+    <li>{{s|s082|}}</li>
+    <li>{{s|s083|}}</li>
   </ul>
-  <p>{{s|s081|}}</p>
-  <figure class="scena" data-scena="buffer" data-titolo="{{a|s082|}}"></figure>
+  <p>{{s|s084|}}</p>
+  <figure class="scena" data-scena="buffer" data-titolo="{{a|s085|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s083|}}</h2>
-  <p>{{s|s084|}}</p>
-  <figure class="codice" data-titolo="{{a|s085|}}">
+  <h2>{{s|s086|}}</h2>
+  <p>{{s|s087|}}</p>
+  <figure class="codice" data-titolo="{{a|s088|}}">
 <pre data-lang="java">public class BoundedBuffer&lt;T&gt; implements BoundedBufferInteface&lt;T&gt; {
     private final LinkedList&lt;T&gt; queue = new LinkedList&lt;&gt;();
     private final Semaphore items = new Semaphore(0);   // elementi da prendere
@@ -280,48 +280,48 @@ System.out.println(shared_array[(index + 1) % parties]);</pre>
     }
 }</pre>
     <ol class="spiega">
-      <li data-righe="1" data-segna="implements BoundedBufferInteface&lt;T&gt;@dato"><p>{{s|s086|}}</p></li>
-      <li data-righe="2" data-segna="LinkedList&lt;T&gt;@dato"><p>{{s|s087|}}</p></li>
-      <li data-righe="3-5" data-segna="items@ok|spaces@due|mutex@ora"><p>{{s|s088|}}</p></li>
-      <li data-righe="7-9" data-segna="new Semaphore(capacity)@due"><p>{{s|s089|}}</p></li>
-      <li data-righe="11-12" data-segna="spaces.acquire();@due"><p>{{s|s090|}}</p></li>
-      <li data-righe="13-14" data-segna="mutex.acquire();@ora|queue.addLast(elem);@dato|mutex.release();@ora"><p>{{s|s091|}}</p></li>
-      <li data-righe="15" data-segna="items.release();@ok"><p>{{s|s092|}}</p></li>
-      <li data-righe="18-19" data-segna="items.acquire();@ok"><p>{{s|s093|}}</p></li>
-      <li data-righe="21-22" data-segna="queue.removeFirst()@dato"><p>{{s|s094|}}</p></li>
-      <li data-righe="23-24" data-segna="spaces.release();@due"><p>{{s|s095|}}</p></li>
-      <li data-righe="12-13" data-segna="spaces.acquire();@due|mutex.acquire();@ora"><p>{{s|s096|}}</p></li>
+      <li data-righe="1" data-segna="implements BoundedBufferInteface&lt;T&gt;@dato"><p>{{s|s089|}}</p></li>
+      <li data-righe="2" data-segna="LinkedList&lt;T&gt;@dato"><p>{{s|s090|}}</p></li>
+      <li data-righe="3-5" data-segna="items@ok|spaces@due|mutex@ora"><p>{{s|s091|}}</p></li>
+      <li data-righe="7-9" data-segna="new Semaphore(capacity)@due"><p>{{s|s092|}}</p></li>
+      <li data-righe="11-12" data-segna="spaces.acquire();@due"><p>{{s|s093|}}</p></li>
+      <li data-righe="13-14" data-segna="mutex.acquire();@ora|queue.addLast(elem);@dato|mutex.release();@ora"><p>{{s|s094|}}</p></li>
+      <li data-righe="15" data-segna="items.release();@ok"><p>{{s|s095|}}</p></li>
+      <li data-righe="18-19" data-segna="items.acquire();@ok"><p>{{s|s096|}}</p></li>
+      <li data-righe="21-22" data-segna="queue.removeFirst()@dato"><p>{{s|s097|}}</p></li>
+      <li data-righe="23-24" data-segna="spaces.release();@due"><p>{{s|s098|}}</p></li>
+      <li data-righe="12-13" data-segna="spaces.acquire();@due|mutex.acquire();@ora"><p>{{s|s099|}}</p></li>
     </ol>
   </figure>
 
-  <h3>{{s|s097|}}</h3>
-  <figure class="passi" data-titolo="{{a|s098|}}">
-    <div class="passo"><div class="espr">1. <mark class="dato">class state</mark> = { queue, items, spaces, mutex }</div><p class="nota">{{s|s099|}}</p></div>
-    <div class="passo"><div class="espr">2. <mark class="dato">escaping</mark>: tutti private, nessun metodo restituisce queue</div><p class="nota">{{s|s100|}}</p></div>
-    <div class="passo"><div class="espr">3. <mark class="ora">safe publication</mark>: tutti i campi sono final</div><p class="nota">{{s|s101|}}</p></div>
-    <div class="passo"><div class="espr">4. <mark class="ok">immutability</mark>: i riferimenti non cambiano; i semafori sono classi thread-safe della libreria</div><p class="nota">{{s|s102|}}</p></div>
-    <div class="passo"><div class="espr">5. <mark class="due">mutual exclusion</mark>: ogni accesso a queue sta tra mutex.acquire() e mutex.release()</div><p class="nota">{{s|s103|}}</p></div>
+  <h3>{{s|s100|}}</h3>
+  <figure class="passi" data-titolo="{{a|s101|}}">
+    <div class="passo"><div class="espr">1. <mark class="dato">class state</mark> = { queue, items, spaces, mutex }</div><p class="nota">{{s|s102|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s103|}}</div><p class="nota">{{s|s104|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s105|}}</div><p class="nota">{{s|s106|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s107|}}</div><p class="nota">{{s|s108|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s109|}}</div><p class="nota">{{s|s110|}}</p></div>
   </figure>
-  <div class="box inglese" data-tit="{{a|s104|}}">
-    <p>{{s|s105|}}</p>
+  <div class="box inglese" data-tit="{{a|s111|}}">
+    <p>{{s|s112|}}</p>
   </div>
 
-  <h3>{{s|s106|}}</h3>
-  <p>{{s|s107|}}</p>
+  <h3>{{s|s113|}}</h3>
+  <p>{{s|s114|}}</p>
 
-  <h3>{{s|s108|}}</h3>
+  <h3>{{s|s115|}}</h3>
   <ul>
-    <li>{{s|s109|}}</li>
-    <li>{{s|s110|}}</li>
-    <li>{{s|s111|}}</li>
+    <li>{{s|s116|}}</li>
+    <li>{{s|s117|}}</li>
+    <li>{{s|s118|}}</li>
   </ul>
-  <figure class="scena" data-scena="buffer41" data-titolo="{{a|s112|}}"></figure>
+  <figure class="scena" data-scena="buffer41" data-titolo="{{a|s119|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s113|}}</h2>
-  <p>{{s|s114|}}</p>
-  <figure class="codice" data-titolo="{{a|s115|}}">
+  <h2>{{s|s120|}}</h2>
+  <p>{{s|s121|}}</p>
+  <figure class="codice" data-titolo="{{a|s122|}}">
 <pre data-lang="java">class MySemaphore {
     private int permits;                                  // protetto da lock
     private final Lock lock = new ReentrantLock();
@@ -349,14 +349,14 @@ System.out.println(shared_array[(index + 1) % parties]);</pre>
     }
 }</pre>
     <ol class="spiega">
-      <li data-righe="2-4" data-segna="permits@dato|positive@ok"><p>{{s|s116|}}</p></li>
-      <li data-righe="6-9" data-segna="this.permits = permits;@dato"><p>{{s|s117|}}</p></li>
-      <li data-righe="14" data-segna="while (permits == 0)@no|positive.await()@ok"><p>{{s|s118|}}</p></li>
-      <li data-righe="15" data-segna="permits--;@ora"><p>{{s|s119|}}</p></li>
-      <li data-righe="22-23" data-segna="permits++;@ora|positive.signal();@ok"><p>{{s|s120|}}</p></li>
+      <li data-righe="2-4" data-segna="permits@dato|positive@ok"><p>{{s|s123|}}</p></li>
+      <li data-righe="6-9" data-segna="this.permits = permits;@dato"><p>{{s|s124|}}</p></li>
+      <li data-righe="14" data-segna="while (permits == 0)@no|positive.await()@ok"><p>{{s|s125|}}</p></li>
+      <li data-righe="15" data-segna="permits--;@ora"><p>{{s|s126|}}</p></li>
+      <li data-righe="22-23" data-segna="permits++;@ora|positive.signal();@ok"><p>{{s|s127|}}</p></li>
     </ol>
   </figure>
-  <figure class="codice" data-titolo="{{a|s121|}}">
+  <figure class="codice" data-titolo="{{a|s128|}}">
 <pre data-lang="java">class MyBarrier {
     private final int parties;
     private int waiting = 0;                              // protetto da mutex
@@ -379,14 +379,14 @@ System.out.println(shared_array[(index + 1) % parties]);</pre>
     }
 }</pre>
     <ol class="spiega">
-      <li data-righe="3-5" data-segna="waiting@dato|mutex@ora|gate@ok"><p>{{s|s122|}}</p></li>
-      <li data-righe="10-11" data-segna="mutex.acquire();@ora|waiting++;@dato"><p>{{s|s123|}}</p></li>
-      <li data-righe="12-14" data-segna="mutex.release();@ora|gate.acquire();@ok"><p>{{s|s124|}}</p></li>
-      <li data-righe="16-17" data-segna="gate.release()@ok"><p>{{s|s125|}}</p></li>
-      <li data-righe="13-14" data-segna="mutex.release();@ora|gate.acquire();@ok"><p>{{s|s126|}}</p></li>
+      <li data-righe="3-5" data-segna="waiting@dato|mutex@ora|gate@ok"><p>{{s|s129|}}</p></li>
+      <li data-righe="10-11" data-segna="mutex.acquire();@ora|waiting++;@dato"><p>{{s|s130|}}</p></li>
+      <li data-righe="12-14" data-segna="mutex.release();@ora|gate.acquire();@ok"><p>{{s|s131|}}</p></li>
+      <li data-righe="16-17" data-segna="gate.release()@ok"><p>{{s|s132|}}</p></li>
+      <li data-righe="13-14" data-segna="mutex.release();@ora|gate.acquire();@ok"><p>{{s|s133|}}</p></li>
     </ol>
   </figure>
-  <figure class="scena" data-scena="mysem" data-titolo="{{a|s127|}}"></figure>
+  <figure class="scena" data-scena="mysem" data-titolo="{{a|s134|}}"></figure>
 </section>
 
 </main>

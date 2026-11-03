@@ -115,60 +115,60 @@ window.SCENE = window.SCENE || {};
   <figure class="scena" data-scena="boxplot" data-titolo="{{a|s038|}}"></figure>
   <p class="piccolo">{{s|s039|}}</p>
   <figure class="passi" data-titolo="{{a|s040|}}">
-    <div class="passo"><div class="espr">la scatola va da <mark class="dato">Q1</mark> a <mark class="dato">Q3</mark>, la riga dentro è la <mark class="ok">mediana</mark></div><p class="nota">{{s|s041|}}</p></div>
-    <div class="passo"><div class="espr">i baffi arrivano fino all'ultimo dato entro <mark class="ora">1.5 · IQR</mark> dalla scatola</div><p class="nota">{{s|s042|}}</p></div>
-    <div class="passo"><div class="espr">scatola lunga = dati <mark class="due">variabili</mark>;  mediana non al centro = <mark class="due">asimmetria</mark></div><p class="nota">{{s|s043|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s041|}}</div><p class="nota">{{s|s042|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s043|}}</div><p class="nota">{{s|s044|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s045|}}</div><p class="nota">{{s|s046|}}</p></div>
   </figure>
 </section>
 
 <section>
-  <h2>{{s|s044|}}</h2>
-  <p>{{s|s045|}}</p>
-  <figure class="passi" data-titolo="{{a|s046|}}">
-    <div class="passo"><div class="espr">media degli errori (MSE)</div><p class="nota">{{s|s047|}}</p></div>
-    <div class="passo"><div class="espr">varianza degli errori e dei coefficienti</div><p class="nota">{{s|s048|}}</p></div>
-    <div class="passo"><div class="espr">covarianza e correlazione tra i coefficienti</div><p class="nota">{{s|s049|}}</p></div>
+  <h2>{{s|s047|}}</h2>
+  <p>{{s|s048|}}</p>
+  <figure class="passi" data-titolo="{{a|s049|}}">
+    <div class="passo"><div class="espr">{{s|s050|}}</div><p class="nota">{{s|s051|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s052|}}</div><p class="nota">{{s|s053|}}</p></div>
+    <div class="passo"><div class="espr">covarianza e correlazione tra i coefficienti</div><p class="nota">{{s|s054|}}</p></div>
   </figure>
   <div class="tab-wrap"><table class="tab">
-    <thead><tr><th>{{s|s050|}}</th><th>{{s|s051|}}</th><th>{{s|s052|}}</th></tr></thead>
+    <thead><tr><th>{{s|s055|}}</th><th>{{s|s056|}}</th><th>{{s|s057|}}</th></tr></thead>
     <tbody>
-      <tr><td>{{s|s053|}}</td><td>1.09, −2.14, −0.05</td><td>1.96</td></tr>
-      <tr><td>{{s|s054|}}</td><td>1.03, −4.95, <b>24.1</b></td><td>34.0</td></tr>
-      <tr><td>{{s|s055|}}</td><td>0.94, −8.83, <b>77.6</b></td><td>63.6</td></tr>
-      <tr><td>{{s|s056|}}</td><td>1.16, −2.24, −2.28</td><td>3.39</td></tr>
-      <tr><td>{{s|s057|}}</td><td>1.34, −2.50, −8.00</td><td>7.05</td></tr>
+      <tr><td>{{s|s058|}}</td><td>1.09, −2.14, −0.05</td><td>1.96</td></tr>
+      <tr><td>{{s|s059|}}</td><td>1.03, −4.95, <b>24.1</b></td><td>34.0</td></tr>
+      <tr><td>{{s|s060|}}</td><td>0.94, −8.83, <b>77.6</b></td><td>63.6</td></tr>
+      <tr><td>{{s|s061|}}</td><td>1.16, −2.24, −2.28</td><td>3.39</td></tr>
+      <tr><td>{{s|s062|}}</td><td>1.34, −2.50, −8.00</td><td>7.05</td></tr>
     </tbody>
   </table></div>
-  <p class="piccolo">{{s|s058|}}</p>
-  <figure class="passi" data-titolo="{{a|s059|}}">
-    <div class="passo"><div class="espr">outlier: +10 · varianza = <mark class="no">+500</mark>, sempre verso l'alto</div><p class="nota">{{s|s060|}}</p></div>
-    <div class="passo"><div class="espr">rumore gaussiano: media 0, più largo</div><p class="nota">{{s|s061|}}</p></div>
-    <div class="passo"><div class="espr">la curva media non va comunque a (1, −2, 3)</div><p class="nota">{{s|s062|}}</p></div>
+  <p class="piccolo">{{s|s063|}}</p>
+  <figure class="passi" data-titolo="{{a|s064|}}">
+    <div class="passo"><div class="espr">outlier: +10 · varianza = <mark class="no">+500</mark>, sempre verso l'alto</div><p class="nota">{{s|s065|}}</p></div>
+    <div class="passo"><div class="espr">rumore gaussiano: media 0, più largo</div><p class="nota">{{s|s066|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s067|}}</div><p class="nota">{{s|s068|}}</p></div>
   </figure>
-  <figure class="scena" data-scena="centovolte" data-titolo="{{a|s063|}}"></figure>
+  <figure class="scena" data-scena="centovolte" data-titolo="{{a|s069|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s064|}}</h2>
+  <h2>{{s|s070|}}</h2>
   <div class="tab-wrap"><table class="tab">
-    <thead><tr><th>{{s|s065|}}</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th></tr></thead>
+    <thead><tr><th>{{s|s071|}}</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th></tr></thead>
     <tbody>
-      <tr><td>{{s|s066|}}</td><td>74.7</td><td>71.0</td><td>67.2</td><td>62.9</td><td>59.9</td></tr>
-      <tr><td>{{s|s067|}}</td><td><b>102.0</b></td><td>111.3</td><td>132.4</td><td>342.2</td><td>561.1</td></tr>
-      <tr><td>{{s|s068|}}</td><td><b>100.0</b></td><td>107.0</td><td>121.2</td><td>136.3</td><td>147.9</td></tr>
+      <tr><td>{{s|s072|}}</td><td>74.7</td><td>71.0</td><td>67.2</td><td>62.9</td><td>59.9</td></tr>
+      <tr><td>{{s|s073|}}</td><td><b>102.0</b></td><td>111.3</td><td>132.4</td><td>342.2</td><td>561.1</td></tr>
+      <tr><td>{{s|s074|}}</td><td><b>100.0</b></td><td>107.0</td><td>121.2</td><td>136.3</td><td>147.9</td></tr>
     </tbody>
   </table></div>
-  <p class="piccolo">{{s|s069|}}</p>
-  <figure class="passi" data-titolo="{{a|s070|}}">
-    <div class="passo"><div class="espr">training <mark class="ok">&lt;</mark> test</div><p class="nota">{{s|s071|}}</p></div>
-    <div class="passo"><div class="espr">varianza del training <mark class="ora">più grande</mark> di quella del test</div><p class="nota">{{s|s072|}}</p></div>
-    <div class="passo"><div class="espr">grado ↑: training ↓, test ↑, e media del test ≫ mediana</div><p class="nota">{{s|s073|}}</p></div>
-    <div class="passo"><div class="espr">coefficienti dei gradi alti ≈ <mark class="ok">0</mark></div><p class="nota">{{s|s074|}}</p></div>
+  <p class="piccolo">{{s|s075|}}</p>
+  <figure class="passi" data-titolo="{{a|s076|}}">
+    <div class="passo"><div class="espr">training <mark class="ok">&lt;</mark> test</div><p class="nota">{{s|s077|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s078|}}</div><p class="nota">{{s|s079|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s080|}}</div><p class="nota">{{s|s081|}}</p></div>
+    <div class="passo"><div class="espr">coefficienti dei gradi alti ≈ <mark class="ok">0</mark></div><p class="nota">{{s|s082|}}</p></div>
   </figure>
-  <div class="box esame" data-tit="{{a|s075|}}">
-    <p>{{s|s076|}}</p>
+  <div class="box esame" data-tit="{{a|s083|}}">
+    <p>{{s|s084|}}</p>
   </div>
-  <figure class="scena" data-scena="traintest100" data-titolo="{{a|s077|}}"></figure>
+  <figure class="scena" data-scena="traintest100" data-titolo="{{a|s085|}}"></figure>
 </section>
 
 </main>

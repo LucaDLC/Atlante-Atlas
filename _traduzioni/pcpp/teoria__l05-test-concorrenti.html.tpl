@@ -114,66 +114,66 @@ window.SCENE = window.SCENE || {};
 <section>
   <h2>{{s|s013|}}</h2>
   <figure class="passi" data-titolo="{{a|s014|}}">
-    <div class="passo"><div class="espr">1. definisci <mark class="ora">la proprietà</mark> in modo preciso</div><p class="nota">{{s|s015|}}</p></div>
-    <div class="passo"><div class="espr">2. un'<mark class="dato">interfaccia</mark> per le classi da testare</div><p class="nota">{{s|s016|}}</p></div>
-    <div class="passo"><div class="espr">3. un setup che <mark class="no">massimizza la contesa</mark></div><p class="nota">{{s|s017|}}</p></div>
-    <div class="passo"><div class="espr">4. <mark class="ok">ripeti</mark>, con parametri diversi</div><p class="nota">{{s|s018|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s015|}}</div><p class="nota">{{s|s016|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s017|}}</div><p class="nota">{{s|s018|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s019|}}</div><p class="nota">{{s|s020|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s021|}}</div><p class="nota">{{s|s022|}}</p></div>
   </figure>
   <div class="tab-wrap"><table class="tab">
-    <thead><tr><th>{{s|s019|}}</th><th>{{s|s020|}}</th></tr></thead>
+    <thead><tr><th>{{s|s023|}}</th><th>{{s|s024|}}</th></tr></thead>
     <tbody>
-      <tr><td>{{s|s021|}}</td><td>{{s|s022|}}</td></tr>
-      <tr><td>{{s|s023|}}</td><td>{{s|s024|}}</td></tr>
       <tr><td>{{s|s025|}}</td><td>{{s|s026|}}</td></tr>
       <tr><td>{{s|s027|}}</td><td>{{s|s028|}}</td></tr>
       <tr><td>{{s|s029|}}</td><td>{{s|s030|}}</td></tr>
       <tr><td>{{s|s031|}}</td><td>{{s|s032|}}</td></tr>
+      <tr><td>{{s|s033|}}</td><td>{{s|s034|}}</td></tr>
+      <tr><td>{{s|s035|}}</td><td>{{s|s036|}}</td></tr>
     </tbody>
   </table></div>
-  <figure class="scena" data-scena="barriera" data-titolo="{{a|s033|}}"></figure>
-  <div class="box attenzione" data-tit="{{a|s034|}}">
-    <p>{{s|s035|}}</p>
-    <p>{{s|s036|}}</p>
+  <figure class="scena" data-scena="barriera" data-titolo="{{a|s037|}}"></figure>
+  <div class="box attenzione" data-tit="{{a|s038|}}">
+    <p>{{s|s039|}}</p>
+    <p>{{s|s040|}}</p>
   </div>
 </section>
 
 <section>
-  <h2>{{s|s037|}}</h2>
-  <p>{{s|s038|}}</p>
+  <h2>{{s|s041|}}</h2>
+  <p>{{s|s042|}}</p>
   <div class="tab-wrap"><table class="tab">
-    <thead><tr><th>{{s|s039|}}</th><th>{{s|s040|}}</th><th>{{s|s041|}}</th></tr></thead>
+    <thead><tr><th>{{s|s043|}}</th><th>{{s|s044|}}</th><th>{{s|s045|}}</th></tr></thead>
     <tbody>
-      <tr><td>{{s|s042|}}</td><td>{{s|s043|}}</td><td>{{s|s044|}}</td></tr>
-      <tr><td>{{s|s045|}}</td><td>0 / 200</td><td>0 / 200</td></tr>
-      <tr><td>{{s|s046|}}</td><td>0 / 200</td><td>0 / 200</td></tr>
+      <tr><td>{{s|s046|}}</td><td>{{s|s047|}}</td><td>{{s|s048|}}</td></tr>
+      <tr><td>{{s|s049|}}</td><td>0 / 200</td><td>0 / 200</td></tr>
+      <tr><td>{{s|s050|}}</td><td>0 / 200</td><td>0 / 200</td></tr>
     </tbody>
   </table></div>
-  <p class="piccolo">{{s|s047|}}</p>
-  <h3>{{s|s048|}}</h3>
-  <p>{{s|s049|}}</p>
-  <figure class="interleaving" data-prog="addset" data-titolo="{{a|s050|}}"></figure>
-  <div class="box regola" data-tit="{{a|s051|}}">
-    <p>{{s|s052|}}</p>
+  <p class="piccolo">{{s|s051|}}</p>
+  <h3>{{s|s052|}}</h3>
+  <p>{{s|s053|}}</p>
+  <figure class="interleaving" data-prog="addset" data-titolo="{{a|s054|}}"></figure>
+  <div class="box regola" data-tit="{{a|s055|}}">
+    <p>{{s|s056|}}</p>
   </div>
-  <figure class="passi" data-titolo="{{a|s053|}}">
-    <div class="passo"><div class="espr">test <mark class="no">fallito</mark>  ⇒  la classe <mark class="no">non è thread-safe</mark></div><p class="nota">{{s|s054|}}</p></div>
-    <div class="passo"><div class="espr">test <mark class="ok">passato</mark>  ⇏  thread-safe</div><p class="nota">{{s|s055|}}</p></div>
+  <figure class="passi" data-titolo="{{a|s057|}}">
+    <div class="passo"><div class="espr">{{s|s058|}}</div><p class="nota">{{s|s059|}}</p></div>
+    <div class="passo"><div class="espr">test <mark class="ok">passato</mark>  ⇏  thread-safe</div><p class="nota">{{s|s060|}}</p></div>
   </figure>
 </section>
 
 <section>
-  <h2>{{s|s056|}}</h2>
-  <figure class="passi" data-titolo="{{a|s057|}}">
-    <div class="passo"><div class="espr">state = 0,  capacity = 2</div><p class="nota">{{s|s058|}}</p></div>
-    <div class="passo"><div class="espr">main: release()  →  state = <mark class="no">−1</mark></div><p class="nota">{{s|s059|}}</p></div>
-    <div class="passo"><div class="espr">t1: acquire() → state = 0;   t2: acquire() → 1;   t3: acquire() → <mark class="no">2</mark></div><p class="nota">{{s|s060|}}</p></div>
-    <div class="passo"><div class="espr"><mark class="no">3 thread</mark> nella sezione critica con capacity = 2</div><p class="nota">{{s|s061|}}</p></div>
+  <h2>{{s|s061|}}</h2>
+  <figure class="passi" data-titolo="{{a|s062|}}">
+    <div class="passo"><div class="espr">state = 0,  capacity = 2</div><p class="nota">{{s|s063|}}</p></div>
+    <div class="passo"><div class="espr">main: release()  →  state = <mark class="no">−1</mark></div><p class="nota">{{s|s064|}}</p></div>
+    <div class="passo"><div class="espr">t1: acquire() → state = 0;   t2: acquire() → 1;   t3: acquire() → <mark class="no">2</mark></div><p class="nota">{{s|s065|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s066|}}</div><p class="nota">{{s|s067|}}</p></div>
   </figure>
-  <figure class="scena" data-scena="sem52" data-titolo="{{a|s062|}}"></figure>
-  <div class="box regola" data-tit="{{a|s063|}}">
-    <p>{{s|s064|}}</p>
+  <figure class="scena" data-scena="sem52" data-titolo="{{a|s068|}}"></figure>
+  <div class="box regola" data-tit="{{a|s069|}}">
+    <p>{{s|s070|}}</p>
   </div>
-  <figure class="codice" data-titolo="{{a|s065|}}">
+  <figure class="codice" data-titolo="{{a|s071|}}">
 <pre data-lang="java">CyclicBarrier barrier = new CyclicBarrier(THREADS_NUMBER + 1);   // 3 thread + main
 AtomicInteger inCriticalSection = new AtomicInteger(0);
 
@@ -194,31 +194,31 @@ public void capacity() {
     catch (InterruptedException | BrokenBarrierException e) { e.printStackTrace(); }
     assertTrue(inCriticalSection.get() &lt;= CAPACITY, "... threads entered the critical section ...");
 }</pre>
-    <div class="intro"><p>{{s|s066|}}</p></div>
+    <div class="intro"><p>{{s|s072|}}</p></div>
     <ol class="spiega">
-      <li data-righe="1" data-segna="THREADS_NUMBER + 1@dato"><p>{{s|s067|}}</p></li>
-      <li data-righe="2" data-segna="AtomicInteger@ok"><p>{{s|s068|}}</p></li>
-      <li data-righe="6" data-segna="semaphore.release();@no"><p>{{s|s069|}}</p></li>
-      <li data-righe="7-8,15" data-segna="new Thread@ora|.start()@ora"><p>{{s|s070|}}</p></li>
-      <li data-righe="10,17" data-segna="barrier.await();#1@ora|barrier.await();#2@dato"><p>{{s|s071|}}</p></li>
-      <li data-righe="11-12" data-segna="semaphore.acquire();@ora|incrementAndGet()@ok"><p>{{s|s072|}}</p></li>
-      <li data-righe="13,17" data-segna="barrier.await();#1@ora|barrier.await();#3@dato"><p>{{s|s073|}}</p></li>
-      <li data-righe="19" data-segna="inCriticalSection.get() &lt;= CAPACITY@no"><p>{{s|s074|}}</p></li>
-      <li data-righe="6,11" data-segna="semaphore.release();@no|semaphore.acquire();@ora"><p>{{s|s075|}}</p></li>
+      <li data-righe="1" data-segna="THREADS_NUMBER + 1@dato"><p>{{s|s073|}}</p></li>
+      <li data-righe="2" data-segna="AtomicInteger@ok"><p>{{s|s074|}}</p></li>
+      <li data-righe="6" data-segna="semaphore.release();@no"><p>{{s|s075|}}</p></li>
+      <li data-righe="7-8,15" data-segna="new Thread@ora|.start()@ora"><p>{{s|s076|}}</p></li>
+      <li data-righe="10,17" data-segna="barrier.await();#1@ora|barrier.await();#2@dato"><p>{{s|s077|}}</p></li>
+      <li data-righe="11-12" data-segna="semaphore.acquire();@ora|incrementAndGet()@ok"><p>{{s|s078|}}</p></li>
+      <li data-righe="13,17" data-segna="barrier.await();#1@ora|barrier.await();#3@dato"><p>{{s|s079|}}</p></li>
+      <li data-righe="19" data-segna="inCriticalSection.get() &lt;= CAPACITY@no"><p>{{s|s080|}}</p></li>
+      <li data-righe="6,11" data-segna="semaphore.release();@no|semaphore.acquire();@ora"><p>{{s|s081|}}</p></li>
     </ol>
   </figure>
-  <div class="box attenzione" data-tit="{{a|s076|}}">
-    <p>{{s|s077|}}</p>
+  <div class="box attenzione" data-tit="{{a|s082|}}">
+    <p>{{s|s083|}}</p>
   </div>
 </section>
 
 <section>
-  <h2>{{s|s078|}}</h2>
-  <p>{{s|s079|}}</p>
-  <div class="box idea" data-tit="{{a|s080|}}">
-    <p>{{s|s081|}}</p>
+  <h2>{{s|s084|}}</h2>
+  <p>{{s|s085|}}</p>
+  <div class="box idea" data-tit="{{a|s086|}}">
+    <p>{{s|s087|}}</p>
   </div>
-  <figure class="scena" data-scena="sommatest" data-titolo="{{a|s082|}}"></figure>
+  <figure class="scena" data-scena="sommatest" data-titolo="{{a|s088|}}"></figure>
 </section>
 
 </main>

@@ -239,42 +239,42 @@ val z = (42, false)           // una coppia</pre>
     <div class="errore">
       <pre data-lang="scala">List(1, 2, 3).map(_ * _)</pre>
       <pre class="msg">Wrong number of parameters, expected: 1</pre>
-      <div class="fix"><code>_ * _</code> è una funzione a <b>due</b> parametri, ma <code>map</code> ne vuole una a uno. Per "moltiplica x per se stesso" serve il nome: <code>map(x => x * x)</code>.</div>
+      <div class="fix">{{s|s060|}}</div>
     </div>
     <div class="errore">
       <pre data-lang="scala">val negative = x => x &lt; 0</pre>
       <pre class="msg">Missing parameter type
 
 I could not infer the type of the parameter x</pre>
-      <div class="fix">Qui non c'è nessuna lista da cui dedurre il tipo di <code>x</code>. Scrivilo: <code>(x: Int) => x &lt; 0</code>.</div>
+      <div class="fix">{{s|s061|}}</div>
     </div>
   </div>
-  <figure class="scena" data-scena="tremodi" data-titolo="{{a|s060|}}"></figure>
+  <figure class="scena" data-scena="tremodi" data-titolo="{{a|s062|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s061|}}</h2>
-  <p>{{s|s062|}}</p>
-  <figure class="passi" data-titolo="{{a|s063|}}">
+  <h2>{{s|s063|}}</h2>
+  <p>{{s|s064|}}</p>
+  <figure class="passi" data-titolo="{{a|s065|}}">
     <div class="passo">
       <div class="espr">def piuDi(<mark class="dato">soglia</mark>: Int): Int => Boolean =
   x => x &gt; <mark class="dato">soglia</mark></div>
-      <p class="nota">{{s|s064|}}</p>
-    </div>
-    <div class="passo">
-      <div class="espr">val grande = piuDi(<mark class="dato">100</mark>)</div>
-      <p class="nota">{{s|s065|}}</p>
-    </div>
-    <div class="passo">
-      <div class="espr">val grande = <mark class="ora">x => x &gt; 100</mark></div>
       <p class="nota">{{s|s066|}}</p>
     </div>
     <div class="passo">
-      <div class="espr">List(50, 150, 300).filter(<mark class="ora">grande</mark>)   →   <mark class="ok">List(150, 300)</mark></div>
+      <div class="espr">val grande = piuDi(<mark class="dato">100</mark>)</div>
       <p class="nota">{{s|s067|}}</p>
     </div>
+    <div class="passo">
+      <div class="espr">val grande = <mark class="ora">x => x &gt; 100</mark></div>
+      <p class="nota">{{s|s068|}}</p>
+    </div>
+    <div class="passo">
+      <div class="espr">List(50, 150, 300).filter(<mark class="ora">grande</mark>)   →   <mark class="ok">List(150, 300)</mark></div>
+      <p class="nota">{{s|s069|}}</p>
+    </div>
   </figure>
-  <figure class="scena" data-scena="fabbrica" data-titolo="{{a|s068|}}"></figure>
+  <figure class="scena" data-scena="fabbrica" data-titolo="{{a|s070|}}"></figure>
 </section>
 
 </main>

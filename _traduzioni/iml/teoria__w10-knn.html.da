@@ -24,75 +24,77 @@
 @@s024 Sådan klassificeres et punkt q
 @@s025 Der er ingen træning og ingen vægte: modellen er selve træningsmængden (<i>memory-based</i>). x er vektoren af features for et punkt, y dets klasse, N hvor mange punkter der er.
 @@s026 q er det nye punkt, xᵢ punkt i i træningen; det andet indeks siger, hvilken feature der menes. Det er den euklidiske afstand, altså normen af q − xᵢ (siden <a href="w02-norme-distanze.html">Normer og afstande</a>). Den beregnes for alle N punkter.
-@@s027 k vælges af den, der bruger metoden: det er en <b>hyperparameter</b>, den læres ikke fra dataene.
-@@s028 Med to klasser og ulige k er uafgjort stemmetal umuligt. Med lige k kan det ske.
-@@s029 Task 1–2: de 20 punkter og de fem spørgsmål
-@@s030 Notebooken giver 10 punkter af klasse A, 10 af klasse B og fem punkter, der skal klassificeres. Task 1 beder kun om at se på dem; Task 2 beder om klassen for hvert Q med k = 2, 3, 5 "på øjemål". Her beregnes afstandene, og man ser, hvor øjet ikke rækker.
-@@s031 Klasse A
-@@s032 Klasse B
-@@s033 Navnene A1…A10 og B1…B10 er dem, notebooken skriver på grafen, i den rækkefølge de står i listerne <code>class_A</code> og <code>class_B</code>. De fem spørgsmål er Q1 = (3, 3), Q2 = (2, 4), Q3 = (5, 2), Q4 = (4, 5), Q5 = (4, 2).
-@@s034 De fem spørgsmål, ét ad gangen
-@@s035 Punkt
-@@s036 A, eller uafgjort 1–1
-@@s037 uafgjort 1–1
-@@s038 Stemmerne er skrevet som "hvor mange A – hvor mange B". Hvor cellen siger "A / B", er resultatet A eller B, afhængigt af hvordan man løser tilfældet med samme afstand, som forklares nedenfor.
-@@s039 Punkter med samme afstand: det, øjet overser
-@@s040 Med heltalskoordinater gentager afstandene sig: fra Q4 ligger tre punkter alle i √2. Hvis den k'te plads kæmpes om af flere punkter i samme afstand, <b>afgør metoden ikke selv</b>: der skal bruges en regel. De mest almindelige: beholde alle punkter med samme afstand (så er der flere end k naboer), vælge efter dataenes rækkefølge eller veje stemmerne med afstanden. I øvelsen er det ærlige at sige, at der er et tilfælde med samme afstand, og at svaret afhænger af, hvordan det løses.
-@@s041 Med <code>KNeighborsClassifier</code> fra scikit-learn 1.9.0 kommer der: for Q4 A med k = 2, 3, 5; for Q5 A med k = 2 og 3, B med k = 5. Den vælger selv blandt punkterne med samme afstand og har ved uafgjort stemmetal givet A: det er en implementeringsdetalje, ikke en regel i metoden.
-@@s042 Sikre punkter og punkter på grænsen
-@@s043 Q1, Q2 og Q3 ligger inde i en gruppe: naboerne er næsten alle af samme klasse, og en ændring af k ændrer ikke svaret. Q4 og Q5 ligger mellem de to grupper, tæt på <b>beslutningsgrænsen</b>: dér kan enhver ændring af k, af afstand eller af valget blandt punkter med samme afstand vende klassen.
-@@s044 Hvordan svaret ændrer sig med k (Task 2)
-@@s045 Notebookens spørgsmål: hvad sker der, når k er meget lille eller meget stor, og hvordan hænger det sammen med overfitting og underfitting?
-@@s046 <b>Lille k</b> (i grænsen 1): ét enkelt punkt afgør. Et punkt, der ligger forkert, på grund af støj eller målefejl, ændrer svaret rundt om sig. Grænsen er takket og følger støjen: <b>overfitting</b>.
-@@s047 <b>Stor k</b>: hvert svar er et gennemsnit over mange punkter. Grænsen bliver glat; de rigtige detaljer går tabt. I grænsen k = N stemmer alle punkter for hvert Q: her 10–10, én klasse overalt, nøjagtighed 0.5: <b>underfitting</b>.
-@@s048 <b>Midt imellem</b> ligger det rigtige k, og det vælges med et valideringssæt (<a href="w07-validazione.html">Validering</a>), fordi k er en hyperparameter.
-@@s049 træningspunkter med fejl
-@@s050 nøjagtighed på træningen
-@@s051 ingen
-@@s052 ingen
-@@s053 alle B
-@@s054 <code>KNeighborsClassifier(n_neighbors=k).fit(X, y).predict(X)</code>. I træningen er hvert punkt også nabo til sig selv (afstand 0): derfor giver k = 1 altid 1.0. En nøjagtighed på 1.0 på træningen siger intet om generalisering.
-@@s055 knn(q, k): stemmerne fra de k naboer (verificeret med notebookens data)
-@@s056 Alle punkterne i en matrix på 20 × 2 og, i samme rækkefølge, deres klasser: 0 for A, 1 for B. Begge dele skal bruges, fordi afstemningen læser et punkts klasse ud fra dets indeks.
-@@s057 <code>X - q</code> trækker q fra hver række i X (broadcasting): det er vektorerne fra q til hvert punkt. <code>norm</code> med <code>axis=1</code> beregner deres længde række for række: 20 afstande.
-@@s058 <code>argsort</code> giver punkternes indekser fra det nærmeste til det fjerneste; <code>[:k]</code> beholder de første k. Med <code>kind="stable"</code> bevares dataenes rækkefølge ved samme afstand, altså A før B: det er denne kodes regel for samme afstand.
-@@s059 <code>y[vicini]</code> er klasserne for de k naboer; <code>np.bincount</code> tæller dem. <code>minlength=2</code> sikrer to pladser, også hvis ingen nabo er B. Resultat for Q4 med k = 3: <code>[2 1]</code>, to A og ét B.
-@@s060 Med denne regel (A før B) giver koden, for k = 2, 3, 5: Q1 [2 0], [2 1], [3 2]; Q2 [2 0], [3 0], [5 0]; Q3 [0 2], [0 3], [0 5]; Q4 [2 0], [2 1], [3 2]; Q5 [1 1], [2 1], [2 3]. Cellerne "A / B" i tabellen er dem, hvor en anden regel ville give et andet resultat.
-@@s061 Task 3: flere dimensioner
-@@s062 Notebooken giver et andet sæt, i fire dimensioner, med ét enkelt punkt, der skal klassificeres, Q = [0, 0, 0, 0]. Afstanden beregnes som før, med fire led under kvadratroden.
-@@s063 Klasse A
-@@s064 Klasse B
-@@s065 Fra det nærmeste til det fjerneste, i fire dimensioner
-@@s066 I dette eksempel gentager ingen afstand sig, så der er ingen punkter med samme afstand.
-@@s067 <b>Hvorfor dimensionen betyder noget</b>: A3 og B3 har samme x₁ og x₂ og adskiller sig kun i x₃. I to dimensioner ville de være det samme punkt, og femtepladsen ville være et tilfælde med samme afstand (A eller B). Den tredje koordinat skiller dem ad og afgør femtepladsen: én feature mere ændrer svaret, selv om den ikke fortæller noget nyttigt om klassen.
-@@s068 Flere features, mindre informative afstande
-@@s069 Hver ekstra koordinat lægger et led til afstanden og kan flytte naboerne. En ubrugelig feature (eller en i en meget større skala end de andre) bringer støj ind i afstanden. Med mange dimensioner bliver afstandene desuden næsten alle ens, og det "nærmeste" er ikke meget nærmere end de andre: se dimensionalitetens forbandelse i <a href="w12-pca.html">PCA</a>.
-@@s070 Task 4: lineær klassifikator mod naboer
-@@s071 Notebookens spørgsmål: hvordan adskiller beslutningsgrænserne sig, og hvordan adskiller de sig i beregningen? På de samme 20 punkter:
-@@s072 En linje, eller naboerne
-@@s073 Lineær klassifikator
-@@s074 k-nearest neighbour
-@@s075 Hvad den lærer
-@@s076 vægtene w: d + 1 tal (d features)
-@@s077 ingenting: den beholder hele træningsmængden, N × d tal
-@@s078 Grænse
-@@s079 kun én, et hyperplan (her en linje)
-@@s080 sat sammen af stykker, følger dataene; ved lille k bøjer den sig omkring enkelte punkter
-@@s081 Træning
-@@s082 ja: mindste kvadrater eller gradientnedstigning, omkostningen betales én gang
-@@s083 ingen (den huskes)
-@@s084 Forudsigelse
-@@s085 ét indre produkt: omkostning proportional med d
-@@s086 afstande fra alle N punkter: omkostning proportional med N · d, plus valget af de k
-@@s087 Featurenes skala
-@@s088 vægten w kompenserer for en anden skala
-@@s089 betyder meget: en feature i stor skala dominerer afstanden
-@@s090 Dataenes form
-@@s091 godt, hvis klasserne kan adskilles af et hyperplan
-@@s092 godt også med grænser af enhver form, hvis der er data nok
-@@s093 På de 20 punkter
-@@s094 19 ud af 20 (0.95), tager fejl på A2
-@@s095 k = 1: 20 ud af 20; k = 5: 19 ud af 20
-@@s096 Linjen er den fra mindste kvadrater på etiketterne ±1, som på siden <a href="w10-classificatore-lineare.html">Lineær klassifikator og logistisk regression</a>. Grænserne for k = 1 og k = 5 er beregnet med scikit-learn på et gitter af 32 × 32 celler.
-@@s097 Til eksamen, på engelsk
-@@s098 "k-nearest neighbour <b>stores the training set</b> and classifies a new point by a <b>majority vote among its k closest training points</b>, using a distance such as the Euclidean one. A small k gives a jagged boundary and overfits; a large k smooths it and can underfit; I choose k on a validation set."
+@@s027 man sorterer afstandene og beholder de <mark class="ora">k</mark> nærmeste punkter
+@@s028 k vælges af den, der bruger metoden: det er en <b>hyperparameter</b>, den læres ikke fra dataene.
+@@s029 klassen for q = den hyppigste blandt de k naboer: <mark class="ok">flertalsafstemning</mark>
+@@s030 Med to klasser og ulige k er uafgjort stemmetal umuligt. Med lige k kan det ske.
+@@s031 Task 1–2: de 20 punkter og de fem spørgsmål
+@@s032 Notebooken giver 10 punkter af klasse A, 10 af klasse B og fem punkter, der skal klassificeres. Task 1 beder kun om at se på dem; Task 2 beder om klassen for hvert Q med k = 2, 3, 5 "på øjemål". Her beregnes afstandene, og man ser, hvor øjet ikke rækker.
+@@s033 Klasse A
+@@s034 Klasse B
+@@s035 Navnene A1…A10 og B1…B10 er dem, notebooken skriver på grafen, i den rækkefølge de står i listerne <code>class_A</code> og <code>class_B</code>. De fem spørgsmål er Q1 = (3, 3), Q2 = (2, 4), Q3 = (5, 2), Q4 = (4, 5), Q5 = (4, 2).
+@@s036 De fem spørgsmål, ét ad gangen
+@@s037 Punkt
+@@s038 A, eller uafgjort 1–1
+@@s039 uafgjort 1–1
+@@s040 Stemmerne er skrevet som "hvor mange A – hvor mange B". Hvor cellen siger "A / B", er resultatet A eller B, afhængigt af hvordan man løser tilfældet med samme afstand, som forklares nedenfor.
+@@s041 Punkter med samme afstand: det, øjet overser
+@@s042 Med heltalskoordinater gentager afstandene sig: fra Q4 ligger tre punkter alle i √2. Hvis den k'te plads kæmpes om af flere punkter i samme afstand, <b>afgør metoden ikke selv</b>: der skal bruges en regel. De mest almindelige: beholde alle punkter med samme afstand (så er der flere end k naboer), vælge efter dataenes rækkefølge eller veje stemmerne med afstanden. I øvelsen er det ærlige at sige, at der er et tilfælde med samme afstand, og at svaret afhænger af, hvordan det løses.
+@@s043 Med <code>KNeighborsClassifier</code> fra scikit-learn 1.9.0 kommer der: for Q4 A med k = 2, 3, 5; for Q5 A med k = 2 og 3, B med k = 5. Den vælger selv blandt punkterne med samme afstand og har ved uafgjort stemmetal givet A: det er en implementeringsdetalje, ikke en regel i metoden.
+@@s044 Sikre punkter og punkter på grænsen
+@@s045 Q1, Q2 og Q3 ligger inde i en gruppe: naboerne er næsten alle af samme klasse, og en ændring af k ændrer ikke svaret. Q4 og Q5 ligger mellem de to grupper, tæt på <b>beslutningsgrænsen</b>: dér kan enhver ændring af k, af afstand eller af valget blandt punkter med samme afstand vende klassen.
+@@s046 Hvordan svaret ændrer sig med k (Task 2)
+@@s047 Notebookens spørgsmål: hvad sker der, når k er meget lille eller meget stor, og hvordan hænger det sammen med overfitting og underfitting?
+@@s048 <b>Lille k</b> (i grænsen 1): ét enkelt punkt afgør. Et punkt, der ligger forkert, på grund af støj eller målefejl, ændrer svaret rundt om sig. Grænsen er takket og følger støjen: <b>overfitting</b>.
+@@s049 <b>Stor k</b>: hvert svar er et gennemsnit over mange punkter. Grænsen bliver glat; de rigtige detaljer går tabt. I grænsen k = N stemmer alle punkter for hvert Q: her 10–10, én klasse overalt, nøjagtighed 0.5: <b>underfitting</b>.
+@@s050 <b>Midt imellem</b> ligger det rigtige k, og det vælges med et valideringssæt (<a href="w07-validazione.html">Validering</a>), fordi k er en hyperparameter.
+@@s051 træningspunkter med fejl
+@@s052 nøjagtighed på træningen
+@@s053 ingen
+@@s054 ingen
+@@s055 alle B
+@@s056 <code>KNeighborsClassifier(n_neighbors=k).fit(X, y).predict(X)</code>. I træningen er hvert punkt også nabo til sig selv (afstand 0): derfor giver k = 1 altid 1.0. En nøjagtighed på 1.0 på træningen siger intet om generalisering.
+@@s057 knn(q, k): stemmerne fra de k naboer (verificeret med notebookens data)
+@@s058 Alle punkterne i en matrix på 20 × 2 og, i samme rækkefølge, deres klasser: 0 for A, 1 for B. Begge dele skal bruges, fordi afstemningen læser et punkts klasse ud fra dets indeks.
+@@s059 <code>X - q</code> trækker q fra hver række i X (broadcasting): det er vektorerne fra q til hvert punkt. <code>norm</code> med <code>axis=1</code> beregner deres længde række for række: 20 afstande.
+@@s060 <code>argsort</code> giver punkternes indekser fra det nærmeste til det fjerneste; <code>[:k]</code> beholder de første k. Med <code>kind="stable"</code> bevares dataenes rækkefølge ved samme afstand, altså A før B: det er denne kodes regel for samme afstand.
+@@s061 <code>y[vicini]</code> er klasserne for de k naboer; <code>np.bincount</code> tæller dem. <code>minlength=2</code> sikrer to pladser, også hvis ingen nabo er B. Resultat for Q4 med k = 3: <code>[2 1]</code>, to A og ét B.
+@@s062 Med denne regel (A før B) giver koden, for k = 2, 3, 5: Q1 [2 0], [2 1], [3 2]; Q2 [2 0], [3 0], [5 0]; Q3 [0 2], [0 3], [0 5]; Q4 [2 0], [2 1], [3 2]; Q5 [1 1], [2 1], [2 3]. Cellerne "A / B" i tabellen er dem, hvor en anden regel ville give et andet resultat.
+@@s063 Task 3: flere dimensioner
+@@s064 Notebooken giver et andet sæt, i fire dimensioner, med ét enkelt punkt, der skal klassificeres, Q = [0, 0, 0, 0]. Afstanden beregnes som før, med fire led under kvadratroden.
+@@s065 Klasse A
+@@s066 Klasse B
+@@s067 Fra det nærmeste til det fjerneste, i fire dimensioner
+@@s068 I dette eksempel gentager ingen afstand sig, så der er ingen punkter med samme afstand.
+@@s069 <b>Hvorfor dimensionen betyder noget</b>: A3 og B3 har samme x₁ og x₂ og adskiller sig kun i x₃. I to dimensioner ville de være det samme punkt, og femtepladsen ville være et tilfælde med samme afstand (A eller B). Den tredje koordinat skiller dem ad og afgør femtepladsen: én feature mere ændrer svaret, selv om den ikke fortæller noget nyttigt om klassen.
+@@s070 Flere features, mindre informative afstande
+@@s071 Hver ekstra koordinat lægger et led til afstanden og kan flytte naboerne. En ubrugelig feature (eller en i en meget større skala end de andre) bringer støj ind i afstanden. Med mange dimensioner bliver afstandene desuden næsten alle ens, og det "nærmeste" er ikke meget nærmere end de andre: se dimensionalitetens forbandelse i <a href="w12-pca.html">PCA</a>.
+@@s072 Task 4: lineær klassifikator mod naboer
+@@s073 Notebookens spørgsmål: hvordan adskiller beslutningsgrænserne sig, og hvordan adskiller de sig i beregningen? På de samme 20 punkter:
+@@s074 En linje, eller naboerne
+@@s075 Lineær klassifikator
+@@s076 k-nearest neighbour
+@@s077 Hvad den lærer
+@@s078 vægtene w: d + 1 tal (d features)
+@@s079 ingenting: den beholder hele træningsmængden, N × d tal
+@@s080 Grænse
+@@s081 kun én, et hyperplan (her en linje)
+@@s082 sat sammen af stykker, følger dataene; ved lille k bøjer den sig omkring enkelte punkter
+@@s083 Træning
+@@s084 ja: mindste kvadrater eller gradientnedstigning, omkostningen betales én gang
+@@s085 ingen (den huskes)
+@@s086 Forudsigelse
+@@s087 ét indre produkt: omkostning proportional med d
+@@s088 afstande fra alle N punkter: omkostning proportional med N · d, plus valget af de k
+@@s089 Featurenes skala
+@@s090 vægten w kompenserer for en anden skala
+@@s091 betyder meget: en feature i stor skala dominerer afstanden
+@@s092 Dataenes form
+@@s093 godt, hvis klasserne kan adskilles af et hyperplan
+@@s094 godt også med grænser af enhver form, hvis der er data nok
+@@s095 På de 20 punkter
+@@s096 19 ud af 20 (0.95), tager fejl på A2
+@@s097 k = 1: 20 ud af 20; k = 5: 19 ud af 20
+@@s098 Linjen er den fra mindste kvadrater på etiketterne ±1, som på siden <a href="w10-classificatore-lineare.html">Lineær klassifikator og logistisk regression</a>. Grænserne for k = 1 og k = 5 er beregnet med scikit-learn på et gitter af 32 × 32 celler.
+@@s099 Til eksamen, på engelsk
+@@s100 "k-nearest neighbour <b>stores the training set</b> and classifies a new point by a <b>majority vote among its k closest training points</b>, using a distance such as the Euclidean one. A small k gives a jagged boundary and overfits; a large k smooths it and can underfit; I choose k on a validation set."

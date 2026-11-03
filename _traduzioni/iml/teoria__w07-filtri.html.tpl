@@ -143,74 +143,74 @@ window.SCENE = window.SCENE || {};
     <div class="passo"><div class="espr">y₂ = <mark class="due">1/3</mark>·<mark class="dato">3</mark> + <mark class="due">1/3</mark>·<mark class="dato">9</mark> + <mark class="due">1/3</mark>·<mark class="dato">3</mark> = <mark class="ok">5</mark></div><p class="nota">{{s|s023|}}</p></div>
     <div class="passo"><div class="espr">y<sub>n</sub> = <mark class="due">h</mark> · [<mark class="dato">f<sub>n−1</sub>, f<sub>n</sub>, f<sub>n+1</sub></mark>]</div><p class="nota">{{s|s024|}}</p></div>
     <div class="passo"><div class="espr">media pesata:  h = [<mark class="due">1, 2, 1</mark>] / 4</div><p class="nota">{{s|s025|}}</p></div>
-    <div class="passo"><div class="espr">Σ pesi = <mark class="ok">1</mark>  ⇒  una zona costante resta uguale</div><p class="nota">{{s|s026|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s026|}}</div><p class="nota">{{s|s027|}}</p></div>
   </figure>
 </section>
 
 <section>
-  <h2>{{s|s027|}}</h2>
-  <p>{{s|s028|}}</p>
-  <figure class="passi" data-titolo="{{a|s029|}}">
-    <div class="passo"><div class="espr">correlazione:  y<sub>n</sub> = Σ<sub>m</sub> h<sub>m</sub> · f<sub><mark class="ora">n + m</mark></sub></div><p class="nota">{{s|s030|}}</p></div>
-    <div class="passo"><div class="espr">convoluzione:  y<sub>n</sub> = Σ<sub>m</sub> h<sub>m</sub> · f<sub><mark class="due">n − m</mark></sub></div><p class="nota">{{s|s031|}}</p></div>
-    <div class="passo"><div class="espr">filtro simmetrico ([1, 2, 1], gaussiano, media):  <mark class="ok">stesso risultato</mark></div><p class="nota">{{s|s032|}}</p></div>
-    <div class="passo"><div class="espr">gradino [1, 1, 1, 5, 5, 5] con [1, −1]:  convolve → <mark class="ok">+4</mark>,  correlate → <mark class="no">−4</mark></div><p class="nota">{{s|s033|}}</p><p class="nota">{{s|s034|}}</p></div>
+  <h2>{{s|s028|}}</h2>
+  <p>{{s|s029|}}</p>
+  <figure class="passi" data-titolo="{{a|s030|}}">
+    <div class="passo"><div class="espr">correlazione:  y<sub>n</sub> = Σ<sub>m</sub> h<sub>m</sub> · f<sub><mark class="ora">n + m</mark></sub></div><p class="nota">{{s|s031|}}</p></div>
+    <div class="passo"><div class="espr">convoluzione:  y<sub>n</sub> = Σ<sub>m</sub> h<sub>m</sub> · f<sub><mark class="due">n − m</mark></sub></div><p class="nota">{{s|s032|}}</p></div>
+    <div class="passo"><div class="espr">filtro simmetrico ([1, 2, 1], gaussiano, media):  <mark class="ok">stesso risultato</mark></div><p class="nota">{{s|s033|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s034|}}</div><p class="nota">{{s|s035|}}</p><p class="nota">{{s|s036|}}</p></div>
   </figure>
-  <div class="box regola" data-tit="{{a|s035|}}">
-    <p>{{s|s036|}}</p>
-  </div>
-  <div class="box idea" data-tit="{{a|s037|}}">
+  <div class="box regola" data-tit="{{a|s037|}}">
     <p>{{s|s038|}}</p>
   </div>
-  <figure class="scena" data-scena="convcorr" data-titolo="{{a|s039|}}"></figure>
+  <div class="box idea" data-tit="{{a|s039|}}">
+    <p>{{s|s040|}}</p>
+  </div>
+  <figure class="scena" data-scena="convcorr" data-titolo="{{a|s041|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s040|}}</h2>
-  <p>{{s|s041|}}</p>
+  <h2>{{s|s042|}}</h2>
+  <p>{{s|s043|}}</p>
   <div class="tab-wrap"><table class="tab">
-    <thead><tr><th>{{s|s042|}}</th><th>{{s|s043|}}</th><th>{{s|s044|}}</th><th>{{s|s045|}}</th></tr></thead>
+    <thead><tr><th>{{s|s044|}}</th><th>{{s|s045|}}</th><th>{{s|s046|}}</th><th>{{s|s047|}}</th></tr></thead>
     <tbody>
-      <tr><td>{{s|s046|}}</td><td>{{s|s047|}}</td><td>1</td><td>{{s|s048|}}</td></tr>
-      <tr><td>{{s|s049|}}</td><td>[[1, 2, 1], [2, 4, 2], [1, 2, 1]] / 16</td><td>1</td><td>{{s|s050|}}</td></tr>
-      <tr><td>{{s|s051|}}</td><td>[1, 4, 6, 4, 1] ⊗ [1, 4, 6, 4, 1] / 256</td><td>1</td><td>{{s|s052|}}</td></tr>
-      <tr><td>{{s|s053|}}</td><td>{{s|s054|}}</td><td>1</td><td>{{s|s055|}}</td></tr>
-      <tr><td>{{s|s056|}}</td><td>[[−1, 0, 1], [−2, 0, 2], [−1, 0, 1]]</td><td>0</td><td>{{s|s057|}}</td></tr>
+      <tr><td>{{s|s048|}}</td><td>{{s|s049|}}</td><td>1</td><td>{{s|s050|}}</td></tr>
+      <tr><td>{{s|s051|}}</td><td>[[1, 2, 1], [2, 4, 2], [1, 2, 1]] / 16</td><td>1</td><td>{{s|s052|}}</td></tr>
+      <tr><td>{{s|s053|}}</td><td>[1, 4, 6, 4, 1] ⊗ [1, 4, 6, 4, 1] / 256</td><td>1</td><td>{{s|s054|}}</td></tr>
+      <tr><td>{{s|s055|}}</td><td>{{s|s056|}}</td><td>1</td><td>{{s|s057|}}</td></tr>
+      <tr><td>{{s|s058|}}</td><td>[[−1, 0, 1], [−2, 0, 2], [−1, 0, 1]]</td><td>0</td><td>{{s|s059|}}</td></tr>
     </tbody>
   </table></div>
-  <p class="piccolo">{{s|s058|}}</p>
-  <figure class="passi" data-titolo="{{a|s059|}}">
-    <div class="passo"><div class="espr">K₂ = 9·<mark class="ora">centro</mark> − 1·(<mark class="dato">8 vicini</mark>)</div><p class="nota">{{s|s060|}}</p></div>
-    <div class="passo"><div class="espr">zona uniforme:  centro − media = <mark class="ok">0</mark>  ⇒  pixel invariato</div><p class="nota">{{s|s061|}}</p></div>
-    <div class="passo"><div class="espr">vicino a un bordo:  centro − media ≠ 0  ⇒  <mark class="no">amplificato</mark></div><p class="nota">{{s|s062|}}</p></div>
+  <p class="piccolo">{{s|s060|}}</p>
+  <figure class="passi" data-titolo="{{a|s061|}}">
+    <div class="passo"><div class="espr">K₂ = 9·<mark class="ora">centro</mark> − 1·(<mark class="dato">8 vicini</mark>)</div><p class="nota">{{s|s062|}}</p></div>
+    <div class="passo"><div class="espr">zona uniforme:  centro − media = <mark class="ok">0</mark>  ⇒  pixel invariato</div><p class="nota">{{s|s063|}}</p></div>
+    <div class="passo"><div class="espr">vicino a un bordo:  centro − media ≠ 0  ⇒  <mark class="no">amplificato</mark></div><p class="nota">{{s|s064|}}</p></div>
   </figure>
-  <div class="box regola" data-tit="{{a|s063|}}">
-    <p>{{s|s064|}}</p>
+  <div class="box regola" data-tit="{{a|s065|}}">
+    <p>{{s|s066|}}</p>
   </div>
-  <figure class="scena" data-scena="filtri2d" data-titolo="{{a|s065|}}"></figure>
+  <figure class="scena" data-scena="filtri2d" data-titolo="{{a|s067|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s066|}}</h2>
-  <figure class="codice" data-titolo="{{a|s067|}}">
+  <h2>{{s|s068|}}</h2>
+  <figure class="codice" data-titolo="{{a|s069|}}">
 <pre data-lang="python">np.convolve(f, np.ones(3) / 3, "valid")          # 1D: [5, 5, 5, 4, 5, 6]
 gaussian_filter1d(px, sigma=2)                    # 1D gaussiano (gaze)
 scipy.ndimage.convolve(image, G3)                 # 2D, filtro costruito a mano
 skimage.filters.gaussian(image, sigma=5)          # 2D gaussiano pronto</pre>
     <ol class="spiega">
-      <li data-righe="1" data-segna="&quot;valid&quot;@ora"><p>{{s|s068|}}</p></li>
-      <li data-righe="2" data-segna="sigma=2@due"><p>{{s|s069|}}</p></li>
-      <li data-righe="3-4" data-segna="G3@due|sigma=5@due"><p>{{s|s070|}}</p></li>
+      <li data-righe="1" data-segna="&quot;valid&quot;@ora"><p>{{s|s070|}}</p></li>
+      <li data-righe="2" data-segna="sigma=2@due"><p>{{s|s071|}}</p></li>
+      <li data-righe="3-4" data-segna="G3@due|sigma=5@due"><p>{{s|s072|}}</p></li>
     </ol>
   </figure>
-  <div class="box esame" data-tit="{{a|s071|}}">
-    <p>{{s|s072|}}</p>
-  </div>
-  <div class="box inglese" data-tit="{{a|s073|}}">
+  <div class="box esame" data-tit="{{a|s073|}}">
     <p>{{s|s074|}}</p>
-    <p>{{s|s075|}}</p>
   </div>
-  <figure class="scena" data-scena="incodice" data-titolo="{{a|s076|}}"></figure>
+  <div class="box inglese" data-tit="{{a|s075|}}">
+    <p>{{s|s076|}}</p>
+    <p>{{s|s077|}}</p>
+  </div>
+  <figure class="scena" data-scena="incodice" data-titolo="{{a|s078|}}"></figure>
 </section>
 
 </main>

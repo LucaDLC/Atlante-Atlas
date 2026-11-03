@@ -151,66 +151,66 @@ window.SCENE = window.SCENE || {};
   </div>
   <figure class="scena" data-scena="confusione" data-titolo="{{a|s046|}}"></figure>
   <figure class="passi" data-titolo="{{a|s047|}}">
-    <div class="passo"><div class="espr">spam:  conta la <mark class="ok">precision</mark></div><p class="nota">{{s|s048|}}</p></div>
-    <div class="passo"><div class="espr">malattia:  conta la <mark class="ok">recall</mark></div><p class="nota">{{s|s049|}}</p></div>
-    <div class="passo"><div class="espr">F1: nessuna delle due è sufficiente da sola</div><p class="nota">{{s|s050|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s048|}}</div><p class="nota">{{s|s049|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s050|}}</div><p class="nota">{{s|s051|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s052|}}</div><p class="nota">{{s|s053|}}</p></div>
   </figure>
 </section>
 
 <section>
-  <h2>{{s|s051|}}</h2>
-  <p>{{s|s052|}}</p>
+  <h2>{{s|s054|}}</h2>
+  <p>{{s|s055|}}</p>
   <div class="tab-wrap"><table class="tab">
-    <thead><tr><th>{{s|s053|}}</th><th>0.3</th><th>0.5</th><th>0.85</th></tr></thead>
+    <thead><tr><th>{{s|s056|}}</th><th>0.3</th><th>0.5</th><th>0.85</th></tr></thead>
     <tbody>
-      <tr><td>{{s|s054|}}</td><td>0.75</td><td>1.0</td><td>1.0</td></tr>
-      <tr><td>{{s|s055|}}</td><td><b>1.0</b></td><td>0.667</td><td>0.333</td></tr>
+      <tr><td>{{s|s057|}}</td><td>0.75</td><td>1.0</td><td>1.0</td></tr>
+      <tr><td>{{s|s058|}}</td><td><b>1.0</b></td><td>0.667</td><td>0.333</td></tr>
     </tbody>
   </table></div>
-  <figure class="passi" data-titolo="{{a|s056|}}">
-    <div class="passo"><div class="espr">soglia ↓  ⇒  più "positivo"  ⇒  recall ↑, precision di solito ↓</div><p class="nota">{{s|s057|}}</p></div>
-    <div class="passo"><div class="espr"><mark class="ora">ROC</mark>: per ogni soglia un punto (FPR, TPR)</div><p class="nota">{{s|s058|}}</p></div>
-    <div class="passo"><div class="espr"><mark class="ok">AUC</mark> = area sotto la ROC = 0.889 qui</div><p class="nota">{{s|s059|}}</p></div>
+  <figure class="passi" data-titolo="{{a|s059|}}">
+    <div class="passo"><div class="espr">{{s|s060|}}</div><p class="nota">{{s|s061|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s062|}}</div><p class="nota">{{s|s063|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s064|}}</div><p class="nota">{{s|s065|}}</p></div>
   </figure>
-  <figure class="scena" data-scena="roc" data-titolo="{{a|s060|}}"></figure>
+  <figure class="scena" data-scena="roc" data-titolo="{{a|s066|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s061|}}</h2>
-  <figure class="passi" data-titolo="{{a|s062|}}">
-    <div class="passo"><div class="espr">95 negativi, 5 positivi;  il modello dice sempre "negativo"</div><p class="nota">{{s|s063|}}</p></div>
-    <div class="passo"><div class="espr">accuracy = <mark class="no">0.95</mark>,  recall = 0,  F1 = 0,  MCC = 0</div><p class="nota">{{s|s064|}}</p></div>
+  <h2>{{s|s067|}}</h2>
+  <figure class="passi" data-titolo="{{a|s068|}}">
+    <div class="passo"><div class="espr">{{s|s069|}}</div><p class="nota">{{s|s070|}}</p></div>
+    <div class="passo"><div class="espr">accuracy = <mark class="no">0.95</mark>,  recall = 0,  F1 = 0,  MCC = 0</div><p class="nota">{{s|s071|}}</p></div>
   </figure>
   <div class="tab-wrap"><table class="tab">
-    <thead><tr><th>{{s|s065|}}</th><th>{{s|s066|}}</th><th>{{s|s067|}}</th></tr></thead>
+    <thead><tr><th>{{s|s072|}}</th><th>{{s|s073|}}</th><th>{{s|s074|}}</th></tr></thead>
     <tbody>
-      <tr><td>{{s|s068|}}</td><td>{{s|s069|}}</td><td>{{s|s070|}}</td></tr>
-      <tr><td>{{s|s071|}}</td><td>{{s|s072|}}</td><td>{{s|s073|}}</td></tr>
-      <tr><td>{{s|s074|}}</td><td>{{s|s075|}}</td><td>{{s|s076|}}</td></tr>
-      <tr><td>{{s|s077|}}</td><td>{{s|s078|}}</td><td>{{s|s079|}}</td></tr>
-      <tr><td>{{s|s080|}}</td><td>{{s|s081|}}</td><td>–</td></tr>
+      <tr><td>{{s|s075|}}</td><td>{{s|s076|}}</td><td>{{s|s077|}}</td></tr>
+      <tr><td>{{s|s078|}}</td><td>{{s|s079|}}</td><td>{{s|s080|}}</td></tr>
+      <tr><td>{{s|s081|}}</td><td>{{s|s082|}}</td><td>{{s|s083|}}</td></tr>
+      <tr><td>{{s|s084|}}</td><td>{{s|s085|}}</td><td>{{s|s086|}}</td></tr>
+      <tr><td>{{s|s087|}}</td><td>{{s|s088|}}</td><td>–</td></tr>
     </tbody>
   </table></div>
-  <p class="piccolo">{{s|s082|}}</p>
-  <figure class="scena" data-scena="sbilanciate" data-titolo="{{a|s083|}}"></figure>
+  <p class="piccolo">{{s|s089|}}</p>
+  <figure class="scena" data-scena="sbilanciate" data-titolo="{{a|s090|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s084|}}</h2>
+  <h2>{{s|s091|}}</h2>
   <div class="tab-wrap"><table class="tab">
-    <thead><tr><th>{{s|s085|}}</th><th>{{s|s086|}}</th><th>{{s|s087|}}</th></tr></thead>
+    <thead><tr><th>{{s|s092|}}</th><th>{{s|s093|}}</th><th>{{s|s094|}}</th></tr></thead>
     <tbody>
-      <tr><td>{{s|s088|}}</td><td>{{s|s089|}}</td><td>{{s|s090|}}</td></tr>
-      <tr><td>{{s|s091|}}</td><td>{{s|s092|}}</td><td>{{s|s093|}}</td></tr>
-      <tr><td>{{s|s094|}}</td><td>{{s|s095|}}</td><td>{{s|s096|}}</td></tr>
-      <tr><td>R²</td><td>{{s|s097|}}</td><td>{{s|s098|}}</td></tr>
+      <tr><td>{{s|s095|}}</td><td>{{s|s096|}}</td><td>{{s|s097|}}</td></tr>
+      <tr><td>{{s|s098|}}</td><td>{{s|s099|}}</td><td>{{s|s100|}}</td></tr>
+      <tr><td>{{s|s101|}}</td><td>{{s|s102|}}</td><td>{{s|s103|}}</td></tr>
+      <tr><td>R²</td><td>{{s|s104|}}</td><td>{{s|s105|}}</td></tr>
     </tbody>
   </table></div>
-  <p>{{s|s099|}}</p>
-  <div class="box esame" data-tit="{{a|s100|}}">
-    <p>{{s|s101|}}</p>
+  <p>{{s|s106|}}</p>
+  <div class="box esame" data-tit="{{a|s107|}}">
+    <p>{{s|s108|}}</p>
   </div>
-  <figure class="scena" data-scena="metricheregr" data-titolo="{{a|s102|}}"></figure>
+  <figure class="scena" data-scena="metricheregr" data-titolo="{{a|s109|}}"></figure>
 </section>
 
 </main>

@@ -59,22 +59,25 @@
 @@s059 Perché <code>while</code> e non <code>if</code>
 @@s060 Con if, un lettore può entrare mentre c'è uno scrittore
 @@s061 Versione con <code>if</code>: controlla una volta sola.
-@@s062 Il lettore R1 aspetta.
-@@s063 Lo scrittore finisce e sveglia tutti. R1 torna nella <b>entry queue</b>: deve ricompetere per il lock.
-@@s064 Semantica <b>Mesa</b> (quella di Java): un altro scrittore può entrare prima di R1.
-@@s065 Con <code>if</code> R1 non ricontrolla: legge mentre W2 scrive. Violata la specifica.
-@@s066 Con <code>while</code> la condizione si ricontrolla a ogni risveglio. In più, i thread possono svegliarsi anche senza signal (<b>spurious wakeup</b>): il while protegge anche da questo.
-@@s067 Perché while e non if
-@@s068 Domanda della slide: serve controllare readers == 0 prima di signalAll?
-@@s069 Per la <b>correttezza</b> no: chi si sveglia ricontrolla la sua condizione nel <code>while</code> e, se non può entrare, torna ad aspettare. Il controllo evita solo risvegli <b>inutili</b>: se ci sono ancora lettori, nessuno scrittore potrebbe comunque entrare.
-@@s070 Esercizio 2.1: lo stesso monitor con <code>synchronized</code>
-@@s071 Ogni oggetto Java ha già un lock <b>e una condition variable</b> dentro. Con <code>synchronized</code> si usano <code>wait()</code>, <code>notify()</code>, <code>notifyAll()</code> al posto di <code>await()</code>, <code>signal()</code>, <code>signalAll()</code>.
-@@s072 Versione con lock intrinseco, già fair verso gli scrittori (compilata ed eseguita)
-@@s073 <code>synchronized</code> sui metodi: tutti usano il lock dell'oggetto <code>this</code>, quindi sono mutuamente esclusivi.
-@@s074 <code>wait()</code> fa quello che faceva <code>await()</code>: rilascia il lock di <code>this</code> e aspetta nella sua coda. Anche qui dentro un <code>while</code>.
-@@s075 La modifica "fair": lo scrittore <b>prenota</b> subito (<code>writer = true</code>) e poi aspetta che i lettori già dentro escano. Da quel momento i nuovi lettori si fermano al <code>while (writer)</code>. È l'idea di <code>FairReadWriteMonitor.java</code>.
-@@s076 <code>notifyAll()</code> sveglia tutti i thread in attesa su <code>this</code>.
-@@s077 Esercizio 2.1.3: quante condition variable?
-@@s078 <b>Una</b>: quella intrinseca dell'oggetto su cui fai <code>synchronized</code>. Lettori e scrittori aspettano tutti nella stessa coda, con <code>wait()</code>, e vengono svegliati con <code>notifyAll()</code>. Con <code>ReentrantLock</code> invece puoi creare più condizioni (<code>lock.newCondition()</code> due volte), per esempio una per i lettori e una per gli scrittori (esercizio 2.1.5).
-@@s079 Verificato: 15 lettori e 5 scrittori, 200 accessi ciascuno, nessuna violazione della specifica.
-@@s080 Dal Lock esplicito al lock intrinseco
+@@s062 <mark class="dato">R1</mark>: writer è true → await()
+@@s063 Il lettore R1 aspetta.
+@@s064 Lo scrittore finisce e sveglia tutti. R1 torna nella <b>entry queue</b>: deve ricompetere per il lock.
+@@s065 <mark class="no">W2</mark> prende il lock prima di R1 → writer = true
+@@s066 Semantica <b>Mesa</b> (quella di Java): un altro scrittore può entrare prima di R1.
+@@s067 <mark class="dato">R1</mark> riprende il lock → <mark class="no">readers++</mark> senza ricontrollare
+@@s068 Con <code>if</code> R1 non ricontrolla: legge mentre W2 scrive. Violata la specifica.
+@@s069 Con <code>while</code> la condizione si ricontrolla a ogni risveglio. In più, i thread possono svegliarsi anche senza signal (<b>spurious wakeup</b>): il while protegge anche da questo.
+@@s070 Perché while e non if
+@@s071 Domanda della slide: serve controllare readers == 0 prima di signalAll?
+@@s072 Per la <b>correttezza</b> no: chi si sveglia ricontrolla la sua condizione nel <code>while</code> e, se non può entrare, torna ad aspettare. Il controllo evita solo risvegli <b>inutili</b>: se ci sono ancora lettori, nessuno scrittore potrebbe comunque entrare.
+@@s073 Esercizio 2.1: lo stesso monitor con <code>synchronized</code>
+@@s074 Ogni oggetto Java ha già un lock <b>e una condition variable</b> dentro. Con <code>synchronized</code> si usano <code>wait()</code>, <code>notify()</code>, <code>notifyAll()</code> al posto di <code>await()</code>, <code>signal()</code>, <code>signalAll()</code>.
+@@s075 Versione con lock intrinseco, già fair verso gli scrittori (compilata ed eseguita)
+@@s076 <code>synchronized</code> sui metodi: tutti usano il lock dell'oggetto <code>this</code>, quindi sono mutuamente esclusivi.
+@@s077 <code>wait()</code> fa quello che faceva <code>await()</code>: rilascia il lock di <code>this</code> e aspetta nella sua coda. Anche qui dentro un <code>while</code>.
+@@s078 La modifica "fair": lo scrittore <b>prenota</b> subito (<code>writer = true</code>) e poi aspetta che i lettori già dentro escano. Da quel momento i nuovi lettori si fermano al <code>while (writer)</code>. È l'idea di <code>FairReadWriteMonitor.java</code>.
+@@s079 <code>notifyAll()</code> sveglia tutti i thread in attesa su <code>this</code>.
+@@s080 Esercizio 2.1.3: quante condition variable?
+@@s081 <b>Una</b>: quella intrinseca dell'oggetto su cui fai <code>synchronized</code>. Lettori e scrittori aspettano tutti nella stessa coda, con <code>wait()</code>, e vengono svegliati con <code>notifyAll()</code>. Con <code>ReentrantLock</code> invece puoi creare più condizioni (<code>lock.newCondition()</code> due volte), per esempio una per i lettori e una per gli scrittori (esercizio 2.1.5).
+@@s082 Verificato: 15 lettori e 5 scrittori, 200 accessi ciascuno, nessuna violazione della specifica.
+@@s083 Dal Lock esplicito al lock intrinseco

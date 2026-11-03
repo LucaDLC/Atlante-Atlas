@@ -288,18 +288,18 @@ window.SCENE = window.SCENE || {};
   <p>{{s|s061|}}</p>
   <p>{{s|s062|}}</p>
   <figure class="passi" data-titolo="{{a|s063|}}">
-    <div class="passo"><div class="espr">(AB)<sub>ij</sub> = <mark class="ora">riga i di A</mark> · <mark class="due">colonna j di B</mark></div><p class="nota">{{s|s064|}}</p></div>
-    <div class="passo"><div class="espr">A = [[2, 1], [1, 3]],  B = [[0, 1], [1, 0]]  ⇒  AB = [[1, 2], [3, 1]]</div><p class="nota">{{s|s065|}}</p></div>
-    <div class="passo"><div class="espr">colonna j di AB = <mark class="ok">A · (colonna j di B)</mark></div><p class="nota">{{s|s066|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s064|}}</div><p class="nota">{{s|s065|}}</p></div>
+    <div class="passo"><div class="espr">A = [[2, 1], [1, 3]],  B = [[0, 1], [1, 0]]  ⇒  AB = [[1, 2], [3, 1]]</div><p class="nota">{{s|s066|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s067|}}</div><p class="nota">{{s|s068|}}</p></div>
   </figure>
-  <figure class="scena" data-scena="mm" data-titolo="{{a|s067|}}"></figure>
+  <figure class="scena" data-scena="mm" data-titolo="{{a|s069|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s068|}}</h2>
-  <p>{{s|s069|}}</p>
-  <p>{{s|s070|}}</p>
-  <figure class="codice" data-titolo="{{a|s071|}}">
+  <h2>{{s|s070|}}</h2>
+  <p>{{s|s071|}}</p>
+  <p>{{s|s072|}}</p>
+  <figure class="codice" data-titolo="{{a|s073|}}">
 <pre data-lang="python">D = np.array([[1, 2, 3],
               [4, 5, 6]])     # forma (2, 3)
 D.T.shape                     # (3, 2)
@@ -307,27 +307,27 @@ D @ D.T                       # (2, 3)(3, 2) → forma (2, 2): [[14, 32], [32, 7
 (D.T @ D).shape               # (3, 2)(2, 3) → (3, 3)
 D @ D                         # errore: (2, 3)(2, 3), 3 ≠ 2</pre>
     <ol class="spiega">
-      <li data-righe="1-3" data-segna="(2, 3)@dato|(3, 2)@due"><p>{{s|s072|}}</p></li>
-      <li data-righe="4-5" data-segna="D @ D.T@ok|D.T @ D@ok"><p>{{s|s073|}}</p></li>
-      <li data-righe="6" data-segna="errore@no"><p>{{s|s074|}}</p></li>
+      <li data-righe="1-3" data-segna="(2, 3)@dato|(3, 2)@due"><p>{{s|s074|}}</p></li>
+      <li data-righe="4-5" data-segna="D @ D.T@ok|D.T @ D@ok"><p>{{s|s075|}}</p></li>
+      <li data-righe="6" data-segna="errore@no"><p>{{s|s076|}}</p></li>
     </ol>
   </figure>
-  <figure class="scena" data-scena="dimensioni" data-titolo="{{a|s075|}}"></figure>
+  <figure class="scena" data-scena="dimensioni" data-titolo="{{a|s077|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s076|}}</h2>
-  <p>{{s|s077|}}</p>
-  <p>{{s|s078|}}</p>
-  <figure class="scena" data-scena="identita" data-titolo="{{a|s079|}}"></figure>
+  <h2>{{s|s078|}}</h2>
+  <p>{{s|s079|}}</p>
+  <p>{{s|s080|}}</p>
+  <figure class="scena" data-scena="identita" data-titolo="{{a|s081|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s080|}}</h2>
-  <p>{{s|s081|}}</p>
-  <p>{{s|s082|}}</p>
+  <h2>{{s|s082|}}</h2>
   <p>{{s|s083|}}</p>
-  <figure class="scena" data-scena="ortogonale" data-titolo="{{a|s084|}}"></figure>
+  <p>{{s|s084|}}</p>
+  <p>{{s|s085|}}</p>
+  <figure class="scena" data-scena="ortogonale" data-titolo="{{a|s086|}}"></figure>
 </section>
 
 </main>

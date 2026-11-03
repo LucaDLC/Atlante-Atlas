@@ -50,43 +50,51 @@
 @@s050 map2, sequence
 @@s051 <code>map2(h, …)(…)</code>
 @@s052 <code>h.map2(…)(…)</code>, è un metodo
-@@s053 Funzione del file
-@@s054 Cosa fa
-@@s055 Esempio (verificato)
-@@s056 <code>get</code>
-@@s057 legge lo stato e lo restituisce come valore
-@@s058 <code>get.run(7)</code> = (7, 7)
-@@s059 <code>set(s)</code>
-@@s060 sostituisce lo stato
-@@s061 <code>set(5).run(7)</code> = ((), 5)
-@@s062 <code>modify(f)</code>
-@@s063 get, poi set di f(stato)
-@@s064 <code>modify(_ * 10).run(4)</code> = ((), 40)
-@@s065 Con get, set, modify e for/yield il codice con State sembra imperativo ("leggi lo stato, cambialo"), ma resta puro: è solo la descrizione di una transizione, che parte quando si chiama <code>run</code>.
-@@s066 flatMap, map, map2, get, set, modify
-@@s067 Comporre automi: map, flatMap, map2 (slide 11–13)
-@@s068 State è una <b>monade</b>: ha le stesse operazioni chiave di List, Option e LazyList. Pensando a uno State come a un automa, queste operazioni servono a <b>costruire automi nuovi da automi esistenti</b>, senza mai scrivere a mano il passaggio dello stato.
-@@s069 <b>map</b> cambia i valori prodotti e lascia la transizione com'è: <code>val even: Rand[Int] = int.map(n =&gt; n * 2)</code> è un generatore di numeri pari. <b>flatMap</b> usa il valore prodotto per <b>scegliere</b> l'automa successivo: <code>int.flatMap(n =&gt; ints(n))</code> genera una lista di lunghezza casuale, e la lunghezza è estratta con uno stato diverso da quello dei numeri, perché flatMap passa avanti lo stato nuovo. <b>map2</b> fa lo "zip" di due automi sullo stesso spazio di stati: con <code>C = (A, B)</code> è l'<b>automa prodotto</b>, che fa avanzare due calcoli in sincronia. <b>sequence</b> mette in fila una lista di automi.
-@@s070 La slide 8 riassume perché serve: tutto ciò che ha uno stato si scrive con questo schema. Un generatore di numeri casuali (stato: il seme), un sito con una sessione (stato: la sessione), un'applicazione con un database (stato: il database), un protocollo di comunicazione (stato: la fase del protocollo). E si compone sempre con gli stessi quattro strumenti.
-@@s071 map, flatMap, map2 e sequence su automi
-@@s072 Stati e liste pigre (esercizi 10–11)
-@@s073 Dall'automa alla sua traccia
-@@s074 Un passo, e il resto della lista è "lo stesso automa dallo stato successivo". Senza caso base: funziona solo perché <code>cons</code> non calcola la coda finché non serve (settimana 4). Con una List normale sarebbe un ciclo infinito.
-@@s075 Es. 11: il generatore di interi è un automa; la sua traccia è una lista infinita di numeri casuali.
-@@s076 Dieci numeri in una riga: 16159453, −1281479697, −340305902, −2015756020, 1770001318, … Le astrazioni si compongono: automa → lista pigra → take → lista.
-@@s077 In soldoni: cosa chiedono il 10 e l'11
-@@s078 <b>Es. 10:</b> hai un automa (un <code>State</code>) e uno stato di partenza. Fallo girare all'infinito e metti in fila i valori che escono, in una <code>LazyList</code>. <b>Es. 11:</b> il generatore di numeri casuali è un automa anche lui (stato = RNG, passo = nextInt): mettilo in un <code>State</code>, dallo all'es. 10 → lista infinita di numeri casuali; poi prendine 10 in una List normale.
-@@s079 Immagine: il distributore di biglietti del turno. Lo stato è il numero sul display; <code>run</code> = strappi un biglietto: ti dà il numero e il display avanza. La <code>LazyList</code> è il rotolo: un biglietto si stampa solo quando qualcuno lo strappa (<code>take</code>).
-@@s080 stateToLazyList(counter)(0).take(3).toList
-@@s081 dato:stato,ora:valore uscito,due:stato dopo,ok:risultato
-@@s082 Il distributore: restituisce il numero sul display e lo fa avanzare di 1.
-@@s083 Un passo dell'automa dallo stato iniziale.
-@@s084 ⟨ ⟩ = coda non ancora calcolata. <code>cons</code> la riceve "per nome" (<code>tl: =&gt; LazyList[A]</code>) e la tiene in sospeso.
-@@s085 Solo adesso la coda si calcola: un altro passo, dallo stato dopo.
-@@s086 Ancora un passo.
-@@s087 Niente caso base e niente ciclo infinito: si ferma chi legge, non chi scrive. Verificato (Scala 3.8.4).
-@@s088 Il file dei test di questa settimana non compila
-@@s089 <code>Exercises.test.scala</code> comincia con <code>package adpro.state.solution</code>, mentre le soluzioni stanno in <code>package adpro.state</code>: dal package "solution" <code>RNG</code> non si vede e la compilazione si ferma con <code>Not found: RNG</code> (verificato). Nella mia copia ho cambiato quella riga in <code>package adpro.state</code> e tutti i 44 test passano. Se ti succede, non è colpa del tuo codice: cambia la prima riga del file di test, o chiedi ai TA.
-@@s090 Frasi pronte (esame scritto)
-@@s091 "State[S, A] wraps a state transition S =&gt; (A, S); flatMap threads the state from one transition to the next, so the state stays explicit but invisible to the user."
-@@s092 Srotolare un automa in una lista pigra
+@@s053 Manca la scatola: il metodo deve restituire uno <code>State</code>, non una funzione nuda. Si scrive <code>State { s =&gt; … }</code>.
+@@s054 È il <code>g(a)(rng2)</code> di Rand copiato così com'è. <code>f(a)</code> ora è una scatola, non una funzione: per farla girare serve <code>f(a).run(s1)</code>.
+@@s055 Funzione del file
+@@s056 Cosa fa
+@@s057 Esempio (verificato)
+@@s058 <code>get</code>
+@@s059 legge lo stato e lo restituisce come valore
+@@s060 <code>get.run(7)</code> = (7, 7)
+@@s061 <code>set(s)</code>
+@@s062 sostituisce lo stato
+@@s063 <code>set(5).run(7)</code> = ((), 5)
+@@s064 <code>modify(f)</code>
+@@s065 get, poi set di f(stato)
+@@s066 <code>modify(_ * 10).run(4)</code> = ((), 40)
+@@s067 Con get, set, modify e for/yield il codice con State sembra imperativo ("leggi lo stato, cambialo"), ma resta puro: è solo la descrizione di una transizione, che parte quando si chiama <code>run</code>.
+@@s068 flatMap, map, map2, get, set, modify
+@@s069 Comporre automi: map, flatMap, map2 (slide 11–13)
+@@s070 State è una <b>monade</b>: ha le stesse operazioni chiave di List, Option e LazyList. Pensando a uno State come a un automa, queste operazioni servono a <b>costruire automi nuovi da automi esistenti</b>, senza mai scrivere a mano il passaggio dello stato.
+@@s071 <b>map</b> cambia i valori prodotti e lascia la transizione com'è: <code>val even: Rand[Int] = int.map(n =&gt; n * 2)</code> è un generatore di numeri pari. <b>flatMap</b> usa il valore prodotto per <b>scegliere</b> l'automa successivo: <code>int.flatMap(n =&gt; ints(n))</code> genera una lista di lunghezza casuale, e la lunghezza è estratta con uno stato diverso da quello dei numeri, perché flatMap passa avanti lo stato nuovo. <b>map2</b> fa lo "zip" di due automi sullo stesso spazio di stati: con <code>C = (A, B)</code> è l'<b>automa prodotto</b>, che fa avanzare due calcoli in sincronia. <b>sequence</b> mette in fila una lista di automi.
+@@s072 La slide 8 riassume perché serve: tutto ciò che ha uno stato si scrive con questo schema. Un generatore di numeri casuali (stato: il seme), un sito con una sessione (stato: la sessione), un'applicazione con un database (stato: il database), un protocollo di comunicazione (stato: la fase del protocollo). E si compone sempre con gli stessi quattro strumenti.
+@@s073 map, flatMap, map2 e sequence su automi
+@@s074 Stati e liste pigre (esercizi 10–11)
+@@s075 Dall'automa alla sua traccia
+@@s076 Un passo, e il resto della lista è "lo stesso automa dallo stato successivo". Senza caso base: funziona solo perché <code>cons</code> non calcola la coda finché non serve (settimana 4). Con una List normale sarebbe un ciclo infinito.
+@@s077 Es. 11: il generatore di interi è un automa; la sua traccia è una lista infinita di numeri casuali.
+@@s078 Dieci numeri in una riga: 16159453, −1281479697, −340305902, −2015756020, 1770001318, … Le astrazioni si compongono: automa → lista pigra → take → lista.
+@@s079 In soldoni: cosa chiedono il 10 e l'11
+@@s080 <b>Es. 10:</b> hai un automa (un <code>State</code>) e uno stato di partenza. Fallo girare all'infinito e metti in fila i valori che escono, in una <code>LazyList</code>. <b>Es. 11:</b> il generatore di numeri casuali è un automa anche lui (stato = RNG, passo = nextInt): mettilo in un <code>State</code>, dallo all'es. 10 → lista infinita di numeri casuali; poi prendine 10 in una List normale.
+@@s081 Immagine: il distributore di biglietti del turno. Lo stato è il numero sul display; <code>run</code> = strappi un biglietto: ti dà il numero e il display avanza. La <code>LazyList</code> è il rotolo: un biglietto si stampa solo quando qualcuno lo strappa (<code>take</code>).
+@@s082 stateToLazyList(counter)(0).take(3).toList
+@@s083 dato:stato,ora:valore uscito,due:stato dopo,ok:risultato
+@@s084 Il distributore: restituisce il numero sul display e lo fa avanzare di 1.
+@@s085 Un passo dell'automa dallo stato iniziale.
+@@s086 ⟨ ⟩ = coda non ancora calcolata. <code>cons</code> la riceve "per nome" (<code>tl: =&gt; LazyList[A]</code>) e la tiene in sospeso.
+@@s087 take chiede il 2° → counter.run(<mark class="dato">1</mark>) = (<mark class="ora">1</mark>, <mark class="due">2</mark>) → cons(1, ⟨…(2)⟩)
+@@s088 Solo adesso la coda si calcola: un altro passo, dallo stato dopo.
+@@s089 take chiede il 3° → counter.run(<mark class="dato">2</mark>) = (<mark class="ora">2</mark>, <mark class="due">3</mark>) → cons(2, ⟨…(3)⟩)
+@@s090 Ancora un passo.
+@@s091 take ne ha 3 → ⟨…(3)⟩ non si calcola mai → <mark class="ok">List(0, 1, 2)</mark>
+@@s092 Niente caso base e niente ciclo infinito: si ferma chi legge, non chi scrive. Verificato (Scala 3.8.4).
+@@s093 Con una List normale <code>::</code> vuole la coda <b>subito</b>: la coda chiama di nuovo la funzione, che vuole di nuovo la coda… e il <code>take(3)</code> non arriva mai. Serve <code>cons</code> della LazyList, che aspetta.
+@@s094 Ci sono due <code>Rand</code>: in <code>object RNG</code> è una funzione nuda <code>RNG =&gt; (A, RNG)</code>; in <code>object State</code> è <code>State[RNG, A]</code>, la scatola. <code>RNG.int</code> è la funzione nuda: va messa nella scatola, <code>State(RNG.int)</code>.
+@@s095 <code>take</code> su una LazyList dà ancora una LazyList (pigra). "Strict" = List normale, tutta calcolata: manca <code>.toList</code>.
+@@s096 Il file dei test di questa settimana non compila
+@@s097 <code>Exercises.test.scala</code> comincia con <code>package adpro.state.solution</code>, mentre le soluzioni stanno in <code>package adpro.state</code>: dal package "solution" <code>RNG</code> non si vede e la compilazione si ferma con <code>Not found: RNG</code> (verificato). Nella mia copia ho cambiato quella riga in <code>package adpro.state</code> e tutti i 44 test passano. Se ti succede, non è colpa del tuo codice: cambia la prima riga del file di test, o chiedi ai TA.
+@@s098 Frasi pronte (esame scritto)
+@@s099 "State[S, A] wraps a state transition S =&gt; (A, S); flatMap threads the state from one transition to the next, so the state stays explicit but invisible to the user."
+@@s100 Srotolare un automa in una lista pigra

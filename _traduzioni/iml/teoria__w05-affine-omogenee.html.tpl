@@ -190,11 +190,11 @@ window.SCENE = window.SCENE || {};
   <h2>{{s|s038|}}</h2>
   <p>{{s|s039|}}</p>
   <figure class="passi" data-titolo="{{a|s040|}}">
-    <div class="passo"><div class="espr">una corrispondenza (x, y) → (x', y') dà:<br>[<mark class="dato">x, y, 1</mark>, 0, 0, 0] · w = x'<br>[0, 0, 0, <mark class="dato">x, y, 1</mark>] · w = y'</div><p class="nota">{{s|s041|}}</p></div>
-    <div class="passo"><div class="espr">n corrispondenze ⇒ <mark class="ora">A</mark> (2n × 6) · <mark class="ora">w</mark> = <mark class="ok">b</mark> (2n)</div><p class="nota">{{s|s042|}}</p></div>
-    <div class="passo"><div class="espr">n = 3 punti non allineati: 6 equazioni, <mark class="ok">soluzione unica</mark></div><p class="nota">{{s|s043|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s041|}}</div><p class="nota">{{s|s042|}}</p></div>
+    <div class="passo"><div class="espr">n corrispondenze ⇒ <mark class="ora">A</mark> (2n × 6) · <mark class="ora">w</mark> = <mark class="ok">b</mark> (2n)</div><p class="nota">{{s|s043|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s044|}}</div><p class="nota">{{s|s045|}}</p></div>
   </figure>
-  <figure class="codice" data-titolo="{{a|s044|}}">
+  <figure class="codice" data-titolo="{{a|s046|}}">
 <pre data-lang="python">rows, b = [], []
 for (x, y), (xp, yp) in zip(src, dst):
     rows.append([x, y, 1, 0, 0, 0]); b.append(xp)
@@ -206,22 +206,22 @@ T = np.array([[w[0], w[1], w[2]],
               [0,    0,    1   ]])
 T @ np.array([2, 2, 1])        # array([6., 1., 1.])</pre>
     <ol class="spiega">
-      <li data-righe="1-4" data-segna="[x, y, 1, 0, 0, 0]@dato|[0, 0, 0, x, y, 1]@dato|zip(src, dst)@ora"><p>{{s|s045|}}</p></li>
-      <li data-righe="5-6" data-segna="np.linalg.lstsq@ok"><p>{{s|s046|}}</p></li>
-      <li data-righe="7-9" data-segna="[0,    0,    1   ]@due"><p>{{s|s047|}}</p></li>
-      <li data-righe="10" data-segna="[2, 2, 1]@due"><p>{{s|s048|}}</p></li>
+      <li data-righe="1-4" data-segna="[x, y, 1, 0, 0, 0]@dato|[0, 0, 0, x, y, 1]@dato|zip(src, dst)@ora"><p>{{s|s047|}}</p></li>
+      <li data-righe="5-6" data-segna="np.linalg.lstsq@ok"><p>{{s|s048|}}</p></li>
+      <li data-righe="7-9" data-segna="[0,    0,    1   ]@due"><p>{{s|s049|}}</p></li>
+      <li data-righe="10" data-segna="[2, 2, 1]@due"><p>{{s|s050|}}</p></li>
     </ol>
   </figure>
-  <figure class="scena" data-scena="aff" data-titolo="{{a|s049|}}"></figure>
+  <figure class="scena" data-scena="aff" data-titolo="{{a|s051|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s050|}}</h2>
-  <p>{{s|s051|}}</p>
-  <div class="box esame" data-tit="{{a|s052|}}">
-    <p>{{s|s053|}}</p>
+  <h2>{{s|s052|}}</h2>
+  <p>{{s|s053|}}</p>
+  <div class="box esame" data-tit="{{a|s054|}}">
+    <p>{{s|s055|}}</p>
   </div>
-  <figure class="scena" data-scena="rumorose" data-titolo="{{a|s054|}}"></figure>
+  <figure class="scena" data-scena="rumorose" data-titolo="{{a|s056|}}"></figure>
 </section>
 
 </main>

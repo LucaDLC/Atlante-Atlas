@@ -201,10 +201,10 @@ window.SCENE = window.SCENE || {};
 Required: B
 
 Maybe the enclosing block is missing a final expression after the definition of `aiuto`?</pre>
-      <div class="fix">Un blocco che finisce con un <code>def</code> non ha un valore. Dopo le definizioni interne serve un'espressione finale che le usi. Spesso la causa è l'<b>indentazione</b>: la riga con <code>foldRight(…)(z)</code> è finita dentro il <code>def</code> precedente, o è stata dimenticata.</div>
+      <div class="fix">{{s|s057|}}</div>
     </div>
   </div>
-  <figure class="scena" data-scena="bloccofinale" data-titolo="{{a|s057|}}"></figure>
+  <figure class="scena" data-scena="bloccofinale" data-titolo="{{a|s058|}}"></figure>
 </section>
 
 </main>

@@ -14,24 +14,27 @@
 @@s014 Træet af to counter++
 @@s015 Træet bygget i hånden; resultaterne (2 rigtige slutværdier ud af 6) er bekræftet af en udtømmende udforskning i Python.
 @@s016 Programmet fra slidene: CounterAct.java, N = 10 forøgelser pr. tråd
-@@s017 Spørgsmålet "HARDer" fra slidene: minimum er <b>2</b>, ikke 10. Interleavingen: t1 læser 0; t2 laver alle sine gennemløb undtagen det sidste; t1 skriver 1; t2 læser 1; t1 færdiggør sine gennemløb; t2 skriver 2. Byg den selv på siden <a href="l01-interleaving.html">Interleaving</a>.
-@@s018 At prøve dem én for én er umuligt: det er <b>tilstandseksplosionen</b> (state explosion).
-@@s019 Mange interleavings fører til den samme tilstand (samme værdier af counter, temp og punkt i koden): en model checker som JPF genkender dem og udforsker dem ikke igen (state matching). Derfor bliver problemet håndterligt.
-@@s020 Med minimum 2 overtrædes assertionen i <code>CounterAct</code> aldrig: JPF <b>beviser</b>, at den er sand. Med <code>counter &gt; 2</code> ville JPF udskrive modeksemplet, der når 2.
-@@s021 Tal beregnet med en lille tilstandsudforsker i Python, som for dette program gør det samme som en model checker.
-@@s022 Deadlock i JPF's bounded buffer
-@@s023 Eksemplet <code>jpf_examples/deadlock/BoundedBuffer.java</code> bruger en enkelt monitor (<code>synchronized</code>, <code>wait()</code>) med <code>notify()</code> i stedet for <code>notifyAll()</code>. Producenter og konsumenter venter i det samme venteset, og <code>notify()</code> vækker <b>en vilkårlig</b>. Et scenarie med en buffer på 1, producenter P1, P2 og konsumenter C1, C2:
-@@s024 Alle står stille (scenariet genspillet trin for trin)
-@@s025 Konsumenterne kommer først.
-@@s026 Venter: [C2, P1, P2].
-@@s027 Den "forkerte venter": den vækker en anden konsument i stedet for en producent. Venter: [P1, P2].
-@@s028 Venter: <b>[P1, P2, C1, C2]</b>. Ingen kan længere underrette nogen: <mark class="no">deadlock</mark>.
-@@s029 En vækket producent finder plads og låser situationen op. Med tests sker et sådant scenarie sjældent; JPF finder det ved at udforske tilstandene (konfigurationen <code>target.args = 2,4,1</code> i .jpf-filen).
-@@s030 notify() vækker den forkerte venter
-@@s031 Hvorfor det ikke altid bruges
-@@s032 <b>Tilstandseksplosion</b>: selv små programmer kan have flere tilstande, end der kan besøges. Den reduceres med abstraktioner, approksimationer og ved at indskrænke problemet.
-@@s033 Værktøjer: interaktive bevisværktøjer (Rocq, Isabelle, Lean), model checkere, SAT/SMT-løsere, statisk analyse. Eksempel fra underviserens forskning: at finde data races i store Java-kodebaser med CodeQL (200 000 linjer på under 2 minutter).
-@@s034 Industrien bruger det stadig mere (Intel til hardware; NASA brugte JPF til en del af roveren Curiosity).
-@@s035 Til eksamen
-@@s036 Tests = generatorer af interleavings: de finder modeksempler, men beviser ikke fraværet af fejl. Formel verifikation = alle interleavings, med omkostningen ved tilstandseksplosionen. At kunne sige, hvilken slags egenskab der kontrolleres (<a href="l05-proprieta.html">safety eller liveness</a>), og hvordan dens modeksempel ser ud.
-@@s037 Tilstandseksplosion
+@@s017 mulige slutværdier for counter: fra <mark class="no">2</mark> til 20
+@@s018 Spørgsmålet "HARDer" fra slidene: minimum er <b>2</b>, ikke 10. Interleavingen: t1 læser 0; t2 laver alle sine gennemløb undtagen det sidste; t1 skriver 1; t2 læser 1; t1 færdiggør sine gennemløb; t2 skriver 2. Byg den selv på siden <a href="l01-interleaving.html">Interleaving</a>.
+@@s019 At prøve dem én for én er umuligt: det er <b>tilstandseksplosionen</b> (state explosion).
+@@s020 Mange interleavings fører til den samme tilstand (samme værdier af counter, temp og punkt i koden): en model checker som JPF genkender dem og udforsker dem ikke igen (state matching). Derfor bliver problemet håndterligt.
+@@s021 assert (counter &gt; 1) → <mark class="ok">sand i alle eksekveringer</mark>
+@@s022 Med minimum 2 overtrædes assertionen i <code>CounterAct</code> aldrig: JPF <b>beviser</b>, at den er sand. Med <code>counter &gt; 2</code> ville JPF udskrive modeksemplet, der når 2.
+@@s023 Tal beregnet med en lille tilstandsudforsker i Python, som for dette program gør det samme som en model checker.
+@@s024 Deadlock i JPF's bounded buffer
+@@s025 Eksemplet <code>jpf_examples/deadlock/BoundedBuffer.java</code> bruger en enkelt monitor (<code>synchronized</code>, <code>wait()</code>) med <code>notify()</code> i stedet for <code>notifyAll()</code>. Producenter og konsumenter venter i det samme venteset, og <code>notify()</code> vækker <b>en vilkårlig</b>. Et scenarie med en buffer på 1, producenter P1, P2 og konsumenter C1, C2:
+@@s026 Alle står stille (scenariet genspillet trin for trin)
+@@s027 Konsumenterne kommer først.
+@@s028 Venter: [C2, P1, P2].
+@@s029 Den "forkerte venter": den vækker en anden konsument i stedet for en producent. Venter: [P1, P2].
+@@s030 Venter: <b>[P1, P2, C1, C2]</b>. Ingen kan længere underrette nogen: <mark class="no">deadlock</mark>.
+@@s031 med <mark class="ok">notifyAll()</mark> vågner alle, og hver enkelt kontrollerer sin betingelse igen i while
+@@s032 En vækket producent finder plads og låser situationen op. Med tests sker et sådant scenarie sjældent; JPF finder det ved at udforske tilstandene (konfigurationen <code>target.args = 2,4,1</code> i .jpf-filen).
+@@s033 notify() vækker den forkerte venter
+@@s034 Hvorfor det ikke altid bruges
+@@s035 <b>Tilstandseksplosion</b>: selv små programmer kan have flere tilstande, end der kan besøges. Den reduceres med abstraktioner, approksimationer og ved at indskrænke problemet.
+@@s036 Værktøjer: interaktive bevisværktøjer (Rocq, Isabelle, Lean), model checkere, SAT/SMT-løsere, statisk analyse. Eksempel fra underviserens forskning: at finde data races i store Java-kodebaser med CodeQL (200 000 linjer på under 2 minutter).
+@@s037 Industrien bruger det stadig mere (Intel til hardware; NASA brugte JPF til en del af roveren Curiosity).
+@@s038 Til eksamen
+@@s039 Tests = generatorer af interleavings: de finder modeksempler, men beviser ikke fraværet af fejl. Formel verifikation = alle interleavings, med omkostningen ved tilstandseksplosionen. At kunne sige, hvilken slags egenskab der kontrolleres (<a href="l05-proprieta.html">safety eller liveness</a>), og hvordan dens modeksempel ser ud.
+@@s040 Tilstandseksplosion

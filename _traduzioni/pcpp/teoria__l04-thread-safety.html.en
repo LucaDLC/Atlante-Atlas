@@ -78,21 +78,23 @@
 @@s078 Program order: t1 has lock, <code>i++</code>, unlock; t2 has only <code>i++</code>.
 @@s079 They are conflicting actions.
 @@s080 The only pairs between different threads come from the start rule.
-@@s081 t2 does no lock actions, so the monitor rule creates no pairs between t1 and t2.
-@@s082 Fix: <code>private int i</code>. In this way every access goes through the <code>synchronized</code> methods, and every pair of accesses is ordered by the monitor rule.
-@@s083 Declaring <code>private</code> all the fields of primitive type ensures that they are touched only by the methods of the class.
-@@s084 Second way: returning a reference to the state
-@@s085 <code>private</code> is not enough if a method returns the object that is part of the state.
-@@s086 ArrayListEscape.java
-@@s087 The field is <code>private</code> and <code>final</code>. <code>final</code> blocks the <b>reference</b>, not the content of the list.
-@@s088 <code>get</code> returns the reference to the internal list. The lock covers only the <code>return</code>.
-@@s089 Whoever has the reference modifies the list after the lock has been released.
-@@s090 How the state escapes from get()
-@@s091 How to avoid it
-@@s092 Do not write methods that return references to objects of the state. Return values (an <code>int</code>, an immutable element such as <code>Integer</code> or <code>String</code>) or a copy.
-@@s093 Model sentence
-@@s094 "The class state is the field <i>a</i>. It escapes through <i>get()</i>, which returns a reference to the internal list: a thread can then call <i>set</i> on it without holding the lock, so that write and the write in <i>set(…)</i> are not ordered by happens-before. This is a data race on the class state, hence the class is not thread-safe."
-@@s095 Why does ConcurrentSkipListSet pass the add/remove tests (exercise 5.1.4)?
-@@s096 <code>HashSet.add</code> does "look whether it is there → write the node → <code>size++</code>" in three separate steps: two threads can both look before one writes.
-@@s097 <code>ConcurrentSkipListSet</code> (on top of <code>ConcurrentSkipListMap</code>) does the decisive step with a <b>compare-and-set</b> (CAS): "write the new node <b>only if</b> the pointer still has the value I read". It is a single atomic operation of the hardware: if another thread has changed something in the meantime, the CAS fails and the thread <b>restarts</b> the search, and this time it finds the key already present → <code>add</code> returns <code>false</code>. For <code>remove</code> it is the same: the node is deleted with a CAS on the value (from <i>v</i> to <code>null</code>), and only one thread wins.
-@@s098 The counter is updated (<code>addCount(±1)</code>, a thread-safe <code>LongAdder</code>) <b>only</b> by the thread that won the CAS: no duplicates, no double decrements. Verified on the source of JDK 26.
+@@s081 monitor rule: <mark class="no">a lock is needed in t2 too</mark>
+@@s082 t2 does no lock actions, so the monitor rule creates no pairs between t1 and t2.
+@@s083 t1(1) ↛ t2(2) and t2(2) ↛ t1(1) ⇒ <mark class="no">data race on field i</mark> ⇒ Counter not thread-safe
+@@s084 Fix: <code>private int i</code>. In this way every access goes through the <code>synchronized</code> methods, and every pair of accesses is ordered by the monitor rule.
+@@s085 Declaring <code>private</code> all the fields of primitive type ensures that they are touched only by the methods of the class.
+@@s086 Second way: returning a reference to the state
+@@s087 <code>private</code> is not enough if a method returns the object that is part of the state.
+@@s088 ArrayListEscape.java
+@@s089 The field is <code>private</code> and <code>final</code>. <code>final</code> blocks the <b>reference</b>, not the content of the list.
+@@s090 <code>get</code> returns the reference to the internal list. The lock covers only the <code>return</code>.
+@@s091 Whoever has the reference modifies the list after the lock has been released.
+@@s092 How the state escapes from get()
+@@s093 How to avoid it
+@@s094 Do not write methods that return references to objects of the state. Return values (an <code>int</code>, an immutable element such as <code>Integer</code> or <code>String</code>) or a copy.
+@@s095 Model sentence
+@@s096 "The class state is the field <i>a</i>. It escapes through <i>get()</i>, which returns a reference to the internal list: a thread can then call <i>set</i> on it without holding the lock, so that write and the write in <i>set(…)</i> are not ordered by happens-before. This is a data race on the class state, hence the class is not thread-safe."
+@@s097 Why does ConcurrentSkipListSet pass the add/remove tests (exercise 5.1.4)?
+@@s098 <code>HashSet.add</code> does "look whether it is there → write the node → <code>size++</code>" in three separate steps: two threads can both look before one writes.
+@@s099 <code>ConcurrentSkipListSet</code> (on top of <code>ConcurrentSkipListMap</code>) does the decisive step with a <b>compare-and-set</b> (CAS): "write the new node <b>only if</b> the pointer still has the value I read". It is a single atomic operation of the hardware: if another thread has changed something in the meantime, the CAS fails and the thread <b>restarts</b> the search, and this time it finds the key already present → <code>add</code> returns <code>false</code>. For <code>remove</code> it is the same: the node is deleted with a CAS on the value (from <i>v</i> to <code>null</code>), and only one thread wins.
+@@s100 The counter is updated (<code>addCount(±1)</code>, a thread-safe <code>LongAdder</code>) <b>only</b> by the thread that won the CAS: no duplicates, no double decrements. Verified on the source of JDK 26.

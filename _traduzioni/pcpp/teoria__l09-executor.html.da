@@ -6,35 +6,39 @@
 @@s006 En <b>task</b> er et stykke arbejde, der skal laves (en <code>Runnable</code> eller en <code>Callable</code>). En <b>executor</b> modtager tasks og kører dem med en gruppe tråde, <b>puljen</b>. Med <code>Executors.newWorkStealingPool()</code> har puljen cirka en tråd pr. kerne. Hver worker har sin egen kø af tasks: hvis dens kø er tom, stjæler den en task fra en anden workers kø (<i>work stealing</i>).
 @@s007 Executorens dynamik
 @@s008 dato:task,ora:trin i gang,ok:resultat
-@@s009 Kalderen venter ikke: submit returnerer med det samme.
-@@s010 Hvis dens kø er tom, stjæler den en task fra en anden worker.
-@@s011 Taskens kode kører på en tråd i puljen, ikke på den tråd, der kaldte submit.
-@@s012 <code>future.get()</code> læser resultatet og venter, hvis tasken ikke er færdig endnu.
-@@s013 Future: resultatet der kommer
-@@s014 <code>submit</code> returnerer en <b>Future</b>: en beholder til en værdi, der kommer senere. <code>future.get()</code> blokerer, indtil tasken er færdig, og returnerer resultatet. Med <code>Future&lt;?&gt;</code> returnerer tasken ingenting: den tjener kun til at vente, til den er færdig.
-@@s015 Pas på
-@@s016 Hvis tasken kaster en undtagelse, kaster <code>get()</code> den igen, pakket ind i <code>ExecutionException</code>. Ignorer ikke resultatet af <code>get()</code>, ellers forsvinder fejlen.
-@@s017 Eksempel: tæl primtal i otte tasks
-@@s018 Antallet af primtal under 100 000, delt i otte uafhængige stykker. Hver task tæller primtallene i sit stykke og lægger dem i den samme delte <code>LongAdder</code> (uden lås, se siden om striping).
-@@s019 Esecutore.java
-@@s020 <code>isPrime</code> prøver divisorerne op til kvadratroden af n: det er nok, for en divisor over roden har en komplementær divisor under den. Castet <code>(long)</code> undgår et overflow i <code>d * d</code>.
-@@s021 100 000 tal delt med 8 tasks: 12 500 tal hver. Stykkerne er uafhængige, så de kan køre parallelt.
-@@s022 Puljen med work stealing. Antallet af workers afhænger af maskinens kerner, ikke af antallet af tasks.
-@@s023 Delt tæller uden lås: hver task laver <code>increment</code> på de primtal, den finder. Det er emnet for casestudiet om LongAdder.
-@@s024 Løkken forbereder de otte tasks. For hver af dem er intervallet <code>[da, a)</code> (fra da inklusiv til a eksklusiv) dens stykke af tal.
-@@s025 Tasken er lambdaen, der tæller primtal i intervallet. <code>submit</code> sætter den i kø og returnerer Future'en, som lægges i listen.
-@@s026 Venter på resultatet af hver task, en efter en. Efter denne løkke er alle tasks færdige.
-@@s027 Lukker puljen: den accepterer ikke flere tasks, og workerne stopper, når de er færdige.
-@@s028 Summen af bidragene fra alle tråde: 9 592 primtal under 100 000. Resultatet er korrekt, selv om tasks kører parallelt.
-@@s029 Tasks eller virtuelle tråde?
-@@s030 Forelæsningen sammenligner de to veje på den samme optælling af primtal. Med 1–64 tråde eller tasks: tasks er lidt hurtigere end tråde, mens platformstråde og virtuelle tråde er lige hurtige. Med 2048: tasks forbliver lidt hurtigere end virtuelle tråde, og platformstråde bliver meget langsommere.
-@@s031 arbejde
-@@s032 anbefalet værktøj
-@@s033 venten (I/O, netværk, database)
-@@s034 virtuelle tråde: én tråd pr. operation
-@@s035 CPU-beregning, ydeevne er vigtig
-@@s036 tasks på en executor: mere kontrol og et fast antal tråde
-@@s037 enkelhed
-@@s038 virtuelle tråde: enklere at skrive
-@@s039 Forelæsningens regel
-@@s040 Opret ikke mange platformstråde. Til I/O: virtuelle tråde; til CPU-bundet arbejde: tasks. Hvis du er i tvivl, vælg virtuelle tråde.
+@@s009 <code>executor.submit(task)</code>: opgaven havner i en <mark class="ora">kø</mark>
+@@s010 Kalderen venter ikke: submit returnerer med det samme.
+@@s011 En <mark class="ora">worker</mark> tager en opgave fra sin kø
+@@s012 Hvis dens kø er tom, stjæler den en task fra en anden worker.
+@@s013 Workeren <mark class="dato">kører</mark> opgaven
+@@s014 Taskens kode kører på en tråd i puljen, ikke på den tråd, der kaldte submit.
+@@s015 <mark class="ok">Future</mark> bliver fuldført med resultatet
+@@s016 <code>future.get()</code> læser resultatet og venter, hvis tasken ikke er færdig endnu.
+@@s017 Future: resultatet der kommer
+@@s018 <code>submit</code> returnerer en <b>Future</b>: en beholder til en værdi, der kommer senere. <code>future.get()</code> blokerer, indtil tasken er færdig, og returnerer resultatet. Med <code>Future&lt;?&gt;</code> returnerer tasken ingenting: den tjener kun til at vente, til den er færdig.
+@@s019 Pas på
+@@s020 Hvis tasken kaster en undtagelse, kaster <code>get()</code> den igen, pakket ind i <code>ExecutionException</code>. Ignorer ikke resultatet af <code>get()</code>, ellers forsvinder fejlen.
+@@s021 Eksempel: tæl primtal i otte tasks
+@@s022 Antallet af primtal under 100 000, delt i otte uafhængige stykker. Hver task tæller primtallene i sit stykke og lægger dem i den samme delte <code>LongAdder</code> (uden lås, se siden om striping).
+@@s023 Esecutore.java
+@@s024 <code>isPrime</code> prøver divisorerne op til kvadratroden af n: det er nok, for en divisor over roden har en komplementær divisor under den. Castet <code>(long)</code> undgår et overflow i <code>d * d</code>.
+@@s025 100 000 tal delt med 8 tasks: 12 500 tal hver. Stykkerne er uafhængige, så de kan køre parallelt.
+@@s026 Puljen med work stealing. Antallet af workers afhænger af maskinens kerner, ikke af antallet af tasks.
+@@s027 Delt tæller uden lås: hver task laver <code>increment</code> på de primtal, den finder. Det er emnet for casestudiet om LongAdder.
+@@s028 Løkken forbereder de otte tasks. For hver af dem er intervallet <code>[da, a)</code> (fra da inklusiv til a eksklusiv) dens stykke af tal.
+@@s029 Tasken er lambdaen, der tæller primtal i intervallet. <code>submit</code> sætter den i kø og returnerer Future'en, som lægges i listen.
+@@s030 Venter på resultatet af hver task, en efter en. Efter denne løkke er alle tasks færdige.
+@@s031 Lukker puljen: den accepterer ikke flere tasks, og workerne stopper, når de er færdige.
+@@s032 Summen af bidragene fra alle tråde: 9 592 primtal under 100 000. Resultatet er korrekt, selv om tasks kører parallelt.
+@@s033 Tasks eller virtuelle tråde?
+@@s034 Forelæsningen sammenligner de to veje på den samme optælling af primtal. Med 1–64 tråde eller tasks: tasks er lidt hurtigere end tråde, mens platformstråde og virtuelle tråde er lige hurtige. Med 2048: tasks forbliver lidt hurtigere end virtuelle tråde, og platformstråde bliver meget langsommere.
+@@s035 arbejde
+@@s036 anbefalet værktøj
+@@s037 venten (I/O, netværk, database)
+@@s038 virtuelle tråde: én tråd pr. operation
+@@s039 CPU-beregning, ydeevne er vigtig
+@@s040 tasks på en executor: mere kontrol og et fast antal tråde
+@@s041 enkelhed
+@@s042 virtuelle tråde: enklere at skrive
+@@s043 Forelæsningens regel
+@@s044 Opret ikke mange platformstråde. Til I/O: virtuelle tråde; til CPU-bundet arbejde: tasks. Hvis du er i tvivl, vælg virtuelle tråde.

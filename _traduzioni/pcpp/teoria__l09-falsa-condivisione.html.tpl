@@ -23,36 +23,36 @@
   <p>{{s|s006|}}</p>
   <p>{{s|s007|}}</p>
   <figure class="passi" data-titolo="{{a|s008|}}" data-legenda="{{a|s009|}}">
-    <div class="passo"><div class="espr">Thread 0 scrive: la linea è in <mark class="ora">M</mark> nella cache del core 0</div><p class="nota">{{s|s010|}}</p></div>
-    <div class="passo"><div class="espr">Thread 1 scrive lo stesso dato: il core 1 <mark class="no">invalida</mark> la copia di core 0</div><p class="nota">{{s|s011|}}</p></div>
-    <div class="passo"><div class="espr">Thread 0 scrive di nuovo: la linea torna da core 1, <mark class="no">e così via</mark></div><p class="nota">{{s|s012|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s010|}}</div><p class="nota">{{s|s011|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s012|}}</div><p class="nota">{{s|s013|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s014|}}</div><p class="nota">{{s|s015|}}</p></div>
   </figure>
 </section>
 
 <section>
-  <h2>{{s|s013|}}</h2>
-  <p>{{s|s014|}}</p>
-  <ul>
-    <li>{{s|s015|}}</li>
-    <li>{{s|s016|}}</li>
-  </ul>
+  <h2>{{s|s016|}}</h2>
   <p>{{s|s017|}}</p>
+  <ul>
+    <li>{{s|s018|}}</li>
+    <li>{{s|s019|}}</li>
+  </ul>
+  <p>{{s|s020|}}</p>
 </section>
 
 <section>
-  <h2>{{s|s018|}}</h2>
-  <p>{{s|s019|}}</p>
-  <figure class="passi" data-titolo="{{a|s020|}}" data-legenda="{{a|s021|}}">
-    <div class="passo"><div class="espr">Thread A scrive il contatore <mark class="dato">a</mark>, Thread B il contatore <mark class="dato">b</mark>: stessa linea</div><p class="nota">{{s|s022|}}</p></div>
-    <div class="passo"><div class="espr">Ogni scrittura di A <mark class="no">invalida</mark> la copia di B, e viceversa</div><p class="nota">{{s|s023|}}</p></div>
-    <div class="passo"><div class="espr"><mark class="ok">Soluzione</mark>: <mark class="ok">padding</mark>, cioè spazio vuoto tra i dati, così ognuno sta su una linea propria</div><p class="nota">{{s|s024|}}</p></div>
+  <h2>{{s|s021|}}</h2>
+  <p>{{s|s022|}}</p>
+  <figure class="passi" data-titolo="{{a|s023|}}" data-legenda="{{a|s024|}}">
+    <div class="passo"><div class="espr">{{s|s025|}}</div><p class="nota">{{s|s026|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s027|}}</div><p class="nota">{{s|s028|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s029|}}</div><p class="nota">{{s|s030|}}</p></div>
   </figure>
 </section>
 
 <section>
-  <h2>{{s|s025|}}</h2>
-  <p>{{s|s026|}}</p>
-  <div class="box attenzione" data-tit="{{a|s027|}}">{{s|s028|}}</div>
+  <h2>{{s|s031|}}</h2>
+  <p>{{s|s032|}}</p>
+  <div class="box attenzione" data-tit="{{a|s033|}}">{{s|s034|}}</div>
 </section>
 
 </main>

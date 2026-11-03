@@ -260,37 +260,37 @@ window.SCENE = window.SCENE || {};
       <pre data-lang="scala">case Empty => None</pre>
       <pre class="msg">Found:    None.type
 Required: List[A]</pre>
-      <div class="fix"><code>None</code> è un Option. La lista vuota è <code>Nil</code>.</div>
+      <div class="fix">{{s|s058|}}</div>
     </div>
     <div class="errore">
       <pre data-lang="scala">case Cons(h, t) => h() :: t().toList()</pre>
       <pre class="msg">missing argument for parameter n of method apply in trait LinearSeqOps: (n: Int): A</pre>
-      <div class="fix"><code>toList</code> è definita <b>senza</b> parentesi, quindi si chiama senza. Scala legge <code>t().toList</code> (una List) seguita da <code>()</code>, cioè "l'elemento in posizione…?", e manca la posizione. Scrivi <code>t().toList</code>.</div>
+      <div class="fix">{{s|s059|}}</div>
     </div>
     <div class="errore">
       <pre data-lang="scala">case Cons(h, t) => cons(h(), t().toList)</pre>
       <pre class="msg">Found:    List[A]
 Required: LazyList[A]</pre>
-      <div class="fix"><code>cons</code> costruisce una LazyList e vuole una LazyList come resto. <code>toList</code> deve restituire una List: usa <code>::</code>.</div>
+      <div class="fix">{{s|s060|}}</div>
     </div>
     <div class="errore">
       <pre data-lang="scala">def take(n: Int): LazyList[A] =
   if n &lt;= 0 then Nil else …</pre>
       <pre class="msg">Found:    (Nil : scala.collection.immutable.Nil.type)
 Required: LazyList[A]</pre>
-      <div class="fix">Qui il risultato è una <b>LazyList</b>: la versione vuota è <code>empty</code>, non <code>Nil</code>.</div>
+      <div class="fix">{{s|s061|}}</div>
     </div>
   </div>
-  <div class="box regola" data-tit="{{a|s058|}}">
+  <div class="box regola" data-tit="{{a|s062|}}">
     <div class="tab-wrap"><table class="tab">
-      <thead><tr><th>{{s|s059|}}</th><th>{{s|s060|}}</th><th>{{s|s061|}}</th><th>{{s|s062|}}</th></tr></thead>
+      <thead><tr><th>{{s|s063|}}</th><th>{{s|s064|}}</th><th>{{s|s065|}}</th><th>{{s|s066|}}</th></tr></thead>
       <tbody>
-        <tr><td>{{s|s063|}}</td><td>{{s|s064|}}</td><td>{{s|s065|}}</td><td>{{s|s066|}}</td></tr>
         <tr><td>{{s|s067|}}</td><td>{{s|s068|}}</td><td>{{s|s069|}}</td><td>{{s|s070|}}</td></tr>
         <tr><td>{{s|s071|}}</td><td>{{s|s072|}}</td><td>{{s|s073|}}</td><td>{{s|s074|}}</td></tr>
+        <tr><td>{{s|s075|}}</td><td>{{s|s076|}}</td><td>{{s|s077|}}</td><td>{{s|s078|}}</td></tr>
       </tbody>
     </table></div>
-    <p>{{s|s075|}}</p>
+    <p>{{s|s079|}}</p>
   </div>
   <div class="errori">
     <div class="errore">
@@ -298,22 +298,22 @@ Required: LazyList[A]</pre>
   case Empty => empty</pre>
       <pre class="msg">Found:    adpro.lazyList.LazyList[Nothing]
 Required: Option[A]</pre>
-      <div class="fix">La funzione restituisce un <code>Option</code>: il niente è <code>None</code>.</div>
+      <div class="fix">{{s|s080|}}</div>
     </div>
     <div class="errore">
       <pre data-lang="scala">def tail: LazyList[A] = this match
   case Empty => None</pre>
       <pre class="msg">Found:    None.type
 Required: adpro.lazyList.LazyList[A]</pre>
-      <div class="fix">La funzione restituisce una <code>LazyList</code>: il niente è <code>empty</code>.</div>
+      <div class="fix">{{s|s081|}}</div>
     </div>
   </div>
-  <figure class="scena" data-scena="tolistlazy" data-titolo="{{a|s076|}}"></figure>
+  <figure class="scena" data-scena="tolistlazy" data-titolo="{{a|s082|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s077|}}</h2>
-  <figure class="codice" data-titolo="{{a|s078|}}">
+  <h2>{{s|s083|}}</h2>
+  <figure class="codice" data-titolo="{{a|s084|}}">
 <pre data-lang="scala">def take(n: Int): LazyList[A] = this match
   case Cons(h, t) if n &gt; 0 => cons(h(), t().take(n - 1))
   case _ => empty
@@ -322,15 +322,15 @@ def drop(n: Int): LazyList[A] = this match
   case Cons(_, t) if n &gt; 0 => t().drop(n - 1)
   case _ => this</pre>
     <ol class="spiega">
-      <li data-righe="2" data-segna="if n &gt; 0@ora"><p>{{s|s079|}}</p></li>
-      <li data-righe="2" data-segna="cons(h(), t().take(n - 1))@ok"><p>{{s|s080|}}</p></li>
-      <li data-righe="3" data-segna="case _ => empty@dato"><p>{{s|s081|}}</p></li>
-      <li data-righe="6" data-segna="t().drop(n - 1)@ora"><p>{{s|s082|}}</p></li>
-      <li data-righe="7" data-segna="case _ => this@ok"><p>{{s|s083|}}</p></li>
+      <li data-righe="2" data-segna="if n &gt; 0@ora"><p>{{s|s085|}}</p></li>
+      <li data-righe="2" data-segna="cons(h(), t().take(n - 1))@ok"><p>{{s|s086|}}</p></li>
+      <li data-righe="3" data-segna="case _ => empty@dato"><p>{{s|s087|}}</p></li>
+      <li data-righe="6" data-segna="t().drop(n - 1)@ora"><p>{{s|s088|}}</p></li>
+      <li data-righe="7" data-segna="case _ => this@ok"><p>{{s|s089|}}</p></li>
     </ol>
   </figure>
-  <div class="box attenzione" data-tit="{{a|s084|}}">
-    <p>{{s|s085|}}</p>
+  <div class="box attenzione" data-tit="{{a|s090|}}">
+    <p>{{s|s091|}}</p>
   </div>
   <div class="errori">
     <div class="errore">
@@ -341,26 +341,26 @@ def drop(n: Int): LazyList[A] = this match
   def apply[A](as: A*): adpro.lazyList.LazyList[A]
 
 where:    A is a type variable</pre>
-      <div class="fix"><code>LazyList[A]</code> è un <b>tipo</b>, non un valore. Scritto in mezzo al codice, Scala prova a chiamare il costruttore <code>LazyList(…)</code> e gli mancano gli argomenti. Il valore che serve è <code>this</code>: la lista su cui è stato chiamato <code>drop</code>.</div>
+      <div class="fix">{{s|s092|}}</div>
     </div>
   </div>
-  <figure class="passi" data-titolo="{{a|s086|}}">
-    <div class="passo"><div class="espr">naturals.<mark class="dato">take(1000000000)</mark></div><p class="nota">{{s|s087|}}</p></div>
-    <div class="passo"><div class="espr">….<mark class="ora">drop(41)</mark></div><p class="nota">{{s|s088|}}</p></div>
-    <div class="passo"><div class="espr">….<mark class="dato">take(10)</mark></div><p class="nota">{{s|s089|}}</p></div>
-    <div class="passo"><div class="espr">….<mark class="ora">toList</mark>   →   <mark class="ok">List(42, 43, …, 51)</mark></div><p class="nota">{{s|s090|}}</p></div>
+  <figure class="passi" data-titolo="{{a|s093|}}">
+    <div class="passo"><div class="espr">naturals.<mark class="dato">take(1000000000)</mark></div><p class="nota">{{s|s094|}}</p></div>
+    <div class="passo"><div class="espr">….<mark class="ora">drop(41)</mark></div><p class="nota">{{s|s095|}}</p></div>
+    <div class="passo"><div class="espr">….<mark class="dato">take(10)</mark></div><p class="nota">{{s|s096|}}</p></div>
+    <div class="passo"><div class="espr">….<mark class="ora">toList</mark>   →   <mark class="ok">List(42, 43, …, 51)</mark></div><p class="nota">{{s|s097|}}</p></div>
   </figure>
-  <div class="box inglese" data-tit="{{a|s091|}}">
-    <p>{{s|s092|}}</p>
+  <div class="box inglese" data-tit="{{a|s098|}}">
+    <p>{{s|s099|}}</p>
   </div>
-  <div class="box inglese" data-tit="{{a|s093|}}">
-    <p>{{s|s094|}}</p>
+  <div class="box inglese" data-tit="{{a|s100|}}">
+    <p>{{s|s101|}}</p>
   </div>
-  <figure class="scena" data-scena="takedrop" data-titolo="{{a|s095|}}"></figure>
+  <figure class="scena" data-scena="takedrop" data-titolo="{{a|s102|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s096|}}</h2>
+  <h2>{{s|s103|}}</h2>
   <pre class="cod" data-lang="scala">def takeWhile(p: A => Boolean): LazyList[A] = this match
   case Cons(h, t) if p(h()) => cons(h(), t().takeWhile(p))
   case _ => empty
@@ -372,40 +372,40 @@ def forAll(p: A => Boolean): Boolean = this match
 def exists(p: A => Boolean): Boolean = this match
   case Empty => false
   case Cons(h, t) => p(h()) || t().exists(p)</pre>
-  <p>{{s|s097|}}</p>
-  <p>{{s|s098|}}</p>
-  <p>{{s|s099|}}</p>
-  <div class="box inglese" data-tit="{{a|s100|}}">
-    <p>{{s|s101|}}</p>
+  <p>{{s|s104|}}</p>
+  <p>{{s|s105|}}</p>
+  <p>{{s|s106|}}</p>
+  <div class="box inglese" data-tit="{{a|s107|}}">
+    <p>{{s|s108|}}</p>
   </div>
-  <div class="box inglese" data-tit="{{a|s102|}}">
-    <p>{{s|s103|}}</p>
-    <p>{{s|s104|}}</p>
+  <div class="box inglese" data-tit="{{a|s109|}}">
+    <p>{{s|s110|}}</p>
+    <p>{{s|s111|}}</p>
   </div>
-  <figure class="scena" data-scena="forallexists" data-titolo="{{a|s105|}}"></figure>
-</section>
-
-<section>
-  <h2>{{s|s106|}}</h2>
-  <pre class="cod" data-lang="scala">lazy val random1: LazyList[Double] = Cons(() => Math.random, () => random1)
-lazy val random2: LazyList[Double] = cons(Math.random, random2)</pre>
-  <div class="colonne">
-    <div class="carta"><h4>{{s|s107|}}</h4><p>{{s|s108|}}</p></div>
-    <div class="carta"><h4>{{s|s109|}}</h4><p>{{s|s110|}}</p></div>
-  </div>
-  <p>{{s|s111|}}</p>
-  <figure class="scena" data-scena="random12" data-titolo="{{a|s112|}}"></figure>
+  <figure class="scena" data-scena="forallexists" data-titolo="{{a|s112|}}"></figure>
 </section>
 
 <section>
   <h2>{{s|s113|}}</h2>
+  <pre class="cod" data-lang="scala">lazy val random1: LazyList[Double] = Cons(() => Math.random, () => random1)
+lazy val random2: LazyList[Double] = cons(Math.random, random2)</pre>
+  <div class="colonne">
+    <div class="carta"><h4>{{s|s114|}}</h4><p>{{s|s115|}}</p></div>
+    <div class="carta"><h4>{{s|s116|}}</h4><p>{{s|s117|}}</p></div>
+  </div>
+  <p>{{s|s118|}}</p>
+  <figure class="scena" data-scena="random12" data-titolo="{{a|s119|}}"></figure>
+</section>
+
+<section>
+  <h2>{{s|s120|}}</h2>
   <ul>
-    <li>{{s|s114|}}</li>
-    <li>{{s|s115|}}</li>
-    <li>{{s|s116|}}</li>
-    <li>{{s|s117|}}</li>
+    <li>{{s|s121|}}</li>
+    <li>{{s|s122|}}</li>
+    <li>{{s|s123|}}</li>
+    <li>{{s|s124|}}</li>
   </ul>
-  <figure class="scena" data-scena="perchelazy" data-titolo="{{a|s118|}}"></figure>
+  <figure class="scena" data-scena="perchelazy" data-titolo="{{a|s125|}}"></figure>
 </section>
 
 </main>

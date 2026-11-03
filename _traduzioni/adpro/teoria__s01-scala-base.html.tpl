@@ -228,13 +228,13 @@ val res0: Int = 7</pre>
     <div class="errore">
       <pre data-lang="scala">scala&gt; adpro.intro.Exercise.fib(10)</pre>
       <pre class="msg">value Exercise is not a member of adpro.intro</pre>
-      <div class="fix">Nel package <code>adpro.intro</code> non esiste niente che si chiami <code>Exercise</code>. Controlla il nome esatto dell'<code>object</code> nel file (e se <code>fib</code> sta fuori da ogni object, si chiama <code>adpro.intro.fib(10)</code>). Se hai appena modificato il file, chiudi e riapri <code>scala-cli repl .</code>: il REPL vede il codice compilato all'avvio.</div>
+      <div class="fix">{{s|s081|}}</div>
     </div>
   </div>
-  <div class="box attenzione" data-tit="{{a|s081|}}">
-    <p>{{s|s082|}}</p>
+  <div class="box attenzione" data-tit="{{a|s082|}}">
+    <p>{{s|s083|}}</p>
   </div>
-  <figure class="scena" data-scena="errrepl" data-titolo="{{a|s083|}}"></figure>
+  <figure class="scena" data-scena="errrepl" data-titolo="{{a|s084|}}"></figure>
 </section>
 
 </main>

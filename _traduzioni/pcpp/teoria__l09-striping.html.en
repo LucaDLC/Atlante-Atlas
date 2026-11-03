@@ -18,14 +18,17 @@
 @@s018 Even with 64 stripes, the counters and the locks are in arrays: adjacent elements in an array share a cache line. Two neighbouring stripes can therefore do false sharing. The solution of the lecture is <b>padding</b>: only the indices that are multiples of 16 are used (<code>padding = 16</code>), and the other elements stay empty. So each counter and each lock sits on a line of its own.
 @@s019 How a thread chooses its counter
 @@s020 dato:thread,ora:step in progress,ok:result
-@@s021 <code>threadId()</code> is unique for each thread.
-@@s022 The AND keeps only the 6 low bits: the result is always between 0 and 63.
-@@s023 No other thread uses stripe 37, unless it has the same remainder.
-@@s024 The results of the lecture
-@@s025 The lecture compares nine versions of the counter, on an Apple M3 Pro laptop and an AMD EPYC 7313 server. The conclusions, from the slide:
-@@s026 using a lock is not slow in itself, but a single lock creates <b>contention</b> and a lot of traffic between the caches;
-@@s027 striping improves concurrent code, but the stripes must sit on different cache lines: padding is needed;
-@@s028 the library's <code>java.util.concurrent.atomic.LongAdder</code> does all this correctly, and it is the choice to use;
-@@s029 the conclusions hold for five CPU architectures, from 2014 to 2023.
-@@s030 Practical rule
-@@s031 For a shared counter, use <code>LongAdder</code>. Do not write a single lock, and do not copy striping unless you have measured the need for it.
+@@s021 The thread has an <mark class="dato">id</mark>, for example 37
+@@s022 <code>threadId()</code> is unique for each thread.
+@@s023 <mark class="ora">37 AND 63</mark> = 37: the stripe is number 37
+@@s024 The AND keeps only the 6 low bits: the result is always between 0 and 63.
+@@s025 The thread takes the <mark class="ora">lock of stripe 37</mark> and adds to <mark class="ok">counts[37]</mark>
+@@s026 No other thread uses stripe 37, unless it has the same remainder.
+@@s027 The results of the lecture
+@@s028 The lecture compares nine versions of the counter, on an Apple M3 Pro laptop and an AMD EPYC 7313 server. The conclusions, from the slide:
+@@s029 using a lock is not slow in itself, but a single lock creates <b>contention</b> and a lot of traffic between the caches;
+@@s030 striping improves concurrent code, but the stripes must sit on different cache lines: padding is needed;
+@@s031 the library's <code>java.util.concurrent.atomic.LongAdder</code> does all this correctly, and it is the choice to use;
+@@s032 the conclusions hold for five CPU architectures, from 2014 to 2023.
+@@s033 Practical rule
+@@s034 For a shared counter, use <code>LongAdder</code>. Do not write a single lock, and do not copy striping unless you have measured the need for it.

@@ -303,69 +303,68 @@ def foldLeft[A, B](l: List[A], z: B, f: (B, A) => B): B = l match
       <p class="nota">{{s|s071|}}</p>
     </div>
     <div class="passo">
-      <div class="espr">f: (<mark class="dato">B</mark>, <mark class="due">A</mark>) => B   con B = Int
-f(<mark class="dato">acc</mark>, <mark class="due">elemento</mark>) = ?</div>
-      <p class="nota">{{s|s072|}}</p>
+      <div class="espr">{{s|s072|}}</div>
+      <p class="nota">{{s|s073|}}</p>
     </div>
     <div class="passo">
       <div class="espr">(<mark class="dato">acc</mark>, <mark class="due">_</mark>) => <mark class="ora">acc + 1</mark></div>
-      <p class="nota">{{s|s073|}}</p>
+      <p class="nota">{{s|s074|}}</p>
     </div>
     <div class="passo">
       <div class="espr">def length1[A](as: List[A]): Int =
   foldLeft(as, 0, <mark class="ok">(acc, _) => acc + 1</mark>)</div>
-      <p class="nota">{{s|s074|}}</p>
+      <p class="nota">{{s|s075|}}</p>
     </div>
   </figure>
-  <figure class="passi" data-titolo="{{a|s075|}}">
+  <figure class="passi" data-titolo="{{a|s076|}}">
     <div class="passo">
       <div class="espr">foldLeft(List(1, 2, 3), <mark class="dato">Nil</mark>, (acc, a) => Cons(a, acc))</div>
-      <p class="nota">{{s|s076|}}</p>
+      <p class="nota">{{s|s077|}}</p>
     </div>
-    <div class="passo"><div class="espr">acc = Cons(<mark class="ora">1</mark>, Nil)</div><p class="nota">{{s|s077|}}</p></div>
-    <div class="passo"><div class="espr">acc = Cons(<mark class="ora">2</mark>, Cons(1, Nil))</div><p class="nota">{{s|s078|}}</p></div>
-    <div class="passo"><div class="espr">acc = Cons(<mark class="ora">3</mark>, Cons(2, Cons(1, Nil)))</div><p class="nota">{{s|s079|}}</p></div>
-    <div class="passo"><div class="espr"><mark class="ok">List(3, 2, 1)</mark></div><p class="nota">{{s|s080|}}</p></div>
+    <div class="passo"><div class="espr">acc = Cons(<mark class="ora">1</mark>, Nil)</div><p class="nota">{{s|s078|}}</p></div>
+    <div class="passo"><div class="espr">acc = Cons(<mark class="ora">2</mark>, Cons(1, Nil))</div><p class="nota">{{s|s079|}}</p></div>
+    <div class="passo"><div class="espr">acc = Cons(<mark class="ora">3</mark>, Cons(2, Cons(1, Nil)))</div><p class="nota">{{s|s080|}}</p></div>
+    <div class="passo"><div class="espr"><mark class="ok">List(3, 2, 1)</mark></div><p class="nota">{{s|s081|}}</p></div>
   </figure>
   <pre class="cod" data-lang="scala">def product(as: List[Int]): Int = foldLeft(as, 1, _ * _)       // z = 1, mai 0
 def map[A, B](l: List[A], f: A => B): List[B] =
   foldRight[A, List[B]](l, Nil, (a, z) => Cons(f(a), z))       // dalla testa del file</pre>
-  <figure class="scena" data-scena="treesempi" data-titolo="{{a|s081|}}"></figure>
+  <figure class="scena" data-scena="treesempi" data-titolo="{{a|s082|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s082|}}</h2>
+  <h2>{{s|s083|}}</h2>
   <div class="tab-wrap"><table class="tab">
-    <thead><tr><th>{{s|s083|}}</th><th>{{s|s084|}}</th><th>{{s|s085|}}</th></tr></thead>
+    <thead><tr><th>{{s|s084|}}</th><th>{{s|s085|}}</th><th>{{s|s086|}}</th></tr></thead>
     <tbody>
-      <tr><td>{{s|s086|}}</td><td><code>f(a1, f(a2, f(a3, z)))</code></td><td><code>f(f(f(z, a1), a2), a3)</code></td></tr>
-      <tr><td>{{s|s087|}}</td><td>{{s|s088|}}</td><td>{{s|s089|}}</td></tr>
-      <tr><td>{{s|s090|}}</td><td>{{s|s091|}}</td><td>{{s|s092|}}</td></tr>
-      <tr><td>{{s|s093|}}</td><td>{{s|s094|}}</td><td>{{s|s095|}}</td></tr>
-      <tr><td>{{s|s096|}}</td><td>{{s|s097|}}</td><td>{{s|s098|}}</td></tr>
+      <tr><td>{{s|s087|}}</td><td><code>f(a1, f(a2, f(a3, z)))</code></td><td><code>f(f(f(z, a1), a2), a3)</code></td></tr>
+      <tr><td>{{s|s088|}}</td><td>{{s|s089|}}</td><td>{{s|s090|}}</td></tr>
+      <tr><td>{{s|s091|}}</td><td>{{s|s092|}}</td><td>{{s|s093|}}</td></tr>
+      <tr><td>{{s|s094|}}</td><td>{{s|s095|}}</td><td>{{s|s096|}}</td></tr>
+      <tr><td>{{s|s097|}}</td><td>{{s|s098|}}</td><td>{{s|s099|}}</td></tr>
     </tbody>
   </table></div>
-  <div class="box esame" data-tit="{{a|s099|}}">
-    <p>{{s|s100|}}</p>
+  <div class="box esame" data-tit="{{a|s100|}}">
+    <p>{{s|s101|}}</p>
   </div>
-  <figure class="scena" data-scena="scegli" data-titolo="{{a|s101|}}"></figure>
+  <figure class="scena" data-scena="scegli" data-titolo="{{a|s102|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s102|}}</h2>
-  <p>{{s|s103|}}</p>
+  <h2>{{s|s103|}}</h2>
   <p>{{s|s104|}}</p>
-  <figure class="scena" data-scena="stile" data-titolo="{{a|s105|}}"></figure>
+  <p>{{s|s105|}}</p>
+  <figure class="scena" data-scena="stile" data-titolo="{{a|s106|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s106|}}</h2>
+  <h2>{{s|s107|}}</h2>
   <div class="errori">
     <div class="errore">
       <pre data-lang="scala">foldLeft(as, 0, f(acc, _) => acc + 1)</pre>
       <pre class="msg">not a legal formal parameter for a function literal
 Not found: acc</pre>
-      <div class="fix">A sinistra della freccia vanno solo i nomi dei parametri tra parentesi, senza <code>f</code> davanti: <code>(acc, _) => acc + 1</code>.</div>
+      <div class="fix">{{s|s108|}}</div>
     </div>
     <div class="errore">
       <pre data-lang="scala">def foldLeft[A, B](l: List[A], z: B, f: (B, A) => B): B =
@@ -375,10 +374,10 @@ Not found: acc</pre>
 I could not infer the type of the parameter x$1
 in expanded function:
   x$1 => x$1 match { case Nil => z … }</pre>
-      <div class="fix">Messaggio strano, causa semplice: manca <code>l match</code>. Dei <code>case</code> scritti da soli Scala li legge come una <b>funzione anonima</b> (<code>x$1 => x$1 match …</code>) e non capisce il tipo del suo parametro. Scrivi <code>= l match</code> prima dei <code>case</code>.</div>
+      <div class="fix">{{s|s109|}}</div>
     </div>
   </div>
-  <figure class="scena" data-scena="errorifold" data-titolo="{{a|s107|}}"></figure>
+  <figure class="scena" data-scena="errorifold" data-titolo="{{a|s110|}}"></figure>
 </section>
 
 </main>

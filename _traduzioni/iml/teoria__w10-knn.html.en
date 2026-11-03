@@ -24,75 +24,77 @@
 @@s024 How a point q is classified
 @@s025 There is no training and there are no weights: the model is the training set itself (<i>memory-based</i>). x is the vector of features of a point, y its class, N how many points there are.
 @@s026 q is the new point, xᵢ the point i of the training set; the second index says which feature we mean. It is the Euclidean distance, that is the norm of q − xᵢ (page <a href="w02-norme-distanze.html">Norms and distances</a>). It is computed for all N points.
-@@s027 k is chosen by whoever uses the method: it is a <b>hyperparameter</b>, not learned from the data.
-@@s028 With two classes and odd k a tied vote is impossible. With even k it can happen.
-@@s029 Tasks 1–2: the 20 points and the five questions
-@@s030 The notebook gives 10 points of class A, 10 of class B and five points to classify. Task 1 only asks to look at them; Task 2 asks for the class of each Q with k = 2, 3, 5 "by eye". Here we calculate the distances, and see where the eye is not enough.
-@@s031 Class A
-@@s032 Class B
-@@s033 The names A1…A10 and B1…B10 are the ones the notebook writes on the plot, in the order in which they appear in the lists <code>class_A</code> and <code>class_B</code>. The five questions are Q1 = (3, 3), Q2 = (2, 4), Q3 = (5, 2), Q4 = (4, 5), Q5 = (4, 2).
-@@s034 The five questions, one at a time
-@@s035 Point
-@@s036 A, or a tied vote 1–1
-@@s037 tied vote 1–1
-@@s038 The votes are written as "how many A – how many B". Where the cell says "A / B" the result is A or B, depending on how the tie explained below is resolved.
-@@s039 The ties: what the eye misses
-@@s040 With integer coordinates distances repeat: from Q4 three points are all at √2. If the k-th place is contested by several points at the same distance, <b>the method alone does not decide</b>: a rule is needed. The most common: keep all the tied points (then there are more than k neighbours), choose by the order of the data, or weight the votes by distance. In the exercise the honest thing is to say that there is a tie and that the answer depends on how it is resolved.
-@@s041 With <code>KNeighborsClassifier</code> of scikit-learn 1.9.0 the output is: for Q4, A with k = 2, 3, 5; for Q5, A with k = 2 and 3, B with k = 5. It picks among the tied points itself and, on a tied vote, gave A: this is an implementation detail, not a rule of the method.
-@@s042 Safe points and points on the boundary
-@@s043 Q1, Q2 and Q3 lie inside a group: the neighbours are almost all of the same class and changing k does not change the answer. Q4 and Q5 lie between the two groups, close to the <b>decision boundary</b>: there any change of k, of distance or of tie can flip the class.
-@@s044 How the answer changes with k (Task 2)
-@@s045 The question of the notebook: what happens when k is very small or very large, and how does it relate to overfitting and underfitting?
-@@s046 <b>Small k</b> (at the limit 1): a single point decides. A point out of place, because of noise or measurement error, changes the answer all around it. The boundary is jagged and follows the noise: <b>overfitting</b>.
-@@s047 <b>Large k</b>: every answer is an average over many points. The boundary smooths out; real details are lost. At the limit k = N all the points vote for every Q: here 10–10, a single class everywhere, 0.5 accuracy: <b>underfitting</b>.
-@@s048 <b>In between</b> there is the right k, and it is chosen with a validation set (<a href="w07-validazione.html">Validation</a>), because k is a hyperparameter.
-@@s049 training points got wrong
-@@s050 accuracy on the training
-@@s051 none
-@@s052 none
-@@s053 all the B
-@@s054 <code>KNeighborsClassifier(n_neighbors=k).fit(X, y).predict(X)</code>. In the training set every point is also a neighbour of itself (distance 0): that is why k = 1 always gives 1.0. An accuracy of 1.0 on the training says nothing about generalisation.
-@@s055 knn(q, k): the votes of the k neighbours (verified with the data of the notebook)
-@@s056 All the points in a 20 × 2 matrix and, in the same order, their classes: 0 for A, 1 for B. Both are needed because the vote reads the class of a point from its index.
-@@s057 <code>X - q</code> subtracts q from every row of X (broadcasting): these are the vectors from q to every point. <code>norm</code> with <code>axis=1</code> computes their length row by row: 20 distances.
-@@s058 <code>argsort</code> gives the indices of the points from the closest to the farthest; <code>[:k]</code> keeps the first k. With <code>kind="stable"</code> at equal distance the order of the data stays, that is the A before the B: this is the tie rule of this code.
-@@s059 <code>y[vicini]</code> are the classes of the k neighbours; <code>np.bincount</code> counts them. <code>minlength=2</code> guarantees two slots even if no neighbour is B. Result for Q4 with k = 3: <code>[2 1]</code>, two A and one B.
-@@s060 With this rule (A before B) the code gives, for k = 2, 3, 5: Q1 [2 0], [2 1], [3 2]; Q2 [2 0], [3 0], [5 0]; Q3 [0 2], [0 3], [0 5]; Q4 [2 0], [2 1], [3 2]; Q5 [1 1], [2 1], [2 3]. The "A / B" cells of the table are those where another rule would give a different result.
-@@s061 Task 3: more dimensions
-@@s062 The notebook gives a second set, in four dimensions, with a single point to classify, Q = [0, 0, 0, 0]. The distance is computed as before, with four terms under the root.
-@@s063 Class A
-@@s064 Class B
-@@s065 From the closest to the farthest, in four dimensions
-@@s066 In this example no distance repeats, so there is no tie.
-@@s067 <b>Why the dimension matters</b>: A3 and B3 have the same x₁ and x₂ and differ only in x₃. In two dimensions they would be the same point and the fifth place would be a tie (A or B). The third coordinate separates them and decides the fifth place: one more feature changes the answer, even if it says nothing useful about the class.
-@@s068 More features, less informative distances
-@@s069 Every extra coordinate adds a term to the distance and can move the neighbours. A useless feature (or one on a much larger scale than the others) brings noise into the distance. With many dimensions, moreover, distances become almost all equal and the "closest" is not much closer than the others: see the curse of dimensionality in <a href="w12-pca.html">PCA</a>.
-@@s070 Task 4: linear classifier versus neighbours
-@@s071 The question of the notebook: how do the decision boundaries differ, and how do they differ from the point of view of computation? On the same 20 points:
-@@s072 A line, or the neighbours
-@@s073 Linear classifier
-@@s074 k-nearest neighbour
-@@s075 What it learns
-@@s076 the weights w: d + 1 numbers (d features)
-@@s077 nothing: it keeps the whole training set, N × d numbers
-@@s078 Boundary
-@@s079 just one, a hyperplane (here a line)
-@@s080 made of pieces, follows the data; for small k it bends around single points
-@@s081 Training
-@@s082 yes: least squares or gradient descent, cost paid once
-@@s083 none (it is memorised)
-@@s084 Prediction
-@@s085 one inner product: cost proportional to d
-@@s086 distances from all N points: cost proportional to N · d, plus choosing the k
-@@s087 Scale of the features
-@@s088 the weight w compensates for a different scale
-@@s089 matters a lot: a feature on a large scale dominates the distance
-@@s090 Shape of the data
-@@s091 good if the classes are separable by a hyperplane
-@@s092 good also with boundaries of any shape, if there is enough data
-@@s093 On the 20 points
-@@s094 19 out of 20 (0.95), gets A2 wrong
-@@s095 k = 1: 20 out of 20; k = 5: 19 out of 20
-@@s096 The line is the least-squares one on the labels ±1, as in the page <a href="w10-classificatore-lineare.html">Linear classifier and logistic regression</a>. The boundaries of k = 1 and k = 5 are computed with scikit-learn on a grid of 32 × 32 cells.
-@@s097 At the exam, in English
-@@s098 "k-nearest neighbour <b>stores the training set</b> and classifies a new point by a <b>majority vote among its k closest training points</b>, using a distance such as the Euclidean one. A small k gives a jagged boundary and overfits; a large k smooths it and can underfit; I choose k on a validation set."
+@@s027 sort the distances and keep the <mark class="ora">k</mark> closest points
+@@s028 k is chosen by whoever uses the method: it is a <b>hyperparameter</b>, not learned from the data.
+@@s029 class of q = the most frequent among the k neighbours: <mark class="ok">majority vote</mark>
+@@s030 With two classes and odd k a tied vote is impossible. With even k it can happen.
+@@s031 Tasks 1–2: the 20 points and the five questions
+@@s032 The notebook gives 10 points of class A, 10 of class B and five points to classify. Task 1 only asks to look at them; Task 2 asks for the class of each Q with k = 2, 3, 5 "by eye". Here we calculate the distances, and see where the eye is not enough.
+@@s033 Class A
+@@s034 Class B
+@@s035 The names A1…A10 and B1…B10 are the ones the notebook writes on the plot, in the order in which they appear in the lists <code>class_A</code> and <code>class_B</code>. The five questions are Q1 = (3, 3), Q2 = (2, 4), Q3 = (5, 2), Q4 = (4, 5), Q5 = (4, 2).
+@@s036 The five questions, one at a time
+@@s037 Point
+@@s038 A, or a tied vote 1–1
+@@s039 tied vote 1–1
+@@s040 The votes are written as "how many A – how many B". Where the cell says "A / B" the result is A or B, depending on how the tie explained below is resolved.
+@@s041 The ties: what the eye misses
+@@s042 With integer coordinates distances repeat: from Q4 three points are all at √2. If the k-th place is contested by several points at the same distance, <b>the method alone does not decide</b>: a rule is needed. The most common: keep all the tied points (then there are more than k neighbours), choose by the order of the data, or weight the votes by distance. In the exercise the honest thing is to say that there is a tie and that the answer depends on how it is resolved.
+@@s043 With <code>KNeighborsClassifier</code> of scikit-learn 1.9.0 the output is: for Q4, A with k = 2, 3, 5; for Q5, A with k = 2 and 3, B with k = 5. It picks among the tied points itself and, on a tied vote, gave A: this is an implementation detail, not a rule of the method.
+@@s044 Safe points and points on the boundary
+@@s045 Q1, Q2 and Q3 lie inside a group: the neighbours are almost all of the same class and changing k does not change the answer. Q4 and Q5 lie between the two groups, close to the <b>decision boundary</b>: there any change of k, of distance or of tie can flip the class.
+@@s046 How the answer changes with k (Task 2)
+@@s047 The question of the notebook: what happens when k is very small or very large, and how does it relate to overfitting and underfitting?
+@@s048 <b>Small k</b> (at the limit 1): a single point decides. A point out of place, because of noise or measurement error, changes the answer all around it. The boundary is jagged and follows the noise: <b>overfitting</b>.
+@@s049 <b>Large k</b>: every answer is an average over many points. The boundary smooths out; real details are lost. At the limit k = N all the points vote for every Q: here 10–10, a single class everywhere, 0.5 accuracy: <b>underfitting</b>.
+@@s050 <b>In between</b> there is the right k, and it is chosen with a validation set (<a href="w07-validazione.html">Validation</a>), because k is a hyperparameter.
+@@s051 training points got wrong
+@@s052 accuracy on the training
+@@s053 none
+@@s054 none
+@@s055 all the B
+@@s056 <code>KNeighborsClassifier(n_neighbors=k).fit(X, y).predict(X)</code>. In the training set every point is also a neighbour of itself (distance 0): that is why k = 1 always gives 1.0. An accuracy of 1.0 on the training says nothing about generalisation.
+@@s057 knn(q, k): the votes of the k neighbours (verified with the data of the notebook)
+@@s058 All the points in a 20 × 2 matrix and, in the same order, their classes: 0 for A, 1 for B. Both are needed because the vote reads the class of a point from its index.
+@@s059 <code>X - q</code> subtracts q from every row of X (broadcasting): these are the vectors from q to every point. <code>norm</code> with <code>axis=1</code> computes their length row by row: 20 distances.
+@@s060 <code>argsort</code> gives the indices of the points from the closest to the farthest; <code>[:k]</code> keeps the first k. With <code>kind="stable"</code> at equal distance the order of the data stays, that is the A before the B: this is the tie rule of this code.
+@@s061 <code>y[vicini]</code> are the classes of the k neighbours; <code>np.bincount</code> counts them. <code>minlength=2</code> guarantees two slots even if no neighbour is B. Result for Q4 with k = 3: <code>[2 1]</code>, two A and one B.
+@@s062 With this rule (A before B) the code gives, for k = 2, 3, 5: Q1 [2 0], [2 1], [3 2]; Q2 [2 0], [3 0], [5 0]; Q3 [0 2], [0 3], [0 5]; Q4 [2 0], [2 1], [3 2]; Q5 [1 1], [2 1], [2 3]. The "A / B" cells of the table are those where another rule would give a different result.
+@@s063 Task 3: more dimensions
+@@s064 The notebook gives a second set, in four dimensions, with a single point to classify, Q = [0, 0, 0, 0]. The distance is computed as before, with four terms under the root.
+@@s065 Class A
+@@s066 Class B
+@@s067 From the closest to the farthest, in four dimensions
+@@s068 In this example no distance repeats, so there is no tie.
+@@s069 <b>Why the dimension matters</b>: A3 and B3 have the same x₁ and x₂ and differ only in x₃. In two dimensions they would be the same point and the fifth place would be a tie (A or B). The third coordinate separates them and decides the fifth place: one more feature changes the answer, even if it says nothing useful about the class.
+@@s070 More features, less informative distances
+@@s071 Every extra coordinate adds a term to the distance and can move the neighbours. A useless feature (or one on a much larger scale than the others) brings noise into the distance. With many dimensions, moreover, distances become almost all equal and the "closest" is not much closer than the others: see the curse of dimensionality in <a href="w12-pca.html">PCA</a>.
+@@s072 Task 4: linear classifier versus neighbours
+@@s073 The question of the notebook: how do the decision boundaries differ, and how do they differ from the point of view of computation? On the same 20 points:
+@@s074 A line, or the neighbours
+@@s075 Linear classifier
+@@s076 k-nearest neighbour
+@@s077 What it learns
+@@s078 the weights w: d + 1 numbers (d features)
+@@s079 nothing: it keeps the whole training set, N × d numbers
+@@s080 Boundary
+@@s081 just one, a hyperplane (here a line)
+@@s082 made of pieces, follows the data; for small k it bends around single points
+@@s083 Training
+@@s084 yes: least squares or gradient descent, cost paid once
+@@s085 none (it is memorised)
+@@s086 Prediction
+@@s087 one inner product: cost proportional to d
+@@s088 distances from all N points: cost proportional to N · d, plus choosing the k
+@@s089 Scale of the features
+@@s090 the weight w compensates for a different scale
+@@s091 matters a lot: a feature on a large scale dominates the distance
+@@s092 Shape of the data
+@@s093 good if the classes are separable by a hyperplane
+@@s094 good also with boundaries of any shape, if there is enough data
+@@s095 On the 20 points
+@@s096 19 out of 20 (0.95), gets A2 wrong
+@@s097 k = 1: 20 out of 20; k = 5: 19 out of 20
+@@s098 The line is the least-squares one on the labels ±1, as in the page <a href="w10-classificatore-lineare.html">Linear classifier and logistic regression</a>. The boundaries of k = 1 and k = 5 are computed with scikit-learn on a grid of 32 × 32 cells.
+@@s099 At the exam, in English
+@@s100 "k-nearest neighbour <b>stores the training set</b> and classifies a new point by a <b>majority vote among its k closest training points</b>, using a distance such as the Euclidean one. A small k gives a jagged boundary and overfits; a large k smooths it and can underfit; I choose k on a validation set."

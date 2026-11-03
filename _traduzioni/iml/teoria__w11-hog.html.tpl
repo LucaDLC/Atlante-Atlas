@@ -83,40 +83,40 @@ window.SCENE = window.SCENE || {};
 <section>
   <h2>{{s|s012|}}</h2>
   <figure class="passi" data-titolo="{{a|s013|}}">
-    <div class="passo"><div class="espr">1. gradiente in ogni pixel:  <mark class="dato">I<sub>x</sub>, I<sub>y</sub></mark>  →  grandezza e <mark class="ora">direzione</mark></div><p class="nota">{{s|s014|}}</p></div>
-    <div class="passo"><div class="espr">2. celle di 8 × 8 pixel  →  un <mark class="ora">istogramma delle direzioni</mark> per cella</div><p class="nota">{{s|s015|}}</p></div>
-    <div class="passo"><div class="espr">3. blocchi di 2 × 2 celle  →  <mark class="due">normalizzazione</mark></div><p class="nota">{{s|s016|}}</p></div>
-    <div class="passo"><div class="espr">4. tutti gli istogrammi in fila  →  <mark class="ok">un vettore di feature</mark></div><p class="nota">{{s|s017|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s014|}}</div><p class="nota">{{s|s015|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s016|}}</div><p class="nota">{{s|s017|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s018|}}</div><p class="nota">{{s|s019|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s020|}}</div><p class="nota">{{s|s021|}}</p></div>
   </figure>
-  <p class="piccolo">{{s|s018|}}</p>
-  <figure class="scena" data-scena="istogramma" data-titolo="{{a|s019|}}"></figure>
-  <figure class="codice" data-titolo="{{a|s020|}}">
+  <p class="piccolo">{{s|s022|}}</p>
+  <figure class="scena" data-scena="istogramma" data-titolo="{{a|s023|}}"></figure>
+  <figure class="codice" data-titolo="{{a|s024|}}">
 <pre data-lang="python">fd, hog_image = hog(image, orientations=8, pixels_per_cell=(8, 8),
                     cells_per_block=(2, 2), visualize=True, channel_axis=-1)
 X_train = np.array([hog(im, orientations=8, pixels_per_cell=(8, 8),
                         cells_per_block=(2, 2)) for im in images])</pre>
     <ol class="spiega">
-      <li data-righe="1-2" data-segna="orientations=8@ora|pixels_per_cell=(8, 8)@dato|cells_per_block=(2, 2)@due"><p>{{s|s021|}}</p></li>
-      <li data-righe="3-4" data-segna="X_train@ok"><p>{{s|s022|}}</p></li>
+      <li data-righe="1-2" data-segna="orientations=8@ora|pixels_per_cell=(8, 8)@dato|cells_per_block=(2, 2)@due"><p>{{s|s025|}}</p></li>
+      <li data-righe="3-4" data-segna="X_train@ok"><p>{{s|s026|}}</p></li>
     </ol>
   </figure>
 </section>
 
 <section>
-  <h2>{{s|s023|}}</h2>
+  <h2>{{s|s027|}}</h2>
   <ul>
-    <li>{{s|s024|}}</li>
-    <li>{{s|s025|}}</li>
-    <li>{{s|s026|}}</li>
-    <li>{{s|s027|}}</li>
+    <li>{{s|s028|}}</li>
+    <li>{{s|s029|}}</li>
+    <li>{{s|s030|}}</li>
+    <li>{{s|s031|}}</li>
   </ul>
-  <div class="box idea" data-tit="{{a|s028|}}">
-    <p>{{s|s029|}}</p>
+  <div class="box idea" data-tit="{{a|s032|}}">
+    <p>{{s|s033|}}</p>
   </div>
-  <div class="box esame" data-tit="{{a|s030|}}">
-    <p>{{s|s031|}}</p>
+  <div class="box esame" data-tit="{{a|s034|}}">
+    <p>{{s|s035|}}</p>
   </div>
-  <figure class="scena" data-scena="hogperche" data-titolo="{{a|s032|}}"></figure>
+  <figure class="scena" data-scena="hogperche" data-titolo="{{a|s036|}}"></figure>
 </section>
 
 </main>

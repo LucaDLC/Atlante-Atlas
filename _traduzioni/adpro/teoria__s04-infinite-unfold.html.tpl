@@ -165,40 +165,40 @@ lazy val naturals: LazyList[Int] = from(1)</pre>
   <figure class="passi" data-titolo="{{a|s031|}}">
     <div class="passo"><div class="espr">unfold[A, <mark class="dato">S</mark>](<mark class="dato">z: S</mark>)</div><p class="nota">{{s|s032|}}</p></div>
     <div class="passo"><div class="espr">(f: <mark class="dato">S</mark> => Option[(<mark class="ok">A</mark>, <mark class="dato">S</mark>)])</div><p class="nota">{{s|s033|}}</p></div>
-    <div class="passo"><div class="espr">Option[…]  →  <mark class="ok">Some((valore, stato))</mark> oppure <mark class="no">None</mark></div><p class="nota">{{s|s034|}}</p></div>
-    <div class="passo"><div class="espr">: <mark class="ok">LazyList[A]</mark></div><p class="nota">{{s|s035|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s034|}}</div><p class="nota">{{s|s035|}}</p></div>
+    <div class="passo"><div class="espr">: <mark class="ok">LazyList[A]</mark></div><p class="nota">{{s|s036|}}</p></div>
   </figure>
-  <figure class="codice" data-titolo="{{a|s036|}}">
+  <figure class="codice" data-titolo="{{a|s037|}}">
 <pre data-lang="scala">def unfold[A, S](z: S)(f: S => Option[(A, S)]): LazyList[A] =
   f(z).map((a, s) => cons(a, unfold(s)(f))).getOrElse(empty)</pre>
     <ol class="spiega">
-      <li data-righe="2" data-segna="f(z)@dato"><p>{{s|s037|}}</p></li>
-      <li data-righe="2" data-segna="(a, s) =>@ora"><p>{{s|s038|}}</p></li>
-      <li data-righe="2" data-segna="cons(a, unfold(s)(f))@ok"><p>{{s|s039|}}</p></li>
-      <li data-righe="2" data-segna="getOrElse(empty)@no"><p>{{s|s040|}}</p></li>
+      <li data-righe="2" data-segna="f(z)@dato"><p>{{s|s038|}}</p></li>
+      <li data-righe="2" data-segna="(a, s) =>@ora"><p>{{s|s039|}}</p></li>
+      <li data-righe="2" data-segna="cons(a, unfold(s)(f))@ok"><p>{{s|s040|}}</p></li>
+      <li data-righe="2" data-segna="getOrElse(empty)@no"><p>{{s|s041|}}</p></li>
     </ol>
   </figure>
-  <figure class="passi" data-titolo="{{a|s041|}}">
-    <div class="passo"><div class="espr">stato <mark class="dato">0</mark>  →  f(0) = Some((<mark class="ok">0</mark>, <mark class="dato">1</mark>))</div><p class="nota">{{s|s042|}}</p></div>
-    <div class="passo"><div class="espr">stato <mark class="dato">1</mark>  →  f(1) = Some((<mark class="ok">10</mark>, <mark class="dato">2</mark>))</div><p class="nota">{{s|s043|}}</p></div>
-    <div class="passo"><div class="espr">stato <mark class="dato">2</mark>  →  f(2) = Some((<mark class="ok">20</mark>, <mark class="dato">3</mark>))</div><p class="nota">{{s|s044|}}</p></div>
-    <div class="passo"><div class="espr">stato <mark class="dato">3</mark>  →  f(3) = <mark class="no">None</mark></div><p class="nota">{{s|s045|}}</p></div>
-    <div class="passo"><div class="espr"><mark class="ok">List(0, 10, 20)</mark></div><p class="nota">{{s|s046|}}</p></div>
+  <figure class="passi" data-titolo="{{a|s042|}}">
+    <div class="passo"><div class="espr">stato <mark class="dato">0</mark>  →  f(0) = Some((<mark class="ok">0</mark>, <mark class="dato">1</mark>))</div><p class="nota">{{s|s043|}}</p></div>
+    <div class="passo"><div class="espr">stato <mark class="dato">1</mark>  →  f(1) = Some((<mark class="ok">10</mark>, <mark class="dato">2</mark>))</div><p class="nota">{{s|s044|}}</p></div>
+    <div class="passo"><div class="espr">stato <mark class="dato">2</mark>  →  f(2) = Some((<mark class="ok">20</mark>, <mark class="dato">3</mark>))</div><p class="nota">{{s|s045|}}</p></div>
+    <div class="passo"><div class="espr">stato <mark class="dato">3</mark>  →  f(3) = <mark class="no">None</mark></div><p class="nota">{{s|s046|}}</p></div>
+    <div class="passo"><div class="espr"><mark class="ok">List(0, 10, 20)</mark></div><p class="nota">{{s|s047|}}</p></div>
   </figure>
-  <figure class="scena" data-scena="unfold" data-titolo="{{a|s047|}}"></figure>
+  <figure class="scena" data-scena="unfold" data-titolo="{{a|s048|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s048|}}</h2>
-  <p>{{s|s049|}}</p>
+  <h2>{{s|s049|}}</h2>
+  <p>{{s|s050|}}</p>
   <div class="colonne">
-    <div class="carta media"><h4>{{s|s050|}}</h4>
+    <div class="carta media"><h4>{{s|s051|}}</h4>
 <pre class="cod" data-lang="scala" data-segna="cons(f(h()), t().map(f))@ora|empty@no">def map[B](f: A => B): LazyList[B] =
   this match
     case Cons(h, t) =>
       cons(f(h()), t().map(f))
     case Empty => empty</pre></div>
-    <div class="carta buona"><h4>{{s|s051|}}</h4>
+    <div class="carta buona"><h4>{{s|s052|}}</h4>
 <pre class="cod" data-lang="scala" data-segna="Some((f(h()), t()))@ok|None@no">def mapUnfold[B](f: A => B): LazyList[B] =
   unfold(this) {
     case Cons(h, t) =>
@@ -206,38 +206,38 @@ lazy val naturals: LazyList[Int] = from(1)</pre>
     case Empty => None
   }</pre></div>
   </div>
-  <p>{{s|s052|}}</p>
-  <div class="box idea" data-tit="{{a|s053|}}">
-    <p>{{s|s054|}}</p>
+  <p>{{s|s053|}}</p>
+  <div class="box idea" data-tit="{{a|s054|}}">
+    <p>{{s|s055|}}</p>
   </div>
-  <div class="box domanda-tua" data-tit="{{a|s055|}}">
-    <p>{{s|s056|}}</p>
+  <div class="box domanda-tua" data-tit="{{a|s056|}}">
+    <p>{{s|s057|}}</p>
   </div>
-  <figure class="passi" data-titolo="{{a|s057|}}" data-legenda="{{a|s058|}}">
-    <div class="passo"><div class="espr testo">{{s|s059|}}</div><p class="nota">{{s|s060|}}</p></div>
+  <figure class="passi" data-titolo="{{a|s058|}}" data-legenda="{{a|s059|}}">
+    <div class="passo"><div class="espr testo">{{s|s060|}}</div><p class="nota">{{s|s061|}}</p></div>
     <div class="passo"><div class="espr">map (foldRight)         mapUnfold
   lista creata            <mark class="ora">calcolo f(1)</mark>
   calcolo f(1)            lista creata
   calcolo f(2)            calcolo f(2)
 List(2, 4)                <mark class="ora">calcolo f(3)</mark>
-                        List(2, 4)</div><p class="nota">{{s|s061|}}</p></div>
+                        List(2, 4)</div><p class="nota">{{s|s062|}}</p></div>
   </figure>
-  <figure class="scena" data-scena="perchunfold" data-titolo="{{a|s062|}}"></figure>
+  <figure class="scena" data-scena="perchunfold" data-titolo="{{a|s063|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s063|}}</h2>
+  <h2>{{s|s064|}}</h2>
   <div class="tab-wrap"><table class="tab">
-    <thead><tr><th>{{s|s064|}}</th><th>{{s|s065|}}</th><th>{{s|s066|}}</th></tr></thead>
+    <thead><tr><th>{{s|s065|}}</th><th>{{s|s066|}}</th><th>{{s|s067|}}</th></tr></thead>
     <tbody>
-      <tr><td>{{s|s067|}}</td><td>{{s|s068|}}</td><td>{{s|s069|}}</td></tr>
-      <tr><td>{{s|s070|}}</td><td>{{s|s071|}}</td><td>{{s|s072|}}</td></tr>
-      <tr><td>{{s|s073|}}</td><td>{{s|s074|}}</td><td>{{s|s075|}}</td></tr>
-      <tr><td>{{s|s076|}}</td><td>{{s|s077|}}</td><td>{{s|s078|}}</td></tr>
-      <tr><td>{{s|s079|}}</td><td>{{s|s080|}}</td><td>{{s|s081|}}</td></tr>
+      <tr><td>{{s|s068|}}</td><td>{{s|s069|}}</td><td>{{s|s070|}}</td></tr>
+      <tr><td>{{s|s071|}}</td><td>{{s|s072|}}</td><td>{{s|s073|}}</td></tr>
+      <tr><td>{{s|s074|}}</td><td>{{s|s075|}}</td><td>{{s|s076|}}</td></tr>
+      <tr><td>{{s|s077|}}</td><td>{{s|s078|}}</td><td>{{s|s079|}}</td></tr>
+      <tr><td>{{s|s080|}}</td><td>{{s|s081|}}</td><td>{{s|s082|}}</td></tr>
     </tbody>
   </table></div>
-  <figure class="codice" data-titolo="{{a|s082|}}">
+  <figure class="codice" data-titolo="{{a|s083|}}">
 <pre data-lang="scala">lazy val fibsUnfold: LazyList[Int] =
   unfold((0, 1))((a, b) => Some((a, (b, a + b))))
 
@@ -265,26 +265,26 @@ def zipWith[B &gt;: A, C](ope: (=> B, => B) => C)(bs: LazyList[B]): LazyList[C] 
     case _ => None
   }</pre>
     <ol class="spiega">
-      <li data-righe="2" data-segna="(0, 1)@dato|Some((a, (b, a + b)))@ok"><p>{{s|s083|}}</p></li>
-      <li data-righe="5-8" data-segna="unfold(this)@dato|Some((f(h()), t()))@ok"><p>{{s|s084|}}</p></li>
-      <li data-righe="11-14" data-segna="(this, n)@dato|if k &gt; 0@ora"><p>{{s|s085|}}</p></li>
-      <li data-righe="12" data-segna="k@dato"><p>{{s|s086|}}</p></li>
-      <li data-righe="13" data-segna="case _ => None@no"><p>{{s|s087|}}</p></li>
-      <li data-righe="16-20" data-segna="if p(h())@ora"><p>{{s|s088|}}</p></li>
-      <li data-righe="22" data-segna="ope: (=> B, => B) => C@ora"><p>{{s|s089|}}</p></li>
-      <li data-righe="23-26" data-segna="(this, bs)@dato|ope(h1(), h2())@ok|(t1(), t2())@due"><p>{{s|s090|}}</p></li>
+      <li data-righe="2" data-segna="(0, 1)@dato|Some((a, (b, a + b)))@ok"><p>{{s|s084|}}</p></li>
+      <li data-righe="5-8" data-segna="unfold(this)@dato|Some((f(h()), t()))@ok"><p>{{s|s085|}}</p></li>
+      <li data-righe="11-14" data-segna="(this, n)@dato|if k &gt; 0@ora"><p>{{s|s086|}}</p></li>
+      <li data-righe="12" data-segna="k@dato"><p>{{s|s087|}}</p></li>
+      <li data-righe="13" data-segna="case _ => None@no"><p>{{s|s088|}}</p></li>
+      <li data-righe="16-20" data-segna="if p(h())@ora"><p>{{s|s089|}}</p></li>
+      <li data-righe="22" data-segna="ope: (=> B, => B) => C@ora"><p>{{s|s090|}}</p></li>
+      <li data-righe="23-26" data-segna="(this, bs)@dato|ope(h1(), h2())@ok|(t1(), t2())@due"><p>{{s|s091|}}</p></li>
     </ol>
   </figure>
   <div class="tab-wrap"><table class="tab">
-    <thead><tr><th>{{s|s091|}}</th><th>{{s|s092|}}</th></tr></thead>
+    <thead><tr><th>{{s|s092|}}</th><th>{{s|s093|}}</th></tr></thead>
     <tbody>
-      <tr><td>{{s|s093|}}</td><td>{{s|s094|}}</td></tr>
-      <tr><td>{{s|s095|}}</td><td>{{s|s096|}}</td></tr>
+      <tr><td>{{s|s094|}}</td><td>{{s|s095|}}</td></tr>
+      <tr><td>{{s|s096|}}</td><td>{{s|s097|}}</td></tr>
     </tbody>
   </table></div>
-  <p>{{s|s097|}}</p>
-  <div class="box inglese" data-tit="{{a|s098|}}">
-    <p>{{s|s099|}}</p>
+  <p>{{s|s098|}}</p>
+  <div class="box inglese" data-tit="{{a|s099|}}">
+    <p>{{s|s100|}}</p>
   </div>
   <div class="errori">
     <div class="errore">
@@ -294,7 +294,7 @@ def zipWith[B &gt;: A, C](ope: (=> B, => B) => C)(bs: LazyList[B]): LazyList[C] 
     case Empty => None
   }</pre>
       <pre class="msg">Not found: f</pre>
-      <div class="fix">Copiato da <code>mapUnfold</code>: qui non c'è nessuna <code>f</code>, l'elemento esce così com'è. E sotto ci sono altri tre problemi che il compilatore non vede ancora: lo stato è una coppia, quindi il case deve essere <code>(Cons(h, t), k)</code>; <code>n</code> non scende mai, scende <code>k</code>; manca il controllo <code>if k &gt; 0</code>, senza il quale <code>naturals.takeUnfold(3)</code> non finisce.</div>
+      <div class="fix">{{s|s101|}}</div>
     </div>
     <div class="errore">
       <pre data-lang="scala">unfold(this) {
@@ -302,7 +302,7 @@ def zipWith[B &gt;: A, C](ope: (=> B, => B) => C)(bs: LazyList[B]): LazyList[C] 
   case Cons(h, t) => Some((f(h()), t()))
 }</pre>
       <pre class="msg">Unreachable case</pre>
-      <div class="fix"><code>case _</code> combacia con tutto: i case sotto non vengono mai provati. Con <code>-Werror</code> il file non compila. <code>case _</code> va per ultimo.</div>
+      <div class="fix">{{s|s102|}}</div>
     </div>
     <div class="errore">
       <pre data-lang="scala">def mapUnfold[B](f: A => B): LazyList[B] = this match
@@ -310,10 +310,10 @@ def zipWith[B &gt;: A, C](ope: (=> B, => B) => C)(bs: LazyList[B]): LazyList[C] 
   case Empty => None</pre>
       <pre class="msg">Found:    Some[(B, adpro.lazyList.LazyList[A])]
 Required: adpro.lazyList.LazyList[B]</pre>
-      <div class="fix">Senza <code>unfold</code> il metodo restituisce l'<code>Option</code>, che è la risposta di <code>f</code> a <code>unfold</code>, non la lista. Il <code>match</code> va <b>dentro</b> <code>unfold(this) { … }</code>: le graffe con i case sono proprio la funzione <code>f</code>.</div>
+      <div class="fix">{{s|s103|}}</div>
     </div>
   </div>
-  <figure class="scena" data-scena="takeunfold" data-titolo="{{a|s100|}}"></figure>
+  <figure class="scena" data-scena="takeunfold" data-titolo="{{a|s104|}}"></figure>
 </section>
 
 </main>

@@ -57,24 +57,24 @@
   <h2>{{s|s011|}}</h2>
   <p>{{s|s012|}}</p>
   <figure class="passi" data-titolo="{{a|s013|}}" data-legenda="{{a|s014|}}">
-    <div class="passo"><div class="espr">Punto 1 (CAS di push)       →  test 7.2.2: n thread fanno push insieme   <mark class="ok">coperto</mark></div><p class="nota">{{s|s015|}}</p></div>
-    <div class="passo"><div class="espr">Punto 2 (CAS di pop)        →  test 7.2.3: n thread fanno pop insieme    <mark class="ok">coperto</mark></div><p class="nota">{{s|s016|}}</p></div>
-    <div class="passo"><div class="espr">Punto 3 (pop su vuoto)      →  nessun test concorrente                  <mark class="no">non coperto</mark></div><p class="nota">{{s|s017|}}</p></div>
-    <div class="passo"><div class="espr">push e pop insieme          →  mai                                      <mark class="no">non coperto</mark></div><p class="nota">{{s|s018|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s015|}}</div><p class="nota">{{s|s016|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s017|}}</div><p class="nota">{{s|s018|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s019|}}</div><p class="nota">{{s|s020|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s021|}}</div><p class="nota">{{s|s022|}}</p></div>
   </figure>
-  <div class="box domanda-tua" data-tit="{{a|s019|}}">
-    <p>{{s|s020|}}</p>
-  </div>
-  <div class="box idea" data-tit="{{a|s021|}}">
-    <p>{{s|s022|}}</p>
-    <p>{{s|s023|}}</p>
+  <div class="box domanda-tua" data-tit="{{a|s023|}}">
     <p>{{s|s024|}}</p>
   </div>
-  <div class="box attenzione" data-tit="{{a|s025|}}">
+  <div class="box idea" data-tit="{{a|s025|}}">
     <p>{{s|s026|}}</p>
-  </div>
-  <div class="box inglese" data-tit="{{a|s027|}}">
+    <p>{{s|s027|}}</p>
     <p>{{s|s028|}}</p>
+  </div>
+  <div class="box attenzione" data-tit="{{a|s029|}}">
+    <p>{{s|s030|}}</p>
+  </div>
+  <div class="box inglese" data-tit="{{a|s031|}}">
+    <p>{{s|s032|}}</p>
   </div>
 </section>
 

@@ -198,37 +198,37 @@ def sequence[S,A](sas: List[State[S, A]]): State[S, List[A]] = sas match
 I could not infer the type of the parameter s
 Expected type for the whole anonymous function:
   adpro.state.State[S, B]</pre>
-      <div class="fix">Manca la scatola: il metodo deve restituire uno <code>State</code>, non una funzione nuda. Si scrive <code>State { s =&gt; … }</code>.</div>
+      <div class="fix">{{s|s053|}}</div>
     </div>
     <div class="errore">
 <pre data-lang="scala">f(a)(s1)</pre>
 <pre class="msg">method apply in trait Function1 does not take more parameters</pre>
-      <div class="fix">È il <code>g(a)(rng2)</code> di Rand copiato così com'è. <code>f(a)</code> ora è una scatola, non una funzione: per farla girare serve <code>f(a).run(s1)</code>.</div>
+      <div class="fix">{{s|s054|}}</div>
     </div>
   </div>
   <div class="tab-wrap"><table class="tab">
-    <thead><tr><th>{{s|s053|}}</th><th>{{s|s054|}}</th><th>{{s|s055|}}</th></tr></thead>
+    <thead><tr><th>{{s|s055|}}</th><th>{{s|s056|}}</th><th>{{s|s057|}}</th></tr></thead>
     <tbody>
-      <tr><td>{{s|s056|}}</td><td>{{s|s057|}}</td><td>{{s|s058|}}</td></tr>
-      <tr><td>{{s|s059|}}</td><td>{{s|s060|}}</td><td>{{s|s061|}}</td></tr>
-      <tr><td>{{s|s062|}}</td><td>{{s|s063|}}</td><td>{{s|s064|}}</td></tr>
+      <tr><td>{{s|s058|}}</td><td>{{s|s059|}}</td><td>{{s|s060|}}</td></tr>
+      <tr><td>{{s|s061|}}</td><td>{{s|s062|}}</td><td>{{s|s063|}}</td></tr>
+      <tr><td>{{s|s064|}}</td><td>{{s|s065|}}</td><td>{{s|s066|}}</td></tr>
     </tbody>
   </table></div>
-  <p class="piccolo">{{s|s065|}}</p>
-  <figure class="scena" data-scena="apistate" data-titolo="{{a|s066|}}"></figure>
+  <p class="piccolo">{{s|s067|}}</p>
+  <figure class="scena" data-scena="apistate" data-titolo="{{a|s068|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s067|}}</h2>
-  <p>{{s|s068|}}</p>
-  <p>{{s|s069|}}</p>
+  <h2>{{s|s069|}}</h2>
   <p>{{s|s070|}}</p>
-  <figure class="scena" data-scena="componi" data-titolo="{{a|s071|}}"></figure>
+  <p>{{s|s071|}}</p>
+  <p>{{s|s072|}}</p>
+  <figure class="scena" data-scena="componi" data-titolo="{{a|s073|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s072|}}</h2>
-  <figure class="codice" data-titolo="{{a|s073|}}">
+  <h2>{{s|s074|}}</h2>
+  <figure class="codice" data-titolo="{{a|s075|}}">
 <pre data-lang="scala">def stateToLazyList[S, A](s: State[S, A])(initial: S): LazyList[A] =
   val (a, next) = s.run(initial)
   cons(a, stateToLazyList(s)(next))
@@ -239,22 +239,22 @@ def lazyInts(rng: RNG): LazyList[Int] =
 lazy val tenStrictInts: List[Int] =
   lazyInts(RNG.SimpleRNG(42)).take(10).toList</pre>
     <ol class="spiega">
-      <li data-righe="1-3" data-segna="s.run(initial)@ora|cons(a, stateToLazyList(s)(next))@ok"><p>{{s|s074|}}</p></li>
-      <li data-righe="5-6" data-segna="State[RNG, Int](_.nextInt)@due"><p>{{s|s075|}}</p></li>
-      <li data-righe="8-9" data-segna="take(10).toList@ok"><p>{{s|s076|}}</p></li>
+      <li data-righe="1-3" data-segna="s.run(initial)@ora|cons(a, stateToLazyList(s)(next))@ok"><p>{{s|s076|}}</p></li>
+      <li data-righe="5-6" data-segna="State[RNG, Int](_.nextInt)@due"><p>{{s|s077|}}</p></li>
+      <li data-righe="8-9" data-segna="take(10).toList@ok"><p>{{s|s078|}}</p></li>
     </ol>
   </figure>
-  <div class="box domanda-tua" data-tit="{{a|s077|}}">
-    <p>{{s|s078|}}</p>
-    <p>{{s|s079|}}</p>
+  <div class="box domanda-tua" data-tit="{{a|s079|}}">
+    <p>{{s|s080|}}</p>
+    <p>{{s|s081|}}</p>
   </div>
-  <figure class="passi" data-titolo="{{a|s080|}}" data-legenda="{{a|s081|}}">
-    <div class="passo"><div class="espr">counter = State[Int, Int](x =&gt; (x, x + 1))</div><p class="nota">{{s|s082|}}</p></div>
-    <div class="passo"><div class="espr">counter.run(<mark class="dato">0</mark>) = (<mark class="ora">0</mark>, <mark class="due">1</mark>)</div><p class="nota">{{s|s083|}}</p></div>
-    <div class="passo"><div class="espr">cons(<mark class="ora">0</mark>, ⟨stateToLazyList(counter)(<mark class="due">1</mark>)⟩)</div><p class="nota">{{s|s084|}}</p></div>
-    <div class="passo"><div class="espr">take chiede il 2° → counter.run(<mark class="dato">1</mark>) = (<mark class="ora">1</mark>, <mark class="due">2</mark>) → cons(1, ⟨…(2)⟩)</div><p class="nota">{{s|s085|}}</p></div>
-    <div class="passo"><div class="espr">take chiede il 3° → counter.run(<mark class="dato">2</mark>) = (<mark class="ora">2</mark>, <mark class="due">3</mark>) → cons(2, ⟨…(3)⟩)</div><p class="nota">{{s|s086|}}</p></div>
-    <div class="passo"><div class="espr">take ne ha 3 → ⟨…(3)⟩ non si calcola mai → <mark class="ok">List(0, 1, 2)</mark></div><p class="nota">{{s|s087|}}</p></div>
+  <figure class="passi" data-titolo="{{a|s082|}}" data-legenda="{{a|s083|}}">
+    <div class="passo"><div class="espr">counter = State[Int, Int](x =&gt; (x, x + 1))</div><p class="nota">{{s|s084|}}</p></div>
+    <div class="passo"><div class="espr">counter.run(<mark class="dato">0</mark>) = (<mark class="ora">0</mark>, <mark class="due">1</mark>)</div><p class="nota">{{s|s085|}}</p></div>
+    <div class="passo"><div class="espr">cons(<mark class="ora">0</mark>, ⟨stateToLazyList(counter)(<mark class="due">1</mark>)⟩)</div><p class="nota">{{s|s086|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s087|}}</div><p class="nota">{{s|s088|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s089|}}</div><p class="nota">{{s|s090|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s091|}}</div><p class="nota">{{s|s092|}}</p></div>
   </figure>
   <div class="errori">
     <div class="errore">
@@ -264,30 +264,30 @@ lazy val tenStrictInts: List[Int] =
 
 stateToList(counter)(0).take(3)</pre>
 <pre class="msg">java.lang.StackOverflowError</pre>
-      <div class="fix">Con una List normale <code>::</code> vuole la coda <b>subito</b>: la coda chiama di nuovo la funzione, che vuole di nuovo la coda… e il <code>take(3)</code> non arriva mai. Serve <code>cons</code> della LazyList, che aspetta.</div>
+      <div class="fix">{{s|s093|}}</div>
     </div>
     <div class="errore">
 <pre data-lang="scala">def lazyInts(rng: RNG): LazyList[Int] =
   stateToLazyList(RNG.int)(rng)</pre>
 <pre class="msg">Found:    (adpro.state.RNG.int : adpro.state.RNG.Rand[Int])
 Required: adpro.state.State[S, Any]</pre>
-      <div class="fix">Ci sono due <code>Rand</code>: in <code>object RNG</code> è una funzione nuda <code>RNG =&gt; (A, RNG)</code>; in <code>object State</code> è <code>State[RNG, A]</code>, la scatola. <code>RNG.int</code> è la funzione nuda: va messa nella scatola, <code>State(RNG.int)</code>.</div>
+      <div class="fix">{{s|s094|}}</div>
     </div>
     <div class="errore">
 <pre data-lang="scala">lazy val tenStrictInts: List[Int] =
   lazyInts(RNG.SimpleRNG(42)).take(10)</pre>
 <pre class="msg">Found:    adpro.lazyList.LazyList[Int]
 Required: List[Int]</pre>
-      <div class="fix"><code>take</code> su una LazyList dà ancora una LazyList (pigra). "Strict" = List normale, tutta calcolata: manca <code>.toList</code>.</div>
+      <div class="fix">{{s|s095|}}</div>
     </div>
   </div>
-  <div class="box attenzione" data-tit="{{a|s088|}}">
-    <p>{{s|s089|}}</p>
+  <div class="box attenzione" data-tit="{{a|s096|}}">
+    <p>{{s|s097|}}</p>
   </div>
-  <div class="box inglese" data-tit="{{a|s090|}}">
-    <p>{{s|s091|}}</p>
+  <div class="box inglese" data-tit="{{a|s098|}}">
+    <p>{{s|s099|}}</p>
   </div>
-  <figure class="scena" data-scena="statolista" data-titolo="{{a|s092|}}"></figure>
+  <figure class="scena" data-scena="statolista" data-titolo="{{a|s100|}}"></figure>
 </section>
 
 </main>

@@ -26,25 +26,29 @@
 @@s026 Per confrontarle, la lezione usa lo stesso schema di lavoro per tutte: N thread eseguono in totale 5 000 000 operazioni (ognuno 5 000 000 / N). Ogni operazione cerca una chiave a caso e agisce così:
 @@s027 Un’operazione del carico di lavoro
 @@s028 dato:chiave,ora:decisione,ok:azione
-@@s029 È il primo controllo: <code>containsKey</code>.
-@@s030 Se il numero casuale è sotto addProb, si fa <code>put</code>.
-@@s031 Se il numero casuale è sotto removeProb, si fa <code>remove</code>.
-@@s032 Cambiando addProb e removeProb si ottengono carichi diversi: <b>dominati dalle letture</b> (60% e 2%) oppure <b>dominati dalle scritture</b> (90% e 30%).
-@@s033 Cosa mostrano le misure
-@@s034 Il lock unico (<code>SynchronizedMap</code>) non scala: più thread, più tempo. Sul server è molto peggiore che sul laptop.
-@@s035 Con carico bilanciato o dominato dalle scritture, nessuna versione scritta a mano scala bene: vince la <code>ConcurrentHashMap</code> della libreria.
-@@s036 Con carico dominato dalle letture, la <code>ConcurrentHashMap</code> resta la migliore; il padding aiuta le versioni con letture non bloccanti.
-@@s037 Le letture non bloccanti (liste immutabili) funzionano bene solo se la mappa è letta molto più di quanto è scritta.
-@@s038 Le versioni non bloccanti hanno un costo in memoria: ogni scrittura crea una coppia nuova, quindi servono un garbage collector e una gestione attenta. È per questo che la lezione dice che la tecnica non è praticabile in C o C++ senza un GC.
-@@s039 Le lezioni
-@@s040 Quando un lock è la scelta giusta, e quando no
-@@s041 dato:situazione,ora:passo di ragionamento,ok:conclusione,no:da evitare
-@@s042 Un lock che aspetta non fa lavorare la CPU: è un vantaggio.
-@@s043 Ma solo se i dati mutabili, lock compresi, restano per lo più locali a un thread.
-@@s044 I thread riprovano in un ciclo di attesa attiva, e le linee passano M → I → M → I.
-@@s045 @Contended è riservato alle librerie di Java: nel tuo codice serve il padding a mano.
-@@s046 Come scegliere
-@@s047 In pratica
-@@s048 Non scrivere una mappa concorrente da zero: usa <code>ConcurrentHashMap</code>. Scrivi una versione tua solo per capire il trade-off, o se misuri che la libreria non basta per un caso preciso.
-@@s049 Frase per l’orale
-@@s050 Striped locks and padding keep frequently written data core-local, so the cache lines can stay in the Modified state; ConcurrentHashMap combines these ideas in the library.
+@@s029 <mark class="dato">Chiave</mark> casuale. Se la mappa <mark class="ora">non la contiene</mark>…
+@@s030 È il primo controllo: <code>containsKey</code>.
+@@s031 …la aggiunge con probabilità <mark class="ora">addProb</mark>
+@@s032 Se il numero casuale è sotto addProb, si fa <code>put</code>.
+@@s033 Se la mappa la <mark class="ora">contiene</mark>, la rimuove con probabilità <mark class="ora">removeProb</mark>
+@@s034 Se il numero casuale è sotto removeProb, si fa <code>remove</code>.
+@@s035 Cambiando addProb e removeProb si ottengono carichi diversi: <b>dominati dalle letture</b> (60% e 2%) oppure <b>dominati dalle scritture</b> (90% e 30%).
+@@s036 Cosa mostrano le misure
+@@s037 Il lock unico (<code>SynchronizedMap</code>) non scala: più thread, più tempo. Sul server è molto peggiore che sul laptop.
+@@s038 Con carico bilanciato o dominato dalle scritture, nessuna versione scritta a mano scala bene: vince la <code>ConcurrentHashMap</code> della libreria.
+@@s039 Con carico dominato dalle letture, la <code>ConcurrentHashMap</code> resta la migliore; il padding aiuta le versioni con letture non bloccanti.
+@@s040 Le letture non bloccanti (liste immutabili) funzionano bene solo se la mappa è letta molto più di quanto è scritta.
+@@s041 Le versioni non bloccanti hanno un costo in memoria: ogni scrittura crea una coppia nuova, quindi servono un garbage collector e una gestione attenta. È per questo che la lezione dice che la tecnica non è praticabile in C o C++ senza un GC.
+@@s042 Le lezioni
+@@s043 Quando un lock è la scelta giusta, e quando no
+@@s044 dato:situazione,ora:passo di ragionamento,ok:conclusione,no:da evitare
+@@s045 I lock <mark class="ok">possono essere veloci</mark>: un thread bloccato non consuma CPU
+@@s046 Un lock che aspetta non fa lavorare la CPU: è un vantaggio.
+@@s047 Ma solo se i dati mutabili, lock compresi, restano per lo più locali a un thread.
+@@s048 I thread riprovano in un ciclo di attesa attiva, e le linee passano M → I → M → I.
+@@s049 @Contended è riservato alle librerie di Java: nel tuo codice serve il padding a mano.
+@@s050 Come scegliere
+@@s051 In pratica
+@@s052 Non scrivere una mappa concorrente da zero: usa <code>ConcurrentHashMap</code>. Scrivi una versione tua solo per capire il trade-off, o se misuri che la libreria non basta per un caso preciso.
+@@s053 Frase per l’orale
+@@s054 Striped locks and padding keep frequently written data core-local, so the cache lines can stay in the Modified state; ConcurrentHashMap combines these ideas in the library.

@@ -177,9 +177,9 @@ window.SCENE = window.SCENE || {};
     <div class="passo"><div class="espr">readLock:   while (<mark class="dato">writer</mark>) await();</div><p class="nota">{{s|s046|}}</p></div>
     <div class="passo"><div class="espr">writeLock:  while (<mark class="due">readers &gt; 0</mark> || writer) await();</div><p class="nota">{{s|s047|}}</p></div>
     <div class="passo"><div class="espr">R1 dentro · W aspetta · <mark class="no">R2 entra</mark> · R1 esce · <mark class="no">R3 entra</mark> · R2 esce · …</div><p class="nota">{{s|s048|}}</p></div>
-    <div class="passo"><div class="espr"><mark class="no">W non scrive mai</mark></div><p class="nota">{{s|s049|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s049|}}</div><p class="nota">{{s|s050|}}</p></div>
   </figure>
-  <figure class="codice" data-titolo="{{a|s050|}}">
+  <figure class="codice" data-titolo="{{a|s051|}}">
 <pre data-lang="java">public void writeLock() {
     lock.lock();
     try {
@@ -192,40 +192,40 @@ window.SCENE = window.SCENE || {};
     finally { lock.unlock(); }
 }</pre>
     <ol class="spiega">
-      <li data-righe="4-5" data-segna="while (writer)@due"><p>{{s|s051|}}</p></li>
-      <li data-righe="6" data-segna="writer = true;@ora"><p>{{s|s052|}}</p></li>
-      <li data-righe="7-8" data-segna="while (readers &gt; 0)@ok"><p>{{s|s053|}}</p></li>
+      <li data-righe="4-5" data-segna="while (writer)@due"><p>{{s|s052|}}</p></li>
+      <li data-righe="6" data-segna="writer = true;@ora"><p>{{s|s053|}}</p></li>
+      <li data-righe="7-8" data-segna="while (readers &gt; 0)@ok"><p>{{s|s054|}}</p></li>
     </ol>
   </figure>
-  <div class="box domanda-tua" data-tit="{{a|s054|}}">
-    <p>{{s|s055|}}</p>
+  <div class="box domanda-tua" data-tit="{{a|s055|}}">
+    <p>{{s|s056|}}</p>
   </div>
-  <figure class="scena" data-scena="starvscrittori" data-titolo="{{a|s056|}}"></figure>
+  <figure class="scena" data-scena="starvscrittori" data-titolo="{{a|s057|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s057|}}</h2>
-  <p>{{s|s058|}}</p>
+  <h2>{{s|s058|}}</h2>
+  <p>{{s|s059|}}</p>
   <div class="colonne">
     <div class="carta cattiva">
-      <h4>{{s|s059|}}</h4>
+      <h4>{{s|s060|}}</h4>
       <pre class="cod" data-lang="java">while (i &gt; 0) {
     // non faccio niente, ricontrollo
 }</pre>
-      <p>{{s|s060|}}</p>
+      <p>{{s|s061|}}</p>
     </div>
     <div class="carta buona">
-      <h4>{{s|s061|}}</h4>
+      <h4>{{s|s062|}}</h4>
       <pre class="cod" data-lang="java">while (i &gt; 0) {
     condition.await();
 }</pre>
-      <p>{{s|s062|}}</p>
+      <p>{{s|s063|}}</p>
     </div>
   </div>
-  <div class="box esame" data-tit="{{a|s063|}}">
-    <p>{{s|s064|}}</p>
+  <div class="box esame" data-tit="{{a|s064|}}">
+    <p>{{s|s065|}}</p>
   </div>
-  <figure class="scena" data-scena="busywait" data-titolo="{{a|s065|}}"></figure>
+  <figure class="scena" data-scena="busywait" data-titolo="{{a|s066|}}"></figure>
 </section>
 
 </main>

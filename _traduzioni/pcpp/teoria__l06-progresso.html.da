@@ -11,84 +11,90 @@
 @@s011 Også en lås giver et rigtigt resultat. Det en lås <b>ikke</b> garanterer, er progression: hvis tråden, der holder den, stopper, stopper alle.
 @@s012 I praksis: T1 suspenderes midt i increment()
 @@s013 dato:T1,due:de andre tråde,no:blokeret,ok:går videre
-@@s014 Det sker virkelig: slutningen af tidsskiven, page fault, afbrydelse, en tråd med højere prioritet.
-@@s015 Ingen kan komme ind, før T1 starter igen og laver <code>unlock()</code>. Hvis T1 dør og holder låsen, venter de for evigt. Den er <b>blokerende</b>.
-@@s016 T1 holder ikke noget: dens arbejde "halvvejs" (den læste 5) er kun i dens lokale variabel, og de andre ser det ikke. Ingen venter på T1.
-@@s017 Værdien er ikke længere 5, så CAS'en overskriver ikke: ingen tabt forøgelse (safety). T1 prøver igen og bliver færdig. Systemet har aldrig stoppet (lock-free).
-@@s018 De tre definitioner
-@@s019 betingelse
-@@s020 garanti (slide)
-@@s021 med ord
-@@s022 hvem bliver færdig
-@@s023 <b>wait-free</b>
-@@s024 hvert kald bliver færdigt på et endeligt antal trin
-@@s025 "<b>mine</b> operationer bliver færdige, uanset hvad de andre gør"
-@@s026 <mark class="ok">alle</mark>
-@@s027 <b>lock-free</b>
-@@s028 at køre metoden garanterer, at <b>et</b> eller andet kald (også et samtidigt) bliver færdigt på et endeligt antal trin
-@@s029 "<b>nogens</b> operationer bliver færdige"
-@@s030 <mark class="due">mindst én</mark>
-@@s031 <b>obstruction-free</b>
-@@s032 fra ethvert punkt, hvor den kører <b>alene</b> (i isolation), bliver den færdig på et endeligt antal trin
-@@s033 "mine operationer bliver færdige, <b>hvis de lader mig</b> køre"
-@@s034 <mark class="ora">den der bliver alene</mark>
-@@s035 Kæden (slide 15)
-@@s036 <b>wait-free ⇒ lock-free ⇒ obstruction-free</b>. Hver betingelse medfører den under den:
-@@s037 hvis <b>alle</b> bliver færdige, så bliver <b>nogen</b> færdige: wait-free ⇒ lock-free;
-@@s038 hvis nogen altid bliver færdig, og jeg kører <b>alene</b>, kan den nogen kun være mig: lock-free ⇒ obstruction-free.
-@@s039 Det omvendte gælder ikke: garantien svækkes, når man går nedad.
-@@s040 Lock-free: CAS-løkken
-@@s041 Slide 17 spørger: hvilken betingelse har <code>addAndGet</code> af <code>AtomicInteger</code>, skrevet med en CAS-løkke?
-@@s042 Hvorfor den er lock-free
-@@s043 ok:den der vinder,no:den der taber,ora:nøglepunktet
-@@s044 To tråde i den samme løkke, på den samme værdi.
-@@s045 Kun én CAS kan lykkes: værdien er ændret.
-@@s046 En CAS fejler kun, hvis en anden tråd har ændret værdien, altså har <b>fuldført</b> sin operation. Så hver fejl svarer til, at en anden tråd er gået fremad: systemet stopper aldrig. Den er <b>lock-free</b>.
-@@s047 Intet forhindrer T2 i at tabe hver runde mod T1, T3, T4… (sult). Der er ingen grænse for T2's forsøg: den er <b>ikke</b> wait-free.
-@@s048 De fleste ikke-blokerende strukturer er lock-free: Treiber-stakken, Michael-Scott-køen, <code>ConcurrentSkipListSet</code>, <code>CasHistogram</code> fra øvelse 6.1 (<code>increment</code>, <code>getAndClear</code>).
-@@s049 Wait-free og obstruction-free: eksempler
-@@s050 Wait-free
-@@s051 Ingen løkke, der afhænger af de andre. <code>getCount(bin)</code> i <code>CasHistogram</code> laver et enkelt <code>get()</code>: den bliver færdig på ét trin, uanset hvad der sker. Også <code>getSpan()</code>.
-@@s052 Obstruction-free
-@@s053 To tråde kan <b>ophæve hinanden</b> for evigt: hver laver den andens halvfærdige arbejde om, og ingen bliver færdig (livelock). Som to personer i en gang, der altid flytter sig til samme side. Men hvis en af de to bliver alene, bliver den færdig.
-@@s054 Uden låse, hvem garanterer at CAS'en er atomar?
-@@s055 Hvilken lås er det? Virker det på tillid?
-@@s056 Hverken lås eller tillid: garantien kommer fra <b>processoren</b>. CAS er en <b>enkelt maskininstruktion</b> (slide 8: moderne processorer har dedikerede instruktioner, som compare-and-swap). Sammenligningen og skrivningen sker inde i den ene instruktion, og hardwaren forhindrer en anden kerne i at røre den hukommelsescelle, før instruktionen er færdig (på x86 er det <code>LOCK CMPXCHG</code>).
-@@s057 Der er altså en "blokering", men den varer <b>én instruktion</b>, nogle få nanosekunder, og hardwaren håndterer den. Ingen tråd kan holde den og så falde i søvn: forskellen til en <code>lock()</code>, der bliver taget under hele den kritiske sektion, også mens tråden er suspenderet.
-@@s058 Lås: pessimistisk
-@@s059 "Nogen kunne forstyrre mig, så <b>først</b> reserverer og lukker jeg døren, derefter arbejder jeg." De andre venter udenfor, selv om de ikke ville have rørt noget.
-@@s060 CAS: optimistisk (slide 17)
-@@s061 "Sandsynligvis forstyrrer ingen mig: jeg arbejder på min kopi og kontrollerer <b>til sidst</b>. Hvis nogen har ændret værdien, smider jeg mit arbejde væk og gør det om." Det er <i>optimistic concurrency</i>.
-@@s062 Hvis du kender Git
-@@s063 CAS-løkken virker som en <code>git push</code>. Du arbejder lokalt (læser værdien, beregner den nye). Så pusher du: hvis ingen har pushet i mellemtiden, går det igennem. Hvis nogen har pushet før, bliver pushet <b>afvist</b> (det overskriver ikke andres arbejde): du laver pull, udfører beregningen igen på den nye værdi og pusher igen. Ingen har nogensinde låst repositoriet.
-@@s064 Hardwaren beskytter ét trin, ikke din algoritme
-@@s065 CAS'en er udelelig, og ingen tråd kan holde de andre som gidsler. Men koden omkring den kan stadig være forkert:
-@@s066 <b>én CAS pr. felt, når invarianten binder flere felter</b>: <code>NumberRange</code> nedenfor ender med lower &gt; upper;
-@@s067 <b>at skrive med <code>set()</code> i stedet for CAS'en</b>: "læs, beregn, <code>set</code>" er igen en ikke-atomar read-modify-write, og opdateringer går tabt;
-@@s068 <b>at bruge en anden værdi end CAS'ens</b>: i <code>getAndClear</code> skal man returnere den værdi, CAS'en nulstillede, ikke en genlæsning foretaget bagefter;
-@@s069 <b>værdien vender tilbage til det samme</b>: CAS'en sammenligner kun værdien, så A → B → A ser "uændret" ud (ABA-problemet, senere i lektionen).
-@@s070 Erstatter CAS låse?
-@@s071 CAS'en er kun en optimering, og låse skal man alligevel bruge?
-@@s072 <b>Nej, til begge dele.</b> I en lock-free struktur findes der <b>ingen</b> låse: <code>CasHistogram</code>, Treiber-stakken og <code>ConcurrentSkipListSet</code> er korrekte uden nogen <code>lock()</code>. CAS'en klarer begge opgaver selv: den gør opdateringen atomar (safety) og blokerer ingen (progression).
-@@s073 Og det er ikke sikkert, at den er hurtigere: med mange tråde, der konkurrerer om den samme værdi, fejler CAS'erne ofte, og man prøver igen uden resultat. Slide 32–33 (tilfældighedsgeneratoren) viser, at CAS-versionen under høj konkurrence kan skalere <b>dårligere</b>, og at <b>lokalitet</b> betyder mere (hver tråd med sit eget objekt, <code>ThreadLocal</code>) end at være lock-free. Den reelle fordel ved CAS er progressionsgarantien, ikke hastigheden.
-@@s074 CAS'ens begrænsning: den virker på <b>én variabel</b> ad gangen. Hvis invarianten binder flere felter, er to separate CAS'er ikke nok.
-@@s075 NumberRange: invarianten lower ≤ upper (slide 20–22)
-@@s076 no:ødelagt,ok:korrekt,ora:hvad der ændrer sig
-@@s077 Hvert felt er atomart alene, men invarianten angår <b>parret</b>.
-@@s078 Begge kontroller består, fordi hver kigger på den gamle værdi af det andet felt.
-@@s079 Check-then-act på to variable: ingen af de to skrivninger er forkert alene, men sammen bryder de invarianten. Goetz: "don't do this".
-@@s080 <code>CasNumberRange</code>: man læser parret, kontrollerer det, opretter et <b>nyt</b> par og laver <b>én enkelt</b> CAS på referencen. Hvis nogen i mellemtiden har ændret parret, fejler CAS'en, og man kontrollerer igen: <mark class="ok">invarianten holder</mark>.
-@@s081 Praktisk regel: tilstand i <b>én</b> variabel (eller som kan pakkes i et uforanderligt objekt) → CAS'en er nok og erstatter låsen. Tilstand spredt over flere objekter, eller man skal <b>vente</b> på en betingelse (buffer ikke tom) → låse og monitorer er stadig det rigtige værktøj.
-@@s082 Ikke-blokerende betyder ikke busy-wait
-@@s083 Slide 14 og 16
-@@s084 <b>Busy-wait</b> (<code>while (i &gt; 0) { }</code>) venter på, at <b>en anden tråd</b> ændrer noget: hvis den tråd stopper, kører løkken for evigt. I kurset er det forbudt: løsninger med busy-wait bliver afvist.
-@@s085 En CAS-løkke venter derimod ikke på nogen: den gentager, fordi en anden tråd <b>er gået videre</b>, og med de tre betingelser er terminering garanteret (i det mindste i isolation). Derfor er CAS-løkken tilladt, men <b>kun</b> for implementeringer baseret på CAS.
-@@s086 Modelsætning
-@@s087 CAS-løkken i <i>addAndGet</i> er lock-free, men ikke wait-free: et CAS fejler kun, hvis en anden tråds CAS er lykkedes, så et kald bliver altid færdigt, men en enkelt tråd kan blive ved med at tabe og aldrig blive færdig. Wait-free medfører lock-free, og lock-free medfører obstruction-free.
-@@s088 Prøv selv
-@@s089 En metode laver en CAS-løkke, der kun fejler, når en anden tråd er lykkedes. Hvilken betingelse har den?
-@@s090 Nogen bliver altid færdig (lock-free), men en enkelt tråd kan tabe for evigt (ikke wait-free).
-@@s091 En implementering er wait-free. Hvad kan du sige?
-@@s092 wait-free ⇒ lock-free ⇒ obstruction-free.
-@@s093 Hvilken garanterer kun, at en tråd bliver færdig, <b>når den kører alene</b>?
-@@s094 Med andre aktive tråde kan ingen blive færdig (livelock).
+@@s014 <mark class="dato">T1</mark> læser 5, og scheduleren suspenderer den i 1 sekund
+@@s015 Det sker virkelig: slutningen af tidsskiven, page fault, afbrydelse, en tråd med højere prioritet.
+@@s016 med en lås: <mark class="dato">T1</mark> holder låsen → <mark class="due">T2, T3, T4</mark> <mark class="no">venter 1 sekund</mark>
+@@s017 Ingen kan komme ind, før T1 starter igen og laver <code>unlock()</code>. Hvis T1 dør og holder låsen, venter de for evigt. Den er <b>blokerende</b>.
+@@s018 med CAS: <mark class="due">T2, T3, T4</mark> <mark class="ok">øger</mark> 5 → 6 → 7 → 8
+@@s019 T1 holder ikke noget: dens arbejde "halvvejs" (den læste 5) er kun i dens lokale variabel, og de andre ser det ikke. Ingen venter på T1.
+@@s020 Værdien er ikke længere 5, så CAS'en overskriver ikke: ingen tabt forøgelse (safety). T1 prøver igen og bliver færdig. Systemet har aldrig stoppet (lock-free).
+@@s021 De tre definitioner
+@@s022 betingelse
+@@s023 garanti (slide)
+@@s024 med ord
+@@s025 hvem bliver færdig
+@@s026 <b>wait-free</b>
+@@s027 hvert kald bliver færdigt på et endeligt antal trin
+@@s028 "<b>mine</b> operationer bliver færdige, uanset hvad de andre gør"
+@@s029 <mark class="ok">alle</mark>
+@@s030 <b>lock-free</b>
+@@s031 at køre metoden garanterer, at <b>et</b> eller andet kald (også et samtidigt) bliver færdigt på et endeligt antal trin
+@@s032 "<b>nogens</b> operationer bliver færdige"
+@@s033 <mark class="due">mindst én</mark>
+@@s034 <b>obstruction-free</b>
+@@s035 fra ethvert punkt, hvor den kører <b>alene</b> (i isolation), bliver den færdig på et endeligt antal trin
+@@s036 "mine operationer bliver færdige, <b>hvis de lader mig</b> køre"
+@@s037 <mark class="ora">den der bliver alene</mark>
+@@s038 Kæden (slide 15)
+@@s039 <b>wait-free ⇒ lock-free ⇒ obstruction-free</b>. Hver betingelse medfører den under den:
+@@s040 hvis <b>alle</b> bliver færdige, så bliver <b>nogen</b> færdige: wait-free ⇒ lock-free;
+@@s041 hvis nogen altid bliver færdig, og jeg kører <b>alene</b>, kan den nogen kun være mig: lock-free ⇒ obstruction-free.
+@@s042 Det omvendte gælder ikke: garantien svækkes, når man går nedad.
+@@s043 Lock-free: CAS-løkken
+@@s044 Slide 17 spørger: hvilken betingelse har <code>addAndGet</code> af <code>AtomicInteger</code>, skrevet med en CAS-løkke?
+@@s045 Hvorfor den er lock-free
+@@s046 ok:den der vinder,no:den der taber,ora:nøglepunktet
+@@s047 To tråde i den samme løkke, på den samme værdi.
+@@s048 Kun én CAS kan lykkes: værdien er ændret.
+@@s049 T2 fejler <mark class="ora">kun fordi</mark> T1 lykkedes
+@@s050 En CAS fejler kun, hvis en anden tråd har ændret værdien, altså har <b>fuldført</b> sin operation. Så hver fejl svarer til, at en anden tråd er gået fremad: systemet stopper aldrig. Den er <b>lock-free</b>.
+@@s051 T2 kan tabe <mark class="no">for evigt</mark>
+@@s052 Intet forhindrer T2 i at tabe hver runde mod T1, T3, T4… (sult). Der er ingen grænse for T2's forsøg: den er <b>ikke</b> wait-free.
+@@s053 De fleste ikke-blokerende strukturer er lock-free: Treiber-stakken, Michael-Scott-køen, <code>ConcurrentSkipListSet</code>, <code>CasHistogram</code> fra øvelse 6.1 (<code>increment</code>, <code>getAndClear</code>).
+@@s054 Wait-free og obstruction-free: eksempler
+@@s055 Wait-free
+@@s056 Ingen løkke, der afhænger af de andre. <code>getCount(bin)</code> i <code>CasHistogram</code> laver et enkelt <code>get()</code>: den bliver færdig på ét trin, uanset hvad der sker. Også <code>getSpan()</code>.
+@@s057 Obstruction-free
+@@s058 To tråde kan <b>ophæve hinanden</b> for evigt: hver laver den andens halvfærdige arbejde om, og ingen bliver færdig (livelock). Som to personer i en gang, der altid flytter sig til samme side. Men hvis en af de to bliver alene, bliver den færdig.
+@@s059 Uden låse, hvem garanterer at CAS'en er atomar?
+@@s060 Hvilken lås er det? Virker det på tillid?
+@@s061 Hverken lås eller tillid: garantien kommer fra <b>processoren</b>. CAS er en <b>enkelt maskininstruktion</b> (slide 8: moderne processorer har dedikerede instruktioner, som compare-and-swap). Sammenligningen og skrivningen sker inde i den ene instruktion, og hardwaren forhindrer en anden kerne i at røre den hukommelsescelle, før instruktionen er færdig (på x86 er det <code>LOCK CMPXCHG</code>).
+@@s062 Der er altså en "blokering", men den varer <b>én instruktion</b>, nogle få nanosekunder, og hardwaren håndterer den. Ingen tråd kan holde den og så falde i søvn: forskellen til en <code>lock()</code>, der bliver taget under hele den kritiske sektion, også mens tråden er suspenderet.
+@@s063 Lås: pessimistisk
+@@s064 "Nogen kunne forstyrre mig, så <b>først</b> reserverer og lukker jeg døren, derefter arbejder jeg." De andre venter udenfor, selv om de ikke ville have rørt noget.
+@@s065 CAS: optimistisk (slide 17)
+@@s066 "Sandsynligvis forstyrrer ingen mig: jeg arbejder på min kopi og kontrollerer <b>til sidst</b>. Hvis nogen har ændret værdien, smider jeg mit arbejde væk og gør det om." Det er <i>optimistic concurrency</i>.
+@@s067 Hvis du kender Git
+@@s068 CAS-løkken virker som en <code>git push</code>. Du arbejder lokalt (læser værdien, beregner den nye). Så pusher du: hvis ingen har pushet i mellemtiden, går det igennem. Hvis nogen har pushet før, bliver pushet <b>afvist</b> (det overskriver ikke andres arbejde): du laver pull, udfører beregningen igen på den nye værdi og pusher igen. Ingen har nogensinde låst repositoriet.
+@@s069 Hardwaren beskytter ét trin, ikke din algoritme
+@@s070 CAS'en er udelelig, og ingen tråd kan holde de andre som gidsler. Men koden omkring den kan stadig være forkert:
+@@s071 <b>én CAS pr. felt, når invarianten binder flere felter</b>: <code>NumberRange</code> nedenfor ender med lower &gt; upper;
+@@s072 <b>at skrive med <code>set()</code> i stedet for CAS'en</b>: "læs, beregn, <code>set</code>" er igen en ikke-atomar read-modify-write, og opdateringer går tabt;
+@@s073 <b>at bruge en anden værdi end CAS'ens</b>: i <code>getAndClear</code> skal man returnere den værdi, CAS'en nulstillede, ikke en genlæsning foretaget bagefter;
+@@s074 <b>værdien vender tilbage til det samme</b>: CAS'en sammenligner kun værdien, så A → B → A ser "uændret" ud (ABA-problemet, senere i lektionen).
+@@s075 Erstatter CAS låse?
+@@s076 CAS'en er kun en optimering, og låse skal man alligevel bruge?
+@@s077 <b>Nej, til begge dele.</b> I en lock-free struktur findes der <b>ingen</b> låse: <code>CasHistogram</code>, Treiber-stakken og <code>ConcurrentSkipListSet</code> er korrekte uden nogen <code>lock()</code>. CAS'en klarer begge opgaver selv: den gør opdateringen atomar (safety) og blokerer ingen (progression).
+@@s078 Og det er ikke sikkert, at den er hurtigere: med mange tråde, der konkurrerer om den samme værdi, fejler CAS'erne ofte, og man prøver igen uden resultat. Slide 32–33 (tilfældighedsgeneratoren) viser, at CAS-versionen under høj konkurrence kan skalere <b>dårligere</b>, og at <b>lokalitet</b> betyder mere (hver tråd med sit eget objekt, <code>ThreadLocal</code>) end at være lock-free. Den reelle fordel ved CAS er progressionsgarantien, ikke hastigheden.
+@@s079 CAS'ens begrænsning: den virker på <b>én variabel</b> ad gangen. Hvis invarianten binder flere felter, er to separate CAS'er ikke nok.
+@@s080 NumberRange: invarianten lower ≤ upper (slide 20–22)
+@@s081 no:ødelagt,ok:korrekt,ora:hvad der ændrer sig
+@@s082 Hvert felt er atomart alene, men invarianten angår <b>parret</b>.
+@@s083 Begge kontroller består, fordi hver kigger på den gamle værdi af det andet felt.
+@@s084 Check-then-act på to variable: ingen af de to skrivninger er forkert alene, men sammen bryder de invarianten. Goetz: "don't do this".
+@@s085 <mark class="ora">AtomicReference&lt;IntPair&gt;</mark>: parret i et uforanderligt objekt
+@@s086 <code>CasNumberRange</code>: man læser parret, kontrollerer det, opretter et <b>nyt</b> par og laver <b>én enkelt</b> CAS på referencen. Hvis nogen i mellemtiden har ændret parret, fejler CAS'en, og man kontrollerer igen: <mark class="ok">invarianten holder</mark>.
+@@s087 Praktisk regel: tilstand i <b>én</b> variabel (eller som kan pakkes i et uforanderligt objekt) → CAS'en er nok og erstatter låsen. Tilstand spredt over flere objekter, eller man skal <b>vente</b> på en betingelse (buffer ikke tom) → låse og monitorer er stadig det rigtige værktøj.
+@@s088 Ikke-blokerende betyder ikke busy-wait
+@@s089 Slide 14 og 16
+@@s090 <b>Busy-wait</b> (<code>while (i &gt; 0) { }</code>) venter på, at <b>en anden tråd</b> ændrer noget: hvis den tråd stopper, kører løkken for evigt. I kurset er det forbudt: løsninger med busy-wait bliver afvist.
+@@s091 En CAS-løkke venter derimod ikke på nogen: den gentager, fordi en anden tråd <b>er gået videre</b>, og med de tre betingelser er terminering garanteret (i det mindste i isolation). Derfor er CAS-løkken tilladt, men <b>kun</b> for implementeringer baseret på CAS.
+@@s092 Modelsætning
+@@s093 CAS-løkken i <i>addAndGet</i> er lock-free, men ikke wait-free: et CAS fejler kun, hvis en anden tråds CAS er lykkedes, så et kald bliver altid færdigt, men en enkelt tråd kan blive ved med at tabe og aldrig blive færdig. Wait-free medfører lock-free, og lock-free medfører obstruction-free.
+@@s094 Prøv selv
+@@s095 En metode laver en CAS-løkke, der kun fejler, når en anden tråd er lykkedes. Hvilken betingelse har den?
+@@s096 Nogen bliver altid færdig (lock-free), men en enkelt tråd kan tabe for evigt (ikke wait-free).
+@@s097 En implementering er wait-free. Hvad kan du sige?
+@@s098 wait-free ⇒ lock-free ⇒ obstruction-free.
+@@s099 Hvilken garanterer kun, at en tråd bliver færdig, <b>når den kører alene</b>?
+@@s100 Med andre aktive tråde kan ingen blive færdig (livelock).

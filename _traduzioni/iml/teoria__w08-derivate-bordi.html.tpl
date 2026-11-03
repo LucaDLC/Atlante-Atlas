@@ -133,51 +133,51 @@ window.SCENE = window.SCENE || {};
   </figure>
   <figure class="passi" data-titolo="{{a|s028|}}">
     <div class="passo"><div class="espr">∇f = (2x, 3) = <mark class="ok">(2, 3)</mark></div><p class="nota">{{s|s029|}}</p></div>
-    <div class="passo"><div class="espr">derivata nella direzione u:  D<sub>u</sub>f = ∇f · u</div><p class="nota">{{s|s030|}}</p></div>
-    <div class="passo"><div class="espr">massima quando u punta come ∇f:  D<sub>u</sub>f = ‖∇f‖ = <mark class="ok">√13 ≈ 3.61</mark></div><p class="nota">{{s|s031|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s030|}}</div><p class="nota">{{s|s031|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s032|}}</div><p class="nota">{{s|s033|}}</p></div>
   </figure>
-  <figure class="scena" data-scena="gradiente" data-titolo="{{a|s032|}}"></figure>
+  <figure class="scena" data-scena="gradiente" data-titolo="{{a|s034|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s033|}}</h2>
-  <figure class="passi" data-titolo="{{a|s034|}}">
-    <div class="passo"><div class="espr">f′(x) ≈ f(x + <mark class="ora">1</mark>) − f(x)</div><p class="nota">{{s|s035|}}</p></div>
-    <div class="passo"><div class="espr">[ <mark class="no">−1</mark>, <mark class="ok">1</mark> ] · [ f(x), f(x + 1) ]</div><p class="nota">{{s|s036|}}</p></div>
-    <div class="passo"><div class="espr">centrale: ( f(x + 1) − f(x − 1) ) / 2  →  filtro [1, 0, −1] / 2 (convoluzione)</div><p class="nota">{{s|s037|}}</p></div>
-    <div class="passo"><div class="espr">derivare <mark class="no">amplifica il rumore</mark></div><p class="nota">{{s|s038|}}</p></div>
-    <div class="passo"><div class="espr">(f ∗ g)′ = f ∗ <mark class="ok">g′</mark></div><p class="nota">{{s|s039|}}</p></div>
+  <h2>{{s|s035|}}</h2>
+  <figure class="passi" data-titolo="{{a|s036|}}">
+    <div class="passo"><div class="espr">f′(x) ≈ f(x + <mark class="ora">1</mark>) − f(x)</div><p class="nota">{{s|s037|}}</p></div>
+    <div class="passo"><div class="espr">[ <mark class="no">−1</mark>, <mark class="ok">1</mark> ] · [ f(x), f(x + 1) ]</div><p class="nota">{{s|s038|}}</p></div>
+    <div class="passo"><div class="espr">centrale: ( f(x + 1) − f(x − 1) ) / 2  →  filtro [1, 0, −1] / 2 (convoluzione)</div><p class="nota">{{s|s039|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s040|}}</div><p class="nota">{{s|s041|}}</p></div>
+    <div class="passo"><div class="espr">(f ∗ g)′ = f ∗ <mark class="ok">g′</mark></div><p class="nota">{{s|s042|}}</p></div>
   </figure>
-  <figure class="scena" data-scena="derivfiltro" data-titolo="{{a|s040|}}"></figure>
+  <figure class="scena" data-scena="derivfiltro" data-titolo="{{a|s043|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s041|}}</h2>
-  <p>{{s|s042|}}</p>
+  <h2>{{s|s044|}}</h2>
+  <p>{{s|s045|}}</p>
   <div class="tab-wrap"><table class="tab">
-    <thead><tr><th>{{s|s043|}}</th><th>{{s|s044|}}</th><th>{{s|s045|}}</th></tr></thead>
+    <thead><tr><th>{{s|s046|}}</th><th>{{s|s047|}}</th><th>{{s|s048|}}</th></tr></thead>
     <tbody>
-      <tr><td>{{s|s046|}}</td><td>[−1, 1]</td><td>{{s|s047|}}</td></tr>
-      <tr><td>{{s|s048|}}</td><td>[[−1, 0, 1], [−1, 0, 1], [−1, 0, 1]]</td><td>{{s|s049|}}</td></tr>
-      <tr><td>{{s|s050|}}</td><td>[[−1, 0, 1], [−2, 0, 2], [−1, 0, 1]]</td><td>{{s|s051|}}</td></tr>
+      <tr><td>{{s|s049|}}</td><td>[−1, 1]</td><td>{{s|s050|}}</td></tr>
+      <tr><td>{{s|s051|}}</td><td>[[−1, 0, 1], [−1, 0, 1], [−1, 0, 1]]</td><td>{{s|s052|}}</td></tr>
+      <tr><td>{{s|s053|}}</td><td>[[−1, 0, 1], [−2, 0, 2], [−1, 0, 1]]</td><td>{{s|s054|}}</td></tr>
     </tbody>
   </table></div>
-  <p class="piccolo">{{s|s052|}}</p>
-  <figure class="passi" data-titolo="{{a|s053|}}">
-    <div class="passo"><div class="espr">I<sub>x</sub> = (−10 + 10) + (−2·10 + 2·50) + (−10 + 50) = <mark class="ora">120</mark></div><p class="nota">{{s|s054|}}</p></div>
-    <div class="passo"><div class="espr">I<sub>y</sub> = −(10 + 2·10 + 10) + (10 + 2·50 + 50) = <mark class="due">120</mark></div><p class="nota">{{s|s055|}}</p></div>
-    <div class="passo"><div class="espr">‖∇I‖ = √(120² + 120²) ≈ <mark class="ok">169.7</mark>     direzione = atan2(120, 120) = <mark class="ok">45°</mark></div><p class="nota">{{s|s056|}}</p></div>
+  <p class="piccolo">{{s|s055|}}</p>
+  <figure class="passi" data-titolo="{{a|s056|}}">
+    <div class="passo"><div class="espr">I<sub>x</sub> = (−10 + 10) + (−2·10 + 2·50) + (−10 + 50) = <mark class="ora">120</mark></div><p class="nota">{{s|s057|}}</p></div>
+    <div class="passo"><div class="espr">I<sub>y</sub> = −(10 + 2·10 + 10) + (10 + 2·50 + 50) = <mark class="due">120</mark></div><p class="nota">{{s|s058|}}</p></div>
+    <div class="passo"><div class="espr">‖∇I‖ = √(120² + 120²) ≈ <mark class="ok">169.7</mark>     direzione = atan2(120, 120) = <mark class="ok">45°</mark></div><p class="nota">{{s|s059|}}</p></div>
   </figure>
-  <div class="box attenzione" data-tit="{{a|s057|}}">
-    <p>{{s|s058|}}</p>
+  <div class="box attenzione" data-tit="{{a|s060|}}">
+    <p>{{s|s061|}}</p>
   </div>
-  <div class="box idea" data-tit="{{a|s059|}}">
-    <p>{{s|s060|}}</p>
+  <div class="box idea" data-tit="{{a|s062|}}">
+    <p>{{s|s063|}}</p>
   </div>
-  <div class="box esame" data-tit="{{a|s061|}}">
-    <p>{{s|s062|}}</p>
+  <div class="box esame" data-tit="{{a|s064|}}">
+    <p>{{s|s065|}}</p>
   </div>
-  <figure class="scena" data-scena="sobelimg" data-titolo="{{a|s063|}}"></figure>
+  <figure class="scena" data-scena="sobelimg" data-titolo="{{a|s066|}}"></figure>
 </section>
 
 </main>

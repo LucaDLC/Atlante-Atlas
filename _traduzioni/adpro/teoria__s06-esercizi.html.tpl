@@ -241,32 +241,28 @@ forAll(genLazyList, genNonNegativeInt) { (l, n) =&gt; … }</pre>
     <div class="passo"><div class="espr">cons(7, bomba)  =  Cons(<mark class="dato">[7]</mark>, <mark class="no">[bomba]</mark>)</div><p class="nota">{{s|s113|}}</p></div>
     <div class="passo"><div class="espr">headOption  =  foldRight(None)((h, _) =&gt; Some(h))
 foldRight su Cons(h, t)  =  f(<mark class="ora">h()</mark>, ⟨t().foldRight(z)(f)⟩)</div><p class="nota">{{s|s114|}}</p></div>
-    <div class="passo"><div class="espr">f(7, ⟨…⟩)  con  f = (h, <mark class="ora">_</mark>) =&gt; Some(h)   →   <mark class="ok">Some(7)</mark></div><p class="nota">{{s|s115|}}</p></div>
-    <div class="passo"><div class="espr">mutante:  case Cons(h, t) =&gt; <mark class="no">t()</mark>; Some(h())   →   RuntimeException: forzato!</div><p class="nota">{{s|s116|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s115|}}</div><p class="nota">{{s|s116|}}</p></div>
+    <div class="passo"><div class="espr">mutante:  case Cons(h, t) =&gt; <mark class="no">t()</mark>; Some(h())   →   RuntimeException: forzato!</div><p class="nota">{{s|s117|}}</p></div>
   </figure>
-  <div class="box domanda-tua" data-tit="{{a|s117|}}">
-    <p>{{s|s118|}}</p>
+  <div class="box domanda-tua" data-tit="{{a|s118|}}">
+    <p>{{s|s119|}}</p>
     <pre class="cod" data-lang="pseudo">··def infiniteLazyList…        2 spazi: membro dell'object
 ····Gen.const(loop)             4 spazi: dentro infiniteLazyList
 ··/* The test suite */          commento: non conta
 ····def tailDevelopFinder…      4 spazi: finisce DENTRO infiniteLazyList   ✗
 ··def tailDevelopFinder…        2 spazi: membro dell'object, lo vedono i test   ✓</pre>
-    <p>{{s|s119|}}</p>
+    <p>{{s|s120|}}</p>
   </div>
-  <div class="box domanda-tua" data-tit="{{a|s120|}}">
-    <p>{{s|s121|}}</p>
+  <div class="box domanda-tua" data-tit="{{a|s121|}}">
+    <p>{{s|s122|}}</p>
   </div>
-  <figure class="passi" data-titolo="{{a|s122|}}" data-legenda="{{a|s123|}}">
+  <figure class="passi" data-titolo="{{a|s123|}}" data-legenda="{{a|s124|}}">
     <div class="passo"><div class="espr">bombe.take(n)          bombe = Cons(⟨bomba⟩, ⟨bombe⟩)
 cons(1, bomba).take(n) = Cons(⟨1⟩, ⟨bomba⟩)
-true</div><p class="nota">{{s|s124|}}</p></div>
-    <div class="passo"><div class="espr">take giusta:  cons(⟨h()⟩, ⟨t().take(n - 1)⟩)   →  nessuna busta aperta  →  <mark class="ok">OK, passed 100 tests</mark></div><p class="nota">{{s|s125|}}</p></div>
-    <div class="passo"><div class="espr">take rotta A:  <mark class="ora">val x = h()</mark>; cons(x, …)
-  bombe.take(3)           → h() = <mark class="no">bomba</mark>  →  Exception, ARG_0: 3
-  cons(1, bomba).take(3)  → h() = 1, la coda resta chiusa  →  non se ne accorgerebbe</div><p class="nota">{{s|s126|}}</p></div>
-    <div class="passo"><div class="espr">take rotta B:  <mark class="ora">val r = t().take(n - 1)</mark>; cons(h(), r)
-  bombe.take(3)           → t() = bombe, che non è una bomba  →  non se ne accorgerebbe
-  cons(1, bomba).take(3)  → t() = <mark class="no">bomba</mark>  →  Exception, ARG_0: 2</div><p class="nota">{{s|s127|}}</p></div>
+true</div><p class="nota">{{s|s125|}}</p></div>
+    <div class="passo"><div class="espr">take giusta:  cons(⟨h()⟩, ⟨t().take(n - 1)⟩)   →  nessuna busta aperta  →  <mark class="ok">OK, passed 100 tests</mark></div><p class="nota">{{s|s126|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s127|}}</div><p class="nota">{{s|s128|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s129|}}</div><p class="nota">{{s|s130|}}</p></div>
   </figure>
   <div class="errori">
     <div class="errore">
@@ -276,25 +272,25 @@ true</div><p class="nota">{{s|s124|}}</p></div>
 <pre class="msg">! testing.Ex03.X: con toList (sbagliato): Exception raised on property evaluation.
 &gt; ARG_0: 1
 &gt; Exception: java.lang.RuntimeException: forzato!</pre>
-      <div class="fix">Fallisce sulla LazyList <b>giusta</b>: <code>toList</code> legge il risultato e quindi apre le teste, che sono bombe. Nell'es. 3 il risultato di take non va guardato; aprire le teste del risultato è permesso, ed è l'es. 4 a controllare quali.</div>
+      <div class="fix">{{s|s131|}}</div>
     </div>
   </div>
-  <figure class="passi" data-titolo="{{a|s128|}}" data-legenda="{{a|s129|}}">
-    <div class="passo"><div class="espr testo">{{s|s130|}}</div><p class="nota">{{s|s131|}}</p></div>
-    <div class="passo"><div class="espr testo">{{s|s132|}}</div><p class="nota">{{s|s133|}}</p></div>
+  <figure class="passi" data-titolo="{{a|s132|}}" data-legenda="{{a|s133|}}">
+    <div class="passo"><div class="espr testo">{{s|s134|}}</div><p class="nota">{{s|s135|}}</p></div>
+    <div class="passo"><div class="espr testo">{{s|s136|}}</div><p class="nota">{{s|s137|}}</p></div>
     <div class="passo"><div class="espr">property("Ex02: headOption does not force the tail") =
-  forAll { (n: Int) =&gt; cons(<mark class="dato">n</mark>, <mark class="no">bomba</mark>).headOption == <mark class="ok">Some(n)</mark> }</div><p class="nota">{{s|s134|}}</p></div>
-    <div class="passo"><div class="espr">lazyList00:  foldRight(None)((h, <mark class="ora">_</mark>) =&gt; Some(h))   →   <mark class="ok">OK, passed 100 tests.</mark></div><p class="nota">{{s|s135|}}</p></div>
-    <div class="passo"><div class="espr">mutante:  case Cons(h, t) =&gt; <mark class="ora">t()</mark>; Some(h())   →   <mark class="no">Exception raised … RuntimeException: forzato!</mark></div><p class="nota">{{s|s136|}}</p></div>
+  forAll { (n: Int) =&gt; cons(<mark class="dato">n</mark>, <mark class="no">bomba</mark>).headOption == <mark class="ok">Some(n)</mark> }</div><p class="nota">{{s|s138|}}</p></div>
+    <div class="passo"><div class="espr">lazyList00:  foldRight(None)((h, <mark class="ora">_</mark>) =&gt; Some(h))   →   <mark class="ok">OK, passed 100 tests.</mark></div><p class="nota">{{s|s139|}}</p></div>
+    <div class="passo"><div class="espr">mutante:  case Cons(h, t) =&gt; <mark class="ora">t()</mark>; Some(h())   →   <mark class="no">Exception raised … RuntimeException: forzato!</mark></div><p class="nota">{{s|s140|}}</p></div>
   </figure>
-  <figure class="passi" data-titolo="{{a|s137|}}" data-legenda="{{a|s138|}}">
-    <div class="passo"><div class="espr">headForceFinderAfter(3)  =  <mark class="dato">1</mark>, <mark class="dato">2</mark>, <mark class="dato">3</mark>, <mark class="no">bomba</mark></div><p class="nota">{{s|s139|}}</p></div>
-    <div class="passo"><div class="espr">take(3) su 1:  <mark class="ora">case Cons(h, t) if n &gt; 1</mark> =&gt; cons(h(), t().take(2))</div><p class="nota">{{s|s140|}}</p></div>
-    <div class="passo"><div class="espr">toList apre: 1 · poi take(2) su 2: <mark class="ora">n &gt; 1</mark> · 2 · poi take(1) su 3: <mark class="ora">case Cons(h, _) if n == 1</mark> =&gt; cons(h(), empty)</div><p class="nota">{{s|s141|}}</p></div>
-    <div class="passo"><div class="espr">toList = <mark class="ok">List(1, 2, 3)</mark>  ==  List.range(1, 4) = List(1, 2, 3)</div><p class="nota">{{s|s142|}}</p></div>
-    <div class="passo"><div class="espr">mutante: case Cons(h, _) if n == 0 =&gt; <mark class="no">h()</mark>; empty   →   ARG_0: 0, Head Forced!</div><p class="nota">{{s|s143|}}</p></div>
+  <figure class="passi" data-titolo="{{a|s141|}}" data-legenda="{{a|s142|}}">
+    <div class="passo"><div class="espr">headForceFinderAfter(3)  =  <mark class="dato">1</mark>, <mark class="dato">2</mark>, <mark class="dato">3</mark>, <mark class="no">bomba</mark></div><p class="nota">{{s|s143|}}</p></div>
+    <div class="passo"><div class="espr">take(3) su 1:  <mark class="ora">case Cons(h, t) if n &gt; 1</mark> =&gt; cons(h(), t().take(2))</div><p class="nota">{{s|s144|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s145|}}</div><p class="nota">{{s|s146|}}</p></div>
+    <div class="passo"><div class="espr">toList = <mark class="ok">List(1, 2, 3)</mark>  ==  List.range(1, 4) = List(1, 2, 3)</div><p class="nota">{{s|s147|}}</p></div>
+    <div class="passo"><div class="espr">mutante: case Cons(h, _) if n == 0 =&gt; <mark class="no">h()</mark>; empty   →   ARG_0: 0, Head Forced!</div><p class="nota">{{s|s148|}}</p></div>
   </figure>
-  <details class="soluzione"><summary>{{s|s144|}}</summary><div>
+  <details class="soluzione"><summary>{{s|s149|}}</summary><div>
 <pre class="cod" data-lang="scala">// liste con le bombe
 def bombe: LazyList[Int] = cons(bomba, bombe)
 
@@ -319,12 +315,12 @@ property("Ex04: take(n) does not force the (n+1)st head") =
 property("Ex07: drop(n) does not force dropped heads") =
   forAll(genN) { n =&gt; bombePoi(n, LazyList(1, 2, 3)).drop(n).toList == List(1, 2, 3) }</pre>
   </div></details>
-  <figure class="scena" data-scena="pigrizia" data-titolo="{{a|s145|}}"></figure>
+  <figure class="scena" data-scena="pigrizia" data-titolo="{{a|s150|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s146|}}</h2>
-  <p>{{s|s147|}}</p>
+  <h2>{{s|s151|}}</h2>
+  <p>{{s|s152|}}</p>
   <div class="errori">
     <div class="errore">
 <pre data-lang="scala">forAll(arbitrary[LazyList[Int]], genN) { (l, n) =&gt;
@@ -332,15 +328,14 @@ property("Ex07: drop(n) does not force dropped heads") =
 <pre class="msg">! testing.EQ: take(n).take(n) == take(n) con ==: Falsified after 2 passed tests.
 &gt; ARG_0: Cons(adpro.lazyList.lazyList00.LazyList$$$Lambda/…
 &gt; ARG_1: 1</pre>
-      <div class="fix">Fallisce sulla LazyList <b>giusta</b>: dentro una Cons ci sono funzioni, e due funzioni diverse non sono mai uguali (<code>LazyList(1, 2) == LazyList(1, 2)</code> è false). I 2 test passati erano liste vuote (<code>Empty == Empty</code>). Si confronta con <code>.toList</code>.</div>
+      <div class="fix">{{s|s153|}}</div>
     </div>
   </div>
-  <figure class="passi" data-titolo="{{a|s148|}}" data-legenda="{{a|s149|}}">
+  <figure class="passi" data-titolo="{{a|s154|}}" data-legenda="{{a|s155|}}">
     <div class="passo"><div class="espr">l = 1, 2, 3, 4, 5   n = 1   m = 2
-l.drop(1).drop(2) = 4, 5      l.drop(3) = 4, 5   <mark class="ok">uguali</mark></div><p class="nota">{{s|s150|}}</p></div>
-    <div class="passo"><div class="espr">n = 4   m = 3:   l.drop(4).drop(3) = ()   l.drop(7) = ()   <mark class="ok">uguali</mark></div><p class="nota">{{s|s151|}}</p></div>
-    <div class="passo"><div class="espr">mutante  case Cons(_, t) if <mark class="no">n &gt; 1</mark>  (scarta uno in meno)
-oracolo:  list2lazyList(List(0)).drop(1).toList = List(0)   ≠   <mark class="due">List(0).drop(1)</mark> = List()</div><p class="nota">{{s|s152|}}</p></div>
+l.drop(1).drop(2) = 4, 5      l.drop(3) = 4, 5   <mark class="ok">uguali</mark></div><p class="nota">{{s|s156|}}</p></div>
+    <div class="passo"><div class="espr">n = 4   m = 3:   l.drop(4).drop(3) = ()   l.drop(7) = ()   <mark class="ok">uguali</mark></div><p class="nota">{{s|s157|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s158|}}</div><p class="nota">{{s|s159|}}</p></div>
   </figure>
   <div class="errori">
     <div class="errore">
@@ -352,10 +347,10 @@ forAll(genNonNegativeInt) { n =&gt; … }      // ma il generatore si chiama Gen
 [error] Not found: headForceFinder
 [error] .\Exercises.scala:89:12
 [error] Not found: genNonNegativeInt</pre>
-      <div class="fix">Dal tuo file: si usa un nome che non è definito da nessuna parte. <code>headForceFinder</code> mancava (c'era solo <code>tailForceFinder</code>), e il generatore era definito come <code>Genn</code> ma usato come <code>genNonNegativeInt</code>. Un nome, una definizione: aggiungi <code>def headForceFinder[A]: A = throw RuntimeException("Head Forced!")</code> e usa lo stesso nome del generatore ovunque.</div>
+      <div class="fix">{{s|s160|}}</div>
     </div>
   </div>
-  <details class="soluzione"><summary>{{s|s153|}}</summary><div>
+  <details class="soluzione"><summary>{{s|s161|}}</summary><div>
 <pre class="cod" data-lang="scala">property("Ex05: take(n).take(n) == take(n)") =
   forAll(arbitrary[LazyList[Int]], genN) { (l, n) =&gt;
     l.take(n).take(n).toList == l.take(n).toList } &amp;&amp;
@@ -373,23 +368,23 @@ property("Ex06: drop(n).drop(m) == drop(n + m)") =
 property("Ex08: map(identity) == l") =
   forAll { (l: LazyList[Int]) =&gt; l.map(identity).toList == l.toList }</pre>
   </div></details>
-  <figure class="scena" data-scena="leggi" data-titolo="{{a|s154|}}"></figure>
+  <figure class="scena" data-scena="leggi" data-titolo="{{a|s162|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s155|}}</h2>
-  <p>{{s|s156|}}</p>
-  <details class="soluzione"><summary>{{s|s157|}}</summary><div>
+  <h2>{{s|s163|}}</h2>
+  <p>{{s|s164|}}</p>
+  <details class="soluzione"><summary>{{s|s165|}}</summary><div>
 <pre class="cod" data-lang="scala">property("Ex09: map terminates on infinite lists") =
   forAll(infiniteLazyList[Int], genN) { (l, n) =&gt;
     l.map(_ + 1).take(n).toList == l.take(n).toList.map(_ + 1) }</pre>
   </div></details>
-  <figure class="scena" data-scena="infinita" data-titolo="{{a|s158|}}"></figure>
+  <figure class="scena" data-scena="infinita" data-titolo="{{a|s166|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s159|}}</h2>
-  <p>{{s|s160|}}</p>
+  <h2>{{s|s167|}}</h2>
+  <p>{{s|s168|}}</p>
   <div class="errori">
     <div class="errore">
 <pre data-lang="scala">property("append does not force its argument") =
@@ -397,10 +392,10 @@ property("Ex08: map(identity) == l") =
 <pre class="msg">! testing.Ex10.02: append does not force its argument: Exception raised on property evaluation.
 &gt; ARG_0: Empty
 &gt; Exception: java.lang.RuntimeException: forzato!</pre>
-      <div class="fix">Fallisce sulla LazyList <b>giusta</b>: se <code>l</code> è vuota, <code>l.append(that)</code> <b>è</b> <code>that</code>, e restituirlo vuol dire calcolarlo. La proprietà vale solo per <code>l</code> non vuota: <code>forAll(genNonEmptyLazyList[Int]) { l =&gt; … }</code>. Errore mio, trovato provando il file su lazyList00: prova sempre i tuoi test sulla versione giusta.</div>
+      <div class="fix">{{s|s169|}}</div>
     </div>
   </div>
-  <details class="soluzione"><summary>{{s|s161|}}</summary><div>
+  <details class="soluzione"><summary>{{s|s170|}}</summary><div>
 <pre class="cod" data-lang="scala">property("Ex10.01: append = ++ on lists") =
   forAll { (l1: LazyList[Int], l2: LazyList[Int]) =&gt;
     l1.append(l2).toList == l1.toList ++ l2.toList }
@@ -412,34 +407,34 @@ property("Ex10.03: infinite append anything = infinite") =
   forAll(infiniteLazyList[Int], genN) { (l, n) =&gt;
     l.append(bomba).take(n).toList == l.take(n).toList }</pre>
   </div></details>
-  <figure class="scena" data-scena="append" data-titolo="{{a|s162|}}"></figure>
+  <figure class="scena" data-scena="append" data-titolo="{{a|s171|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s163|}}</h2>
-  <p>{{s|s164|}}</p>
+  <h2>{{s|s172|}}</h2>
+  <p>{{s|s173|}}</p>
   <div class="tab-wrap"><table class="tab">
-    <thead><tr><th>{{s|s165|}}</th><th>{{s|s166|}}</th></tr></thead>
+    <thead><tr><th>{{s|s174|}}</th><th>{{s|s175|}}</th></tr></thead>
     <tbody>
-      <tr><td>{{s|s167|}}</td><td>{{s|s168|}}</td></tr>
-      <tr><td>{{s|s169|}}</td><td>{{s|s170|}}</td></tr>
-      <tr><td>{{s|s171|}}</td><td>{{s|s172|}}</td></tr>
-      <tr><td>{{s|s173|}}</td><td>{{s|s174|}}</td></tr>
-      <tr><td>{{s|s175|}}</td><td>{{s|s176|}}</td></tr>
-      <tr><td>{{s|s177|}}</td><td>{{s|s178|}}</td></tr>
-      <tr><td>{{s|s179|}}</td><td>{{s|s180|}}</td></tr>
-      <tr><td>{{s|s181|}}</td><td>{{s|s182|}}</td></tr>
-      <tr><td>{{s|s183|}}</td><td>{{s|s184|}}</td></tr>
-      <tr><td>{{s|s185|}}</td><td>{{s|s186|}}</td></tr>
-      <tr><td>{{s|s187|}}</td><td>{{s|s188|}}</td></tr>
-      <tr><td>{{s|s189|}}</td><td>{{s|s190|}}</td></tr>
-      <tr><td>{{s|s191|}}</td><td>{{s|s192|}}</td></tr>
+      <tr><td>{{s|s176|}}</td><td>{{s|s177|}}</td></tr>
+      <tr><td>{{s|s178|}}</td><td>{{s|s179|}}</td></tr>
+      <tr><td>{{s|s180|}}</td><td>{{s|s181|}}</td></tr>
+      <tr><td>{{s|s182|}}</td><td>{{s|s183|}}</td></tr>
+      <tr><td>{{s|s184|}}</td><td>{{s|s185|}}</td></tr>
+      <tr><td>{{s|s186|}}</td><td>{{s|s187|}}</td></tr>
+      <tr><td>{{s|s188|}}</td><td>{{s|s189|}}</td></tr>
+      <tr><td>{{s|s190|}}</td><td>{{s|s191|}}</td></tr>
+      <tr><td>{{s|s192|}}</td><td>{{s|s193|}}</td></tr>
+      <tr><td>{{s|s194|}}</td><td>{{s|s195|}}</td></tr>
+      <tr><td>{{s|s196|}}</td><td>{{s|s197|}}</td></tr>
+      <tr><td>{{s|s198|}}</td><td>{{s|s199|}}</td></tr>
+      <tr><td>{{s|s200|}}</td><td>{{s|s201|}}</td></tr>
     </tbody>
   </table></div>
-  <div class="box regola" data-tit="{{a|s193|}}">
-    <p>{{s|s194|}}</p>
+  <div class="box regola" data-tit="{{a|s202|}}">
+    <p>{{s|s203|}}</p>
   </div>
-  <figure class="scena" data-scena="mutanti" data-titolo="{{a|s195|}}"></figure>
+  <figure class="scena" data-scena="mutanti" data-titolo="{{a|s204|}}"></figure>
 </section>
 
 </main>

@@ -78,21 +78,23 @@
 @@s078 Program order: t1 har lock, <code>i++</code>, unlock; t2 har kun <code>i++</code>.
 @@s079 De er konflikterende handlinger.
 @@s080 De eneste par mellem forskellige tråde kommer fra start-reglen.
-@@s081 t2 laver ingen låsehandlinger, så monitorreglen skaber ingen par mellem t1 og t2.
-@@s082 Rettelse: <code>private int i</code>. Så går alle adgange gennem de <code>synchronized</code>-metoder, og alle par af adgange ordnes af monitorreglen.
-@@s083 At erklære alle felter af primitiv type som <code>private</code> sikrer, at de kun rør ved af klassens metoder.
-@@s084 Anden måde: at returnere en reference til tilstanden
-@@s085 <code>private</code> er ikke nok, hvis en metode returnerer det objekt, der er en del af tilstanden.
-@@s086 ArrayListEscape.java
-@@s087 Feltet er <code>private</code> og <code>final</code>. <code>final</code> blokerer <b>referencen</b>, ikke listens indhold.
-@@s088 <code>get</code> returnerer referencen til den interne liste. Låsen dækker kun <code>return</code>.
-@@s089 Den der har referencen, ændrer listen, efter låsen er frigivet.
-@@s090 Hvordan tilstanden slipper ud fra get()
-@@s091 Sådan undgås det
-@@s092 Skriv ikke metoder, der returnerer referencer til objekter i tilstanden. Returnér værdier (en <code>int</code>, et uforanderligt element som <code>Integer</code> eller <code>String</code>) eller en kopi.
-@@s093 Modelsætning
-@@s094 "The class state is the field <i>a</i>. It escapes through <i>get()</i>, which returns a reference to the internal list: a thread can then call <i>set</i> on it without holding the lock, so that write and the write in <i>set(…)</i> are not ordered by happens-before. This is a data race on the class state, hence the class is not thread-safe."
-@@s095 Hvorfor består ConcurrentSkipListSet add/remove-testene (øvelse 5.1.4)?
-@@s096 <code>HashSet.add</code> gør "kig om den er der → skriv noden → <code>size++</code>" i tre separate trin: to tråde kan begge kigge, før den ene skriver.
-@@s097 <code>ConcurrentSkipListSet</code> (oven på <code>ConcurrentSkipListMap</code>) gør det afgørende trin med en <b>compare-and-set</b> (CAS): "skriv den nye node <b>kun hvis</b> pegeren stadig har den værdi, jeg læste". Det er én atomar operation i hardwaren: hvis en anden tråd har ændret noget imens, fejler CAS'en, og tråden <b>starter</b> søgningen forfra, og denne gang finder den nøglen allerede til stede → <code>add</code> returnerer <code>false</code>. For <code>remove</code> er det det samme: noden slettes med en CAS på værdien (fra <i>v</i> til <code>null</code>), og kun én tråd vinder.
-@@s098 Tælleren opdateres (<code>addCount(±1)</code>, en trådsikker <code>LongAdder</code>) <b>kun</b> af tråden, der vandt CAS'en: ingen dubletter, ingen dobbelte nedtællinger. Verificeret på kildekoden til JDK 26.
+@@s081 monitorreglen: <mark class="no">der skal også en lås i t2</mark>
+@@s082 t2 laver ingen låsehandlinger, så monitorreglen skaber ingen par mellem t1 og t2.
+@@s083 t1(1) ↛ t2(2) og t2(2) ↛ t1(1) ⇒ <mark class="no">data race på feltet i</mark> ⇒ Counter er ikke trådsikker
+@@s084 Rettelse: <code>private int i</code>. Så går alle adgange gennem de <code>synchronized</code>-metoder, og alle par af adgange ordnes af monitorreglen.
+@@s085 At erklære alle felter af primitiv type som <code>private</code> sikrer, at de kun rør ved af klassens metoder.
+@@s086 Anden måde: at returnere en reference til tilstanden
+@@s087 <code>private</code> er ikke nok, hvis en metode returnerer det objekt, der er en del af tilstanden.
+@@s088 ArrayListEscape.java
+@@s089 Feltet er <code>private</code> og <code>final</code>. <code>final</code> blokerer <b>referencen</b>, ikke listens indhold.
+@@s090 <code>get</code> returnerer referencen til den interne liste. Låsen dækker kun <code>return</code>.
+@@s091 Den der har referencen, ændrer listen, efter låsen er frigivet.
+@@s092 Hvordan tilstanden slipper ud fra get()
+@@s093 Sådan undgås det
+@@s094 Skriv ikke metoder, der returnerer referencer til objekter i tilstanden. Returnér værdier (en <code>int</code>, et uforanderligt element som <code>Integer</code> eller <code>String</code>) eller en kopi.
+@@s095 Modelsætning
+@@s096 "The class state is the field <i>a</i>. It escapes through <i>get()</i>, which returns a reference to the internal list: a thread can then call <i>set</i> on it without holding the lock, so that write and the write in <i>set(…)</i> are not ordered by happens-before. This is a data race on the class state, hence the class is not thread-safe."
+@@s097 Hvorfor består ConcurrentSkipListSet add/remove-testene (øvelse 5.1.4)?
+@@s098 <code>HashSet.add</code> gør "kig om den er der → skriv noden → <code>size++</code>" i tre separate trin: to tråde kan begge kigge, før den ene skriver.
+@@s099 <code>ConcurrentSkipListSet</code> (oven på <code>ConcurrentSkipListMap</code>) gør det afgørende trin med en <b>compare-and-set</b> (CAS): "skriv den nye node <b>kun hvis</b> pegeren stadig har den værdi, jeg læste". Det er én atomar operation i hardwaren: hvis en anden tråd har ændret noget imens, fejler CAS'en, og tråden <b>starter</b> søgningen forfra, og denne gang finder den nøglen allerede til stede → <code>add</code> returnerer <code>false</code>. For <code>remove</code> er det det samme: noden slettes med en CAS på værdien (fra <i>v</i> til <code>null</code>), og kun én tråd vinder.
+@@s100 Tælleren opdateres (<code>addCount(±1)</code>, en trådsikker <code>LongAdder</code>) <b>kun</b> af tråden, der vandt CAS'en: ingen dubletter, ingen dobbelte nedtællinger. Verificeret på kildekoden til JDK 26.

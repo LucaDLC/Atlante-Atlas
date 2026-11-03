@@ -23,62 +23,69 @@
 @@s023 La scala: ogni Mark corregge un errore
 @@s024 Da Mark0 a Mark8Setup
 @@s025 no:errore,ok:correzione,ora:cosa cambia,dato:il dato misurato
-@@s026 Inutile: include il riscaldamento e la precisione del cronometro non basta per una chiamata da pochi nanosecondi.
-@@s027 Il tempo si divide per 100 milioni, ma il JIT può capire che <code>multiply(i)</code> non serve a niente e toglierlo: potresti misurare un ciclo vuoto.
-@@s028 Ora il risultato viene usato (<code>dummy</code> esce dal metodo): il JIT non può eliminare il calcolo.
-@@s029 Si vede il riscaldamento (le prime righe sono più alte) e la variazione tra una ripetizione e l'altra.
-@@s030 Un numero solo, con la sua incertezza. La formula è nel paragrafo sotto.
-@@s031 Non devi indovinare quante chiamate servono: si parte da poche e si raddoppia, e si ferma quando il giro è abbastanza lungo da essere misurato bene. Stampa una riga per ogni raddoppio.
-@@s032 Si può misurare qualsiasi codice: <code>Mark6('n', "hashCode()", i -&gt; myPoint.hashCode())</code>. Stampa ancora una riga per ogni raddoppio: serve per vedere come si stabilizza.
-@@s033 È quella da usare per riportare un risultato: una riga per misura, senza le righe del riscaldamento.
-@@s034 Serve a mettere nella riga un parametro, per esempio la dimensione dell'array (<code>String.format("%8d", size)</code>).
-@@s035 Prepara i dati <b>senza contarne il tempo</b>: per esempio rimescolare l'array prima di ogni ordinamento.
-@@s036 Mark7 riga per riga
-@@s037 Mark7 (da Benchmark.java)
-@@s038 Il metodo riceve tre cose: l'<b>unità di tempo</b> (<code>'n'</code> nanosecondi, <code>'u'</code> microsecondi, <code>'m'</code> millisecondi), un <b>messaggio</b> da stampare, e la <b>funzione da misurare</b> <code>f</code>. <code>LongToDoubleFunction</code> è un'interfaccia di Java con un solo metodo, <code>applyAsDouble(long)</code>: prende un <code>long</code>, restituisce un <code>double</code>. Per questo si passa una lambda <code>i -&gt; …</code>.
-@@s039 <code>n</code> = quante ripetizioni dello stesso giro si fanno, per poter calcolare una media. <code>count</code> = quante volte si chiama <code>f</code> dentro un giro; parte da 1 e viene raddoppiato subito, quindi il primo giro ha 2.
-@@s040 <code>dummy</code> accumula tutti i risultati di <code>f</code>: così il JIT non può buttare il calcolo. <code>st</code> = somma dei tempi, <code>sst</code> = somma dei <b>quadrati</b> dei tempi: servono per la deviazione standard.
-@@s041 Ogni giro del <code>do</code> raddoppia <code>count</code>: 2, 4, 8, … fino a quando il giro dura abbastanza.
-@@s042 Le somme si azzerano a ogni raddoppio: la media riguarda solo le 10 ripetizioni di <b>questo</b> <code>count</code>.
-@@s043 Un cronometro nuovo per ogni ripetizione. <code>new Timer()</code> lo fa partire; <code>t.check()</code> restituisce i secondi trascorsi.
-@@s044 Il lavoro misurato: chiama <code>f</code> <code>count</code> volte, passando <code>i</code> (0, 1, 2, …). Passare <code>i</code> impedisce al JIT di precalcolare il risultato come una costante.
-@@s045 Tempo di <b>una</b> chiamata: secondi del giro × fattore dell'unità (<code>scale('n')</code> = 1e9) ÷ <code>count</code>.
-@@s046 Aggiorna le somme: <code>st</code> con il tempo, <code>sst</code> con il suo quadrato. <code>totalCount</code> conta tutte le chiamate, serve solo per il valore restituito.
-@@s047 Condizione per <b>continuare</b>: se l'ultima ripetizione è durata meno di 0,25 s, si raddoppia <code>count</code> e si rifà. Quando dura almeno 0,25 s, il cronometro è abbastanza preciso e ci si ferma.
-@@s048 Media e deviazione standard delle 10 ripetizioni (formula nel paragrafo sotto).
-@@s049 Stampa una sola riga: messaggio, media, unità, sdev, <code>count</code> dell'ultimo giro.
-@@s050 Restituisce qualcosa che dipende da tutti i risultati: l'ultimo modo per far usare <code>dummy</code>.
-@@s051 Media e deviazione standard
-@@s052 La <b>deviazione standard</b> (sdev) dice quanto le misure sono sparpagliate intorno alla media. Se è piccola rispetto alla media la misura è stabile; se è grande, no. La riga <code>sdev = Math.sqrt((sst - mean*mean*n)/(n-1))</code> usa le due somme che il ciclo ha già accumulato. Un esempio con 4 tempi (la funzione usa 10) :
-@@s053 Da 4 tempi a media ± sdev
-@@s054 dato:i tempi,due:i quadrati,ora:la formula,ok:il risultato
-@@s055 Quattro ripetizioni dello stesso giro.
-@@s056 Somma dei tempi.
-@@s057 Somma dei quadrati dei tempi.
-@@s058 La media.
-@@s059 Si divide per n−1 e non per n: è la formula della deviazione standard campionaria.
-@@s060 Controllo: gli scarti dalla media sono −1, 0, 0, +1, i loro quadrati sommano 2: stessa cosa, perché Σ(t − media)² = Σt² − n·media². Il vantaggio è che il ciclo non deve ricordarsi i singoli tempi.
-@@s061 Come leggere una riga di Mark7
-@@s062 <code>nome media unità sdev count</code>: per esempio <code>Thread virt cre strt join 14557,2 ns 864,61 32768</code> vuol dire che creare, avviare e aspettare un virtual thread costa in media 14 557 ns, con sdev 865 ns (6% della media), misurato su un giro da 32 768 chiamate. Una sdev vicina o superiore alla media vuol dire che il numero non è affidabile.
-@@s063 Timer e Mark8Setup: misurare senza il setup
-@@s064 Timer.java e il cuore di Mark8Setup
-@@s065 <code>start</code> = l'istante in cui il cronometro è (ri)partito; <code>spent</code> = il tempo già accumulato prima di una pausa.
-@@s066 <code>System.nanoTime()</code> è l'orologio di Java in nanosecondi (utile solo per sottrarre due istanti). Il tempo misurato è <i>ora − start + spent</i>, diviso per 1e9 per averlo in secondi.
-@@s067 <code>pause()</code>: aggiunge a <code>spent</code> quanto è passato dall'ultimo <code>start</code>. Da quel momento il tempo che passa <b>non conta</b> finché non si richiama <code>play()</code>.
-@@s068 <code>play()</code>: riparte da adesso. Tutto quello che è successo fra <code>pause()</code> e <code>play()</code> resta fuori da <code>check()</code>.
-@@s069 Si ferma il cronometro, si prepara il dato (per esempio <code>shuffle</code> dell'array, che costa 1,1 ms su 100 000 elementi), si riparte e si misura solo <code>f</code>. Senza questo, l'ordinamento misurerebbe anche il rimescolamento.
-@@s070 Cosa misurano gli esercizi 8.1–8.4
-@@s071 Il filo dell'assignment: <b>quanto costa davvero</b> una cosa che in Java sembra gratis (una funzione di libreria, un thread, una parola chiave)? Ogni esercizio misura un costo diverso con le stesse <code>Mark</code>. I numeri sono di questo PC (i5-11400H, JDK 26.0.2.1).
-@@s072 L'assignment in 4 passi
-@@s073 dato:cosa si misura,ok:risultato,ora:cosa si impara,no:attenzione
-@@s074 <mark class="ora">Si impara a usare Mark7 e a leggere la sdev.</mark> Su una run <code>tan</code> e <code>asin</code> avevano sdev ±5 ns e sono tornate normali nelle altre: era rumore. <code>Math.sqrt</code> (≈2 ns) è una singola istruzione della CPU; <code>Math.random</code> (≈20–29 ns) usa un <code>Random</code> condiviso con un CAS. E <code>sqrt(random)</code> non fa <code>random + sqrt</code>: i 2 ns di <code>sqrt</code> spariscono nel rumore.
-@@s075 <mark class="ora">Costo del thread = totale − lavoro del thread.</mark> Il lavoro (1000 incrementi) vale ≈4,7 µs, quindi l'overhead è ≈106 µs contro ≈6,9 µs: circa 15 volte meno per il virtual. Un thread platform non va creato per un lavoro piccolo. Attenzione: <mark class="no">"crea + avvia" senza join non è affidabile</mark> (sdev altissima).
-@@s076 <mark class="ora">Parallelizzare conviene solo se il lavoro di un thread vale più del costo del thread</mark> (≈7 µs per un virtual, dal passo precedente). Per questo il quicksort parallelo crea un thread solo se <code>j - a &gt; 50</code>: sotto, ordinare costa meno che creare il thread.
-@@s077 <mark class="ora">Un campo <code>volatile</code> costa circa 20 volte</mark> già con un thread solo: ogni scrittura ha una barriera di memoria e il JIT non può tenere il campo in un registro. Con due thread sullo stesso oggetto <code>addVolatile</code> arriva a ≈31 ns per addizione, mentre <code>add</code> non cambia.
-@@s078 La lezione che li lega
-@@s079 Il costo non è mai "zero" e non è mai "quello che sembra": una chiamata di libreria, un thread o una parola chiave possono costare da pochi ns a centinaia di µs. Per decidere (thread sì o no? <code>volatile</code> sì o no?) bisogna <b>misurare con rigore</b>: riscaldamento, risultato usato, ripetizioni, sdev. Ed è per questo che esistono le <code>Mark</code>.
-@@s080 Regole pratiche
-@@s081 Cose che falsano la misura
-@@s082 <b>Mai dentro un IDE o in modalità debug</b> (lo dice il testo dell'esercizio). Chiudi le altre applicazioni; su un portatile collega l'alimentazione. Fai sempre almeno due esecuzioni e guarda la sdev: una sdev molto più alta in una run (come <code>tan</code> con ±5,4 ns su una run su due) indica rumore, non una proprietà della funzione. Il valore restituito da <code>f</code> deve <b>dipendere dal lavoro misurato</b>, altrimenti il JIT lo elimina.
-@@s083 Comandi da terminale
-@@s084 Dalla cartella del progetto: <code>gradle -q -PmainClass=exercises08.Benchmark run</code> (cambia la classe per le altre: <code>TestTimeThreads</code>, <code>TestTimeSort</code>, <code>TestTimeVolatile</code>). <code>-q</code> stampa solo l'output del programma; per salvarlo aggiungi <code>&gt; file.txt</code>. Senza Gradle: dalla cartella <code>app/src/main/java</code>, <code>javac exercises08/*.java</code> e poi <code>java exercises08.Benchmark</code>.
+@@s026 <mark class="dato">Mark0</mark>: <mark class="no">una sola chiamata</mark> a multiply(10), cronometrata
+@@s027 Inutile: include il riscaldamento e la precisione del cronometro non basta per una chiamata da pochi nanosecondi.
+@@s028 <mark class="dato">Mark1</mark>: <mark class="ok">100 milioni di chiamate</mark>, ma <mark class="no">il risultato viene buttato</mark>
+@@s029 Il tempo si divide per 100 milioni, ma il JIT può capire che <code>multiply(i)</code> non serve a niente e toglierlo: potresti misurare un ciclo vuoto.
+@@s030 Ora il risultato viene usato (<code>dummy</code> esce dal metodo): il JIT non può eliminare il calcolo.
+@@s031 Si vede il riscaldamento (le prime righe sono più alte) e la variazione tra una ripetizione e l'altra.
+@@s032 <mark class="dato">Mark4</mark>: <mark class="ok">media ± deviazione standard</mark> delle 10 ripetizioni
+@@s033 Un numero solo, con la sua incertezza. La formula è nel paragrafo sotto.
+@@s034 Non devi indovinare quante chiamate servono: si parte da poche e si raddoppia, e si ferma quando il giro è abbastanza lungo da essere misurato bene. Stampa una riga per ogni raddoppio.
+@@s035 <mark class="dato">Mark6</mark>: come Mark5 ma <mark class="ora">generico</mark>: unità, messaggio e funzione <mark class="ora">f</mark> come argomenti
+@@s036 Si può misurare qualsiasi codice: <code>Mark6('n', "hashCode()", i -&gt; myPoint.hashCode())</code>. Stampa ancora una riga per ogni raddoppio: serve per vedere come si stabilizza.
+@@s037 <mark class="dato">Mark7</mark>: come Mark6 ma <mark class="ok">stampa solo l'ultimo giro</mark>
+@@s038 È quella da usare per riportare un risultato: una riga per misura, senza le righe del riscaldamento.
+@@s039 <mark class="dato">Mark8</mark>: Mark7 con una colonna <mark class="ora">info</mark> in più
+@@s040 Serve a mettere nella riga un parametro, per esempio la dimensione dell'array (<code>String.format("%8d", size)</code>).
+@@s041 Prepara i dati <b>senza contarne il tempo</b>: per esempio rimescolare l'array prima di ogni ordinamento.
+@@s042 Mark7 riga per riga
+@@s043 Mark7 (da Benchmark.java)
+@@s044 Il metodo riceve tre cose: l'<b>unità di tempo</b> (<code>'n'</code> nanosecondi, <code>'u'</code> microsecondi, <code>'m'</code> millisecondi), un <b>messaggio</b> da stampare, e la <b>funzione da misurare</b> <code>f</code>. <code>LongToDoubleFunction</code> è un'interfaccia di Java con un solo metodo, <code>applyAsDouble(long)</code>: prende un <code>long</code>, restituisce un <code>double</code>. Per questo si passa una lambda <code>i -&gt; …</code>.
+@@s045 <code>n</code> = quante ripetizioni dello stesso giro si fanno, per poter calcolare una media. <code>count</code> = quante volte si chiama <code>f</code> dentro un giro; parte da 1 e viene raddoppiato subito, quindi il primo giro ha 2.
+@@s046 <code>dummy</code> accumula tutti i risultati di <code>f</code>: così il JIT non può buttare il calcolo. <code>st</code> = somma dei tempi, <code>sst</code> = somma dei <b>quadrati</b> dei tempi: servono per la deviazione standard.
+@@s047 Ogni giro del <code>do</code> raddoppia <code>count</code>: 2, 4, 8, … fino a quando il giro dura abbastanza.
+@@s048 Le somme si azzerano a ogni raddoppio: la media riguarda solo le 10 ripetizioni di <b>questo</b> <code>count</code>.
+@@s049 Un cronometro nuovo per ogni ripetizione. <code>new Timer()</code> lo fa partire; <code>t.check()</code> restituisce i secondi trascorsi.
+@@s050 Il lavoro misurato: chiama <code>f</code> <code>count</code> volte, passando <code>i</code> (0, 1, 2, …). Passare <code>i</code> impedisce al JIT di precalcolare il risultato come una costante.
+@@s051 Tempo di <b>una</b> chiamata: secondi del giro × fattore dell'unità (<code>scale('n')</code> = 1e9) ÷ <code>count</code>.
+@@s052 Aggiorna le somme: <code>st</code> con il tempo, <code>sst</code> con il suo quadrato. <code>totalCount</code> conta tutte le chiamate, serve solo per il valore restituito.
+@@s053 Condizione per <b>continuare</b>: se l'ultima ripetizione è durata meno di 0,25 s, si raddoppia <code>count</code> e si rifà. Quando dura almeno 0,25 s, il cronometro è abbastanza preciso e ci si ferma.
+@@s054 Media e deviazione standard delle 10 ripetizioni (formula nel paragrafo sotto).
+@@s055 Stampa una sola riga: messaggio, media, unità, sdev, <code>count</code> dell'ultimo giro.
+@@s056 Restituisce qualcosa che dipende da tutti i risultati: l'ultimo modo per far usare <code>dummy</code>.
+@@s057 Media e deviazione standard
+@@s058 La <b>deviazione standard</b> (sdev) dice quanto le misure sono sparpagliate intorno alla media. Se è piccola rispetto alla media la misura è stabile; se è grande, no. La riga <code>sdev = Math.sqrt((sst - mean*mean*n)/(n-1))</code> usa le due somme che il ciclo ha già accumulato. Un esempio con 4 tempi (la funzione usa 10) :
+@@s059 Da 4 tempi a media ± sdev
+@@s060 dato:i tempi,due:i quadrati,ora:la formula,ok:il risultato
+@@s061 Quattro ripetizioni dello stesso giro.
+@@s062 Somma dei tempi.
+@@s063 Somma dei quadrati dei tempi.
+@@s064 La media.
+@@s065 Si divide per n−1 e non per n: è la formula della deviazione standard campionaria.
+@@s066 Controllo: gli scarti dalla media sono −1, 0, 0, +1, i loro quadrati sommano 2: stessa cosa, perché Σ(t − media)² = Σt² − n·media². Il vantaggio è che il ciclo non deve ricordarsi i singoli tempi.
+@@s067 Come leggere una riga di Mark7
+@@s068 <code>nome media unità sdev count</code>: per esempio <code>Thread virt cre strt join 14557,2 ns 864,61 32768</code> vuol dire che creare, avviare e aspettare un virtual thread costa in media 14 557 ns, con sdev 865 ns (6% della media), misurato su un giro da 32 768 chiamate. Una sdev vicina o superiore alla media vuol dire che il numero non è affidabile.
+@@s069 Timer e Mark8Setup: misurare senza il setup
+@@s070 Timer.java e il cuore di Mark8Setup
+@@s071 <code>start</code> = l'istante in cui il cronometro è (ri)partito; <code>spent</code> = il tempo già accumulato prima di una pausa.
+@@s072 <code>System.nanoTime()</code> è l'orologio di Java in nanosecondi (utile solo per sottrarre due istanti). Il tempo misurato è <i>ora − start + spent</i>, diviso per 1e9 per averlo in secondi.
+@@s073 <code>pause()</code>: aggiunge a <code>spent</code> quanto è passato dall'ultimo <code>start</code>. Da quel momento il tempo che passa <b>non conta</b> finché non si richiama <code>play()</code>.
+@@s074 <code>play()</code>: riparte da adesso. Tutto quello che è successo fra <code>pause()</code> e <code>play()</code> resta fuori da <code>check()</code>.
+@@s075 Si ferma il cronometro, si prepara il dato (per esempio <code>shuffle</code> dell'array, che costa 1,1 ms su 100 000 elementi), si riparte e si misura solo <code>f</code>. Senza questo, l'ordinamento misurerebbe anche il rimescolamento.
+@@s076 Cosa misurano gli esercizi 8.1–8.4
+@@s077 Il filo dell'assignment: <b>quanto costa davvero</b> una cosa che in Java sembra gratis (una funzione di libreria, un thread, una parola chiave)? Ogni esercizio misura un costo diverso con le stesse <code>Mark</code>. I numeri sono di questo PC (i5-11400H, JDK 26.0.2.1).
+@@s078 L'assignment in 4 passi
+@@s079 dato:cosa si misura,ok:risultato,ora:cosa si impara,no:attenzione
+@@s080 <mark class="ora">Si impara a usare Mark7 e a leggere la sdev.</mark> Su una run <code>tan</code> e <code>asin</code> avevano sdev ±5 ns e sono tornate normali nelle altre: era rumore. <code>Math.sqrt</code> (≈2 ns) è una singola istruzione della CPU; <code>Math.random</code> (≈20–29 ns) usa un <code>Random</code> condiviso con un CAS. E <code>sqrt(random)</code> non fa <code>random + sqrt</code>: i 2 ns di <code>sqrt</code> spariscono nel rumore.
+@@s081 <mark class="ora">Costo del thread = totale − lavoro del thread.</mark> Il lavoro (1000 incrementi) vale ≈4,7 µs, quindi l'overhead è ≈106 µs contro ≈6,9 µs: circa 15 volte meno per il virtual. Un thread platform non va creato per un lavoro piccolo. Attenzione: <mark class="no">"crea + avvia" senza join non è affidabile</mark> (sdev altissima).
+@@s082 <mark class="dato">8.3</mark> ordinamento di 100 000 interi: quicksort <mark class="ok">7,8 ms</mark>, <code>Arrays.sort</code> <mark class="ok">6,0 ms</mark>, <code>parallelSort</code> <mark class="ok">2,3 ms</mark>
+@@s083 <mark class="ora">Parallelizzare conviene solo se il lavoro di un thread vale più del costo del thread</mark> (≈7 µs per un virtual, dal passo precedente). Per questo il quicksort parallelo crea un thread solo se <code>j - a &gt; 50</code>: sotto, ordinare costa meno che creare il thread.
+@@s084 <mark class="ora">Un campo <code>volatile</code> costa circa 20 volte</mark> già con un thread solo: ogni scrittura ha una barriera di memoria e il JIT non può tenere il campo in un registro. Con due thread sullo stesso oggetto <code>addVolatile</code> arriva a ≈31 ns per addizione, mentre <code>add</code> non cambia.
+@@s085 La lezione che li lega
+@@s086 Il costo non è mai "zero" e non è mai "quello che sembra": una chiamata di libreria, un thread o una parola chiave possono costare da pochi ns a centinaia di µs. Per decidere (thread sì o no? <code>volatile</code> sì o no?) bisogna <b>misurare con rigore</b>: riscaldamento, risultato usato, ripetizioni, sdev. Ed è per questo che esistono le <code>Mark</code>.
+@@s087 Regole pratiche
+@@s088 Cose che falsano la misura
+@@s089 <b>Mai dentro un IDE o in modalità debug</b> (lo dice il testo dell'esercizio). Chiudi le altre applicazioni; su un portatile collega l'alimentazione. Fai sempre almeno due esecuzioni e guarda la sdev: una sdev molto più alta in una run (come <code>tan</code> con ±5,4 ns su una run su due) indica rumore, non una proprietà della funzione. Il valore restituito da <code>f</code> deve <b>dipendere dal lavoro misurato</b>, altrimenti il JIT lo elimina.
+@@s090 Comandi da terminale
+@@s091 Dalla cartella del progetto: <code>gradle -q -PmainClass=exercises08.Benchmark run</code> (cambia la classe per le altre: <code>TestTimeThreads</code>, <code>TestTimeSort</code>, <code>TestTimeVolatile</code>). <code>-q</code> stampa solo l'output del programma; per salvarlo aggiungi <code>&gt; file.txt</code>. Senza Gradle: dalla cartella <code>app/src/main/java</code>, <code>javac exercises08/*.java</code> e poi <code>java exercises08.Benchmark</code>.

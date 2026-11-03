@@ -137,89 +137,89 @@ counter = temp + 1;    <span class="mano">// (2) scrittura</span></div>
       <p class="nota">{{s|s014|}}</p>
     </div>
     <div class="passo">
-      <div class="espr"><mark class="ok">Nessuna differenza tra le tre forme.</mark></div>
-      <p class="nota">{{s|s015|}}</p>
+      <div class="espr">{{s|s015|}}</div>
+      <p class="nota">{{s|s016|}}</p>
     </div>
   </figure>
-  <figure class="scena" data-scena="bytecode" data-titolo="{{a|s016|}}"></figure>
+  <figure class="scena" data-scena="bytecode" data-titolo="{{a|s017|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s017|}}</h2>
-  <p>{{s|s018|}}</p>
-  <figure class="interleaving" data-prog="perso" data-titolo="{{a|s019|}}"></figure>
-  <figure class="passi" data-titolo="{{a|s020|}}">
-    <div class="passo"><div class="espr"><mark class="dato">t1(1)</mark>    temp<sub>t1</sub> = 0</div><p class="nota">{{s|s021|}}</p></div>
-    <div class="passo"><div class="espr">t1(1), <mark class="due">t2(1)</mark>    temp<sub>t2</sub> = 0</div><p class="nota">{{s|s022|}}</p></div>
-    <div class="passo"><div class="espr">t1(1), t2(1), <mark class="dato">t1(2)</mark>    counter = 1</div><p class="nota">{{s|s023|}}</p></div>
-    <div class="passo"><div class="espr">t1(1), t2(1), t1(2), <mark class="no">t2(2)</mark>    counter = 1</div><p class="nota">{{s|s024|}}</p></div>
-    <div class="passo"><div class="espr"><mark class="no">counter = 1</mark>   invece di 2</div><p class="nota">{{s|s025|}}</p></div>
+  <h2>{{s|s018|}}</h2>
+  <p>{{s|s019|}}</p>
+  <figure class="interleaving" data-prog="perso" data-titolo="{{a|s020|}}"></figure>
+  <figure class="passi" data-titolo="{{a|s021|}}">
+    <div class="passo"><div class="espr"><mark class="dato">t1(1)</mark>    temp<sub>t1</sub> = 0</div><p class="nota">{{s|s022|}}</p></div>
+    <div class="passo"><div class="espr">t1(1), <mark class="due">t2(1)</mark>    temp<sub>t2</sub> = 0</div><p class="nota">{{s|s023|}}</p></div>
+    <div class="passo"><div class="espr">t1(1), t2(1), <mark class="dato">t1(2)</mark>    counter = 1</div><p class="nota">{{s|s024|}}</p></div>
+    <div class="passo"><div class="espr">t1(1), t2(1), t1(2), <mark class="no">t2(2)</mark>    counter = 1</div><p class="nota">{{s|s025|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s026|}}</div><p class="nota">{{s|s027|}}</p></div>
   </figure>
-  <div class="box regola" data-tit="{{a|s026|}}">
-    <p>{{s|s027|}}</p>
+  <div class="box regola" data-tit="{{a|s028|}}">
+    <p>{{s|s029|}}</p>
   </div>
 </section>
 
 <section>
-  <h2>{{s|s028|}}</h2>
-  <p>{{s|s029|}}</p>
+  <h2>{{s|s030|}}</h2>
+  <p>{{s|s031|}}</p>
   <div class="colonne">
-    <div class="carta">
-      <h4>{{s|s030|}}</h4>
-      <p>{{s|s031|}}</p>
-    </div>
     <div class="carta">
       <h4>{{s|s032|}}</h4>
       <p>{{s|s033|}}</p>
     </div>
+    <div class="carta">
+      <h4>{{s|s034|}}</h4>
+      <p>{{s|s035|}}</p>
+    </div>
   </div>
   <div class="tab-wrap"><table class="tab">
-    <thead><tr><th>{{s|s034|}}</th><th>{{s|s035|}}</th><th>{{s|s036|}}</th></tr></thead>
+    <thead><tr><th>{{s|s036|}}</th><th>{{s|s037|}}</th><th>{{s|s038|}}</th></tr></thead>
     <tbody>
-      <tr><td>{{s|s037|}}</td><td class="t-no">{{s|s038|}}</td><td class="t-no">{{s|s039|}}</td></tr>
-      <tr><td>{{s|s040|}}</td><td class="t-no">{{s|s041|}}</td><td class="t-ok">{{s|s042|}}</td></tr>
-      <tr><td>{{s|s043|}}</td><td class="t-ok">{{s|s044|}}</td><td class="t-no">{{s|s045|}}</td></tr>
+      <tr><td>{{s|s039|}}</td><td class="t-no">{{s|s040|}}</td><td class="t-no">{{s|s041|}}</td></tr>
+      <tr><td>{{s|s042|}}</td><td class="t-no">{{s|s043|}}</td><td class="t-ok">{{s|s044|}}</td></tr>
+      <tr><td>{{s|s045|}}</td><td class="t-ok">{{s|s046|}}</td><td class="t-no">{{s|s047|}}</td></tr>
     </tbody>
   </table></div>
-  <figure class="scena" data-scena="quadranti" data-titolo="{{a|s046|}}"></figure>
+  <figure class="scena" data-scena="quadranti" data-titolo="{{a|s048|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s047|}}</h2>
-  <p>{{s|s048|}}</p>
-  <figure class="scena" data-scena="pochigiri" data-titolo="{{a|s049|}}"></figure>
+  <h2>{{s|s049|}}</h2>
+  <p>{{s|s050|}}</p>
+  <figure class="scena" data-scena="pochigiri" data-titolo="{{a|s051|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s050|}}</h2>
-  <p>{{s|s051|}}</p>
-  <figure class="interleaving" data-prog="minimo" data-titolo="{{a|s052|}}"></figure>
-  <figure class="passi" data-titolo="{{a|s053|}}">
-    <div class="passo"><div class="espr"><mark class="dato">t1(1)</mark>   temp<sub>t1</sub> = 0</div><p class="nota">{{s|s054|}}</p></div>
-    <div class="passo"><div class="espr"><mark class="due">t2(1), t2(2), t2(1), t2(2)</mark>   counter = 2</div><p class="nota">{{s|s055|}}</p></div>
-    <div class="passo"><div class="espr"><mark class="dato">t1(2)</mark>   counter = <mark class="no">1</mark></div><p class="nota">{{s|s056|}}</p></div>
-    <div class="passo"><div class="espr"><mark class="due">t2(1)</mark>   temp<sub>t2</sub> = 1</div><p class="nota">{{s|s057|}}</p></div>
-    <div class="passo"><div class="espr"><mark class="dato">t1(1), t1(2), t1(1), t1(2)</mark>   counter = 3</div><p class="nota">{{s|s058|}}</p></div>
-    <div class="passo"><div class="espr"><mark class="due">t2(2)</mark>   counter = <mark class="no">2</mark></div><p class="nota">{{s|s059|}}</p></div>
+  <h2>{{s|s052|}}</h2>
+  <p>{{s|s053|}}</p>
+  <figure class="interleaving" data-prog="minimo" data-titolo="{{a|s054|}}"></figure>
+  <figure class="passi" data-titolo="{{a|s055|}}">
+    <div class="passo"><div class="espr"><mark class="dato">t1(1)</mark>   temp<sub>t1</sub> = 0</div><p class="nota">{{s|s056|}}</p></div>
+    <div class="passo"><div class="espr"><mark class="due">t2(1), t2(2), t2(1), t2(2)</mark>   counter = 2</div><p class="nota">{{s|s057|}}</p></div>
+    <div class="passo"><div class="espr"><mark class="dato">t1(2)</mark>   counter = <mark class="no">1</mark></div><p class="nota">{{s|s058|}}</p></div>
+    <div class="passo"><div class="espr"><mark class="due">t2(1)</mark>   temp<sub>t2</sub> = 1</div><p class="nota">{{s|s059|}}</p></div>
+    <div class="passo"><div class="espr"><mark class="dato">t1(1), t1(2), t1(1), t1(2)</mark>   counter = 3</div><p class="nota">{{s|s060|}}</p></div>
+    <div class="passo"><div class="espr"><mark class="due">t2(2)</mark>   counter = <mark class="no">2</mark></div><p class="nota">{{s|s061|}}</p></div>
   </figure>
-  <div class="box inglese" data-tit="{{a|s060|}}">
-    <p>{{s|s061|}}</p>
+  <div class="box inglese" data-tit="{{a|s062|}}">
+    <p>{{s|s063|}}</p>
   </div>
 </section>
 
 <section>
-  <h2>{{s|s062|}}</h2>
-  <p>{{s|s063|}}</p>
-  <figure class="interleaving" data-prog="printer" data-titolo="{{a|s064|}}"></figure>
-  <figure class="passi" data-titolo="{{a|s065|}}">
-    <div class="passo"><div class="espr"><mark class="dato">t1(1)</mark>   uscita: -</div><p class="nota">{{s|s066|}}</p></div>
-    <div class="passo"><div class="espr">t1(1), <mark class="due">t2(1)</mark>   uscita: <mark class="no">--</mark></div><p class="nota">{{s|s067|}}</p></div>
-    <div class="passo"><div class="espr">t1(1), t2(1), <mark class="dato">t1(2)</mark>, <mark class="due">t2(2)</mark>   uscita: <mark class="no">--||</mark></div><p class="nota">{{s|s068|}}</p></div>
+  <h2>{{s|s064|}}</h2>
+  <p>{{s|s065|}}</p>
+  <figure class="interleaving" data-prog="printer" data-titolo="{{a|s066|}}"></figure>
+  <figure class="passi" data-titolo="{{a|s067|}}">
+    <div class="passo"><div class="espr"><mark class="dato">t1(1)</mark>   uscita: -</div><p class="nota">{{s|s068|}}</p></div>
+    <div class="passo"><div class="espr">t1(1), <mark class="due">t2(1)</mark>   uscita: <mark class="no">--</mark></div><p class="nota">{{s|s069|}}</p></div>
+    <div class="passo"><div class="espr">t1(1), t2(1), <mark class="dato">t1(2)</mark>, <mark class="due">t2(2)</mark>   uscita: <mark class="no">--||</mark></div><p class="nota">{{s|s070|}}</p></div>
   </figure>
-  <div class="box domanda-tua" data-tit="{{a|s069|}}">
-    <p>{{s|s070|}}</p>
+  <div class="box domanda-tua" data-tit="{{a|s071|}}">
+    <p>{{s|s072|}}</p>
     <p><code>t1(1), t2(1), t1(2), t1(1), t1(2), t1(1), t1(2), t1(1), t2(2), t2(1), t2(2), t2(1), t2(2), t2(1), t1(2), t2(2)</code></p>
-    <p>{{s|s071|}}</p>
+    <p>{{s|s073|}}</p>
   </div>
 </section>
 

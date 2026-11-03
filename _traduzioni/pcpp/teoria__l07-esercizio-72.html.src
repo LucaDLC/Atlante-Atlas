@@ -12,17 +12,21 @@
 @@s012 "Coprire" un punto di linearizzazione vuol dire che un test lo fa eseguire <b>in concorrenza</b>, con altri thread che possono scontrarsi lì. Un punto eseguito da un thread solo non mette alla prova niente di concorrente.
 @@s013 Punto per punto
 @@s014 ok:coperto,no:non coperto
-@@s015 I CAS dei push si scontrano su <code>top</code>; uno vince, gli altri riprovano.
-@@s016 Lo stack ha n elementi e ci sono n pop: i CAS dei pop si scontrano.
-@@s017 Nel 7.2.3 ci sono <b>esattamente</b> n elementi per n pop: in un'esecuzione giusta nessun pop trova lo stack vuoto. Nel 7.2.2 lo stack si svuota alla fine, ma con <b>un thread solo</b>.
-@@s018 Nei due test i push e i pop non si sovrappongono mai: prima tutti i push, poi tutti i pop. Lo scontro tra un CAS di push e uno di pop non viene mai provato.
-@@s019 &quot;Il push avviene sempre prima del pop, quindi è tutto coperto&quot;?
-@@s020 È proprio il motivo per cui <b>non</b> è tutto coperto. Se i push vengono sempre prima dei pop, i due tipi di chiamata non si scontrano mai, e il pop non trova mai lo stack vuoto mentre altri lavorano. La risposta al 7.2.4 è <b>no</b>.
-@@s021 Il test da aggiungere
-@@s022 <b>Pop su stack quasi vuoto:</b> metti m elementi, poi fai partire n &gt; m thread che fanno <code>pop</code> insieme. Alla fine: esattamente m pop hanno restituito un elemento (con somma uguale a quella messa dentro) e n − m hanno restituito <code>null</code>. Così il punto 3 avviene in concorrenza, mentre altri thread fanno ancora CAS.
-@@s023 <b>Facoltativo, push e pop insieme:</b> metà thread fanno push, metà pop, tutti insieme. Alla fine somma rimasta nello stack + somma dei valori usciti = somma dei valori entrati.
-@@s024 Una variante più semplice: ogni thread fa <code>push(x)</code> e subito <code>pop()</code>. Ogni thread ha sempre fatto un push in più dei suoi pop, quindi lo stack non è mai vuoto quando qualcuno fa pop: alla fine la somma dei valori usciti è uguale a quella dei valori entrati, e lo stack è vuoto. Attenzione: questo copre lo scontro push/pop, ma <b>non</b> il pop su stack vuoto.
-@@s025 Un giro solo per thread scopre poco
-@@s026 Misurato con 16 thread, barriera, 1000 ripetizioni. Con <b>un solo</b> push+pop per thread, un <code>push</code> sbagliato apposta (<code>get</code> e poi <code>set</code>) non viene scoperto <b>mai</b>, un <code>pop</code> sbagliato 1 volta su 1000. Con <b>1000 giri</b> di push+pop per thread: push sbagliato scoperto 999 volte su 1000, pop sbagliato 1000 su 1000; lo stack giusto passa 1000 su 1000. Quando il testo non impone "una operazione per thread", conviene far lavorare ogni thread in un ciclo.
-@@s027 Risposta pronta 7.2.4
-@@s028 No. The push test exercises the linearization point of push (the successful CAS) concurrently, and the pop test exercises the linearization point of a successful pop (the successful CAS). But the linearization point of a pop on an empty stack (the <code>top.get()</code> that returns null) is never reached concurrently: in the pop test there are exactly n elements for n pops, so in a correct execution no pop finds the stack empty, and in the push test the stack is emptied by a single thread. Moreover, pushes and pops never run at the same time. We therefore add a test where n threads pop concurrently from a stack with m &lt; n elements, and check that exactly m pops return elements whose sum equals the sum pushed and n − m pops return null.
+@@s015 Punto 1 (CAS di push) → test 7.2.2: n thread fanno push insieme <mark class="ok">coperto</mark>
+@@s016 I CAS dei push si scontrano su <code>top</code>; uno vince, gli altri riprovano.
+@@s017 Punto 2 (CAS di pop) → test 7.2.3: n thread fanno pop insieme <mark class="ok">coperto</mark>
+@@s018 Lo stack ha n elementi e ci sono n pop: i CAS dei pop si scontrano.
+@@s019 Punto 3 (pop su vuoto) → nessun test concorrente <mark class="no">non coperto</mark>
+@@s020 Nel 7.2.3 ci sono <b>esattamente</b> n elementi per n pop: in un'esecuzione giusta nessun pop trova lo stack vuoto. Nel 7.2.2 lo stack si svuota alla fine, ma con <b>un thread solo</b>.
+@@s021 push e pop insieme → mai <mark class="no">non coperto</mark>
+@@s022 Nei due test i push e i pop non si sovrappongono mai: prima tutti i push, poi tutti i pop. Lo scontro tra un CAS di push e uno di pop non viene mai provato.
+@@s023 &quot;Il push avviene sempre prima del pop, quindi è tutto coperto&quot;?
+@@s024 È proprio il motivo per cui <b>non</b> è tutto coperto. Se i push vengono sempre prima dei pop, i due tipi di chiamata non si scontrano mai, e il pop non trova mai lo stack vuoto mentre altri lavorano. La risposta al 7.2.4 è <b>no</b>.
+@@s025 Il test da aggiungere
+@@s026 <b>Pop su stack quasi vuoto:</b> metti m elementi, poi fai partire n &gt; m thread che fanno <code>pop</code> insieme. Alla fine: esattamente m pop hanno restituito un elemento (con somma uguale a quella messa dentro) e n − m hanno restituito <code>null</code>. Così il punto 3 avviene in concorrenza, mentre altri thread fanno ancora CAS.
+@@s027 <b>Facoltativo, push e pop insieme:</b> metà thread fanno push, metà pop, tutti insieme. Alla fine somma rimasta nello stack + somma dei valori usciti = somma dei valori entrati.
+@@s028 Una variante più semplice: ogni thread fa <code>push(x)</code> e subito <code>pop()</code>. Ogni thread ha sempre fatto un push in più dei suoi pop, quindi lo stack non è mai vuoto quando qualcuno fa pop: alla fine la somma dei valori usciti è uguale a quella dei valori entrati, e lo stack è vuoto. Attenzione: questo copre lo scontro push/pop, ma <b>non</b> il pop su stack vuoto.
+@@s029 Un giro solo per thread scopre poco
+@@s030 Misurato con 16 thread, barriera, 1000 ripetizioni. Con <b>un solo</b> push+pop per thread, un <code>push</code> sbagliato apposta (<code>get</code> e poi <code>set</code>) non viene scoperto <b>mai</b>, un <code>pop</code> sbagliato 1 volta su 1000. Con <b>1000 giri</b> di push+pop per thread: push sbagliato scoperto 999 volte su 1000, pop sbagliato 1000 su 1000; lo stack giusto passa 1000 su 1000. Quando il testo non impone "una operazione per thread", conviene far lavorare ogni thread in un ciclo.
+@@s031 Risposta pronta 7.2.4
+@@s032 No. The push test exercises the linearization point of push (the successful CAS) concurrently, and the pop test exercises the linearization point of a successful pop (the successful CAS). But the linearization point of a pop on an empty stack (the <code>top.get()</code> that returns null) is never reached concurrently: in the pop test there are exactly n elements for n pops, so in a correct execution no pop finds the stack empty, and in the push test the stack is emptied by a single thread. Moreover, pushes and pops never run at the same time. We therefore add a test where n threads pop concurrently from a stack with m &lt; n elements, and check that exactly m pops return elements whose sum equals the sum pushed and n − m pops return null.

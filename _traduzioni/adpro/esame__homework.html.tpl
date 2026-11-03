@@ -56,16 +56,16 @@
 scala-cli test . -w</div><p class="nota">{{s|s038|}}</p></div>
     <div class="passo"><div class="espr">def take(n: Int): LazyList[A] = <mark class="ora">???</mark></div><p class="nota">{{s|s039|}}</p></div>
     <div class="passo"><div class="espr">Ctrl+S   →   i test ripartono</div><p class="nota">{{s|s040|}}</p></div>
-    <div class="passo"><div class="espr"><mark class="no">! Falsified</mark>   →   leggi il test in Exercises.test.scala</div><p class="nota">{{s|s041|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s041|}}</div><p class="nota">{{s|s042|}}</p></div>
   </figure>
-  <div class="box esame" data-tit="{{a|s042|}}">
-    <p>{{s|s043|}}</p>
+  <div class="box esame" data-tit="{{a|s043|}}">
+    <p>{{s|s044|}}</p>
   </div>
 </section>
 
 <section>
-  <h2>{{s|s044|}}</h2>
-  <p>{{s|s045|}}</p>
+  <h2>{{s|s045|}}</h2>
+  <p>{{s|s046|}}</p>
   <pre class="cod">+ intro.Ex04.12: A singleton array is sorted in any ordering: OK, passed 100 tests.
 + intro.Ex03.02: F2 Fibonacci number is 1: OK, proved property.
 failing seed for intro.Ex03.04: F4 Fibonacci number is 2 is PegXUnQfTboKdTHcmk8ou94A4mPjTmIEE28ENANc6SO=
@@ -76,31 +76,31 @@ failing seed for intro.Ex01.00: square behaves like n * n is FfqqeqDKi0Nay15K57g
 &gt; ARG_0_ORIGINAL: -2147483648
 &gt; Exception: scala.NotImplementedError: an implementation is missing
 Failed: Total 33, Failed 3, Errors 1, Passed 29</pre>
-  <figure class="passi" data-titolo="{{a|s046|}}">
-    <div class="passo"><div class="espr"><mark class="ok">+</mark> intro.<mark class="dato">Ex04.12</mark>: … : OK, passed 100 tests.</div><p class="nota">{{s|s047|}}</p></div>
-    <div class="passo"><div class="espr">… : OK, <mark class="ok">proved property</mark>.</div><p class="nota">{{s|s048|}}</p></div>
-    <div class="passo"><div class="espr"><mark class="no">!</mark> intro.Ex03.04: F4 Fibonacci number is 2: <mark class="no">Falsified after 0 passed tests</mark>.</div><p class="nota">{{s|s049|}}</p></div>
+  <figure class="passi" data-titolo="{{a|s047|}}">
+    <div class="passo"><div class="espr"><mark class="ok">+</mark> intro.<mark class="dato">Ex04.12</mark>: … : OK, passed 100 tests.</div><p class="nota">{{s|s048|}}</p></div>
+    <div class="passo"><div class="espr">… : OK, <mark class="ok">proved property</mark>.</div><p class="nota">{{s|s049|}}</p></div>
+    <div class="passo"><div class="espr"><mark class="no">!</mark> intro.Ex03.04: F4 Fibonacci number is 2: <mark class="no">Falsified after 0 passed tests</mark>.</div><p class="nota">{{s|s050|}}</p></div>
     <div class="passo"><div class="espr">! … : <mark class="due">Exception raised on property evaluation</mark>.
-&gt; Exception: scala.<mark class="ora">NotImplementedError: an implementation is missing</mark></div><p class="nota">{{s|s050|}}</p></div>
+&gt; Exception: scala.<mark class="ora">NotImplementedError: an implementation is missing</mark></div><p class="nota">{{s|s051|}}</p></div>
     <div class="passo"><div class="espr">&gt; <mark class="dato">ARG_0: 0</mark>
-&gt; ARG_0_ORIGINAL: -2147483648</div><p class="nota">{{s|s051|}}</p></div>
-    <div class="passo"><div class="espr">failing seed for … is <mark class="due">PegXUnQf…</mark></div><p class="nota">{{s|s052|}}</p></div>
-    <div class="passo"><div class="espr">Failed: Total 33, <mark class="no">Failed 3</mark>, <mark class="no">Errors 1</mark>, Passed 29</div><p class="nota">{{s|s053|}}</p></div>
+&gt; ARG_0_ORIGINAL: -2147483648</div><p class="nota">{{s|s052|}}</p></div>
+    <div class="passo"><div class="espr">failing seed for … is <mark class="due">PegXUnQf…</mark></div><p class="nota">{{s|s053|}}</p></div>
+    <div class="passo"><div class="espr">Failed: Total 33, <mark class="no">Failed 3</mark>, <mark class="no">Errors 1</mark>, Passed 29</div><p class="nota">{{s|s054|}}</p></div>
   </figure>
 </section>
 
 <section>
-  <h2>{{s|s054|}}</h2>
+  <h2>{{s|s055|}}</h2>
   <ul>
-    <li>{{s|s055|}}</li>
     <li>{{s|s056|}}</li>
     <li>{{s|s057|}}</li>
+    <li>{{s|s058|}}</li>
   </ul>
 </section>
 
 <section>
-  <h2>{{s|s058|}}</h2>
-  <p>{{s|s059|}}</p>
+  <h2>{{s|s059|}}</h2>
+  <p>{{s|s060|}}</p>
 </section>
 
 </main>

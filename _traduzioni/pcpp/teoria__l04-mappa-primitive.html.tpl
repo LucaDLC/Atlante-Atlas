@@ -162,31 +162,31 @@ window.SCENE = window.SCENE || {};
 <section>
   <h2>{{s|s076|}}</h2>
   <figure class="passi" data-titolo="{{a|s077|}}">
-    <div class="passo"><div class="espr">il valore non cambia mai dopo il costruttore  →  <mark class="ok">final</mark></div><p class="nota">{{s|s078|}}</p></div>
-    <div class="passo"><div class="espr">un thread scrive un flag, gli altri lo leggono e basta  →  <mark class="dato">volatile</mark></div><p class="nota">{{s|s079|}}</p></div>
-    <div class="passo"><div class="espr">leggi-e-poi-scrivi, check-then-act, più campi da cambiare insieme  →  <mark class="ora">lock</mark></div><p class="nota">{{s|s080|}}</p></div>
-    <div class="passo"><div class="espr">aspettare che lo stato diventi "giusto" (buffer non pieno, nessuno scrittore)  →  <mark class="due">monitor</mark></div><p class="nota">{{s|s081|}}</p></div>
-    <div class="passo"><div class="espr">al massimo c thread insieme, o contare risorse  →  <mark class="due">Semaphore</mark></div><p class="nota">{{s|s082|}}</p></div>
-    <div class="passo"><div class="espr">aspettare che tutti arrivino allo stesso punto  →  <mark class="due">CyclicBarrier</mark></div><p class="nota">{{s|s083|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s078|}}</div><p class="nota">{{s|s079|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s080|}}</div><p class="nota">{{s|s081|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s082|}}</div><p class="nota">{{s|s083|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s084|}}</div><p class="nota">{{s|s085|}}</p></div>
+    <div class="passo"><div class="espr">al massimo c thread insieme, o contare risorse  →  <mark class="due">Semaphore</mark></div><p class="nota">{{s|s086|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s087|}}</div><p class="nota">{{s|s088|}}</p></div>
   </figure>
-  <figure class="scena" data-scena="scegli" data-titolo="{{a|s084|}}"></figure>
+  <figure class="scena" data-scena="scegli" data-titolo="{{a|s089|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s085|}}</h2>
+  <h2>{{s|s090|}}</h2>
   <div class="tab-wrap"><table class="tab">
-    <thead><tr><th>{{s|s086|}}</th><th>{{s|s087|}}</th></tr></thead>
+    <thead><tr><th>{{s|s091|}}</th><th>{{s|s092|}}</th></tr></thead>
     <tbody>
-      <tr><td>{{s|s088|}}</td><td>{{s|s089|}}</td></tr>
-      <tr><td>{{s|s090|}}</td><td>{{s|s091|}}</td></tr>
-      <tr><td>{{s|s092|}}</td><td>{{s|s093|}}</td></tr>
-      <tr><td>{{s|s094|}}</td><td>{{s|s095|}}</td></tr>
-      <tr><td>{{s|s096|}}</td><td>{{s|s097|}}</td></tr>
-      <tr><td>{{s|s098|}}</td><td>{{s|s099|}}</td></tr>
-      <tr><td>{{s|s100|}}</td><td>{{s|s101|}}</td></tr>
+      <tr><td>{{s|s093|}}</td><td>{{s|s094|}}</td></tr>
+      <tr><td>{{s|s095|}}</td><td>{{s|s096|}}</td></tr>
+      <tr><td>{{s|s097|}}</td><td>{{s|s098|}}</td></tr>
+      <tr><td>{{s|s099|}}</td><td>{{s|s100|}}</td></tr>
+      <tr><td>{{s|s101|}}</td><td>{{s|s102|}}</td></tr>
+      <tr><td>{{s|s103|}}</td><td>{{s|s104|}}</td></tr>
+      <tr><td>{{s|s105|}}</td><td>{{s|s106|}}</td></tr>
     </tbody>
   </table></div>
-  <figure class="scena" data-scena="errori" data-titolo="{{a|s102|}}"></figure>
+  <figure class="scena" data-scena="errori" data-titolo="{{a|s107|}}"></figure>
 </section>
 
 </main>

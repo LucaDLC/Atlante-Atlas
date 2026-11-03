@@ -84,42 +84,42 @@
     <h2>{{s|s040|}}</h2>
     <p>{{s|s041|}}</p>
     <div class="legenda">
-      <span class="l-ora"><i></i>arancio · la cosa che cambia adesso</span>
-      <span class="l-dato"><i></i>blu · il dato di partenza (e il thread t1)</span>
-      <span class="l-due"><i></i>viola · un secondo ruolo (e il thread t2)</span>
-      <span class="l-ok"><i></i>verde · il risultato</span>
-      <span class="l-no"><i></i>rosso · scartato o sbagliato</span>
+      <span class="l-ora">{{s|s042|}}</span>
+      <span class="l-dato">{{s|s043|}}</span>
+      <span class="l-due">{{s|s044|}}</span>
+      <span class="l-ok">{{s|s045|}}</span>
+      <span class="l-no">{{s|s046|}}</span>
     </div>
-    <p>{{s|s042|}}</p>
-    <figure class="interleaving" data-prog="home" data-titolo="{{a|s043|}}"></figure>
-  </section>
-
-  <section>
-    <h2>{{s|s044|}}</h2>
-    <div class="mappa" data-auto data-sezione="Teoria"></div>
-    <h3>{{s|s045|}}</h3>
-    <div class="mappa">
-      <a href="esame/formato.html"><small>esame</small><b>Com'è l'esame orale</b><span>Formato, date, cosa valutano</span></a>
-      <a href="esame/assignment.html"><small>ammissione</small><b>Assignment e oral feedback</b><span>Consegne, gruppi, repository, sessioni</span></a>
-      <a href="esame/vincoli.html"><small>regole</small><b>Vincoli e divieti</b><span>Busy-wait, try/finally, cosa non viene approvato</span></a>
-      <a href="esame/come-rispondere.html"><small>orale</small><b>Come rispondere</b><span>Schemi di risposta e frasi pronte in inglese</span></a>
-      <a href="esame/allenamento.html"><small>allenamento</small><b>Domande orali e risposte modello</b><span>Le domande "blue box" delle lezioni, con la risposta aperta</span></a>
-    </div>
-  </section>
-
-  <section>
-    <h2>{{s|s046|}}</h2>
     <p>{{s|s047|}}</p>
+    <figure class="interleaving" data-prog="home" data-titolo="{{a|s048|}}"></figure>
+  </section>
+
+  <section>
+    <h2>{{s|s049|}}</h2>
+    <div class="mappa" data-auto data-sezione="Teoria"></div>
+    <h3>{{s|s050|}}</h3>
+    <div class="mappa">
+      <a href="esame/formato.html">{{s|s051|}}</a>
+      <a href="esame/assignment.html">{{s|s052|}}</a>
+      <a href="esame/vincoli.html">{{s|s053|}}</a>
+      <a href="esame/come-rispondere.html">{{s|s054|}}</a>
+      <a href="esame/allenamento.html">{{s|s055|}}</a>
+    </div>
+  </section>
+
+  <section>
+    <h2>{{s|s056|}}</h2>
+    <p>{{s|s057|}}</p>
     <ul>
-      <li>{{s|s048|}}</li>
-      <li>{{s|s049|}}</li>
-      <li>{{s|s050|}}</li>
-      <li>{{s|s051|}}</li>
-      <li>{{s|s052|}}</li>
-      <li>{{s|s053|}}</li>
-      <li>{{s|s054|}}</li>
+      <li>{{s|s058|}}</li>
+      <li>{{s|s059|}}</li>
+      <li>{{s|s060|}}</li>
+      <li>{{s|s061|}}</li>
+      <li>{{s|s062|}}</li>
+      <li>{{s|s063|}}</li>
+      <li>{{s|s064|}}</li>
     </ul>
-    <p class="piccolo">{{s|s055|}}</p>
+    <p class="piccolo">{{s|s065|}}</p>
   </section>
 
 </main>

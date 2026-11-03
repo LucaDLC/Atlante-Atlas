@@ -267,23 +267,23 @@ case None    => None</div>
       <pre data-lang="scala">def size[A](t: Tree[A]): Int = match
   case Leaf(_) => 1</pre>
       <pre class="msg">expression expected but match found</pre>
-      <div class="fix">Manca il soggetto prima di <code>match</code>: scrivi <code>= t match</code>.</div>
+      <div class="fix">{{s|s083|}}</div>
     </div>
     <div class="errore">
       <pre data-lang="scala">case Const(h, t) => h * product(t)</pre>
       <pre class="msg">no pattern match extractor named Const was found</pre>
-      <div class="fix">Il costruttore si chiama <code>Cons</code>, senza la t. (Seguono altri errori a cascata come <i>value * is not a member of Any</i>: sparisce tutto correggendo il nome.)</div>
+      <div class="fix">{{s|s084|}}</div>
     </div>
     <div class="errore">
       <pre data-lang="scala">def drop[A](l: List[A], n: Int): List[A] = l match
   case n &lt; 0 => l</pre>
       <pre class="msg">no pattern match extractor named &lt; was found</pre>
-      <div class="fix">Un pattern descrive una <b>forma</b>, non una condizione. Per controllare <code>n</code> usa un <code>if</code> prima del match, o una guardia: <code>case _ if n &lt;= 0 => l</code>.</div>
+      <div class="fix">{{s|s085|}}</div>
     </div>
     <div class="errore">
       <pre data-lang="scala">case Some(X) => X</pre>
       <pre class="msg">Not found: X</pre>
-      <div class="fix">Maiuscolo = Scala cerca una <code>X</code> che esiste già. Per un nome nuovo usa il minuscolo: <code>case Some(x) => x</code>.</div>
+      <div class="fix">{{s|s086|}}</div>
     </div>
     <div class="errore">
       <pre data-lang="scala">def head[A](l: List[A]): A = l match
@@ -291,16 +291,16 @@ case None    => None</div>
       <pre class="msg">match may not be exhaustive.
 
 It would fail on pattern case: Nil</pre>
-      <div class="fix">Hai dimenticato una forma. Con <code>-Werror</code> è un errore: il file non compila e la consegna non passa. Aggiungi <code>case Nil => …</code>.</div>
+      <div class="fix">{{s|s087|}}</div>
     </div>
     <div class="errore">
       <pre data-lang="scala">case Cons(h, t) => h
 case Cons(1, t) => 1</pre>
       <pre class="msg">Unreachable case</pre>
-      <div class="fix">Il primo caso prende già tutte le celle: il secondo non scatta mai. Metti i casi <b>più specifici prima</b>.</div>
+      <div class="fix">{{s|s088|}}</div>
     </div>
   </div>
-  <figure class="scena" data-scena="errorimatch" data-titolo="{{a|s083|}}"></figure>
+  <figure class="scena" data-scena="errorimatch" data-titolo="{{a|s089|}}"></figure>
 </section>
 
 </main>

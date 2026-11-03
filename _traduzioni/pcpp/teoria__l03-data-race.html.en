@@ -30,42 +30,48 @@
 @@s030 List who touches x and how.
 @@s031 All the pairs with at least one write: they are in conflict.
 @@s032 But they are ordered: no data race on x.
-@@s033 This pair is in conflict <b>and</b> not ordered: data race. It is enough to find one in an execution to say that the program is <b>not</b> correctly synchronized.
-@@s034 Looking for a happens-before path
-@@s035 Fix with a lock, and prove it
-@@s036 From the lock to the two families of executions
-@@s037 The lock adds four synchronization actions.
-@@s038 Now there are more synchronization orders. Note: in none of them does a lock sit in the middle of the lock/unlock of the other thread (mutual exclusion).
-@@s039 Monitor rule: the unlock of t1 comes before the lock of t2.
-@@s040 All the synchronization orders fall into one of these two cases.
-@@s041 The write of a (t1(2)) happens-before the read (t2(7)).
-@@s042 Here the order is the opposite, but there is still one.
-@@s043 The same reasoning holds for all the other conflicting pairs: the program is <b>correctly synchronized</b>.
-@@s044 HB1 and HB2: the write and the read of a are always ordered
-@@s045 Predicting the values: visibility
-@@s046 If <code>a → b</code>, the effect of <code>a</code> is visible to <code>b</code>. So one can prove which values are possible.
-@@s047 Can the program with the lock print x == 1? (slide 40)
-@@s048 That is: the last write of b before <code>x=b</code> is that of t2, which writes 1.
-@@s049 This part holds in <b>all</b> the executions: it does not depend on who takes the lock.
-@@s050 This part holds only in HB<sub>2</sub>.
-@@s051 The same reasoning for the other variables.
-@@s052 x is 1 only if t2 takes the lock first
-@@s053 The volatile rule
-@@s054 Volatile rule
-@@s055 If <code>a</code> is a write to a volatile variable and <code>b</code> a <b>later</b> read of the same variable, then <code>a → b</code>.
-@@s056 Accesses to volatile variables are synchronization actions but do <b>not</b> give mutual exclusion: they greatly increase the possible synchronization orders.
-@@s057 By definition the accesses to volatile variables are <b>never in conflict</b>. So they cannot give a data race.
-@@s058 With <code>volatile a, b</code> in <code>PossibleReordering</code> only the accesses to x and y remain in conflict, already ordered by the start and termination rules: the program is correctly synchronized. The possible outputs are (1,0), (0,1), (1,1); (0,0) no.
-@@s059 Careful: in your answer to 3.1.8 (assignment 2 still to be handed in)
-@@s060 You wrote that with <code>count</code> volatile there is a data race between the two writes. By the course definition, <b>no</b>: accesses to volatile variables are not in conflict, so <b>there are no data races</b> and the program is correctly synchronized. But the <b>race condition</b> remains: both threads can read 0 and write 1, so <code>count</code> can be 1. It is exactly the comparison asked by 3.1.9: the version with the lock always prints 2, the volatile one can print 1. Details in the <a href="l03-esercizio-31.html">exercise 3.1 worked out</a>.
-@@s061 With a and b volatile, (0,0) is impossible
-@@s062 The strategy in 6 steps (slide 48)
-@@s063 The strategy is a mechanical procedure: there is no need to "guess" where the problem is. One starts from the actions, adds the pairs that hold <b>always</b> (program order, start, termination), then looks at what <b>depends on the execution</b> (who takes the lock first, which volatile is read afterwards). Each different case gives a different HB set; in the end every exam question (data race? correctly synchronized? which values can it print?) is solved by looking for paths in those sets.
-@@s064 Identify the actions and classify them (variable access, synchronization, other).
-@@s065 Write the pairs of the <b>program order</b>.
-@@s066 Write the pairs of the synchronization actions: <b>start</b>, <b>termination</b>, <b>monitor</b>, <b>volatile</b>.
-@@s067 List the possible <b>synchronization orders</b>.
-@@s068 Look at which happens-before pairs <b>change</b> from one synchronization order to the other.
-@@s069 For each difference, write the corresponding happens-before set (such as HB<sub>1</sub>, HB<sub>2</sub>).
-@@s070 With those sets you can: <b>find</b> data races, <b>prove</b> that there are none (correctness), <b>predict</b> the values of the variables.
-@@s071 The six steps applied to the example with the lock
+@@s033 accesses to <mark class="due">a</mark>: t1(1) writes · t2(4) reads → <mark class="no">not ordered</mark>
+@@s034 This pair is in conflict <b>and</b> not ordered: data race. It is enough to find one in an execution to say that the program is <b>not</b> correctly synchronized.
+@@s035 Looking for a happens-before path
+@@s036 Fix with a lock, and prove it
+@@s037 From the lock to the two families of executions
+@@s038 new synchronization actions: <mark class="ora">t1(1), t1(4)</mark>, <mark class="due">t2(5), t2(8)</mark>
+@@s039 The lock adds four synchronization actions.
+@@s040 Now there are more synchronization orders. Note: in none of them does a lock sit in the middle of the lock/unlock of the other thread (mutual exclusion).
+@@s041 HB<sub>1</sub> = HB ∪ { <mark class="ora">t1(4)</mark> → <mark class="due">t2(5)</mark> } if t1 takes the lock first
+@@s042 Monitor rule: the unlock of t1 comes before the lock of t2.
+@@s043 HB<sub>2</sub> = HB ∪ { <mark class="due">t2(8)</mark> → <mark class="ora">t1(1)</mark> } if t2 takes the lock first
+@@s044 All the synchronization orders fall into one of these two cases.
+@@s045 The write of a (t1(2)) happens-before the read (t2(7)).
+@@s046 Here the order is the opposite, but there is still one.
+@@s047 The same reasoning holds for all the other conflicting pairs: the program is <b>correctly synchronized</b>.
+@@s048 HB1 and HB2: the write and the read of a are always ordered
+@@s049 Predicting the values: visibility
+@@s050 If <code>a → b</code>, the effect of <code>a</code> is visible to <code>b</code>. So one can prove which values are possible.
+@@s051 Can the program with the lock print x == 1? (slide 40)
+@@s052 it is enough that this holds: m(init(x)) → m(init(b)) → <mark class="due">t2(6)</mark> → <mark class="ora">t1(3)</mark>
+@@s053 That is: the last write of b before <code>x=b</code> is that of t2, which writes 1.
+@@s054 This part holds in <b>all</b> the executions: it does not depend on who takes the lock.
+@@s055 This part holds only in HB<sub>2</sub>.
+@@s056 <mark class="ok">x == 1</mark> exactly in the executions where <b>t2 takes the lock first</b>
+@@s057 The same reasoning for the other variables.
+@@s058 x is 1 only if t2 takes the lock first
+@@s059 The volatile rule
+@@s060 Volatile rule
+@@s061 If <code>a</code> is a write to a volatile variable and <code>b</code> a <b>later</b> read of the same variable, then <code>a → b</code>.
+@@s062 Accesses to volatile variables are synchronization actions but do <b>not</b> give mutual exclusion: they greatly increase the possible synchronization orders.
+@@s063 By definition the accesses to volatile variables are <b>never in conflict</b>. So they cannot give a data race.
+@@s064 With <code>volatile a, b</code> in <code>PossibleReordering</code> only the accesses to x and y remain in conflict, already ordered by the start and termination rules: the program is correctly synchronized. The possible outputs are (1,0), (0,1), (1,1); (0,0) no.
+@@s065 Careful: in your answer to 3.1.8 (assignment 2 still to be handed in)
+@@s066 You wrote that with <code>count</code> volatile there is a data race between the two writes. By the course definition, <b>no</b>: accesses to volatile variables are not in conflict, so <b>there are no data races</b> and the program is correctly synchronized. But the <b>race condition</b> remains: both threads can read 0 and write 1, so <code>count</code> can be 1. It is exactly the comparison asked by 3.1.9: the version with the lock always prints 2, the volatile one can print 1. Details in the <a href="l03-esercizio-31.html">exercise 3.1 worked out</a>.
+@@s067 With a and b volatile, (0,0) is impossible
+@@s068 The strategy in 6 steps (slide 48)
+@@s069 The strategy is a mechanical procedure: there is no need to "guess" where the problem is. One starts from the actions, adds the pairs that hold <b>always</b> (program order, start, termination), then looks at what <b>depends on the execution</b> (who takes the lock first, which volatile is read afterwards). Each different case gives a different HB set; in the end every exam question (data race? correctly synchronized? which values can it print?) is solved by looking for paths in those sets.
+@@s070 Identify the actions and classify them (variable access, synchronization, other).
+@@s071 Write the pairs of the <b>program order</b>.
+@@s072 Write the pairs of the synchronization actions: <b>start</b>, <b>termination</b>, <b>monitor</b>, <b>volatile</b>.
+@@s073 List the possible <b>synchronization orders</b>.
+@@s074 Look at which happens-before pairs <b>change</b> from one synchronization order to the other.
+@@s075 For each difference, write the corresponding happens-before set (such as HB<sub>1</sub>, HB<sub>2</sub>).
+@@s076 With those sets you can: <b>find</b> data races, <b>prove</b> that there are none (correctness), <b>predict</b> the values of the variables.
+@@s077 The six steps applied to the example with the lock

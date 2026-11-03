@@ -103,75 +103,75 @@ window.SCENE = window.SCENE || {};
   </figure>
   <figure class="passi" data-titolo="{{a|s019|}}">
     <div class="passo"><div class="espr">map2(<mark class="dato">Some(2)</mark>, <mark class="due">Some(3)</mark>)(_ + _)</div><p class="nota">{{s|s020|}}</p></div>
-    <div class="passo"><div class="espr">Some(2).flatMap(a => Some(3).map(b => a + b))   con a = <mark class="dato">2</mark>, b = <mark class="due">3</mark></div><p class="nota">{{s|s021|}}</p></div>
-    <div class="passo"><div class="espr"><mark class="ok">Some(5)</mark></div><p class="nota">{{s|s022|}}</p></div>
-    <div class="passo"><div class="espr">map2(Some(2), <mark class="no">None</mark>)(_ + _)   →   Some(2).flatMap(a => <mark class="no">None</mark>.map(…))   →   <mark class="no">None</mark></div><p class="nota">{{s|s023|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s021|}}</div><p class="nota">{{s|s022|}}</p></div>
+    <div class="passo"><div class="espr"><mark class="ok">Some(5)</mark></div><p class="nota">{{s|s023|}}</p></div>
+    <div class="passo"><div class="espr">map2(Some(2), <mark class="no">None</mark>)(_ + _)   →   Some(2).flatMap(a => <mark class="no">None</mark>.map(…))   →   <mark class="no">None</mark></div><p class="nota">{{s|s024|}}</p></div>
   </figure>
-  <div class="box idea" data-tit="{{a|s024|}}">
-    <p>{{s|s025|}}</p>
+  <div class="box idea" data-tit="{{a|s025|}}">
+    <p>{{s|s026|}}</p>
   </div>
-  <figure class="scena" data-scena="map2" data-titolo="{{a|s026|}}"></figure>
+  <figure class="scena" data-scena="map2" data-titolo="{{a|s027|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s027|}}</h2>
-  <p>{{s|s028|}}</p>
-  <figure class="passi" data-titolo="{{a|s029|}}">
-    <div class="passo"><div class="espr">3 :: <mark class="dato">Nil</mark>             →   <mark class="ok">List(3)</mark></div><p class="nota">{{s|s030|}}</p></div>
-    <div class="passo"><div class="espr">2 :: <mark class="dato">List(3)</mark>         →   <mark class="ok">List(2, 3)</mark></div><p class="nota">{{s|s031|}}</p></div>
+  <h2>{{s|s028|}}</h2>
+  <p>{{s|s029|}}</p>
+  <figure class="passi" data-titolo="{{a|s030|}}">
+    <div class="passo"><div class="espr">3 :: <mark class="dato">Nil</mark>             →   <mark class="ok">List(3)</mark></div><p class="nota">{{s|s031|}}</p></div>
+    <div class="passo"><div class="espr">2 :: <mark class="dato">List(3)</mark>         →   <mark class="ok">List(2, 3)</mark></div><p class="nota">{{s|s032|}}</p></div>
     <div class="passo"><div class="espr">1 :: <mark class="dato">List(2, 3)</mark>      →   <mark class="ok">List(1, 2, 3)</mark></div><p class="nota">E 1.</p></div>
-    <div class="passo"><div class="espr">_ :: _   =   (<mark class="ora">x</mark>, <mark class="due">xs</mark>) => <mark class="ora">x</mark> :: <mark class="due">xs</mark></div><p class="nota">{{s|s032|}}</p></div>
+    <div class="passo"><div class="espr">_ :: _   =   (<mark class="ora">x</mark>, <mark class="due">xs</mark>) => <mark class="ora">x</mark> :: <mark class="due">xs</mark></div><p class="nota">{{s|s033|}}</p></div>
   </figure>
   <div class="tab-wrap"><table class="tab">
-    <thead><tr><th>{{s|s033|}}</th><th>{{s|s034|}}</th></tr></thead>
+    <thead><tr><th>{{s|s034|}}</th><th>{{s|s035|}}</th></tr></thead>
     <tbody>
-      <tr><td>{{s|s035|}}</td><td>{{s|s036|}}</td></tr>
-      <tr><td>{{s|s037|}}</td><td>{{s|s038|}}</td></tr>
+      <tr><td>{{s|s036|}}</td><td>{{s|s037|}}</td></tr>
+      <tr><td>{{s|s038|}}</td><td>{{s|s039|}}</td></tr>
     </tbody>
   </table></div>
-  <figure class="scena" data-scena="cons" data-titolo="{{a|s039|}}"></figure>
+  <figure class="scena" data-scena="cons" data-titolo="{{a|s040|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s040|}}</h2>
-  <p>{{s|s041|}}</p>
-  <figure class="codice" data-titolo="{{a|s042|}}">
+  <h2>{{s|s041|}}</h2>
+  <p>{{s|s042|}}</p>
+  <figure class="codice" data-titolo="{{a|s043|}}">
 <pre data-lang="scala">def sequence[A](aos: List[Option[A]]): Option[List[A]] =
   aos.foldRight[Option[List[A]]](Some(Nil))((ao, acc) => map2(ao, acc)(_ :: _))</pre>
     <ol class="spiega">
-      <li data-righe="1" data-segna="List[Option[A]]@dato|Option[List[A]]@ok"><p>{{s|s043|}}</p></li>
-      <li data-righe="2" data-segna="foldRight[Option[List[A]]]@due"><p>{{s|s044|}}</p></li>
-      <li data-righe="2" data-segna="Some(Nil)@ok"><p>{{s|s045|}}</p></li>
-      <li data-righe="2" data-segna="map2(ao, acc)@ora|(_ :: _)@due"><p>{{s|s046|}}</p></li>
+      <li data-righe="1" data-segna="List[Option[A]]@dato|Option[List[A]]@ok"><p>{{s|s044|}}</p></li>
+      <li data-righe="2" data-segna="foldRight[Option[List[A]]]@due"><p>{{s|s045|}}</p></li>
+      <li data-righe="2" data-segna="Some(Nil)@ok"><p>{{s|s046|}}</p></li>
+      <li data-righe="2" data-segna="map2(ao, acc)@ora|(_ :: _)@due"><p>{{s|s047|}}</p></li>
     </ol>
   </figure>
-  <figure class="passi" data-titolo="{{a|s047|}}">
-    <div class="passo"><div class="espr">acc = <mark class="ok">Some(Nil)</mark></div><p class="nota">{{s|s048|}}</p></div>
-    <div class="passo"><div class="espr">map2(<mark class="dato">Some(3)</mark>, Some(Nil))(_ :: _) = <mark class="ok">Some(List(3))</mark></div><p class="nota">{{s|s049|}}</p></div>
-    <div class="passo"><div class="espr">map2(<mark class="no">None</mark>, Some(List(3)))(_ :: _) = <mark class="no">None</mark></div><p class="nota">{{s|s050|}}</p></div>
-    <div class="passo"><div class="espr">map2(<mark class="dato">Some(1)</mark>, <mark class="no">None</mark>)(_ :: _) = <mark class="no">None</mark></div><p class="nota">{{s|s051|}}</p></div>
-    <div class="passo"><div class="espr"><mark class="no">None</mark>        e con List(Some(1), Some(2), Some(3)):   <mark class="ok">Some(List(1, 2, 3))</mark></div><p class="nota">{{s|s052|}}</p></div>
+  <figure class="passi" data-titolo="{{a|s048|}}">
+    <div class="passo"><div class="espr">acc = <mark class="ok">Some(Nil)</mark></div><p class="nota">{{s|s049|}}</p></div>
+    <div class="passo"><div class="espr">map2(<mark class="dato">Some(3)</mark>, Some(Nil))(_ :: _) = <mark class="ok">Some(List(3))</mark></div><p class="nota">{{s|s050|}}</p></div>
+    <div class="passo"><div class="espr">map2(<mark class="no">None</mark>, Some(List(3)))(_ :: _) = <mark class="no">None</mark></div><p class="nota">{{s|s051|}}</p></div>
+    <div class="passo"><div class="espr">map2(<mark class="dato">Some(1)</mark>, <mark class="no">None</mark>)(_ :: _) = <mark class="no">None</mark></div><p class="nota">{{s|s052|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s053|}}</div><p class="nota">{{s|s054|}}</p></div>
   </figure>
-  <figure class="scena" data-scena="sequenza" data-titolo="{{a|s053|}}"></figure>
-  <div class="box attenzione" data-tit="{{a|s054|}}">
-    <p>{{s|s055|}}</p>
+  <figure class="scena" data-scena="sequenza" data-titolo="{{a|s055|}}"></figure>
+  <div class="box attenzione" data-tit="{{a|s056|}}">
+    <p>{{s|s057|}}</p>
   </div>
 </section>
 
 <section>
-  <h2>{{s|s056|}}</h2>
-  <figure class="codice" data-titolo="{{a|s057|}}">
+  <h2>{{s|s058|}}</h2>
+  <figure class="codice" data-titolo="{{a|s059|}}">
 <pre data-lang="scala">def traverse[A, B](as: List[A])(f: A => Option[B]): Option[List[B]] =
   as.foldRight[Option[List[B]]](Some(Nil))((a, acc) => map2(f(a), acc)(_ :: _))</pre>
     <ol class="spiega">
-      <li data-righe="1" data-segna="f: A => Option[B]@ora"><p>{{s|s058|}}</p></li>
-      <li data-righe="2" data-segna="map2(f(a), acc)@ok"><p>{{s|s059|}}</p></li>
+      <li data-righe="1" data-segna="f: A => Option[B]@ora"><p>{{s|s060|}}</p></li>
+      <li data-righe="2" data-segna="map2(f(a), acc)@ok"><p>{{s|s061|}}</p></li>
     </ol>
   </figure>
   <pre class="cod" data-lang="scala">traverse(List(1, 2, 3))(x => if x &gt; 0 then Some(x * 10) else None)    // Some(List(10, 20, 30))
 traverse(List(1, -2, 3))(x => if x &gt; 0 then Some(x * 10) else None)   // None</pre>
-  <p>{{s|s060|}}</p>
-  <figure class="scena" data-scena="traverse" data-titolo="{{a|s061|}}"></figure>
+  <p>{{s|s062|}}</p>
+  <figure class="scena" data-scena="traverse" data-titolo="{{a|s063|}}"></figure>
 </section>
 
 </main>

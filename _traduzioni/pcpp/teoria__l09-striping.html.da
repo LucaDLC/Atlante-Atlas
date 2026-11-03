@@ -18,14 +18,17 @@
 @@s018 Selv med 64 stripes ligger tællerne og låsene i arrays: nabo-elementer i et array deler en cache-linje. To nabostripes kan derfor lave false sharing. Forelæsningens løsning er <b>padding</b>: kun indekser, der er multipla af 16, bruges (<code>padding = 16</code>), og de andre elementer forbliver tomme. Så står hver tæller og hver lås på sin egen linje.
 @@s019 Hvordan en tråd vælger sin tæller
 @@s020 dato:tråd,ora:trin i gang,ok:resultat
-@@s021 <code>threadId()</code> er unik for hver tråd.
-@@s022 AND beholder kun de 6 lave bit: resultatet er altid mellem 0 og 63.
-@@s023 Ingen anden tråd bruger stripe 37, medmindre den har samme rest.
-@@s024 Forelæsningens resultater
-@@s025 Forelæsningen sammenligner ni versioner af tælleren, på en Apple M3 Pro-laptop og en AMD EPYC 7313-server. Konklusionerne, fra sliden:
-@@s026 at bruge en lås er ikke i sig selv langsomt, men én enkelt lås skaber <b>konkurrence</b> og meget trafik mellem cachene;
-@@s027 striping forbedrer samtidig kode, men stripes skal ligge på forskellige cache-linjer: padding er nødvendig;
-@@s028 bibliotekets <code>java.util.concurrent.atomic.LongAdder</code> gør alt dette korrekt, og det er det valg, man skal bruge;
-@@s029 konklusionerne gælder for fem CPU-arkitekturer, fra 2014 til 2023.
-@@s030 Praktisk regel
-@@s031 Til en delt tæller bruger man <code>LongAdder</code>. Skriv ikke én enkelt lås, og kopier ikke striping, medmindre du har målt behovet for det.
+@@s021 Tråden har et <mark class="dato">id</mark>, for eksempel 37
+@@s022 <code>threadId()</code> er unik for hver tråd.
+@@s023 <mark class="ora">37 AND 63</mark> = 37: stripen er nummer 37
+@@s024 AND beholder kun de 6 lave bit: resultatet er altid mellem 0 og 63.
+@@s025 Tråden tager <mark class="ora">låsen på stripe 37</mark> og lægger til i <mark class="ok">counts[37]</mark>
+@@s026 Ingen anden tråd bruger stripe 37, medmindre den har samme rest.
+@@s027 Forelæsningens resultater
+@@s028 Forelæsningen sammenligner ni versioner af tælleren, på en Apple M3 Pro-laptop og en AMD EPYC 7313-server. Konklusionerne, fra sliden:
+@@s029 at bruge en lås er ikke i sig selv langsomt, men én enkelt lås skaber <b>konkurrence</b> og meget trafik mellem cachene;
+@@s030 striping forbedrer samtidig kode, men stripes skal ligge på forskellige cache-linjer: padding er nødvendig;
+@@s031 bibliotekets <code>java.util.concurrent.atomic.LongAdder</code> gør alt dette korrekt, og det er det valg, man skal bruge;
+@@s032 konklusionerne gælder for fem CPU-arkitekturer, fra 2014 til 2023.
+@@s033 Praktisk regel
+@@s034 Til en delt tæller bruger man <code>LongAdder</code>. Skriv ikke én enkelt lås, og kopier ikke striping, medmindre du har målt behovet for det.

@@ -82,60 +82,60 @@
   <figure class="passi" data-titolo="{{a|s030|}}" data-legenda="{{a|s031|}}">
     <div class="passo"><div class="espr">stato = <mark class="dato">counts</mark> e i 30 AtomicInteger dentro</div><p class="nota">{{s|s032|}}</p></div>
     <div class="passo"><div class="espr">1. campo: <mark class="ok">private</mark></div><p class="nota">{{s|s033|}}</p></div>
-    <div class="passo"><div class="espr">2. metodi: restituiscono solo <mark class="ok">int</mark></div><p class="nota">{{s|s034|}}</p></div>
-    <div class="passo"><div class="espr">3. costruttore: <mark class="ok">this non esce</mark></div><p class="nota">{{s|s035|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s034|}}</div><p class="nota">{{s|s035|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s036|}}</div><p class="nota">{{s|s037|}}</p></div>
   </figure>
-  <div class="box inglese" data-tit="{{a|s036|}}">
-    <p>{{s|s037|}}</p>
-  </div>
-  <div class="box attenzione" data-tit="{{a|s038|}}">
+  <div class="box inglese" data-tit="{{a|s038|}}">
     <p>{{s|s039|}}</p>
   </div>
+  <div class="box attenzione" data-tit="{{a|s040|}}">
+    <p>{{s|s041|}}</p>
+  </div>
 </section>
 
 <section>
-  <h2>{{s|s040|}}</h2>
-  <p>{{s|s041|}}</p>
-  <figure class="passi" data-titolo="{{a|s042|}}" data-legenda="{{a|s043|}}">
-    <div class="passo"><div class="espr">bin 7 = 5      T1: getAndClear(7)      T2: increment(7)</div><p class="nota">{{s|s044|}}</p></div>
-    <div class="passo"><div class="espr">T1: oldValue = get() = <mark class="dato">5</mark></div><p class="nota">{{s|s045|}}</p></div>
-    <div class="passo"><div class="espr">T2: <mark class="ora">CAS(5 → 6)</mark> <mark class="ok">riesce</mark>      bin 7 = 6</div><p class="nota">{{s|s046|}}</p></div>
-    <div class="passo"><div class="espr">T1: <mark class="ora">CAS(5 → 0)</mark> <mark class="no">fallisce</mark>      bin 7 = 6</div><p class="nota">{{s|s047|}}</p></div>
-    <div class="passo"><div class="espr">T1: oldValue = <mark class="dato">6</mark>, <mark class="ora">CAS(6 → 0)</mark> <mark class="ok">riesce</mark>, return 6</div><p class="nota">{{s|s048|}}</p></div>
+  <h2>{{s|s042|}}</h2>
+  <p>{{s|s043|}}</p>
+  <figure class="passi" data-titolo="{{a|s044|}}" data-legenda="{{a|s045|}}">
+    <div class="passo"><div class="espr">bin 7 = 5      T1: getAndClear(7)      T2: increment(7)</div><p class="nota">{{s|s046|}}</p></div>
+    <div class="passo"><div class="espr">T1: oldValue = get() = <mark class="dato">5</mark></div><p class="nota">{{s|s047|}}</p></div>
+    <div class="passo"><div class="espr">T2: <mark class="ora">CAS(5 → 6)</mark> <mark class="ok">riesce</mark>      bin 7 = 6</div><p class="nota">{{s|s048|}}</p></div>
+    <div class="passo"><div class="espr">T1: <mark class="ora">CAS(5 → 0)</mark> <mark class="no">fallisce</mark>      bin 7 = 6</div><p class="nota">{{s|s049|}}</p></div>
+    <div class="passo"><div class="espr">T1: oldValue = <mark class="dato">6</mark>, <mark class="ora">CAS(6 → 0)</mark> <mark class="ok">riesce</mark>, return 6</div><p class="nota">{{s|s050|}}</p></div>
   </figure>
   <div class="colonne">
-    <div class="carta cattiva"><h4>{{s|s049|}}</h4><p>{{s|s050|}}</p></div>
-    <div class="carta buona"><h4>{{s|s051|}}</h4><p>{{s|s052|}}</p></div>
+    <div class="carta cattiva"><h4>{{s|s051|}}</h4><p>{{s|s052|}}</p></div>
+    <div class="carta buona"><h4>{{s|s053|}}</h4><p>{{s|s054|}}</p></div>
   </div>
-  <div class="box inglese" data-tit="{{a|s053|}}">
-    <p>{{s|s054|}}</p>
+  <div class="box inglese" data-tit="{{a|s055|}}">
+    <p>{{s|s056|}}</p>
   </div>
 </section>
 
 <section>
-  <h2>{{s|s055|}}</h2>
-  <p>{{s|s056|}}</p>
+  <h2>{{s|s057|}}</h2>
+  <p>{{s|s058|}}</p>
   <div class="tab-wrap"><table class="tab">
-    <thead><tr><th>{{s|s057|}}</th><th>{{s|s058|}}</th><th>{{s|s059|}}</th></tr></thead>
+    <thead><tr><th>{{s|s059|}}</th><th>{{s|s060|}}</th><th>{{s|s061|}}</th></tr></thead>
     <tbody>
-      <tr><td>0, 1</td><td>{{s|s060|}}</td><td>0</td></tr>
-      <tr><td>2, 3, 5, 7</td><td>{{s|s061|}}</td><td>1</td></tr>
+      <tr><td>0, 1</td><td>{{s|s062|}}</td><td>0</td></tr>
+      <tr><td>2, 3, 5, 7</td><td>{{s|s063|}}</td><td>1</td></tr>
       <tr><td>4, 6, 9</td><td>2·2, 2·3, 3·3</td><td>2</td></tr>
       <tr><td>8</td><td>2·2·2</td><td>3</td></tr>
     </tbody>
   </table></div>
-  <p>{{s|s062|}}</p>
-  <figure class="passi" data-titolo="{{a|s063|}}" data-legenda="{{a|s064|}}">
-    <div class="passo"><div class="espr"><mark class="dato">expected</mark>: un thread, p = 0…4999, expected.increment(countFactors(p))</div><p class="nota">{{s|s065|}}</p></div>
-    <div class="passo"><div class="espr"><mark class="due">histogram</mark>: 5000 thread, uno per numero, tutti sullo stesso oggetto</div><p class="nota">{{s|s066|}}</p></div>
-    <div class="passo"><div class="espr">barriera da 5000 + 1: partenza insieme, poi main aspetta la fine</div><p class="nota">{{s|s067|}}</p></div>
-    <div class="passo"><div class="espr">per ogni bin 0…29: assertEquals(<mark class="dato">expected</mark>.getCount(bin), <mark class="due">histogram</mark>.getCount(bin))</div><p class="nota">{{s|s068|}}</p></div>
+  <p>{{s|s064|}}</p>
+  <figure class="passi" data-titolo="{{a|s065|}}" data-legenda="{{a|s066|}}">
+    <div class="passo"><div class="espr"><mark class="dato">expected</mark>: un thread, p = 0…4999, expected.increment(countFactors(p))</div><p class="nota">{{s|s067|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s068|}}</div><p class="nota">{{s|s069|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s070|}}</div><p class="nota">{{s|s071|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s072|}}</div><p class="nota">{{s|s073|}}</p></div>
   </figure>
-  <div class="box attenzione" data-tit="{{a|s069|}}">
-    <p>{{s|s070|}}</p>
+  <div class="box attenzione" data-tit="{{a|s074|}}">
+    <p>{{s|s075|}}</p>
   </div>
-  <div class="box attenzione" data-tit="{{a|s071|}}">
-    <p>{{s|s072|}}</p>
+  <div class="box attenzione" data-tit="{{a|s076|}}">
+    <p>{{s|s077|}}</p>
   </div>
 </section>
 

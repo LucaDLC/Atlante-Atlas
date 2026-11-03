@@ -30,42 +30,48 @@
 @@s030 Elenco chi tocca x e come.
 @@s031 Tutte le coppie con almeno una scrittura: sono in conflitto.
 @@s032 Ma sono ordinate: nessuna data race su x.
-@@s033 Questa coppia è in conflitto <b>e</b> non ordinata: data race. Basta trovarne una in un'esecuzione per dire che il programma <b>non</b> è correttamente sincronizzato.
-@@s034 Cercare un cammino di happens-before
-@@s035 Sistemare con un lock, e dimostrarlo
-@@s036 Dal lock alle due famiglie di esecuzioni
-@@s037 Il lock aggiunge quattro azioni di sincronizzazione.
-@@s038 Ora ci sono più synchronization order. Nota: in nessuno un lock sta in mezzo a un lock/unlock dell'altro thread (mutua esclusione).
-@@s039 Regola del monitor: l'unlock di t1 viene prima del lock di t2.
-@@s040 Tutti i synchronization order ricadono in uno di questi due casi.
-@@s041 La scrittura di a (t1(2)) happens-before la lettura (t2(7)).
-@@s042 Qui l'ordine è al contrario, ma c'è comunque.
-@@s043 Lo stesso ragionamento vale per tutte le altre coppie in conflitto: il programma è <b>correttamente sincronizzato</b>.
-@@s044 HB1 e HB2: la scrittura e la lettura di a sono sempre ordinate
-@@s045 Prevedere i valori: la visibilità
-@@s046 Se <code>a → b</code>, l'effetto di <code>a</code> è visibile a <code>b</code>. Quindi si può dimostrare quali valori sono possibili.
-@@s047 Il programma con lock può stampare x == 1? (slide 40)
-@@s048 Cioè: l'ultima scrittura di b prima di <code>x=b</code> è quella di t2, che scrive 1.
-@@s049 Questa parte vale in <b>tutte</b> le esecuzioni: non dipende da chi prende il lock.
-@@s050 Questa parte vale solo in HB<sub>2</sub>.
-@@s051 Stesso ragionamento per le altre variabili.
-@@s052 x vale 1 solo se t2 prende il lock per primo
-@@s053 La regola volatile
-@@s054 Volatile rule
-@@s055 Se <code>a</code> è una scrittura su una variabile volatile e <code>b</code> una lettura <b>successiva</b> della stessa variabile, allora <code>a → b</code>.
-@@s056 Gli accessi a variabili volatile sono azioni di sincronizzazione ma <b>non</b> danno mutua esclusione: aumentano molto i synchronization order possibili.
-@@s057 Per definizione gli accessi a variabili volatile <b>non sono mai in conflitto</b>. Quindi non possono dare data race.
-@@s058 Con <code>volatile a, b</code> in <code>PossibleReordering</code> restano in conflitto solo gli accessi a x e y, già ordinati da start e termination rule: il programma è correttamente sincronizzato. Gli output possibili sono (1,0), (0,1), (1,1); (0,0) no.
-@@s059 Attenzione: nella tua risposta al 3.1.8 (assignment 2 ancora da consegnare)
-@@s060 Hai scritto che con <code>count</code> volatile c'è una data race tra le due scritture. Per la definizione del corso <b>no</b>: gli accessi a variabili volatile non sono in conflitto, quindi <b>non ci sono data race</b> e il programma è correttamente sincronizzato. Però la <b>race condition</b> resta: entrambi i thread possono leggere 0 e scrivere 1, quindi <code>count</code> può valere 1. È proprio il confronto chiesto dal 3.1.9: la versione con lock stampa sempre 2, quella volatile può stampare 1. Dettagli nell'<a href="l03-esercizio-31.html">esercizio 3.1 svolto</a>.
-@@s061 Con a e b volatile, (0,0) è impossibile
-@@s062 La strategia in 6 passi (slide 48)
-@@s063 La strategia è un procedimento meccanico: non serve "intuire" dove sta il problema. Si parte dalle azioni, si aggiungono le coppie che valgono <b>sempre</b> (program order, start, termination), poi si guarda cosa <b>dipende dall'esecuzione</b> (chi prende per primo il lock, quale volatile viene letto dopo). Ogni caso diverso dà un insieme HB diverso; alla fine ogni domanda d'esame (data race? correttamente sincronizzato? che valori può stampare?) si risolve cercando percorsi in quegli insiemi.
-@@s064 Identifica le azioni e classificale (variable access, synchronization, other).
-@@s065 Scrivi le coppie del <b>program order</b>.
-@@s066 Scrivi le coppie delle azioni di sincronizzazione: <b>start</b>, <b>termination</b>, <b>monitor</b>, <b>volatile</b>.
-@@s067 Elenca i possibili <b>synchronization order</b>.
-@@s068 Guarda quali coppie di happens-before <b>cambiano</b> tra un synchronization order e l'altro.
-@@s069 Per ogni differenza, scrivi l'insieme happens-before corrispondente (come HB<sub>1</sub>, HB<sub>2</sub>).
-@@s070 Con quegli insiemi puoi: <b>trovare</b> data race, <b>dimostrare</b> che non ci sono (correttezza), <b>prevedere</b> i valori delle variabili.
-@@s071 I sei passi applicati all’esempio con il lock
+@@s033 accessi ad <mark class="due">a</mark>: t1(1) scrive · t2(4) legge → <mark class="no">non ordinate</mark>
+@@s034 Questa coppia è in conflitto <b>e</b> non ordinata: data race. Basta trovarne una in un'esecuzione per dire che il programma <b>non</b> è correttamente sincronizzato.
+@@s035 Cercare un cammino di happens-before
+@@s036 Sistemare con un lock, e dimostrarlo
+@@s037 Dal lock alle due famiglie di esecuzioni
+@@s038 nuove azioni di sincronizzazione: <mark class="ora">t1(1), t1(4)</mark>, <mark class="due">t2(5), t2(8)</mark>
+@@s039 Il lock aggiunge quattro azioni di sincronizzazione.
+@@s040 Ora ci sono più synchronization order. Nota: in nessuno un lock sta in mezzo a un lock/unlock dell'altro thread (mutua esclusione).
+@@s041 HB<sub>1</sub> = HB ∪ { <mark class="ora">t1(4)</mark> → <mark class="due">t2(5)</mark> } se t1 prende il lock per primo
+@@s042 Regola del monitor: l'unlock di t1 viene prima del lock di t2.
+@@s043 HB<sub>2</sub> = HB ∪ { <mark class="due">t2(8)</mark> → <mark class="ora">t1(1)</mark> } se t2 prende il lock per primo
+@@s044 Tutti i synchronization order ricadono in uno di questi due casi.
+@@s045 La scrittura di a (t1(2)) happens-before la lettura (t2(7)).
+@@s046 Qui l'ordine è al contrario, ma c'è comunque.
+@@s047 Lo stesso ragionamento vale per tutte le altre coppie in conflitto: il programma è <b>correttamente sincronizzato</b>.
+@@s048 HB1 e HB2: la scrittura e la lettura di a sono sempre ordinate
+@@s049 Prevedere i valori: la visibilità
+@@s050 Se <code>a → b</code>, l'effetto di <code>a</code> è visibile a <code>b</code>. Quindi si può dimostrare quali valori sono possibili.
+@@s051 Il programma con lock può stampare x == 1? (slide 40)
+@@s052 basta che valga: m(init(x)) → m(init(b)) → <mark class="due">t2(6)</mark> → <mark class="ora">t1(3)</mark>
+@@s053 Cioè: l'ultima scrittura di b prima di <code>x=b</code> è quella di t2, che scrive 1.
+@@s054 Questa parte vale in <b>tutte</b> le esecuzioni: non dipende da chi prende il lock.
+@@s055 Questa parte vale solo in HB<sub>2</sub>.
+@@s056 <mark class="ok">x == 1</mark> esattamente nelle esecuzioni in cui <b>t2 prende il lock per primo</b>
+@@s057 Stesso ragionamento per le altre variabili.
+@@s058 x vale 1 solo se t2 prende il lock per primo
+@@s059 La regola volatile
+@@s060 Volatile rule
+@@s061 Se <code>a</code> è una scrittura su una variabile volatile e <code>b</code> una lettura <b>successiva</b> della stessa variabile, allora <code>a → b</code>.
+@@s062 Gli accessi a variabili volatile sono azioni di sincronizzazione ma <b>non</b> danno mutua esclusione: aumentano molto i synchronization order possibili.
+@@s063 Per definizione gli accessi a variabili volatile <b>non sono mai in conflitto</b>. Quindi non possono dare data race.
+@@s064 Con <code>volatile a, b</code> in <code>PossibleReordering</code> restano in conflitto solo gli accessi a x e y, già ordinati da start e termination rule: il programma è correttamente sincronizzato. Gli output possibili sono (1,0), (0,1), (1,1); (0,0) no.
+@@s065 Attenzione: nella tua risposta al 3.1.8 (assignment 2 ancora da consegnare)
+@@s066 Hai scritto che con <code>count</code> volatile c'è una data race tra le due scritture. Per la definizione del corso <b>no</b>: gli accessi a variabili volatile non sono in conflitto, quindi <b>non ci sono data race</b> e il programma è correttamente sincronizzato. Però la <b>race condition</b> resta: entrambi i thread possono leggere 0 e scrivere 1, quindi <code>count</code> può valere 1. È proprio il confronto chiesto dal 3.1.9: la versione con lock stampa sempre 2, quella volatile può stampare 1. Dettagli nell'<a href="l03-esercizio-31.html">esercizio 3.1 svolto</a>.
+@@s067 Con a e b volatile, (0,0) è impossibile
+@@s068 La strategia in 6 passi (slide 48)
+@@s069 La strategia è un procedimento meccanico: non serve "intuire" dove sta il problema. Si parte dalle azioni, si aggiungono le coppie che valgono <b>sempre</b> (program order, start, termination), poi si guarda cosa <b>dipende dall'esecuzione</b> (chi prende per primo il lock, quale volatile viene letto dopo). Ogni caso diverso dà un insieme HB diverso; alla fine ogni domanda d'esame (data race? correttamente sincronizzato? che valori può stampare?) si risolve cercando percorsi in quegli insiemi.
+@@s070 Identifica le azioni e classificale (variable access, synchronization, other).
+@@s071 Scrivi le coppie del <b>program order</b>.
+@@s072 Scrivi le coppie delle azioni di sincronizzazione: <b>start</b>, <b>termination</b>, <b>monitor</b>, <b>volatile</b>.
+@@s073 Elenca i possibili <b>synchronization order</b>.
+@@s074 Guarda quali coppie di happens-before <b>cambiano</b> tra un synchronization order e l'altro.
+@@s075 Per ogni differenza, scrivi l'insieme happens-before corrispondente (come HB<sub>1</sub>, HB<sub>2</sub>).
+@@s076 Con quegli insiemi puoi: <b>trovare</b> data race, <b>dimostrare</b> che non ci sono (correttezza), <b>prevedere</b> i valori delle variabili.
+@@s077 I sei passi applicati all’esempio con il lock

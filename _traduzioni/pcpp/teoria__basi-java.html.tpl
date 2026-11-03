@@ -251,11 +251,11 @@ Conto b = new Conto();</pre>
     <div class="errore">
       <pre>PS&gt; gradle -PmainClass=lecture01.CounterThreads run</pre>
       <pre class="msg">Task '.CounterThreads' not found in root project 'lecture01' and its subprojects.</pre>
-      <div class="fix">PowerShell spezza il parametro al punto e Gradle riceve <code>.CounterThreads</code> come nome di un task. Metti tutto il parametro tra virgolette: <code>gradle "-PmainClass=lecture01.CounterThreads" run</code> (lo dice anche la guida Gradle del corso).</div>
+      <div class="fix">{{s|s057|}}</div>
     </div>
   </div>
-  <p>{{s|s057|}}</p>
-  <figure class="scena" data-scena="gradle" data-titolo="{{a|s058|}}"></figure>
+  <p>{{s|s058|}}</p>
+  <figure class="scena" data-scena="gradle" data-titolo="{{a|s059|}}"></figure>
 </section>
 
 </main>

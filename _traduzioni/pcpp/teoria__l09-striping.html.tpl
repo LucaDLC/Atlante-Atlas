@@ -85,22 +85,22 @@
   <h2>{{s|s017|}}</h2>
   <p>{{s|s018|}}</p>
   <figure class="passi" data-titolo="{{a|s019|}}" data-legenda="{{a|s020|}}">
-    <div class="passo"><div class="espr">Il thread ha un <mark class="dato">id</mark>, per esempio 37</div><p class="nota">{{s|s021|}}</p></div>
-    <div class="passo"><div class="espr"><mark class="ora">37 AND 63</mark> = 37: la stripe è la 37</div><p class="nota">{{s|s022|}}</p></div>
-    <div class="passo"><div class="espr">Il thread prende il <mark class="ora">lock della stripe 37</mark> e aggiunge a <mark class="ok">counts[37]</mark></div><p class="nota">{{s|s023|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s021|}}</div><p class="nota">{{s|s022|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s023|}}</div><p class="nota">{{s|s024|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s025|}}</div><p class="nota">{{s|s026|}}</p></div>
   </figure>
 </section>
 
 <section>
-  <h2>{{s|s024|}}</h2>
-  <p>{{s|s025|}}</p>
+  <h2>{{s|s027|}}</h2>
+  <p>{{s|s028|}}</p>
   <ul>
-    <li>{{s|s026|}}</li>
-    <li>{{s|s027|}}</li>
-    <li>{{s|s028|}}</li>
     <li>{{s|s029|}}</li>
+    <li>{{s|s030|}}</li>
+    <li>{{s|s031|}}</li>
+    <li>{{s|s032|}}</li>
   </ul>
-  <div class="box regola" data-tit="{{a|s030|}}">{{s|s031|}}</div>
+  <div class="box regola" data-tit="{{a|s033|}}">{{s|s034|}}</div>
 </section>
 
 </main>

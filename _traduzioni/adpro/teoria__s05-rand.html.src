@@ -38,37 +38,42 @@
 @@s038 <code>_ :: _</code> è la forma corta di <code>(a, b) =&gt; a :: b</code>: ogni <code>_</code> è un parametro, nell'ordine in cui compare. È la funzione che <code>map2</code> usa per mettere il valore di <code>h</code> davanti alla lista prodotta dagli altri.
 @@s039 ints2 non ha bisogno di un if per size ≤ 0
 @@s040 <code>List.fill(0)(int)</code> e anche <code>List.fill(-3)(int)</code> danno la lista vuota, e <code>sequence(Nil)</code> è <code>unit(Nil)</code>: il caso base è già dentro <code>sequence</code>. <code>ints2(0)(SimpleRNG(42))._1</code> = <code>List()</code> (verificato).
-@@s041 Lo stato passa da un generatore all’altro
-@@s042 flatMap e nonNegativeLessThan (esercizio 8)
-@@s043 Il secondo generatore dipende dal primo valore
-@@s044 Come <code>map</code>, ma <code>g</code> non restituisce un valore: restituisce un <b>altro generatore</b>, scelto in base ad <code>a</code>. Lo si fa girare subito sullo stato nuovo <code>r1</code>. Con map2 i due generatori erano fissi; con flatMap il secondo dipende dal risultato del primo.
-@@s045 Un numero tra 0 e bound − 1: il resto della divisione. Da solo però non basta.
-@@s046 I non negativi sono 2³¹ = 2147483648 valori; con bound = 6 avanzano 2147483648 mod 6 = 2 valori in cima, e 0 e 1 uscirebbero un po' più spesso. Se <code>i</code> cade in quell'ultimo pezzo incompleto, <code>i + (bound − 1) − mod</code> supera Int.MaxValue e diventa negativo (overflow): allora si <b>riprova</b> con un numero nuovo. Il riprovare ha bisogno dello stato nuovo, cioè di <code>flatMap</code>.
-@@s047 Cinque lanci di dado (<code>nonNegativeLessThan(6)</code> + 1) da <code>SimpleRNG(42)</code>: 2, 3, 2, 4, 5. Verificato.
-@@s048 Il tuo flatMap
-@@s049 Nel tuo file <code>flatMap</code> era copiato dalla LazyList (<code>foldRight(empty)(…append…)</code>) e non compila: "Not found: foldRight". Su <code>Rand</code> non c'è una sequenza da scorrere: c'è <b>una</b> funzione da far girare e poi il secondo generatore. Sopra la versione giusta.
-@@s050 Aggiornamento (26 set): la tua nuova versione <code>rng =&gt; val (a, rng2) = f(rng)</code> con <code>g(a)(rng2)</code> sulla riga sotto compila e passa i test Ex08.01–03. Però <code>g(a)(rng2)</code> sta alla stessa colonna di <code>rng =&gt;</code> e sembra fuori dalla lambda: meglio andare a capo dopo <code>=&gt;</code> e rientrare le due righe, come nel codice sopra.
-@@s051 Dubbio: perché non basta riprovare finché n &lt; bound?
-@@s052 È la tua prima idea: <code>if n &gt;= bound then nonNegativeLessThan(bound) else unit(n)</code>. Se finisce, il risultato è giusto (un numero &lt; bound), ma non finisce quasi mai.
-@@s053 Con bound = 6 e <code>SimpleRNG(42)</code>: primo numero 16159453 → è ≥ 6 → riprova. I numeri &lt; 6 sono 6 su 2³¹ = 2147483648: in media servono circa 358 milioni di tentativi. Ogni tentativo è una chiamata dentro l'altra (<code>flatMap</code> → <code>g</code> → <code>nonNegativeLessThan</code> → <code>flatMap</code> …) e lo stack finisce molto prima.
-@@s054 La soluzione: non scartare 16159453, <b>riducilo</b> con il resto. 16159453 % 6 = <b>1</b>, e il controllo 16159453 + 5 − 1 ≥ 0 è vero → risultato (1, SimpleRNG(1059025964525)). Si riprova solo nel pezzettino in cima, quasi mai.
-@@s055 Un dado senza ricorsioni infinite
-@@s056 Il controllo n + (bound − 1) − mod, passo per passo
-@@s057 dato:numero uscito,ora:cosa cambia,ok:accettato,no:si riprova
-@@s058 Esempio piccolo: un generatore che dà solo 0…7, e bound = 3. L'ultimo blocco è incompleto: 0 e 1 escono 3 volte, 2 solo 2. Il solo <code>%</code> dà un dado truccato.
-@@s059 Se l'ultimo del blocco supera il massimo, il blocco è incompleto e si riprova.
-@@s060 Il blocco {3, 4, 5} esiste tutto; il blocco {6, 7, 8} no, perché 8 non esce mai.
-@@s061 Con gli Int veri e bound = 6. Il massimo è Int.MaxValue: "&gt; Int.MaxValue" non si può scrivere, perché un Int che lo supera trabocca e diventa <b>negativo</b>. Per questo il codice controlla <code>&gt;= 0</code>.
-@@s062 Valori stampati da Scala 3.8.4.
-@@s063 Il caso "riprova" eseguito davvero, con un RNG finto che dà prima 2147483647 e poi 16. Il secondo tentativo gira sullo stato <b>nuovo</b>: è il lavoro di <code>flatMap</code>. Con <code>map</code> la funzione dovrebbe restituire un numero, e "un altro tentativo" non è un numero ma un generatore.
-@@s064 Dubbio: c'è un modo senza %? Non l'abbiamo visto
-@@s065 <code>%</code> è il resto della divisione (17 % 6 = 5, perché 17 = 6 × 2 + 5). Nelle slide non c'è, ma è già nel file dell'esercizio: <code>nonNegativeEven</code> fa <code>i - i % 2</code>. Se non ti piace, puoi usare <code>double</code> dell'esercizio 2, che dà un numero in [0, 1):
-@@s066 <code>d * bound</code> sta in [0, bound); <code>.toInt</code> taglia i decimali (non arrotonda), quindi il risultato va da 0 a bound − 1. Con <code>SimpleRNG(42)</code>: d = 0.0075…, × 6 = 0.045…, toInt = <b>0</b>. Il caso più alto: 0.99999… × 6 = 5.99999…, toInt = 5, mai 6. Tutti i 44 test passano (verificato). Non riprova mai, quindi <code>flatMap</code> qui non è indispensabile (basterebbe <code>map</code>), e ha lo stesso piccolo squilibrio del solo <code>%</code>. Cinque dadi da SimpleRNG(42): 1, 4, 1, 6, 5.
-@@s067 Perché (d * bound).toInt funziona: il righello in 6 fette
-@@s068 dato:d,ora:d × 6,ok:fetta scelta
-@@s069 Il righello [0, 1) diviso in 6 fette uguali. <code>double</code> cade in un punto a caso del righello: ogni fetta è lunga uguale, quindi ha la stessa probabilità.
-@@s070 0.2 sta tra 1/6 = 0.166… e 2/6 = 0.333…: fetta 1. Moltiplicare per 6 dice quante fette intere ci sono prima di d; <code>.toInt</code> butta via il pezzo di fetta.
-@@s071 Il risultato è sempre tra 0 e 5 perché d non arriva mai a 1 (lo garantisce l'esercizio 2). Valori stampati da Scala 3.8.4.
-@@s072 Dubbio: perché double e non nonNegativeInt? E cosa chiede, in soldoni, l'es. 8?
-@@s073 <b>In soldoni:</b> (1) scrivi <code>flatMap</code>, cioè un <code>map</code> in cui la funzione restituisce un <b>generatore</b> invece di un valore; (2) usalo per fare un dado con <code>bound</code> facce: un numero a caso tra 0 e bound − 1. I test controllano solo che il risultato sia ≥ 0 e &lt; bound.
-@@s074 <b>double o nonNegativeInt:</b> dallo stesso <code>SimpleRNG(42)</code> escono 16159453 (nonNegativeInt) e 0.0075248… (double), che è 16159453 / 2147483648. Sono lo stesso numero a due scale diverse. Il trucco "× 6 poi toInt" funziona solo sulla scala piccola [0, 1). Sulla scala grande: 16159453 × 6 = 96956718, che non è un dado, e Int.MaxValue × 6 = −6 (overflow). Un numero grande va <b>rimpicciolito</b>, e per quello serve <code>%</code>: 16159453 % 6 = 1. Quindi: con nonNegativeInt si usa <code>%</code>, con double si usa <code>× bound</code> e <code>.toInt</code>.
+@@s041 Dentro un <code>Rand</code> non c'è nessun <code>rng</code> da passare: arriva dopo. E il secondo argomento di <code>map</code> è una <b>funzione</b>, in una seconda coppia di parentesi, non un numero.
+@@s042 <code>(h, t)</code> smonta una <b>coppia</b>, non una lista: qui serve <code>h :: t</code>.
+@@s043 <code>(_, _)</code> costruisce una coppia, non una funzione a due argomenti: uscirebbe un <code>Rand[(A, List[A])]</code>. La funzione che unisce è <code>_ :: _</code>.
+@@s044 Lo stato passa da un generatore all’altro
+@@s045 flatMap e nonNegativeLessThan (esercizio 8)
+@@s046 Il secondo generatore dipende dal primo valore
+@@s047 Come <code>map</code>, ma <code>g</code> non restituisce un valore: restituisce un <b>altro generatore</b>, scelto in base ad <code>a</code>. Lo si fa girare subito sullo stato nuovo <code>r1</code>. Con map2 i due generatori erano fissi; con flatMap il secondo dipende dal risultato del primo.
+@@s048 Un numero tra 0 e bound − 1: il resto della divisione. Da solo però non basta.
+@@s049 I non negativi sono 2³¹ = 2147483648 valori; con bound = 6 avanzano 2147483648 mod 6 = 2 valori in cima, e 0 e 1 uscirebbero un po' più spesso. Se <code>i</code> cade in quell'ultimo pezzo incompleto, <code>i + (bound − 1) − mod</code> supera Int.MaxValue e diventa negativo (overflow): allora si <b>riprova</b> con un numero nuovo. Il riprovare ha bisogno dello stato nuovo, cioè di <code>flatMap</code>.
+@@s050 Cinque lanci di dado (<code>nonNegativeLessThan(6)</code> + 1) da <code>SimpleRNG(42)</code>: 2, 3, 2, 4, 5. Verificato.
+@@s051 Il tuo flatMap
+@@s052 Nel tuo file <code>flatMap</code> era copiato dalla LazyList (<code>foldRight(empty)(…append…)</code>) e non compila: "Not found: foldRight". Su <code>Rand</code> non c'è una sequenza da scorrere: c'è <b>una</b> funzione da far girare e poi il secondo generatore. Sopra la versione giusta.
+@@s053 Aggiornamento (26 set): la tua nuova versione <code>rng =&gt; val (a, rng2) = f(rng)</code> con <code>g(a)(rng2)</code> sulla riga sotto compila e passa i test Ex08.01–03. Però <code>g(a)(rng2)</code> sta alla stessa colonna di <code>rng =&gt;</code> e sembra fuori dalla lambda: meglio andare a capo dopo <code>=&gt;</code> e rientrare le due righe, come nel codice sopra.
+@@s054 Dubbio: perché non basta riprovare finché n &lt; bound?
+@@s055 È la tua prima idea: <code>if n &gt;= bound then nonNegativeLessThan(bound) else unit(n)</code>. Se finisce, il risultato è giusto (un numero &lt; bound), ma non finisce quasi mai.
+@@s056 Con bound = 6 e <code>SimpleRNG(42)</code>: primo numero 16159453 → è ≥ 6 → riprova. I numeri &lt; 6 sono 6 su 2³¹ = 2147483648: in media servono circa 358 milioni di tentativi. Ogni tentativo è una chiamata dentro l'altra (<code>flatMap</code> → <code>g</code> → <code>nonNegativeLessThan</code> → <code>flatMap</code> …) e lo stack finisce molto prima.
+@@s057 La soluzione: non scartare 16159453, <b>riducilo</b> con il resto. 16159453 % 6 = <b>1</b>, e il controllo 16159453 + 5 − 1 ≥ 0 è vero → risultato (1, SimpleRNG(1059025964525)). Si riprova solo nel pezzettino in cima, quasi mai.
+@@s058 Compila, ma esplode a runtime. Nei test: Ex08.04 e Ex08.05 danno "Exception raised on property evaluation … StackOverflowError" (es. bound = 3053). Si sistema usando <code>n % bound</code> invece di scartare ogni n ≥ bound (versione sopra).
+@@s059 Un dado senza ricorsioni infinite
+@@s060 Il controllo n + (bound − 1) − mod, passo per passo
+@@s061 dato:numero uscito,ora:cosa cambia,ok:accettato,no:si riprova
+@@s062 Esempio piccolo: un generatore che dà solo 0…7, e bound = 3. L'ultimo blocco è incompleto: 0 e 1 escono 3 volte, 2 solo 2. Il solo <code>%</code> dà un dado truccato.
+@@s063 <mark class="dato">n</mark> − mod = primo del suo blocco, + (bound − 1) = <mark class="ora">ultimo del suo blocco</mark>
+@@s064 Se l'ultimo del blocco supera il massimo, il blocco è incompleto e si riprova.
+@@s065 Il blocco {3, 4, 5} esiste tutto; il blocco {6, 7, 8} no, perché 8 non esce mai.
+@@s066 Con gli Int veri e bound = 6. Il massimo è Int.MaxValue: "&gt; Int.MaxValue" non si può scrivere, perché un Int che lo supera trabocca e diventa <b>negativo</b>. Per questo il codice controlla <code>&gt;= 0</code>.
+@@s067 Valori stampati da Scala 3.8.4.
+@@s068 Il caso "riprova" eseguito davvero, con un RNG finto che dà prima 2147483647 e poi 16. Il secondo tentativo gira sullo stato <b>nuovo</b>: è il lavoro di <code>flatMap</code>. Con <code>map</code> la funzione dovrebbe restituire un numero, e "un altro tentativo" non è un numero ma un generatore.
+@@s069 Dubbio: c'è un modo senza %? Non l'abbiamo visto
+@@s070 <code>%</code> è il resto della divisione (17 % 6 = 5, perché 17 = 6 × 2 + 5). Nelle slide non c'è, ma è già nel file dell'esercizio: <code>nonNegativeEven</code> fa <code>i - i % 2</code>. Se non ti piace, puoi usare <code>double</code> dell'esercizio 2, che dà un numero in [0, 1):
+@@s071 <code>d * bound</code> sta in [0, bound); <code>.toInt</code> taglia i decimali (non arrotonda), quindi il risultato va da 0 a bound − 1. Con <code>SimpleRNG(42)</code>: d = 0.0075…, × 6 = 0.045…, toInt = <b>0</b>. Il caso più alto: 0.99999… × 6 = 5.99999…, toInt = 5, mai 6. Tutti i 44 test passano (verificato). Non riprova mai, quindi <code>flatMap</code> qui non è indispensabile (basterebbe <code>map</code>), e ha lo stesso piccolo squilibrio del solo <code>%</code>. Cinque dadi da SimpleRNG(42): 1, 4, 1, 6, 5.
+@@s072 Perché (d * bound).toInt funziona: il righello in 6 fette
+@@s073 dato:d,ora:d × 6,ok:fetta scelta
+@@s074 Il righello [0, 1) diviso in 6 fette uguali. <code>double</code> cade in un punto a caso del righello: ogni fetta è lunga uguale, quindi ha la stessa probabilità.
+@@s075 0.2 sta tra 1/6 = 0.166… e 2/6 = 0.333…: fetta 1. Moltiplicare per 6 dice quante fette intere ci sono prima di d; <code>.toInt</code> butta via il pezzo di fetta.
+@@s076 Il risultato è sempre tra 0 e 5 perché d non arriva mai a 1 (lo garantisce l'esercizio 2). Valori stampati da Scala 3.8.4.
+@@s077 Dubbio: perché double e non nonNegativeInt? E cosa chiede, in soldoni, l'es. 8?
+@@s078 <b>In soldoni:</b> (1) scrivi <code>flatMap</code>, cioè un <code>map</code> in cui la funzione restituisce un <b>generatore</b> invece di un valore; (2) usalo per fare un dado con <code>bound</code> facce: un numero a caso tra 0 e bound − 1. I test controllano solo che il risultato sia ≥ 0 e &lt; bound.
+@@s079 <b>double o nonNegativeInt:</b> dallo stesso <code>SimpleRNG(42)</code> escono 16159453 (nonNegativeInt) e 0.0075248… (double), che è 16159453 / 2147483648. Sono lo stesso numero a due scale diverse. Il trucco "× 6 poi toInt" funziona solo sulla scala piccola [0, 1). Sulla scala grande: 16159453 × 6 = 96956718, che non è un dado, e Int.MaxValue × 6 = −6 (overflow). Un numero grande va <b>rimpicciolito</b>, e per quello serve <code>%</code>: 16159453 % 6 = 1. Quindi: con nonNegativeInt si usa <code>%</code>, con double si usa <code>× bound</code> e <code>.toInt</code>.

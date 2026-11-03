@@ -202,28 +202,28 @@ if (u != null &amp;&amp; u.readX() != 42) System.out.println("x is not equal 42"
     }
 }</pre>
   <figure class="passi" data-titolo="{{a|s051|}}">
-    <div class="passo"><div class="espr"><mark class="dato">volatile</mark>: una scrittura su un campo volatile → ogni lettura successiva di quel campo</div><p class="nota">{{s|s052|}}</p></div>
-    <div class="passo"><div class="espr"><mark class="dato">default</mark>: l'inizializzazione di default (0, false, null) → ogni altra azione del programma</div><p class="nota">{{s|s053|}}</p></div>
-    <div class="passo"><div class="espr"><mark class="ok">final</mark> e <mark class="ok">static</mark>: la loro inizializzazione → ogni altra azione del programma (dopo la fine del costruttore)</div><p class="nota">{{s|s054|}}</p></div>
-    <div class="passo"><div class="espr">inizializzazione → pubblicazione  ⇒  <mark class="ok">safe publication</mark></div><p class="nota">{{s|s055|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s052|}}</div><p class="nota">{{s|s053|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s054|}}</div><p class="nota">{{s|s055|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s056|}}</div><p class="nota">{{s|s057|}}</p></div>
+    <div class="passo"><div class="espr">inizializzazione → pubblicazione  ⇒  <mark class="ok">safe publication</mark></div><p class="nota">{{s|s058|}}</p></div>
   </figure>
-  <div class="box esame" data-tit="{{a|s056|}}">
-    <p>{{s|s057|}}</p>
+  <div class="box esame" data-tit="{{a|s059|}}">
+    <p>{{s|s060|}}</p>
   </div>
-  <figure class="scena" data-scena="modisicuri" data-titolo="{{a|s058|}}"></figure>
+  <figure class="scena" data-scena="modisicuri" data-titolo="{{a|s061|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s059|}}</h2>
+  <h2>{{s|s062|}}</h2>
   <ul>
-    <li>{{s|s060|}}</li>
-    <li>{{s|s061|}}</li>
-    <li>{{s|s062|}}</li>
+    <li>{{s|s063|}}</li>
+    <li>{{s|s064|}}</li>
+    <li>{{s|s065|}}</li>
   </ul>
-  <div class="box regola" data-tit="{{a|s063|}}">
-    <p>{{s|s064|}}</p>
+  <div class="box regola" data-tit="{{a|s066|}}">
+    <p>{{s|s067|}}</p>
   </div>
-  <figure class="codice" data-titolo="{{a|s065|}}">
+  <figure class="codice" data-titolo="{{a|s068|}}">
 <pre data-lang="java">public final class ThreeStooges {
     private final Set&lt;String&gt; stooges = new HashSet&lt;String&gt;();
 
@@ -238,19 +238,19 @@ if (u != null &amp;&amp; u.readX() != 42) System.out.println("x is not equal 42"
     }
 }</pre>
     <ol class="spiega">
-      <li data-righe="2" data-segna="private final@ok|stooges@dato"><p>{{s|s066|}}</p></li>
-      <li data-righe="4-8" data-segna="stooges.add*@ora"><p>{{s|s067|}}</p></li>
-      <li data-righe="10-12" data-segna="contains@due"><p>{{s|s068|}}</p></li>
-      <li data-righe="10" data-segna="public boolean isStooge@ok"><p>{{s|s069|}}</p></li>
+      <li data-righe="2" data-segna="private final@ok|stooges@dato"><p>{{s|s069|}}</p></li>
+      <li data-righe="4-8" data-segna="stooges.add*@ora"><p>{{s|s070|}}</p></li>
+      <li data-righe="10-12" data-segna="contains@due"><p>{{s|s071|}}</p></li>
+      <li data-righe="10" data-segna="public boolean isStooge@ok"><p>{{s|s072|}}</p></li>
     </ol>
   </figure>
-  <figure class="scena" data-scena="immutabile" data-titolo="{{a|s070|}}"></figure>
+  <figure class="scena" data-scena="immutabile" data-titolo="{{a|s073|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s071|}}</h2>
-  <p>{{s|s072|}}</p>
-  <figure class="codice" data-titolo="{{a|s073|}}">
+  <h2>{{s|s074|}}</h2>
+  <p>{{s|s075|}}</p>
+  <figure class="codice" data-titolo="{{a|s076|}}">
 <pre data-lang="java">public final class Stooges {
     private final Set&lt;String&gt; stooges = new HashSet&lt;String&gt;();
     // costruttore come prima
@@ -262,24 +262,24 @@ if (u != null &amp;&amp; u.readX() != 42) System.out.println("x is not equal 42"
     }
 }</pre>
     <ol class="spiega">
-      <li data-righe="7-9" data-segna="stooges.add(name);@no"><p>{{s|s074|}}</p></li>
-      <li data-righe="4-8" data-segna="synchronized*@ok"><p>{{s|s075|}}</p></li>
+      <li data-righe="7-9" data-segna="stooges.add(name);@no"><p>{{s|s077|}}</p></li>
+      <li data-righe="4-8" data-segna="synchronized*@ok"><p>{{s|s078|}}</p></li>
     </ol>
   </figure>
-  <figure class="passi" data-titolo="{{a|s076|}}">
-    <div class="passo"><div class="espr">1. <mark class="dato">class state</mark>: elenco i campi</div><p class="nota">{{s|s077|}}</p></div>
-    <div class="passo"><div class="espr">2. <mark class="dato">escaping</mark>: campi private, nessun metodo restituisce riferimenti allo stato</div><p class="nota">{{s|s078|}}</p></div>
-    <div class="passo"><div class="espr">3. <mark class="ora">safe publication</mark>: ogni campo è default, final, volatile o static</div><p class="nota">{{s|s079|}}</p></div>
-    <div class="passo"><div class="espr">4. <mark class="ok">immutability</mark>: quello che non cambia è final e non viene più scritto</div><p class="nota">{{s|s080|}}</p></div>
-    <div class="passo"><div class="espr">5. <mark class="due">mutual exclusion</mark>: lo stato mutabile è letto e scritto sempre con lo stesso lock</div><p class="nota">{{s|s081|}}</p></div>
+  <figure class="passi" data-titolo="{{a|s079|}}">
+    <div class="passo"><div class="espr">1. <mark class="dato">class state</mark>: elenco i campi</div><p class="nota">{{s|s080|}}</p></div>
+    <div class="passo"><div class="espr">2. <mark class="dato">escaping</mark>: campi private, nessun metodo restituisce riferimenti allo stato</div><p class="nota">{{s|s081|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s082|}}</div><p class="nota">{{s|s083|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s084|}}</div><p class="nota">{{s|s085|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s086|}}</div><p class="nota">{{s|s087|}}</p></div>
   </figure>
-  <figure class="scena" data-scena="mutuaesc" data-titolo="{{a|s082|}}"></figure>
+  <figure class="scena" data-scena="mutuaesc" data-titolo="{{a|s088|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s083|}}</h2>
-  <p>{{s|s084|}}</p>
-  <figure class="codice" data-titolo="{{a|s085|}}">
+  <h2>{{s|s089|}}</h2>
+  <p>{{s|s090|}}</p>
+  <figure class="codice" data-titolo="{{a|s091|}}">
 <pre data-lang="java">public class Person {
     private static long nextId = 0;
     private static boolean firstCreated = false;
@@ -311,33 +311,33 @@ if (u != null &amp;&amp; u.readX() != 42) System.out.println("x is not equal 42"
     }
 }</pre>
     <ol class="spiega">
-      <li data-righe="2-3" data-segna="nextId@dato|firstCreated@dato"><p>{{s|s086|}}</p></li>
-      <li data-righe="5" data-segna="private final long id;@ok"><p>{{s|s087|}}</p></li>
-      <li data-righe="6-8" data-segna="name;@due|zip;@due|address;@due"><p>{{s|s088|}}</p></li>
-      <li data-righe="10-11" data-segna="assignId(-1)@ora|assignId(initialId)@ora"><p>{{s|s089|}}</p></li>
-      <li data-righe="13-19" data-segna="static synchronized@ok|firstCreated = true;@ora|nextId = initialId;@ora|nextId++@ora"><p>{{s|s090|}}</p></li>
-      <li data-righe="21" data-segna="return id;@ok"><p>{{s|s091|}}</p></li>
-      <li data-righe="22-29" data-segna="synchronized*@ok"><p>{{s|s092|}}</p></li>
+      <li data-righe="2-3" data-segna="nextId@dato|firstCreated@dato"><p>{{s|s092|}}</p></li>
+      <li data-righe="5" data-segna="private final long id;@ok"><p>{{s|s093|}}</p></li>
+      <li data-righe="6-8" data-segna="name;@due|zip;@due|address;@due"><p>{{s|s094|}}</p></li>
+      <li data-righe="10-11" data-segna="assignId(-1)@ora|assignId(initialId)@ora"><p>{{s|s095|}}</p></li>
+      <li data-righe="13-19" data-segna="static synchronized@ok|firstCreated = true;@ora|nextId = initialId;@ora|nextId++@ora"><p>{{s|s096|}}</p></li>
+      <li data-righe="21" data-segna="return id;@ok"><p>{{s|s097|}}</p></li>
+      <li data-righe="22-29" data-segna="synchronized*@ok"><p>{{s|s098|}}</p></li>
     </ol>
   </figure>
-  <div class="box inglese" data-tit="{{a|s093|}}">
-    <p>{{s|s094|}}</p>
+  <div class="box inglese" data-tit="{{a|s099|}}">
+    <p>{{s|s100|}}</p>
   </div>
   <ul>
-    <li>{{s|s095|}}</li>
-    <li>{{s|s096|}}</li>
+    <li>{{s|s101|}}</li>
+    <li>{{s|s102|}}</li>
   </ul>
-  <div class="box attenzione" data-tit="{{a|s097|}}">
-    <p>{{s|s098|}}</p>
-    <p>{{s|s099|}}</p>
-    <p>{{s|s100|}}</p>
-    <p>{{s|s101|}}</p>
-  </div>
-  <div class="box domanda-tua" data-tit="{{a|s102|}}">
-    <p>{{s|s103|}}</p>
+  <div class="box attenzione" data-tit="{{a|s103|}}">
     <p>{{s|s104|}}</p>
+    <p>{{s|s105|}}</p>
+    <p>{{s|s106|}}</p>
+    <p>{{s|s107|}}</p>
   </div>
-  <figure class="scena" data-scena="person42" data-titolo="{{a|s105|}}"></figure>
+  <div class="box domanda-tua" data-tit="{{a|s108|}}">
+    <p>{{s|s109|}}</p>
+    <p>{{s|s110|}}</p>
+  </div>
+  <figure class="scena" data-scena="person42" data-titolo="{{a|s111|}}"></figure>
 </section>
 
 </main>

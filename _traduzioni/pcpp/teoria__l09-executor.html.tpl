@@ -22,23 +22,23 @@
   <h2>{{s|s005|}}</h2>
   <p>{{s|s006|}}</p>
   <figure class="passi" data-titolo="{{a|s007|}}" data-legenda="{{a|s008|}}">
-    <div class="passo"><div class="espr"><code>executor.submit(task)</code>: il task entra in una <mark class="ora">coda</mark></div><p class="nota">{{s|s009|}}</p></div>
-    <div class="passo"><div class="espr">Un <mark class="ora">worker</mark> prende un task dalla sua coda</div><p class="nota">{{s|s010|}}</p></div>
-    <div class="passo"><div class="espr">Il worker <mark class="dato">esegue</mark> il task</div><p class="nota">{{s|s011|}}</p></div>
-    <div class="passo"><div class="espr">Il <mark class="ok">Future</mark> viene completato con il risultato</div><p class="nota">{{s|s012|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s009|}}</div><p class="nota">{{s|s010|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s011|}}</div><p class="nota">{{s|s012|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s013|}}</div><p class="nota">{{s|s014|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s015|}}</div><p class="nota">{{s|s016|}}</p></div>
   </figure>
-</section>
-
-<section>
-  <h2>{{s|s013|}}</h2>
-  <p>{{s|s014|}}</p>
-  <div class="box attenzione" data-tit="{{a|s015|}}">{{s|s016|}}</div>
 </section>
 
 <section>
   <h2>{{s|s017|}}</h2>
   <p>{{s|s018|}}</p>
-  <figure class="codice" data-titolo="{{a|s019|}}">
+  <div class="box attenzione" data-tit="{{a|s019|}}">{{s|s020|}}</div>
+</section>
+
+<section>
+  <h2>{{s|s021|}}</h2>
+  <p>{{s|s022|}}</p>
+  <figure class="codice" data-titolo="{{a|s023|}}">
 <pre data-lang="java">import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -74,28 +74,28 @@ public class Esecutore {
     }
 }</pre>
     <ol class="spiega">
-      <li data-righe="9-13" data-segna="isPrime(int n)@ora"><p>{{s|s020|}}</p></li>
-      <li data-righe="18" data-segna="range / taskCount@ora"><p>{{s|s021|}}</p></li>
-      <li data-righe="19" data-segna="Executors.newWorkStealingPool()@ora"><p>{{s|s022|}}</p></li>
-      <li data-righe="20" data-segna="LongAdder conteggio@due"><p>{{s|s023|}}</p></li>
-      <li data-righe="22-23" data-segna="for (int t = 0; t &lt; taskCount; t++)@ora"><p>{{s|s024|}}</p></li>
-      <li data-righe="24-27" data-segna="executor.submit@ora"><p>{{s|s025|}}</p></li>
-      <li data-righe="29-30" data-segna="f.get()@ora"><p>{{s|s026|}}</p></li>
-      <li data-righe="31" data-segna="executor.shutdown()@ora"><p>{{s|s027|}}</p></li>
-      <li data-righe="32" data-segna="conteggio.sum()@ok"><p>{{s|s028|}}</p></li>
+      <li data-righe="9-13" data-segna="isPrime(int n)@ora"><p>{{s|s024|}}</p></li>
+      <li data-righe="18" data-segna="range / taskCount@ora"><p>{{s|s025|}}</p></li>
+      <li data-righe="19" data-segna="Executors.newWorkStealingPool()@ora"><p>{{s|s026|}}</p></li>
+      <li data-righe="20" data-segna="LongAdder conteggio@due"><p>{{s|s027|}}</p></li>
+      <li data-righe="22-23" data-segna="for (int t = 0; t &lt; taskCount; t++)@ora"><p>{{s|s028|}}</p></li>
+      <li data-righe="24-27" data-segna="executor.submit@ora"><p>{{s|s029|}}</p></li>
+      <li data-righe="29-30" data-segna="f.get()@ora"><p>{{s|s030|}}</p></li>
+      <li data-righe="31" data-segna="executor.shutdown()@ora"><p>{{s|s031|}}</p></li>
+      <li data-righe="32" data-segna="conteggio.sum()@ok"><p>{{s|s032|}}</p></li>
     </ol>
   </figure>
 </section>
 
 <section>
-  <h2>{{s|s029|}}</h2>
-  <p>{{s|s030|}}</p>
-  <div class="tab-wrap"><table class="tab"><thead><tr><th>{{s|s031|}}</th><th>{{s|s032|}}</th></tr></thead><tbody>
-    <tr><td>{{s|s033|}}</td><td>{{s|s034|}}</td></tr>
-    <tr><td>{{s|s035|}}</td><td>{{s|s036|}}</td></tr>
+  <h2>{{s|s033|}}</h2>
+  <p>{{s|s034|}}</p>
+  <div class="tab-wrap"><table class="tab"><thead><tr><th>{{s|s035|}}</th><th>{{s|s036|}}</th></tr></thead><tbody>
     <tr><td>{{s|s037|}}</td><td>{{s|s038|}}</td></tr>
+    <tr><td>{{s|s039|}}</td><td>{{s|s040|}}</td></tr>
+    <tr><td>{{s|s041|}}</td><td>{{s|s042|}}</td></tr>
   </tbody></table></div>
-  <div class="box regola" data-tit="{{a|s039|}}">{{s|s040|}}</div>
+  <div class="box regola" data-tit="{{a|s043|}}">{{s|s044|}}</div>
 </section>
 
 </main>

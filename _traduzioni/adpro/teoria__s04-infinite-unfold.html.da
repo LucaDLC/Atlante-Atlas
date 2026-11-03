@@ -31,70 +31,74 @@
 @@s031 At læse signaturen
 @@s032 <code>S</code> er typen af <b>tilstanden</b>: hvad jeg skal huske mellem ét trin og det næste. <code>z</code> er startTilstanden.
 @@s033 <code>f</code> kigger på tilstanden og svarer med et <b>par</b>: den næste værdi, der skal udsendes (<code>A</code>), og den nye tilstand (<code>S</code>).
-@@s034 Det er inde i en Option: <code>None</code> betyder "listen slutter her".
-@@s035 Resultatet er listen af de udsendte værdier, én pr. trin.
-@@s036 Uden pattern matching: map og getOrElse fra uge 3
-@@s037 Jeg spørger <code>f</code>, hvad der skal gøres med den aktuelle tilstand: jeg får en <code>Option[(A, S)]</code>.
-@@s038 Hvis der er et par, åbner jeg det: <code>a</code> er værdien, <code>s</code> den nye tilstand. (Scala 3 tillader at skrive <code>(a, s) =></code> for en funktion, der modtager et par.)
-@@s039 Jeg udsender <code>a</code> og, som doven hale, <code>unfold</code> fra den nye tilstand.
-@@s040 Hvis <code>f</code> sagde <code>None</code>, er listen tom. Resultatet af <code>map</code> er en <code>Option[LazyList[A]]</code>: <code>getOrElse</code> "åbner" den.
-@@s041 unfold(0)(n => if n < 3 then Some((n * 10, n + 1)) else None).toList
-@@s042 Udsender 0, ny tilstand 1.
-@@s043 Udsender 10.
-@@s044 Udsender 20.
-@@s045 Slut.
-@@s046 Tilstanden bruges til at huske; værdien er det, der kommer ud.
-@@s047 Tilstand efter tilstand
-@@s048 Hvorfor <code>unfold</code>?
-@@s049 Den gør det samme som den rekursion, der skrives i hånden, men rekursionen skriver den selv: du beskriver <b>kun ét trin</b>.
-@@s050 I hånden
-@@s051 Med unfold
-@@s052 To ting ændrer sig: hvor du skrev <code>cons(valore, &lt;ricorsione&gt;)</code>, skriver du <code>Some((valore, nuovoStato))</code>; hvor du skrev <code>empty</code>, skriver du <code>None</code>. <code>cons</code> og det rekursive kald sætter <code>unfold</code> ind i sin sidste linje: <code>case Some((a, s)) => cons(a, unfold(s)(f))</code>.
-@@s053 Fold's tvilling
-@@s054 <code>foldRight</code> <b>forbruger</b> en liste og giver en værdi (øvelse 8). <code>unfold</code> starter fra en værdi (tilstanden) og <b>bygger</b> en liste (øvelse 13). I begge tilfælde skriver du ikke rekursionen: på kursets stilskala er det trinnet fra <i>forgivable</i> til <i>enlightened</i>.
-@@s055 Tvivl: er unfold officiel ligesom cons?
-@@s056 Nej. I filen har underviseren skrevet <code>empty</code>, <code>cons</code>, <code>apply</code> (companion) og <code>headOption</code>, <code>tail</code>, <code>foldRight</code>, <code>foldLeft</code>, <code>find</code> (i enum'en). <code>unfold</code> har du skrevet i øvelse 11. Standardbibliotekets <code>LazyList</code>, som kurset <b>ikke</b> bruger, har sin egen: <code>scala.collection.immutable.LazyList.unfold(1)(n => if n &gt; 4 then None else Some((n, n * 2)))</code> → <code>List(1, 2, 4)</code> (kontrolleret).
-@@s057 Målt: unfold er et trin foran
-@@s058 ora:beregnet før nødvendigt
-@@s059 Jeg udskriver inde i brugerens f og beder om 2 elementer ud af 3: <code>.map(…)</code> mod <code>.mapUnfold(…)</code>, derefter <code>.take(2).toList</code>.
-@@s060 Samme liste, samme funktion.
-@@s061 <code>unfold</code> skal kalde <code>f</code> <b>først</b>, for at vide, om svaret er <code>None</code> (endelig liste) eller <code>Some</code>. <code>foldRight</code> + <code>cons</code> holder derimod også hovedet suspenderet. Ægte output.
-@@s062 map mod mapUnfold: hvem beregner først
-@@s063 Alt med <code>unfold</code> (øvelse 12–13)
-@@s064 Funktion
-@@s065 Tilstand
-@@s066 Regel
-@@s067 <code>from(n)</code>
-@@s068 det aktuelle tal
-@@s069 <code>unfold(n)(k => Some((k, k + 1)))</code>
-@@s070 <code>fibsUnfold</code>
-@@s071 parret (a, b)
-@@s072 <code>unfold((0, 1))((a, b) => Some((a, (b, a + b))))</code>
-@@s073 <code>mapUnfold(f)</code>
-@@s074 den resterende liste
-@@s075 hvis det er en Cons, udsend <code>f(h())</code> og send videre til <code>t()</code>
-@@s076 <code>takeUnfold(n)</code>
-@@s077 (liste, hvor mange der mangler)
-@@s078 hvis der er en celle, og mere end 0 mangler, udsend og træk 1 fra
-@@s079 <code>zipWith</code>
-@@s080 (liste 1, liste 2)
-@@s081 hvis begge har en celle, udsend <code>ope(h1(), h2())</code>
-@@s082 Versionerne med unfold (kontrolleret)
-@@s083 Tilstanden er vinduet (a, b). Jeg udsender <code>a</code>, den nye tilstand er <code>(b, a + b)</code>. <code>fibsUnfold.take(100).toList == fibs.take(100).toList</code> er sand.
-@@s084 Tilstanden er "den del af listen, jeg stadig skal læse". De krøllede parenteser med nogle <code>case</code> er en funktion, der laver pattern matching på sit argument.
-@@s085 Tilstanden er et par: listen og hvor mange elementer der mangler. Skriv de dobbelte parenteser <code>unfold((this, n))</code>: det ses, at det er <b>ét</b> argument, tilstanden.
-@@s086 Hvor kommer <code>k</code> fra? Du erklærer den ikke: den opstår i mønsteret, når <code>case</code> tager parret fra hinanden. <code>n</code> forbliver fast (det er metodens parameter); det, der tæller ned, er tælleren <b>inde i tilstanden</b>.
-@@s087 <code>case _</code> samler de to måder at slutte på: tom liste <b>eller</b> tæller på 0. Den står <b>sidst</b>: tilfældene prøves oppefra.
-@@s088 <code>takeWhileUnfold</code>: som <code>mapUnfold</code>, men vagten afgør, om man fortsætter. Prædikat falsk → man falder ned i <code>case _</code> → slut.
-@@s089 Teksten vælger en ikke-strict operation: <code>ope</code> kan ignorere et argument uden at beregne det (nyttigt med <code>||</code> og <code>&amp;&amp;</code>).
-@@s090 Tilstanden er de to lister. Den stopper, så snart den ene slutter.
-@@s091 Testcase fra teksten
-@@s092 Resultat (kontrolleret)
-@@s093 <code>naturals.zipWith[Int, Int](_+_)(naturals).take(2000000000).take(5).toList</code>
-@@s094 <code>List(2, 4, 6, 8, 10)</code>
-@@s095 <code>naturals.map(_%2==0).zipWith[Boolean, Boolean](_||_)(naturals.map(_%2==1)).take(4).toList</code>
-@@s096 <code>List(true, true, true, true)</code>
-@@s097 Den anden: hvert tal er lige <b>eller</b> ulige, så altid <code>true</code>. Tænk over det, før du kører, som teksten beder om.
-@@s098 Øvelse 13: hvad de to testcases skal give
-@@s099 "naturals.zipWith(_ + _)(naturals) adds each number to itself, so it gives the even numbers 2, 4, 6, …; take(2000000000) costs nothing, because it builds one node at a time. The Boolean one gives only true: every number is either even or odd. Since ope takes its operands by name, || never evaluates the second one once the first is true."
-@@s100 Tilstanden (liste, k) i takeUnfold
+@@s034 
+@@s035 Det er inde i en Option: <code>None</code> betyder "listen slutter her".
+@@s036 Resultatet er listen af de udsendte værdier, én pr. trin.
+@@s037 Uden pattern matching: map og getOrElse fra uge 3
+@@s038 Jeg spørger <code>f</code>, hvad der skal gøres med den aktuelle tilstand: jeg får en <code>Option[(A, S)]</code>.
+@@s039 Hvis der er et par, åbner jeg det: <code>a</code> er værdien, <code>s</code> den nye tilstand. (Scala 3 tillader at skrive <code>(a, s) =></code> for en funktion, der modtager et par.)
+@@s040 Jeg udsender <code>a</code> og, som doven hale, <code>unfold</code> fra den nye tilstand.
+@@s041 Hvis <code>f</code> sagde <code>None</code>, er listen tom. Resultatet af <code>map</code> er en <code>Option[LazyList[A]]</code>: <code>getOrElse</code> "åbner" den.
+@@s042 unfold(0)(n => if n < 3 then Some((n * 10, n + 1)) else None).toList
+@@s043 Udsender 0, ny tilstand 1.
+@@s044 Udsender 10.
+@@s045 Udsender 20.
+@@s046 Slut.
+@@s047 Tilstanden bruges til at huske; værdien er det, der kommer ud.
+@@s048 Tilstand efter tilstand
+@@s049 Hvorfor <code>unfold</code>?
+@@s050 Den gør det samme som den rekursion, der skrives i hånden, men rekursionen skriver den selv: du beskriver <b>kun ét trin</b>.
+@@s051 I hånden
+@@s052 Med unfold
+@@s053 To ting ændrer sig: hvor du skrev <code>cons(valore, &lt;ricorsione&gt;)</code>, skriver du <code>Some((valore, nuovoStato))</code>; hvor du skrev <code>empty</code>, skriver du <code>None</code>. <code>cons</code> og det rekursive kald sætter <code>unfold</code> ind i sin sidste linje: <code>case Some((a, s)) => cons(a, unfold(s)(f))</code>.
+@@s054 Fold's tvilling
+@@s055 <code>foldRight</code> <b>forbruger</b> en liste og giver en værdi (øvelse 8). <code>unfold</code> starter fra en værdi (tilstanden) og <b>bygger</b> en liste (øvelse 13). I begge tilfælde skriver du ikke rekursionen: på kursets stilskala er det trinnet fra <i>forgivable</i> til <i>enlightened</i>.
+@@s056 Tvivl: er unfold officiel ligesom cons?
+@@s057 Nej. I filen har underviseren skrevet <code>empty</code>, <code>cons</code>, <code>apply</code> (companion) og <code>headOption</code>, <code>tail</code>, <code>foldRight</code>, <code>foldLeft</code>, <code>find</code> (i enum'en). <code>unfold</code> har du skrevet i øvelse 11. Standardbibliotekets <code>LazyList</code>, som kurset <b>ikke</b> bruger, har sin egen: <code>scala.collection.immutable.LazyList.unfold(1)(n => if n &gt; 4 then None else Some((n, n * 2)))</code> → <code>List(1, 2, 4)</code> (kontrolleret).
+@@s058 Målt: unfold er et trin foran
+@@s059 ora:beregnet før nødvendigt
+@@s060 Jeg udskriver inde i brugerens f og beder om 2 elementer ud af 3: <code>.map(…)</code> mod <code>.mapUnfold(…)</code>, derefter <code>.take(2).toList</code>.
+@@s061 Samme liste, samme funktion.
+@@s062 <code>unfold</code> skal kalde <code>f</code> <b>først</b>, for at vide, om svaret er <code>None</code> (endelig liste) eller <code>Some</code>. <code>foldRight</code> + <code>cons</code> holder derimod også hovedet suspenderet. Ægte output.
+@@s063 map mod mapUnfold: hvem beregner først
+@@s064 Alt med <code>unfold</code> (øvelse 12–13)
+@@s065 Funktion
+@@s066 Tilstand
+@@s067 Regel
+@@s068 <code>from(n)</code>
+@@s069 det aktuelle tal
+@@s070 <code>unfold(n)(k => Some((k, k + 1)))</code>
+@@s071 <code>fibsUnfold</code>
+@@s072 parret (a, b)
+@@s073 <code>unfold((0, 1))((a, b) => Some((a, (b, a + b))))</code>
+@@s074 <code>mapUnfold(f)</code>
+@@s075 den resterende liste
+@@s076 hvis det er en Cons, udsend <code>f(h())</code> og send videre til <code>t()</code>
+@@s077 <code>takeUnfold(n)</code>
+@@s078 (liste, hvor mange der mangler)
+@@s079 hvis der er en celle, og mere end 0 mangler, udsend og træk 1 fra
+@@s080 <code>zipWith</code>
+@@s081 (liste 1, liste 2)
+@@s082 hvis begge har en celle, udsend <code>ope(h1(), h2())</code>
+@@s083 Versionerne med unfold (kontrolleret)
+@@s084 Tilstanden er vinduet (a, b). Jeg udsender <code>a</code>, den nye tilstand er <code>(b, a + b)</code>. <code>fibsUnfold.take(100).toList == fibs.take(100).toList</code> er sand.
+@@s085 Tilstanden er "den del af listen, jeg stadig skal læse". De krøllede parenteser med nogle <code>case</code> er en funktion, der laver pattern matching på sit argument.
+@@s086 Tilstanden er et par: listen og hvor mange elementer der mangler. Skriv de dobbelte parenteser <code>unfold((this, n))</code>: det ses, at det er <b>ét</b> argument, tilstanden.
+@@s087 Hvor kommer <code>k</code> fra? Du erklærer den ikke: den opstår i mønsteret, når <code>case</code> tager parret fra hinanden. <code>n</code> forbliver fast (det er metodens parameter); det, der tæller ned, er tælleren <b>inde i tilstanden</b>.
+@@s088 <code>case _</code> samler de to måder at slutte på: tom liste <b>eller</b> tæller på 0. Den står <b>sidst</b>: tilfældene prøves oppefra.
+@@s089 <code>takeWhileUnfold</code>: som <code>mapUnfold</code>, men vagten afgør, om man fortsætter. Prædikat falsk → man falder ned i <code>case _</code> → slut.
+@@s090 Teksten vælger en ikke-strict operation: <code>ope</code> kan ignorere et argument uden at beregne det (nyttigt med <code>||</code> og <code>&amp;&amp;</code>).
+@@s091 Tilstanden er de to lister. Den stopper, så snart den ene slutter.
+@@s092 Testcase fra teksten
+@@s093 Resultat (kontrolleret)
+@@s094 <code>naturals.zipWith[Int, Int](_+_)(naturals).take(2000000000).take(5).toList</code>
+@@s095 <code>List(2, 4, 6, 8, 10)</code>
+@@s096 <code>naturals.map(_%2==0).zipWith[Boolean, Boolean](_||_)(naturals.map(_%2==1)).take(4).toList</code>
+@@s097 <code>List(true, true, true, true)</code>
+@@s098 Den anden: hvert tal er lige <b>eller</b> ulige, så altid <code>true</code>. Tænk over det, før du kører, som teksten beder om.
+@@s099 Øvelse 13: hvad de to testcases skal give
+@@s100 "naturals.zipWith(_ + _)(naturals) adds each number to itself, so it gives the even numbers 2, 4, 6, …; take(2000000000) costs nothing, because it builds one node at a time. The Boolean one gives only true: every number is either even or odd. Since ope takes its operands by name, || never evaluates the second one once the first is true."
+@@s101 
+@@s102 
+@@s103 
+@@s104 Tilstanden (liste, k) i takeUnfold

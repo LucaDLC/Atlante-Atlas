@@ -111,64 +111,64 @@ window.SCENE = window.SCENE || {};
 <section>
   <h2>{{s|s014|}}</h2>
   <figure class="passi" data-titolo="{{a|s015|}}">
-    <div class="passo"><div class="espr">assegna: ogni punto al <mark class="ora">centro più vicino</mark>  →  [1] | [2, 3, 10, 11, 12]</div><p class="nota">{{s|s016|}}</p></div>
-    <div class="passo"><div class="espr">aggiorna: ogni centro = <mark class="ok">media</mark> del suo gruppo  →  1 e 7.6</div><p class="nota">(2 + 3 + 10 + 11 + 12) / 5 = 7.6.</p></div>
-    <div class="passo"><div class="espr">assegna di nuovo  →  [1, 2, 3] | [10, 11, 12];  aggiorna  →  <mark class="ok">2 e 11</mark></div><p class="nota">{{s|s017|}}</p></div>
-    <div class="passo"><div class="espr">assegna di nuovo  →  niente cambia  ⇒  <mark class="ok">convergenza</mark></div><p class="nota">{{s|s018|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s016|}}</div><p class="nota">{{s|s017|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s018|}}</div><p class="nota">(2 + 3 + 10 + 11 + 12) / 5 = 7.6.</p></div>
+    <div class="passo"><div class="espr">{{s|s019|}}</div><p class="nota">{{s|s020|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s021|}}</div><p class="nota">{{s|s022|}}</p></div>
   </figure>
-  <figure class="scena" data-scena="kmeans" data-titolo="{{a|s019|}}"></figure>
+  <figure class="scena" data-scena="kmeans" data-titolo="{{a|s023|}}"></figure>
   <div class="tab-wrap"><table class="tab">
     <thead><tr><th>k</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th></tr></thead>
-    <tbody><tr><td>{{s|s020|}}</td><td>4096</td><td>1878</td><td><b>595</b></td><td>509</td><td>433</td><td>379</td></tr></tbody>
+    <tbody><tr><td>{{s|s024|}}</td><td>4096</td><td>1878</td><td><b>595</b></td><td>509</td><td>433</td><td>379</td></tr></tbody>
   </table></div>
-  <p class="piccolo">{{s|s021|}}</p>
-  <div class="box attenzione" data-tit="{{a|s022|}}">
-    <p>{{s|s023|}}</p>
+  <p class="piccolo">{{s|s025|}}</p>
+  <div class="box attenzione" data-tit="{{a|s026|}}">
+    <p>{{s|s027|}}</p>
   </div>
 </section>
 
 <section>
-  <h2>{{s|s024|}}</h2>
-  <figure class="passi" data-titolo="{{a|s025|}}">
-    <div class="passo"><div class="espr">finestra di raggio <mark class="ora">h</mark> (bandwidth) attorno a un punto</div><p class="nota">{{s|s026|}}</p></div>
-    <div class="passo"><div class="espr">sposta il punto sulla <mark class="ok">media pesata</mark> dei vicini (il vettore mean shift m(x))</div><p class="nota">{{s|s027|}}</p></div>
-    <div class="passo"><div class="espr">ripeti finché non si muove più;  punti che arrivano allo stesso massimo = <mark class="due">stesso cluster</mark></div><p class="nota">{{s|s028|}}</p></div>
+  <h2>{{s|s028|}}</h2>
+  <figure class="passi" data-titolo="{{a|s029|}}">
+    <div class="passo"><div class="espr">{{s|s030|}}</div><p class="nota">{{s|s031|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s032|}}</div><p class="nota">{{s|s033|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s034|}}</div><p class="nota">{{s|s035|}}</p></div>
   </figure>
   <div class="tab-wrap"><table class="tab">
-    <thead><tr><th>{{s|s029|}}</th><th>0.5</th><th>1.5</th><th>3</th><th>6</th></tr></thead>
-    <tbody><tr><td>{{s|s030|}}</td><td>63</td><td><b>3</b></td><td>2</td><td>1</td></tr></tbody>
+    <thead><tr><th>{{s|s036|}}</th><th>0.5</th><th>1.5</th><th>3</th><th>6</th></tr></thead>
+    <tbody><tr><td>{{s|s037|}}</td><td>63</td><td><b>3</b></td><td>2</td><td>1</td></tr></tbody>
   </table></div>
-  <p class="piccolo">{{s|s031|}}</p>
-  <figure class="scena" data-scena="meanshift" data-titolo="{{a|s032|}}"></figure>
-</section>
-
-<section>
-  <h2>{{s|s033|}}</h2>
-  <figure class="passi" data-titolo="{{a|s034|}}">
-    <div class="passo"><div class="espr">all'inizio ogni punto è un cluster</div><p class="nota">{{s|s035|}}</p></div>
-    <div class="passo"><div class="espr">fondi i due cluster <mark class="ora">più vicini</mark>; ripeti</div><p class="nota">{{s|s036|}}</p></div>
-    <div class="passo"><div class="espr">il <mark class="ok">dendrogramma</mark> registra ogni fusione e a che distanza</div><p class="nota">{{s|s037|}}</p></div>
-  </figure>
   <p class="piccolo">{{s|s038|}}</p>
-  <figure class="scena" data-scena="agglomerativo" data-titolo="{{a|s039|}}"></figure>
+  <figure class="scena" data-scena="meanshift" data-titolo="{{a|s039|}}"></figure>
 </section>
 
 <section>
   <h2>{{s|s040|}}</h2>
+  <figure class="passi" data-titolo="{{a|s041|}}">
+    <div class="passo"><div class="espr">{{s|s042|}}</div><p class="nota">{{s|s043|}}</p></div>
+    <div class="passo"><div class="espr">fondi i due cluster <mark class="ora">più vicini</mark>; ripeti</div><p class="nota">{{s|s044|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s045|}}</div><p class="nota">{{s|s046|}}</p></div>
+  </figure>
+  <p class="piccolo">{{s|s047|}}</p>
+  <figure class="scena" data-scena="agglomerativo" data-titolo="{{a|s048|}}"></figure>
+</section>
+
+<section>
+  <h2>{{s|s049|}}</h2>
   <div class="tab-wrap"><table class="tab">
-    <thead><tr><th></th><th>{{s|s041|}}</th><th>{{s|s042|}}</th><th>{{s|s043|}}</th></tr></thead>
+    <thead><tr><th></th><th>{{s|s050|}}</th><th>{{s|s051|}}</th><th>{{s|s052|}}</th></tr></thead>
     <tbody>
-      <tr><td>{{s|s044|}}</td><td>k</td><td>{{s|s045|}}</td><td>{{s|s046|}}</td></tr>
-      <tr><td>{{s|s047|}}</td><td>{{s|s048|}}</td><td>{{s|s049|}}</td><td>{{s|s050|}}</td></tr>
-      <tr><td>{{s|s051|}}</td><td>{{s|s052|}}</td><td>{{s|s053|}}</td><td>{{s|s054|}}</td></tr>
-      <tr><td>{{s|s055|}}</td><td>{{s|s056|}}</td><td>{{s|s057|}}</td><td>{{s|s058|}}</td></tr>
+      <tr><td>{{s|s053|}}</td><td>k</td><td>{{s|s054|}}</td><td>{{s|s055|}}</td></tr>
+      <tr><td>{{s|s056|}}</td><td>{{s|s057|}}</td><td>{{s|s058|}}</td><td>{{s|s059|}}</td></tr>
+      <tr><td>{{s|s060|}}</td><td>{{s|s061|}}</td><td>{{s|s062|}}</td><td>{{s|s063|}}</td></tr>
+      <tr><td>{{s|s064|}}</td><td>{{s|s065|}}</td><td>{{s|s066|}}</td><td>{{s|s067|}}</td></tr>
     </tbody>
   </table></div>
-  <p>{{s|s059|}}</p>
-  <div class="box esame" data-tit="{{a|s060|}}">
-    <p>{{s|s061|}}</p>
+  <p>{{s|s068|}}</p>
+  <div class="box esame" data-tit="{{a|s069|}}">
+    <p>{{s|s070|}}</p>
   </div>
-  <figure class="scena" data-scena="confronto" data-titolo="{{a|s062|}}"></figure>
+  <figure class="scena" data-scena="confronto" data-titolo="{{a|s071|}}"></figure>
 </section>
 
 </main>

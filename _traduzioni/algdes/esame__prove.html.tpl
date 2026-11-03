@@ -49,68 +49,68 @@
   <p>{{s|s030|}}</p>
   <figure class="passi" data-titolo="{{a|s031|}}">
     <div class="passo"><div class="espr">4 4<br>1111<br>1110<br>0011<br>0001</div><p class="nota">{{s|s032|}}</p></div>
-    <div class="passo"><div class="espr">Gordon: <mark class="ora">1111</mark> (4 uni, l'unica con 4)</div><p class="nota">{{s|s033|}}</p></div>
-    <div class="passo"><div class="espr">da 1111 si scende in 1110 (3), 0011 (2), 0001 (1): prende <mark class="ora">1110</mark></div><p class="nota">{{s|s034|}}</p></div>
-    <div class="passo"><div class="espr">da 1110: 0011 e 0001 hanno un 1 in ultima posizione, dove 1110 ha 0 ⇒ <mark class="no">nessuna</mark></div><p class="nota">{{s|s035|}}</p></div>
-    <div class="passo"><div class="espr">ottimo: <mark class="ok">1111, 0011, 0001</mark>, lunghezza 3</div><p class="nota">{{s|s036|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s033|}}</div><p class="nota">{{s|s034|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s035|}}</div><p class="nota">{{s|s036|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s037|}}</div><p class="nota">{{s|s038|}}</p></div>
+    <div class="passo"><div class="espr">ottimo: <mark class="ok">1111, 0011, 0001</mark>, lunghezza 3</div><p class="nota">{{s|s039|}}</p></div>
   </figure>
 
-  <h3>{{s|s037|}}</h3>
-  <p>{{s|s038|}}</p>
+  <h3>{{s|s040|}}</h3>
+  <p>{{s|s041|}}</p>
 
-  <h3>{{s|s039|}}</h3>
-  <p>{{s|s040|}}</p>
+  <h3>{{s|s042|}}</h3>
+  <p>{{s|s043|}}</p>
 
-  <h3>{{s|s041|}}</h3>
-  <figure class="passi" data-titolo="{{a|s042|}}">
-    <div class="passo"><div class="espr">ordino per numero di 1 <mark class="dato">decrescente</mark>: x₁, …, x<sub>N</sub></div><p class="nota">{{s|s043|}}</p></div>
-    <div class="passo"><div class="espr"><mark class="ora">OPT(i)</mark> = lunghezza della sequenza più lunga che <b>finisce</b> con xᵢ,  i ∈ {1, …, N}</div><p class="nota">{{s|s044|}}</p></div>
-    <div class="passo"><div class="espr">OPT(i) = 1 + max { OPT(j) : j &lt; i, xⱼ si decrementa in xᵢ },   <mark class="due">OPT(i) = 1</mark> se nessun j</div><p class="nota">{{s|s045|}}</p></div>
-    <div class="passo"><div class="espr">risposta: <mark class="ok">max<sub>i</sub> OPT(i)</mark>; tempo O(N²K), spazio O(N)</div><p class="nota">{{s|s046|}}</p></div>
+  <h3>{{s|s044|}}</h3>
+  <figure class="passi" data-titolo="{{a|s045|}}">
+    <div class="passo"><div class="espr">{{s|s046|}}</div><p class="nota">{{s|s047|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s048|}}</div><p class="nota">{{s|s049|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s050|}}</div><p class="nota">{{s|s051|}}</p></div>
+    <div class="passo"><div class="espr">risposta: <mark class="ok">max<sub>i</sub> OPT(i)</mark>; tempo O(N²K), spazio O(N)</div><p class="nota">{{s|s052|}}</p></div>
   </figure>
 
-  <h3>{{s|s047|}}</h3>
-  <p>{{s|s048|}}</p>
+  <h3>{{s|s053|}}</h3>
+  <p>{{s|s054|}}</p>
 
-  <h3>{{s|s049|}}</h3>
-  <p>{{s|s050|}}</p>
-</section>
-
-<section>
-  <h2>{{s|s051|}}</h2>
-  <ul>
-    <li>{{s|s052|}}</li>
-    <li>{{s|s053|}}</li>
-    <li>{{s|s054|}}</li>
-  </ul>
-  <div class="box domanda-tua" data-tit="{{a|s055|}}">
-    <p>{{s|s056|}}</p>
-  </div>
+  <h3>{{s|s055|}}</h3>
+  <p>{{s|s056|}}</p>
 </section>
 
 <section>
   <h2>{{s|s057|}}</h2>
-  <p>{{s|s058|}}</p>
   <ul>
+    <li>{{s|s058|}}</li>
     <li>{{s|s059|}}</li>
     <li>{{s|s060|}}</li>
   </ul>
-  <p>{{s|s061|}}</p>
-  <p>{{s|s062|}}</p>
-  <div class="box regola" data-tit="{{a|s063|}}">{{s|s064|}}</div>
+  <div class="box domanda-tua" data-tit="{{a|s061|}}">
+    <p>{{s|s062|}}</p>
+  </div>
+</section>
+
+<section>
+  <h2>{{s|s063|}}</h2>
+  <p>{{s|s064|}}</p>
+  <ul>
+    <li>{{s|s065|}}</li>
+    <li>{{s|s066|}}</li>
+  </ul>
+  <p>{{s|s067|}}</p>
+  <p>{{s|s068|}}</p>
+  <div class="box regola" data-tit="{{a|s069|}}">{{s|s070|}}</div>
 </section>
 <section>
-  <h2>{{s|s065|}}</h2>
-  <p>{{s|s066|}}</p>
-  <div class="tab-wrap"><table class="tab"><thead><tr><th>{{s|s067|}}</th><th>{{s|s068|}}</th></tr></thead><tbody>
-    <tr><td>{{s|s069|}}</td><td>{{s|s070|}}</td></tr>
-    <tr><td>{{s|s071|}}</td><td>{{s|s072|}}</td></tr>
-    <tr><td>{{s|s073|}}</td><td>{{s|s074|}}</td></tr>
+  <h2>{{s|s071|}}</h2>
+  <p>{{s|s072|}}</p>
+  <div class="tab-wrap"><table class="tab"><thead><tr><th>{{s|s073|}}</th><th>{{s|s074|}}</th></tr></thead><tbody>
+    <tr><td>{{s|s075|}}</td><td>{{s|s076|}}</td></tr>
+    <tr><td>{{s|s077|}}</td><td>{{s|s078|}}</td></tr>
+    <tr><td>{{s|s079|}}</td><td>{{s|s080|}}</td></tr>
   </tbody></table></div>
-  <p>{{s|s075|}}</p>
-  <p>{{s|s076|}}</p>
-  <div class="box attenzione" data-tit="{{a|s077|}}">{{s|s078|}}</div>
-  <p>{{s|s079|}}</p>
+  <p>{{s|s081|}}</p>
+  <p>{{s|s082|}}</p>
+  <div class="box attenzione" data-tit="{{a|s083|}}">{{s|s084|}}</div>
+  <p>{{s|s085|}}</p>
 </section>
 </main>
 </body>

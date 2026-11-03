@@ -1,0 +1,985 @@
+@@s001 Formulario rapido
+@@s002 <span>Esame</span>
+@@s003 Formulario rapido
+@@s004 Tutto il corso da consultare in fretta, settore per settore: le nozioni da sapere e <b>ogni pezzo di codice dei tuoi esercizi</b> con una riga su cosa fa. Il codice è quello dei tuoi <code>Exercises.scala</code> (settimane 1–9).
+@@s005 Mappa dei settori
+@@s006 settore
+@@s007 settimana
+@@s008 idea in una riga
+@@s009 pezzi di codice
+@@s010 <a href="#atomi">Pezzi atomici</a>
+@@s011 tutte
+@@s012 ogni simbolo, parola chiave, tipo e metodo, con cosa chiede tra parentesi
+@@s013 <code>_</code> <code>=&gt;</code> <code>::</code> <code>cons</code> <code>.flatMap</code> <code>.forall</code> <code>foldRight(z)(f)</code>
+@@s014 <a href="#s1">S1 · Funzioni e ricorsione</a>
+@@s015 funzioni pure, ricorsione in coda, funzioni come valori
+@@s016 <code>fib</code> <code>isSorted</code> <code>curry</code> <code>uncurry</code> <code>compose</code>
+@@s017 <a href="#s2">S2 · Liste e fold</a>
+@@s018 tipo algebrico <code>List</code>, pattern matching, fold
+@@s019 <code>tail</code> <code>drop</code> <code>init</code> <code>foldLeft</code> <code>reverse</code> <code>concat</code> <code>flatMap</code> <code>zipWith</code>
+@@s020 <a href="#s3">S3 · Alberi e Option</a>
+@@s021 fallimento come valore, <code>map</code>/<code>flatMap</code>, <code>for</code>
+@@s022 <code>Tree.fold</code> <code>Option</code> <code>map2</code> <code>sequence</code> <code>traverse</code>
+@@s023 <a href="#s4">S4 · Laziness</a>
+@@s024 calcolare solo quando serve, liste infinite
+@@s025 <code>cons</code> <code>take</code> <code>exists</code> <code>foldRight</code> <code>unfold</code> <code>fibs</code>
+@@s026 <a href="#s5">S5 · State</a>
+@@s027 casualità pura: lo stato passa da un passo al successivo
+@@s028 <code>RNG</code> <code>Rand</code> <code>map2</code> <code>flatMap</code> <code>State</code>
+@@s029 <a href="#s6">S6–S7 · Testing</a>
+@@s030 proprietà al posto di esempi, generatori
+@@s031 <code>forAll</code> <code>Gen</code> <code>Prop</code> <code>SGen</code> <code>given</code>
+@@s032 <a href="#s8">S8 · Parser combinators</a>
+@@s033 parser piccoli che si incollano
+@@s034 <code>many</code> <code>map2</code> <code>or</code> <code>regex</code> <code>JSON</code>
+@@s035 <a href="#s9">S9 · Monoid e Monad</a>
+@@s036 strutture con leggi: combinare, mappare, concatenare
+@@s037 <code>Monoid</code> <code>foldMap</code> <code>Foldable</code> <code>Functor</code> <code>Monad</code>
+@@s038 S10 Probula, S11 semantica, S12 reinforcement learning, S14 lenses: non sono ancora nel repo, li aggiungo quando escono.
+@@s039 Pezzi atomici: ogni simbolo, ogni metodo
+@@s040 Qui sotto c'è <b>ogni pezzo</b> con cui sono scritti i blocchi di codice, dal più piccolo al più grande. Per ogni pezzo: <b>cosa vuol dire</b>, <b>cosa chiede tra le parentesi</b> e un esempio. I risultati dopo la freccia <code>→</code> sono stati eseguiti in Scala 3.8.4 (sulle liste standard, che si comportano come le tue). Poi, in fondo, tre righe di codice vere <b>smontate pezzo per pezzo</b>.
+@@s041 Segui l'ordine: simboli → parole chiave → tipi → costruttori → metodi per tipo → come si incastrano.
+@@s042 1 · Simboli e punteggiatura
+@@s043 pezzo
+@@s044 cosa vuol dire
+@@s045 esempio
+@@s046 <code>_</code> nel pattern
+@@s047 "questo valore non mi interessa". Non lega nessun nome.
+@@s048 <code>case Cons(_, t) =&gt; t</code> (ignoro la testa, tengo la coda)
+@@s049 <code>case _ =&gt;</code>
+@@s050 ultimo caso: prende tutto ciò che i casi sopra non hanno preso
+@@s051 <code>case _ =&gt; None</code>
+@@s052 <code>_</code> come lambda corta
+@@s053 scorciatoia per una funzione: ogni <code>_</code> è un <b>parametro diverso</b>, nell'ordine in cui compaiono. <code>_ * 10</code> = <code>x =&gt; x * 10</code>; <code>_ + _</code> = <code>(a, b) =&gt; a + b</code>
+@@s054 <code>List(1,2,3).map(_ * 10)</code> → <code>List(10, 20, 30)</code>
+@@s055 lambda corta che prende il campo <code>._2</code> (secondo elemento della coppia)
+@@s056 <code>List((1,"x"),(2,"y")).map(_._2)</code> → <code>List(x, y)</code>
+@@s057 "un tipo che aspetta un tipo" (<code>List</code>, <code>Option</code>, non <code>List[Int]</code>). Il <code>_</code> è un buco da riempire.
+@@s058 <code>trait Functor[F[_]]</code>
+@@s059 <code>import X.*</code>
+@@s060 <code>*</code> = importa tutto quello che c'è dentro <code>X</code>
+@@s061 <code>import LazyList.*</code>
+@@s062 <code>=&gt;</code> in un tipo
+@@s063 freccia delle funzioni: <code>A =&gt; B</code> = "prende <code>A</code>, restituisce <code>B</code>"
+@@s064 <code>f: Int =&gt; String</code>
+@@s065 <code>=&gt;</code> in una lambda
+@@s066 separa i parametri dal corpo
+@@s067 <code>(a, b) =&gt; a + b</code>
+@@s068 <code>=&gt;</code> in un <code>case</code>
+@@s069 separa il pattern dal risultato
+@@s070 <code>case Some(a) =&gt; a</code>
+@@s071 <code>x: =&gt; A</code> (by-name)
+@@s072 l'argomento <b>non</b> è calcolato prima della chiamata: è ricalcolato ogni volta che lo nomini dentro la funzione
+@@s073 <code>def getOrElse[B &gt;: A](default: =&gt; B)</code>
+@@s074 <code>this: X =&gt;</code> / <code>self =&gt;</code>
+@@s075 nelle prime righe di un trait: <code>this: X</code> = "questo trait sarà mescolato a un <code>X</code>", puoi usare i suoi membri. <code>self =&gt;</code> = dò il nome <code>self</code> a "questo oggetto"
+@@s076 <code>this: java.awt.Point =&gt;</code>
+@@s077 <code>-&gt;</code>
+@@s078 crea una <b>coppia</b>: <code>a -&gt; b</code> è <code>(a, b)</code>
+@@s079 <code>1 -&gt; "a"</code> → <code>(1,a)</code>
+@@s080 <code>&lt;-</code>
+@@s081 dentro un <code>for</code>: "prendi il valore dal contenitore e chiamalo così" (diventa un <code>flatMap</code>)
+@@s082 <code>for a &lt;- ao; b &lt;- bo yield a + b</code>
+@@s083 "cons" della <code>List</code> standard: <code>x :: resto</code> mette <code>x</code> in testa. Associa a <b>destra</b>: <code>1 :: 2 :: Nil</code> = <code>1 :: (2 :: Nil)</code>. Nei pattern smonta: <code>h :: t</code> = testa e coda
+@@s084 <code>1 :: 2 :: Nil</code> → <code>List(1, 2)</code>
+@@s085 concatena due liste
+@@s086 <code>List(1,2) ++ List(3)</code> → <code>List(1, 2, 3)</code>
+@@s087 <code>:</code> dopo un nome
+@@s088 "è di tipo": <code>n: Int</code>, <code>def f(x: A): B</code>
+@@s089 <code>val magic: Int = 42</code>
+@@s090 <code>:</code> a fine riga (<code>enum</code>, <code>trait</code>, <code>object</code>, <code>new X:</code>)
+@@s091 apre il corpo, che va <b>indentato</b> sotto (al posto delle graffe)
+@@s092 <code>object List:</code>
+@@s093 parametri di <b>tipo</b>. Le <code>( )</code> sono i parametri di <b>valore</b>
+@@s094 <code>foldRight[A, B](l, z, f)</code>
+@@s095 <code>( )</code> vuote
+@@s096 il valore <code>Unit</code> ("niente di utile"); nel tipo <code>() =&gt; A</code> è una funzione <b>senza argomenti</b> (<i>thunk</i>); <code>h()</code> la <b>esegue</b>
+@@s097 <code>Cons(() =&gt; head, () =&gt; tail)</code>
+@@s098 tupla; i campi si leggono con <code>._1</code>, <code>._2</code>, oppure si smontano: <code>val (a, b) = (1, 2)</code>
+@@s099 blocco di più righe; al posto delle <code>( )</code> quando l'argomento è una lambda. <code>{ case … }</code> = lambda che smonta con pattern matching
+@@s100 <code>unfold(this) { case Cons(h,t) =&gt; … }</code>
+@@s101 due liste di parametri (<b>currying</b>): la prima si può dare e la seconda dopo
+@@s102 <code>def add(a: Int)(b: Int) = a + b</code>; <code>add(1)(2)</code> → <code>3</code>
+@@s103 <code>A*</code> / <code>xs*</code>
+@@s104 parametro <b>variadico</b> (<code>A*</code> = zero o più valori). <code>xs*</code> "spacchetta" una sequenza negli argomenti
+@@s105 <code>apply(as.tail*)</code>
+@@s106 un operatore è un <b>metodo</b>: <code>p1 ** p2</code> è <code>p1.**(p2)</code>. Se finisce con <code>:</code> è il destro a ricevere la chiamata: <code>1 :: Nil</code> è <code>Nil.::(1)</code>
+@@s107 <code>==</code> / <code>eq</code>
+@@s108 <code>==</code> uguali per valore; <code>eq</code> è la <b>stessa</b> cosa in memoria (vero per <code>tail</code> senza copia)
+@@s109 <code>List(1) == List(1)</code> → <code>true</code>
+@@s110 <code>&amp;&amp;</code> <code>||</code> <code>!</code>
+@@s111 e, o, non. <code>&amp;&amp;</code> e <code>||</code> <b>non valutano il destro</b> se il sinistro basta
+@@s112 <code>false &amp;&amp; chissà</code> → <code>false</code>
+@@s113 <code>% / max / min</code>
+@@s114 resto della divisione; massimo e minimo come metodi
+@@s115 <code>7 % 2</code> → <code>1</code>; <code>3.max(5)</code> → <code>5</code>
+@@s116 <code>&amp;</code>, <code>&gt;&gt;&gt;</code>
+@@s117 AND bit a bit; shift a destra riempiendo di zeri (nel generatore <code>SimpleRNG</code>)
+@@s118 <code>newSeed &gt;&gt;&gt; 16</code>
+@@s119 stringa con valori dentro: <code>${…}</code> è un'espressione
+@@s120 <code>L</code> = <code>Long</code>; apici singoli = <code>Char</code>; doppi = <code>String</code>
+@@s121 <code>char('a')</code>
+@@s122 <code>===</code> <code>==&gt;</code> <code>:|</code>
+@@s123 nei test: uguaglianza di ScalaCheck/Scalactic (confrontabile anche per funzioni); "se la condizione vale, allora la proprietà" (scarta i casi che non la rispettano); etichetta del test
+@@s124 <code>(s.size &gt; 0) ==&gt; …</code>
+@@s125 operatori dei parser: alternativa; coppia; scarta sinistro; scarta destro; zero o una volta; zero o più
+@@s126 <code>string(",") |* json</code>
+@@s127 commenti
+@@s128 2 · Parole chiave
+@@s129 parola
+@@s130 cosa fa
+@@s131 forma
+@@s132 <code>val</code>
+@@s133 dà un nome a un valore, <b>per sempre</b> (non si riassegna)
+@@s134 <code>val x = 3</code>
+@@s135 <code>var</code>
+@@s136 nome <b>riassegnabile</b>: <span class="t-no">vietato</span> negli esercizi
+@@s137 <code>var i = 0</code>
+@@s138 <code>def</code>
+@@s139 definisce una funzione, eseguita a ogni chiamata
+@@s140 <code>def f(x: Int): Int = x + 1</code>
+@@s141 <code>lazy val</code>
+@@s142 come <code>val</code> ma calcolato <b>al primo uso</b>, una volta sola
+@@s143 <code>lazy val naturals = from(1)</code>
+@@s144 <code>type</code>
+@@s145 un altro nome per un tipo
+@@s146 <code>type Rand[+A] = RNG =&gt; (A, RNG)</code>
+@@s147 <code>opaque type</code>
+@@s148 nome nuovo per un tipo, valido <b>solo dentro il file</b>: fuori nessuno sa cos'è
+@@s149 <code>opaque type Gen[+A] = State[RNG, A]</code>
+@@s150 <code>enum</code> / <code>case</code>
+@@s151 tipo somma: elenca i casi possibili. Un <code>case</code> con campi è un prodotto
+@@s152 <code>enum List[+A]: case Nil; case Cons(h, t)</code>
+@@s153 <code>case class</code>
+@@s154 classe a un solo caso, con <code>==</code>, <code>copy</code>, pattern matching già pronti
+@@s155 <code>case class State[S, +A](run: S =&gt; (A, S))</code>
+@@s156 <code>trait</code>
+@@s157 interfaccia (con metodi anche già scritti) da implementare o mescolare
+@@s158 <code>trait Monoid[A]:</code>
+@@s159 <code>object</code>
+@@s160 oggetto unico (singleton). Con lo stesso nome del tipo = <b>companion</b>: le sue funzioni sono quelle "statiche"
+@@s161 <code>object LazyList:</code>
+@@s162 <code>extends</code> / <code>with</code>
+@@s163 "è un" / "e in più". Mescolano trait
+@@s164 <code>new Point with OrderedPoint</code>
+@@s165 <code>new X:</code>
+@@s166 crea al volo un'istanza anonima di <code>X</code>, con il corpo indentato
+@@s167 <code>new Monoid[String]:</code>
+@@s168 <code>override</code>
+@@s169 sostituisce un metodo già definito
+@@s170 <code>override def compare(…)</code>
+@@s171 <code>if … then … else</code>
+@@s172 è un'<b>espressione</b>: dà un valore
+@@s173 <code>if n &lt; 0 then -n else n</code>
+@@s174 <code>x match</code>
+@@s175 prova i <code>case</code> dall'alto, vince il primo che combacia. Guardia: <code>case x if x &gt; 5 =&gt;</code>
+@@s176 <code>l match { case Nil =&gt; 0 … }</code>
+@@s177 <code>for … yield</code>
+@@s178 catena di <code>flatMap</code> e un <code>map</code> finale, scritta in modo leggibile
+@@s179 <code>for p &lt;- headOption(lst) yield p._2</code>
+@@s180 <code>throw</code>
+@@s181 lancia un'eccezione (vietata, salvo richiesta)
+@@s182 <code>throw NoSuchElementException()</code>
+@@s183 <code>@annotation.tailrec</code>
+@@s184 chiede al compilatore di controllare che la ricorsione sia <b>in coda</b>
+@@s185 sopra un <code>def</code>
+@@s186 <code>given</code> / <code>using</code> / <code>summon</code>
+@@s187 <code>given</code> definisce un'istanza di default per un tipo; <code>using</code> è il parametro che la riceve da solo; <code>summon[T]</code> la va a prendere. <code>[A: Gen]</code> = <code>(using Gen[A])</code>
+@@s188 <code>summon[Gen[A]].listOfN(n)</code>
+@@s189 <code>extension</code>
+@@s190 aggiunge un metodo a un tipo da fuori (si chiama con il punto)
+@@s191 <code>extension [A](g: Gen[A]) def map…</code>
+@@s192 <code>infix</code>
+@@s193 permette di scrivere il metodo come operatore: <code>a op b</code>
+@@s194 <code>infix def &amp;&amp; (that: Prop)</code>
+@@s195 <code>import</code> / <code>package</code>
+@@s196 porta dentro nomi / dice in che cartella logica sta il file
+@@s197 <code>package adpro.option</code>
+@@s198 <code>@main</code>
+@@s199 funzione da cui parte il programma
+@@s200 <code>@main def printAbs: Unit</code>
+@@s201 <code>private</code>
+@@s202 visibile solo qui
+@@s203 <code>private lazy val …</code>
+@@s204 3 · Tipi e parametri di tipo
+@@s205 pezzo
+@@s206 cosa vuol dire
+@@s207 <code>Int</code> <code>Long</code> <code>Double</code> <code>Boolean</code> <code>String</code> <code>Char</code>
+@@s208 tipi base. <code>Int</code> in overflow gira (mod 2<sup>32</sup>), non dà errore
+@@s209 <code>Unit</code>
+@@s210 "nessun valore utile" (si scrive <code>()</code>). Tipico di una funzione con effetti
+@@s211 <code>Nothing</code>
+@@s212 tipo senza valori, sottotipo di <b>tutti</b>. È il tipo di <code>throw</code>, di <code>Nil</code> (<code>List[Nothing]</code>) e <code>None</code>
+@@s213 <code>Any</code>
+@@s214 supertipo di tutti (da evitare: perdi l'informazione)
+@@s215 <code>A =&gt; B</code>, <code>(A, B) =&gt; C</code>, <code>A =&gt; B =&gt; C</code>
+@@s216 funzione di 1 argomento, di 2, curried (= <code>A =&gt; (B =&gt; C)</code>)
+@@s217 coppia (tupla)
+@@s218 funzione o tipo <b>polimorfo</b>: <code>A</code> è un tipo qualunque scelto da chi chiama
+@@s219 covariante: <code>T[Cat]</code> vale anche come <code>T[Animal]</code> (il contenitore <b>produce</b> <code>A</code>). Contravariante: il contrario (<b>consuma</b> <code>A</code>). Senza segno: invariante
+@@s220 <code>[B &gt;: A]</code>
+@@s221 <code>B</code> è <code>A</code> o un <b>supertipo</b> di <code>A</code> (serve per i metodi di tipi covarianti)
+@@s222 <code>[A &lt;: B]</code>
+@@s223 <code>A</code> è <code>B</code> o un <b>sottotipo</b> di <code>B</code>
+@@s224 <code>[A: Monoid]</code>
+@@s225 "<code>A</code> deve avere un <code>Monoid[A]</code> nel contesto" (zucchero per un <code>using</code>)
+@@s226 <code>=&gt; A</code>
+@@s227 argomento by-name (calcolato quando serve)
+@@s228 <code>() =&gt; A</code>
+@@s229 thunk: una "ricetta" per calcolare <code>A</code>, non ancora eseguita
+@@s230 <code>Option[A]</code>
+@@s231 o <code>Some(a)</code> o <code>None</code>
+@@s232 <code>Either[E, A]</code>
+@@s233 o <code>Left(errore)</code> o <code>Right(valore)</code> (i parser lo usano per il risultato di <code>run</code>)
+@@s234 <code>List[A]</code>, <code>Seq[A]</code>, <code>Array[A]</code>, <code>IndexedSeq[A]</code>, <code>Map[K, V]</code>
+@@s235 collezioni: lista concatenata, sequenza generica, array, sequenza con accesso veloce, dizionario
+@@s236 4 · Costruttori e valori del corso
+@@s237 pezzo
+@@s238 cosa chiede
+@@s239 cosa è
+@@s240 <code>Nil</code>
+@@s241 niente
+@@s242 la lista vuota
+@@s243 <code>Cons(head, tail)</code> <small>(List)</small>
+@@s244 un elemento <code>A</code> e il resto <code>List[A]</code>
+@@s245 una cella: testa + coda. Equivale a <code>head :: tail</code>
+@@s246 <code>List(1, 2, 3)</code>
+@@s247 un numero qualunque di elementi (<code>apply</code> variadico)
+@@s248 <code>Cons(1, Cons(2, Cons(3, Nil)))</code>
+@@s249 <code>Some(a)</code> / <code>None</code>
+@@s250 <code>a: A</code> / niente
+@@s251 valore presente / assente
+@@s252 <code>Leaf(value)</code>
+@@s253 un valore <code>A</code>
+@@s254 foglia dell'albero
+@@s255 <code>Branch(left, right)</code>
+@@s256 due <code>Tree[A]</code>
+@@s257 nodo con due figli
+@@s258 <code>Empty</code> / <code>Cons(h, t)</code> <small>(LazyList)</small>
+@@s259 <code>h: () =&gt; A</code>, <code>t: () =&gt; LazyList[A]</code>
+@@s260 lista pigra vuota / cella con <b>due thunk</b>. <code>h()</code> e <code>t()</code> li eseguono
+@@s261 <code>cons(hd, tl)</code> <small>(minuscolo)</small>
+@@s262 testa e coda <b>by-name</b>
+@@s263 costruttore intelligente: mette testa e coda in <code>lazy val</code> e crea i thunk. <b>Non</b> calcola niente
+@@s264 <code>empty</code>
+@@s265 niente
+@@s266 la <code>LazyList</code> vuota (<code>Empty</code> col tipo giusto)
+@@s267 <code>State(run)</code>
+@@s268 <code>run: S =&gt; (A, S)</code>
+@@s269 un'azione che legge uno stato e restituisce valore + stato nuovo
+@@s270 <code>SimpleRNG(seed)</code>
+@@s271 un <code>Long</code>
+@@s272 generatore di numeri casuali puro
+@@s273 <code>Success(get, length)</code> / <code>Failure(get, isCommitted)</code> / <code>Slice(length)</code>
+@@s274 valore + caratteri consumati / errore + flag / solo caratteri consumati
+@@s275 possibili risultati di un parser
+@@s276 <code>Passed</code> / <code>Falsified(failure, successes)</code>
+@@s277 — / messaggio del controesempio + quanti test erano passati
+@@s278 risultato di una proprietà
+@@s279 <code>Left(e)</code> / <code>Right(a)</code>
+@@s280 errore / valore
+@@s281 i due casi di <code>Either</code>
+@@s282 <code>JNull</code> <code>JBool(b)</code> <code>JNumber(d)</code> <code>JString(s)</code> <code>JArray(v)</code> <code>JObject(m)</code>
+@@s283 niente / <code>Boolean</code> / <code>Double</code> / <code>String</code> / <code>IndexedSeq[JSON]</code> / <code>Map[String, JSON]</code>
+@@s284 le sei forme di JSON
+@@s285 5 · Metodi sulle liste (<code>List</code>; i nomi sono gli stessi in <code>LazyList</code>)
+@@s286 Nella colonna <b>chiede</b> c'è ciò che va dentro le parentesi. Quando c'è <b>due volte</b> <code>(…)(…)</code> la prima serve a dare il valore iniziale, la seconda la funzione.
+@@s287 pezzo
+@@s288 chiede
+@@s289 cosa fa
+@@s290 esempio su <code>List(1,2,3)</code>
+@@s291 <code>.map(f)</code>
+@@s292 <code>f: A =&gt; B</code>
+@@s293 applica <code>f</code> a <b>ogni</b> elemento; stessa lunghezza
+@@s294 <code>.map(_ * 10)</code> → <code>List(10, 20, 30)</code>
+@@s295 <code>.filter(p)</code>
+@@s296 <code>p: A =&gt; Boolean</code>
+@@s297 tiene solo gli elementi per cui <code>p</code> è vero
+@@s298 <code>.filter(_ % 2 == 1)</code> → <code>List(1, 3)</code>
+@@s299 <code>.flatMap(f)</code>
+@@s300 <code>f: A =&gt; List[B]</code>
+@@s301 applica <code>f</code> (che dà una <b>lista</b> per elemento) e <b>incolla</b> tutte le liste
+@@s302 <code>.flatMap(x =&gt; List(x, x))</code> → <code>List(1, 1, 2, 2, 3, 3)</code>
+@@s303 <code>.foldLeft(z)(f)</code>
+@@s304 <code>z: B</code> (partenza), <code>f: (B, A) =&gt; B</code> (accumulatore, elemento)
+@@s305 parte da <code>z</code> e combina da <b>sinistra</b>: <code>f(f(f(z,1),2),3)</code>. In coda
+@@s306 <code>.foldLeft(0)(_ + _)</code> → <code>6</code>; <code>.foldLeft(List.empty[Int])((acc, a) =&gt; a :: acc)</code> → <code>List(3, 2, 1)</code>
+@@s307 <code>.foldRight(z)(f)</code>
+@@s308 <code>z: B</code>, <code>f: (A, B) =&gt; B</code> (elemento, resto già combinato)
+@@s309 combina da <b>destra</b>: <code>f(1, f(2, f(3, z)))</code>. Non in coda
+@@s310 <code>.foldRight(List.empty[Int])((a, acc) =&gt; a :: acc)</code> → <code>List(1, 2, 3)</code>
+@@s311 <code>.forall(p)</code>
+@@s312 <code>p: A =&gt; Boolean</code>
+@@s313 vero se <code>p</code> vale per <b>tutti</b> (vero sulla lista vuota). Si ferma al primo falso
+@@s314 <code>.forall(_ &gt; 0)</code> → <code>true</code>
+@@s315 <code>.exists(p)</code>
+@@s316 <code>p: A =&gt; Boolean</code>
+@@s317 vero se <code>p</code> vale per <b>almeno uno</b>. Si ferma al primo vero
+@@s318 <code>.exists(_ &gt; 2)</code> → <code>true</code>
+@@s319 <code>.contains(x)</code>
+@@s320 un valore <code>x</code>
+@@s321 vero se <code>x</code> è nella lista (uguaglianza <code>==</code>)
+@@s322 <code>.contains(2)</code> → <code>true</code>
+@@s323 <code>.zip(that)</code>
+@@s324 un'altra lista
+@@s325 accoppia posizione per posizione; si ferma alla più corta
+@@s326 <code>.zip(List("a","b"))</code> → <code>List((1,a), (2,b))</code>
+@@s327 <code>zipWith(l, r, f)</code> <small>(corso)</small>
+@@s328 due liste e <code>f: (A, B) =&gt; C</code>
+@@s329 come <code>zip</code> poi applica <code>f</code> a ogni coppia
+@@s330 <code>zipWith(l, r, _ + _)</code>
+@@s331 <code>.zipWithIndex</code>
+@@s332 niente
+@@s333 accoppia ogni elemento col suo indice (da 0)
+@@s334 → <code>List((1,0), (2,1), (3,2))</code>
+@@s335 <code>.take(n)</code> / <code>.drop(n)</code>
+@@s336 <code>n: Int</code>
+@@s337 tiene i primi <code>n</code> / scarta i primi <code>n</code>
+@@s338 <code>.take(2)</code> → <code>List(1, 2)</code>; <code>.drop(2)</code> → <code>List(3)</code>
+@@s339 <code>.takeWhile(p)</code> / <code>.dropWhile(p)</code>
+@@s340 <code>p: A =&gt; Boolean</code>
+@@s341 tiene / scarta finché <code>p</code> è vero, poi si ferma
+@@s342 <code>.headOption</code>
+@@s343 niente
+@@s344 <code>Some(primo)</code> oppure <code>None</code> se vuota
+@@s345 → <code>Some(1)</code>; su lista vuota → <code>None</code>
+@@s346 <code>.head</code> / <code>.tail</code> / <code>init</code>
+@@s347 niente
+@@s348 primo / tutto tranne il primo / tutto tranne l'ultimo. Su lista vuota <b>lanciano</b> (per questo il corso preferisce <code>headOption</code>)
+@@s349 <code>.isEmpty</code> / <code>.length</code>
+@@s350 niente
+@@s351 vera se vuota / quanti elementi
+@@s352 <code>.length</code> → <code>3</code>
+@@s353 <code>.sum</code> / <code>.mkString(sep)</code>
+@@s354 — / separatore
+@@s355 somma dei numeri / unisce in una stringa
+@@s356 <code>.sum</code> → <code>6</code>; <code>.mkString(",")</code> → <code>1,2,3</code>
+@@s357 <code>.reverse</code>
+@@s358 niente
+@@s359 lista rovesciata
+@@s360 <code>List.fill(n)(x)</code>
+@@s361 <code>n: Int</code>, poi <code>x: =&gt; A</code>
+@@s362 <code>n</code> copie di <code>x</code> (<code>x</code> è by-name: ricalcolato per ogni copia)
+@@s363 <code>List.fill(3)(0)</code> → <code>List(0, 0, 0)</code>
+@@s364 <code>List.range(a, b)</code>
+@@s365 due interi
+@@s366 da <code>a</code> a <code>b-1</code>
+@@s367 <code>List.empty[A]</code>
+@@s368 il tipo <code>[A]</code>
+@@s369 lista vuota con il tipo giusto (aiuta l'inferenza nei fold)
+@@s370 <code>.toList</code> / <code>.toVector</code> / <code>.toMap</code>
+@@s371 niente
+@@s372 cambia contenitore (<code>toMap</code> vuole coppie)
+@@s373 <code>identity</code>
+@@s374 un valore <code>a</code>
+@@s375 la funzione che restituisce <code>a</code> senza cambiarlo (<code>A =&gt; A</code>)
+@@s376 <code>l.map(identity) == l</code>
+@@s377 <code>.curried</code>
+@@s378 niente (su una funzione a 2 argomenti)
+@@s379 da <code>(A, B) =&gt; C</code> a <code>A =&gt; B =&gt; C</code>
+@@s380 <code>((a: Int, b: Int) =&gt; a + b).curried(1)(2)</code> → <code>3</code>
+@@s381 <code>.toInt</code> <code>.toDouble</code> <code>.toString</code>
+@@s382 niente
+@@s383 conversioni di numeri e stringhe
+@@s384 <code>.drop(1)</code> <code>.dropRight(1)</code> su una String
+@@s385 <code>n: Int</code>
+@@s386 toglie <code>n</code> caratteri dall'inizio / dalla fine
+@@s387 niente
+@@s388 trasforma la stringa in un'espressione regolare (<code>Regex</code>)
+@@s389 6 · Metodi su <code>Option</code>
+@@s390 pezzo
+@@s391 chiede
+@@s392 cosa fa
+@@s393 esempio
+@@s394 <code>.map(f)</code>
+@@s395 <code>f: A =&gt; B</code>
+@@s396 trasforma il contenuto; <code>None</code> resta <code>None</code>
+@@s397 <code>Some(2).map(_ + 1)</code> → <code>Some(3)</code>
+@@s398 <code>.flatMap(f)</code>
+@@s399 <code>f: A =&gt; Option[B]</code>
+@@s400 come <code>map</code> ma <code>f</code> può fallire; <b>non</b> ri-avvolge
+@@s401 <code>Some(2).flatMap(x =&gt; if x &gt; 1 then Some(x) else None)</code> → <code>Some(2)</code>
+@@s402 <code>.filter(p)</code>
+@@s403 <code>p: A =&gt; Boolean</code>
+@@s404 <code>Some</code> diventa <code>None</code> se <code>p</code> è falso
+@@s405 <code>Some(2).filter(_ &gt; 5)</code> → <code>None</code>
+@@s406 <code>.getOrElse(d)</code>
+@@s407 <code>d: =&gt; B</code> (by-name)
+@@s408 il contenuto, oppure <code>d</code> se è <code>None</code>. <code>d</code> è calcolato solo se serve
+@@s409 <code>None.getOrElse(0)</code> → <code>0</code>
+@@s410 <code>.forAll(p)</code> <small>(corso)</small>
+@@s411 <code>p: A =&gt; Boolean</code>
+@@s412 <code>p</code> sul contenuto; <code>true</code> se <code>None</code>
+@@s413 <code>map2(ao, bo)(f)</code>
+@@s414 due <code>Option</code>, poi <code>f: (A, B) =&gt; C</code>
+@@s415 <code>Some(f(a, b))</code> solo se <b>entrambe</b> sono <code>Some</code>
+@@s416 <code>sequence(aos)</code>
+@@s417 <code>List[Option[A]]</code>
+@@s418 <code>Some(lista)</code> se tutte <code>Some</code>, altrimenti <code>None</code>
+@@s419 <code>List(Some(1), None)</code> → <code>None</code>
+@@s420 <code>traverse(as)(f)</code>
+@@s421 lista <code>as</code>, poi <code>f: A =&gt; Option[B]</code>
+@@s422 applica <code>f</code> a ogni elemento e fa <code>sequence</code>, in un passaggio
+@@s423 7 · Metodi della <code>LazyList</code> (solo quelli che non hanno già l'omonimo sulle liste)
+@@s424 pezzo
+@@s425 chiede
+@@s426 cosa fa
+@@s427 niente (le parentesi vuote sono la chiamata)
+@@s428 eseguono il thunk di testa / coda: <b>qui</b> avviene il calcolo (una volta sola)
+@@s429 <code>.foldRight(z)(f)</code>
+@@s430 <code>z: =&gt; B</code>, <code>f: (A, =&gt; C) =&gt; C</code>
+@@s431 il resto arriva a <code>f</code> <b>by-name</b>: se <code>f</code> non lo usa, non viene calcolato
+@@s432 <code>.append(that)</code>
+@@s433 <code>that: =&gt; LazyList[B]</code>, con <code>B &gt;: A</code>
+@@s434 incolla dopo, senza calcolare <code>that</code> finché non serve
+@@s435 <code>from(n)</code> / <code>to(n)</code>
+@@s436 <code>n: Int</code>
+@@s437 lista infinita <code>n, n+1, …</code> / <code>n, n-1, …</code>
+@@s438 <code>naturals</code> / <code>fibs</code>
+@@s439 liste infinite 1, 2, 3, … / 0, 1, 1, 2, 3, …
+@@s440 <code>unfold(z)(f)</code>
+@@s441 <code>z: S</code> (stato iniziale), <code>f: S =&gt; Option[(A, S)]</code>
+@@s442 chiede a <code>f</code> "cosa emetto e con quale stato proseguo?"; <code>None</code> = fine
+@@s443 <code>.find(p)</code>
+@@s444 <code>p: A =&gt; Boolean</code>
+@@s445 <code>filter(p).headOption</code>: il primo che soddisfa <code>p</code>
+@@s446 <code>.zipWith(ope)(bs)</code>
+@@s447 <code>ope: (=&gt; B, =&gt; B) =&gt; C</code>, poi l'altra lista <code>bs</code>
+@@s448 combina due liste pigre elemento per elemento
+@@s449 <code>.take(n)</code> vs <code>.drop(n)</code>
+@@s450 <code>n: Int</code>
+@@s451 <code>take</code> rimanda tutto dentro <code>cons</code> (pigra); <code>drop</code> avanza subito di <code>n</code> code
+@@s452 8 · <code>State</code>, <code>Rand</code>, <code>RNG</code>
+@@s453 pezzo
+@@s454 chiede
+@@s455 cosa fa
+@@s456 <code>rng.nextInt</code>
+@@s457 niente
+@@s458 coppia <code>(numero, rng nuovo)</code>. Usa sempre quello <b>nuovo</b> dopo
+@@s459 <code>val (a, rng2) = s(rng)</code>
+@@s460 esegue la ricetta <code>s: Rand[A]</code> e smonta la coppia in valore e stato nuovo
+@@s461 <code>unit(a)</code>
+@@s462 ricetta che dà <code>a</code> e lascia lo stato com'è
+@@s463 <code>map(s)(f)</code> / <code>s.map(f)</code>
+@@s464 una ricetta, poi <code>f: A =&gt; B</code>
+@@s465 trasforma il valore, lo stato passa uguale
+@@s466 <code>map2(ra, rb)(f)</code>
+@@s467 due ricette, poi <code>f: (A, B) =&gt; C</code>
+@@s468 esegue <code>ra</code>, poi <code>rb</code> con lo stato di <code>ra</code>, combina
+@@s469 <code>flatMap(f)(g)</code> / <code>s.flatMap(g)</code>
+@@s470 una ricetta, poi <code>g: A =&gt; Rand[B]</code>
+@@s471 il valore ottenuto <b>sceglie</b> la ricetta successiva, eseguita con lo stato aggiornato
+@@s472 <code>sequence(ras)</code>
+@@s473 lista di ricette
+@@s474 ricetta di una lista, in ordine, con lo stato che passa
+@@s475 <code>s.run(st)</code>
+@@s476 lo stato iniziale
+@@s477 esegue un <code>State</code>: restituisce <code>(a, stato nuovo)</code>
+@@s478 <code>get</code> / <code>set(s)</code> / <code>modify(f)</code>
+@@s479 — / il nuovo stato / <code>f: S =&gt; S</code>
+@@s480 legge lo stato / lo sostituisce / lo trasforma
+@@s481 <code>List.fill(n)(int)</code>
+@@s482 <code>n</code> copie della ricetta <code>int</code> (poi <code>sequence</code> le esegue di fila)
+@@s483 9 · Test: ScalaCheck e <code>Gen</code>/<code>Prop</code> del corso
+@@s484 pezzo
+@@s485 chiede
+@@s486 cosa fa
+@@s487 <code>property("nome") = …</code>
+@@s488 nome e una proprietà
+@@s489 registra un test nella suite
+@@s490 <code>forAll { (x: Int) =&gt; … }</code>
+@@s491 una funzione che restituisce <code>Boolean</code> (i valori li inventa ScalaCheck)
+@@s492 prova la proprietà su 100 casi casuali; se fallisce fa shrinking
+@@s493 <code>forAll(gen) { x =&gt; … }</code>
+@@s494 un generatore e la funzione
+@@s495 come sopra ma i valori vengono da <code>gen</code>
+@@s496 <code>arbitrary[T]</code>
+@@s497 il tipo <code>[T]</code>
+@@s498 il generatore di default per <code>T</code>
+@@s499 <code>Gen.choose(a, b)</code>
+@@s500 due interi (nel corso: <code>b</code> escluso)
+@@s501 generatore di un intero tra <code>a</code> e <code>b</code>
+@@s502 <code>g.suchThat(p)</code>
+@@s503 <code>p: A =&gt; Boolean</code>
+@@s504 scarta i valori che non rispettano <code>p</code> (es. liste non vuote)
+@@s505 <code>g.listOfN(n)</code>
+@@s506 <code>n: Int</code>
+@@s507 generatore di liste di <b>esattamente</b> <code>n</code> elementi
+@@s508 <code>g.listOf(size)</code>
+@@s509 <code>size: Gen[Int]</code>
+@@s510 generatore di liste di lunghezza casuale
+@@s511 <code>g.union(h)</code>
+@@s512 un altro <code>Gen[A]</code>
+@@s513 lancia una moneta e usa uno dei due
+@@s514 <code>g.map(f)</code> / <code>g.flatMap(f)</code>
+@@s515 <code>f: A =&gt; B</code> / <code>f: A =&gt; Gen[B]</code>
+@@s516 trasforma i valori generati / sceglie il generatore successivo in base al valore
+@@s517 <code>Gen.unit(a)</code> / <code>Gen.boolean</code>
+@@s518 <code>a: =&gt; A</code> / —
+@@s519 sempre <code>a</code> / vero o falso a caso
+@@s520 <code>p1 &amp;&amp; p2</code> / <code>p1 || p2</code>
+@@s521 due proprietà
+@@s522 tutte e due devono valere / basta una
+@@s523 <code>cond ==&gt; prop</code>
+@@s524 una condizione e una proprietà
+@@s525 valuta <code>prop</code> solo sui casi in cui <code>cond</code> è vera
+@@s526 <code>prop :| "etichetta"</code>
+@@s527 una stringa
+@@s528 nel messaggio di errore compare l'etichetta
+@@s529 <code>p.run(maxSize, testCases, rng)</code>
+@@s530 tre parametri con default
+@@s531 esegue la <code>Prop</code> del corso e stampa il risultato
+@@s532 <code>cons(3, tailForceFinder)</code>
+@@s533 trabocchetto: una coda che <b>lancia se viene calcolata</b>. Se il test passa, la funzione è davvero pigra
+@@s534 10 · Parser
+@@s535 pezzo
+@@s536 chiede
+@@s537 cosa fa
+@@s538 <code>string(s)</code>
+@@s539 <code>s: String</code>
+@@s540 legge esattamente il testo <code>s</code>
+@@s541 <code>char(c)</code>
+@@s542 <code>c: Char</code>
+@@s543 legge un carattere (è <code>string</code> di un carattere)
+@@s544 <code>regex(r)</code>
+@@s545 <code>r: Regex</code> (es. <code>"[0-9]".r</code>)
+@@s546 legge il più lungo testo che combacia <b>all'inizio</b> dell'input
+@@s547 <code>succeed(a)</code>
+@@s548 riesce sempre, restituisce <code>a</code>, consuma <b>0</b> caratteri
+@@s549 <code>p.run(input)</code>
+@@s550 <code>input: String</code>
+@@s551 avvia il parser: <code>Right(valore)</code> o <code>Left(errore)</code>
+@@s552 <code>p | q</code> = <code>p.or(q)</code>
+@@s553 <code>q: =&gt; Parser[A]</code>
+@@s554 prova <code>p</code>; se fallisce senza aver consumato, prova <code>q</code>
+@@s555 <code>p.flatMap(f)</code>
+@@s556 <code>f: A =&gt; Parser[B]</code>
+@@s557 il valore letto da <code>p</code> <b>decide</b> quale parser usare dopo
+@@s558 <code>p.map(f)</code>
+@@s559 <code>f: A =&gt; B</code>
+@@s560 trasforma il valore letto (parser identico, valore cambiato)
+@@s561 <code>p.map2(q)(f)</code>
+@@s562 <code>q: =&gt; Parser[B]</code>, poi <code>f: (A, B) =&gt; C</code>
+@@s563 <code>p</code>, poi <code>q</code>, combina i due valori
+@@s564 <code>p ** q</code> / <code>p.product(q)</code>
+@@s565 <code>q: =&gt; Parser[B]</code>
+@@s566 <code>p</code> poi <code>q</code>, restituisce la coppia <code>(a, b)</code>
+@@s567 <code>q: =&gt; Parser[B]</code>
+@@s568 <code>p</code> poi <code>q</code>, tiene <b>solo</b> il risultato di <code>q</code>
+@@s569 <code>q: =&gt; Parser[Any]</code>
+@@s570 <code>p</code> poi <code>q</code>, tiene <b>solo</b> il risultato di <code>p</code>
+@@s571 <code>p.many</code> / <code>p.*</code>
+@@s572 niente
+@@s573 <code>p</code> zero o più volte → <code>List[A]</code>
+@@s574 <code>p.many1</code>
+@@s575 niente
+@@s576 <code>p</code> almeno una volta
+@@s577 <code>p.listOfN(n)</code>
+@@s578 <code>n: Int</code>
+@@s579 <code>p</code> esattamente <code>n</code> volte
+@@s580 niente
+@@s581 <code>p</code> zero o una volta → <code>Option[A]</code>
+@@s582 <code>p.slice</code>
+@@s583 niente
+@@s584 restituisce il <b>testo</b> riconosciuto invece del valore
+@@s585 <code>ws.?</code>
+@@s586 spazi, se ci sono (idiom per "salta gli spazi")
+@@s587 11 · Monoid, Foldable, Functor, Monad
+@@s588 pezzo
+@@s589 chiede
+@@s590 cosa fa
+@@s591 <code>m.combine(a1, a2)</code>
+@@s592 due valori <code>A</code>
+@@s593 l'operazione del monoide; <b>associativa</b>
+@@s594 <code>m.empty</code>
+@@s595 niente (è un valore)
+@@s596 l'elemento neutro: <code>combine(a, empty) == a</code>
+@@s597 <code>m.foldMap(as)(f)</code>
+@@s598 lista <code>as</code>, poi <code>f: A =&gt; B</code> (con <code>m: Monoid[B]</code>)
+@@s599 trasforma ogni elemento con <code>f</code> e li combina partendo da <code>empty</code>
+@@s600 <code>ma.homomorphism(f)(mb)</code>
+@@s601 <code>f: A =&gt; B</code>, poi l'altro monoide
+@@s602 proprietà: <code>f</code> rispetta <code>combine</code> e <code>empty</code>
+@@s603 <code>ma.isomorphism(f, g)(mb)</code>
+@@s604 <code>f</code>, <code>g</code> inverse, poi l'altro monoide
+@@s605 proprietà: omomorfismo nei due versi e <code>g(f(a)) == a</code>
+@@s606 <code>productMonoid(ma)(mb)</code>
+@@s607 due monoidi
+@@s608 monoide delle coppie, componente per componente
+@@s609 <code>dual(m)</code>
+@@s610 un monoide
+@@s611 stesso monoide con gli argomenti di <code>combine</code> scambiati
+@@s612 <code>summon[Monoid[A]]</code> / <code>monoid[A]</code>
+@@s613 il tipo
+@@s614 recupera il monoide in contesto
+@@s615 <code>as.foldMap(f)</code> / <code>.foldRight(z)(f)</code> / <code>.foldLeft(z)(f)</code> / <code>.combineAll</code> <small>(Foldable)</small>
+@@s616 come i fold sulle liste; <code>combineAll</code> usa il monoide di <code>A</code>
+@@s617 riducono qualunque contenitore <code>F[A]</code> che abbia un <code>Foldable</code>
+@@s618 <code>fa.map(f)</code> <small>(Functor)</small>
+@@s619 <code>f: A =&gt; B</code>
+@@s620 trasforma il contenuto, <b>la forma resta</b>
+@@s621 <code>fab.distribute</code>
+@@s622 niente (su <code>F[(A, B)]</code>)
+@@s623 <code>(F[A], F[B])</code>: separa le due componenti
+@@s624 <code>e.codistribute</code>
+@@s625 niente (su <code>Either[F[A], F[B]]</code>)
+@@s626 <code>F[Either[A, B]]</code>
+@@s627 <code>unit(a)</code> <small>(Monad)</small>
+@@s628 <code>a: =&gt; A</code>
+@@s629 mette <code>a</code> nel contenitore (<code>Some(a)</code>, <code>List(a)</code>…)
+@@s630 <code>fa.flatMap(f)</code>
+@@s631 <code>f: A =&gt; F[B]</code>
+@@s632 concatena un passo che avvolge il risultato
+@@s633 <code>fa.map2(fb)(f)</code>
+@@s634 <code>fb: F[B]</code>, <code>f: (A, B) =&gt; C</code>
+@@s635 combina due contenitori
+@@s636 <code>m.sequence(fas)</code>
+@@s637 <code>List[F[A]]</code>
+@@s638 <code>F[List[A]]</code>
+@@s639 <code>m.replicateM(n, ma)</code>
+@@s640 <code>n: Int</code>, <code>ma: F[A]</code>
+@@s641 <code>ma</code> ripetuta <code>n</code> volte → <code>F[List[A]]</code>
+@@s642 <code>m.compose(f, g)</code>
+@@s643 <code>f: A =&gt; F[B]</code>, <code>g: B =&gt; F[C]</code>
+@@s644 <code>A =&gt; F[C]</code>: prima <code>f</code>, poi <code>g</code> con <code>flatMap</code>
+@@s645 12 · Come si incastrano: tre righe vere, pezzo per pezzo
+@@s646 Premi <b>Avanti</b>: a ogni passo si accende un solo pezzo. Colori: <code>dato</code> blu = ciò che entra, <code>ora</code> arancio = il pezzo che guardi, <code>due</code> viola = un secondo ruolo, <code>ok</code> verde = il risultato.
+@@s647 sequence: lista di Option → Option di lista
+@@s648 La firma: entra una lista di <code>Option</code>, esce <b>un solo</b> <code>Option</code> che contiene la lista. <code>[A]</code> = vale per ogni tipo.
+@@s649 <code>foldRight</code> percorre la lista da <b>destra</b>, combinando un elemento alla volta con il risultato del resto.
+@@s650 Tra le <code>[ ]</code> dico <b>che tipo avrà l'accumulatore</b>. Serve perché <code>Some(Nil)</code> da solo sarebbe <code>Option[List[Nothing]]</code>.
+@@s651 Il valore di partenza <code>z</code>: <code>Some(Nil)</code>, un <code>Option</code> che contiene la lista vuota. È ciò che c'è "dopo l'ultimo elemento".
+@@s652 La funzione riceve <code>ao</code> (l'<code>Option</code> attuale) e <code>acc</code> (il risultato già calcolato per tutto il resto della lista).
+@@s653 <code>map2</code> unisce due <code>Option</code>: dà <code>Some</code> <b>solo se entrambe</b> sono <code>Some</code>, altrimenti <code>None</code>. Un <code>None</code> in mezzo rende <code>None</code> tutto.
+@@s654 Il secondo <code>( )</code> di <code>map2</code> è la funzione che combina i due contenuti. <code>_ :: _</code> = lambda corta con due parametri: <code>(a, lista) =&gt; a :: lista</code>, cioè metti <code>a</code> in testa. Esempio: <code>List(Some(1), Some(2))</code> → <code>Some(List(1, 2))</code>.
+@@s655 filter su LazyList, scritto con foldRight
+@@s656 <code>p</code> è una funzione che prende un elemento e risponde vero/falso. Il risultato è una nuova lista pigra.
+@@s657 Parto da <code>empty</code> (lista vuota): è ciò che resta quando la lista finisce.
+@@s658 La funzione riceve <code>a</code> (l'elemento attuale) e <code>acc</code> (il <b>resto</b>, ancora da calcolare: è by-name).
+@@s659 Se <code>p(a)</code> è vero tengo <code>a</code>: <code>cons</code> crea una cella con <code>a</code> in testa e il resto dietro, <b>senza calcolarlo</b>.
+@@s660 Altrimenti scarto <code>a</code> e restituisco <code>acc</code>: ora il resto <b>va calcolato</b>, per trovare il prossimo elemento valido.
+@@s661 fibonacci con unfold
+@@s662 <code>lazy val</code>: la lista è infinita, la calcolo solo quando serve, e una volta sola.
+@@s663 Il primo <code>( )</code> di <code>unfold</code> è lo <b>stato di partenza</b> <code>z</code>: la coppia <code>(0, 1)</code>, cioè "il numero attuale e il prossimo".
+@@s664 Il secondo <code>( )</code> è la funzione <code>f</code>. Riceve lo stato smontato: <code>a</code> = numero attuale, <code>s</code> = prossimo.
+@@s665 <code>Some(a, …)</code> significa "emetti <code>a</code> e continua". Con <code>None</code> la lista finirebbe; qui non succede mai.
+@@s666 Il <b>nuovo stato</b>: il prossimo diventa l'attuale (<code>s</code>), e il nuovo prossimo è la somma dei due (<code>s + a</code>). Da (0, 1) si passa a (1, 1), poi (1, 2), (2, 3): escono 0, 1, 1, 2, 3, …
+@@s667 S1 · Funzioni, ricorsione, funzioni come valori
+@@s668 Nozioni
+@@s669 <b>Funzione pura</b>: stesso input, stesso output, nessun effetto (niente <code>println</code>, <code>var</code>, eccezioni, I/O). Si può sostituire la chiamata con il suo valore (<i>referential transparency</i>).
+@@s670 <code>val</code> non cambia mai. <code>def</code> è una funzione, valutata a ogni chiamata. <code>if</code> e <code>match</code> sono <b>espressioni</b>: restituiscono un valore, quindi niente <code>return</code>.
+@@s671 Tipo di una funzione: <code>A =&gt; B</code>. Due argomenti: <code>(A, B) =&gt; C</code>. Curried: <code>A =&gt; B =&gt; C</code>, che si legge <code>A =&gt; (B =&gt; C)</code> (la freccia associa a destra).
+@@s672 <b>Ricorsione in coda</b> (<i>tail recursion</i>): la chiamata ricorsiva è l'<b>ultima</b> cosa che la funzione fa. Il compilatore la trasforma in un ciclo, pila costante. <code>@annotation.tailrec</code> dà errore di compilazione se non è davvero in coda.
+@@s673 Ricorsione semplice (<code>1 + f(n-1)</code>): dopo il ritorno resta da fare il <code>+1</code>, quindi ogni livello occupa un frame di pila → <code>StackOverflowError</code> su input lunghi.
+@@s674 <b>Funzione di ordine superiore</b> (HOF): prende o restituisce funzioni. <b>Polimorfismo</b>: <code>[A]</code> dopo il nome, la funzione vale per ogni tipo.
+@@s675 Quando i tipi sono generici l'implementazione è spesso <b>forzata dai tipi</b> (<code>curry</code>, <code>compose</code>): se sei bloccato, segui i tipi.
+@@s676 <code>Int</code> in overflow non dà errore: è aritmetica modulo 2<sup>32</sup>.
+@@s677 Codice
+@@s678 fib · Fibonacci in tempo lineare
+@@s679 <b>Cosa fa.</b> Porta avanti solo gli ultimi due numeri <code>(curr, next)</code>. A ogni passo scala <code>n</code> e sposta la finestra. Numerazione dal 1: <code>fib(1)=0</code>, <code>fib(2)=1</code>, <code>fib(3)=1</code>, <code>fib(5)=3</code>. La versione ovvia <code>fib(n-1)+fib(n-2)</code> costa O(φ<sup>n</sup>); questa O(n), pila costante.
+@@s680 isSorted · ordinata senza pattern matching
+@@s681 <b>Cosa fa.</b> Controlla solo le coppie adiacenti: basta se <code>ordered</code> è transitiva. Appena una coppia è sbagliata risponde <code>false</code>. Array vuoto o con un elemento: nessuna coppia da violare, quindi <code>true</code>. Il criterio d'ordine è un parametro (HOF).
+@@s682 curry · uncurry · compose
+@@s683 <b>Cosa fanno.</b> <code>curry</code> trasforma una funzione a due argomenti in una che ne prende uno alla volta (applicazione parziale: fisso <code>a</code>, resto con una funzione di <code>b</code>). <code>uncurry</code> è l'inversa: <code>uncurry(curry(f)) == f</code>. <code>compose(f, g)</code> = "f dopo g": prima <code>g</code>, poi <code>f</code>. È associativa e ha <code>identity</code> come neutro.
+@@s684 Domande tipiche
+@@s685 Scrivi la funzione ricorsiva in coda con accumulatore. Perché <code>@tailrec</code> rifiuta questa funzione? (Perché dopo la chiamata resta un'operazione.) Qual è il tipo di <code>curry(f)</code>?
+@@s686 S2 · Tipi algebrici, liste, fold
+@@s687 Nozioni
+@@s688 <b>ADT</b> (<i>algebraic data type</i>) = <b>somma</b> di <b>prodotti</b>. Somma: i <code>case</code> di un <code>enum</code> (<i>o</i> l'uno <i>o</i> l'altro). Prodotto: i campi di un <code>case</code> (<i>e</i> questo <i>e</i> quello).
+@@s689 <code>enum List[+A]: case Nil; case Cons(head: A, tail: List[A])</code>. <code>+A</code> = covariante: <code>List[Cat]</code> è anche <code>List[Animal]</code>. <code>Nil</code> è <code>List[Nothing]</code>, quindi serve per ogni tipo.
+@@s690 <b>Pattern matching</b>: i <code>case</code> sono provati <b>dall'alto in basso</b>, vince il primo che combacia (un caso generale messo prima oscura quelli specifici). <code>_</code> = non mi interessa. Una variabile nel pattern lega il valore. Il compilatore controlla l'<b>esaustività</b>.
+@@s691 <b>Condivisione</b>: i dati sono immutabili, quindi <code>tail</code>, <code>drop</code>, <code>dropWhile</code> restituiscono un pezzo della <i>stessa</i> lista, senza copiare (<code>eq</code> è vero). Costo: <code>tail</code> O(1), <code>drop(n)</code> O(n), <code>append(l1,l2)</code> O(|l1|), <code>init</code> O(n) (ricostruisce tutto).
+@@s692 Quando una funzione non ha risposta sensata (<code>tail(Nil)</code>, <code>init(Nil)</code>) il corso chiede <code>NoSuchElementException</code>; quando ce l'ha (<code>dropWhile</code> su <code>Nil</code>) restituisce il valore vuoto.
+@@s693 <b>foldRight</b>: <code>f(a1, f(a2, f(a3, z)))</code>. Associa a destra, <b>non</b> è in coda: pila O(n). <b>foldLeft</b>: <code>f(f(f(z, a1), a2), a3)</code>. Associa a sinistra, <b>è</b> in coda: è il "ciclo for" funzionale.
+@@s694 Il valore iniziale <code>z</code> è il <b>neutro</b> dell'operazione: 0 per <code>+</code>, 1 per <code>*</code>, <code>Nil</code> per <code>append</code>, <code>identity</code> per la composizione.
+@@s695 <code>foldLeft</code> con <code>Cons</code> costruisce la lista <b>al contrario</b> (<code>reverse</code>); <code>foldRight</code> con <code>Cons</code> la ricostruisce nello stesso ordine (<code>map</code>, <code>filter</code>).
+@@s696 <code>flatMap</code> contiene <code>map</code> (f restituisce un singoletto) e <code>filter</code> (f restituisce <code>Nil</code> o un singoletto).
+@@s697 <b>Ordine di stile</b> (settimana 2 in poi): API dedicata (<code>map</code>, <code>filter</code>, <code>exists</code>…) → fold → ricorsione esplicita solo se l'iterazione è insolita.
+@@s698 Codice
+@@s699 List, apply, head, append, foldRight, map (dati dal corso)
+@@s700 <b>Cosa fanno.</b> <code>apply</code> permette <code>List(1,2,3)</code> (<code>A*</code> = numero variabile di argomenti, <code>as.tail*</code> li ripassa uno a uno). <code>append</code> ricopia solo <code>l1</code> e aggancia <code>l2</code> in fondo. <code>map</code> è un <code>foldRight</code> che rimette <code>f(a)</code> davanti al risultato del resto.
+@@s701 tail · drop · dropWhile · init
+@@s702 <b>Cosa fanno.</b> <code>tail</code> toglie la testa, restituisce la coda così com'è (nessuna copia). <code>drop</code> la toglie <code>n</code> volte; <code>n</code> guida la ricorsione, se la lista finisce prima: errore. <code>dropWhile</code> toglie finché <code>p</code> vale e restituisce <code>l</code> al primo elemento che resta. <code>init</code> toglie l'<b>ultimo</b>: il caso base è <code>Cons(_, Nil)</code>; deve ricostruire ogni <code>Cons</code> al ritorno.
+@@s703 length · foldLeft · product · length1 · reverse
+@@s704 <b>Cosa fanno.</b> <code>length</code> semplice: il <code>+1</code> avviene dopo il ritorno, quindi non è in coda. <code>foldLeft</code> porta in avanti l'accumulatore <code>z</code>: nessun lavoro dopo la chiamata, quindi è in coda. <code>product</code>: neutro 1 (con 0 il risultato sarebbe sempre 0). <code>length1</code> ignora l'elemento e incrementa. <code>reverse</code>: ogni elemento visitato va in testa all'accumulatore, quindi l'ultimo finisce davanti.
+@@s705 foldRight1 · foldLeft1 · l'uno scritto con l'altro
+@@s706 <b>Cosa fanno.</b> <code>foldRight1</code>: inverto la lista e uso foldLeft, scambiando gli argomenti di <code>f</code>; non va in <code>StackOverflow</code>. <code>foldLeft1</code>: faccio produrre a <code>foldRight</code> una <b>funzione</b> <code>B =&gt; B</code> (calcolo rimandato): per ogni <code>a</code> costruisco <code>b =&gt; g(f(b, a))</code>, il neutro è <code>identity</code>; alla fine applico il tutto a <code>z</code>.
+@@s707 concat · filter · flatMap · filter1
+@@s708 <b>Cosa fanno.</b> <code>concat</code> appiattisce una lista di liste con <code>foldRight</code>: ogni lista è ricopiata una volta sola, costo lineare (con <code>foldLeft</code> l'accumulatore crescente verrebbe ricopiato a ogni passo: quadratico). <code>filter</code>: tengo <code>a</code> (lo rimetto davanti) o scarto (passo <code>z</code> invariato). <code>flatMap</code> = <code>map</code> poi <code>concat</code>. <code>filter1</code>: tenere = singoletto, scartare = <code>Nil</code>.
+@@s709 addPairwise · zipWith · hasSubsequence
+@@s710 <b>Cosa fanno.</b> <code>zipWith</code> percorre due liste in parallelo e si ferma alla più corta; l'operazione <code>f</code> è un parametro (<code>addPairwise</code> è il caso <code>_ + _</code>). <code>hasSubsequence</code> = sottosequenza <b>contigua</b>: <code>sub</code> è prefisso di <code>sup</code> <i>oppure</i> sottosequenza della sua coda. Se il prefisso fallisce, riparte da <code>t</code> con <code>sub</code> <b>intero</b>. Caso peggiore O(|sup|·|sub|).
+@@s711 Domande tipiche
+@@s712 Perché <code>foldRight</code> può dare <code>StackOverflow</code> e <code>foldLeft</code> no? Scrivi <code>reverse</code>, <code>map</code> o <code>filter</code> con un fold. Perché <code>concat</code> usa <code>foldRight</code>? Perché <code>init</code> costa O(n) mentre <code>tail</code> costa O(1)?
+@@s713 S3 · Alberi, Option, for
+@@s714 Nozioni
+@@s715 <b>Tree</b>: <code>enum Tree[+A]: case Leaf(value: A); case Branch(left, right)</code>. Funzioni sull'albero = ricorsione sui due casi. Un solo <code>fold(t)(f)(g)</code>: <code>g</code> trasforma una foglia, <code>f</code> combina i due risultati dei rami. <code>size</code>, <code>maximum</code>, <code>map</code> sono casi particolari.
+@@s716 <b>Option</b>: <code>Some(a)</code> oppure <code>None</code>. Il fallimento diventa un <b>valore nel tipo</b>: niente <code>null</code>, niente eccezioni. Chi chiama è obbligato a gestire l'assenza.
+@@s717 <code>map(f: A =&gt; B)</code>: applica <code>f</code> dentro, <code>None</code> resta <code>None</code>. <code>flatMap(f: A =&gt; Option[B])</code>: serve quando <code>f</code> può a sua volta fallire (con <code>map</code> verrebbe <code>Option[Option[B]]</code>). <code>filter(p)</code>: <code>Some</code> diventa <code>None</code> se <code>p</code> è falso.
+@@s718 <code>getOrElse[B &gt;: A](default: =&gt; B): B</code>: <code>default</code> è <b>by-name</b> (valutato solo se serve); <code>B &gt;: A</code> perché <code>Option</code> è covariante e <code>A</code> non può stare in posizione di argomento.
+@@s719 <b>for/yield</b> è zucchero sintattico: <code>for a &lt;- ao; b &lt;- bo yield f(a,b)</code> = <code>ao.flatMap(a =&gt; bo.map(b =&gt; f(a,b)))</code>. Le frecce <code>&lt;-</code> diventano <code>flatMap</code>, l'ultima <code>map</code>. Se un passo è <code>None</code>, tutto è <code>None</code>.
+@@s720 <code>map2(ao, bo)(f)</code>: combina due Option, <code>Some</code> solo se entrambe lo sono. <code>sequence</code>: <code>List[Option[A]] =&gt; Option[List[A]]</code>, <code>Some</code> solo se <b>tutti</b> sono <code>Some</code>. <code>traverse(as)(f)</code>: come <code>sequence</code> dopo <code>map(f)</code>, ma in un solo passaggio.
+@@s721 <b>Varianza</b>: <code>T[+A]</code> covariante (<i>produce</i> A, si legge: <code>List</code>, <code>Option</code>). <code>T[-A]</code> contravariante (<i>consuma</i> A, si scrive: funzioni sull'argomento). <code>T[A]</code> invariante (legge e scrive: <code>Array</code>). Regola: un <code>+A</code> non può comparire come tipo di argomento di un metodo, per questo <code>getOrElse[B &gt;: A]</code> e <code>append[B &gt;: A]</code>.
+@@s722 <b>Dispatch dinamico</b>: il metodo eseguito dipende dal tipo <i>a runtime</i> dell'oggetto, non dal tipo statico. Un <b>self type</b> <code>this: java.awt.Point =&gt;</code> dice a un trait che sarà mescolato a un <code>Point</code>.
+@@s723 <code>Nil</code> = lista vuota (valore valido). <code>None</code> = assenza di valore. <code>null</code> = da non usare. <code>Nothing</code> = tipo senza valori, sottotipo di tutti.
+@@s724 Codice
+@@s725 Tree · size · maximum · map
+@@s726 <b>Cosa fanno.</b> <code>size</code> conta nodi interni e foglie (1 per ogni nodo). <code>maximum</code> prende il massimo dei due lati. <code>map</code> mantiene la forma e trasforma solo le foglie. Stesso schema tre volte: è quello che <code>fold</code> riassume.
+@@s727 fold sugli alberi e le tre funzioni riscritte
+@@s728 <b>Cosa fa.</b> <code>g</code> dice cosa fare di una foglia, <code>f</code> come unire i risultati dei due figli. <code>size1</code>: foglia vale 1, ramo = 1 + sx + dx. <code>maximum1</code>: foglia = il valore stesso (<code>identity</code>), ramo = massimo. <code>map1</code>: foglia = nuova foglia, ramo = ricostruisco <code>Branch</code>.
+@@s729 Option: map · getOrElse · flatMap · filter · forAll
+@@s730 <b>Cosa fanno.</b> Ogni metodo guarda i due casi: su <code>None</code> propaga <code>None</code> (o il default); su <code>Some(a)</code> lavora su <code>a</code>. <code>flatMap</code> non ri-avvolge: <code>f(a)</code> è già un <code>Option</code>. <code>forAll</code> su <code>None</code> è <code>true</code> (nessun elemento viola <code>p</code>).
+@@s731 map2 · sequence · traverse
+@@s732 <b>Cosa fanno.</b> <code>map2</code>: se <code>ao</code> è <code>Some(a)</code> guardo <code>bo</code>; se anche <code>bo</code> è <code>Some(b)</code>, applico <code>f</code>. <code>sequence</code>: parto da <code>Some(Nil)</code> e per ogni elemento (da destra) aggancio <code>a :: resto</code> solo se entrambi sono <code>Some</code>. Esempio verificato: <code>List(Some(1), Some(2))</code> → <code>Some(List(1, 2))</code>; <code>List(Some(1), None)</code> → <code>None</code>. <code>traverse</code> applica <code>f</code> a ogni elemento e fa la stessa cosa.
+@@s733 headOption · headGrade · for/yield · mean · variance
+@@s734 <b>Cosa fanno.</b> <code>headOption</code>: primo elemento se c'è. <code>headGrade</code> prende il voto (<code>._2</code>, secondo elemento della coppia) del primo studente; <code>headGrade1</code> è lo stesso con <code>for</code>. <code>mean</code> è parziale: lista vuota → <code>None</code>. <code>variance</code> = media degli scarti al quadrato; usa <code>mean</code> due volte, quindi <code>flatMap</code>.
+@@s735 OrderedPoint · self type
+@@s736 <b>Cosa fa.</b> Ordine lessicografico sui punti: prima per <code>x</code>, a parità per <code>y</code>. Restituisce −1, 0, 1. <code>this: java.awt.Point =&gt;</code> permette di usare <code>x</code> e <code>y</code> dentro il trait. Uso: <code>new java.awt.Point(0,1) with OrderedPoint</code>.
+@@s737 Domande tipiche
+@@s738 Perché <code>getOrElse</code> ha <code>B &gt;: A</code> e <code>default: =&gt; B</code>? Scrivi <code>map2</code> con <code>for</code> e senza. Quando si usa <code>flatMap</code> invece di <code>map</code>? Cosa restituisce <code>sequence(List(Some(1), None))</code>?
+@@s739 S4 · Laziness: LazyList
+@@s740 Nozioni
+@@s741 <b>Strict</b> (eager): gli argomenti sono calcolati <i>prima</i> della chiamata. <b>By-name</b> (<code>x: =&gt; Int</code>): calcolato a ogni uso, <b>anche più volte</b>. <b>lazy val</b>: calcolato al primo uso, poi ricordato. Verificato: con <code>def f(x: =&gt; Int) = x + x</code> l'argomento si valuta due volte; con <code>lazy val</code> una.
+@@s742 <code>Cons(h: () =&gt; A, t: () =&gt; LazyList[A])</code>: testa e coda sono <b>thunk</b> (<code>() =&gt; …</code> = ricetta senza argomenti, non ancora eseguita). <code>cons(hd: =&gt; A, tl: =&gt; LazyList[A])</code> mette i valori in <code>lazy val</code> e crea i thunk: ogni parte è calcolata <b>al più una volta</b> (memoization).
+@@s743 Operazioni <b>intermedie</b> (<code>map</code>, <code>filter</code>, <code>take</code>, <code>drop</code>, <code>append</code>…) restituiscono una nuova <code>LazyList</code> senza calcolare quasi nulla. Operazioni <b>terminali</b> (<code>toList</code>, <code>forAll</code>, <code>exists</code>, <code>headOption</code>, <code>find</code>) forzano il calcolo.
+@@s744 <b>Liste infinite</b>: <code>naturals = from(1)</code>. Si usano con <code>take</code>/<code>takeWhile</code>/<code>exists</code>. <code>naturals.toList</code> non termina (<code>toList</code> è stretta: cerca <code>Empty</code> che non arriva). <code>naturals.forAll(_ &gt;= 0)</code> non termina (il predicato è sempre vero, non trova mai un controesempio). <code>naturals.exists(_ &gt; 10)</code> termina.
+@@s745 <b>foldRight pigro</b>: <code>foldRight(z: =&gt; B)(f: (A, =&gt; C) =&gt; C)</code>. Il resto arriva a <code>f</code> <i>by-name</i>: se <code>f</code> non lo usa, il resto non viene calcolato. Per questo <code>takeWhile</code>, <code>headOption</code>, <code>map</code>, <code>filter</code>, <code>append</code>, <code>flatMap</code> si scrivono con <code>foldRight</code> e restano pigre. <code>foldLeft</code> invece è stretta e non vale su liste infinite.
+@@s746 <b>Interleaving</b>: <code>l.map(f).filter(p)</code> su <code>LazyList</code> lavora un elemento alla volta (<code>map</code> e <code>filter</code> si alternano), su <code>List</code> fa due passate complete. Per questo <code>find(p) = filter(p).headOption</code> va bene qui e non sulle liste strette.
+@@s747 <b>unfold</b>: <code>unfold(z)(f)</code> con <code>f: S =&gt; Option[(A, S)]</code>. <code>None</code> = fine. <code>Some((a, s))</code> = emetti <code>a</code> e continua dallo stato <code>s</code>. Genera <code>fibs</code>, <code>map</code>, <code>take</code>, <code>zipWith</code> senza ricorsione esplicita.
+@@s748 Il <code>foldRight</code> non è in coda: va in <code>StackOverflow</code> se <code>f</code> scende in profondità.
+@@s749 Codice
+@@s750 LazyList · cons · empty · apply
+@@s751 <b>Cosa fanno.</b> <code>cons</code> non calcola né testa né coda: li mette in due <code>lazy val</code> e restituisce due thunk che le leggono. La prima volta che qualcuno chiama il thunk il valore viene calcolato; le volte dopo si riusa.
+@@s752 headOption · tail · toList
+@@s753 <b>Cosa fanno.</b> <code>h()</code> e <code>t()</code> con le parentesi <b>forzano</b> il thunk. <code>headOption</code> forza solo la testa, non la coda. <code>toList</code> forza tutto, fino a <code>Empty</code>: su una lista infinita non termina.
+@@s754 from · to · naturals
+@@s755 <b>Cosa fanno.</b> Liste infinite: la ricorsione non si esaurisce perché il secondo argomento di <code>cons</code> è by-name e non viene calcolato finché non serve. <code>from(1)</code> dà 1, 2, 3, … <code>naturals</code> parte da <b>1</b> (lo vuole il test del corso).
+@@s756 take · drop · takeWhile
+@@s757 <b>Cosa fanno.</b> <code>take</code> è pigra: crea una cella e rimanda il resto dentro <code>cons</code>. <code>drop</code> invece avanza subito di <code>n</code> code (non guarda le teste scartate). <code>takeWhile</code> si ferma al primo elemento che viola <code>p</code>. <code>naturals.take(1000000000).drop(41).take(10).toList</code> termina perché nessuno chiede più di 51 elementi.
+@@s758 forAll · exists
+@@s759 <b>Cosa fanno.</b> Si fermano appena sanno la risposta: <code>forAll</code> al primo elemento che viola <code>p</code>, <code>exists</code> al primo che la soddisfa. Entrambe in coda. Su una lista infinita terminano <i>solo</i> se la risposta arriva prima della fine.
+@@s760 Con foldRight: takeWhile1 · headOption1 · map · filter · append · flatMap
+@@s761 <b>Cosa fanno.</b> In ognuna <code>acc</code> è "il resto, ancora da calcolare". Se la funzione non lo tocca (<code>takeWhile1</code> quando <code>p</code> è falso, <code>headOption1</code> sempre) il resto non viene mai calcolato. <code>filter</code>: se <code>p(a)</code> è falso restituisce <code>acc</code>, cioè <b>forza</b> il resto fino al prossimo elemento valido. <code>append</code> non forza <code>that</code> finché non si arriva in fondo.
+@@s762 fibs · unfold · fibsUnfold
+@@s763 <b>Cosa fanno.</b> <code>fibs</code> = 0, 1, 1, 2, 3, 5, … Lo stato è la coppia <code>(a, b)</code>. <code>unfold</code> è la forma generale: chiedi a <code>f</code> "che valore emetto e quale stato passo avanti?". Se <code>f</code> risponde <code>None</code>, la lista finisce.
+@@s764 mapUnfold · takeUnfold · takeWhileUnfold · zipWith
+@@s765 <b>Cosa fanno.</b> Lo <b>stato</b> è "quanto resta da leggere": la lista stessa (<code>map</code>, <code>takeWhile</code>), la lista più un contatore (<code>take</code>), due liste (<code>zipWith</code>). Ogni <code>case</code> con <code>Some</code> dice cosa emettere e il nuovo stato; <code>case _ =&gt; None</code> chiude.
+@@s766 Domande tipiche (in inglese)
+@@s767 <i>Why does <code>toList</code> fail on infinite lists?</i> <i>Why does <code>naturals.take(1000000000).drop(41).take(10).toList</code> terminate?</i> <i>Why would <code>naturals.forAll { _ &gt;= 0 }</code> crash?</i> Risposte pronte in fondo alla pagina.
+@@s768 S5 · State e numeri casuali puri
+@@s769 Nozioni
+@@s770 Un generatore con stato nascosto (<code>Random.nextInt</code>) non è puro: due chiamate danno numeri diversi. Soluzione: <code>nextInt: (Int, RNG)</code> restituisce il numero <b>e il nuovo stato</b>. Stesso seme → stessa sequenza (riproducibile, testabile).
+@@s771 <b>Mai riusare lo stato vecchio</b>: chiamare due volte <code>nextInt</code> sullo stesso <code>rng</code> dà due volte lo <i>stesso</i> numero.
+@@s772 <code>type Rand[+A] = RNG =&gt; (A, RNG)</code>: "una ricetta per ottenere una <code>A</code> consumando un <code>RNG</code>". I combinatori (<code>unit</code>, <code>map</code>, <code>map2</code>, <code>flatMap</code>, <code>sequence</code>) passano lo stato al posto tuo, in ordine.
+@@s773 Il pattern generale: <code>State[S, +A](run: S =&gt; (A, S))</code>. <code>get</code> legge lo stato, <code>set(s)</code> lo sostituisce, <code>modify(f)</code> lo trasforma. Si compone anche con <code>for</code>.
+@@s774 <code>nonNegativeInt</code>: se <code>n &lt; 0</code> restituisce <code>-(n+1)</code> e non <code>-n</code>, perché <code>-Int.MinValue</code> va in overflow e resta negativo. <code>double</code> in [0, 1): <code>n / (Int.MaxValue.toDouble + 1)</code> (+1 per escludere l'1).
+@@s775 <code>nonNegativeLessThan(bound)</code>: usa <code>double</code> (numero in [0,1)) e lo scala: <code>(d * bound).toInt</code> dà un intero da 0 a <code>bound-1</code>. Come un dado con <code>bound</code> facce.
+@@s776 <code>stateToLazyList</code>: da un automa a stati a una sequenza infinita (collega S4 e S5).
+@@s777 Codice
+@@s778 RNG · SimpleRNG
+@@s779 <b>Cosa fa.</b> Calcola un nuovo seme (<code>&amp;</code> = AND bit a bit, tiene 48 bit), ne ricava un intero (<code>&gt;&gt;&gt;</code> = shift a destra con zeri) e restituisce la coppia (numero, generatore nuovo).
+@@s780 nonNegativeInt · double · intDouble · doubleInt · ints
+@@s781 <b>Cosa fanno.</b> Ogni funzione prende un <code>rng</code>, ne usa uno nuovo per ogni numero (<code>rand1</code>, <code>rand2</code>) e restituisce l'<b>ultimo</b> stato. <code>doubleInt</code> è <code>intDouble</code> a parti scambiate. <code>ints</code> ricorre: un numero, poi gli altri <code>size-1</code> a partire dal generatore successivo.
+@@s782 Rand · unit · map · double2 · map2 · sequence · ints2
+@@s783 <b>Cosa fanno.</b> <code>unit</code>: restituisce <code>a</code> senza toccare lo stato. <code>map</code>: trasforma il valore, <b>lo stato passa uguale</b>. <code>map2</code>: esegue <code>ra</code>, passa il suo stato a <code>rb</code>, combina i due valori: lo stato fa la catena <code>rng → rng2 → rng3</code>. <code>sequence</code>: trasforma una lista di ricette in una ricetta di lista. <code>ints2</code> = <code>size</code> copie di <code>int</code> in sequenza.
+@@s784 flatMap · nonNegativeLessThan
+@@s785 <b>Cosa fanno.</b> <code>flatMap</code>: esegue <code>f</code>, usa il valore <code>a</code> per <i>scegliere</i> la ricetta successiva <code>g(a)</code> e la esegue con lo stato aggiornato. <code>nonNegativeLessThan</code>: tira un double in [0,1), lo moltiplica per <code>bound</code>, tronca. Con <code>bound=6</code>: 0…5.
+@@s786 State · flatMap · map · map2 · unit · get · set · modify · sequence
+@@s787 <b>Cosa fanno.</b> <code>State</code> è un <code>Rand</code> con lo stato <code>S</code> qualsiasi. <code>flatMap</code>: esegui il primo con <code>s</code>, ottieni <code>(a, s1)</code>, scegli il prossimo <code>f(a)</code> ed eseguilo con <code>s1</code>. <code>map</code> e <code>map2</code> si ricavano da <code>flatMap</code> + <code>unit</code>. <code>get</code>/<code>set</code>/<code>modify</code> leggono e cambiano lo stato. <code>stateToLazyList</code>: esegue lo stato, emette il valore, riparte dal nuovo stato: sequenza infinita di casuali (<code>lazyInts(SimpleRNG(42)).take(10).toList</code>).
+@@s788 Domande tipiche
+@@s789 Perché chiamare <code>nextInt</code> due volte sullo stesso <code>rng</code> dà lo stesso numero? Scrivi <code>map2</code> di <code>Rand</code>. Cosa fa <code>flatMap</code> in più di <code>map</code>? Come ottieni un intero tra 0 e 5?
+@@s790 S6–S7 · Testing e property-based testing
+@@s791 Nozioni
+@@s792 <b>Asserzione</b> = condizione booleana che nelle esecuzioni corrette è vera. <code>require(c)</code>: pre-condizione, colpa di chi chiama (<code>IllegalArgumentException: requirement failed</code>). <code>x.ensuring(r =&gt; P(r))</code>: post-condizione, colpa della funzione (<code>AssertionError</code>). <code>assert(c)</code>: deve valere il programma (<code>AssertionError: assertion failed</code>). <code>assume(c)</code>: un'ipotesi (<code>AssertionError: assumption failed</code>).
+@@s793 <b>Property-based testing</b>: al posto di pochi esempi scrivi una <b>proprietà</b> che deve valere per <i>tutti</i> gli input; ScalaCheck ne genera 100 a caso e cerca un controesempio. Se lo trova fa lo <b>shrinking</b>: lo riduce al più piccolo che fallisce.
+@@s794 <b>Come si inventa una proprietà</b>: (1) <i>legge</i> algebrica: <code>l.drop(n).drop(m) == l.drop(n + m)</code>; (2) <i>idempotenza</i>: <code>l.take(n).take(n) == l.take(n)</code>; (3) <i>identità</i>: <code>l.map(identity) == l</code>; (4) <i>oracolo</i>: confronto con l'implementazione standard (<code>list2lazyList(la).take(n).toList == la.take(n)</code>); (5) <i>pigrizia</i>: un valore che lancia un'eccezione se viene forzato (<code>tailForceFinder</code>) e verifico che non scatti.
+@@s795 <b>Specificare un <code>minimum</code></b> richiede due proprietà insieme: (P1) tutti gli elementi sono ≥ m; (P2) m è nella lista. Una sola non basta: restituire <code>Int.MinValue</code> soddisfa P1, restituire un numero qualunque della lista soddisfa P2. Le proprietà sono funzioni di <code>minimum</code> per poterle provare su implementazioni sbagliate (mutanti).
+@@s796 <b>Gen[A]</b> = <code>State[RNG, A]</code> (un generatore è un automa a stati: S5). <b>Prop</b> = <code>(MaxSize, TestCases, RNG) =&gt; Result</code>. <b>Result</b> = <code>Passed</code> oppure <code>Falsified(failure, successes)</code>. <b>SGen[A]</b> = <code>Int =&gt; Gen[A]</code>: generatore che dipende dalla taglia, per provare da input piccoli a grandi.
+@@s797 <b>opaque type</b>: dentro il file <code>Gen</code> è un <code>State</code>; fuori nessuno lo sa. Non è una classe, quindi non ha un corpo per i metodi: si aggiungono con <b>extension method</b> (<code>g.listOfN(5)</code> funziona lo stesso con il punto).
+@@s798 <b>Type class</b>: <code>given</code> definisce un'istanza, <code>using</code> la chiede, <code>summon[T]</code> la recupera. <code>def f[A: Gen]</code> è zucchero per <code>def f[A](using Gen[A])</code>.
+@@s799 In ScalaCheck: <code>forAll { (x: Int) =&gt; … }</code>, <code>p1 &amp;&amp; p2</code>, <code>cond ==&gt; prop</code> (pre-condizione: scarta i casi che non la soddisfano), <code>prop :| "etichetta"</code>.
+@@s800 Codice
+@@s801 Test di LazyList (settimana 6)
+@@s802 <b>Cosa fanno.</b> <code>tailForceFinder</code> è una "trappola": se il codice forza la coda, lancia e il test fallisce. Se il test passa, la funzione è davvero pigra. <code>Genn</code> = generatore di numeri 0–50. <code>infiniteLazyList</code> prova la proprietà anche su liste infinite. <code>:| "finite"</code> etichetta il pezzo che fallisce.
+@@s803 Specificare minimum (Exercise 3 e 16)
+@@s804 <b>Cosa fanno.</b> <code>intList</code> genera liste <b>non vuote</b> di numeri 0–100 (<code>minimum</code> di una lista vuota non ha senso). <code>p1Min</code>: ogni elemento è ≥ m. <code>p2Min</code>: m compare nella lista. Insieme dicono "m è il più piccolo". La versione dell'esercizio 16 è identica ma usa <code>Prop.forAll(nonEmptyList)</code>, con liste di taglia crescente.
+@@s805 Gen: choose · unit · boolean · listOfN · flatMap · map · listOf · union
+@@s806 <b>Cosa fanno.</b> <code>choose(a, b)</code>: un intero in [a, b) (non negativo del generatore, resto della divisione, spostato di <code>a</code>). <code>listOfN(n)</code>: <code>n</code> copie del generatore in sequenza. <code>flatMap</code>: scegli il generatore successivo in base al valore. <code>listOf(size)</code>: prima genera la lunghezza, poi la lista. <code>union</code>: lancia una moneta e usa uno dei due generatori.
+@@s807 given · using · summon (Exercise 12)
+@@s808 <b>Cosa fanno.</b> <code>A: Gen</code> significa "esiste un <code>Gen[A]</code> nel contesto". <code>summon[Gen[A]]</code> lo prende. Le due scritture di <code>listOfN</code> sono equivalenti: la seconda dà un nome al generatore.
+@@s809 Result · Prop · forAll · &amp;&amp; · ||
+@@s810 <b>Cosa fanno.</b> <code>forAll</code>: genera una <b>lista pigra</b> di valori casuali, li numera, ne prende <code>n</code>, prova <code>f</code> su ognuno (un'eccezione conta come fallimento) e <code>find</code> si ferma al <b>primo</b> fallito. Nessun fallito → <code>Passed</code>. <code>&amp;&amp;</code>: se la prima fallisce restituisce quel fallimento, altrimenti prova la seconda. <code>||</code>: se la prima fallisce prova la seconda.
+@@s811 SGen · unsized · list · Prop.forAll con taglia
+@@s812 <b>Cosa fanno.</b> <code>SGen</code> è una funzione "taglia → generatore". <code>unsized</code> ignora la taglia. <code>list</code> usa la taglia come lunghezza. <code>nonEmptyList</code> usa <code>n max 1</code> per non generare mai la lista vuota. <code>SGen.Prop.forAll</code> prova taglie 0, 1, 2… fino a <code>MaxSize</code> (piccoli prima: il controesempio trovato è già piccolo).
+@@s813 Domande tipiche
+@@s814 Scrivi due proprietà che specificano <code>minimum</code>. Perché serve un <code>extension</code> per <code>listOfN</code>? Perché <code>forAll</code> si ferma al primo fallimento? Qual è la differenza tra <code>Gen</code> e <code>SGen</code>? Scrivi una proprietà per <code>take</code> / <code>drop</code> / <code>map</code> di una <code>LazyList</code>.
+@@s815 S8 · Parser combinators
+@@s816 Nozioni
+@@s817 Un <b>parser</b> è un valore <code>Parser[A]</code> che legge una stringa e produce una <code>A</code> (o un errore). Si costruiscono parser grandi <b>incollando</b> parser piccoli con operatori (<i>combinators</i>). Il tipo concreto: <code>Parser[+A] = ParseState =&gt; Result[A]</code>.
+@@s818 <b>Progetto algebrico</b>: prima l'interfaccia astratta <code>trait Parsers[ParseError, Parser[+_]]</code> (operazioni + leggi), poi l'implementazione (<code>Sliceable</code>). Le <b>leggi</b> (<code>object Laws</code>) sono proprietà ScalaCheck scritte con le sole operazioni astratte, quindi valgono per ogni implementazione.
+@@s819 <b>Primitive</b> (da implementare): <code>string(s)</code>, <code>regex(r)</code>, <code>succeed(a)</code>, <code>flatMap</code>, <code>or</code> (<code>|</code>), <code>slice</code>, <code>run</code>. <b>Derivate</b> (scritte con le primitive): <code>map</code>, <code>map2</code>, <code>product</code> (<code>**</code>), <code>many</code>, <code>many1</code>, <code>listOfN</code>, <code>?</code>, <code>*</code>, <code>|*</code>, <code>*|</code>.
+@@s820 Operatori: <code>p ** q</code> = prima <code>p</code> poi <code>q</code>, coppia dei risultati. <code>p |* q</code> = tieni solo il risultato di <code>q</code> (scarta il sinistro). <code>p *| q</code> = tieni solo quello di <code>p</code>. <code>p | q</code> = prova <code>p</code>, se fallisce prova <code>q</code>. <code>p.?</code> = zero o una volta (<code>Option</code>). <code>p.many</code> = zero o più. <code>p.many1</code> = almeno una.
+@@s821 Il secondo argomento di <code>map2</code>, <code>product</code>, <code>or</code> è <b>by-name</b> (<code>=&gt;</code>): è valutato solo se serve. In <code>many</code> è indispensabile: <code>p.many</code> si richiama dentro sé stesso, senza by-name andrebbe in ricorsione infinita prima di leggere un carattere.
+@@s822 <b>Fallimento committed</b>: <code>Failure(errore, isCommitted)</code>. <code>or</code> prova la seconda alternativa <b>solo</b> se il primo fallimento non è committed (cioè se il primo parser non ha già consumato input). <code>attempt</code> annulla il commit.
+@@s823 <b>Slice</b>: se mi interessa solo il testo riconosciuto, non il valore, <code>slice</code> evita di costruire valori inutili.
+@@s824 <b>Errori</b>: <code>ParseError(stack: List[(Location, String)])</code>; <code>Location(input, offset)</code> sa calcolare riga e colonna e disegnare il segno <code>^</code>.
+@@s825 <b>JSON</b>: la grammatica diventa codice, un parser per ogni forma. Le definizioni sono <code>lazy val</code> perché si richiamano a vicenda (<code>json</code> usa <code>jarray</code>, che usa <code>json</code>).
+@@s826 Codice
+@@s827 L'interfaccia astratta
+@@s828 <b>Cosa fa.</b> Elenca le primitive senza dire come sono fatte. <code>self =&gt;</code> dà un nome a "questo oggetto" per poterlo usare dentro i blocchi annidati (<code>Laws</code>). <code>char</code> è già definita: legge una stringa di un carattere e prende il primo.
+@@s829 map2 · product · ** · |* · *| · ? · *
+@@s830 <b>Cosa fanno.</b> <code>map2</code>: esegui <code>p1</code>, poi <code>p2</code>, combina i due risultati con <code>f</code>. <code>product</code> = <code>map2</code> con <code>f</code> che fa la coppia. <code>|*</code> ignora il risultato sinistro (utile per saltare una virgola o una parentesi). <code>*|</code> ignora il destro. <code>?</code>: se <code>p1</code> fallisce senza consumare, <code>succeed(None)</code> al suo posto.
+@@s831 map · many · manyA · many1 · listOfN · digitTimesA
+@@s832 <b>Cosa fanno.</b> <code>map</code> = <code>flatMap</code> + <code>succeed</code>. <code>many</code>: provo <code>p</code> seguito da <code>many</code>, aggiungo in testa (<code>::</code>); se <code>p</code> fallisce, lista vuota. <code>many1</code> richiede la prima occorrenza. <code>listOfN(n)</code>: esattamente <code>n</code> volte. <code>manyA</code> conta le <code>a</code> di fila. <code>digitTimesA</code> legge una cifra <code>d</code> e <i>poi</i> esattamente <code>d</code> lettere <code>a</code>: il parser successivo <b>dipende</b> dal valore letto, per questo serve <code>flatMap</code> (<code>map2</code> non basta).
+@@s833 Sliceable: succeed · string · or · regex
+@@s834 <b>Cosa fanno.</b> <code>succeed</code>: riesce subito consumando <b>0</b> caratteri. <code>or</code>: prova <code>p</code>; <i>solo</i> se è un fallimento non committed prova <code>p2</code> dallo stesso punto; un successo (o un fallimento committed) resta com'è. <code>regex</code>: cerca una corrispondenza <b>all'inizio</b> dell'input rimanente (<code>findPrefixOf</code>) e consuma tanti caratteri quanti ne ha riconosciuti.
+@@s835 Result e ParseError
+@@s836 <b>Cosa fa.</b> Un parser guarda <code>ParseState</code> (dov'è, e se è in modalità slice) e restituisce: <code>Success</code> (valore + caratteri consumati), <code>Slice</code> (solo caratteri consumati), <code>Failure</code> (errore + flag committed). <code>Slice</code> e <code>Failure</code> sono sottotipi con tipo raffinato (<b>GADT</b>).
+@@s837 JSON: QUOTED · DOUBLE · ws · jnull · jbool · jstring · jnumber
+@@s838 <b>Cosa fanno.</b> <code>QUOTED</code>: legge <code>"…"</code> (virgolette, niente virgolette dentro) e toglie la prima e l'ultima. <code>DOUBLE</code>: numero con segno, parte decimale ed esponente opzionali. <code>ws</code>: uno o più spazi. Le forme semplici sono un <code>string</code> o una <code>regex</code> + <code>map</code> che mette il risultato nel costruttore giusto.
+@@s839 JSON: jarray · field · jobject · json
+@@s840 <b>Cosa fanno.</b> <code>commaSeparatedVals</code>: un <code>json</code>, poi zero o più coppie "virgola + <code>json</code>" (<code>|*</code> scarta la virgola); oppure lista vuota. <code>jarray</code>: <code>[</code>, spazi opzionali, elementi, spazi opzionali, <code>]</code>, poi lista → <code>JArray</code>. <code>field</code>: chiave tra virgolette, <code>:</code>, valore: coppia. <code>jobject</code>: come l'array con le parentesi graffe e <code>toMap</code>. <code>json</code>: spazi opzionali, <b>una</b> tra le sei forme (la prova va in ordine), spazi opzionali.
+@@s841 Domande tipiche (in inglese)
+@@s842 <i>Why is the second argument of <code>map2</code> by-name?</i> Perché se non lo fosse <code>many</code> chiamerebbe sé stessa senza fine. <i>Why can the laws live inside the abstract trait?</i> Perché sono scritte solo con le operazioni astratte: valgono per ogni implementazione. <i>When do you need <code>flatMap</code> and not <code>map2</code>?</i> Quando il parser successivo dipende dal valore appena letto (<code>digitTimesA</code>).
+@@s843 S9 · Monoid, Foldable, Functor, Monad
+@@s844 Nozioni
+@@s845 <b>Monoid</b> = un tipo <code>A</code> + <code>combine(a1, a2): A</code> + <code>empty: A</code>. Due leggi: <b>associatività</b> <code>combine(combine(a,b),c) == combine(a,combine(b,c))</code>; <b>neutro</b> <code>combine(a, empty) == a == combine(empty, a)</code>. L'ordine degli argomenti <i>non</i> deve per forza essere commutativo.
+@@s846 Esempi: <code>(Int, +, 0)</code>, <code>(Int, *, 1)</code>, <code>(Boolean, ||, false)</code>, <code>(Boolean, &amp;&amp;, true)</code>, <code>(String, +, "")</code>, <code>(List, ++, Nil)</code>, <code>(A =&gt; A, composizione, identity)</code> (<code>endoMonoid</code>). <code>optionMonoid</code>: primo <code>Some</code> (<code>combine(None, Some(3)) = Some(3)</code>, <code>combine(Some(1), Some(2)) = Some(1)</code>); <code>optionMonoidLift</code>: se entrambi <code>Some</code> combina i contenuti (con <code>intAddition</code>: <code>Some(1)</code>+<code>Some(2)</code> = <code>Some(3)</code>).
+@@s847 <b>foldMap</b>(as)(f): trasforma ogni elemento con <code>f</code> in un valore del monoide e li combina partendo da <code>empty</code>. Esempio: <code>foldMap(List("a","bb","ccc"))(_.length)</code> con <code>intAddition</code> = 1+2+3 = 6; con <code>stringMonoid</code> e <code>identity</code> = <code>"abbccc"</code>.
+@@s848 <b>Omomorfismo</b> <code>f: A =&gt; B</code> tra monoidi: <code>f(combine(a1,a2)) == combine(f(a1), f(a2))</code> e <code>f(empty) == empty</code>. <b>Isomorfismo</b>: due omomorfismi <code>f</code>, <code>g</code> che si annullano a vicenda (<code>g(f(a)) == a</code>). Esempi: <code>String ≅ List[Char]</code> (<code>toList</code>, <code>mkString</code>); <code>booleanOr ≅ booleanAnd</code> (la negazione).
+@@s849 <b>Dual</b>: stesso monoide con <code>combine</code> a rovescio. <b>productMonoid</b>: due monoidi in parallelo sulla coppia.
+@@s850 <b>Foldable[F]</b>: contenitori che si possono ridurre. Primitiva: <code>foldMap</code>; da lì <code>foldRight</code> (monoide <code>endoMonoid</code> sulle funzioni <code>B =&gt; B</code>), <code>foldLeft</code> (monoide <code>dual(endoMonoid)</code>), <code>combineAll</code>, <code>toList</code>.
+@@s851 <b>Functor[F]</b>: contenitori su cui si può fare <code>map</code>. Legge: <code>fa.map(identity) == fa</code> (la forma non cambia). Derivati: <code>distribute</code> (<code>F[(A,B)] =&gt; (F[A], F[B])</code>), <code>codistribute</code> (<code>Either[F[A], F[B]] =&gt; F[Either[A, B]]</code>).
+@@s852 <b>Monad[F]</b> = Functor + <code>unit</code> + <code>flatMap</code>. Da <code>flatMap</code> + <code>unit</code> si ricavano <code>map</code> e <code>map2</code>. Leggi: <b>associatività</b> <code>x.flatMap(f).flatMap(g) == x.flatMap(a =&gt; f(a).flatMap(g))</code>; <b>identità sinistra</b> <code>unit(y).flatMap(f) == f(y)</code>; <b>identità destra</b> <code>x.flatMap(unit) == x</code>. Sono le stesse leggi del monoide (associatività + neutro).
+@@s853 Sulle monadi: <code>sequence</code> (lista di <code>F[A]</code> → <code>F[List[A]]</code>), <code>replicateM(n, ma)</code> (<code>ma</code> ripetuta <code>n</code> volte; nella monade <code>List</code> dà tutte le combinazioni, per esempio <code>replicateM(2, List(1,2))</code> = <code>List(List(1,1), List(1,2), List(2,1), List(2,2))</code>; con <code>Option</code> dà <code>Some</code> solo se <code>ma</code> è <code>Some</code>), <code>compose</code> (<code>f: A =&gt; F[B]</code> e <code>g: B =&gt; F[C]</code> → <code>A =&gt; F[C]</code>).
+@@s854 Gerarchia: ogni <code>Monad</code> è un <code>Functor</code>. <code>Option</code>, <code>List</code>, <code>State</code>, <code>Gen</code>, <code>Parser</code>, <code>LazyList</code> sono monadi: tutti i <code>flatMap</code> visti nel corso sono lo stesso schema.
+@@s855 Codice
+@@s856 Monoid · leggi
+@@s857 <b>Cosa fa.</b> Il trait ha le due operazioni e, dentro <code>laws</code>, le leggi come proprietà ScalaCheck: associatività e neutro a destra e sinistra. Per provare un monoide: <code>intAddition.laws.monoid</code>. <code>===</code> è l'uguaglianza che passa da <code>Equality</code> (serve per confrontare funzioni).
+@@s858 Istanze: stringMonoid · listMonoid · int · boolean
+@@s859 <b>Cosa fanno.</b> Ogni istanza sceglie operazione e neutro. Il neutro è quello che <b>non cambia</b> l'altro: 0 per la somma, 1 per il prodotto, <code>false</code> per <code>||</code>, <code>true</code> per <code>&amp;&amp;</code>, la stringa e la lista vuote.
+@@s860 optionMonoid · optionMonoidLift · endoMonoid
+@@s861 <b>Cosa fanno.</b> <code>optionMonoid</code>: vince il primo <code>Some</code>, <code>None</code> è il neutro. <code>optionMonoidLift</code>: se ce ne sono due, combina i contenuti con il monoide di <code>A</code>; se ce n'è uno solo, quello. <code>endoMonoid</code>: funzioni da <code>A</code> in <code>A</code>, <code>combine</code> è la composizione, <code>empty</code> è <code>identity</code>.
+@@s862 foldMap · homomorphism · isomorphism
+@@s863 <b>Cosa fanno.</b> <code>foldMap</code>: parte da <code>empty</code>, per ogni elemento fa <code>f(a)</code> e lo combina all'accumulatore. <code>homomorphism</code> controlla che <code>f</code> rispetti l'operazione e il neutro. <code>isomorphism</code> controlla i due versi e anche che <code>g(f(a)) == a</code> e <code>f(g(b)) == b</code>. De Morgan: <code>!(a || b) == !a &amp;&amp; !b</code> è il motivo per cui la negazione collega <code>booleanOr</code> e <code>booleanAnd</code>.
+@@s864 productMonoid · dual
+@@s865 <b>Cosa fanno.</b> <code>productMonoid</code>: combina la prima componente con <code>ma</code> e la seconda con <code>mb</code>; il neutro è la coppia dei neutri. Serve a calcolare due cose in un solo passaggio (per esempio somma e lunghezza). <code>dual</code> scambia gli argomenti di <code>combine</code>: trasforma un fold da destra in uno da sinistra.
+@@s866 Foldable · foldableList · toListF
+@@s867 <b>Cosa fanno.</b> L'unica cosa da scrivere per un contenitore è <code>foldMap</code>. Con <code>f.curried</code> (da <code>(A,B) =&gt; B</code> a <code>A =&gt; B =&gt; B</code>) ogni elemento diventa una funzione <code>B =&gt; B</code>; le composizioni fanno il <code>foldRight</code>, e con il <code>dual</code> il <code>foldLeft</code>. <code>toListF</code> = <code>foldRight</code> con <code>::</code>. <code>F[_]</code> è "un tipo che prende un tipo" (<code>List</code>, <code>Option</code>, non <code>List[Int]</code>).
+@@s868 Functor · optionFunctor
+@@s869 <b>Cosa fanno.</b> L'unica primitiva è <code>map</code>. <code>distribute</code>: da una coppia dentro il contenitore a due contenitori (prendo il primo pezzo, poi il secondo). <code>codistribute</code>: da un <code>Either</code> di contenitori a un contenitore di <code>Either</code>. La legge dice che <code>map(identity)</code> non cambia niente.
+@@s870 Monad · optionMonad · listMonad
+@@s871 <b>Cosa fanno.</b> Per fare una monade scrivi solo <code>unit</code> (metti un valore nel contenitore) e <code>flatMap</code>; <code>map</code> e <code>map2</code> arrivano gratis. <code>optionMonad.unit</code> = <code>Some(a)</code>, <code>listMonad.unit</code> = lista di un elemento.
+@@s872 Leggi della monade
+@@s873 <b>Cosa fanno.</b> <code>associative</code>: concatenare <code>f</code> e <code>g</code> da fuori o da dentro è lo stesso. <code>identityRight</code>: <code>flatMap(unit)</code> non cambia nulla. <code>identityLeft</code>: <code>unit(y).flatMap(f)</code> è proprio <code>f(y)</code>. (Le firme complete con i parametri <code>using</code> sono in <code>09-monad/Exercises.scala</code>.)
+@@s874 sequence · replicateM · compose
+@@s875 <b>Cosa fanno.</b> <code>sequence</code>: esegui il primo, poi la sequenza del resto, e metti il valore davanti. È lo stesso schema di <code>Option.sequence</code> e <code>Rand.sequence</code>, ora scritto una volta per tutte le monadi. <code>replicateM</code>: <code>sequence</code> di <code>n</code> copie. <code>compose</code>: <code>f</code> e poi <code>g</code> sul risultato avvolto, con <code>flatMap</code>.
+@@s876 Domande tipiche
+@@s877 Dimostra (o testa) che <code>(Int, +, 0)</code> è un monoide. Perché <code>(Int, -, 0)</code> non lo è? (Non è associativo: <code>(5-3)-1 ≠ 5-(3-1)</code>.) Scrivi <code>map</code> con <code>flatMap</code> e <code>unit</code>. Cosa fa <code>replicateM(2, List(1,2))</code>? Quali sono le tre leggi della monade?
+@@s878 Costi in breve
+@@s879 cosa
+@@s880 costo
+@@s881 nota
+@@s882 <code>fib</code> ricorsiva ovvia
+@@s883 ricalcola gli stessi sottoproblemi
+@@s884 <code>fib</code> con <code>(curr, next)</code>
+@@s885 O(n), pila costante
+@@s886 in coda
+@@s887 <code>List.tail</code>, <code>cons</code>
+@@s888 condivisione, nessuna copia
+@@s889 <code>drop(n)</code>, <code>length</code>, <code>reverse</code>, <code>init</code>
+@@s890 <code>init</code> ricostruisce tutti i <code>Cons</code>
+@@s891 <code>append(l1, l2)</code>
+@@s892 ricopia solo il primo
+@@s893 <code>concat</code> con <code>foldRight</code>
+@@s894 O(totale elementi)
+@@s895 con <code>foldLeft</code>: quadratico
+@@s896 <code>foldRight</code> su <code>List</code>
+@@s897 O(n), pila O(n)
+@@s898 rischio <code>StackOverflow</code>
+@@s899 <code>foldLeft</code>
+@@s900 O(n), pila costante
+@@s901 in coda
+@@s902 <code>foldRight1</code> (via <code>reverse</code>)
+@@s903 O(n), due passate
+@@s904 niente overflow della pila
+@@s905 <code>hasSubsequence</code>
+@@s906 O(|sup|·|sub|)
+@@s907 caso peggiore
+@@s908 <code>Option</code> (<code>map</code>, <code>flatMap</code>…)
+@@s909 <code>sequence</code>, <code>traverse</code>
+@@s910 una passata sulla lista
+@@s911 <code>LazyList.take(n).toList</code>
+@@s912 calcola solo ciò che serve
+@@s913 <code>LazyList.toList</code> / <code>foldLeft</code> su infinita
+@@s914 non termina
+@@s915 sono strette
+@@s916 <code>LazyList.exists</code>
+@@s917 fino al primo elemento che lo soddisfa
+@@s918 può non terminare se non c'è
+@@s919 <code>nextInt</code>, <code>map</code>, <code>map2</code> su <code>Rand</code>
+@@s920 O(1) per passo
+@@s921 <code>many</code> su <code>n</code> ripetizioni
+@@s922 O(n) chiamate
+@@s923 un livello di ricorsione per ripetizione
+@@s924 <code>foldMap</code>
+@@s925 una combinazione per elemento
+@@s926 Cosa uso per…
+@@s927 devo…
+@@s928 uso
+@@s929 sezione
+@@s930 trasformare ogni elemento
+@@s931 <code>map</code>
+@@s932 tenere solo alcuni elementi
+@@s933 <code>filter</code>
+@@s934 da ogni elemento ottenere zero, uno o più elementi
+@@s935 <code>flatMap</code>
+@@s936 ridurre una lista a un valore (somma, lunghezza)
+@@s937 <code>foldLeft</code> (in coda)
+@@s938 ricostruire una lista nello stesso ordine
+@@s939 <code>foldRight</code> con <code>Cons</code>
+@@s940 percorrere due liste insieme
+@@s941 <code>zipWith</code>
+@@s942 una funzione può non avere risposta
+@@s943 <code>Option</code> (non eccezioni, non <code>null</code>)
+@@s944 concatenare calcoli che possono fallire
+@@s945 <code>flatMap</code> o <code>for</code>
+@@s946 combinare due <code>Option</code> indipendenti
+@@s947 <code>map2</code>
+@@s948 lista di <code>Option</code> → <code>Option</code> di lista
+@@s949 <code>sequence</code> (con <code>map</code> prima: <code>traverse</code>)
+@@s950 calcolare una struttura sull'albero
+@@s951 <code>Tree.fold(t)(f)(g)</code>
+@@s952 sequenza infinita o costosa
+@@s953 <code>LazyList</code> + <code>take</code> / <code>takeWhile</code>
+@@s954 generare una sequenza da uno stato
+@@s955 <code>unfold</code>
+@@s956 numeri casuali senza effetti
+@@s957 <code>Rand</code> / <code>State</code> (passa sempre lo stato nuovo)
+@@s958 testare una funzione
+@@s959 una proprietà (legge, idempotenza, oracolo) con <code>forAll</code>
+@@s960 leggere un testo strutturato
+@@s961 parser combinators (<code>|</code>, <code>many</code>, <code>map2</code>, <code>flatMap</code>)
+@@s962 combinare molti valori con un elemento neutro
+@@s963 <code>Monoid</code> + <code>foldMap</code>
+@@s964 lo stesso <code>map</code> su più contenitori
+@@s965 <code>Functor</code>
+@@s966 concatenare passi che avvolgono un valore
+@@s967 <code>Monad</code> (<code>unit</code>, <code>flatMap</code>)
+@@s968 Regole di stile (valgono su ogni risposta)
+@@s969 Vietati salvo richiesta esplicita: <code>var</code>, assegnamenti, cicli (<code>while</code>, <code>for … do</code>), <code>return</code>, eccezioni, <code>println</code> e altri effetti, <code>Any</code>/<code>Object</code>.
+@@s970 Scala di stile: variabili &lt; <code>val</code> · eccezioni &lt; <code>Option</code>/<code>Either</code> · ricorsione in coda &lt; ricorsione semplice &lt; fold &lt; funzioni dedicate · <code>if</code> &lt; pattern matching.
+@@s971 Dalla settimana 2: ricorsione esplicita solo per iterazioni non standard; altrimenti HOF; <code>fold</code> solo se le altre HOF non bastano.
+@@s972 Eccezioni richieste dal testo (<code>tail</code>, <code>drop</code>, <code>init</code>): lanciarle, non restituire <code>Nil</code>.
+@@s973 Dettagli e punteggi: <a href="regole.html">Regole e divieti</a>. Messaggi del compilatore: <a href="errori.html">Errori del compilatore</a>.
+@@s974 Frasi pronte in inglese
+@@s975 Domande aperte del corso
+@@s976 <i>toList fails on infinite lists because it is strict: it keeps forcing the tail until it reaches Empty, and an infinite list never reaches it.</i>
+@@s977 <i>naturals.take(1000000000).drop(41).take(10).toList terminates because take and drop are lazy: only the elements that toList finally demands are computed, here about 51.</i>
+@@s978 <i>naturals.forAll(_ &gt;= 0) never terminates because the predicate is always true, so forAll never finds a counterexample to stop at. exists stops at the first witness.</i>
+@@s979 <i>foldRight on List is not stack-safe: after the recursive call there is still f to apply, so every element keeps a stack frame. foldLeft is tail recursive.</i>
+@@s980 <i>The second argument is by-name, so it is evaluated only when needed. Otherwise many would call itself forever before reading a single character.</i>
+@@s981 <i>listOfN is an extension method because Gen is an opaque type, not a class: there is no body in which to define a member.</i>
+@@s982 <i>The laws are written only with the abstract operations of the trait, so they hold for every implementation.</i>
+@@s983 <i>A pure function always returns the same output for the same input and has no side effects, so a call can be replaced by its value (referential transparency).</i>
+@@s984 <i>Associativity lets us group the combinations in any way, so a fold with a monoid can be split and combined in parallel.</i>
+@@s985 <i>I use Option instead of an exception because the possible failure is visible in the type, and the caller is forced to handle it.</i>

@@ -161,64 +161,64 @@ w4 = np.linalg.lstsq(X4, y4, rcond=None)[0]     # [0.9, 0.9, 0.5]` },
   <figure class="passi" data-titolo="{{a|s013|}}">
     <div class="passo"><div class="espr">y = <mark class="ora">w₀</mark>·1 + <mark class="ora">w₁</mark>·<mark class="dato">x</mark> + <mark class="ora">w₂</mark>·<mark class="dato">x²</mark></div><p class="nota">{{s|s014|}}</p></div>
     <div class="passo"><div class="espr">y = [<mark class="ora">w₀, w₁, w₂</mark>] · [<mark class="dato">1, x, x²</mark>]</div><p class="nota">{{s|s015|}}</p></div>
-    <div class="passo"><div class="espr">in x: <mark class="no">non lineare</mark> (x² è una curva)    in w: <mark class="ok">lineare</mark></div><p class="nota">{{s|s016|}}</p></div>
-    <div class="passo"><div class="espr">⇒ trovare w = risolvere un <mark class="ok">sistema lineare</mark></div><p class="nota">{{s|s017|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s016|}}</div><p class="nota">{{s|s017|}}</p></div>
+    <div class="passo"><div class="espr">⇒ trovare w = risolvere un <mark class="ok">sistema lineare</mark></div><p class="nota">{{s|s018|}}</p></div>
   </figure>
-  <figure class="scena" data-scena="curvoinx" data-titolo="{{a|s018|}}"></figure>
+  <figure class="scena" data-scena="curvoinx" data-titolo="{{a|s019|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s019|}}</h2>
-  <p>{{s|s020|}}</p>
-  <figure class="passi" data-titolo="{{a|s021|}}">
-    <div class="passo"><div class="espr">riga i = [ 1, xᵢ, xᵢ², …, xᵢᵈ ]</div><p class="nota">{{s|s022|}}</p></div>
-    <div class="passo"><div class="espr"><mark class="dato">X</mark> <mark class="ora">w</mark> = <mark class="ok">y</mark>    (N × (d+1)) · (d+1) = N</div><p class="nota">{{s|s023|}}</p></div>
+  <h2>{{s|s020|}}</h2>
+  <p>{{s|s021|}}</p>
+  <figure class="passi" data-titolo="{{a|s022|}}">
+    <div class="passo"><div class="espr">riga i = [ 1, xᵢ, xᵢ², …, xᵢᵈ ]</div><p class="nota">{{s|s023|}}</p></div>
+    <div class="passo"><div class="espr"><mark class="dato">X</mark> <mark class="ora">w</mark> = <mark class="ok">y</mark>    (N × (d+1)) · (d+1) = N</div><p class="nota">{{s|s024|}}</p></div>
   </figure>
-  <div class="box attenzione" data-tit="{{a|s024|}}">
-    <p>{{s|s025|}}</p>
+  <div class="box attenzione" data-tit="{{a|s025|}}">
+    <p>{{s|s026|}}</p>
   </div>
-  <figure class="scena" data-scena="design" data-titolo="{{a|s026|}}"></figure>
+  <figure class="scena" data-scena="design" data-titolo="{{a|s027|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s027|}}</h2>
-  <p>{{s|s028|}}</p>
+  <h2>{{s|s028|}}</h2>
   <p>{{s|s029|}}</p>
-  <figure class="scena" data-scena="esatto" data-titolo="{{a|s030|}}"></figure>
+  <p>{{s|s030|}}</p>
+  <figure class="scena" data-scena="esatto" data-titolo="{{a|s031|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s031|}}</h2>
-  <p>{{s|s032|}}</p>
+  <h2>{{s|s032|}}</h2>
   <p>{{s|s033|}}</p>
-  <figure class="scena" data-scena="sovradet" data-titolo="{{a|s034|}}"></figure>
+  <p>{{s|s034|}}</p>
+  <figure class="scena" data-scena="sovradet" data-titolo="{{a|s035|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s035|}}</h2>
-  <p>{{s|s036|}}</p>
+  <h2>{{s|s036|}}</h2>
   <p>{{s|s037|}}</p>
+  <p>{{s|s038|}}</p>
   <div class="tab-wrap"><table class="tab">
-    <thead><tr><th>{{s|s038|}}</th><th>{{s|s039|}}</th><th>{{s|s040|}}</th><th>{{s|s041|}}</th></tr></thead>
+    <thead><tr><th>{{s|s039|}}</th><th>{{s|s040|}}</th><th>{{s|s041|}}</th><th>{{s|s042|}}</th></tr></thead>
     <tbody>
-      <tr><td>{{s|s042|}}</td><td>2</td><td>[1, x]</td><td>2</td></tr>
-      <tr><td>{{s|s043|}}</td><td>3</td><td>[1, x, x²]</td><td>3</td></tr>
-      <tr><td>{{s|s044|}}</td><td>d + 1</td><td>[1, x, …, xᵈ]</td><td>d + 1</td></tr>
-      <tr><td>{{s|s045|}}</td><td>3</td><td>[1, x₁, x₂]</td><td>3</td></tr>
-      <tr><td>{{s|s046|}}</td><td>n + 1</td><td>[1, x₁, …, xₙ]</td><td>n + 1</td></tr>
+      <tr><td>{{s|s043|}}</td><td>2</td><td>[1, x]</td><td>2</td></tr>
+      <tr><td>{{s|s044|}}</td><td>3</td><td>[1, x, x²]</td><td>3</td></tr>
+      <tr><td>{{s|s045|}}</td><td>d + 1</td><td>[1, x, …, xᵈ]</td><td>d + 1</td></tr>
+      <tr><td>{{s|s046|}}</td><td>3</td><td>[1, x₁, x₂]</td><td>3</td></tr>
+      <tr><td>{{s|s047|}}</td><td>n + 1</td><td>[1, x₁, …, xₙ]</td><td>n + 1</td></tr>
     </tbody>
   </table></div>
-  <div class="box esame" data-tit="{{a|s047|}}">
-    <p>{{s|s048|}}</p>
+  <div class="box esame" data-tit="{{a|s048|}}">
+    <p>{{s|s049|}}</p>
   </div>
-  <figure class="scena" data-scena="sottodet" data-titolo="{{a|s049|}}"></figure>
+  <figure class="scena" data-scena="sottodet" data-titolo="{{a|s050|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s050|}}</h2>
-  <p>{{s|s051|}}</p>
+  <h2>{{s|s051|}}</h2>
   <p>{{s|s052|}}</p>
-  <figure class="scena" data-scena="multidesign" data-titolo="{{a|s053|}}"></figure>
+  <p>{{s|s053|}}</p>
+  <figure class="scena" data-scena="multidesign" data-titolo="{{a|s054|}}"></figure>
 </section>
 
 </main>

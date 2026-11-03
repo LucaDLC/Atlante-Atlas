@@ -38,37 +38,42 @@
 @@s038 <code>_ :: _</code> is the short form of <code>(a, b) =&gt; a :: b</code>: each <code>_</code> is a parameter, in the order it appears. It is the function that <code>map2</code> uses to put the value of <code>h</code> in front of the list produced by the others.
 @@s039 ints2 does not need an if for size ≤ 0
 @@s040 <code>List.fill(0)(int)</code> and also <code>List.fill(-3)(int)</code> give the empty list, and <code>sequence(Nil)</code> is <code>unit(Nil)</code>: the base case is already inside <code>sequence</code>. <code>ints2(0)(SimpleRNG(42))._1</code> = <code>List()</code> (checked).
-@@s041 The state passes from one generator to the next
-@@s042 flatMap and nonNegativeLessThan (exercise 8)
-@@s043 The second generator depends on the first value
-@@s044 Like <code>map</code>, but <code>g</code> does not return a value: it returns <b>another generator</b>, chosen on the basis of <code>a</code>. It is run at once on the new state <code>r1</code>. With map2 the two generators were fixed; with flatMap the second depends on the result of the first.
-@@s045 A number between 0 and bound − 1: the remainder of the division. Alone, however, it is not enough.
-@@s046 The non-negatives are 2³¹ = 2147483648 values; with bound = 6, 2147483648 mod 6 = 2 values are left over at the top, and 0 and 1 would come out a bit more often. If <code>i</code> falls in that last incomplete piece, <code>i + (bound − 1) − mod</code> exceeds Int.MaxValue and becomes negative (overflow): then one must <b>retry</b> with a new number. Retrying needs the new state, that is <code>flatMap</code>.
-@@s047 Five dice throws (<code>nonNegativeLessThan(6)</code> + 1) from <code>SimpleRNG(42)</code>: 2, 3, 2, 4, 5. Checked.
-@@s048 Your flatMap
-@@s049 In your file <code>flatMap</code> was copied from the LazyList (<code>foldRight(empty)(…append…)</code>) and does not compile: "Not found: foldRight". On <code>Rand</code> there is no sequence to go through: there is <b>one</b> function to run and then the second generator. Above, the right version.
-@@s050 Update (26 Sep): your new version <code>rng =&gt; val (a, rng2) = f(rng)</code> with <code>g(a)(rng2)</code> on the line below compiles and passes tests Ex08.01–03. However <code>g(a)(rng2)</code> sits in the same column as <code>rng =&gt;</code> and seems outside the lambda: better to break the line after <code>=&gt;</code> and indent the two lines, as in the code above.
-@@s051 Doubt: why isn't it enough to retry while n &lt; bound?
-@@s052 It is your first idea: <code>if n &gt;= bound then nonNegativeLessThan(bound) else unit(n)</code>. If it ends, the result is right (a number &lt; bound), but it almost never ends.
-@@s053 With bound = 6 and <code>SimpleRNG(42)</code>: first number 16159453 → it is ≥ 6 → retry. The numbers &lt; 6 are 6 out of 2³¹ = 2147483648: on average about 358 million attempts are needed. Each attempt is a call inside another (<code>flatMap</code> → <code>g</code> → <code>nonNegativeLessThan</code> → <code>flatMap</code> …) and the stack runs out much earlier.
-@@s054 The solution: do not discard 16159453, <b>reduce</b> it with the remainder. 16159453 % 6 = <b>1</b>, and the check 16159453 + 5 − 1 ≥ 0 is true → result (1, SimpleRNG(1059025964525)). One retries only in the little piece at the top, almost never.
-@@s055 A die without infinite recursions
-@@s056 The check n + (bound − 1) − mod, step by step
-@@s057 dato:number that came out,ora:what changes,ok:accepted,no:retry
-@@s058 Small example: a generator that gives only 0…7, and bound = 3. The last block is incomplete: 0 and 1 come out 3 times, 2 only 2. The plain <code>%</code> gives a loaded die.
-@@s059 If the last of the block exceeds the maximum, the block is incomplete and one retries.
-@@s060 The block {3, 4, 5} is complete; the block {6, 7, 8} is not, because 8 never comes out.
-@@s061 With the real Ints and bound = 6. The maximum is Int.MaxValue: "&gt; Int.MaxValue" cannot be written, because an Int that exceeds it overflows and becomes <b>negative</b>. That is why the code checks <code>&gt;= 0</code>.
-@@s062 Values printed by Scala 3.8.4.
-@@s063 The "retry" case run for real, with a fake RNG that gives first 2147483647 and then 16. The second attempt runs on the <b>new</b> state: it is the work of <code>flatMap</code>. With <code>map</code> the function should return a number, and "another attempt" is not a number but a generator.
-@@s064 Doubt: is there a way without %? We have not seen it
-@@s065 <code>%</code> is the remainder of the division (17 % 6 = 5, because 17 = 6 × 2 + 5). It is not in the slides, but it is already in the exercise file: <code>nonNegativeEven</code> does <code>i - i % 2</code>. If you do not like it, you can use <code>double</code> of exercise 2, which gives a number in [0, 1):
-@@s066 <code>d * bound</code> lies in [0, bound); <code>.toInt</code> cuts off the decimals (it does not round), so the result goes from 0 to bound − 1. With <code>SimpleRNG(42)</code>: d = 0.0075…, × 6 = 0.045…, toInt = <b>0</b>. The highest case: 0.99999… × 6 = 5.99999…, toInt = 5, never 6. All 44 tests pass (checked). It never retries, so <code>flatMap</code> is not indispensable here (<code>map</code> would suffice), and it has the same small imbalance as the plain <code>%</code>. Five dice from SimpleRNG(42): 1, 4, 1, 6, 5.
-@@s067 Why (d * bound).toInt works: the ruler in 6 slices
-@@s068 dato:d,ora:d × 6,ok:slice chosen
-@@s069 The ruler [0, 1) divided into 6 equal slices. <code>double</code> falls on a random point of the ruler: every slice is equally long, so it has the same probability.
-@@s070 0.2 lies between 1/6 = 0.166… and 2/6 = 0.333…: slice 1. Multiplying by 6 says how many whole slices there are before d; <code>.toInt</code> throws away the piece of slice.
-@@s071 The result is always between 0 and 5 because d never reaches 1 (guaranteed by exercise 2). Values printed by Scala 3.8.4.
-@@s072 Doubt: why double and not nonNegativeInt? And what does exercise 8 ask, in plain words?
-@@s073 <b>In plain words:</b> (1) write <code>flatMap</code>, that is a <code>map</code> in which the function returns a <b>generator</b> instead of a value; (2) use it to make a die with <code>bound</code> faces: a random number between 0 and bound − 1. The tests check only that the result is ≥ 0 and &lt; bound.
-@@s074 <b>double or nonNegativeInt:</b> from the same <code>SimpleRNG(42)</code> come out 16159453 (nonNegativeInt) and 0.0075248… (double), which is 16159453 / 2147483648. They are the same number on two different scales. The trick "× 6 then toInt" works only on the small scale [0, 1). On the large scale: 16159453 × 6 = 96956718, which is not a die, and Int.MaxValue × 6 = −6 (overflow). A large number must be <b>scaled down</b>, and for that <code>%</code> is needed: 16159453 % 6 = 1. So: with nonNegativeInt one uses <code>%</code>, with double one uses <code>× bound</code> and <code>.toInt</code>.
+@@s041 
+@@s042 
+@@s043 
+@@s044 The state passes from one generator to the next
+@@s045 flatMap and nonNegativeLessThan (exercise 8)
+@@s046 The second generator depends on the first value
+@@s047 Like <code>map</code>, but <code>g</code> does not return a value: it returns <b>another generator</b>, chosen on the basis of <code>a</code>. It is run at once on the new state <code>r1</code>. With map2 the two generators were fixed; with flatMap the second depends on the result of the first.
+@@s048 A number between 0 and bound − 1: the remainder of the division. Alone, however, it is not enough.
+@@s049 The non-negatives are 2³¹ = 2147483648 values; with bound = 6, 2147483648 mod 6 = 2 values are left over at the top, and 0 and 1 would come out a bit more often. If <code>i</code> falls in that last incomplete piece, <code>i + (bound − 1) − mod</code> exceeds Int.MaxValue and becomes negative (overflow): then one must <b>retry</b> with a new number. Retrying needs the new state, that is <code>flatMap</code>.
+@@s050 Five dice throws (<code>nonNegativeLessThan(6)</code> + 1) from <code>SimpleRNG(42)</code>: 2, 3, 2, 4, 5. Checked.
+@@s051 Your flatMap
+@@s052 In your file <code>flatMap</code> was copied from the LazyList (<code>foldRight(empty)(…append…)</code>) and does not compile: "Not found: foldRight". On <code>Rand</code> there is no sequence to go through: there is <b>one</b> function to run and then the second generator. Above, the right version.
+@@s053 Update (26 Sep): your new version <code>rng =&gt; val (a, rng2) = f(rng)</code> with <code>g(a)(rng2)</code> on the line below compiles and passes tests Ex08.01–03. However <code>g(a)(rng2)</code> sits in the same column as <code>rng =&gt;</code> and seems outside the lambda: better to break the line after <code>=&gt;</code> and indent the two lines, as in the code above.
+@@s054 Doubt: why isn't it enough to retry while n &lt; bound?
+@@s055 It is your first idea: <code>if n &gt;= bound then nonNegativeLessThan(bound) else unit(n)</code>. If it ends, the result is right (a number &lt; bound), but it almost never ends.
+@@s056 With bound = 6 and <code>SimpleRNG(42)</code>: first number 16159453 → it is ≥ 6 → retry. The numbers &lt; 6 are 6 out of 2³¹ = 2147483648: on average about 358 million attempts are needed. Each attempt is a call inside another (<code>flatMap</code> → <code>g</code> → <code>nonNegativeLessThan</code> → <code>flatMap</code> …) and the stack runs out much earlier.
+@@s057 The solution: do not discard 16159453, <b>reduce</b> it with the remainder. 16159453 % 6 = <b>1</b>, and the check 16159453 + 5 − 1 ≥ 0 is true → result (1, SimpleRNG(1059025964525)). One retries only in the little piece at the top, almost never.
+@@s058 
+@@s059 A die without infinite recursions
+@@s060 The check n + (bound − 1) − mod, step by step
+@@s061 dato:number that came out,ora:what changes,ok:accepted,no:retry
+@@s062 Small example: a generator that gives only 0…7, and bound = 3. The last block is incomplete: 0 and 1 come out 3 times, 2 only 2. The plain <code>%</code> gives a loaded die.
+@@s063 
+@@s064 If the last of the block exceeds the maximum, the block is incomplete and one retries.
+@@s065 The block {3, 4, 5} is complete; the block {6, 7, 8} is not, because 8 never comes out.
+@@s066 With the real Ints and bound = 6. The maximum is Int.MaxValue: "&gt; Int.MaxValue" cannot be written, because an Int that exceeds it overflows and becomes <b>negative</b>. That is why the code checks <code>&gt;= 0</code>.
+@@s067 Values printed by Scala 3.8.4.
+@@s068 The "retry" case run for real, with a fake RNG that gives first 2147483647 and then 16. The second attempt runs on the <b>new</b> state: it is the work of <code>flatMap</code>. With <code>map</code> the function should return a number, and "another attempt" is not a number but a generator.
+@@s069 Doubt: is there a way without %? We have not seen it
+@@s070 <code>%</code> is the remainder of the division (17 % 6 = 5, because 17 = 6 × 2 + 5). It is not in the slides, but it is already in the exercise file: <code>nonNegativeEven</code> does <code>i - i % 2</code>. If you do not like it, you can use <code>double</code> of exercise 2, which gives a number in [0, 1):
+@@s071 <code>d * bound</code> lies in [0, bound); <code>.toInt</code> cuts off the decimals (it does not round), so the result goes from 0 to bound − 1. With <code>SimpleRNG(42)</code>: d = 0.0075…, × 6 = 0.045…, toInt = <b>0</b>. The highest case: 0.99999… × 6 = 5.99999…, toInt = 5, never 6. All 44 tests pass (checked). It never retries, so <code>flatMap</code> is not indispensable here (<code>map</code> would suffice), and it has the same small imbalance as the plain <code>%</code>. Five dice from SimpleRNG(42): 1, 4, 1, 6, 5.
+@@s072 Why (d * bound).toInt works: the ruler in 6 slices
+@@s073 dato:d,ora:d × 6,ok:slice chosen
+@@s074 The ruler [0, 1) divided into 6 equal slices. <code>double</code> falls on a random point of the ruler: every slice is equally long, so it has the same probability.
+@@s075 0.2 lies between 1/6 = 0.166… and 2/6 = 0.333…: slice 1. Multiplying by 6 says how many whole slices there are before d; <code>.toInt</code> throws away the piece of slice.
+@@s076 The result is always between 0 and 5 because d never reaches 1 (guaranteed by exercise 2). Values printed by Scala 3.8.4.
+@@s077 Doubt: why double and not nonNegativeInt? And what does exercise 8 ask, in plain words?
+@@s078 <b>In plain words:</b> (1) write <code>flatMap</code>, that is a <code>map</code> in which the function returns a <b>generator</b> instead of a value; (2) use it to make a die with <code>bound</code> faces: a random number between 0 and bound − 1. The tests check only that the result is ≥ 0 and &lt; bound.
+@@s079 <b>double or nonNegativeInt:</b> from the same <code>SimpleRNG(42)</code> come out 16159453 (nonNegativeInt) and 0.0075248… (double), which is 16159453 / 2147483648. They are the same number on two different scales. The trick "× 6 then toInt" works only on the small scale [0, 1). On the large scale: 16159453 × 6 = 96956718, which is not a die, and Int.MaxValue × 6 = −6 (overflow). A large number must be <b>scaled down</b>, and for that <code>%</code> is needed: 16159453 % 6 = 1. So: with nonNegativeInt one uses <code>%</code>, with double one uses <code>× bound</code> and <code>.toInt</code>.

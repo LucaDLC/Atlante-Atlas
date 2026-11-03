@@ -85,9 +85,9 @@ window.SCENE = window.SCENE || {};
     <div class="passo"><div class="espr">(1) int temp = counter;  (2) temp = counter + 1;  (3) counter = temp;</div><p class="nota">{{s|s028|}}</p></div>
     <div class="passo"><div class="espr">t1(1), t1(2), t1(3), t2(1), t2(2), t2(3), …   <mark class="ok">va bene</mark></div><p class="nota">{{s|s029|}}</p></div>
     <div class="passo"><div class="espr">t1(1), t2(1), t1(2), t2(2), t1(3), t2(3), …   <mark class="no">race condition</mark></div><p class="nota">{{s|s030|}}</p></div>
-    <div class="passo"><div class="espr">testare = cercare gli interleaving <mark class="no">cattivi</mark></div><p class="nota">{{s|s031|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s031|}}</div><p class="nota">{{s|s032|}}</p></div>
   </figure>
-  <figure class="scena" data-scena="daltest" data-titolo="{{a|s032|}}"></figure>
+  <figure class="scena" data-scena="daltest" data-titolo="{{a|s033|}}"></figure>
 </section>
 
 </main>

@@ -228,52 +228,52 @@ window.SCENE = window.SCENE || {};
   <figure class="interleaving" data-prog="conlock" data-titolo="{{a|s039|}}"></figure>
   <figure class="passi" data-titolo="{{a|s040|}}">
     <div class="passo"><div class="espr">senza lock:  <mark class="no">70</mark> interleaving  =  8! / (4! · 4!)</div><p class="nota">{{s|s041|}}</p></div>
-    <div class="passo"><div class="espr">con lock:  <mark class="ok">2</mark> interleaving</div><p class="nota">{{s|s042|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s042|}}</div><p class="nota">{{s|s043|}}</p></div>
     <div class="passo"><div class="espr">t1(1), t1(2), t1(3), t1(4), t2(1), t2(2), t2(3), t2(4)
-t2(1), t2(2), t2(3), t2(4), t1(1), t1(2), t1(3), t1(4)</div><p class="nota">{{s|s043|}}</p></div>
-    <div class="passo"><div class="espr"><mark class="ok">La sezione critica è diventata indivisibile.</mark></div><p class="nota">{{s|s044|}}</p></div>
+t2(1), t2(2), t2(3), t2(4), t1(1), t1(2), t1(3), t1(4)</div><p class="nota">{{s|s044|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s045|}}</div><p class="nota">{{s|s046|}}</p></div>
   </figure>
 </section>
 
 <section>
-  <h2>{{s|s045|}}</h2>
-  <p>{{s|s046|}}</p>
+  <h2>{{s|s047|}}</h2>
+  <p>{{s|s048|}}</p>
   <pre class="cod" data-lang="java">public void run() {
     l.lock();             // (1)
     int temp = counter;   // (2)
     counter = temp + 1;   // (3)
     l.unlock();           // (4)
 }</pre>
-  <figure class="passi" data-titolo="{{a|s047|}}">
-    <div class="passo"><div class="espr">…, <mark class="dato">t1(2)</mark>, …, <mark class="due">t2(2)</mark>, …, <mark class="dato">t1(3)</mark>, …, <mark class="due">t2(3)</mark>, …</div><p class="nota">{{s|s048|}}</p></div>
-    <div class="passo"><div class="espr">…, t1(2), …, t1(4), …, <mark class="ora">t2(1)</mark>, …, t2(2), t1(3), t2(3), …</div><p class="nota">{{s|s049|}}</p></div>
-    <div class="passo"><div class="espr">…, t1(2), …, <mark class="ora">t1(3)</mark>, …, t1(4), …, t2(1), …, t2(2), <mark class="no">t1(3)</mark>, t2(3), …</div><p class="nota">{{s|s050|}}</p></div>
-    <div class="passo"><div class="espr"><mark class="no">Contraddizione</mark>  →  l'interleaving è impossibile.</div><p class="nota">{{s|s051|}}</p></div>
+  <figure class="passi" data-titolo="{{a|s049|}}">
+    <div class="passo"><div class="espr">…, <mark class="dato">t1(2)</mark>, …, <mark class="due">t2(2)</mark>, …, <mark class="dato">t1(3)</mark>, …, <mark class="due">t2(3)</mark>, …</div><p class="nota">{{s|s050|}}</p></div>
+    <div class="passo"><div class="espr">…, t1(2), …, t1(4), …, <mark class="ora">t2(1)</mark>, …, t2(2), t1(3), t2(3), …</div><p class="nota">{{s|s051|}}</p></div>
+    <div class="passo"><div class="espr">…, t1(2), …, <mark class="ora">t1(3)</mark>, …, t1(4), …, t2(1), …, t2(2), <mark class="no">t1(3)</mark>, t2(3), …</div><p class="nota">{{s|s052|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s053|}}</div><p class="nota">{{s|s054|}}</p></div>
   </figure>
-  <figure class="scena" data-scena="contraddizione" data-titolo="{{a|s052|}}"></figure>
+  <figure class="scena" data-scena="contraddizione" data-titolo="{{a|s055|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s053|}}</h2>
+  <h2>{{s|s056|}}</h2>
   <div class="colonne">
     <div class="carta cattiva">
-      <h4>{{s|s054|}}</h4>
+      <h4>{{s|s057|}}</h4>
       <pre class="cod" data-lang="java">l.lock();
 int temp = counter;
 counter = temp + 1;
 l.lock();   // blocca per sempre</pre>
-      <p>{{s|s055|}}</p>
+      <p>{{s|s058|}}</p>
     </div>
     <div class="carta cattiva">
-      <h4>{{s|s056|}}</h4>
+      <h4>{{s|s059|}}</h4>
       <pre class="cod" data-lang="java">l.lock();
 int temp = counter;
 throw new Exception();
 // unlock() mai eseguito</pre>
-      <p>{{s|s057|}}</p>
+      <p>{{s|s060|}}</p>
     </div>
   </div>
-  <figure class="codice" data-titolo="{{a|s058|}}">
+  <figure class="codice" data-titolo="{{a|s061|}}">
 <pre data-lang="java">Lock l = new ReentrantLock();
 
 l.lock();
@@ -284,38 +284,38 @@ try {
     l.unlock();
 }</pre>
     <ol class="spiega">
-      <li data-righe="3" data-segna="l.lock();@ora"><p>{{s|s059|}}</p></li>
-      <li data-righe="4-6" data-segna="try@dato"><p>{{s|s060|}}</p></li>
-      <li data-righe="7-9" data-segna="finally@ok|l.unlock();@ok"><p>{{s|s061|}}</p></li>
+      <li data-righe="3" data-segna="l.lock();@ora"><p>{{s|s062|}}</p></li>
+      <li data-righe="4-6" data-segna="try@dato"><p>{{s|s063|}}</p></li>
+      <li data-righe="7-9" data-segna="finally@ok|l.unlock();@ok"><p>{{s|s064|}}</p></li>
     </ol>
   </figure>
-  <div class="box esame" data-tit="{{a|s062|}}">
-    <p>{{s|s063|}}</p>
+  <div class="box esame" data-tit="{{a|s065|}}">
+    <p>{{s|s066|}}</p>
   </div>
-  <figure class="passi" data-titolo="{{a|s064|}}">
-    <div class="passo"><div class="espr">l.lock();     <span class="mano">// preso (contatore 1)</span></div><p class="nota">{{s|s065|}}</p></div>
-    <div class="passo"><div class="espr">l.lock();     <span class="mano">// <mark class="ok">non si blocca</mark> (contatore 2)</span></div><p class="nota">{{s|s066|}}</p></div>
-    <div class="passo"><div class="espr">l.unlock();   <span class="mano">// ancora suo (contatore 1)</span></div><p class="nota">{{s|s067|}}</p></div>
-    <div class="passo"><div class="espr">l.unlock();   <span class="mano">// <mark class="ok">libero</mark> (contatore 0)</span></div><p class="nota">{{s|s068|}}</p></div>
+  <figure class="passi" data-titolo="{{a|s067|}}">
+    <div class="passo"><div class="espr">l.lock();     <span class="mano">// preso (contatore 1)</span></div><p class="nota">{{s|s068|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s069|}}</div><p class="nota">{{s|s070|}}</p></div>
+    <div class="passo"><div class="espr">l.unlock();   <span class="mano">// ancora suo (contatore 1)</span></div><p class="nota">{{s|s071|}}</p></div>
+    <div class="passo"><div class="espr">l.unlock();   <span class="mano">// <mark class="ok">libero</mark> (contatore 0)</span></div><p class="nota">{{s|s072|}}</p></div>
   </figure>
-  <figure class="scena" data-scena="trylock" data-titolo="{{a|s069|}}"></figure>
+  <figure class="scena" data-scena="trylock" data-titolo="{{a|s073|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s070|}}</h2>
-  <p>{{s|s071|}}</p>
+  <h2>{{s|s074|}}</h2>
+  <p>{{s|s075|}}</p>
   <div class="colonne">
     <div class="carta cattiva">
-      <h4>{{s|s072|}}</h4>
+      <h4>{{s|s076|}}</h4>
       <pre class="cod" data-lang="java">if (counter &lt; MAX_PEOPLE_COVID) {
     lock.lock();
     try { counter++; }
     finally { lock.unlock(); }
 }</pre>
-      <p>{{s|s073|}}</p>
+      <p>{{s|s077|}}</p>
     </div>
     <div class="carta buona">
-      <h4>{{s|s074|}}</h4>
+      <h4>{{s|s078|}}</h4>
       <pre class="cod" data-lang="java">lock.lock();
 try {
     if (counter &lt; MAX_PEOPLE_COVID)
@@ -323,24 +323,24 @@ try {
 } finally {
     lock.unlock();
 }</pre>
-      <p>{{s|s075|}}</p>
+      <p>{{s|s079|}}</p>
     </div>
   </div>
-  <figure class="scena" data-scena="covid" data-titolo="{{a|s076|}}"></figure>
+  <figure class="scena" data-scena="covid" data-titolo="{{a|s080|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s077|}}</h2>
-  <figure class="passi" data-titolo="{{a|s078|}}">
-    <div class="passo"><div class="espr testo">{{s|s079|}}</div><p class="nota">{{s|s080|}}</p></div>
-    <div class="passo"><div class="espr testo">{{s|s081|}}</div><p class="nota">{{s|s082|}}</p></div>
+  <h2>{{s|s081|}}</h2>
+  <figure class="passi" data-titolo="{{a|s082|}}">
     <div class="passo"><div class="espr testo">{{s|s083|}}</div><p class="nota">{{s|s084|}}</p></div>
     <div class="passo"><div class="espr testo">{{s|s085|}}</div><p class="nota">{{s|s086|}}</p></div>
+    <div class="passo"><div class="espr testo">{{s|s087|}}</div><p class="nota">{{s|s088|}}</p></div>
+    <div class="passo"><div class="espr testo">{{s|s089|}}</div><p class="nota">{{s|s090|}}</p></div>
   </figure>
-  <div class="box inglese" data-tit="{{a|s087|}}">
-    <p>{{s|s088|}}</p>
+  <div class="box inglese" data-tit="{{a|s091|}}">
+    <p>{{s|s092|}}</p>
   </div>
-  <figure class="scena" data-scena="schema" data-titolo="{{a|s089|}}"></figure>
+  <figure class="scena" data-scena="schema" data-titolo="{{a|s093|}}"></figure>
 </section>
 
 </main>

@@ -11,22 +11,26 @@
 @@s011 Lezione 9 ed esercizi della settimana 11 (<i>HoG</i>, <i>HoG classifier</i>). HOG (Histogram of Oriented Gradients) trasforma un'immagine in un vettore di feature che descrive la <b>forma</b>: le direzioni dei bordi, cella per cella. Unisce i <a href="w08-derivate-bordi.html">gradienti</a> della settimana 8 e i classificatori della settimana 10. Domande d'esame <b>Q6 (b)</b> e <b>Q8 (c)</b>.
 @@s012 Come si costruisce
 @@s013 Dall'immagine al vettore
-@@s014 Con filtri derivata (come Sobel): dove c'è un bordo la grandezza è grande, la direzione è perpendicolare al bordo.
-@@s015 Le direzioni si dividono in pochi intervalli (nell'esercizio <code>orientations=8</code>); ogni pixel vota per il suo intervallo con un peso pari alla grandezza del gradiente. I pixel piatti votano quasi zero.
-@@s016 Ogni blocco viene diviso per la sua norma: così la luminosità e il contrasto contano poco, conta la forma. I blocchi si sovrappongono.
-@@s017 Immagine 64 × 64: 8 × 8 celle, 7 × 7 = 49 blocchi, ognuno 2 × 2 × 8 = 32 numeri ⇒ <b>1568</b> numeri. Immagine 128 × 64: <b>3360</b>. Verificato con <code>skimage.feature.hog</code>.
-@@s018 Controllo: in un'immagine con un solo bordo verticale (nero a sinistra, bianco a destra), le celle accanto al bordo mettono tutto il peso in un solo intervallo, quello della direzione orizzontale del gradiente.
-@@s019 I pixel votano: l'istogramma di una cella
-@@s020 Nell'esercizio
-@@s021 I tre parametri dei passi 2–3. <code>visualize=True</code> restituisce anche l'immagine con le "stelline" delle direzioni dominanti; <code>channel_axis=-1</code> dice che l'ultimo asse sono i colori.
-@@s022 Un vettore HOG per ogni immagine: la matrice dei dati (immagini × feature) su cui si allena un classificatore lineare o un'SVM. Con una <b>finestra scorrevole</b> (Task 3 del classificatore) si applica lo stesso modello a ogni pezzo di un'immagine grande.
-@@s023 Perché funziona meglio dei pixel
-@@s024 <b>Luce</b>: i gradienti guardano differenze, non valori assoluti, e la normalizzazione per blocchi toglie il contrasto.
-@@s025 <b>Piccoli spostamenti</b>: dentro una cella di 8 × 8 conta quante direzioni ci sono, non dove esattamente.
-@@s026 <b>Forma</b>: una persona in piedi ha tanti bordi verticali (gambe, busto) in posizioni simili: il vettore HOG lo cattura.
-@@s027 Limiti: rotazioni grandi e cambi di scala cambiano le celle; i parametri (celle, intervalli) si scelgono a mano. Le reti convoluzionali imparano da sole filtri simili (settimana 14).
-@@s028 Feature migliori, classificatore più semplice
-@@s029 Domanda di ripasso della settimana 9: perché scegliere buone feature conta spesso più del classificatore? Con HOG, classi che nello spazio dei pixel sono intrecciate diventano quasi separabili da un iperpiano: basta un classificatore lineare. È la stessa idea delle coordinate polari per l'<a href="w10-confini-non-lineari.html">anello</a>.
-@@s030 Q6 (b) e Q8 (c)
-@@s031 Q6 (b): da derivate e gradienti a HOG (passi 1–4). Q8 (c): HOG come feature per un classificatore lineare o un'SVM, con la finestra scorrevole.
-@@s032 Luce, spostamenti, forma
+@@s014 1. gradiente in ogni pixel: <mark class="dato">I<sub>x</sub>, I<sub>y</sub></mark> → grandezza e <mark class="ora">direzione</mark>
+@@s015 Con filtri derivata (come Sobel): dove c'è un bordo la grandezza è grande, la direzione è perpendicolare al bordo.
+@@s016 2. celle di 8 × 8 pixel → un <mark class="ora">istogramma delle direzioni</mark> per cella
+@@s017 Le direzioni si dividono in pochi intervalli (nell'esercizio <code>orientations=8</code>); ogni pixel vota per il suo intervallo con un peso pari alla grandezza del gradiente. I pixel piatti votano quasi zero.
+@@s018 3. blocchi di 2 × 2 celle → <mark class="due">normalizzazione</mark>
+@@s019 Ogni blocco viene diviso per la sua norma: così la luminosità e il contrasto contano poco, conta la forma. I blocchi si sovrappongono.
+@@s020 4. tutti gli istogrammi in fila → <mark class="ok">un vettore di feature</mark>
+@@s021 Immagine 64 × 64: 8 × 8 celle, 7 × 7 = 49 blocchi, ognuno 2 × 2 × 8 = 32 numeri ⇒ <b>1568</b> numeri. Immagine 128 × 64: <b>3360</b>. Verificato con <code>skimage.feature.hog</code>.
+@@s022 Controllo: in un'immagine con un solo bordo verticale (nero a sinistra, bianco a destra), le celle accanto al bordo mettono tutto il peso in un solo intervallo, quello della direzione orizzontale del gradiente.
+@@s023 I pixel votano: l'istogramma di una cella
+@@s024 Nell'esercizio
+@@s025 I tre parametri dei passi 2–3. <code>visualize=True</code> restituisce anche l'immagine con le "stelline" delle direzioni dominanti; <code>channel_axis=-1</code> dice che l'ultimo asse sono i colori.
+@@s026 Un vettore HOG per ogni immagine: la matrice dei dati (immagini × feature) su cui si allena un classificatore lineare o un'SVM. Con una <b>finestra scorrevole</b> (Task 3 del classificatore) si applica lo stesso modello a ogni pezzo di un'immagine grande.
+@@s027 Perché funziona meglio dei pixel
+@@s028 <b>Luce</b>: i gradienti guardano differenze, non valori assoluti, e la normalizzazione per blocchi toglie il contrasto.
+@@s029 <b>Piccoli spostamenti</b>: dentro una cella di 8 × 8 conta quante direzioni ci sono, non dove esattamente.
+@@s030 <b>Forma</b>: una persona in piedi ha tanti bordi verticali (gambe, busto) in posizioni simili: il vettore HOG lo cattura.
+@@s031 Limiti: rotazioni grandi e cambi di scala cambiano le celle; i parametri (celle, intervalli) si scelgono a mano. Le reti convoluzionali imparano da sole filtri simili (settimana 14).
+@@s032 Feature migliori, classificatore più semplice
+@@s033 Domanda di ripasso della settimana 9: perché scegliere buone feature conta spesso più del classificatore? Con HOG, classi che nello spazio dei pixel sono intrecciate diventano quasi separabili da un iperpiano: basta un classificatore lineare. È la stessa idea delle coordinate polari per l'<a href="w10-confini-non-lineari.html">anello</a>.
+@@s034 Q6 (b) e Q8 (c)
+@@s035 Q6 (b): da derivate e gradienti a HOG (passi 1–4). Q8 (c): HOG come feature per un classificatore lineare o un'SVM, con la finestra scorrevole.
+@@s036 Luce, spostamenti, forma

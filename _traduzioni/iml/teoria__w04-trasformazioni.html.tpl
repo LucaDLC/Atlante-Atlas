@@ -213,71 +213,71 @@ window.SCENE = window.SCENE || {};
   <figure class="passi" data-titolo="{{a|s022|}}">
     <div class="passo"><div class="espr">x = [x₁, x₂] = x₁·<mark class="dato">e₁</mark> + x₂·<mark class="due">e₂</mark></div><p class="nota">{{s|s023|}}</p></div>
     <div class="passo"><div class="espr">T(x) = x₁·<mark class="dato">T(e₁)</mark> + x₂·<mark class="due">T(e₂)</mark></div><p class="nota">{{s|s024|}}</p></div>
-    <div class="passo"><div class="espr">= [ <mark class="dato">T(e₁)</mark> | <mark class="due">T(e₂)</mark> ] · x   ⇒  A = matrice con colonne <mark class="ok">T(e₁), T(e₂)</mark></div><p class="nota">{{s|s025|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s025|}}</div><p class="nota">{{s|s026|}}</p></div>
   </figure>
-  <p>{{s|s026|}}</p>
-  <figure class="scena" data-scena="colbase" data-titolo="{{a|s027|}}"></figure>
+  <p>{{s|s027|}}</p>
+  <figure class="scena" data-scena="colbase" data-titolo="{{a|s028|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s028|}}</h2>
-  <p>{{s|s029|}}</p>
+  <h2>{{s|s029|}}</h2>
+  <p>{{s|s030|}}</p>
   <div class="tab-wrap"><table class="tab">
-    <thead><tr><th>{{s|s030|}}</th><th>{{s|s031|}}</th><th>{{s|s032|}}</th></tr></thead>
+    <thead><tr><th>{{s|s031|}}</th><th>{{s|s032|}}</th><th>{{s|s033|}}</th></tr></thead>
     <tbody>
-      <tr><td>{{s|s033|}}</td><td>[[sₓ, 0], [0, s<sub>y</sub>]]</td><td>sₓ·s<sub>y</sub></td></tr>
-      <tr><td>{{s|s034|}}</td><td>{{s|s035|}}</td><td>1</td></tr>
-      <tr><td>{{s|s036|}}</td><td>[[−1, 0], [0, 1]]</td><td>−1</td></tr>
-      <tr><td>{{s|s037|}}</td><td>[[1, k], [0, 1]]</td><td>1</td></tr>
-      <tr><td>{{s|s038|}}</td><td>[[1, 0], [0, 0]]</td><td>{{s|s039|}}</td></tr>
+      <tr><td>{{s|s034|}}</td><td>[[sₓ, 0], [0, s<sub>y</sub>]]</td><td>sₓ·s<sub>y</sub></td></tr>
+      <tr><td>{{s|s035|}}</td><td>{{s|s036|}}</td><td>1</td></tr>
+      <tr><td>{{s|s037|}}</td><td>[[−1, 0], [0, 1]]</td><td>−1</td></tr>
+      <tr><td>{{s|s038|}}</td><td>[[1, k], [0, 1]]</td><td>1</td></tr>
+      <tr><td>{{s|s039|}}</td><td>[[1, 0], [0, 0]]</td><td>{{s|s040|}}</td></tr>
     </tbody>
   </table></div>
-  <p>{{s|s040|}}</p>
-  <figure class="scena" data-scena="trasf" data-titolo="{{a|s041|}}"></figure>
+  <p>{{s|s041|}}</p>
+  <figure class="scena" data-scena="trasf" data-titolo="{{a|s042|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s042|}}</h2>
-  <p>{{s|s043|}}</p>
+  <h2>{{s|s043|}}</h2>
   <p>{{s|s044|}}</p>
-  <figure class="scena" data-scena="aree" data-titolo="{{a|s045|}}"></figure>
+  <p>{{s|s045|}}</p>
+  <figure class="scena" data-scena="aree" data-titolo="{{a|s046|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s046|}}</h2>
-  <p>{{s|s047|}}</p>
-  <figure class="passi" data-titolo="{{a|s048|}}">
-    <div class="passo"><div class="espr">x → <mark class="ora">R</mark>x → <mark class="due">S</mark>(<mark class="ora">R</mark>x) = (<mark class="ok">SR</mark>)x</div><p class="nota">{{s|s049|}}</p></div>
-    <div class="passo"><div class="espr">SR = [[0, −2], [1, 0]]     RS = [[0, −1], [2, 0]]</div><p class="nota">{{s|s050|}}</p></div>
+  <h2>{{s|s047|}}</h2>
+  <p>{{s|s048|}}</p>
+  <figure class="passi" data-titolo="{{a|s049|}}">
+    <div class="passo"><div class="espr">x → <mark class="ora">R</mark>x → <mark class="due">S</mark>(<mark class="ora">R</mark>x) = (<mark class="ok">SR</mark>)x</div><p class="nota">{{s|s050|}}</p></div>
+    <div class="passo"><div class="espr">SR = [[0, −2], [1, 0]]     RS = [[0, −1], [2, 0]]</div><p class="nota">{{s|s051|}}</p></div>
   </figure>
-  <p>{{s|s051|}}</p>
-  <figure class="scena" data-scena="componi" data-titolo="{{a|s052|}}"></figure>
+  <p>{{s|s052|}}</p>
+  <figure class="scena" data-scena="componi" data-titolo="{{a|s053|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s053|}}</h2>
-  <p>{{s|s054|}}</p>
+  <h2>{{s|s054|}}</h2>
   <p>{{s|s055|}}</p>
   <p>{{s|s056|}}</p>
-  <figure class="scena" data-scena="disfa" data-titolo="{{a|s057|}}"></figure>
+  <p>{{s|s057|}}</p>
+  <figure class="scena" data-scena="disfa" data-titolo="{{a|s058|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s058|}}</h2>
-  <p>{{s|s059|}}</p>
+  <h2>{{s|s059|}}</h2>
   <p>{{s|s060|}}</p>
   <p>{{s|s061|}}</p>
   <p>{{s|s062|}}</p>
-  <figure class="scena" data-scena="iniettiva" data-titolo="{{a|s063|}}"></figure>
+  <p>{{s|s063|}}</p>
+  <figure class="scena" data-scena="iniettiva" data-titolo="{{a|s064|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s064|}}</h2>
-  <p>{{s|s065|}}</p>
-  <div class="box idea" data-tit="{{a|s066|}}">
-    <p>{{s|s067|}}</p>
+  <h2>{{s|s065|}}</h2>
+  <p>{{s|s066|}}</p>
+  <div class="box idea" data-tit="{{a|s067|}}">
+    <p>{{s|s068|}}</p>
   </div>
-  <figure class="scena" data-scena="traslazione" data-titolo="{{a|s068|}}"></figure>
+  <figure class="scena" data-scena="traslazione" data-titolo="{{a|s069|}}"></figure>
 </section>
 
 </main>

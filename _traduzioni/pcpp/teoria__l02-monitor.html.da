@@ -59,22 +59,25 @@
 @@s059 Hvorfor <code>while</code> og ikke <code>if</code>
 @@s060 Med if kan en læser komme ind, mens der er en skriver
 @@s061 Version med <code>if</code>: den kontrollerer kun én gang.
-@@s062 Læseren R1 venter.
-@@s063 Skriveren er færdig og vækker alle. R1 vender tilbage til <b>entry queue</b>: den skal konkurrere om låsen igen.
-@@s064 <b>Mesa</b>-semantik (den som Java har): en anden skriver kan komme ind før R1.
-@@s065 Med <code>if</code> kontrollerer R1 ikke igen: den læser, mens W2 skriver. Specifikationen er overtrådt.
-@@s066 Med <code>while</code> kontrolleres betingelsen igen ved hver vækning. Desuden kan tråde vågne uden et signal (<b>spurious wakeup</b>): while beskytter også mod det.
-@@s067 Hvorfor while og ikke if
-@@s068 Spørgsmål fra slidet: er det nødvendigt at kontrollere readers == 0 før signalAll?
-@@s069 For <b>korrektheden</b> nej: den der vækkes, kontrollerer sin betingelse igen i <code>while</code> og, hvis den ikke kan komme ind, venter den igen. Kontrollen undgår kun <b>unødvendige</b> vækkelser: hvis der stadig er læsere, kunne ingen skriver alligevel komme ind.
-@@s070 Øvelse 2.1: den samme monitor med <code>synchronized</code>
-@@s071 Hvert Java-objekt har allerede en lås <b>og en condition variable</b> indeni. Med <code>synchronized</code> bruger man <code>wait()</code>, <code>notify()</code>, <code>notifyAll()</code> i stedet for <code>await()</code>, <code>signal()</code>, <code>signalAll()</code>.
-@@s072 Version med indre lås, allerede fair over for skriverne (kompileret og kørt)
-@@s073 <code>synchronized</code> på metoderne: de bruger alle låsen på objektet <code>this</code>, så de er gensidigt udelukkende.
-@@s074 <code>wait()</code> gør det, <code>await()</code> gjorde: den frigiver låsen på <code>this</code> og venter i sin kø. Også her i en <code>while</code>.
-@@s075 Ændringen "fair": skriveren <b>reserverer</b> straks (<code>writer = true</code>) og venter derefter på, at de læsere, der allerede er inde, går ud. Fra det øjeblik stopper de nye læsere ved <code>while (writer)</code>. Det er ideen i <code>FairReadWriteMonitor.java</code>.
-@@s076 <code>notifyAll()</code> vækker alle tråde, der venter på <code>this</code>.
-@@s077 Øvelse 2.1.3: hvor mange condition variables?
-@@s078 <b>Én</b>: den indre på objektet, hvor du laver <code>synchronized</code>. Læsere og skrivere venter alle i den samme kø, med <code>wait()</code>, og vækkes med <code>notifyAll()</code>. Med <code>ReentrantLock</code> kan man derimod oprette flere betingelser (<code>lock.newCondition()</code> to gange), for eksempel én for læserne og én for skriverne (øvelse 2.1.5).
-@@s079 Kontrolleret: 15 læsere og 5 skrivere, 200 adgange hver, ingen overtrædelse af specifikationen.
-@@s080 Fra den eksplicitte Lock til den indre lås
+@@s062 <mark class="dato">R1</mark>: writer er true → await()
+@@s063 Læseren R1 venter.
+@@s064 Skriveren er færdig og vækker alle. R1 vender tilbage til <b>entry queue</b>: den skal konkurrere om låsen igen.
+@@s065 <mark class="no">W2</mark> tager låsen før R1 → writer = true
+@@s066 <b>Mesa</b>-semantik (den som Java har): en anden skriver kan komme ind før R1.
+@@s067 <mark class="dato">R1</mark> tager låsen igen → <mark class="no">readers++</mark> uden at kontrollere igen
+@@s068 Med <code>if</code> kontrollerer R1 ikke igen: den læser, mens W2 skriver. Specifikationen er overtrådt.
+@@s069 Med <code>while</code> kontrolleres betingelsen igen ved hver vækning. Desuden kan tråde vågne uden et signal (<b>spurious wakeup</b>): while beskytter også mod det.
+@@s070 Hvorfor while og ikke if
+@@s071 Spørgsmål fra slidet: er det nødvendigt at kontrollere readers == 0 før signalAll?
+@@s072 For <b>korrektheden</b> nej: den der vækkes, kontrollerer sin betingelse igen i <code>while</code> og, hvis den ikke kan komme ind, venter den igen. Kontrollen undgår kun <b>unødvendige</b> vækkelser: hvis der stadig er læsere, kunne ingen skriver alligevel komme ind.
+@@s073 Øvelse 2.1: den samme monitor med <code>synchronized</code>
+@@s074 Hvert Java-objekt har allerede en lås <b>og en condition variable</b> indeni. Med <code>synchronized</code> bruger man <code>wait()</code>, <code>notify()</code>, <code>notifyAll()</code> i stedet for <code>await()</code>, <code>signal()</code>, <code>signalAll()</code>.
+@@s075 Version med indre lås, allerede fair over for skriverne (kompileret og kørt)
+@@s076 <code>synchronized</code> på metoderne: de bruger alle låsen på objektet <code>this</code>, så de er gensidigt udelukkende.
+@@s077 <code>wait()</code> gør det, <code>await()</code> gjorde: den frigiver låsen på <code>this</code> og venter i sin kø. Også her i en <code>while</code>.
+@@s078 Ændringen "fair": skriveren <b>reserverer</b> straks (<code>writer = true</code>) og venter derefter på, at de læsere, der allerede er inde, går ud. Fra det øjeblik stopper de nye læsere ved <code>while (writer)</code>. Det er ideen i <code>FairReadWriteMonitor.java</code>.
+@@s079 <code>notifyAll()</code> vækker alle tråde, der venter på <code>this</code>.
+@@s080 Øvelse 2.1.3: hvor mange condition variables?
+@@s081 <b>Én</b>: den indre på objektet, hvor du laver <code>synchronized</code>. Læsere og skrivere venter alle i den samme kø, med <code>wait()</code>, og vækkes med <code>notifyAll()</code>. Med <code>ReentrantLock</code> kan man derimod oprette flere betingelser (<code>lock.newCondition()</code> to gange), for eksempel én for læserne og én for skriverne (øvelse 2.1.5).
+@@s082 Kontrolleret: 15 læsere og 5 skrivere, 200 adgange hver, ingen overtrædelse af specifikationen.
+@@s083 Fra den eksplicitte Lock til den indre lås

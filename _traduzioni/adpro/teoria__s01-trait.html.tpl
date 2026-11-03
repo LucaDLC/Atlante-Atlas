@@ -162,15 +162,15 @@ println(s"My name is ${f.name}")</pre>
   def makeNoise(): String
 class Frog extends Audible</pre>
       <pre class="msg">class Frog needs to be abstract, since def makeNoise(): String in trait Audible is not defined</pre>
-      <div class="fix">Hai mescolato un trait con un metodo astratto e non l'hai scritto. Aggiungi <code>def makeNoise(): String = …</code> dentro <code>Frog</code>.</div>
+      <div class="fix">{{s|s053|}}</div>
     </div>
   </div>
 </section>
 
 <section>
-  <h2>{{s|s053|}}</h2>
-  <p>{{s|s054|}}</p>
-  <figure class="codice" data-titolo="{{a|s055|}}">
+  <h2>{{s|s054|}}</h2>
+  <p>{{s|s055|}}</p>
+  <figure class="codice" data-titolo="{{a|s056|}}">
 <pre data-lang="scala">trait OrderedPoint extends scala.math.Ordered[java.awt.Point]:
 
   this: java.awt.Point =>
@@ -179,36 +179,36 @@ class Frog extends Audible</pre>
     if this.x != that.x then if this.x &lt; that.x then -1 else 1
     else if this.y == that.y then 0 else if this.y &lt; that.y then -1 else 1</pre>
     <ol class="spiega">
-      <li data-righe="1" data-segna="trait OrderedPoint@ora|scala.math.Ordered[java.awt.Point]@dato"><p>{{s|s056|}}</p></li>
-      <li data-righe="3" data-segna="this: java.awt.Point =>@due"><p>{{s|s057|}}</p></li>
-      <li data-righe="5" data-segna="override def compare(that: java.awt.Point): Int@ora"><p>{{s|s058|}}</p></li>
-      <li data-righe="6" data-segna="this.x != that.x@dato|-1@ok|else 1@ok"><p>{{s|s059|}}</p></li>
-      <li data-righe="7" data-segna="this.y == that.y@due|0@ok"><p>{{s|s060|}}</p></li>
+      <li data-righe="1" data-segna="trait OrderedPoint@ora|scala.math.Ordered[java.awt.Point]@dato"><p>{{s|s057|}}</p></li>
+      <li data-righe="3" data-segna="this: java.awt.Point =>@due"><p>{{s|s058|}}</p></li>
+      <li data-righe="5" data-segna="override def compare(that: java.awt.Point): Int@ora"><p>{{s|s059|}}</p></li>
+      <li data-righe="6" data-segna="this.x != that.x@dato|-1@ok|else 1@ok"><p>{{s|s060|}}</p></li>
+      <li data-righe="7" data-segna="this.y == that.y@due|0@ok"><p>{{s|s061|}}</p></li>
     </ol>
   </figure>
 
-  <figure class="passi" data-titolo="{{a|s061|}}">
+  <figure class="passi" data-titolo="{{a|s062|}}">
     <div class="passo">
       <div class="espr">val p = new java.awt.Point(0, 1) <mark class="ora">with OrderedPoint</mark>
 val q = new java.awt.Point(0, 2) with OrderedPoint</div>
-      <p class="nota">{{s|s062|}}</p>
-    </div>
-    <div class="passo">
-      <div class="espr">p &lt; q   =   <mark class="ora">p.compare(q)</mark> &lt; 0</div>
       <p class="nota">{{s|s063|}}</p>
     </div>
     <div class="passo">
-      <div class="espr">this.x != that.x   →   <mark class="dato">0</mark> != <mark class="dato">0</mark>   →   <mark class="no">false</mark></div>
+      <div class="espr">p &lt; q   =   <mark class="ora">p.compare(q)</mark> &lt; 0</div>
       <p class="nota">{{s|s064|}}</p>
+    </div>
+    <div class="passo">
+      <div class="espr">this.x != that.x   →   <mark class="dato">0</mark> != <mark class="dato">0</mark>   →   <mark class="no">false</mark></div>
+      <p class="nota">{{s|s065|}}</p>
     </div>
     <div class="passo">
       <div class="espr">this.y == that.y   →   <mark class="due">1</mark> == <mark class="due">2</mark>   →   false
 this.y &lt; that.y    →   1 &lt; 2    →   <mark class="ok">-1</mark></div>
-      <p class="nota">{{s|s065|}}</p>
+      <p class="nota">{{s|s066|}}</p>
     </div>
     <div class="passo">
       <div class="espr">-1 &lt; 0   →   <mark class="ok">true</mark></div>
-      <p class="nota">{{s|s066|}}</p>
+      <p class="nota">{{s|s067|}}</p>
     </div>
   </figure>
 
@@ -218,19 +218,19 @@ this.y &lt; that.y    →   1 &lt; 2    →   <mark class="ok">-1</mark></div>
   override def compare(that: java.awt.Point): Int =
     if this.x &lt; that.x then -1 else 1</pre>
       <pre class="msg">value x is not a member of OrderedPoint</pre>
-      <div class="fix">Senza <code>this: java.awt.Point =></code> il trait non sa di essere dentro un Point, quindi <code>this.x</code> non esiste.</div>
+      <div class="fix">{{s|s068|}}</div>
     </div>
   </div>
 
-  <div class="box attenzione" data-tit="{{a|s067|}}">
-    <p>{{s|s068|}}</p>
+  <div class="box attenzione" data-tit="{{a|s069|}}">
+    <p>{{s|s070|}}</p>
   </div>
-  <figure class="scena" data-scena="orderedpoint" data-titolo="{{a|s069|}}"></figure>
+  <figure class="scena" data-scena="orderedpoint" data-titolo="{{a|s071|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s070|}}</h2>
-  <p>{{s|s071|}}</p>
+  <h2>{{s|s072|}}</h2>
+  <p>{{s|s073|}}</p>
   <pre class="cod" data-lang="scala">trait Base:
   def saluta: String = "Base"
 trait A extends Base:
@@ -240,8 +240,8 @@ trait B extends Base:
 
 class X extends A, B     // X().saluta == "B>A>Base"
 class Y extends B, A     // Y().saluta == "A>B>Base"</pre>
-  <p class="piccolo">{{s|s072|}}</p>
-  <figure class="scena" data-scena="linearizza" data-titolo="{{a|s073|}}"></figure>
+  <p class="piccolo">{{s|s074|}}</p>
+  <figure class="scena" data-scena="linearizza" data-titolo="{{a|s075|}}"></figure>
 </section>
 
 </main>

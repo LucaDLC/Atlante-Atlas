@@ -172,24 +172,24 @@ primo valore 318.7, ultimo 285.1  →  due "saccadi" finte al primo e all'ultimo
   </table></div>
   <p class="piccolo">{{s|s031|}}</p>
   <figure class="passi" data-titolo="{{a|s032|}}">
-    <div class="passo"><div class="espr">σ <mark class="dato">piccolo</mark>: resta rumore  ⇒  con soglia bassa troppi falsi allarmi</div><p class="nota">{{s|s033|}}</p></div>
-    <div class="passo"><div class="espr">σ <mark class="no">grande</mark>: il salto si spalma su più frame  ⇒  picco più basso e più largo</div><p class="nota">{{s|s034|}}</p></div>
-    <div class="passo"><div class="espr">quindi la soglia si sceglie <mark class="ok">dopo</mark> aver scelto σ</div><p class="nota">{{s|s035|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s033|}}</div><p class="nota">{{s|s034|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s035|}}</div><p class="nota">{{s|s036|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s037|}}</div><p class="nota">{{s|s038|}}</p></div>
   </figure>
-  <figure class="scena" data-scena="sigmasoglia" data-titolo="{{a|s036|}}"></figure>
+  <figure class="scena" data-scena="sigmasoglia" data-titolo="{{a|s039|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s037|}}</h2>
+  <h2>{{s|s040|}}</h2>
   <ul>
-    <li>{{s|s038|}}</li>
-    <li>{{s|s039|}}</li>
-    <li>{{s|s040|}}</li>
+    <li>{{s|s041|}}</li>
+    <li>{{s|s042|}}</li>
+    <li>{{s|s043|}}</li>
   </ul>
-  <div class="box esame" data-tit="{{a|s041|}}">
-    <p>{{s|s042|}}</p>
+  <div class="box esame" data-tit="{{a|s044|}}">
+    <p>{{s|s045|}}</p>
   </div>
-  <figure class="scena" data-scena="restosguardo" data-titolo="{{a|s043|}}"></figure>
+  <figure class="scena" data-scena="restosguardo" data-titolo="{{a|s046|}}"></figure>
 </section>
 
 </main>

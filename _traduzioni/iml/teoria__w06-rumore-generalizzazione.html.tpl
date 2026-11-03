@@ -212,20 +212,20 @@ window.SCENE = window.SCENE || {};
 <section>
   <h2>{{s|s072|}}</h2>
   <figure class="passi" data-titolo="{{a|s073|}}">
-    <div class="passo"><div class="espr">scopo: stimare <mark class="ok">f</mark>, non ricordare i <mark class="dato">dati</mark></div><p class="nota">{{s|s074|}}</p></div>
-    <div class="passo"><div class="espr"><mark class="ora">inductive bias</mark>: le ipotesi del modello</div><p class="nota">{{s|s075|}}</p></div>
-    <div class="passo"><div class="espr"><mark class="ok">generalizzazione</mark>: funzionare su dati mai visti</div><p class="nota">{{s|s076|}}</p></div>
-    <div class="passo"><div class="espr"><mark class="no">garbage in, garbage out</mark></div><p class="nota">{{s|s077|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s074|}}</div><p class="nota">{{s|s075|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s076|}}</div><p class="nota">{{s|s077|}}</p></div>
+    <div class="passo"><div class="espr"><mark class="ok">generalizzazione</mark>: funzionare su dati mai visti</div><p class="nota">{{s|s078|}}</p></div>
+    <div class="passo"><div class="espr"><mark class="no">garbage in, garbage out</mark></div><p class="nota">{{s|s079|}}</p></div>
   </figure>
-  <div class="box inglese" data-tit="{{a|s078|}}">
-    <p>{{s|s079|}}</p>
-    <p>{{s|s080|}}</p>
+  <div class="box inglese" data-tit="{{a|s080|}}">
     <p>{{s|s081|}}</p>
-  </div>
-  <div class="box esame" data-tit="{{a|s082|}}">
+    <p>{{s|s082|}}</p>
     <p>{{s|s083|}}</p>
   </div>
-  <figure class="scena" data-scena="generalizza" data-titolo="{{a|s084|}}"></figure>
+  <div class="box esame" data-tit="{{a|s084|}}">
+    <p>{{s|s085|}}</p>
+  </div>
+  <figure class="scena" data-scena="generalizza" data-titolo="{{a|s086|}}"></figure>
 </section>
 
 </main>

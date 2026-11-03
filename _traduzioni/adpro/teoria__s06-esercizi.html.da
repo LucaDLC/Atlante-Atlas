@@ -112,84 +112,93 @@
 @@s112 En celle i LazyList'en indeholder to <b>lukkede konvolutter</b>: <code>h</code> (hovedet) og <code>t</code> (halen). De er funktioner: indholdet beregnes kun ved at kalde dem, <code>h()</code> og <code>t()</code>. <b>At tvinge</b> = at åbne konvolutten.
 @@s113 At bygge listen åbner intet: <code>cons</code> modtager hoved og hale ved navn og lukker dem inde i konvolutterne.
 @@s114 foldRight åbner hovedets konvolut (<code>h()</code> → 7). Det andet argument til f er <b>ved navn</b> (<code>=> B</code>): ⟨…⟩ forbliver lukket, <code>t()</code> er ikke kaldt endnu.
-@@s115 <code>_</code> betyder "dette argument kigger jeg ikke på": ⟨…⟩ beregnes aldrig, halens konvolut forbliver lukket, bomben intakt.
-@@s116 En headOption, der åbner halen, før den svarer, får bomben til at eksplodere: testen fejler, mutanten er dræbt (kontrolleret, både med <code>cons(7, bomba)</code> og med forAll).
-@@s117 Tvivl: jeg skrev bomben, men testen virker ikke
-@@s118 I din fil var bomben skrevet med <b>4 mellemrum</b> foran, lige under <code>/* The test suite */</code>. I Scala 3 bestemmer indrykningen, hvad der er inde i hvad, som i Python, og en kommentar lukker intet. Den betydningsfulde linje før var <code>Gen.const(loop)</code>, med 4 mellemrum, inde i <code>infiniteLazyList</code>: så endte bomben også <b>inde i</b> <code>infiniteLazyList</code>, usynlig for testene.
-@@s119 Regel: <code>def</code> og <code>property</code> i object'et står med <b>2 mellemrum</b>, deres krop med 4.
-@@s120 Tvivl: vil øvelse 3 have, at take ikke tvinger typen Any?
-@@s121 Nej: det er engelsk, ikke Scala. <i>"does not force any heads nor any tails"</i> = "tvinger <b>ingen</b> hoveder og <b>ingen</b> haler". <i>any</i> i en negativ sætning betyder "ingen"; Scalas type <code>Any</code> har intet med det at gøre. Kaldet <code>l.take(n)</code> må ikke åbne en eneste konvolut af listen <code>l</code>: hovederne beregnes kun, når nogen læser resultatet (fx med <code>toList</code>), og det er øvelse 4.
-@@s122 Øv. 3: hvordan de to lister finder ud af, hvem der åbner hoveder og haler
-@@s123 no:bombe der eksploderer,ok:ingen eksplosion,ora:den ødelagte linje
-@@s124 Testen kører linjerne i rækkefølge. Hvis en af de to første eksploderer, nås <code>true</code> aldrig, og ScalaCheck skriver <code>Exception raised on property evaluation</code>. Resultatet af take kigges der ikke på.
-@@s125 <code>cons</code> modtager hoved og hale ved navn: hverken <code>h()</code> eller <code>t()</code> kaldes.
-@@s126 Den åbner hovederne: listen med bombe-hovederne fanger den.
-@@s127 Den åbner halerne: listen med bombe-halen fanger den. Derfor skal begge bruges.
-@@s128 Øv. 2 trin for trin: fremgangsmåden for alle øvelserne
-@@s129 dato:element,no:bombe,ora:hvad der ændrer sig,ok:består
-@@s130 1. Læs sætningen: "headOption does not force the tail of a lazy list".
-@@s131 Hvad den må <b>ikke</b> gøre: beregne halen.
-@@s132 2. Læg en bombe præcis der: en liste med et godt hoved og en <mark class="no">bombe-hale</mark>.
-@@s133 Hvis headOption beregner halen, eksploderer den.
-@@s134 Kontrollér resultatet også: ingen eksplosion <b>og</b> det rigtige hoved.
-@@s135 foldRight sender halen ved navn, og funktionen smider den væk med <code>_</code>: bomben beregnes aldrig. Testen skal bestå på den rigtige version.
-@@s136 En headOption, der beregner halen, får bomben til at eksplodere: mutanten er dræbt (ægte output, <code>ARG_0: 0</code>). Testen skal fejle på den ødelagte version.
-@@s137 Øv. 4 inde i take: med n = 3 bygges den fjerde celle ikke engang
-@@s138 dato:godt element,no:bombe,ora:den brugte take-sag,ok:resultat
-@@s139 cons(1, …(2, 2)) → cons(2, …(1, 3)) → cons(3, …(0, 4)) → cons(bombe, empty). Også denne rekursion er inde i cons, så den udfoldes kun, når nogen åbner halerne.
-@@s140 n = 3 &gt; 1: tager hovedet og henviser til resten med n − 1. Intet er åbnet endnu.
-@@s141 Med n = 1 tager take hovedet og sætter <code>empty</code> som hale: halen af den tredje celle (<code>_</code>) kaldes aldrig, så cellen med bomben findes ikke engang.
-@@s142 <code>List.range(a, b)</code> går fra a til b <b>udelukket</b>: derfor skriver man <code>n + 1</code>.
-@@s143 Med n = 0 er listen kun bomben; en take, der alligevel kigger på den, eksploderer (ægte output).
-@@s144 Vis løsningen (øv. 2, 3, 4, 7)
-@@s145 Hvor bomberne skal placeres, øvelse for øvelse
-@@s146 Læs: øvelse 5, 6, 8
-@@s147 Tre algebraiske love at prøve med <code>forAll</code>: <code>l.take(n).take(n) == l.take(n)</code>, <code>l.drop(n).drop(m) == l.drop(n + m)</code>, <code>l.map(identity) == l</code>. Det <code>==</code>, der står i øvelserne, er matematisk: i koden sammenligner man <code>.toList</code>. For uendelige lister sammenligner man kun et stykke, med <code>take(k).toList</code>.
-@@s148 Øv. 6: loven og orglet på en drop, der kasserer én mindre
-@@s149 dato:input,ok:ens,no:forskellige,due:orakel
-@@s150 Loven: at kassere n og derefter m er som at kassere n + m på én gang.
-@@s151 Også når man kasserer mere end længden: tom liste fra begge sider.
-@@s152 Ægte output: <code>Falsified after 8 passed tests</code>, <code>Labels: oracle</code>, <code>ARG_0: List("0")</code>, <code>ARG_1: 1</code>. Orglet fanger den med det mindst mulige eksempel.
-@@s153 Vis løsningen (øv. 5, 6, 8)
-@@s154 Sammenlign med toList, og brug List'en som dommer
-@@s155 Uendelige lister: øvelse 9
-@@s156 "map terminates on infinite lists": kør <code>map</code> på en uendelig liste og tag derefter et endeligt stykke. Hvis <code>map</code> er doven, beregner den kun det stykke; hvis den er strikt, prøver den at beregne hele listen og bliver aldrig færdig (i praksis: <code>StackOverflowError</code>, som tæller som en fejlet test). De uendelige lister leveres af <code>infiniteLazyList[Int]</code>, som allerede findes i filen.
-@@s157 Vis løsningen (øv. 9)
-@@s158 dovent map mod strikt map på en uendelig liste
-@@s159 append: øvelse 10
-@@s160 Her vælger du selv egenskaberne. Tre idéer: <b>orglet</b> (append skal gøre det samme som <code>++</code> på Lists); <b>dovenheden</b> (<code>append</code> modtager <code>that</code> ved navn, så den må ikke beregne den, før den skal bruges); de <b>uendelige lister</b> (det, du hæfter bag en uendelig liste, ses aldrig).
-@@s161 Vis løsningen (øv. 10)
-@@s162 append: doven kun hvis this ikke er tom
-@@s163 Mutanterne: sådan kontrollerer du dine tests
-@@s164 Vi har ikke bedømmerens mutanter, men de kan laves: man kopierer <code>lazyList00</code>, ødelægger <b>én</b> funktion og ser, om mindst ét test fejler. Jeg lavede 13; med løsningen på denne side er de alle dræbt, og lazyList00 består alle 13 tests (kontrolleret).
-@@s165 Mutant (én funktion ødelagt)
-@@s166 Dræbt af
-@@s167 headOption beregner halen, før den svarer
-@@s168 Ex02
-@@s169 headOption returnerer det sidste i stedet for det første
-@@s170 Ex02
-@@s171 take beregner hovederne med det samme
-@@s172 Ex03
-@@s173 take beregner halerne med det samme
-@@s174 Ex03
-@@s175 take rører hoved n+1
-@@s176 Ex03, Ex04
-@@s177 take stopper ikke: med n ≥ 1 returnerer den hele resten af listen
-@@s178 Ex04, Ex05 (på den uendelige liste bliver den aldrig færdig)
-@@s179 drop beregner de kasserede hoveder
-@@s180 Ex07
-@@s181 drop kasserer ét element for lidt
-@@s182 Ex06, Ex07
-@@s183 strikt map (beregner hele halen)
-@@s184 Ex09
-@@s185 map taber det første element
-@@s186 Ex08, Ex09
-@@s187 append ignorerer that
-@@s188 Ex10.01
-@@s189 append beregner that med det samme
-@@s190 Ex10.02, Ex10.03
-@@s191 append sætter that foran
-@@s192 Ex10.01, Ex10.02, Ex10.03
-@@s193 De to regler, der giver point
-@@s194 <b>1.</b> Hver af dine tests skal bestå på <code>lazyList00</code>: en forkert test, der fejler på den rigtige version, koster 35%. <b>2.</b> Hver bedt om funktion (headOption, take, drop, map, append) skal have tests både på <b>resultatet</b> og på <b>dovenheden</b>: mutanterne ødelægger den ene eller den anden.
-@@s195 En mutant: dræbt eller overlevet
+@@s115 
+@@s116 <code>_</code> betyder "dette argument kigger jeg ikke på": ⟨…⟩ beregnes aldrig, halens konvolut forbliver lukket, bomben intakt.
+@@s117 En headOption, der åbner halen, før den svarer, får bomben til at eksplodere: testen fejler, mutanten er dræbt (kontrolleret, både med <code>cons(7, bomba)</code> og med forAll).
+@@s118 Tvivl: jeg skrev bomben, men testen virker ikke
+@@s119 I din fil var bomben skrevet med <b>4 mellemrum</b> foran, lige under <code>/* The test suite */</code>. I Scala 3 bestemmer indrykningen, hvad der er inde i hvad, som i Python, og en kommentar lukker intet. Den betydningsfulde linje før var <code>Gen.const(loop)</code>, med 4 mellemrum, inde i <code>infiniteLazyList</code>: så endte bomben også <b>inde i</b> <code>infiniteLazyList</code>, usynlig for testene.
+@@s120 Regel: <code>def</code> og <code>property</code> i object'et står med <b>2 mellemrum</b>, deres krop med 4.
+@@s121 Tvivl: vil øvelse 3 have, at take ikke tvinger typen Any?
+@@s122 Nej: det er engelsk, ikke Scala. <i>"does not force any heads nor any tails"</i> = "tvinger <b>ingen</b> hoveder og <b>ingen</b> haler". <i>any</i> i en negativ sætning betyder "ingen"; Scalas type <code>Any</code> har intet med det at gøre. Kaldet <code>l.take(n)</code> må ikke åbne en eneste konvolut af listen <code>l</code>: hovederne beregnes kun, når nogen læser resultatet (fx med <code>toList</code>), og det er øvelse 4.
+@@s123 Øv. 3: hvordan de to lister finder ud af, hvem der åbner hoveder og haler
+@@s124 no:bombe der eksploderer,ok:ingen eksplosion,ora:den ødelagte linje
+@@s125 Testen kører linjerne i rækkefølge. Hvis en af de to første eksploderer, nås <code>true</code> aldrig, og ScalaCheck skriver <code>Exception raised on property evaluation</code>. Resultatet af take kigges der ikke på.
+@@s126 <code>cons</code> modtager hoved og hale ved navn: hverken <code>h()</code> eller <code>t()</code> kaldes.
+@@s127 
+@@s128 Den åbner hovederne: listen med bombe-hovederne fanger den.
+@@s129 
+@@s130 Den åbner halerne: listen med bombe-halen fanger den. Derfor skal begge bruges.
+@@s131 
+@@s132 Øv. 2 trin for trin: fremgangsmåden for alle øvelserne
+@@s133 dato:element,no:bombe,ora:hvad der ændrer sig,ok:består
+@@s134 1. Læs sætningen: "headOption does not force the tail of a lazy list".
+@@s135 Hvad den må <b>ikke</b> gøre: beregne halen.
+@@s136 2. Læg en bombe præcis der: en liste med et godt hoved og en <mark class="no">bombe-hale</mark>.
+@@s137 Hvis headOption beregner halen, eksploderer den.
+@@s138 Kontrollér resultatet også: ingen eksplosion <b>og</b> det rigtige hoved.
+@@s139 foldRight sender halen ved navn, og funktionen smider den væk med <code>_</code>: bomben beregnes aldrig. Testen skal bestå på den rigtige version.
+@@s140 En headOption, der beregner halen, får bomben til at eksplodere: mutanten er dræbt (ægte output, <code>ARG_0: 0</code>). Testen skal fejle på den ødelagte version.
+@@s141 Øv. 4 inde i take: med n = 3 bygges den fjerde celle ikke engang
+@@s142 dato:godt element,no:bombe,ora:den brugte take-sag,ok:resultat
+@@s143 cons(1, …(2, 2)) → cons(2, …(1, 3)) → cons(3, …(0, 4)) → cons(bombe, empty). Også denne rekursion er inde i cons, så den udfoldes kun, når nogen åbner halerne.
+@@s144 n = 3 &gt; 1: tager hovedet og henviser til resten med n − 1. Intet er åbnet endnu.
+@@s145 
+@@s146 Med n = 1 tager take hovedet og sætter <code>empty</code> som hale: halen af den tredje celle (<code>_</code>) kaldes aldrig, så cellen med bomben findes ikke engang.
+@@s147 <code>List.range(a, b)</code> går fra a til b <b>udelukket</b>: derfor skriver man <code>n + 1</code>.
+@@s148 Med n = 0 er listen kun bomben; en take, der alligevel kigger på den, eksploderer (ægte output).
+@@s149 Vis løsningen (øv. 2, 3, 4, 7)
+@@s150 Hvor bomberne skal placeres, øvelse for øvelse
+@@s151 Læs: øvelse 5, 6, 8
+@@s152 Tre algebraiske love at prøve med <code>forAll</code>: <code>l.take(n).take(n) == l.take(n)</code>, <code>l.drop(n).drop(m) == l.drop(n + m)</code>, <code>l.map(identity) == l</code>. Det <code>==</code>, der står i øvelserne, er matematisk: i koden sammenligner man <code>.toList</code>. For uendelige lister sammenligner man kun et stykke, med <code>take(k).toList</code>.
+@@s153 
+@@s154 Øv. 6: loven og orglet på en drop, der kasserer én mindre
+@@s155 dato:input,ok:ens,no:forskellige,due:orakel
+@@s156 Loven: at kassere n og derefter m er som at kassere n + m på én gang.
+@@s157 Også når man kasserer mere end længden: tom liste fra begge sider.
+@@s158 
+@@s159 Ægte output: <code>Falsified after 8 passed tests</code>, <code>Labels: oracle</code>, <code>ARG_0: List("0")</code>, <code>ARG_1: 1</code>. Orglet fanger den med det mindst mulige eksempel.
+@@s160 
+@@s161 Vis løsningen (øv. 5, 6, 8)
+@@s162 Sammenlign med toList, og brug List'en som dommer
+@@s163 Uendelige lister: øvelse 9
+@@s164 "map terminates on infinite lists": kør <code>map</code> på en uendelig liste og tag derefter et endeligt stykke. Hvis <code>map</code> er doven, beregner den kun det stykke; hvis den er strikt, prøver den at beregne hele listen og bliver aldrig færdig (i praksis: <code>StackOverflowError</code>, som tæller som en fejlet test). De uendelige lister leveres af <code>infiniteLazyList[Int]</code>, som allerede findes i filen.
+@@s165 Vis løsningen (øv. 9)
+@@s166 dovent map mod strikt map på en uendelig liste
+@@s167 append: øvelse 10
+@@s168 Her vælger du selv egenskaberne. Tre idéer: <b>orglet</b> (append skal gøre det samme som <code>++</code> på Lists); <b>dovenheden</b> (<code>append</code> modtager <code>that</code> ved navn, så den må ikke beregne den, før den skal bruges); de <b>uendelige lister</b> (det, du hæfter bag en uendelig liste, ses aldrig).
+@@s169 
+@@s170 Vis løsningen (øv. 10)
+@@s171 append: doven kun hvis this ikke er tom
+@@s172 Mutanterne: sådan kontrollerer du dine tests
+@@s173 Vi har ikke bedømmerens mutanter, men de kan laves: man kopierer <code>lazyList00</code>, ødelægger <b>én</b> funktion og ser, om mindst ét test fejler. Jeg lavede 13; med løsningen på denne side er de alle dræbt, og lazyList00 består alle 13 tests (kontrolleret).
+@@s174 Mutant (én funktion ødelagt)
+@@s175 Dræbt af
+@@s176 headOption beregner halen, før den svarer
+@@s177 Ex02
+@@s178 headOption returnerer det sidste i stedet for det første
+@@s179 Ex02
+@@s180 take beregner hovederne med det samme
+@@s181 Ex03
+@@s182 take beregner halerne med det samme
+@@s183 Ex03
+@@s184 take rører hoved n+1
+@@s185 Ex03, Ex04
+@@s186 take stopper ikke: med n ≥ 1 returnerer den hele resten af listen
+@@s187 Ex04, Ex05 (på den uendelige liste bliver den aldrig færdig)
+@@s188 drop beregner de kasserede hoveder
+@@s189 Ex07
+@@s190 drop kasserer ét element for lidt
+@@s191 Ex06, Ex07
+@@s192 strikt map (beregner hele halen)
+@@s193 Ex09
+@@s194 map taber det første element
+@@s195 Ex08, Ex09
+@@s196 append ignorerer that
+@@s197 Ex10.01
+@@s198 append beregner that med det samme
+@@s199 Ex10.02, Ex10.03
+@@s200 append sætter that foran
+@@s201 Ex10.01, Ex10.02, Ex10.03
+@@s202 De to regler, der giver point
+@@s203 <b>1.</b> Hver af dine tests skal bestå på <code>lazyList00</code>: en forkert test, der fejler på den rigtige version, koster 35%. <b>2.</b> Hver bedt om funktion (headOption, take, drop, map, append) skal have tests både på <b>resultatet</b> og på <b>dovenheden</b>: mutanterne ødelægger den ene eller den anden.
+@@s204 En mutant: dræbt eller overlevet

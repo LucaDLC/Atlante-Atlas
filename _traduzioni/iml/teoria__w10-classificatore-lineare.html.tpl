@@ -121,20 +121,20 @@ window.SCENE = window.SCENE || {};
   </ul>
   <figure class="passi" data-titolo="{{a|s020|}}">
     <div class="passo"><div class="espr">z = <mark class="ora">w₀</mark> + <mark class="ora">w₁</mark><mark class="dato">x₁</mark> + <mark class="ora">w₂</mark><mark class="dato">x₂</mark> = wᵀx</div><p class="nota">{{s|s021|}}</p></div>
-    <div class="passo"><div class="espr">f(x) = <mark class="ok">sign</mark>(z):   +1 se z &gt; 0,  −1 altrimenti</div><p class="nota">{{s|s022|}}</p></div>
-    <div class="passo"><div class="espr">confine di decisione:  w₀ + w₁x₁ + w₂x₂ = <mark class="no">0</mark>  ⇒  x₂ = −w₀/w₂ − (w₁/w₂)·x₁</div><p class="nota">{{s|s023|}}</p></div>
-    <div class="passo"><div class="espr">predizione giusta  ⇔  <mark class="ok">yᵢ · f(xᵢ) &gt; 0</mark></div><p class="nota">{{s|s024|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s022|}}</div><p class="nota">{{s|s023|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s024|}}</div><p class="nota">{{s|s025|}}</p></div>
+    <div class="passo"><div class="espr">predizione giusta  ⇔  <mark class="ok">yᵢ · f(xᵢ) &gt; 0</mark></div><p class="nota">{{s|s026|}}</p></div>
   </figure>
-  <figure class="scena" data-scena="classifica" data-titolo="{{a|s025|}}"></figure>
-  <div class="box idea" data-tit="{{a|s026|}}">
-    <p>{{s|s027|}}</p>
+  <figure class="scena" data-scena="classifica" data-titolo="{{a|s027|}}"></figure>
+  <div class="box idea" data-tit="{{a|s028|}}">
+    <p>{{s|s029|}}</p>
   </div>
 </section>
 
 <section>
-  <h2>{{s|s028|}}</h2>
-  <figure class="scena" data-scena="retta" data-titolo="{{a|s029|}}"></figure>
-  <figure class="codice" data-titolo="{{a|s030|}}">
+  <h2>{{s|s030|}}</h2>
+  <figure class="scena" data-scena="retta" data-titolo="{{a|s031|}}"></figure>
+  <figure class="codice" data-titolo="{{a|s032|}}">
 <pre data-lang="python">X = np.vstack([p_pos, p_neg])                      # 80 × 2
 labels = np.r_[np.ones(40), -np.ones(40)]         # +1 positivi, −1 negativi
 A = np.c_[np.ones(len(X)), X]                      # [1, x1, x2]
@@ -142,54 +142,54 @@ w = np.linalg.lstsq(A, labels, rcond=None)[0]      # [0.052, 0.386, 0.321]
 pred = np.where(A @ w > 0, 1, -1)
 (pred == labels).mean()                            # 0.8875</pre>
     <ol class="spiega">
-      <li data-righe="1-2" data-segna="np.ones(40)@ok|-np.ones(40)@no"><p>{{s|s031|}}</p></li>
-      <li data-righe="3-4" data-segna="np.ones(len(X))@due|np.linalg.lstsq@ora"><p>{{s|s032|}}</p></li>
-      <li data-righe="5-6" data-segna="A @ w &gt; 0@ok"><p>{{s|s033|}}</p></li>
+      <li data-righe="1-2" data-segna="np.ones(40)@ok|-np.ones(40)@no"><p>{{s|s033|}}</p></li>
+      <li data-righe="3-4" data-segna="np.ones(len(X))@due|np.linalg.lstsq@ora"><p>{{s|s034|}}</p></li>
+      <li data-righe="5-6" data-segna="A @ w &gt; 0@ok"><p>{{s|s035|}}</p></li>
     </ol>
   </figure>
-  <div class="box attenzione" data-tit="{{a|s034|}}">
-    <p>{{s|s035|}}</p>
+  <div class="box attenzione" data-tit="{{a|s036|}}">
+    <p>{{s|s037|}}</p>
   </div>
 </section>
 
 <section>
-  <h2>{{s|s036|}}</h2>
-  <figure class="passi" data-titolo="{{a|s037|}}">
-    <div class="passo"><div class="espr">z = <mark class="ora">w₀ + w₁x</mark></div><p class="nota">{{s|s038|}}</p></div>
-    <div class="passo"><div class="espr">σ(z) = 1 / (1 + e<sup>−z</sup>)  ∈ (<mark class="dato">0</mark>, <mark class="dato">1</mark>)</div><p class="nota">{{s|s039|}}</p></div>
-    <div class="passo"><div class="espr">classe 1 se σ(z) &gt; <mark class="ok">0.5</mark>  ⇔  z &gt; 0</div><p class="nota">{{s|s040|}}</p></div>
+  <h2>{{s|s038|}}</h2>
+  <figure class="passi" data-titolo="{{a|s039|}}">
+    <div class="passo"><div class="espr">z = <mark class="ora">w₀ + w₁x</mark></div><p class="nota">{{s|s040|}}</p></div>
+    <div class="passo"><div class="espr">σ(z) = 1 / (1 + e<sup>−z</sup>)  ∈ (<mark class="dato">0</mark>, <mark class="dato">1</mark>)</div><p class="nota">{{s|s041|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s042|}}</div><p class="nota">{{s|s043|}}</p></div>
   </figure>
   <div class="tab-wrap"><table class="tab">
-    <thead><tr><th>{{s|s041|}}</th><th>{{s|s042|}}</th></tr></thead>
+    <thead><tr><th>{{s|s044|}}</th><th>{{s|s045|}}</th></tr></thead>
     <tbody>
-      <tr><td>{{s|s043|}}</td><td>{{s|s044|}}</td></tr>
-      <tr><td>{{s|s045|}}</td><td>{{s|s046|}}</td></tr>
-      <tr><td>w₁ = 0</td><td>{{s|s047|}}</td></tr>
+      <tr><td>{{s|s046|}}</td><td>{{s|s047|}}</td></tr>
       <tr><td>{{s|s048|}}</td><td>{{s|s049|}}</td></tr>
+      <tr><td>w₁ = 0</td><td>{{s|s050|}}</td></tr>
+      <tr><td>{{s|s051|}}</td><td>{{s|s052|}}</td></tr>
     </tbody>
   </table></div>
-  <figure class="scena" data-scena="sigmoide" data-titolo="{{a|s050|}}"></figure>
-  <figure class="passi" data-titolo="{{a|s051|}}">
-    <div class="passo"><div class="espr">L = −[ y·log(p) + (1 − y)·log(1 − p) ]    con p = σ(wᵀx), y ∈ {0, 1}</div><p class="nota">{{s|s052|}}</p></div>
-    <div class="passo"><div class="espr">y = 1:  p = 0.9 → <mark class="ok">0.105</mark>;   p = 0.5 → 0.693;   p = 0.1 → <mark class="no">2.303</mark></div><p class="nota">{{s|s053|}}</p></div>
-    <div class="passo"><div class="espr">y = 0:  p = 0.99 → <mark class="no">4.605</mark>;   p = 0.1 → <mark class="ok">0.105</mark></div><p class="nota">{{s|s054|}}</p></div>
-    <div class="passo"><div class="espr">nessuna formula chiusa  ⇒  <mark class="ora">discesa del gradiente</mark></div><p class="nota">{{s|s055|}}</p></div>
+  <figure class="scena" data-scena="sigmoide" data-titolo="{{a|s053|}}"></figure>
+  <figure class="passi" data-titolo="{{a|s054|}}">
+    <div class="passo"><div class="espr">{{s|s055|}}</div><p class="nota">{{s|s056|}}</p></div>
+    <div class="passo"><div class="espr">y = 1:  p = 0.9 → <mark class="ok">0.105</mark>;   p = 0.5 → 0.693;   p = 0.1 → <mark class="no">2.303</mark></div><p class="nota">{{s|s057|}}</p></div>
+    <div class="passo"><div class="espr">y = 0:  p = 0.99 → <mark class="no">4.605</mark>;   p = 0.1 → <mark class="ok">0.105</mark></div><p class="nota">{{s|s058|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s059|}}</div><p class="nota">{{s|s060|}}</p></div>
   </figure>
-  <div class="box idea" data-tit="{{a|s056|}}">
-    <p>{{s|s057|}}</p>
+  <div class="box idea" data-tit="{{a|s061|}}">
+    <p>{{s|s062|}}</p>
   </div>
-  <div class="box attenzione" data-tit="{{a|s058|}}">
-    <p>{{s|s059|}}</p>
+  <div class="box attenzione" data-tit="{{a|s063|}}">
+    <p>{{s|s064|}}</p>
   </div>
 </section>
 
 <section>
-  <h2>{{s|s060|}}</h2>
-  <p>{{s|s061|}}</p>
-  <div class="box esame" data-tit="{{a|s062|}}">
-    <p>{{s|s063|}}</p>
+  <h2>{{s|s065|}}</h2>
+  <p>{{s|s066|}}</p>
+  <div class="box esame" data-tit="{{a|s067|}}">
+    <p>{{s|s068|}}</p>
   </div>
-  <figure class="scena" data-scena="knn" data-titolo="{{a|s064|}}"></figure>
+  <figure class="scena" data-scena="knn" data-titolo="{{a|s069|}}"></figure>
 </section>
 
 </main>

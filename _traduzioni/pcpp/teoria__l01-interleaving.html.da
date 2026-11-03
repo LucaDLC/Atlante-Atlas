@@ -12,60 +12,62 @@
 @@s012 Tre måder at skrive det på (øvelse 1.1.3).
 @@s013 Alle tre bliver til den <b>samme</b> bytecode (kun én startinstruktion ændres, den der indlæser objektet): en <b>læsning</b> (<code>getfield</code>), en beregning, en <b>skrivning</b> (<code>putfield</code>).
 @@s014 For at ræsonnere over det skriver man sådan her: to nummererede trin. Mellem (1) og (2) kan scheduleren suspendere tråden.
-@@s015 Svar på øvelse 1.1.3: at ændre formen ændrer ingenting, fordi ingen af de tre er atomisk.
-@@s016 counter++ i tre instruktioner
-@@s017 Byg den tabte opdatering
-@@s018 To tråde kører kroppen i løkken én gang. Det rigtige resultat er <code>counter = 2</code>. Prøv at få 1, og åbn derefter "Alle mulige interleavings".
-@@s019 Tabt opdatering
-@@s020 Interleavingen der taber en forøgelse
-@@s021 t1 læser 0.
-@@s022 Før t1 skriver, læser t2 <b>også</b> 0: en værdi der allerede er gammel (stale).
-@@s023 t1 skriver 0 + 1.
-@@s024 t2 skriver 0 + 1: det overskriver t1's forøgelse.
-@@s025 Af de 6 mulige interleavings taber 4 en opdatering. Med 10 millioner gennemløb pr. tråd er chancerne millioner: det forkerte resultat er næsten sikkert.
-@@s026 Sådan skrives en interleaving (slide 48)
-@@s027 <code>&lt;tråd&gt;(&lt;trin&gt;), &lt;tråd&gt;(&lt;trin&gt;), …</code> — for eksempel <code>t1(1), t1(2), t2(1), t2(2)</code>. Det er en følge af operationer <b>i det samtidige program</b>, ikke af en enkelt tråd. Hver tråd skal respektere sin egen rækkefølge: <code>t1(2)</code> kan ikke komme før <code>t1(1)</code>.
-@@s028 Race condition og data race
-@@s029 Det er de to mest brugte ord i kurset, og de mest forvekslede. Den ene handler om <b>resultatet</b> af programmet, den anden om <b>adgangene</b> til hukommelsen. De optræder ofte sammen (som ved counter++), men de er uafhængige: man kan have den ene uden den anden.
-@@s030 Race condition
-@@s031 <b>Resultatet</b> afhænger af interleavingen. Det er en egenskab ved outputtet.
-@@s032 Data race (definition fra forelæsning 1)
-@@s033 To tråde får adgang til <b>samme</b> hukommelsessted, og <b>mindst én skriver</b>. Det er en egenskab ved adgangene. I forelæsning 3 bliver definitionen mere præcis.
-@@s034 Tilfælde
-@@s035 Race condition?
-@@s036 Data race?
-@@s037 <code>counter++</code> fra to tråde
-@@s038 ja (totalen ændrer sig)
-@@s039 ja (læsninger og skrivninger på counter)
-@@s040 to tråde udskriver uden delt hukommelse (Printer)
-@@s041 ja (rækkefølgen af symbolerne ændrer sig)
-@@s042 nej
-@@s043 to tråde skriver <b>den samme værdi</b> i den samme variabel
-@@s044 nej (resultatet ændrer sig ikke)
-@@s045 ja
-@@s046 Race condition og data race: de fire tilfælde
-@@s047 Hvorfor det med 100 gennemløb næsten altid giver 200 (øvelse 1.1.2)
-@@s048 Med få gennemløb er det ofte sådan, at én tråd <b>får gjort alt sit arbejde</b>, før den anden starter, eller inden for ét enkelt turn af scheduleren: de "dårlige" interleavings, hvor en tråd snyder sig ind mellem den andens læsning og skrivning, bliver sjældne. Sjældne betyder ikke umulige: <b>200 er ikke garanteret</b>, fordi scheduleren altid kan suspendere en tråd mellem (1) og (2).
-@@s049 100 gennemløb mod 10 millioner
-@@s050 Den mindste værdi (øvelse 1.1.8)
-@@s051 Uden lås og med <code>counts = 3</code>: hvad er den mindste værdi, programmet kan udskrive? Forkert intuition: 3. Verificeret ved at opregne alle interleavings: minimum er <b>2</b>, og den bliver 2 selv med 20 millioner gennemløb.
-@@s052 To tråde, 3 gennemløb hver
-@@s053 En interleaving der udskriver 2
-@@s054 t1 læser 0 og stopper (suspenderet af scheduleren).
-@@s055 t2 laver sine første <b>to</b> komplette gennemløb.
-@@s056 t1 skriver sin gamle 0 + 1: det udsletter t2's to gennemløb.
-@@s057 t2 læser 1 til sit sidste gennemløb og stopper.
-@@s058 t1 færdiggør sine to resterende gennemløb.
-@@s059 t2 skriver 1 + 1: det udsletter alt t1's arbejde. Endeligt resultat <b>2</b>. Med N gennemløb er skemaet det samme: t2 laver N−1 gennemløb, derefter t1 N−1 gennemløb.
-@@s060 På engelsk
-@@s061 "The minimum is 2. t1 reads 0 and is suspended; t2 completes all but its last iteration; t1 writes 1, overwriting t2's work; t2 reads 1 and is suspended; t1 completes its remaining iterations; finally t2 writes 2, overwriting all of t1's increments. The same interleaving works for any number of iterations greater than 1."
-@@s062 Printer: race condition uden delt hukommelse
-@@s063 Øvelse 1.2: <code>print()</code> udskriver <code>-</code>, sover 50 ms, udskriver <code>|</code>. To tråde kalder den. <code>sleep</code> garanterer <b>ikke</b> noget om rækkefølgen: det er blot en mulighed for scheduleren.
-@@s064 To tråde, 4 print() hver
-@@s065 Hvor "--|" kommer fra
-@@s066 t1 udskriver bindestregen og går til at sove.
-@@s067 Mens t1 sover, udskriver t2 sin bindestreg: to bindestreger i træk.
-@@s068 Så udskriver begge lodstregen. Efter "fejlen" <code>--</code> kommer før eller siden <code>||</code>, fordi hver tråd altid skifter mellem <code>-</code> og <code>|</code>.
-@@s069 Øvelse 1.2.4: kan man få --|-|-|-|-|-|-|| med 4 print hver?
-@@s070 <b>Ja</b> (verificeret ved at tjekke alle interleavings). Et eksempel:
-@@s071 Indsæt det i "Prøv en følge" i konstruktøren ovenfor for at se det køre. Det er en usandsynlig interleaving (t2 står stille under flere print fra t1), men ingen regel forbyder den.
+@@s015 <mark class="ok">Ingen forskel mellem de tre former.</mark>
+@@s016 Svar på øvelse 1.1.3: at ændre formen ændrer ingenting, fordi ingen af de tre er atomisk.
+@@s017 counter++ i tre instruktioner
+@@s018 Byg den tabte opdatering
+@@s019 To tråde kører kroppen i løkken én gang. Det rigtige resultat er <code>counter = 2</code>. Prøv at få 1, og åbn derefter "Alle mulige interleavings".
+@@s020 Tabt opdatering
+@@s021 Interleavingen der taber en forøgelse
+@@s022 t1 læser 0.
+@@s023 Før t1 skriver, læser t2 <b>også</b> 0: en værdi der allerede er gammel (stale).
+@@s024 t1 skriver 0 + 1.
+@@s025 t2 skriver 0 + 1: det overskriver t1's forøgelse.
+@@s026 <mark class="no">counter = 1</mark> i stedet for 2
+@@s027 Af de 6 mulige interleavings taber 4 en opdatering. Med 10 millioner gennemløb pr. tråd er chancerne millioner: det forkerte resultat er næsten sikkert.
+@@s028 Sådan skrives en interleaving (slide 48)
+@@s029 <code>&lt;tråd&gt;(&lt;trin&gt;), &lt;tråd&gt;(&lt;trin&gt;), …</code> — for eksempel <code>t1(1), t1(2), t2(1), t2(2)</code>. Det er en følge af operationer <b>i det samtidige program</b>, ikke af en enkelt tråd. Hver tråd skal respektere sin egen rækkefølge: <code>t1(2)</code> kan ikke komme før <code>t1(1)</code>.
+@@s030 Race condition og data race
+@@s031 Det er de to mest brugte ord i kurset, og de mest forvekslede. Den ene handler om <b>resultatet</b> af programmet, den anden om <b>adgangene</b> til hukommelsen. De optræder ofte sammen (som ved counter++), men de er uafhængige: man kan have den ene uden den anden.
+@@s032 Race condition
+@@s033 <b>Resultatet</b> afhænger af interleavingen. Det er en egenskab ved outputtet.
+@@s034 Data race (definition fra forelæsning 1)
+@@s035 To tråde får adgang til <b>samme</b> hukommelsessted, og <b>mindst én skriver</b>. Det er en egenskab ved adgangene. I forelæsning 3 bliver definitionen mere præcis.
+@@s036 Tilfælde
+@@s037 Race condition?
+@@s038 Data race?
+@@s039 <code>counter++</code> fra to tråde
+@@s040 ja (totalen ændrer sig)
+@@s041 ja (læsninger og skrivninger på counter)
+@@s042 to tråde udskriver uden delt hukommelse (Printer)
+@@s043 ja (rækkefølgen af symbolerne ændrer sig)
+@@s044 nej
+@@s045 to tråde skriver <b>den samme værdi</b> i den samme variabel
+@@s046 nej (resultatet ændrer sig ikke)
+@@s047 ja
+@@s048 Race condition og data race: de fire tilfælde
+@@s049 Hvorfor det med 100 gennemløb næsten altid giver 200 (øvelse 1.1.2)
+@@s050 Med få gennemløb er det ofte sådan, at én tråd <b>får gjort alt sit arbejde</b>, før den anden starter, eller inden for ét enkelt turn af scheduleren: de "dårlige" interleavings, hvor en tråd snyder sig ind mellem den andens læsning og skrivning, bliver sjældne. Sjældne betyder ikke umulige: <b>200 er ikke garanteret</b>, fordi scheduleren altid kan suspendere en tråd mellem (1) og (2).
+@@s051 100 gennemløb mod 10 millioner
+@@s052 Den mindste værdi (øvelse 1.1.8)
+@@s053 Uden lås og med <code>counts = 3</code>: hvad er den mindste værdi, programmet kan udskrive? Forkert intuition: 3. Verificeret ved at opregne alle interleavings: minimum er <b>2</b>, og den bliver 2 selv med 20 millioner gennemløb.
+@@s054 To tråde, 3 gennemløb hver
+@@s055 En interleaving der udskriver 2
+@@s056 t1 læser 0 og stopper (suspenderet af scheduleren).
+@@s057 t2 laver sine første <b>to</b> komplette gennemløb.
+@@s058 t1 skriver sin gamle 0 + 1: det udsletter t2's to gennemløb.
+@@s059 t2 læser 1 til sit sidste gennemløb og stopper.
+@@s060 t1 færdiggør sine to resterende gennemløb.
+@@s061 t2 skriver 1 + 1: det udsletter alt t1's arbejde. Endeligt resultat <b>2</b>. Med N gennemløb er skemaet det samme: t2 laver N−1 gennemløb, derefter t1 N−1 gennemløb.
+@@s062 På engelsk
+@@s063 "The minimum is 2. t1 reads 0 and is suspended; t2 completes all but its last iteration; t1 writes 1, overwriting t2's work; t2 reads 1 and is suspended; t1 completes its remaining iterations; finally t2 writes 2, overwriting all of t1's increments. The same interleaving works for any number of iterations greater than 1."
+@@s064 Printer: race condition uden delt hukommelse
+@@s065 Øvelse 1.2: <code>print()</code> udskriver <code>-</code>, sover 50 ms, udskriver <code>|</code>. To tråde kalder den. <code>sleep</code> garanterer <b>ikke</b> noget om rækkefølgen: det er blot en mulighed for scheduleren.
+@@s066 To tråde, 4 print() hver
+@@s067 Hvor "--|" kommer fra
+@@s068 t1 udskriver bindestregen og går til at sove.
+@@s069 Mens t1 sover, udskriver t2 sin bindestreg: to bindestreger i træk.
+@@s070 Så udskriver begge lodstregen. Efter "fejlen" <code>--</code> kommer før eller siden <code>||</code>, fordi hver tråd altid skifter mellem <code>-</code> og <code>|</code>.
+@@s071 Øvelse 1.2.4: kan man få --|-|-|-|-|-|-|| med 4 print hver?
+@@s072 <b>Ja</b> (verificeret ved at tjekke alle interleavings). Et eksempel:
+@@s073 Indsæt det i "Prøv en følge" i konstruktøren ovenfor for at se det køre. Det er en usandsynlig interleaving (t2 står stille under flere print fra t1), men ingen regel forbyder den.

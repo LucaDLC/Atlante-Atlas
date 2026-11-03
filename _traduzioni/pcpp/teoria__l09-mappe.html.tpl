@@ -37,38 +37,38 @@
   <h2>{{s|s025|}}</h2>
   <p>{{s|s026|}}</p>
   <figure class="passi" data-titolo="{{a|s027|}}" data-legenda="{{a|s028|}}">
-    <div class="passo"><div class="espr"><mark class="dato">Chiave</mark> casuale. Se la mappa <mark class="ora">non la contiene</mark>…</div><p class="nota">{{s|s029|}}</p></div>
-    <div class="passo"><div class="espr">…la aggiunge con probabilità <mark class="ora">addProb</mark></div><p class="nota">{{s|s030|}}</p></div>
-    <div class="passo"><div class="espr">Se la mappa la <mark class="ora">contiene</mark>, la rimuove con probabilità <mark class="ora">removeProb</mark></div><p class="nota">{{s|s031|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s029|}}</div><p class="nota">{{s|s030|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s031|}}</div><p class="nota">{{s|s032|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s033|}}</div><p class="nota">{{s|s034|}}</p></div>
   </figure>
-  <p>{{s|s032|}}</p>
+  <p>{{s|s035|}}</p>
 </section>
 
 <section>
-  <h2>{{s|s033|}}</h2>
+  <h2>{{s|s036|}}</h2>
   <ul>
-    <li>{{s|s034|}}</li>
-    <li>{{s|s035|}}</li>
-    <li>{{s|s036|}}</li>
     <li>{{s|s037|}}</li>
+    <li>{{s|s038|}}</li>
+    <li>{{s|s039|}}</li>
+    <li>{{s|s040|}}</li>
   </ul>
-  <p>{{s|s038|}}</p>
+  <p>{{s|s041|}}</p>
 </section>
 
 <section>
-  <h2>{{s|s039|}}</h2>
-    <figure class="passi" data-titolo="{{a|s040|}}" data-legenda="{{a|s041|}}">
-    <div class="passo"><div class="espr">I lock <mark class="ok">possono essere veloci</mark>: un thread bloccato non consuma CPU</div><p class="nota">{{s|s042|}}</p></div>
-    <div class="passo"><div class="espr">Più lock (<mark class="ora">lock striping</mark>) possono essere ancora più veloci</div><p class="nota">{{s|s043|}}</p></div>
-    <div class="passo"><div class="espr">I <mark class="no">CAS</mark> senza lock possono essere molto lenti sotto contesa</div><p class="nota">{{s|s044|}}</p></div>
-    <div class="passo"><div class="espr">Il padding, o <code>@Contended</code>, tiene i dati locali sulla propria linea</div><p class="nota">{{s|s045|}}</p></div>
+  <h2>{{s|s042|}}</h2>
+    <figure class="passi" data-titolo="{{a|s043|}}" data-legenda="{{a|s044|}}">
+    <div class="passo"><div class="espr">{{s|s045|}}</div><p class="nota">{{s|s046|}}</p></div>
+    <div class="passo"><div class="espr">Più lock (<mark class="ora">lock striping</mark>) possono essere ancora più veloci</div><p class="nota">{{s|s047|}}</p></div>
+    <div class="passo"><div class="espr">I <mark class="no">CAS</mark> senza lock possono essere molto lenti sotto contesa</div><p class="nota">{{s|s048|}}</p></div>
+    <div class="passo"><div class="espr">Il padding, o <code>@Contended</code>, tiene i dati locali sulla propria linea</div><p class="nota">{{s|s049|}}</p></div>
   </figure>
 </section>
 
 <section>
-  <h2>{{s|s046|}}</h2>
-  <div class="box regola" data-tit="{{a|s047|}}">{{s|s048|}}</div>
-  <div class="box inglese" data-tit="{{a|s049|}}">{{s|s050|}}</div>
+  <h2>{{s|s050|}}</h2>
+  <div class="box regola" data-tit="{{a|s051|}}">{{s|s052|}}</div>
+  <div class="box inglese" data-tit="{{a|s053|}}">{{s|s054|}}</div>
 </section>
 
 </main>

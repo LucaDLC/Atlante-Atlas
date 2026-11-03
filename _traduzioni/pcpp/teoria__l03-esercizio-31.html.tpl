@@ -271,66 +271,66 @@ count = temp + 1;      // (2)</pre>
   <h2>{{s|s045|}}</h2>
   <figure class="passi" data-titolo="{{a|s046|}}">
     <div class="passo"><div class="espr">in conflitto:  (t1(1), t2(2)) · (t1(2), t2(1)) · <mark class="no">(t1(2), t2(2))</mark></div><p class="nota">{{s|s047|}}</p></div>
-    <div class="passo"><div class="espr">HB = chiusura transitiva di ( PO<sub>m</sub> ∪ PO<sub>1</sub> ∪ PO<sub>2</sub> ∪ S ∪ T )</div><p class="nota">{{s|s048|}}</p></div>
-    <div class="passo"><div class="espr">da <mark class="ora">t1(2)</mark> si arriva solo a: m(join(t1)) → m(join(t2)) → m(p)</div><p class="nota">{{s|s049|}}</p></div>
-    <div class="passo"><div class="espr">da <mark class="due">t2(2)</mark> si arriva solo a: m(join(t2)) → m(p)</div><p class="nota">{{s|s050|}}</p></div>
-    <div class="passo"><div class="espr">t1(2) → t2(2) ∉ HB   e   t2(2) → t1(2) ∉ HB   ⇒   <mark class="no">data race</mark></div><p class="nota">{{s|s051|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s048|}}</div><p class="nota">{{s|s049|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s050|}}</div><p class="nota">{{s|s051|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s052|}}</div><p class="nota">{{s|s053|}}</p></div>
+    <div class="passo"><div class="espr">t1(2) → t2(2) ∉ HB   e   t2(2) → t1(2) ∉ HB   ⇒   <mark class="no">data race</mark></div><p class="nota">{{s|s054|}}</p></div>
   </figure>
-  <div class="box domanda-tua" data-tit="{{a|s052|}}">
-    <p>{{s|s053|}}</p>
+  <div class="box domanda-tua" data-tit="{{a|s055|}}">
+    <p>{{s|s056|}}</p>
   </div>
-  <figure class="scena" data-scena="race31" data-titolo="{{a|s054|}}"></figure>
+  <figure class="scena" data-scena="race31" data-titolo="{{a|s057|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s055|}}</h2>
+  <h2>{{s|s058|}}</h2>
   <pre class="cod" data-lang="java">// run()
 l.lock();              // (0)
 int temp = count;      // (1)
 count = temp + 1;      // (2)
 l.unlock();            // (3)   (con try/finally)</pre>
-  <figure class="passi" data-titolo="{{a|s056|}}">
-    <div class="passo"><div class="espr">PO<sub>m</sub> + <mark class="dato">m(init(l))</mark>     PO<sub>1</sub> = { t1(0) → t1(1) → t1(2) → t1(3) }     PO<sub>2</sub> = { t2(0) → … → t2(3) }</div><p class="nota">{{s|s057|}}</p></div>
-    <div class="passo"><div class="espr">S = { m(start(t1)) → <mark class="ora">t1(0)</mark>, m(start(t2)) → <mark class="due">t2(0)</mark> }     T = { <mark class="ora">t1(3)</mark> → m(join(t1)), <mark class="due">t2(3)</mark> → m(join(t2)) }</div><p class="nota">{{s|s058|}}</p></div>
-    <div class="passo"><div class="espr">HB<sub>1</sub> = HB ∪ { <mark class="ora">t1(3)</mark> → <mark class="due">t2(0)</mark> }      HB<sub>2</sub> = HB ∪ { <mark class="due">t2(3)</mark> → <mark class="ora">t1(0)</mark> }</div><p class="nota">{{s|s059|}}</p></div>
-    <div class="passo"><div class="espr">HB<sub>1</sub>: t1(2) <sub>po</sub>→ t1(3) <sub>monitor</sub>→ t2(0) <sub>po</sub>→ t2(1) <sub>po</sub>→ <mark class="ok">t2(2)</mark></div><p class="nota">{{s|s060|}}</p></div>
-    <div class="passo"><div class="espr">HB<sub>2</sub>: t2(2) <sub>po</sub>→ t2(3) <sub>monitor</sub>→ t1(0) <sub>po</sub>→ t1(1) <sub>po</sub>→ <mark class="ok">t1(2)</mark></div><p class="nota">{{s|s061|}}</p></div>
-    <div class="passo"><div class="espr"><mark class="ok">tutte le coppie in conflitto sono ordinate in HB₁ e in HB₂  ⇒  nessuna data race</mark></div><p class="nota">{{s|s062|}}</p></div>
+  <figure class="passi" data-titolo="{{a|s059|}}">
+    <div class="passo"><div class="espr">PO<sub>m</sub> + <mark class="dato">m(init(l))</mark>     PO<sub>1</sub> = { t1(0) → t1(1) → t1(2) → t1(3) }     PO<sub>2</sub> = { t2(0) → … → t2(3) }</div><p class="nota">{{s|s060|}}</p></div>
+    <div class="passo"><div class="espr">S = { m(start(t1)) → <mark class="ora">t1(0)</mark>, m(start(t2)) → <mark class="due">t2(0)</mark> }     T = { <mark class="ora">t1(3)</mark> → m(join(t1)), <mark class="due">t2(3)</mark> → m(join(t2)) }</div><p class="nota">{{s|s061|}}</p></div>
+    <div class="passo"><div class="espr">HB<sub>1</sub> = HB ∪ { <mark class="ora">t1(3)</mark> → <mark class="due">t2(0)</mark> }      HB<sub>2</sub> = HB ∪ { <mark class="due">t2(3)</mark> → <mark class="ora">t1(0)</mark> }</div><p class="nota">{{s|s062|}}</p></div>
+    <div class="passo"><div class="espr">HB<sub>1</sub>: t1(2) <sub>po</sub>→ t1(3) <sub>monitor</sub>→ t2(0) <sub>po</sub>→ t2(1) <sub>po</sub>→ <mark class="ok">t2(2)</mark></div><p class="nota">{{s|s063|}}</p></div>
+    <div class="passo"><div class="espr">HB<sub>2</sub>: t2(2) <sub>po</sub>→ t2(3) <sub>monitor</sub>→ t1(0) <sub>po</sub>→ t1(1) <sub>po</sub>→ <mark class="ok">t1(2)</mark></div><p class="nota">{{s|s064|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s065|}}</div><p class="nota">{{s|s066|}}</p></div>
   </figure>
-  <figure class="scena" data-scena="lock31" data-titolo="{{a|s063|}}"></figure>
-  <div class="box domanda-tua" data-tit="{{a|s064|}}">
-    <p>{{s|s065|}}</p>
-    <p>{{s|s066|}}</p>
+  <figure class="scena" data-scena="lock31" data-titolo="{{a|s067|}}"></figure>
+  <div class="box domanda-tua" data-tit="{{a|s068|}}">
+    <p>{{s|s069|}}</p>
+    <p>{{s|s070|}}</p>
   </div>
 </section>
 
 <section>
-  <h2>{{s|s067|}}</h2>
-  <figure class="passi" data-titolo="{{a|s068|}}">
-    <div class="passo"><div class="espr">count è <mark class="dato">volatile</mark></div><p class="nota">{{s|s069|}}</p></div>
-    <div class="passo"><div class="espr">accessi a variabili volatile  ⇒  <mark class="ok">mai in conflitto</mark></div><p class="nota">{{s|s070|}}</p></div>
-    <div class="passo"><div class="espr"><mark class="ok">nessuna coppia in conflitto ⇒ nessuna data race ⇒ correttamente sincronizzato</mark></div><p class="nota">{{s|s071|}}</p></div>
-    <div class="passo"><div class="espr">t1(1) legge 0 → t2(1) legge 0 → t1(2) scrive 1 → t2(2) scrive <mark class="no">1</mark></div><p class="nota">{{s|s072|}}</p></div>
-    <div class="passo"><div class="espr">lock: <mark class="ok">count = 2</mark> sempre      volatile: count = 1 <mark class="no">oppure</mark> 2</div><p class="nota">{{s|s073|}}</p></div>
+  <h2>{{s|s071|}}</h2>
+  <figure class="passi" data-titolo="{{a|s072|}}">
+    <div class="passo"><div class="espr">{{s|s073|}}</div><p class="nota">{{s|s074|}}</p></div>
+    <div class="passo"><div class="espr">accessi a variabili volatile  ⇒  <mark class="ok">mai in conflitto</mark></div><p class="nota">{{s|s075|}}</p></div>
+    <div class="passo"><div class="espr"><mark class="ok">nessuna coppia in conflitto ⇒ nessuna data race ⇒ correttamente sincronizzato</mark></div><p class="nota">{{s|s076|}}</p></div>
+    <div class="passo"><div class="espr">t1(1) legge 0 → t2(1) legge 0 → t1(2) scrive 1 → t2(2) scrive <mark class="no">1</mark></div><p class="nota">{{s|s077|}}</p></div>
+    <div class="passo"><div class="espr">{{s|s078|}}</div><p class="nota">{{s|s079|}}</p></div>
   </figure>
-  <div class="box domanda-tua" data-tit="{{a|s074|}}">
-    <p>{{s|s075|}}</p>
+  <div class="box domanda-tua" data-tit="{{a|s080|}}">
+    <p>{{s|s081|}}</p>
   </div>
-  <div class="box inglese" data-tit="{{a|s076|}}">
-    <p>{{s|s077|}}</p>
+  <div class="box inglese" data-tit="{{a|s082|}}">
+    <p>{{s|s083|}}</p>
   </div>
-  <figure class="scena" data-scena="vol31" data-titolo="{{a|s078|}}"></figure>
+  <figure class="scena" data-scena="vol31" data-titolo="{{a|s084|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s079|}}</h2>
-  <p>{{s|s080|}}</p>
-  <p>{{s|s081|}}</p>
-  <figure class="scena" data-scena="mutex31" data-titolo="{{a|s082|}}"></figure>
+  <h2>{{s|s085|}}</h2>
+  <p>{{s|s086|}}</p>
+  <p>{{s|s087|}}</p>
+  <figure class="scena" data-scena="mutex31" data-titolo="{{a|s088|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s083|}}</h2>
+  <h2>{{s|s089|}}</h2>
   <pre class="cod" data-lang="java">public synchronized int findOrAdd(String s) {   // lock(s) · (a) indexOf · (b) add · unlock(s)
     int ret = list.indexOf(s);
     if (ret == -1) list.add(s);
@@ -338,15 +338,15 @@ l.unlock();            // (3)   (con try/finally)</pre>
 }
 public int find(String s) { return list.indexOf(s); }   // (c) indexOf, SENZA lock</pre>
   <ul>
-    <li>{{s|s084|}}</li>
-    <li>{{s|s085|}}</li>
-    <li>{{s|s086|}}</li>
+    <li>{{s|s090|}}</li>
+    <li>{{s|s091|}}</li>
+    <li>{{s|s092|}}</li>
   </ul>
-  <figure class="scena" data-scena="stringset" data-titolo="{{a|s087|}}"></figure>
+  <figure class="scena" data-scena="stringset" data-titolo="{{a|s093|}}"></figure>
 </section>
 
 <section>
-  <h2>{{s|s088|}}</h2>
+  <h2>{{s|s094|}}</h2>
   <pre class="cod" data-lang="java">int x = 0;
 Thread t1 = new Thread(() -> {
     while (x == 0) { }                 // (r) lettura di x, ripetuta
@@ -356,14 +356,14 @@ t1.start();                            // (start(t1))
 x = 42;                                // (w) scrittura
 System.out.println("Main: x=" + x);</pre>
   <ul>
-    <li>{{s|s089|}}</li>
-    <li>{{s|s090|}}</li>
-    <li>{{s|s091|}}</li>
+    <li>{{s|s095|}}</li>
+    <li>{{s|s096|}}</li>
+    <li>{{s|s097|}}</li>
   </ul>
-  <div class="box domanda-tua" data-tit="{{a|s092|}}">
-    <p>{{s|s093|}}</p>
+  <div class="box domanda-tua" data-tit="{{a|s098|}}">
+    <p>{{s|s099|}}</p>
   </div>
-  <figure class="scena" data-scena="ciclo33" data-titolo="{{a|s094|}}"></figure>
+  <figure class="scena" data-scena="ciclo33" data-titolo="{{a|s100|}}"></figure>
 </section>
 
 </main>
