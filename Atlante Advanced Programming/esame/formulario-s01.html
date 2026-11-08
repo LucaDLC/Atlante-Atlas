@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>S1 · Funzioni e ricorsione: formulario</title>
+<link rel="stylesheet" href="../assets/atlas.css">
+<link rel="stylesheet" href="../assets/tema.css">
+<script src="../assets/sito.js"></script>
+<script src="../assets/atlas.js" defer></script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <div class="occhiello"><span>Formulario</span><span>S1</span></div>
+  <h1>S1 · Funzioni e ricorsione</h1>
+  <p class="lede">Formulario della lezione: la <b>teoria</b>, gli <b>atomi</b> (simboli, tipi, costruttori, funzioni) con cosa chiedono tra parentesi, i <b>pezzi di codice</b> dei tuoi esercizi e in fondo il <b>codice completo</b> animato, con ogni pezzo evidenziato. Torna all'<a href="formulario.html">indice del formulario</a>.</p>
+</header>
+
+<section>
+  <h2>Teoria</h2>
+<ul>
+    <li><b>Funzione pura</b>: stesso input, stesso output, nessun effetto (niente <code>println</code>, <code>var</code>, eccezioni, I/O). Si può sostituire la chiamata con il suo valore (<i>referential transparency</i>).</li>
+    <li><code>val</code> non cambia mai. <code>def</code> è una funzione, valutata a ogni chiamata. <code>if</code> e <code>match</code> sono <b>espressioni</b>: restituiscono un valore, quindi niente <code>return</code>.</li>
+    <li>Tipo di una funzione: <code>A =&gt; B</code>. Due argomenti: <code>(A, B) =&gt; C</code>. Curried: <code>A =&gt; B =&gt; C</code>, che si legge <code>A =&gt; (B =&gt; C)</code> (la freccia associa a destra).</li>
+    <li><b>Ricorsione in coda</b> (<i>tail recursion</i>): la chiamata ricorsiva è l'<b>ultima</b> cosa che la funzione fa. Il compilatore la trasforma in un ciclo, pila costante. <code>@annotation.tailrec</code> dà errore di compilazione se non è davvero in coda.</li>
+    <li>Ricorsione semplice (<code>1 + f(n-1)</code>): dopo il ritorno resta da fare il <code>+1</code>, quindi ogni livello occupa un frame di pila → <code>StackOverflowError</code> su input lunghi.</li>
+    <li><b>Funzione di ordine superiore</b> (HOF): prende o restituisce funzioni. <b>Polimorfismo</b>: <code>[A]</code> dopo il nome, la funzione vale per ogni tipo.</li>
+    <li>Quando i tipi sono generici l'implementazione è spesso <b>forzata dai tipi</b> (<code>curry</code>, <code>compose</code>): se sei bloccato, segui i tipi.</li>
+    <li><code>Int</code> in overflow non dà errore: è aritmetica modulo 2<sup>32</sup>.</li>
+  </ul>
+</section>
+
+<section>
+  <h2>Atomi della lezione</h2>
+  <p>Ogni pezzo con cui è scritto il codice di questa lezione, dal più piccolo al più grande, e cosa chiede tra le parentesi.</p>
+<h3>Simboli</h3>
+<div class="tab-wrap"><table class="tab">
+<thead><tr><th>pezzo</th><th>cosa vuol dire</th><th>dove nel codice</th></tr></thead>
+<tbody>
+<tr><td><code>def nome(p: T): R = corpo</code></td><td><code>def</code> definisce la funzione; <code>p: T</code> = parametro e suo tipo; <code>: R</code> = tipo del risultato; <code>=</code> separa la firma dal corpo</td><td><code>def fib(n: Int): Int =</code></td></tr>
+<tr><td><code>[A, B, C]</code></td><td>parametri di <b>tipo</b>: la funzione vale per ogni <code>A</code>, <code>B</code>, <code>C</code></td><td><code>def curry[A, B, C](…)</code></td></tr>
+<tr><td><code>=&gt;</code> nel tipo</td><td>"funzione da … a …". <code>(A, B) =&gt; C</code> due argomenti; <code>A =&gt; (B =&gt; C)</code> uno alla volta</td><td><code>f: (A, B) =&gt; C</code></td></tr>
+<tr><td><code>=&gt;</code> nella lambda</td><td>separa i parametri dal corpo: <code>a =&gt; b =&gt; f(a, b)</code> è "dato <code>a</code>, restituisco una funzione che dato <code>b</code> dà <code>f(a, b)</code>"</td><td><code>a =&gt; b =&gt; f(a, b)</code></td></tr>
+<tr><td><code>if … then … else</code></td><td>espressione che dà un valore: niente <code>return</code></td><td><code>if n &lt;= 1 then curr</code></td></tr>
+<tr><td><code>@annotation.tailrec</code></td><td>il compilatore controlla che la chiamata ricorsiva sia l'ultima cosa</td><td>sopra <code>bonacci</code> e <code>Tedsor</code></td></tr>
+<tr><td><code>as(i)</code></td><td>elemento <code>i</code> dell'<code>Array</code> (con le tonde, non le quadre)</td><td><code>ordered(as(i), as(i + 1))</code></td></tr>
+<tr><td><code>!</code></td><td>negazione booleana</td><td><code>!ordered(…)</code></td></tr>
+<tr><td><code>+ - * &lt;= &gt;=</code></td><td>operatori: in Scala sono metodi (<code>n*n</code> è <code>n.*(n)</code>)</td><td><code>assert(magic - 84 == magic.-(84))</code></td></tr>
+<tr><td><code>s"… ${x} …"</code></td><td>stringa con valori dentro</td><td><code>s"The absolute value of ${x} is ${abs(x)}"</code></td></tr>
+<tr><td><code>object X: … end X</code></td><td>oggetto unico che raccoglie funzioni; <code>end X</code> chiude (facoltativo)</td><td><code>object MyModule:</code></td></tr>
+<tr><td>funzione interna</td><td>un <code>def</code> dentro un <code>def</code>: visibile solo lì (il "ciclo" con l'accumulatore)</td><td><code>bonacci</code> dentro <code>fib</code></td></tr>
+</tbody></table></div>
+
+<h3>Tipi</h3>
+<div class="tab-wrap"><table class="tab">
+<thead><tr><th>pezzo</th><th>cosa vuol dire</th></tr></thead>
+<tbody>
+<tr><td><code>Int</code>, <code>Boolean</code>, <code>String</code>, <code>Unit</code></td><td>numero intero (in overflow gira), vero/falso, testo, "nessun valore utile" (<code>@main def printAbs: Unit</code>)</td></tr>
+<tr><td><code>Array[A]</code></td><td>sequenza di <code>A</code> a posizioni numerate (si legge con <code>as(i)</code>, lunghezza <code>as.length</code>)</td></tr>
+<tr><td><code>Option[Int]</code></td><td><code>Some(n)</code> o <code>None</code> (qui solo come esempio di <code>var</code>, vietato)</td></tr>
+<tr><td><code>(A, A) =&gt; Boolean</code></td><td>funzione che confronta due <code>A</code> (il criterio d'ordine di <code>isSorted</code>)</td></tr>
+<tr><td><code>A =&gt; (B =&gt; C)</code></td><td>tipo del risultato di <code>curry</code>: una funzione che restituisce una funzione</td></tr>
+<tr><td><code>Array[A] =&gt; ((A, A) =&gt; Boolean) =&gt; Boolean</code></td><td>tipo di <code>isSortedCurried[A]</code>: prima l'array, poi il criterio, poi il verdetto</td></tr>
+</tbody></table></div>
+
+<h3>Costruttori</h3>
+<p>Questa lezione non definisce tipi nuovi: usa numeri, array e funzioni già esistenti. L'unico "costruttore" è l'<code>object MyModule</code>, un contenitore di funzioni.</p>
+
+<h3>Funzioni e metodi</h3>
+<div class="tab-wrap"><table class="tab">
+<thead><tr><th>pezzo</th><th>chiede</th><th>cosa fa</th></tr></thead>
+<tbody>
+<tr><td><code>abs(n)</code></td><td><code>n: Int</code></td><td>valore assoluto: <code>-n</code> se negativo</td></tr>
+<tr><td><code>square(n)</code></td><td><code>n: Int</code></td><td><code>n*n</code></td></tr>
+<tr><td><code>fib(n)</code></td><td><code>n: Int</code> (da 1)</td><td>l'<code>n</code>-esimo Fibonacci: <code>fib(1)=0</code>, <code>fib(2)=1</code>, <code>fib(5)=3</code></td></tr>
+<tr><td><code>bonacci(n, curr, next)</code></td><td>contatore e due numeri consecutivi</td><td>il "ciclo": scala <code>n</code> e sposta la finestra. Parte da <code>(n, 0, 1)</code></td></tr>
+<tr><td><code>isSorted(as, ordered)</code></td><td>array e funzione <code>(A, A) =&gt; Boolean</code></td><td>vero se ogni coppia adiacente rispetta <code>ordered</code></td></tr>
+<tr><td><code>curry(f)</code></td><td><code>f: (A, B) =&gt; C</code></td><td>restituisce <code>a =&gt; b =&gt; f(a, b)</code></td></tr>
+<tr><td><code>uncurry(f)</code></td><td><code>f: A =&gt; B =&gt; C</code></td><td>l'inversa: <code>(a, b) =&gt; f(a)(b)</code></td></tr>
+<tr><td><code>compose(f, g)</code></td><td><code>f: B =&gt; C</code>, <code>g: A =&gt; B</code></td><td>"f dopo g": <code>a =&gt; f(g(a))</code></td></tr>
+<tr><td><code>as.length</code></td><td>niente</td><td>numero di elementi dell'array</td></tr>
+<tr><td><code>assert(c)</code></td><td>una condizione</td><td>si ferma con errore se <code>c</code> è falsa</td></tr>
+</tbody></table></div>
+</section>
+
+<section>
+  <h2>Pezzi di codice e cosa fanno</h2>
+<h3>fib · Fibonacci in tempo lineare</h3>
+<pre class="cod" data-lang="scala">def fib(n: Int): Int =
+  @annotation.tailrec
+  def bonacci(n: Int, curr: Int, next: Int): Int =
+    if n &lt;= 1 then curr
+    else bonacci(n-1, next, next+curr)
+  bonacci(n, 0, 1)</pre>
+  <p><b>Cosa fa.</b> Porta avanti solo gli ultimi due numeri <code>(curr, next)</code>. A ogni passo scala <code>n</code> e sposta la finestra. Numerazione dal 1: <code>fib(1)=0</code>, <code>fib(2)=1</code>, <code>fib(3)=1</code>, <code>fib(5)=3</code>. La versione ovvia <code>fib(n-1)+fib(n-2)</code> costa O(φ<sup>n</sup>); questa O(n), pila costante.</p>
+
+  <h3>isSorted · ordinata senza pattern matching</h3>
+<pre class="cod" data-lang="scala">def isSorted[A](as: Array[A], ordered: (A, A) =&gt; Boolean): Boolean =
+  @annotation.tailrec
+  def Tedsor(i: Int): Boolean =
+    if i &gt;= as.length - 1 then true
+    else if !ordered(as(i), as(i + 1)) then false
+    else Tedsor(i + 1)
+  Tedsor(0)</pre>
+  <p><b>Cosa fa.</b> Controlla solo le coppie adiacenti: basta se <code>ordered</code> è transitiva. Appena una coppia è sbagliata risponde <code>false</code>. Array vuoto o con un elemento: nessuna coppia da violare, quindi <code>true</code>. Il criterio d'ordine è un parametro (HOF).</p>
+
+  <h3>curry · uncurry · compose</h3>
+<pre class="cod" data-lang="scala">def curry[A, B, C](f: (A, B) =&gt; C): A =&gt; (B =&gt; C) =
+  a =&gt; b =&gt; f(a, b)
+
+def uncurry[A, B, C](f: A =&gt; B =&gt; C): (A, B) =&gt; C =
+  (a, b) =&gt; f(a)(b)
+
+def compose[A, B, C](f: B =&gt; C, g: A =&gt; B): A =&gt; C =
+  a =&gt; f(g(a))
+
+def isSortedCurried[A]: Array[A] =&gt; ((A, A) =&gt; Boolean) =&gt; Boolean =
+  curry(isSorted[A])</pre>
+  <p><b>Cosa fanno.</b> <code>curry</code> trasforma una funzione a due argomenti in una che ne prende uno alla volta (applicazione parziale: fisso <code>a</code>, resto con una funzione di <code>b</code>). <code>uncurry</code> è l'inversa: <code>uncurry(curry(f)) == f</code>. <code>compose(f, g)</code> = "f dopo g": prima <code>g</code>, poi <code>f</code>. È associativa e ha <code>identity</code> come neutro.</p>
+
+  <div class="box esame" data-tit="Domande tipiche">
+    <p>Scrivi la funzione ricorsiva in coda con accumulatore. Perché <code>@tailrec</code> rifiuta questa funzione? (Perché dopo la chiamata resta un'operazione.) Qual è il tipo di <code>curry(f)</code>?</p>
+  </div>
+</section>
+
+<section>
+  <h2>Codice completo della lezione</h2>
+<p>Tutte le idee della lezione in un blocco: la ricorsione in coda con accumulatore, la funzione che prende una funzione, il currying e la composizione. Premi <b>Avanti</b>: ogni passo accende un pezzo e dice cosa fa.</p>
+<figure class="codice" data-titolo="S1 · fib, isSorted, curry, compose">
+<pre data-lang="scala">def fib(n: Int): Int =
+  @annotation.tailrec
+  def bonacci(n: Int, curr: Int, next: Int): Int =
+    if n &lt;= 1 then curr
+    else bonacci(n-1, next, next+curr)
+  bonacci(n, 0, 1)
+
+def isSorted[A](as: Array[A], ordered: (A, A) =&gt; Boolean): Boolean =
+  @annotation.tailrec
+  def Tedsor(i: Int): Boolean =
+    if i &gt;= as.length - 1 then true
+    else if !ordered(as(i), as(i + 1)) then false
+    else Tedsor(i + 1)
+  Tedsor(0)
+
+def curry[A, B, C](f: (A, B) =&gt; C): A =&gt; (B =&gt; C) =
+  a =&gt; b =&gt; f(a, b)
+
+def compose[A, B, C](f: B =&gt; C, g: A =&gt; B): A =&gt; C =
+  a =&gt; f(g(a))</pre>
+<ol class="spiega">
+<li data-righe="1" data-segna="def@ora|fib@dato|n: Int@due|: Int =@ok"><p><code>def</code> definisce una funzione. <code>fib</code> è il nome, <code>n: Int</code> il parametro con il suo tipo, <code>: Int</code> il tipo del risultato.</p></li>
+<li data-righe="2" data-segna="@annotation.tailrec@ora"><p>Promessa al compilatore: la funzione qui sotto è ricorsiva <b>in coda</b>. Se non lo è, errore di compilazione.</p></li>
+<li data-righe="3" data-segna="bonacci@dato|curr: Int@due|next: Int@due"><p>Funzione interna con l'<b>accumulatore</b>: <code>curr</code> è il numero attuale, <code>next</code> il successivo. Fa da ciclo.</p></li>
+<li data-righe="4" data-segna="if n &lt;= 1 then curr@ok"><p>Caso base: finito il conteggio, il risultato è <code>curr</code>. <code>if</code> è un'espressione: non serve <code>return</code>.</p></li>
+<li data-righe="5" data-segna="bonacci(n-1, next, next+curr)@ora"><p>Passo ricorsivo: la chiamata è l'<b>ultima cosa</b> che succede (niente "+1" dopo il ritorno), quindi è in coda. <code>n-1</code> scala, <code>(curr, next)</code> diventa <code>(next, next+curr)</code>.</p></li>
+<li data-righe="6" data-segna="bonacci(n, 0, 1)@dato"><p>Si parte da <code>(0, 1)</code>: i primi due numeri. Con <code>n=5</code> la finestra passa <code>(0,1) → (1,1) → (1,2) → (2,3) → (3,5)</code> e <code>curr</code> finale è <code>3</code>.</p></li>
+<li data-righe="8" data-segna="[A]@due|as: Array[A]@dato|ordered: (A, A) =&gt; Boolean@ora"><p><code>[A]</code> = qualunque tipo. <code>ordered</code> è una <b>funzione passata come argomento</b> (funzione di ordine superiore): decide cosa vuol dire "in ordine".</p></li>
+<li data-righe="11" data-segna="if i &gt;= as.length - 1 then true@ok"><p>Nessuna coppia rimasta da controllare: ordinata. Vale anche per array vuoto o di un elemento.</p></li>
+<li data-righe="12" data-segna="!ordered(as(i), as(i + 1))@no|then false@no"><p><code>as(i)</code> e <code>as(i + 1)</code> sono due elementi <b>adiacenti</b>. <code>!</code> nega: se la coppia non rispetta l'ordine, risposta <code>false</code> subito.</p></li>
+<li data-righe="13" data-segna="Tedsor(i + 1)@ora"><p>Coppia a posto: passo alla successiva. Anche questa è una chiamata in coda.</p></li>
+<li data-righe="16" data-segna="curry@dato|f: (A, B) =&gt; C@ora|A =&gt; (B =&gt; C)@ok"><p><code>curry</code> prende una funzione a <b>due</b> argomenti e dà una funzione che ne prende <b>uno alla volta</b>.</p></li>
+<li data-righe="17" data-segna="a =&gt; b =&gt; f(a, b)@ok"><p>Le uniche cose che ho sono <code>a</code>, <code>b</code> e <code>f</code>: l'unica implementazione possibile è questa. I tipi guidano il codice.</p></li>
+<li data-righe="19" data-segna="f: B =&gt; C@dato|g: A =&gt; B@due|A =&gt; C@ok"><p><code>compose</code> incolla due funzioni: <code>g</code> manda <code>A</code> in <code>B</code>, <code>f</code> manda <code>B</code> in <code>C</code>, il risultato manda <code>A</code> in <code>C</code>.</p></li>
+<li data-righe="20" data-segna="f(g(a))@ok"><p>Prima <code>g</code>, poi <code>f</code>: si legge "f dopo g", come in matematica.</p></li>
+</ol>
+</figure>
+</section>
+
+</main>
+</body>
+</html>

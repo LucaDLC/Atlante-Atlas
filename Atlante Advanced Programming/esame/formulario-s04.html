@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>S4 · Laziness: LazyList: formulario</title>
+<link rel="stylesheet" href="../assets/atlas.css">
+<link rel="stylesheet" href="../assets/tema.css">
+<script src="../assets/sito.js"></script>
+<script src="../assets/atlas.js" defer></script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <div class="occhiello"><span>Formulario</span><span>S4</span></div>
+  <h1>S4 · Laziness: LazyList</h1>
+  <p class="lede">Formulario della lezione: la <b>teoria</b>, gli <b>atomi</b> (simboli, tipi, costruttori, funzioni) con cosa chiedono tra parentesi, i <b>pezzi di codice</b> dei tuoi esercizi e in fondo il <b>codice completo</b> animato, con ogni pezzo evidenziato. Torna all'<a href="formulario.html">indice del formulario</a>.</p>
+</header>
+
+<section>
+  <h2>Teoria</h2>
+<ul>
+    <li><b>Strict</b> (eager): gli argomenti sono calcolati <i>prima</i> della chiamata. <b>By-name</b> (<code>x: =&gt; Int</code>): calcolato a ogni uso, <b>anche più volte</b>. <b>lazy val</b>: calcolato al primo uso, poi ricordato. Verificato: con <code>def f(x: =&gt; Int) = x + x</code> l'argomento si valuta due volte; con <code>lazy val</code> una.</li>
+    <li><code>Cons(h: () =&gt; A, t: () =&gt; LazyList[A])</code>: testa e coda sono <b>thunk</b> (<code>() =&gt; …</code> = ricetta senza argomenti, non ancora eseguita). <code>cons(hd: =&gt; A, tl: =&gt; LazyList[A])</code> mette i valori in <code>lazy val</code> e crea i thunk: ogni parte è calcolata <b>al più una volta</b> (memoization).</li>
+    <li>Operazioni <b>intermedie</b> (<code>map</code>, <code>filter</code>, <code>take</code>, <code>drop</code>, <code>append</code>…) restituiscono una nuova <code>LazyList</code> senza calcolare quasi nulla. Operazioni <b>terminali</b> (<code>toList</code>, <code>forAll</code>, <code>exists</code>, <code>headOption</code>, <code>find</code>) forzano il calcolo.</li>
+    <li><b>Liste infinite</b>: <code>naturals = from(1)</code>. Si usano con <code>take</code>/<code>takeWhile</code>/<code>exists</code>. <code>naturals.toList</code> non termina (<code>toList</code> è stretta: cerca <code>Empty</code> che non arriva). <code>naturals.forAll(_ &gt;= 0)</code> non termina (il predicato è sempre vero, non trova mai un controesempio). <code>naturals.exists(_ &gt; 10)</code> termina.</li>
+    <li><b>foldRight pigro</b>: <code>foldRight(z: =&gt; B)(f: (A, =&gt; C) =&gt; C)</code>. Il resto arriva a <code>f</code> <i>by-name</i>: se <code>f</code> non lo usa, il resto non viene calcolato. Per questo <code>takeWhile</code>, <code>headOption</code>, <code>map</code>, <code>filter</code>, <code>append</code>, <code>flatMap</code> si scrivono con <code>foldRight</code> e restano pigre. <code>foldLeft</code> invece è stretta e non vale su liste infinite.</li>
+    <li><b>Interleaving</b>: <code>l.map(f).filter(p)</code> su <code>LazyList</code> lavora un elemento alla volta (<code>map</code> e <code>filter</code> si alternano), su <code>List</code> fa due passate complete. Per questo <code>find(p) = filter(p).headOption</code> va bene qui e non sulle liste strette.</li>
+    <li><b>unfold</b>: <code>unfold(z)(f)</code> con <code>f: S =&gt; Option[(A, S)]</code>. <code>None</code> = fine. <code>Some((a, s))</code> = emetti <code>a</code> e continua dallo stato <code>s</code>. Genera <code>fibs</code>, <code>map</code>, <code>take</code>, <code>zipWith</code> senza ricorsione esplicita.</li>
+    <li>Il <code>foldRight</code> non è in coda: va in <code>StackOverflow</code> se <code>f</code> scende in profondità.</li>
+  </ul>
+</section>
+
+<section>
+  <h2>Atomi della lezione</h2>
+  <p>Ogni pezzo con cui è scritto il codice di questa lezione, dal più piccolo al più grande, e cosa chiede tra le parentesi.</p>
+<h3>Simboli</h3>
+<div class="tab-wrap"><table class="tab">
+<thead><tr><th>pezzo</th><th>cosa vuol dire</th><th>dove nel codice</th></tr></thead>
+<tbody>
+<tr><td><code>() =&gt; A</code></td><td><b>thunk</b>: funzione senza argomenti, una "ricetta" per calcolare <code>A</code> che non è ancora stata eseguita</td><td><code>Cons(h: () =&gt; A, t: () =&gt; LazyList[A])</code></td></tr>
+<tr><td><code>h()</code>, <code>t()</code></td><td>le parentesi vuote sono la <b>chiamata</b>: eseguono il thunk (qui avviene il calcolo)</td><td><code>Some(h())</code>, <code>t().take(n-1)</code></td></tr>
+<tr><td><code>x: =&gt; A</code></td><td>argomento <b>by-name</b>: non calcolato prima della chiamata, ricalcolato ogni volta che lo usi</td><td><code>cons(hd: =&gt; A, tl: =&gt; …)</code></td></tr>
+<tr><td><code>lazy val</code></td><td>calcolato al <b>primo uso</b>, poi ricordato: si calcola al massimo una volta</td><td><code>lazy val head = hd</code>, <code>lazy val naturals</code></td></tr>
+<tr><td><code>Cons(() =&gt; head, () =&gt; tail)</code></td><td>crea la cella con due thunk che leggono i <code>lazy val</code>: ogni parte è calcolata <b>una volta sola</b> (memoization)</td><td><code>cons</code></td></tr>
+<tr><td><code>(A, =&gt; C) =&gt; C</code></td><td>funzione il cui <b>secondo argomento è by-name</b>: se non lo usa, il resto non viene calcolato</td><td><code>foldRight</code></td></tr>
+<tr><td><code>[B, C &gt;: B]</code></td><td><code>C</code> è <code>B</code> o un suo supertipo: aiuta il compilatore a inferire quando il seme è un sottotipo (<code>Nil</code>)</td><td><code>foldRight[B, C &gt;: B]</code></td></tr>
+<tr><td><code>[B &gt;: A]</code></td><td>per <code>append</code>: posso incollare una lista di supertipi</td><td><code>append[B &gt;: A]</code></td></tr>
+<tr><td><code>f(z) match</code></td><td>chiamo <code>f</code> sullo stato e guardo la risposta (<code>None</code> / <code>Some</code>)</td><td><code>unfold</code></td></tr>
+<tr><td><code>Some((a, s))</code></td><td>le doppie parentesi: <code>Some</code> contiene una <b>coppia</b> (valore emesso, nuovo stato)</td><td><code>unfold</code>, <code>mapUnfold</code></td></tr>
+<tr><td><code>unfold(this) { case … }</code></td><td>la funzione data a <code>unfold</code> è un blocco di <code>case</code>; lo stato è la lista stessa (o una coppia)</td><td><code>mapUnfold</code>, <code>takeUnfold</code></td></tr>
+<tr><td><code>case (Cons(h, t), m) if m &gt; 0</code></td><td><b>guardia</b>: il caso vale solo se la condizione dopo <code>if</code> è vera</td><td><code>takeUnfold</code></td></tr>
+<tr><td><code>(=&gt; B, =&gt; B) =&gt; C</code></td><td>funzione a due argomenti by-name (<code>zipWith</code>)</td><td><code>zipWith</code></td></tr>
+</tbody></table></div>
+
+<h3>Tipi</h3>
+<div class="tab-wrap"><table class="tab">
+<thead><tr><th>pezzo</th><th>cosa vuol dire</th></tr></thead>
+<tbody>
+<tr><td><code>LazyList[+A]</code></td><td>lista i cui elementi si calcolano solo quando servono</td></tr>
+<tr><td><code>() =&gt; A</code> / <code>=&gt; A</code></td><td>thunk (funzione senza argomenti) / tipo di un parametro by-name</td></tr>
+<tr><td><code>Option[(A, S)]</code></td><td>risposta di <code>unfold</code>: niente (<code>None</code>, fine) oppure <code>(valore, nuovo stato)</code></td></tr>
+<tr><td><code>S</code></td><td>il tipo dello <b>stato</b> di <code>unfold</code> (può essere un numero, una coppia, una lista…)</td></tr>
+<tr><td><code>LazyList[Int]</code></td><td>per le liste infinite <code>naturals</code>, <code>fibs</code></td></tr>
+</tbody></table></div>
+
+<h3>Costruttori e valori</h3>
+<div class="tab-wrap"><table class="tab">
+<thead><tr><th>pezzo</th><th>chiede</th><th>cosa è</th></tr></thead>
+<tbody>
+<tr><td><code>Empty</code> / <code>empty</code></td><td>niente</td><td>lista pigra vuota (la seconda ha il tipo giusto)</td></tr>
+<tr><td><code>Cons(h, t)</code></td><td><code>h: () =&gt; A</code>, <code>t: () =&gt; LazyList[A]</code></td><td>cella con due thunk, <b>non</b> valori</td></tr>
+<tr><td><code>cons(hd, tl)</code></td><td>testa e coda <b>by-name</b></td><td>costruttore intelligente: non calcola nulla, prepara i thunk</td></tr>
+<tr><td><code>LazyList(1, 2, 3)</code></td><td>elementi variadici</td><td>lista pigra da valori già noti</td></tr>
+<tr><td><code>from(n)</code></td><td><code>n: Int</code></td><td><code>n, n+1, n+2, …</code> infinita</td></tr>
+<tr><td><code>to(n)</code></td><td><code>n: Int</code></td><td><code>n, n-1, n-2, …</code> infinita</td></tr>
+<tr><td><code>naturals</code></td><td>—</td><td><code>from(1)</code>: 1, 2, 3, …</td></tr>
+<tr><td><code>fibs</code> / <code>fibsUnfold</code></td><td>—</td><td>0, 1, 1, 2, 3, 5, … (la seconda con <code>unfold</code>)</td></tr>
+</tbody></table></div>
+
+<h3>Funzioni e metodi</h3>
+<div class="tab-wrap"><table class="tab">
+<thead><tr><th>pezzo</th><th>chiede</th><th>cosa fa</th></tr></thead>
+<tbody>
+<tr><td><code>headOption</code></td><td>niente</td><td><code>Some(testa)</code> o <code>None</code>; forza solo la testa</td></tr>
+<tr><td><code>tail</code></td><td>niente</td><td>la coda (esegue <code>t()</code>)</td></tr>
+<tr><td><code>toList</code></td><td>niente</td><td>forza <b>tutto</b>: su liste infinite non termina</td></tr>
+<tr><td><code>take(n)</code></td><td><code>n: Int</code></td><td>prime <code>n</code>; pigra (rimanda il resto dentro <code>cons</code>)</td></tr>
+<tr><td><code>drop(n)</code></td><td><code>n: Int</code></td><td>scarta le prime <code>n</code> avanzando subito di <code>n</code> code</td></tr>
+<tr><td><code>takeWhile(p)</code></td><td><code>p: A =&gt; Boolean</code></td><td>prende finché <code>p</code> è vero</td></tr>
+<tr><td><code>forAll(p)</code> / <code>exists(p)</code></td><td><code>p: A =&gt; Boolean</code></td><td>tutti / almeno uno; si fermano appena sanno</td></tr>
+<tr><td><code>foldRight(z)(f)</code></td><td><code>z: =&gt; B</code>, <code>f: (A, =&gt; C) =&gt; C</code></td><td>il resto arriva a <code>f</code> by-name</td></tr>
+<tr><td><code>foldLeft(z)(f)</code></td><td><code>z: =&gt; B</code>, <code>f: (A, =&gt; B) =&gt; B</code></td><td>stretta: non adatta a liste infinite</td></tr>
+<tr><td><code>find(p)</code></td><td><code>p: A =&gt; Boolean</code></td><td><code>filter(p).headOption</code></td></tr>
+<tr><td><code>map(f)</code> / <code>filter(p)</code> / <code>append(that)</code> / <code>flatMap(f)</code></td><td><code>f: A =&gt; B</code> / <code>p</code> / <code>that: =&gt; LazyList[B]</code> / <code>f: A =&gt; LazyList[B]</code></td><td>tutte scritte con <code>foldRight</code> e <code>cons</code>: restano pigre</td></tr>
+<tr><td><code>takeWhile1</code> / <code>headOption1</code></td><td>come gli originali</td><td>versioni con <code>foldRight</code></td></tr>
+<tr><td><code>unfold(z)(f)</code></td><td>stato <code>z: S</code>, <code>f: S =&gt; Option[(A, S)]</code></td><td>emette <code>a</code> e prosegue da <code>s</code>; <code>None</code> chiude</td></tr>
+<tr><td><code>mapUnfold</code> / <code>takeUnfold</code> / <code>takeWhileUnfold</code> / <code>zipWith</code></td><td>come gli originali</td><td>versioni con <code>unfold</code>: lo stato è "quanto resta da leggere"</td></tr>
+</tbody></table></div>
+</section>
+
+<section>
+  <h2>Pezzi di codice e cosa fanno</h2>
+<h3>LazyList · cons · empty · apply</h3>
+<pre class="cod" data-lang="scala">enum LazyList[+A]:
+  case Empty
+  case Cons(h: () =&gt; A, t: () =&gt; LazyList[A])
+
+object LazyList:
+  def empty[A]: LazyList[A] = Empty
+
+  def cons[A](hd: =&gt; A, tl: =&gt; LazyList[A]): LazyList[A] =
+    lazy val head = hd
+    lazy val tail = tl
+    Cons(() =&gt; head, () =&gt; tail)
+
+  def apply[A](as: A*): LazyList[A] =
+    if as.isEmpty then empty
+    else cons(as.head, apply(as.tail*))</pre>
+  <p><b>Cosa fanno.</b> <code>cons</code> non calcola né testa né coda: li mette in due <code>lazy val</code> e restituisce due thunk che le leggono. La prima volta che qualcuno chiama il thunk il valore viene calcolato; le volte dopo si riusa.</p>
+
+  <h3>headOption · tail · toList</h3>
+<pre class="cod" data-lang="scala">def headOption: Option[A] = this match
+  case Empty => None
+  case Cons(h,t) => Some(h())
+
+def tail: LazyList[A] = this match
+  case Empty => Empty
+  case Cons(h,t) => t()
+
+def toList: List[A] = this match
+  case Empty => Nil
+  case Cons(h,t) => h() :: t().toList</pre>
+  <p><b>Cosa fanno.</b> <code>h()</code> e <code>t()</code> con le parentesi <b>forzano</b> il thunk. <code>headOption</code> forza solo la testa, non la coda. <code>toList</code> forza tutto, fino a <code>Empty</code>: su una lista infinita non termina.</p>
+
+  <h3>from · to · naturals</h3>
+<pre class="cod" data-lang="scala">def from(n: Int): LazyList[Int] = cons(n, from(n+1))
+def to(n: Int): LazyList[Int] = cons(n, to(n-1))
+lazy val naturals: LazyList[Int] = from(1)</pre>
+  <p><b>Cosa fanno.</b> Liste infinite: la ricorsione non si esaurisce perché il secondo argomento di <code>cons</code> è by-name e non viene calcolato finché non serve. <code>from(1)</code> dà 1, 2, 3, … <code>naturals</code> parte da <b>1</b> (lo vuole il test del corso).</p>
+
+  <h3>take · drop · takeWhile</h3>
+<pre class="cod" data-lang="scala">def take(n: Int): LazyList[A] =
+  if n &lt;= 0 then empty else
+    this match
+      case Empty => empty
+      case Cons(h, t) => cons(h(), t().take(n-1))
+
+def drop(n: Int): LazyList[A] =
+  if n &lt;= 0 then this else
+    this match
+      case Empty => empty
+      case Cons(_, t) => t().drop(n-1)
+
+def takeWhile(p: A =&gt; Boolean): LazyList[A] = this match
+  case Empty => empty
+  case Cons(h,t) => if p(h()) then cons(h(), t().takeWhile(p)) else empty</pre>
+  <p><b>Cosa fanno.</b> <code>take</code> è pigra: crea una cella e rimanda il resto dentro <code>cons</code>. <code>drop</code> invece avanza subito di <code>n</code> code (non guarda le teste scartate). <code>takeWhile</code> si ferma al primo elemento che viola <code>p</code>. <code>naturals.take(1000000000).drop(41).take(10).toList</code> termina perché nessuno chiede più di 51 elementi.</p>
+
+  <h3>forAll · exists</h3>
+<pre class="cod" data-lang="scala">def forAll(p: A =&gt; Boolean): Boolean = this match
+  case Cons(h,t) => if p(h()) then t().forAll(p) else false
+  case Empty => true
+
+def exists(p: A =&gt; Boolean): Boolean = this match
+  case Cons(h,t) => if p(h()) then true else t().exists(p)
+  case Empty => false</pre>
+  <p><b>Cosa fanno.</b> Si fermano appena sanno la risposta: <code>forAll</code> al primo elemento che viola <code>p</code>, <code>exists</code> al primo che la soddisfa. Entrambe in coda. Su una lista infinita terminano <i>solo</i> se la risposta arriva prima della fine.</p>
+
+  <h3>Con foldRight: takeWhile1 · headOption1 · map · filter · append · flatMap</h3>
+<pre class="cod" data-lang="scala">def takeWhile1(p: A =&gt; Boolean): LazyList[A] =
+  foldRight(empty)((a,acc) =&gt; if p(a) then cons(a,acc) else empty)
+
+def headOption1: Option[A] =
+  foldRight(None)((a,_) =&gt; Some(a))
+
+def map[B](f: A =&gt; B): LazyList[B] =
+  foldRight(empty)((a,acc) =&gt; cons(f(a), acc))
+
+def filter(p: A =&gt; Boolean): LazyList[A] =
+  foldRight(empty)((a,acc) =&gt; if p(a) then cons(a,acc) else acc)
+
+def append[B &gt;: A](that: =&gt; LazyList[B]): LazyList[B] =
+  foldRight(that)((a,acc) =&gt; cons(a,acc))
+
+def flatMap[B](f: A =&gt; LazyList[B]): LazyList[B] =
+  foldRight(empty)((a,acc) =&gt; f(a).append(acc))</pre>
+  <p><b>Cosa fanno.</b> In ognuna <code>acc</code> è "il resto, ancora da calcolare". Se la funzione non lo tocca (<code>takeWhile1</code> quando <code>p</code> è falso, <code>headOption1</code> sempre) il resto non viene mai calcolato. <code>filter</code>: se <code>p(a)</code> è falso restituisce <code>acc</code>, cioè <b>forza</b> il resto fino al prossimo elemento valido. <code>append</code> non forza <code>that</code> finché non si arriva in fondo.</p>
+
+  <h3>fibs · unfold · fibsUnfold</h3>
+<pre class="cod" data-lang="scala">lazy val fibs: LazyList[Int] =
+  def bonacci(a: Int,b: Int): LazyList[Int] = cons(a, bonacci(b,a+b))
+  bonacci(0,1)
+
+def unfold[A,S](z: S)(f: S =&gt; Option[(A, S)]): LazyList[A] = f(z) match
+  case None => empty
+  case Some((a,s)) => cons(a, unfold(s)(f))
+
+lazy val fibsUnfold: LazyList[Int] =
+  unfold(0,1)((a,s) =&gt; Some(a,(s,s+a)))</pre>
+  <p><b>Cosa fanno.</b> <code>fibs</code> = 0, 1, 1, 2, 3, 5, … Lo stato è la coppia <code>(a, b)</code>. <code>unfold</code> è la forma generale: chiedi a <code>f</code> "che valore emetto e quale stato passo avanti?". Se <code>f</code> risponde <code>None</code>, la lista finisce.</p>
+
+  <h3>mapUnfold · takeUnfold · takeWhileUnfold · zipWith</h3>
+<pre class="cod" data-lang="scala">def mapUnfold[B](f: A =&gt; B): LazyList[B] =
+  unfold(this) {
+    case Cons(h, t) => Some((f(h()), t()))
+    case _ => None }
+
+def takeUnfold(n: Int): LazyList[A] =
+  unfold((this, n)) {
+    case (Cons(h, t), m) if m &gt; 0 => Some((h(), (t(), m - 1)))
+    case _  => None }
+
+def takeWhileUnfold(p: A =&gt; Boolean): LazyList[A] =
+  unfold(this) {
+    case Cons(h, t) if p(h()) => Some((h(), t()))
+    case _ => None }
+
+def zipWith[B &gt;: A, C](ope: (=&gt; B, =&gt; B) =&gt; C)(bs: LazyList[B]): LazyList[C] =
+  unfold((this, bs)) {
+    case (Cons(h1, t1), Cons(h2, t2)) => Some((ope(h1(), h2()), (t1(), t2())))
+    case _ => None }</pre>
+  <p><b>Cosa fanno.</b> Lo <b>stato</b> è "quanto resta da leggere": la lista stessa (<code>map</code>, <code>takeWhile</code>), la lista più un contatore (<code>take</code>), due liste (<code>zipWith</code>). Ogni <code>case</code> con <code>Some</code> dice cosa emettere e il nuovo stato; <code>case _ =&gt; None</code> chiude.</p>
+
+  <div class="box esame" data-tit="Domande tipiche (in inglese)">
+    <p><i>Why does <code>toList</code> fail on infinite lists?</i> <i>Why does <code>naturals.take(1000000000).drop(41).take(10).toList</code> terminate?</i> <i>Why would <code>naturals.forAll { _ &gt;= 0 }</code> crash?</i> Risposte pronte in fondo alla pagina.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Codice completo della lezione</h2>
+<p>Thunk, <code>cons</code> con <code>lazy val</code>, lettura di testa e coda, <code>take</code> pigra, <code>foldRight</code> pigro, <code>filter</code> costruita sopra, liste infinite con <code>from</code> e <code>unfold</code>.</p>
+<figure class="codice" data-titolo="S4 · LazyList, cons, take, foldRight, filter, from, unfold">
+<pre data-lang="scala">enum LazyList[+A]:
+  case Empty
+  case Cons(h: () =&gt; A, t: () =&gt; LazyList[A])
+
+  def headOption: Option[A] = this match
+    case Empty => None
+    case Cons(h,t) => Some(h())
+
+  def take(n: Int): LazyList[A] =
+    if n &lt;= 0 then empty else
+      this match
+        case Empty => empty
+        case Cons(h, t) => cons(h(), t().take(n-1))
+
+  def foldRight[B, C &gt;: B](z: =&gt; B)(f: (A, =&gt; C) =&gt; C): C = this match
+    case Empty => z
+    case Cons(h, t) => f(h(), t().foldRight(z)(f))
+
+  def filter(p: A =&gt; Boolean): LazyList[A] =
+    foldRight(empty)((a,acc) =&gt; if p(a) then cons(a,acc) else acc)
+
+object LazyList:
+  def cons[A](hd: =&gt; A, tl: =&gt; LazyList[A]): LazyList[A] =
+    lazy val head = hd
+    lazy val tail = tl
+    Cons(() =&gt; head, () =&gt; tail)
+
+  def from(n: Int): LazyList[Int] =
+    cons(n,from(n+1))
+
+  def unfold[A,S](z: S)(f: S =&gt; Option[(A, S)]): LazyList[A] = f(z) match
+    case None => empty
+    case Some((a,s)) => cons(a, unfold(s)(f))</pre>
+<ol class="spiega">
+<li data-righe="3" data-segna="h: () =&gt; A@dato|t: () =&gt; LazyList[A]@due"><p>Testa e coda sono <b>thunk</b>: funzioni senza argomenti. Nella cella non c'è il valore, c'è la <b>ricetta</b> per calcolarlo.</p></li>
+<li data-righe="23" data-segna="hd: =&gt; A@dato|tl: =&gt; LazyList[A]@dato"><p><code>cons</code> prende testa e coda <b>by-name</b>: <code>=&gt;</code> davanti al tipo significa "non calcolare prima della chiamata".</p></li>
+<li data-righe="24-26" data-segna="lazy val head = hd@ora|lazy val tail = tl@ora|Cons(() =&gt; head, () =&gt; tail)@ok"><p>Metto testa e coda in <code>lazy val</code> (calcolati al primo uso e ricordati) e creo la cella con due thunk che li leggono. Risultato: <b>niente calcolato adesso</b>, ogni pezzo al massimo una volta dopo.</p></li>
+<li data-righe="28-29" data-segna="cons(n,from(n+1))@ora"><p><code>from</code>: una lista <b>infinita</b>. Non va in ricorsione infinita perché <code>from(n+1)</code> è il secondo argomento di <code>cons</code>, che è by-name: non viene eseguito finché nessuno lo chiede.</p></li>
+<li data-righe="5-7" data-segna="Some(h())@ok"><p><code>h()</code> esegue il thunk della testa. <code>headOption</code> non tocca <code>t</code>: la coda resta una ricetta.</p></li>
+<li data-righe="10" data-segna="if n &lt;= 0 then empty@no"><p><code>take</code>: finiti gli elementi richiesti, lista vuota. Il resto della lista non viene mai guardato.</p></li>
+<li data-righe="13" data-segna="cons(h(), t().take(n-1))@ora"><p>Costruisco una cella con la testa e <code>t().take(n-1)</code> come coda. La coda è un argomento by-name di <code>cons</code>: <b>non eseguita ora</b>. Per questo <code>take</code> è pigra.</p></li>
+<li data-righe="15" data-segna="z: =&gt; B@dato|f: (A, =&gt; C) =&gt; C@due"><p><code>z</code> è il valore per la lista vuota (by-name). <code>f</code> riceve l'elemento <b>e il resto by-name</b>: se non usa il resto, il resto non si calcola.</p></li>
+<li data-righe="17" data-segna="f(h(), t().foldRight(z)(f))@ora"><p>Chiamo <code>f</code> con la testa e con il resto (<code>t().foldRight(z)(f)</code>) <b>non ancora calcolato</b>. Non in coda: se <code>f</code> scende in profondità, la pila cresce.</p></li>
+<li data-righe="20" data-segna="foldRight(empty)@ora|(a,acc) =&gt;@due|if p(a) then cons(a,acc)@ok|else acc@no"><p><code>filter</code> via <code>foldRight</code>: <code>acc</code> è il resto, ancora da calcolare. Se <code>p(a)</code> è vero faccio <code>cons(a,acc)</code> e mi fermo lì (resto pigro). Se è falso restituisco <code>acc</code>: ora il resto <b>va calcolato</b>, fino al prossimo elemento valido.</p></li>
+<li data-righe="31" data-segna="z: S@dato|f: S =&gt; Option[(A, S)]@due"><p><code>unfold</code>: <code>z</code> è lo stato iniziale (di tipo <code>S</code>), <code>f</code> è la regola: dato lo stato, <code>None</code> (stop) oppure <code>Some((valore, nuovo stato))</code>.</p></li>
+<li data-righe="32-33" data-segna="None =&gt; empty@no|Some((a,s))@dato|cons(a, unfold(s)(f))@ok"><p><code>None</code> chiude la lista. <code>Some((a,s))</code>: emetto <code>a</code> e il resto è <code>unfold(s)(f)</code> dentro <code>cons</code> (by-name, quindi pigro). Con <code>z=(0,1)</code> e <code>s+a</code> si ottengono i Fibonacci.</p></li>
+</ol>
+</figure>
+</section>
+
+</main>
+</body>
+</html>

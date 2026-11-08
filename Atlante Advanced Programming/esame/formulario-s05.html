@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>S5 · State e numeri casuali: formulario</title>
+<link rel="stylesheet" href="../assets/atlas.css">
+<link rel="stylesheet" href="../assets/tema.css">
+<script src="../assets/sito.js"></script>
+<script src="../assets/atlas.js" defer></script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <div class="occhiello"><span>Formulario</span><span>S5</span></div>
+  <h1>S5 · State e numeri casuali</h1>
+  <p class="lede">Formulario della lezione: la <b>teoria</b>, gli <b>atomi</b> (simboli, tipi, costruttori, funzioni) con cosa chiedono tra parentesi, i <b>pezzi di codice</b> dei tuoi esercizi e in fondo il <b>codice completo</b> animato, con ogni pezzo evidenziato. Torna all'<a href="formulario.html">indice del formulario</a>.</p>
+</header>
+
+<section>
+  <h2>Teoria</h2>
+<ul>
+    <li>Un generatore con stato nascosto (<code>Random.nextInt</code>) non è puro: due chiamate danno numeri diversi. Soluzione: <code>nextInt: (Int, RNG)</code> restituisce il numero <b>e il nuovo stato</b>. Stesso seme → stessa sequenza (riproducibile, testabile).</li>
+    <li><b>Mai riusare lo stato vecchio</b>: chiamare due volte <code>nextInt</code> sullo stesso <code>rng</code> dà due volte lo <i>stesso</i> numero.</li>
+    <li><code>type Rand[+A] = RNG =&gt; (A, RNG)</code>: "una ricetta per ottenere una <code>A</code> consumando un <code>RNG</code>". I combinatori (<code>unit</code>, <code>map</code>, <code>map2</code>, <code>flatMap</code>, <code>sequence</code>) passano lo stato al posto tuo, in ordine.</li>
+    <li>Il pattern generale: <code>State[S, +A](run: S =&gt; (A, S))</code>. <code>get</code> legge lo stato, <code>set(s)</code> lo sostituisce, <code>modify(f)</code> lo trasforma. Si compone anche con <code>for</code>.</li>
+    <li><code>nonNegativeInt</code>: se <code>n &lt; 0</code> restituisce <code>-(n+1)</code> e non <code>-n</code>, perché <code>-Int.MinValue</code> va in overflow e resta negativo. <code>double</code> in [0, 1): <code>n / (Int.MaxValue.toDouble + 1)</code> (+1 per escludere l'1).</li>
+    <li><code>nonNegativeLessThan(bound)</code>: usa <code>double</code> (numero in [0,1)) e lo scala: <code>(d * bound).toInt</code> dà un intero da 0 a <code>bound-1</code>. Come un dado con <code>bound</code> facce.</li>
+    <li><code>stateToLazyList</code>: da un automa a stati a una sequenza infinita (collega S4 e S5).</li>
+  </ul>
+</section>
+
+<section>
+  <h2>Atomi della lezione</h2>
+  <p>Ogni pezzo con cui è scritto il codice di questa lezione, dal più piccolo al più grande, e cosa chiede tra le parentesi.</p>
+<h3>Simboli</h3>
+<div class="tab-wrap"><table class="tab">
+<thead><tr><th>pezzo</th><th>cosa vuol dire</th><th>dove nel codice</th></tr></thead>
+<tbody>
+<tr><td><code>val (a, rng2) = …</code></td><td>smonta una <b>coppia</b> in due nomi: <code>a</code> il valore, <code>rng2</code> il generatore nuovo</td><td>quasi ogni funzione di <code>RNG</code></td></tr>
+<tr><td><code>(Int, RNG)</code> come tipo di ritorno</td><td>la funzione restituisce <b>due cose</b>: il numero e il nuovo stato</td><td><code>def nextInt: (Int, RNG)</code></td></tr>
+<tr><td><code>type Rand[+A] = RNG =&gt; (A, RNG)</code></td><td>nome per un tipo: una <b>funzione</b> che consuma un generatore e dà (valore, generatore nuovo)</td><td>oggetto <code>RNG</code></td></tr>
+<tr><td><code>rng =&gt; { … }</code></td><td>lambda che costruisce una <code>Rand</code>: riceve lo stato e restituisce la coppia</td><td><code>map</code>, <code>map2</code>, <code>flatMap</code></td></tr>
+<tr><td><code>_.nextInt</code></td><td>lambda corta: <code>rng =&gt; rng.nextInt</code></td><td><code>lazy val int: Rand[Int]</code></td></tr>
+<tr><td><code>&amp;</code>, <code>&gt;&gt;&gt;</code>, <code>0x…L</code></td><td>AND bit a bit, shift a destra con zeri, numero esadecimale <code>Long</code></td><td><code>SimpleRNG.nextInt</code></td></tr>
+<tr><td><code>-(num+1)</code></td><td>l'opposto senza overflow: <code>-Int.MinValue</code> sbaglierebbe</td><td><code>nonNegativeInt</code></td></tr>
+<tr><td><code>Int.MaxValue.toDouble + 1</code></td><td>2<sup>31</sup> come <code>Double</code>: divisore che dà un numero in [0, 1)</td><td><code>double</code></td></tr>
+<tr><td><code>State { s =&gt; … }</code></td><td><code>State(…)</code> con una lambda tra graffe: crea l'azione</td><td><code>State.flatMap</code></td></tr>
+<tr><td><code>run(s)</code></td><td><code>run</code> è il campo funzione di <code>State</code>: eseguilo sullo stato <code>s</code></td><td><code>val (a, s1) = run(s)</code></td></tr>
+<tr><td><code>for s &lt;- get; _ &lt;- set(f(s)) yield ()</code></td><td>catena di <code>flatMap</code> su <code>State</code>: <code>&lt;-</code> "esegui e prendi il valore", <code>_</code> se non serve, <code>yield ()</code> risultato vuoto</td><td><code>modify</code></td></tr>
+<tr><td><code>h :: t</code>, <code>Nil</code></td><td>pattern su <code>List</code> standard per percorrere una lista di ricette</td><td><code>sequence</code></td></tr>
+</tbody></table></div>
+
+<h3>Tipi</h3>
+<div class="tab-wrap"><table class="tab">
+<thead><tr><th>pezzo</th><th>cosa vuol dire</th></tr></thead>
+<tbody>
+<tr><td><code>RNG</code></td><td>trait: qualunque cosa abbia <code>nextInt: (Int, RNG)</code></td></tr>
+<tr><td><code>Rand[+A]</code></td><td><code>RNG =&gt; (A, RNG)</code>: "ricetta per ottenere una <code>A</code> casuale"</td></tr>
+<tr><td><code>State[S, +A]</code></td><td>generalizza <code>Rand</code>: stato di tipo qualunque <code>S</code>. Contiene <code>run: S =&gt; (A, S)</code></td></tr>
+<tr><td><code>State[S, Unit]</code></td><td>azione che cambia lo stato e non dà un valore utile (<code>set</code>, <code>modify</code>)</td></tr>
+<tr><td><code>List[Rand[A]]</code> → <code>Rand[List[A]]</code></td><td>il tipo di <code>sequence</code></td></tr>
+<tr><td><code>Long</code>, <code>Double</code>, <code>Int</code></td><td>seme del generatore; numeri in [0,1); interi</td></tr>
+</tbody></table></div>
+
+<h3>Costruttori</h3>
+<div class="tab-wrap"><table class="tab">
+<thead><tr><th>pezzo</th><th>chiede</th><th>cosa è</th></tr></thead>
+<tbody>
+<tr><td><code>SimpleRNG(seed)</code></td><td><code>seed: Long</code></td><td>generatore concreto; stesso seme → stessa sequenza</td></tr>
+<tr><td><code>State(run)</code></td><td><code>run: S =&gt; (A, S)</code></td><td>un'azione con stato</td></tr>
+<tr><td><code>unit(a)</code> / <code>State.unit(a)</code></td><td><code>a: A</code></td><td>azione che dà <code>a</code> e lascia lo stato com'è</td></tr>
+<tr><td><code>get</code> / <code>set(s)</code></td><td>— / il nuovo stato</td><td>azioni che leggono / sostituiscono lo stato</td></tr>
+</tbody></table></div>
+
+<h3>Funzioni e metodi</h3>
+<div class="tab-wrap"><table class="tab">
+<thead><tr><th>pezzo</th><th>chiede</th><th>cosa fa</th></tr></thead>
+<tbody>
+<tr><td><code>rng.nextInt</code></td><td>niente</td><td><code>(numero, rng nuovo)</code>. Poi usa sempre il nuovo</td></tr>
+<tr><td><code>nonNegativeInt(rng)</code></td><td>un <code>RNG</code></td><td>intero ≥ 0</td></tr>
+<tr><td><code>double(rng)</code></td><td>un <code>RNG</code></td><td>numero in [0, 1)</td></tr>
+<tr><td><code>intDouble</code> / <code>doubleInt</code> / <code>ints(size)(rng)</code></td><td>un <code>RNG</code> (e <code>size</code>)</td><td>coppie e liste di casuali, passando lo stato avanti</td></tr>
+<tr><td><code>int</code> / <code>unit(a)</code></td><td>—</td><td><code>Rand</code> base: un intero / un valore fisso</td></tr>
+<tr><td><code>map(s)(f)</code></td><td>ricetta e <code>f: A =&gt; B</code></td><td>trasforma il valore, lo stato passa uguale</td></tr>
+<tr><td><code>map2(ra, rb)(f)</code></td><td>due ricette e <code>f: (A, B) =&gt; C</code></td><td><code>ra</code>, poi <code>rb</code> con lo stato di <code>ra</code>, combina</td></tr>
+<tr><td><code>sequence(ras)</code></td><td><code>List[Rand[A]]</code></td><td>una ricetta di lista, in ordine</td></tr>
+<tr><td><code>flatMap(f)(g)</code></td><td>ricetta e <code>g: A =&gt; Rand[B]</code></td><td>il valore sceglie la ricetta successiva</td></tr>
+<tr><td><code>nonNegativeLessThan(bound)</code></td><td><code>bound: Int</code></td><td>intero in [0, bound): un dado con <code>bound</code> facce</td></tr>
+<tr><td><code>State.flatMap</code> / <code>map</code> / <code>map2</code></td><td>come per <code>Rand</code>, ma su <code>State[S, A]</code></td><td>stessi schemi, stato qualunque</td></tr>
+<tr><td><code>modify(f)</code></td><td><code>f: S =&gt; S</code></td><td>legge lo stato, lo trasforma e lo scrive</td></tr>
+<tr><td><code>stateToLazyList(s)(initial)</code></td><td>un <code>State</code> e lo stato iniziale</td><td>sequenza infinita dei valori prodotti</td></tr>
+<tr><td><code>lazyInts(rng)</code></td><td>un <code>RNG</code></td><td>lista pigra infinita di interi casuali</td></tr>
+</tbody></table></div>
+</section>
+
+<section>
+  <h2>Pezzi di codice e cosa fanno</h2>
+<h3>RNG · SimpleRNG</h3>
+<pre class="cod" data-lang="scala">trait RNG:
+  def nextInt: (Int, RNG)
+
+case class SimpleRNG(seed: Long) extends RNG:
+  def nextInt: (Int, RNG) =
+    val newSeed = (seed * 0x5DEECE66DL + 0xBL) &amp; 0xFFFFFFFFFFFFL
+    val nextRNG = SimpleRNG(newSeed)
+    val n = (newSeed &gt;&gt;&gt; 16).toInt
+    (n, nextRNG)</pre>
+  <p><b>Cosa fa.</b> Calcola un nuovo seme (<code>&amp;</code> = AND bit a bit, tiene 48 bit), ne ricava un intero (<code>&gt;&gt;&gt;</code> = shift a destra con zeri) e restituisce la coppia (numero, generatore nuovo).</p>
+
+  <h3>nonNegativeInt · double · intDouble · doubleInt · ints</h3>
+<pre class="cod" data-lang="scala">def nonNegativeInt(rng: RNG): (Int, RNG) =
+  val (num,rand) = rng.nextInt
+  (if num&lt;0 then -(num+1) else num, rand)
+
+def double(rng: RNG): (Double, RNG) =
+  val (num,rand) = nonNegativeInt(rng)
+  (num / (Int.MaxValue.toDouble + 1), rand)
+
+def intDouble(rng: RNG): ((Int, Double), RNG) =
+  val (numInt, rand1) = nonNegativeInt(rng)
+  val (numDouble, rand2) = double(rand1)
+  ((numInt, numDouble), rand2)
+
+def ints(size: Int)(rng: RNG): (List[Int], RNG) =
+  if size&lt;=0 then (Nil, rng)
+  else
+    val(elem1, rand1) = rng.nextInt
+    val(elem2, rand2) = ints(size-1)(rand1)
+    (elem1 :: elem2, rand2)</pre>
+  <p><b>Cosa fanno.</b> Ogni funzione prende un <code>rng</code>, ne usa uno nuovo per ogni numero (<code>rand1</code>, <code>rand2</code>) e restituisce l'<b>ultimo</b> stato. <code>doubleInt</code> è <code>intDouble</code> a parti scambiate. <code>ints</code> ricorre: un numero, poi gli altri <code>size-1</code> a partire dal generatore successivo.</p>
+
+  <h3>Rand · unit · map · double2 · map2 · sequence · ints2</h3>
+<pre class="cod" data-lang="scala">type Rand[+A] = RNG =&gt; (A, RNG)
+
+def unit[A](a: A): Rand[A] = rng =&gt; (a, rng)
+
+def map[A,B](s: Rand[A])(f: A =&gt; B): Rand[B] =
+  rng =&gt; {
+    val (a, rng2) = s(rng)
+    (f(a), rng2) }
+
+lazy val double2: Rand[Double] =
+  map(nonNegativeInt)(value =&gt; value / (Int.MaxValue.toDouble + 1))
+
+def map2[A, B, C](ra: Rand[A], rb: Rand[B])(f: (A, B) =&gt; C): Rand[C] =
+  rng =&gt; {
+    val (a, rng2) = ra(rng)
+    val (b, rng3) = rb(rng2)
+    (f(a, b), rng3) }
+
+def sequence[A](ras: List[Rand[A]]): Rand[List[A]] = ras match
+  case Nil => unit(Nil)
+  case h :: t => map2(h,sequence(t))(_ :: _)
+
+def ints2(size: Int): Rand[List[Int]] =
+  sequence(List.fill(size)(int))</pre>
+  <p><b>Cosa fanno.</b> <code>unit</code>: restituisce <code>a</code> senza toccare lo stato. <code>map</code>: trasforma il valore, <b>lo stato passa uguale</b>. <code>map2</code>: esegue <code>ra</code>, passa il suo stato a <code>rb</code>, combina i due valori: lo stato fa la catena <code>rng → rng2 → rng3</code>. <code>sequence</code>: trasforma una lista di ricette in una ricetta di lista. <code>ints2</code> = <code>size</code> copie di <code>int</code> in sequenza.</p>
+
+  <h3>flatMap · nonNegativeLessThan</h3>
+<pre class="cod" data-lang="scala">def flatMap[A,B](f: Rand[A])(g: A =&gt; Rand[B]): Rand[B] =
+  rng =&gt; val (a, rng2) = f(rng)
+  g(a)(rng2)
+
+def nonNegativeLessThan(bound: Int): Rand[Int] =
+  flatMap(double) { dval =&gt; unit((dval * bound).toInt) }</pre>
+  <p><b>Cosa fanno.</b> <code>flatMap</code>: esegue <code>f</code>, usa il valore <code>a</code> per <i>scegliere</i> la ricetta successiva <code>g(a)</code> e la esegue con lo stato aggiornato. <code>nonNegativeLessThan</code>: tira un double in [0,1), lo moltiplica per <code>bound</code>, tronca. Con <code>bound=6</code>: 0…5.</p>
+
+  <h3>State · flatMap · map · map2 · unit · get · set · modify · sequence</h3>
+<pre class="cod" data-lang="scala">case class State[S, +A](run: S =&gt; (A, S)):
+  def flatMap[B](f: A =&gt; State[S, B]): State[S, B] =
+    State { s =&gt;
+      val (a, s1) = run(s)
+      f(a).run(s1) }
+
+  def map[B](f: A =&gt; B): State[S, B] =
+    flatMap(a =&gt; unit(f(a)))
+
+  def map2[B,C](sb: State[S, B])(f: (A, B) =&gt; C): State[S, C] =
+    flatMap(a =&gt; sb.map(b =&gt; f(a, b)))
+
+object State:
+  def unit[S, A](a: A): State[S, A] = State { s =&gt; (a, s) }
+  def get[S]: State[S, S] = State(s =&gt; (s, s))
+  def set[S](s: S): State[S, Unit] = State(_ =&gt; ((), s))
+
+  def modify[S](f: S =&gt; S): State[S, Unit] = for
+    s &lt;- get
+    _ &lt;- set(f(s))
+  yield ()
+
+  def sequence[S,A](sas: List[State[S, A]]): State[S, List[A]] = sas match
+    case Nil => unit(Nil)
+    case h :: t => h.map2(sequence(t))(_ :: _)
+
+  def stateToLazyList[S, A](s: State[S,A])(initial: S): LazyList[A] =
+    val (a, next) = s.run(initial)
+    cons(a, stateToLazyList(s)(next))
+
+  def lazyInts(rng: RNG): LazyList[Int] =
+    stateToLazyList(State(RNG.int))(rng)</pre>
+  <p><b>Cosa fanno.</b> <code>State</code> è un <code>Rand</code> con lo stato <code>S</code> qualsiasi. <code>flatMap</code>: esegui il primo con <code>s</code>, ottieni <code>(a, s1)</code>, scegli il prossimo <code>f(a)</code> ed eseguilo con <code>s1</code>. <code>map</code> e <code>map2</code> si ricavano da <code>flatMap</code> + <code>unit</code>. <code>get</code>/<code>set</code>/<code>modify</code> leggono e cambiano lo stato. <code>stateToLazyList</code>: esegue lo stato, emette il valore, riparte dal nuovo stato: sequenza infinita di casuali (<code>lazyInts(SimpleRNG(42)).take(10).toList</code>).</p>
+
+  <div class="box esame" data-tit="Domande tipiche">
+    <p>Perché chiamare <code>nextInt</code> due volte sullo stesso <code>rng</code> dà lo stesso numero? Scrivi <code>map2</code> di <code>Rand</code>. Cosa fa <code>flatMap</code> in più di <code>map</code>? Come ottieni un intero tra 0 e 5?</p>
+  </div>
+</section>
+
+<section>
+  <h2>Codice completo della lezione</h2>
+<p>Lo stato che passa: dal generatore a <code>nonNegativeInt</code>, a <code>map2</code> e <code>flatMap</code> su <code>Rand</code>, fino a <code>State</code>.</p>
+<figure class="codice" data-titolo="S5 · RNG, Rand, map2, flatMap, State">
+<pre data-lang="scala">trait RNG:
+  def nextInt: (Int, RNG)
+
+object RNG:
+  def nonNegativeInt(rng: RNG): (Int, RNG) =
+    val (num,rand) = rng.nextInt
+    (if num&lt;0 then -(num+1) else num, rand)
+
+  type Rand[+A] = RNG =&gt; (A, RNG)
+
+  def map2[A, B, C](ra: Rand[A], rb: Rand[B])(f: (A, B) =&gt; C): Rand[C] =
+    rng =&gt; {
+      val (a, rng2) = ra(rng)
+      val (b, rng3) = rb(rng2)
+      (f(a, b), rng3)
+    }
+
+  def flatMap[A,B](f: Rand[A])(g: A =&gt; Rand[B]): Rand[B] =
+    rng => val (a, rng2) = f(rng)
+    g(a)(rng2)
+
+  def nonNegativeLessThan(bound: Int): Rand[Int] =
+    flatMap(double) { dval =&gt; unit((dval * bound).toInt) }
+
+case class State[S, +A](run: S =&gt; (A, S)):
+  def flatMap[B](f: A =&gt; State[S, B]): State[S, B] =
+    State { s =&gt;
+      val (a, s1) = run(s)
+      f(a).run(s1)
+    }</pre>
+<ol class="spiega">
+<li data-righe="2" data-segna="(Int, RNG)@ok"><p><code>nextInt</code> non restituisce solo un numero: restituisce una <b>coppia</b>, il numero <b>e</b> il generatore nuovo. È così che la funzione resta pura: lo stato non è nascosto.</p></li>
+<li data-righe="6" data-segna="val (num,rand) = rng.nextInt@dato"><p>Smonto la coppia: <code>num</code> è il numero, <code>rand</code> il generatore dopo di lui.</p></li>
+<li data-righe="7" data-segna="-(num+1)@ora|rand@ok"><p>Se <code>num</code> è negativo restituisco <code>-(num+1)</code> (non <code>-num</code>: <code>-Int.MinValue</code> andrebbe in overflow). E restituisco <code>rand</code>, lo stato <b>nuovo</b>.</p></li>
+<li data-righe="9" data-segna="RNG =&gt; (A, RNG)@ora"><p><code>Rand[A]</code> è una <b>funzione</b>: riceve un generatore e restituisce (valore, generatore nuovo). Una ricetta che non ha ancora girato.</p></li>
+<li data-righe="11" data-segna="ra: Rand[A]@dato|rb: Rand[B]@dato|Rand[C]@ok"><p><code>map2</code> prende due ricette e una funzione per combinare i risultati; restituisce una nuova ricetta.</p></li>
+<li data-righe="12-15" data-segna="val (a, rng2) = ra(rng)@ora|val (b, rng3) = rb(rng2)@due|(f(a, b), rng3)@ok"><p>Eseguo <code>ra</code> con <code>rng</code> → <code>(a, rng2)</code>. Poi <code>rb</code> con <code>rng2</code> (<b>non</b> con <code>rng</code>: altrimenti stesso numero!) → <code>(b, rng3)</code>. Combino <code>a</code> e <code>b</code>, restituisco l'ultimo stato <code>rng3</code>.</p></li>
+<li data-righe="18-20" data-segna="(g: A =&gt; Rand[B])@due|f(rng)@ora|g(a)(rng2)@ok"><p><code>flatMap</code>: eseguo <code>f</code>; il valore <code>a</code> ottenuto <b>sceglie</b> la ricetta successiva <code>g(a)</code>, che eseguo con lo stato nuovo <code>rng2</code>.</p></li>
+<li data-righe="23" data-segna="flatMap(double)@ora|dval@due|unit((dval * bound).toInt)@ok"><p>Un dado: <code>double</code> dà un numero in [0,1), <code>dval * bound</code> lo porta in [0,bound), <code>.toInt</code> tronca. Con <code>bound=6</code> escono 0…5. <code>unit</code> mette il risultato in una ricetta che non tocca lo stato.</p></li>
+<li data-righe="25" data-segna="State[S, +A]@dato|run: S =&gt; (A, S)@ora"><p><code>State</code> generalizza <code>Rand</code>: lo stato può essere di qualunque tipo <code>S</code>. Dentro c'è la funzione <code>run</code>.</p></li>
+<li data-righe="27-29" data-segna="State { s =&gt;@due|val (a, s1) = run(s)@ora|f(a).run(s1)@ok"><p><code>flatMap</code> di <code>State</code> è lo stesso schema: eseguo <code>run</code> su <code>s</code>, ottengo <code>(a, s1)</code>, scelgo <code>f(a)</code> e lo eseguo su <code>s1</code>.</p></li>
+</ol>
+</figure>
+</section>
+
+</main>
+</body>
+</html>

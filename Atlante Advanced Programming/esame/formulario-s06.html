@@ -1,0 +1,281 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>S6–S7 · Testing e property-based testing: formulario</title>
+<link rel="stylesheet" href="../assets/atlas.css">
+<link rel="stylesheet" href="../assets/tema.css">
+<script src="../assets/sito.js"></script>
+<script src="../assets/atlas.js" defer></script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <div class="occhiello"><span>Formulario</span><span>S6–S7</span></div>
+  <h1>S6–S7 · Testing e property-based testing</h1>
+  <p class="lede">Formulario della lezione: la <b>teoria</b>, gli <b>atomi</b> (simboli, tipi, costruttori, funzioni) con cosa chiedono tra parentesi, i <b>pezzi di codice</b> dei tuoi esercizi e in fondo il <b>codice completo</b> animato, con ogni pezzo evidenziato. Torna all'<a href="formulario.html">indice del formulario</a>.</p>
+</header>
+
+<section>
+  <h2>Teoria</h2>
+<ul>
+    <li><b>Asserzione</b> = condizione booleana che nelle esecuzioni corrette è vera. <code>require(c)</code>: pre-condizione, colpa di chi chiama (<code>IllegalArgumentException: requirement failed</code>). <code>x.ensuring(r =&gt; P(r))</code>: post-condizione, colpa della funzione (<code>AssertionError</code>). <code>assert(c)</code>: deve valere il programma (<code>AssertionError: assertion failed</code>). <code>assume(c)</code>: un'ipotesi (<code>AssertionError: assumption failed</code>).</li>
+    <li><b>Property-based testing</b>: al posto di pochi esempi scrivi una <b>proprietà</b> che deve valere per <i>tutti</i> gli input; ScalaCheck ne genera 100 a caso e cerca un controesempio. Se lo trova fa lo <b>shrinking</b>: lo riduce al più piccolo che fallisce.</li>
+    <li><b>Come si inventa una proprietà</b>: (1) <i>legge</i> algebrica: <code>l.drop(n).drop(m) == l.drop(n + m)</code>; (2) <i>idempotenza</i>: <code>l.take(n).take(n) == l.take(n)</code>; (3) <i>identità</i>: <code>l.map(identity) == l</code>; (4) <i>oracolo</i>: confronto con l'implementazione standard (<code>list2lazyList(la).take(n).toList == la.take(n)</code>); (5) <i>pigrizia</i>: un valore che lancia un'eccezione se viene forzato (<code>tailForceFinder</code>) e verifico che non scatti.</li>
+    <li><b>Specificare un <code>minimum</code></b> richiede due proprietà insieme: (P1) tutti gli elementi sono ≥ m; (P2) m è nella lista. Una sola non basta: restituire <code>Int.MinValue</code> soddisfa P1, restituire un numero qualunque della lista soddisfa P2. Le proprietà sono funzioni di <code>minimum</code> per poterle provare su implementazioni sbagliate (mutanti).</li>
+    <li><b>Gen[A]</b> = <code>State[RNG, A]</code> (un generatore è un automa a stati: S5). <b>Prop</b> = <code>(MaxSize, TestCases, RNG) =&gt; Result</code>. <b>Result</b> = <code>Passed</code> oppure <code>Falsified(failure, successes)</code>. <b>SGen[A]</b> = <code>Int =&gt; Gen[A]</code>: generatore che dipende dalla taglia, per provare da input piccoli a grandi.</li>
+    <li><b>opaque type</b>: dentro il file <code>Gen</code> è un <code>State</code>; fuori nessuno lo sa. Non è una classe, quindi non ha un corpo per i metodi: si aggiungono con <b>extension method</b> (<code>g.listOfN(5)</code> funziona lo stesso con il punto).</li>
+    <li><b>Type class</b>: <code>given</code> definisce un'istanza, <code>using</code> la chiede, <code>summon[T]</code> la recupera. <code>def f[A: Gen]</code> è zucchero per <code>def f[A](using Gen[A])</code>.</li>
+    <li>In ScalaCheck: <code>forAll { (x: Int) =&gt; … }</code>, <code>p1 &amp;&amp; p2</code>, <code>cond ==&gt; prop</code> (pre-condizione: scarta i casi che non la soddisfano), <code>prop :| "etichetta"</code>.</li>
+  </ul>
+</section>
+
+<section>
+  <h2>Atomi della lezione</h2>
+  <p>Ogni pezzo con cui è scritto il codice di questa lezione, dal più piccolo al più grande, e cosa chiede tra le parentesi.</p>
+<h3>Simboli</h3>
+<div class="tab-wrap"><table class="tab">
+<thead><tr><th>pezzo</th><th>cosa vuol dire</th><th>dove nel codice</th></tr></thead>
+<tbody>
+<tr><td><code>property("nome") = …</code></td><td>registra un test con un nome nella suite ScalaCheck</td><td>ogni <code>property(…)</code> dei test</td></tr>
+<tr><td><code>forAll { (x: Int) =&gt; … }</code></td><td>"per ogni <code>x</code>": la funzione restituisce <code>Boolean</code>; ScalaCheck inventa i valori e cerca un controesempio</td><td>test e <code>p1Min</code></td></tr>
+<tr><td><code>forAll(gen) { … }</code></td><td>come sopra, ma i valori li genera <code>gen</code></td><td><code>forAll(Genn) { n =&gt; … }</code></td></tr>
+<tr><td><code>:| "etichetta"</code></td><td>dà un nome al pezzo di proprietà: compare nel messaggio se fallisce</td><td><code>:| "finite"</code></td></tr>
+<tr><td><code>&amp;&amp;</code> / <code>||</code> tra proprietà</td><td>valgono tutte e due / basta una (per <code>Prop</code>: se la prima fallisce restituisce quel fallimento)</td><td><code>… :| "finite" &amp;&amp; …</code></td></tr>
+<tr><td><code>cond ==&gt; prop</code></td><td>"se <code>cond</code> allora <code>prop</code>": i casi con <code>cond</code> falsa vengono scartati</td><td><code>(s.size &gt; 0) ==&gt; …</code></td></tr>
+<tr><td><code>opaque type Gen[+A] = State[RNG, A]</code></td><td><code>Gen</code> è un <code>State</code> dentro il file, un tipo a sé fuori</td><td>file <code>07-prop</code></td></tr>
+<tr><td><code>extension [A](self: Gen[A])</code></td><td>aggiunge metodi a <code>Gen[A]</code> da fuori (<code>self</code> è l'oggetto su cui chiami): serve perché un tipo opaco non ha un corpo</td><td><code>listOfN</code>, <code>flatMap</code>, <code>map</code></td></tr>
+<tr><td><code>given</code> / <code>using</code> / <code>summon</code></td><td>istanza di default / parametro che la riceve da solo / recuperarla a mano</td><td><code>summon[Gen[A]]</code></td></tr>
+<tr><td><code>[A: Gen]</code></td><td>"serve un <code>Gen[A]</code> nel contesto" = <code>(using Gen[A])</code></td><td><code>def listOfN[A: Gen](n: Int)</code></td></tr>
+<tr><td><code>(max, n, rng) =&gt; …</code></td><td>una <code>Prop</code> è una lambda a tre parametri: taglia massima, numero di test, generatore</td><td><code>forAll</code></td></tr>
+<tr><td><code>.map { (a, i) =&gt; … }</code></td><td>la lambda riceve una coppia già smontata in <code>a</code> e <code>i</code></td><td><code>forAll</code></td></tr>
+<tr><td><code>try … catch case e: Exception =&gt; …</code></td><td>un'eccezione dentro la proprietà conta come fallimento (messaggio con <code>buildMsg</code>)</td><td><code>forAll</code></td></tr>
+<tr><td><code>infix def &amp;&amp; (that: Prop)</code></td><td>definisce <code>p1 &amp;&amp; p2</code> come operatore</td><td><code>extension (self: Prop)</code></td></tr>
+<tr><td><code>n max 1</code></td><td>operatore infisso: <code>n.max(1)</code></td><td><code>nonEmptyList</code></td></tr>
+</tbody></table></div>
+
+<h3>Tipi</h3>
+<div class="tab-wrap"><table class="tab">
+<thead><tr><th>pezzo</th><th>cosa vuol dire</th></tr></thead>
+<tbody>
+<tr><td><code>Gen[+A]</code></td><td>generatore di valori <code>A</code> = <code>State[RNG, A]</code></td></tr>
+<tr><td><code>Prop</code></td><td><code>(MaxSize, TestCases, RNG) =&gt; Result</code>: una proprietà eseguibile</td></tr>
+<tr><td><code>Result</code></td><td><code>Passed</code> oppure <code>Falsified(failure, successes)</code></td></tr>
+<tr><td><code>SGen[+A]</code></td><td><code>Int =&gt; Gen[A]</code>: generatore che dipende dalla <b>taglia</b></td></tr>
+<tr><td><code>MaxSize</code>, <code>TestCases</code>, <code>SuccessCount</code>, <code>FailedCase</code></td><td>tipi opachi sopra <code>Int</code> o <code>String</code>: evitano di scambiare i numeri per sbaglio</td></tr>
+<tr><td><code>Arbitrary[A]</code></td><td>istanza ScalaCheck che sa generare <code>A</code> (si recupera con <code>arbitrary[A]</code>)</td></tr>
+<tr><td><code>List[Int] =&gt; Int</code></td><td>tipo di <code>minimum</code>: le proprietà ricevono la funzione da provare</td></tr>
+</tbody></table></div>
+
+<h3>Costruttori</h3>
+<div class="tab-wrap"><table class="tab">
+<thead><tr><th>pezzo</th><th>chiede</th><th>cosa è</th></tr></thead>
+<tbody>
+<tr><td><code>Passed</code></td><td>niente</td><td>nessun controesempio trovato</td></tr>
+<tr><td><code>Falsified(failure, successes)</code></td><td>messaggio e numero di test passati prima</td><td>controesempio trovato</td></tr>
+<tr><td><code>TestCases(n)</code>, <code>MaxSize(n)</code>…</td><td>un <code>Int</code> (o <code>String</code>)</td><td>costruttori dei tipi opachi</td></tr>
+<tr><td><code>Gen.unit(a)</code> / <code>Gen.boolean</code></td><td><code>a: =&gt; A</code> / —</td><td>sempre <code>a</code> / vero o falso a caso</td></tr>
+<tr><td><code>cons(3, tailForceFinder)</code></td><td>—</td><td>lista con una coda-trabocchetto che lancia se forzata</td></tr>
+</tbody></table></div>
+
+<h3>Funzioni e metodi</h3>
+<div class="tab-wrap"><table class="tab">
+<thead><tr><th>pezzo</th><th>chiede</th><th>cosa fa</th></tr></thead>
+<tbody>
+<tr><td><code>require(c)</code> / <code>assert(c)</code> / <code>assume(c)</code> / <code>.ensuring(P)</code></td><td>una condizione (o predicato sul risultato)</td><td>pre-condizione / asserzione / ipotesi / post-condizione: lanciano se falsa</td></tr>
+<tr><td><code>Gen.choose(a, b)</code></td><td>due <code>Int</code>, <code>b</code> escluso</td><td>intero tra <code>a</code> e <code>b-1</code></td></tr>
+<tr><td><code>g.listOfN(n)</code></td><td><code>n: Int</code></td><td>liste di <code>n</code> elementi</td></tr>
+<tr><td><code>g.listOf(size)</code></td><td><code>size: Gen[Int]</code></td><td>liste di lunghezza casuale</td></tr>
+<tr><td><code>g.flatMap(f)</code> / <code>g.map(f)</code></td><td><code>f: A =&gt; Gen[B]</code> / <code>f: A =&gt; B</code></td><td>concatena / trasforma generatori</td></tr>
+<tr><td><code>g.union(h)</code></td><td>un altro <code>Gen[A]</code></td><td>moneta: uno dei due</td></tr>
+<tr><td><code>g.suchThat(p)</code></td><td><code>p: A =&gt; Boolean</code></td><td>scarta i valori che non rispettano <code>p</code></td></tr>
+<tr><td><code>forAll(as)(f)</code></td><td>generatore e <code>f: A =&gt; Boolean</code></td><td>prova <code>f</code> su <code>n</code> valori; ritorna una <code>Prop</code></td></tr>
+<tr><td><code>p1 &amp;&amp; p2</code>, <code>p1 || p2</code></td><td>due <code>Prop</code></td><td>combinazioni di proprietà</td></tr>
+<tr><td><code>g.unsized</code> / <code>g.list</code></td><td>—</td><td><code>SGen</code> che ignora la taglia / usa la taglia come lunghezza</td></tr>
+<tr><td><code>SGen.Prop.forAll(g)(f)</code></td><td><code>g: SGen[A]</code>, <code>f</code></td><td>prova taglie 0, 1, 2… fino a <code>MaxSize</code></td></tr>
+<tr><td><code>p.run(maxSize, testCases, rng)</code></td><td>tre parametri con default</td><td>esegue la <code>Prop</code> e stampa l'esito</td></tr>
+<tr><td><code>randomLazyList(g)(rng)</code></td><td>generatore e <code>rng</code></td><td>lista pigra infinita di valori casuali (<code>unfold</code> con <code>g.run</code>)</td></tr>
+<tr><td><code>.zip(LazyList.from(0))</code></td><td>un'altra lista</td><td>numera i valori: ogni elemento diventa <code>(valore, indice)</code></td></tr>
+<tr><td><code>.find(p)</code> / <code>.getOrElse(x)</code></td><td><code>p</code> / <code>x</code></td><td>primo fallito / se non c'è, <code>Passed</code></td></tr>
+<tr><td><code>buildMsg(s, e)</code></td><td>valore ed eccezione</td><td>messaggio di errore con stack trace</td></tr>
+<tr><td><code>p1Min</code> / <code>p2Min</code>(minimum)</td><td><code>List[Int] =&gt; Int</code></td><td>proprietà: tutti ≥ m / m è nella lista</td></tr>
+</tbody></table></div>
+</section>
+
+<section>
+  <h2>Pezzi di codice e cosa fanno</h2>
+<h3>Test di LazyList (settimana 6)</h3>
+<pre class="cod" data-lang="scala">def tailForceFinder[A]: A = throw RuntimeException("Tail Forced!")
+def headForceFinder[A]: A = throw RuntimeException("Head Forced!")
+def ForceFinder: LazyList[Int] = cons(tailForceFinder, ForceFinder)
+
+property("Ex02.01: headOption does not force the tail of a lazy list") =
+  cons(3, tailForceFinder).headOption == Some(3)
+
+property("Ex05.01: l.take(n).take(n) == l.take(n)") =
+  forAll(arbitrary[LazyList[Int]], Genn) { (l, n) =&gt;
+    l.take(n).take(n).toList == l.take(n).toList } :| "finite" &amp;&amp;
+  forAll(infiniteLazyList[Int], Genn) { (l, n) =&gt;
+    l.take(n).take(n).toList == l.take(n).toList } :| "infinite"
+
+property("Ex10.02: append does not force its argument (non-empty lazy list)") =
+  forAll(genNonEmptyLazyList[Int]) { l =&gt;
+    l.append(tailForceFinder)
+    true }</pre>
+  <p><b>Cosa fanno.</b> <code>tailForceFinder</code> è una "trappola": se il codice forza la coda, lancia e il test fallisce. Se il test passa, la funzione è davvero pigra. <code>Genn</code> = generatore di numeri 0–50. <code>infiniteLazyList</code> prova la proprietà anche su liste infinite. <code>:| "finite"</code> etichetta il pezzo che fallisce.</p>
+
+  <h3>Specificare minimum (Exercise 3 e 16)</h3>
+<pre class="cod" data-lang="scala">val intList =
+  org.scalacheck.Gen.listOf(org.scalacheck.Gen.choose(0, 100)).suchThat (_.nonEmpty)
+
+def p1Min (minimum: List[Int] =&gt; Int): org.scalacheck.Prop =
+  org.scalacheck.Prop.forAll(intList) { list =&gt;
+    val m = minimum(list)
+    list.forall { elemento =&gt; elemento &gt;= m } }
+
+def p2Min (minimum: List[Int] =&gt; Int): org.scalacheck.Prop =
+  org.scalacheck.Prop.forAll(intList) { list =&gt;
+    val m = minimum(list)
+    list.contains(m) }</pre>
+  <p><b>Cosa fanno.</b> <code>intList</code> genera liste <b>non vuote</b> di numeri 0–100 (<code>minimum</code> di una lista vuota non ha senso). <code>p1Min</code>: ogni elemento è ≥ m. <code>p2Min</code>: m compare nella lista. Insieme dicono "m è il più piccolo". La versione dell'esercizio 16 è identica ma usa <code>Prop.forAll(nonEmptyList)</code>, con liste di taglia crescente.</p>
+
+  <h3>Gen: choose · unit · boolean · listOfN · flatMap · map · listOf · union</h3>
+<pre class="cod" data-lang="scala">opaque type Gen[+A] = State[RNG, A]
+
+object Gen:
+  def choose (start: Int, stopExclusive: Int): Gen[Int] =
+    State(RNG.nonNegativeInt).map { n => start + n % (stopExclusive - start) }
+
+  def unit[A] (a: =&gt;A): Gen[A] = State.unit(a)
+  def boolean: Gen[Boolean] = State(RNG.boolean)
+
+  extension [A](self: Gen[A])
+    def listOfN(n: Int): Gen[List[A]] =
+      State.sequence(List.fill(n)(self))
+
+    def flatMap[B](f: A =&gt; Gen[B]): Gen[B] =
+      State.flatMap(self)(f)
+
+    def map[B](f: A =&gt; B): Gen[B] =
+      self.flatMap { a => unit(f(a)) }
+
+    def listOf(size: Gen[Int]): Gen[List[A]] =
+      size.flatMap { n => self.listOfN(n) }
+
+    def union (that: Gen[A]): Gen[A] =
+      boolean.flatMap { b => if b then self else that }</pre>
+  <p><b>Cosa fanno.</b> <code>choose(a, b)</code>: un intero in [a, b) (non negativo del generatore, resto della divisione, spostato di <code>a</code>). <code>listOfN(n)</code>: <code>n</code> copie del generatore in sequenza. <code>flatMap</code>: scegli il generatore successivo in base al valore. <code>listOf(size)</code>: prima genera la lunghezza, poi la lista. <code>union</code>: lancia una moneta e usa uno dei due generatori.</p>
+
+  <h3>given · using · summon (Exercise 12)</h3>
+<pre class="cod" data-lang="scala">def listOfN[A: Gen](n: Int): Gen[List[A]] =
+  summon[Gen[A]].listOfN(n)
+
+def listOfN__ [A](n: Int)(using genA: Gen[A]): Gen[List[A]] =
+  genA.listOfN(n)
+
+def listOf[A: Gen](using genInt: Gen[Int]): Gen[List[A]] =
+  summon[Gen[A]].listOf(genInt)</pre>
+  <p><b>Cosa fanno.</b> <code>A: Gen</code> significa "esiste un <code>Gen[A]</code> nel contesto". <code>summon[Gen[A]]</code> lo prende. Le due scritture di <code>listOfN</code> sono equivalenti: la seconda dà un nome al generatore.</p>
+
+  <h3>Result · Prop · forAll · &amp;&amp; · ||</h3>
+<pre class="cod" data-lang="scala">enum Result:
+  case Passed
+  case Falsified(failure: FailedCase, successes: SuccessCount)
+
+  def isFalsified: Boolean = this match
+    case Passed => false
+    case Falsified(_, _) => true
+
+opaque type Prop = (MaxSize, TestCases, RNG) =&gt; Result
+
+def forAll[A](as: Gen[A])(f: A =&gt; Boolean): Prop =
+  (max, n, rng) =&gt;
+    randomLazyList(as)(rng)
+      .zip(LazyList.from(0))
+      .take(n)
+      .map { (a, i) =&gt;
+             try if f(a) then Passed else Falsified(a.toString, i)
+             catch case e: Exception => Falsified(buildMsg(a, e), i) }
+      .find(_.isFalsified)
+      .getOrElse(Passed)
+
+extension (self: Prop)
+  infix def &amp;&amp; (that: Prop): Prop = (maxSize, tcs, rng) =&gt;
+    val first = self(maxSize, tcs, rng)
+    if first.isFalsified then first else that(maxSize, tcs, rng)
+
+  infix def || (that: Prop): Prop = (maxSize, tcs, rng) =&gt;
+    val first = self(maxSize, tcs, rng)
+    if first.isFalsified then that(maxSize, tcs, rng) else first</pre>
+  <p><b>Cosa fanno.</b> <code>forAll</code>: genera una <b>lista pigra</b> di valori casuali, li numera, ne prende <code>n</code>, prova <code>f</code> su ognuno (un'eccezione conta come fallimento) e <code>find</code> si ferma al <b>primo</b> fallito. Nessun fallito → <code>Passed</code>. <code>&amp;&amp;</code>: se la prima fallisce restituisce quel fallimento, altrimenti prova la seconda. <code>||</code>: se la prima fallisce prova la seconda.</p>
+
+  <h3>SGen · unsized · list · Prop.forAll con taglia</h3>
+<pre class="cod" data-lang="scala">opaque type SGen[+A] = Int =&gt; Gen[A]
+
+extension [A](self: Gen[A])
+  def unsized: SGen[A] = n =&gt; self
+  def list: SGen[List[A]] = n =&gt; self.listOfN(n)
+
+val nonEmptyList: SGen[List[Int]] =
+  (n: Int) =&gt; Gen.choose(-100, 100).listOfN(n max 1)</pre>
+  <p><b>Cosa fanno.</b> <code>SGen</code> è una funzione "taglia → generatore". <code>unsized</code> ignora la taglia. <code>list</code> usa la taglia come lunghezza. <code>nonEmptyList</code> usa <code>n max 1</code> per non generare mai la lista vuota. <code>SGen.Prop.forAll</code> prova taglie 0, 1, 2… fino a <code>MaxSize</code> (piccoli prima: il controesempio trovato è già piccolo).</p>
+
+  <div class="box esame" data-tit="Domande tipiche">
+    <p>Scrivi due proprietà che specificano <code>minimum</code>. Perché serve un <code>extension</code> per <code>listOfN</code>? Perché <code>forAll</code> si ferma al primo fallimento? Qual è la differenza tra <code>Gen</code> e <code>SGen</code>? Scrivi una proprietà per <code>take</code> / <code>drop</code> / <code>map</code> di una <code>LazyList</code>.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Codice completo della lezione</h2>
+<p>Un test ScalaCheck con la trappola per la pigrizia, e sotto il motore del corso: <code>Gen</code>, <code>listOfN</code> e <code>forAll</code>.</p>
+<figure class="codice" data-titolo="S6–S7 · property, Gen, listOfN, forAll">
+<pre data-lang="scala">def tailForceFinder[A]: A = throw RuntimeException("Tail Forced!")
+
+property("Ex02.01: headOption does not force the tail of a lazy list") =
+  cons(3, tailForceFinder).headOption == Some(3)
+
+property("Ex06.01: l.drop(n).drop(m) == l.drop(n + m)") =
+  forAll(arbitrary[LazyList[Int]], Genn, Genn) { (l, n, m) =&gt;
+    l.drop(n).drop(m).toList == l.drop(n + m).toList } :| "law"
+
+opaque type Gen[+A] = State[RNG, A]
+
+object Gen:
+  def choose (start: Int, stopExclusive: Int): Gen[Int] =
+    State(RNG.nonNegativeInt).map { n =&gt; start + n % (stopExclusive - start) }
+
+  extension [A](self: Gen[A])
+    def listOfN(n: Int): Gen[List[A]] =
+      State.sequence(List.fill(n)(self))
+
+def forAll[A](as: Gen[A])(f: A =&gt; Boolean): Prop =
+  (max, n, rng) =&gt;
+    randomLazyList(as)(rng)
+      .zip(LazyList.from(0))
+      .take(n)
+      .map { (a, i) =&gt;
+             try if f(a) then Passed else Falsified(a.toString, i)
+             catch case e: Exception => Falsified(buildMsg(a, e), i) }
+      .find(_.isFalsified)
+      .getOrElse(Passed)</pre>
+<ol class="spiega">
+<li data-righe="1" data-segna="throw RuntimeException(&quot;Tail Forced!&quot;)@no|[A]@due"><p>Una <b>trappola</b>: un valore di qualunque tipo <code>A</code> che, se qualcuno lo calcola, lancia un'eccezione. Se un test con la trappola passa, il codice non l'ha mai calcolata.</p></li>
+<li data-righe="3" data-segna="property@ora"><p><code>property("nome") = …</code> registra un test. Il nome ("Ex02.01…") dice cosa si verifica.</p></li>
+<li data-righe="4" data-segna="cons(3, tailForceFinder)@ora|.headOption@dato|Some(3)@ok"><p>La coda è la trappola (<code>cons</code> la tiene by-name). <code>headOption</code> deve restituire <code>Some(3)</code> <b>senza</b> toccare la coda: se la toccasse, il test lancerebbe.</p></li>
+<li data-righe="7-8" data-segna="forAll(arbitrary[LazyList[Int]], Genn, Genn)@ora|(l, n, m) =&gt;@due|l.drop(n).drop(m).toList == l.drop(n + m).toList@ok|&quot;law&quot;@dato"><p><code>forAll</code> con tre generatori: una lista, e due numeri (<code>Genn</code> = 0–50). La <b>legge</b>: scartare <code>n</code> e poi <code>m</code> è come scartare <code>n+m</code>. Vale per tutti gli input, non per tre esempi scelti. <code>:| "law"</code> etichetta il pezzo.</p></li>
+<li data-righe="10" data-segna="opaque type Gen[+A] = State[RNG, A]@ora"><p>Un generatore è un <code>State[RNG, A]</code>: consuma un <code>RNG</code> e dà un <code>A</code>. <code>opaque</code>: lo sappiamo solo dentro il file.</p></li>
+<li data-righe="13-14" data-segna="State(RNG.nonNegativeInt)@dato|start + n % (stopExclusive - start)@ok"><p><code>choose</code>: prendo un intero non negativo, il resto della divisione per l'ampiezza dà un numero in [0, ampiezza), sommo <code>start</code>: valore in [start, stopExclusive).</p></li>
+<li data-righe="16-18" data-segna="extension [A](self: Gen[A])@due|State.sequence(List.fill(n)(self))@ok"><p>Un tipo opaco non ha un corpo per i metodi: li aggiungo con <code>extension</code>. <code>List.fill(n)(self)</code> = <code>n</code> copie del generatore; <code>State.sequence</code> le esegue di fila con lo stato che passa.</p></li>
+<li data-righe="20" data-segna="as: Gen[A]@dato|f: A =&gt; Boolean@due|Prop@ok"><p><code>forAll</code> prende un generatore e la funzione da verificare; restituisce una <code>Prop</code>.</p></li>
+<li data-righe="22-24" data-segna="randomLazyList(as)(rng)@ora|.zip(LazyList.from(0))@due|.take(n)@ora"><p>Genero una lista <b>pigra infinita</b> di valori casuali, li numero (0, 1, 2…) e ne prendo <code>n</code>. Pigra: gli altri non vengono mai creati.</p></li>
+<li data-righe="25-27" data-segna="try if f(a) then Passed@ok|Falsified(a.toString, i)@no|catch case e: Exception@no"><p>Per ogni valore provo <code>f</code>: se è vera <code>Passed</code>, se è falsa <code>Falsified</code> con il valore e l'indice. Anche un'eccezione conta come fallimento.</p></li>
+<li data-righe="28-29" data-segna=".find(_.isFalsified)@ora|.getOrElse(Passed)@ok"><p><code>find</code> si ferma al <b>primo</b> fallito (la lista è pigra: i successivi non si calcolano). Se non c'è nessun fallito, <code>Passed</code>.</p></li>
+</ol>
+</figure>
+</section>
+
+</main>
+</body>
+</html>

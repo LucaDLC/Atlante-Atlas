@@ -1,0 +1,289 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>S8 · Parser combinators: formulario</title>
+<link rel="stylesheet" href="../assets/atlas.css">
+<link rel="stylesheet" href="../assets/tema.css">
+<script src="../assets/sito.js"></script>
+<script src="../assets/atlas.js" defer></script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <div class="occhiello"><span>Formulario</span><span>S8</span></div>
+  <h1>S8 · Parser combinators</h1>
+  <p class="lede">Formulario della lezione: la <b>teoria</b>, gli <b>atomi</b> (simboli, tipi, costruttori, funzioni) con cosa chiedono tra parentesi, i <b>pezzi di codice</b> dei tuoi esercizi e in fondo il <b>codice completo</b> animato, con ogni pezzo evidenziato. Torna all'<a href="formulario.html">indice del formulario</a>.</p>
+</header>
+
+<section>
+  <h2>Teoria</h2>
+<ul>
+    <li>Un <b>parser</b> è un valore <code>Parser[A]</code> che legge una stringa e produce una <code>A</code> (o un errore). Si costruiscono parser grandi <b>incollando</b> parser piccoli con operatori (<i>combinators</i>). Il tipo concreto: <code>Parser[+A] = ParseState =&gt; Result[A]</code>.</li>
+    <li><b>Progetto algebrico</b>: prima l'interfaccia astratta <code>trait Parsers[ParseError, Parser[+_]]</code> (operazioni + leggi), poi l'implementazione (<code>Sliceable</code>). Le <b>leggi</b> (<code>object Laws</code>) sono proprietà ScalaCheck scritte con le sole operazioni astratte, quindi valgono per ogni implementazione.</li>
+    <li><b>Primitive</b> (da implementare): <code>string(s)</code>, <code>regex(r)</code>, <code>succeed(a)</code>, <code>flatMap</code>, <code>or</code> (<code>|</code>), <code>slice</code>, <code>run</code>. <b>Derivate</b> (scritte con le primitive): <code>map</code>, <code>map2</code>, <code>product</code> (<code>**</code>), <code>many</code>, <code>many1</code>, <code>listOfN</code>, <code>?</code>, <code>*</code>, <code>|*</code>, <code>*|</code>.</li>
+    <li>Operatori: <code>p ** q</code> = prima <code>p</code> poi <code>q</code>, coppia dei risultati. <code>p |* q</code> = tieni solo il risultato di <code>q</code> (scarta il sinistro). <code>p *| q</code> = tieni solo quello di <code>p</code>. <code>p | q</code> = prova <code>p</code>, se fallisce prova <code>q</code>. <code>p.?</code> = zero o una volta (<code>Option</code>). <code>p.many</code> = zero o più. <code>p.many1</code> = almeno una.</li>
+    <li>Il secondo argomento di <code>map2</code>, <code>product</code>, <code>or</code> è <b>by-name</b> (<code>=&gt;</code>): è valutato solo se serve. In <code>many</code> è indispensabile: <code>p.many</code> si richiama dentro sé stesso, senza by-name andrebbe in ricorsione infinita prima di leggere un carattere.</li>
+    <li><b>Fallimento committed</b>: <code>Failure(errore, isCommitted)</code>. <code>or</code> prova la seconda alternativa <b>solo</b> se il primo fallimento non è committed (cioè se il primo parser non ha già consumato input). <code>attempt</code> annulla il commit.</li>
+    <li><b>Slice</b>: se mi interessa solo il testo riconosciuto, non il valore, <code>slice</code> evita di costruire valori inutili.</li>
+    <li><b>Errori</b>: <code>ParseError(stack: List[(Location, String)])</code>; <code>Location(input, offset)</code> sa calcolare riga e colonna e disegnare il segno <code>^</code>.</li>
+    <li><b>JSON</b>: la grammatica diventa codice, un parser per ogni forma. Le definizioni sono <code>lazy val</code> perché si richiamano a vicenda (<code>json</code> usa <code>jarray</code>, che usa <code>json</code>).</li>
+  </ul>
+</section>
+
+<section>
+  <h2>Atomi della lezione</h2>
+  <p>Ogni pezzo con cui è scritto il codice di questa lezione, dal più piccolo al più grande, e cosa chiede tra le parentesi.</p>
+<h3>Simboli</h3>
+<div class="tab-wrap"><table class="tab">
+<thead><tr><th>pezzo</th><th>cosa vuol dire</th><th>dove nel codice</th></tr></thead>
+<tbody>
+<tr><td><code>Parser[+_]</code></td><td>un tipo che prende un tipo (<code>Parser[Int]</code>, <code>Parser[String]</code>…); il <code>_</code> è il buco, <code>+</code> = covariante</td><td><code>trait Parsers[ParseError, Parser[+_]]</code></td></tr>
+<tr><td><code>self =&gt;</code></td><td>dà il nome <code>self</code> a "questo oggetto" dentro il trait, per usarlo nei blocchi annidati (<code>Laws</code>)</td><td>prima riga del trait</td></tr>
+<tr><td><code>extension [A](p: Parser[A])</code></td><td>aggiunge metodi a ogni <code>Parser[A]</code>: si chiamano con il punto (<code>p.many</code>)</td><td><code>many</code>, <code>map</code>, <code>or</code></td></tr>
+<tr><td><code>p2: =&gt; Parser[B]</code></td><td>argomento <b>by-name</b>: il parser a destra è valutato solo se serve. Indispensabile in <code>many</code> per non ricorrere all'infinito</td><td><code>map2</code>, <code>product</code>, <code>or</code></td></tr>
+<tr><td><code>p1.flatMap { elem =&gt; … }</code></td><td>"leggi con <code>p1</code>, chiama <code>elem</code> il valore, poi scegli il parser successivo"</td><td><code>map2</code>, <code>map</code></td></tr>
+<tr><td><code>(_::_)</code></td><td>lambda corta: <code>(a, lista) =&gt; a :: lista</code></td><td><code>many</code>, <code>listOfN</code></td></tr>
+<tr><td><code>p | q</code>, <code>p.or(q)</code></td><td>alternativa: prova <code>p</code>, se fallisce senza consumare prova <code>q</code></td><td><code>jbool</code>, <code>many</code></td></tr>
+<tr><td><code>p ** q</code></td><td>prima <code>p</code> poi <code>q</code>, restituisce la coppia</td><td><code>field</code></td></tr>
+<tr><td><code>p |* q</code></td><td>prima <code>p</code> poi <code>q</code>, tiene <b>solo q</b> (la barra sta dalla parte che si scarta)</td><td><code>string(",") |* json</code></td></tr>
+<tr><td><code>p *| q</code></td><td>prima <code>p</code> poi <code>q</code>, tiene <b>solo p</b></td><td><code>commaSeparatedVals *| ws.?</code></td></tr>
+<tr><td><code>p.?</code> / <code>p.*</code></td><td>zero o una volta (<code>Option</code>) / zero o più (<code>List</code>)</td><td><code>ws.?</code></td></tr>
+<tr><td><code>lazy val</code></td><td>i parser JSON si richiamano a vicenda: <code>lazy</code> li calcola al primo uso ed evita il giro vizioso</td><td><code>jarray</code>, <code>json</code></td></tr>
+<tr><td><code>"""…""".r</code> / <code>"…".r</code></td><td>testo trasformato in espressione regolare; con le triple virgolette non serve raddoppiare le barre</td><td><code>DOUBLE</code>, <code>ws</code></td></tr>
+<tr><td><code>case Failure(_, false) =&gt; p2(s)</code></td><td>pattern: un fallimento <b>non committed</b>; <code>_</code> ignora l'errore</td><td><code>or</code></td></tr>
+<tr><td><code>(s: ParseState) =&gt; …</code></td><td>un <code>Parser</code> concreto è una lambda che riceve lo stato di lettura</td><td><code>succeed</code>, <code>string</code>, <code>regex</code></td></tr>
+<tr><td><code>Right(a)</code> / <code>Left(e)</code></td><td>risultato di <code>run</code>: valore oppure errore</td><td>le <code>Laws</code></td></tr>
+</tbody></table></div>
+
+<h3>Tipi</h3>
+<div class="tab-wrap"><table class="tab">
+<thead><tr><th>pezzo</th><th>cosa vuol dire</th></tr></thead>
+<tbody>
+<tr><td><code>Parser[+A]</code></td><td>astratto: "qualcosa che legge testo e produce <code>A</code>". Concreto: <code>ParseState =&gt; Result[A]</code></td></tr>
+<tr><td><code>Parsers[ParseError, Parser[+_]]</code></td><td>l'interfaccia (algebra) dei combinatori, indipendente da come sono implementati</td></tr>
+<tr><td><code>Either[ParseError, A]</code></td><td>esito di <code>run</code>: <code>Left(errore)</code> o <code>Right(valore)</code></td></tr>
+<tr><td><code>Result[+A]</code></td><td><code>Success</code>, <code>Failure</code> o <code>Slice</code>. <b>GADT</b>: <code>Slice</code> e <code>Failure</code> hanno tipi più precisi (<code>Result[String]</code>, <code>Result[Nothing]</code>)</td></tr>
+<tr><td><code>ParseState</code></td><td>dove sono nell'input (<code>loc</code>) e se sono in modalità slice</td></tr>
+<tr><td><code>Location</code> / <code>ParseError</code></td><td>posizione (riga, colonna) / pila di messaggi con le loro posizioni</td></tr>
+<tr><td><code>Regex</code></td><td>espressione regolare (da <code>"…".r</code>)</td></tr>
+<tr><td><code>JSON</code></td><td>enum con sei casi: <code>JNull</code>, <code>JBool</code>, <code>JNumber</code>, <code>JString</code>, <code>JArray</code>, <code>JObject</code></td></tr>
+<tr><td><code>Parser[Unit]</code>, <code>Parser[Any]</code></td><td>parser di cui non mi interessa il valore (<code>ws</code>, e il destro di <code>*|</code>)</td></tr>
+</tbody></table></div>
+
+<h3>Costruttori</h3>
+<div class="tab-wrap"><table class="tab">
+<thead><tr><th>pezzo</th><th>chiede</th><th>cosa è</th></tr></thead>
+<tbody>
+<tr><td><code>Success(get, length)</code></td><td>valore e caratteri consumati</td><td>lettura riuscita</td></tr>
+<tr><td><code>Failure(get, isCommitted)</code></td><td>errore e flag</td><td>lettura fallita; <code>committed</code> = ha già consumato input, quindi <code>or</code> non prova l'alternativa</td></tr>
+<tr><td><code>Slice(length)</code></td><td>caratteri consumati</td><td>riuscita in modalità slice: solo la lunghezza, nessun valore costruito</td></tr>
+<tr><td><code>ParseState(loc, isSliced)</code></td><td>posizione e flag</td><td>stato di lettura</td></tr>
+<tr><td><code>Location(input, offset)</code></td><td>testo e posizione</td><td>punto dell'input: calcola <code>line</code>, <code>col</code>, <code>remaining</code></td></tr>
+<tr><td><code>ParseError(stack)</code></td><td>lista di (posizione, messaggio)</td><td>errore; <code>push</code> e <code>label</code> aggiungono contesto</td></tr>
+<tr><td><code>JNull</code> <code>JBool(b)</code> <code>JNumber(d)</code> <code>JString(s)</code> <code>JArray(v)</code> <code>JObject(m)</code></td><td>— / <code>Boolean</code> / <code>Double</code> / <code>String</code> / <code>IndexedSeq[JSON]</code> / <code>Map[String, JSON]</code></td><td>i valori JSON</td></tr>
+</tbody></table></div>
+
+<h3>Funzioni e metodi</h3>
+<div class="tab-wrap"><table class="tab">
+<thead><tr><th>pezzo</th><th>chiede</th><th>cosa fa</th></tr></thead>
+<tbody>
+<tr><td><code>string(s)</code></td><td><code>s: String</code></td><td>legge esattamente <code>s</code></td></tr>
+<tr><td><code>char(c)</code></td><td><code>c: Char</code></td><td>legge un carattere</td></tr>
+<tr><td><code>regex(r)</code></td><td><code>r: Regex</code></td><td>legge il più lungo prefisso che combacia</td></tr>
+<tr><td><code>succeed(a)</code></td><td><code>a: A</code></td><td>riesce subito con <code>a</code>, consumando 0</td></tr>
+<tr><td><code>p.run(input)</code></td><td>la stringa</td><td><code>Right(valore)</code> o <code>Left(errore)</code></td></tr>
+<tr><td><code>p.or(q)</code> / <code>p | q</code></td><td><code>q: =&gt; Parser[A]</code></td><td>alternativa (solo se <code>p</code> non ha consumato)</td></tr>
+<tr><td><code>p.flatMap(f)</code></td><td><code>f: A =&gt; Parser[B]</code></td><td>il valore letto decide il parser successivo</td></tr>
+<tr><td><code>p.map(f)</code></td><td><code>f: A =&gt; B</code></td><td><code>flatMap</code> + <code>succeed</code>: cambia il valore</td></tr>
+<tr><td><code>p.map2(q)(f)</code></td><td><code>q</code> by-name e <code>f: (A, B) =&gt; C</code></td><td><code>p</code> poi <code>q</code>, combina</td></tr>
+<tr><td><code>p.product(q)</code> / <code>**</code></td><td><code>q</code> by-name</td><td>coppia dei due valori</td></tr>
+<tr><td><code>|*</code> / <code>*|</code></td><td><code>q</code> by-name</td><td>tiene solo il destro / solo il sinistro</td></tr>
+<tr><td><code>p.many</code> / <code>p.many1</code></td><td>niente</td><td>zero o più / almeno una volta</td></tr>
+<tr><td><code>p.listOfN(n)</code></td><td><code>n: Int</code></td><td>esattamente <code>n</code> volte</td></tr>
+<tr><td><code>p.slice</code></td><td>niente</td><td>il testo riconosciuto invece del valore</td></tr>
+<tr><td><code>manyA</code> / <code>digitTimesA</code></td><td>—</td><td>conta le <code>a</code> / legge una cifra <code>d</code> e poi <code>d</code> lettere <code>a</code></td></tr>
+<tr><td><code>QUOTED</code> / <code>DOUBLE</code> / <code>ws</code></td><td>—</td><td>testo tra virgolette / numero / spazi</td></tr>
+<tr><td><code>jnull</code> <code>jbool</code> <code>jstring</code> <code>jnumber</code> <code>jarray</code> <code>jobject</code> <code>json</code></td><td>—</td><td>un parser per ogni forma JSON; <code>json</code> le prova tutte</td></tr>
+<tr><td><code>commaSeparatedVals</code> / <code>field</code></td><td>—</td><td>elementi separati da virgole / coppia chiave:valore</td></tr>
+<tr><td><code>Laws.*</code></td><td>—</td><td>proprietà ScalaCheck scritte con le sole operazioni astratte</td></tr>
+</tbody></table></div>
+</section>
+
+<section>
+  <h2>Pezzi di codice e cosa fanno</h2>
+<h3>L'interfaccia astratta</h3>
+<pre class="cod" data-lang="scala">trait Parsers[ParseError, Parser[+_]]:
+  self =>
+  def string(s: String): Parser[String]
+  def char(c: Char): Parser[Char] = string(c.toString).map { _.charAt(0) }
+  def succeed[A](a: A): Parser[A]
+  def regex(r: Regex): Parser[String]
+
+  extension [A](p: Parser[A])
+    def run(input: String): Either[ParseError, A]
+    infix def or(p2: => Parser[A]): Parser[A]
+    def |(p2: => Parser[A]): Parser[A] = p.or (p2)
+    def slice: Parser[String]
+    def flatMap[B](f: A => Parser[B]): Parser[B]</pre>
+  <p><b>Cosa fa.</b> Elenca le primitive senza dire come sono fatte. <code>self =&gt;</code> dà un nome a "questo oggetto" per poterlo usare dentro i blocchi annidati (<code>Laws</code>). <code>char</code> è già definita: legge una stringa di un carattere e prende il primo.</p>
+
+  <h3>map2 · product · ** · |* · *| · ? · *</h3>
+<pre class="cod" data-lang="scala">extension [A](p1: Parser[A])
+  def map2[B, C](p2: => Parser[B]) (f: (A, B) =&gt; C): Parser[C] =
+    p1.flatMap{ elem => p2.map{ elem2 => f(elem,elem2)}}
+
+  def product[B] (p2: => Parser[B]): Parser[(A,B)] =
+    p1.flatMap{ elem => p2.map{ elem2 => (elem,elem2)}}
+
+  def **[B](p2: => Parser[B]): Parser[(A, B)] = p1.product(p2)
+  def |*[B](p2: => Parser[B]): Parser[B] = p1.flatMap { s => p2 }
+  def *| (p2: => Parser[Any]): Parser[A] = (p1 ** p2).map { (a, _) => a }
+  def ? : Parser[Option[A]] = { p1.map { Some(_) } } | succeed(None)
+  def * : Parser[List[A]] = p1.many</pre>
+  <p><b>Cosa fanno.</b> <code>map2</code>: esegui <code>p1</code>, poi <code>p2</code>, combina i due risultati con <code>f</code>. <code>product</code> = <code>map2</code> con <code>f</code> che fa la coppia. <code>|*</code> ignora il risultato sinistro (utile per saltare una virgola o una parentesi). <code>*|</code> ignora il destro. <code>?</code>: se <code>p1</code> fallisce senza consumare, <code>succeed(None)</code> al suo posto.</p>
+
+  <h3>map · many · manyA · many1 · listOfN · digitTimesA</h3>
+<pre class="cod" data-lang="scala">extension [A](p: Parser[A])
+  def map[B](f: A => B): Parser[B] =
+    p.flatMap{ elem => succeed(f(elem))}
+
+  def many: Parser[List[A]] =
+    p.map2(p.many)(_::_) | succeed(List.empty[A])
+
+  def many1: Parser[List[A]] =
+    p.map2(p.many)(_ :: _)
+
+  def listOfN(n: Int): Parser[List[A]] =
+    if n &lt;= 0 then succeed(List.empty[A])
+    else p.map2(p.listOfN(n - 1))(_ :: _)
+
+def manyA: Parser[Int] =
+  char('a').many.map{_.size}
+
+def digitTimesA: Parser[Int] =
+  regex("[0-9]".r).map {_.toInt}.flatMap { elem => char('a').listOfN(elem).map { _.size}}</pre>
+  <p><b>Cosa fanno.</b> <code>map</code> = <code>flatMap</code> + <code>succeed</code>. <code>many</code>: provo <code>p</code> seguito da <code>many</code>, aggiungo in testa (<code>::</code>); se <code>p</code> fallisce, lista vuota. <code>many1</code> richiede la prima occorrenza. <code>listOfN(n)</code>: esattamente <code>n</code> volte. <code>manyA</code> conta le <code>a</code> di fila. <code>digitTimesA</code> legge una cifra <code>d</code> e <i>poi</i> esattamente <code>d</code> lettere <code>a</code>: il parser successivo <b>dipende</b> dal valore letto, per questo serve <code>flatMap</code> (<code>map2</code> non basta).</p>
+
+  <h3>Sliceable: succeed · string · or · regex</h3>
+<pre class="cod" data-lang="scala">def succeed[A](a: A): Parser[A] =
+  (s: ParseState) => Success(a, 0)
+
+extension [A](p: Parser[A])
+  def or(p2: => Parser[A]): Parser[A] =
+    (s: ParseState) =>
+      p(s) match
+        case Failure(_, false) =>  p2(s)
+        case pval => pval
+
+def regex(r: Regex): Parser[String] = (s: ParseState) =>
+  r.findPrefixOf(s.input) match
+    case Some(m) =>
+      if s.isSliced then Slice(m.length) else Success(m, m.length)
+    case None =>
+      Failure(s.loc.toError(s"regex $r"), false)</pre>
+  <p><b>Cosa fanno.</b> <code>succeed</code>: riesce subito consumando <b>0</b> caratteri. <code>or</code>: prova <code>p</code>; <i>solo</i> se è un fallimento non committed prova <code>p2</code> dallo stesso punto; un successo (o un fallimento committed) resta com'è. <code>regex</code>: cerca una corrispondenza <b>all'inizio</b> dell'input rimanente (<code>findPrefixOf</code>) e consuma tanti caratteri quanti ne ha riconosciuti.</p>
+
+  <h3>Result e ParseError</h3>
+<pre class="cod" data-lang="scala">type Parser[+A] = ParseState => Result[A]
+
+enum Result[+A]:
+  case Success(get: A, length: Int)
+  case Failure(get: ParseError, isCommitted: Boolean) extends Result[Nothing]
+  case Slice(length: Int) extends Result[String]</pre>
+  <p><b>Cosa fa.</b> Un parser guarda <code>ParseState</code> (dov'è, e se è in modalità slice) e restituisce: <code>Success</code> (valore + caratteri consumati), <code>Slice</code> (solo caratteri consumati), <code>Failure</code> (errore + flag committed). <code>Slice</code> e <code>Failure</code> sono sottotipi con tipo raffinato (<b>GADT</b>).</p>
+
+  <h3>JSON: QUOTED · DOUBLE · ws · jnull · jbool · jstring · jnumber</h3>
+<pre class="cod" data-lang="scala">enum JSON:
+  case JNull
+  case JNumber(get: Double)
+  case JString(get: String)
+  case JBool(get: Boolean)
+  case JArray(get: IndexedSeq[JSON])
+  case JObject(get: Map[String, JSON])
+
+lazy val QUOTED: Parser[String] =
+  regex("\"[^\"]*\"".r).map { _.drop(1).dropRight(1) }
+
+lazy val DOUBLE: Parser[Double] =
+  regex("""[-+]?([0-9]*\.)?[0-9]+([eE][-+]?[0-9]+)?""".r).map { _.toDouble }
+
+lazy val ws: Parser[Unit] =
+  regex("""\s+""".r).map { _ => () }
+
+lazy val jnull: Parser[JSON] =
+  string("null").map { _ => JNull }
+
+lazy val jbool: Parser[JSON] =
+  string("true").map { _ => JBool(true) } | string("false").map { _ => JBool(false) }
+
+lazy val jstring: Parser[JString] = QUOTED.map { JString(_) }
+lazy val jnumber: Parser[JNumber] = DOUBLE.map { JNumber(_) }</pre>
+  <p><b>Cosa fanno.</b> <code>QUOTED</code>: legge <code>"…"</code> (virgolette, niente virgolette dentro) e toglie la prima e l'ultima. <code>DOUBLE</code>: numero con segno, parte decimale ed esponente opzionali. <code>ws</code>: uno o più spazi. Le forme semplici sono un <code>string</code> o una <code>regex</code> + <code>map</code> che mette il risultato nel costruttore giusto.</p>
+
+  <h3>JSON: jarray · field · jobject · json</h3>
+<pre class="cod" data-lang="scala">private lazy val commaSeparatedVals: Parser[List[JSON]] =
+  json.map2((string(",") |* json).many)(_ :: _) | succeed(Nil)
+
+lazy val jarray: Parser[JArray] =
+  (char('[') |* ws.? |* (commaSeparatedVals *| ws.?) *| char(']')).map { l => JArray(l.toVector) }
+
+lazy val field: Parser[(String,JSON)] =
+  (ws.? |* (QUOTED *| ws.?)) ** (char(':') |* json)
+
+private lazy val commaSeparatedFields: Parser[List[(String,JSON)]] =
+  field.map2((string(",") |* field).many)(_ :: _) | succeed(Nil)
+
+lazy val jobject: Parser[JObject] =
+  (char('{') |* ws.? |* (commaSeparatedFields *| ws.?) *| char('}')).map { l => JObject(l.toMap) }
+
+lazy val json: Parser[JSON] =
+  ws.? |* ((jobject | jarray | jstring | jnumber | jbool | jnull) *| ws.?)</pre>
+  <p><b>Cosa fanno.</b> <code>commaSeparatedVals</code>: un <code>json</code>, poi zero o più coppie "virgola + <code>json</code>" (<code>|*</code> scarta la virgola); oppure lista vuota. <code>jarray</code>: <code>[</code>, spazi opzionali, elementi, spazi opzionali, <code>]</code>, poi lista → <code>JArray</code>. <code>field</code>: chiave tra virgolette, <code>:</code>, valore: coppia. <code>jobject</code>: come l'array con le parentesi graffe e <code>toMap</code>. <code>json</code>: spazi opzionali, <b>una</b> tra le sei forme (la prova va in ordine), spazi opzionali.</p>
+
+  <div class="box esame" data-tit="Domande tipiche (in inglese)">
+    <p><i>Why is the second argument of <code>map2</code> by-name?</i> Perché se non lo fosse <code>many</code> chiamerebbe sé stessa senza fine. <i>Why can the laws live inside the abstract trait?</i> Perché sono scritte solo con le operazioni astratte: valgono per ogni implementazione. <i>When do you need <code>flatMap</code> and not <code>map2</code>?</i> Quando il parser successivo dipende dal valore appena letto (<code>digitTimesA</code>).</p>
+  </div>
+</section>
+
+<section>
+  <h2>Codice completo della lezione</h2>
+<p>L'interfaccia astratta, <code>map2</code> e <code>|*</code> costruiti sopra <code>flatMap</code>, <code>many</code> ricorsivo e un parser JSON che li usa.</p>
+<figure class="codice" data-titolo="S8 · Parsers, map2, |*, many, jarray">
+<pre data-lang="scala">trait Parsers[ParseError, Parser[+_]]:
+  def string(s: String): Parser[String]
+  def succeed[A](a: A): Parser[A]
+
+  extension [A](p: Parser[A])
+    infix def or(p2: =&gt; Parser[A]): Parser[A]
+    def flatMap[B](f: A =&gt; Parser[B]): Parser[B]
+
+  extension [A](p1: Parser[A])
+    def map2[B, C](p2: =&gt; Parser[B]) (f: (A, B) =&gt; C): Parser[C] =
+      p1.flatMap{ elem => p2.map{ elem2 => f(elem,elem2)}}
+    def |*[B](p2: =&gt; Parser[B]): Parser[B] =
+      p1.flatMap { s => p2 }
+
+  extension [A](p: Parser[A])
+    def many: Parser[List[A]] =
+      p.map2(p.many)(_::_) | succeed(List.empty[A])
+
+lazy val jarray: Parser[JArray] =
+  (char('[') |* ws.? |* (commaSeparatedVals *| ws.?) *| char(']')).map { l => JArray(l.toVector) }</pre>
+<ol class="spiega">
+<li data-righe="2-3" data-segna="string(s: String)@dato|Parser[String]@ok|succeed@due"><p>Le <b>primitive</b> sono solo dichiarate: <code>string</code> legge un testo, <code>succeed</code> riesce senza leggere. Come funzionano lo decide l'implementazione.</p></li>
+<li data-righe="6" data-segna="p2: =&gt; Parser[A]@ora"><p><code>or</code>: il secondo parser è <b>by-name</b>, calcolato solo se il primo fallisce.</p></li>
+<li data-righe="7" data-segna="f: A =&gt; Parser[B]@due"><p><code>flatMap</code>: dal valore letto <code>A</code> costruisco il parser successivo. È la primitiva da cui nascono <code>map</code> e <code>map2</code>.</p></li>
+<li data-righe="10-11" data-segna="(p2: =&gt; Parser[B])@ora|p1.flatMap{ elem =&gt;@dato|p2.map{ elem2 =&gt;@due|f(elem,elem2)@ok"><p><code>map2</code> con sole primitive: leggo con <code>p1</code> (<code>elem</code>), poi con <code>p2</code> (<code>elem2</code>), combino con <code>f</code>. <code>p2</code> è by-name: se <code>p1</code> fallisce non viene mai calcolato.</p></li>
+<li data-righe="13" data-segna="p1.flatMap { s =&gt; p2 }@ok"><p><code>|*</code>: leggo <code>p1</code>, ignoro il suo valore (<code>s</code> non serve) e restituisco <code>p2</code>. Serve a saltare virgole e parentesi.</p></li>
+<li data-righe="17" data-segna="p.map2(p.many)@ora|(_::_)@due|succeed(List.empty[A])@ok"><p><code>many</code>: provo <code>p</code> seguito da <b>di nuovo</b> <code>many</code> e metto in testa (<code>::</code>). Se <code>p</code> fallisce, <code>succeed</code> dà la lista vuota: la ricorsione finisce. Funziona perché il secondo argomento di <code>map2</code> è by-name.</p></li>
+<li data-righe="20" data-segna="char('[')@dato|commaSeparatedVals@ora|char(']')@dato|JArray(l.toVector)@ok"><p><code>jarray</code>: leggo <code>[</code>, gli elementi separati da virgole, poi <code>]</code>; <code>|*</code> e <code>*|</code> scartano parentesi e spazi, <code>.map</code> mette la lista in <code>JArray</code>. È un <code>lazy val</code> perché <code>json</code> e <code>jarray</code> si richiamano a vicenda.</p></li>
+</ol>
+</figure>
+</section>
+
+</main>
+</body>
+</html>

@@ -117,7 +117,8 @@ window.SITO = {
       "Homework: come si passano": "Homework: how to pass",
       "Errori del compilatore": "Compiler errors",
       "Vecchie prove e allenamento": "Past exams and practice",
-      "Formulario rapido": "Quick formulary",
+      "Formulario": "Formulary",
+      "Indice e dizionario": "Index and dictionary",
       "scritto in presenza, 4 ore": "written, on campus, 4 hours"
     },
     "da": {
@@ -188,7 +189,8 @@ window.SITO = {
       "Homework: come si passano": "Homework: sådan består du",
       "Errori del compilatore": "Compilerfejl",
       "Vecchie prove e allenamento": "Gamle eksamener og træning",
-      "Formulario rapido": "Hurtigt formularium",
+      "Formulario": "Formularium",
+      "Indice e dizionario": "Indeks og ordbog",
       "scritto in presenza, 4 ore": "skriftlig, på campus, 4 timer"
     }
   },
@@ -270,6 +272,16 @@ window.SITO = {
     { t: 'Homework: come si passano', h: 'esame/homework.html', noCapito: true },
     { t: 'Errori del compilatore', h: 'esame/errori.html' },
     { t: 'Vecchie prove e allenamento', h: 'esame/prove.html' },
-    { t: 'Formulario rapido', h: 'esame/formulario.html', noCapito: true }
+    { g: 'Formulario', quando: 'ripasso', figli: [
+      { t: 'Indice e dizionario', h: 'esame/formulario.html' },
+      { t: 'S1 · Funzioni e ricorsione', h: 'esame/formulario-s01.html' },
+      { t: 'S2 · Tipi algebrici, liste, fold', h: 'esame/formulario-s02.html' },
+      { t: 'S3 · Alberi, Option, for', h: 'esame/formulario-s03.html' },
+      { t: 'S4 · Laziness: LazyList', h: 'esame/formulario-s04.html' },
+      { t: 'S5 · State e numeri casuali', h: 'esame/formulario-s05.html' },
+      { t: 'S6–S7 · Testing e property-based testing', h: 'esame/formulario-s06.html' },
+      { t: 'S8 · Parser combinators', h: 'esame/formulario-s08.html' },
+      { t: 'S9 · Monoid, Foldable, Functor, Monad', h: 'esame/formulario-s09.html' }
+    ] }
   ]
 };

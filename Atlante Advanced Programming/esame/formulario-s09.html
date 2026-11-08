@@ -1,0 +1,388 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>S9 · Monoid, Foldable, Functor, Monad: formulario</title>
+<link rel="stylesheet" href="../assets/atlas.css">
+<link rel="stylesheet" href="../assets/tema.css">
+<script src="../assets/sito.js"></script>
+<script src="../assets/atlas.js" defer></script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <div class="occhiello"><span>Formulario</span><span>S9</span></div>
+  <h1>S9 · Monoid, Foldable, Functor, Monad</h1>
+  <p class="lede">Formulario della lezione: la <b>teoria</b>, gli <b>atomi</b> (simboli, tipi, costruttori, funzioni) con cosa chiedono tra parentesi, i <b>pezzi di codice</b> dei tuoi esercizi e in fondo il <b>codice completo</b> animato, con ogni pezzo evidenziato. Torna all'<a href="formulario.html">indice del formulario</a>.</p>
+</header>
+
+<section>
+  <h2>Teoria</h2>
+<ul>
+    <li><b>Monoid</b> = un tipo <code>A</code> + <code>combine(a1, a2): A</code> + <code>empty: A</code>. Due leggi: <b>associatività</b> <code>combine(combine(a,b),c) == combine(a,combine(b,c))</code>; <b>neutro</b> <code>combine(a, empty) == a == combine(empty, a)</code>. L'ordine degli argomenti <i>non</i> deve per forza essere commutativo.</li>
+    <li>Esempi: <code>(Int, +, 0)</code>, <code>(Int, *, 1)</code>, <code>(Boolean, ||, false)</code>, <code>(Boolean, &amp;&amp;, true)</code>, <code>(String, +, "")</code>, <code>(List, ++, Nil)</code>, <code>(A =&gt; A, composizione, identity)</code> (<code>endoMonoid</code>). <code>optionMonoid</code>: primo <code>Some</code> (<code>combine(None, Some(3)) = Some(3)</code>, <code>combine(Some(1), Some(2)) = Some(1)</code>); <code>optionMonoidLift</code>: se entrambi <code>Some</code> combina i contenuti (con <code>intAddition</code>: <code>Some(1)</code>+<code>Some(2)</code> = <code>Some(3)</code>).</li>
+    <li><b>foldMap</b>(as)(f): trasforma ogni elemento con <code>f</code> in un valore del monoide e li combina partendo da <code>empty</code>. Esempio: <code>foldMap(List("a","bb","ccc"))(_.length)</code> con <code>intAddition</code> = 1+2+3 = 6; con <code>stringMonoid</code> e <code>identity</code> = <code>"abbccc"</code>.</li>
+    <li><b>Omomorfismo</b> <code>f: A =&gt; B</code> tra monoidi: <code>f(combine(a1,a2)) == combine(f(a1), f(a2))</code> e <code>f(empty) == empty</code>. <b>Isomorfismo</b>: due omomorfismi <code>f</code>, <code>g</code> che si annullano a vicenda (<code>g(f(a)) == a</code>). Esempi: <code>String ≅ List[Char]</code> (<code>toList</code>, <code>mkString</code>); <code>booleanOr ≅ booleanAnd</code> (la negazione).</li>
+    <li><b>Dual</b>: stesso monoide con <code>combine</code> a rovescio. <b>productMonoid</b>: due monoidi in parallelo sulla coppia.</li>
+    <li><b>Foldable[F]</b>: contenitori che si possono ridurre. Primitiva: <code>foldMap</code>; da lì <code>foldRight</code> (monoide <code>endoMonoid</code> sulle funzioni <code>B =&gt; B</code>), <code>foldLeft</code> (monoide <code>dual(endoMonoid)</code>), <code>combineAll</code>, <code>toList</code>.</li>
+    <li><b>Functor[F]</b>: contenitori su cui si può fare <code>map</code>. Legge: <code>fa.map(identity) == fa</code> (la forma non cambia). Derivati: <code>distribute</code> (<code>F[(A,B)] =&gt; (F[A], F[B])</code>), <code>codistribute</code> (<code>Either[F[A], F[B]] =&gt; F[Either[A, B]]</code>).</li>
+    <li><b>Monad[F]</b> = Functor + <code>unit</code> + <code>flatMap</code>. Da <code>flatMap</code> + <code>unit</code> si ricavano <code>map</code> e <code>map2</code>. Leggi: <b>associatività</b> <code>x.flatMap(f).flatMap(g) == x.flatMap(a =&gt; f(a).flatMap(g))</code>; <b>identità sinistra</b> <code>unit(y).flatMap(f) == f(y)</code>; <b>identità destra</b> <code>x.flatMap(unit) == x</code>. Sono le stesse leggi del monoide (associatività + neutro).</li>
+    <li>Sulle monadi: <code>sequence</code> (lista di <code>F[A]</code> → <code>F[List[A]]</code>), <code>replicateM(n, ma)</code> (<code>ma</code> ripetuta <code>n</code> volte; nella monade <code>List</code> dà tutte le combinazioni, per esempio <code>replicateM(2, List(1,2))</code> = <code>List(List(1,1), List(1,2), List(2,1), List(2,2))</code>; con <code>Option</code> dà <code>Some</code> solo se <code>ma</code> è <code>Some</code>), <code>compose</code> (<code>f: A =&gt; F[B]</code> e <code>g: B =&gt; F[C]</code> → <code>A =&gt; F[C]</code>).</li>
+    <li>Gerarchia: ogni <code>Monad</code> è un <code>Functor</code>. <code>Option</code>, <code>List</code>, <code>State</code>, <code>Gen</code>, <code>Parser</code>, <code>LazyList</code> sono monadi: tutti i <code>flatMap</code> visti nel corso sono lo stesso schema.</li>
+  </ul>
+</section>
+
+<section>
+  <h2>Atomi della lezione</h2>
+  <p>Ogni pezzo con cui è scritto il codice di questa lezione, dal più piccolo al più grande, e cosa chiede tra le parentesi.</p>
+<h3>Simboli</h3>
+<div class="tab-wrap"><table class="tab">
+<thead><tr><th>pezzo</th><th>cosa vuol dire</th><th>dove nel codice</th></tr></thead>
+<tbody>
+<tr><td><code>trait Monoid[A]:</code></td><td>un'<b>interfaccia</b>: chi la implementa deve fornire <code>combine</code> e <code>empty</code></td><td>inizio file</td></tr>
+<tr><td><code>new Monoid[Int]:</code></td><td>crea un'<b>istanza</b> anonima del trait, con il corpo indentato sotto</td><td><code>intAddition</code>, <code>stringMonoid</code></td></tr>
+<tr><td><code>val empty = 0</code></td><td>nelle istanze il neutro è un <code>val</code> (valore fisso)</td><td>ogni monoide</td></tr>
+<tr><td><code>A =&gt; A</code> come tipo di <code>A</code></td><td>le <b>funzioni</b> da <code>A</code> in <code>A</code> formano un monoide: <code>Monoid[A =&gt; A]</code></td><td><code>endoMonoid</code></td></tr>
+<tr><td><code>x =&gt; f(g(x))</code></td><td>lambda: la composizione. <code>(x: A) =&gt; x</code> è <code>identity</code></td><td><code>endoMonoid</code></td></tr>
+<tr><td><code>extension [B](mb: Monoid[B])</code></td><td>aggiunge un metodo a ogni <code>Monoid[B]</code>: <code>intAddition.foldMap(…)</code></td><td><code>foldMap</code>, <code>homomorphism</code></td></tr>
+<tr><td><code>F[_]</code></td><td>un contenitore generico (<code>List</code>, <code>Option</code>…): tipo che prende un tipo</td><td><code>Functor[F[_]]</code></td></tr>
+<tr><td><code>extends Functor[F]</code></td><td>"ogni <code>Monad</code> è anche un <code>Functor</code>": eredita <code>map</code></td><td><code>trait Monad[F[_]]</code></td></tr>
+<tr><td><code>(using mb: Monoid[B])</code></td><td>parametro <b>implicito</b> con nome: il compilatore lo cerca nel contesto</td><td><code>Foldable.foldMap</code></td></tr>
+<tr><td><code>f.curried</code></td><td>da <code>(A, B) =&gt; B</code> a <code>A =&gt; B =&gt; B</code>: ogni elemento diventa una funzione</td><td><code>Foldable.foldRight</code></td></tr>
+<tr><td><code>a =&gt; b =&gt; f(b, a)</code></td><td>lambda annidata: scambia l'ordine degli argomenti (per <code>foldLeft</code>)</td><td><code>Foldable.foldLeft</code></td></tr>
+<tr><td><code>given x: [A] =&gt; Foldable[List] = …</code></td><td>istanza di default di <code>Foldable[List]</code>, trovata da sola dove serve</td><td><code>foldableList</code></td></tr>
+<tr><td><code>[A: {Arbitrary, Equality}]</code></td><td>"<code>A</code> deve avere <code>Arbitrary</code> ed <code>Equality</code> nel contesto"</td><td><code>homomorphism</code></td></tr>
+<tr><td><code>===</code></td><td>uguaglianza di Scalactic: usa l'istanza <code>Equality</code> (serve per confrontare funzioni)</td><td><code>laws</code></td></tr>
+<tr><td><code>object laws:</code></td><td>raccoglie le leggi come proprietà ScalaCheck, dentro il trait</td><td><code>Monoid.laws</code>, <code>Monad.monadLaws</code></td></tr>
+<tr><td><code>import m.*</code></td><td>porta dentro i metodi di <code>m</code> (<code>flatMap</code>, <code>map</code>) per usarli col punto</td><td><code>sequence</code>, <code>compose</code></td></tr>
+<tr><td><code>unit(a: =&gt; A)</code></td><td><code>a</code> by-name: calcolato solo se serve</td><td><code>Monad.unit</code></td></tr>
+<tr><td><code>fa.flatMap[B] { a =&gt; unit(f(a)) }</code></td><td><code>map</code> derivato: <code>flatMap</code> + rimettere il risultato nel contenitore con <code>unit</code></td><td><code>Monad.map</code></td></tr>
+</tbody></table></div>
+
+<h3>Tipi</h3>
+<div class="tab-wrap"><table class="tab">
+<thead><tr><th>pezzo</th><th>cosa vuol dire</th></tr></thead>
+<tbody>
+<tr><td><code>Monoid[A]</code></td><td>un tipo <code>A</code> con <code>combine: (A, A) =&gt; A</code> e <code>empty: A</code></td></tr>
+<tr><td><code>Monoid[Option[A]]</code> / <code>Monoid[(A, B)]</code> / <code>Monoid[A =&gt; A]</code></td><td>monoidi sui tipi composti: <code>optionMonoid</code>, <code>productMonoid</code>, <code>endoMonoid</code></td></tr>
+<tr><td><code>B =&gt; B</code></td><td>il tipo su cui <code>Foldable</code> costruisce <code>foldRight</code>: una funzione che trasforma l'accumulatore</td></tr>
+<tr><td><code>Foldable[F[_]]</code></td><td>"contenitori che si possono ridurre": la primitiva è <code>foldMap</code></td></tr>
+<tr><td><code>Functor[F[_]]</code></td><td>"contenitori su cui fare <code>map</code>"</td></tr>
+<tr><td><code>Monad[F[_]]</code></td><td><code>Functor</code> + <code>unit</code> + <code>flatMap</code></td></tr>
+<tr><td><code>F[A]</code>, <code>F[(A, B)]</code>, <code>F[List[A]]</code></td><td>il contenitore <code>F</code> con dentro <code>A</code>, una coppia, una lista</td></tr>
+<tr><td><code>Either[F[A], F[B]]</code></td><td>argomento di <code>codistribute</code>: o un contenitore di <code>A</code> o uno di <code>B</code></td></tr>
+<tr><td><code>A =&gt; F[B]</code></td><td>funzione che restituisce un contenitore: argomento di <code>flatMap</code> e <code>compose</code></td></tr>
+<tr><td><code>Prop</code>, <code>Arbitrary[A]</code>, <code>Equality[A]</code></td><td>tipi dei test: proprietà, generatore, uguaglianza personalizzata</td></tr>
+</tbody></table></div>
+
+<h3>Costruttori e istanze</h3>
+<div class="tab-wrap"><table class="tab">
+<thead><tr><th>pezzo</th><th>combine</th><th>empty</th></tr></thead>
+<tbody>
+<tr><td><code>stringMonoid</code></td><td><code>a1 + a2</code></td><td><code>""</code></td></tr>
+<tr><td><code>listMonoid[A]</code></td><td><code>a1 ++ a2</code></td><td><code>Nil</code></td></tr>
+<tr><td><code>intAddition</code> / <code>intMultiplication</code></td><td><code>+</code> / <code>*</code></td><td><code>0</code> / <code>1</code></td></tr>
+<tr><td><code>booleanOr</code> / <code>booleanAnd</code></td><td><code>||</code> / <code>&amp;&amp;</code></td><td><code>false</code> / <code>true</code></td></tr>
+<tr><td><code>optionMonoid[A]</code></td><td>il primo <code>Some</code></td><td><code>None</code></td></tr>
+<tr><td><code>optionMonoidLift[A: Monoid]</code></td><td>se entrambi <code>Some</code>, combina i contenuti</td><td><code>None</code></td></tr>
+<tr><td><code>endoMonoid[A]</code></td><td><code>x =&gt; f(g(x))</code></td><td><code>x =&gt; x</code></td></tr>
+<tr><td><code>productMonoid(ma)(mb)</code></td><td>componente per componente</td><td><code>(ma.empty, mb.empty)</code></td></tr>
+<tr><td><code>dual(m)</code></td><td><code>m.combine(y, x)</code></td><td><code>m.empty</code></td></tr>
+<tr><td><code>foldableList</code>, <code>optionFunctor</code>, <code>listFunctor</code>, <code>optionMonad</code>, <code>listMonad</code></td><td colspan="2">le istanze per <code>List</code> e <code>Option</code>; <code>unit</code> = <code>Some(a)</code> / <code>List(a)</code></td></tr>
+</tbody></table></div>
+
+<h3>Funzioni e metodi</h3>
+<div class="tab-wrap"><table class="tab">
+<thead><tr><th>pezzo</th><th>chiede</th><th>cosa fa</th></tr></thead>
+<tbody>
+<tr><td><code>combine(a1, a2)</code> / <code>empty</code></td><td>due <code>A</code> / niente</td><td>l'operazione associativa / il neutro</td></tr>
+<tr><td><code>laws.associative</code> / <code>laws.unit</code> / <code>laws.monoid</code></td><td><code>Arbitrary[A]</code>, <code>Equality[A]</code> impliciti</td><td>proprietà: associatività / neutro a destra e sinistra / entrambe</td></tr>
+<tr><td><code>mb.foldMap(as)(f)</code></td><td>lista e <code>f: A =&gt; B</code></td><td>trasforma e combina partendo da <code>empty</code></td></tr>
+<tr><td><code>ma.homomorphism(f)(mb)</code></td><td><code>f: A =&gt; B</code>, un altro monoide</td><td>proprietà: <code>f</code> rispetta <code>combine</code> ed <code>empty</code></td></tr>
+<tr><td><code>ma.isomorphism(f, g)(mb)</code></td><td>due funzioni inverse, un altro monoide</td><td>proprietà: omomorfismo nei due versi + inversione</td></tr>
+<tr><td><code>as.foldMap(f)</code> <small>(Foldable)</small></td><td><code>f: A =&gt; B</code>, <code>Monoid[B]</code> implicito</td><td>la primitiva del contenitore</td></tr>
+<tr><td><code>as.foldRight(z)(f)</code> / <code>as.foldLeft(z)(f)</code></td><td><code>z: B</code>, <code>f</code></td><td>derivati da <code>foldMap</code> con <code>endoMonoid</code> / <code>dual(endoMonoid)</code></td></tr>
+<tr><td><code>as.combineAll</code></td><td>niente (<code>Monoid[A]</code> implicito)</td><td><code>foldLeft(m.empty)(m.combine)</code></td></tr>
+<tr><td><code>as.toListF</code></td><td>niente</td><td><code>foldRight</code> con <code>::</code>: qualunque <code>Foldable</code> → <code>List</code></td></tr>
+<tr><td><code>fa.map(f)</code> <small>(Functor)</small></td><td><code>f: A =&gt; B</code></td><td>trasforma il contenuto, la forma resta</td></tr>
+<tr><td><code>fab.distribute</code> / <code>e.codistribute</code></td><td>niente</td><td><code>F[(A,B)] → (F[A], F[B])</code> / <code>Either[F[A], F[B]] → F[Either[A, B]]</code></td></tr>
+<tr><td><code>functorLaws.map</code></td><td>—</td><td>proprietà: <code>fa.map(identity) == fa</code></td></tr>
+<tr><td><code>unit(a)</code> <small>(Monad)</small></td><td><code>a: =&gt; A</code></td><td>mette <code>a</code> nel contenitore</td></tr>
+<tr><td><code>fa.flatMap(f)</code></td><td><code>f: A =&gt; F[B]</code></td><td>concatena un passo che avvolge il risultato</td></tr>
+<tr><td><code>fa.map2(fb)(f)</code></td><td><code>fb: F[B]</code>, <code>f: (A, B) =&gt; C</code></td><td>combina due contenitori</td></tr>
+<tr><td><code>monadLaws.associative</code> / <code>identityLeft</code> / <code>identityRight</code></td><td>—</td><td>le tre leggi della monade come proprietà</td></tr>
+<tr><td><code>m.sequence(fas)</code></td><td><code>List[F[A]]</code></td><td><code>F[List[A]]</code></td></tr>
+<tr><td><code>m.replicateM(n, ma)</code></td><td><code>n</code>, <code>ma: F[A]</code></td><td><code>ma</code> ripetuta <code>n</code> volte</td></tr>
+<tr><td><code>m.compose(f, g)</code></td><td><code>f: A =&gt; F[B]</code>, <code>g: B =&gt; F[C]</code></td><td><code>A =&gt; F[C]</code></td></tr>
+</tbody></table></div>
+</section>
+
+<section>
+  <h2>Pezzi di codice e cosa fanno</h2>
+<h3>Monoid · leggi</h3>
+<pre class="cod" data-lang="scala">trait Monoid[A]:
+  def combine(a1: A, a2: A): A
+  def empty: A
+
+  object laws:
+    def associative(using Arbitrary[A], Equality[A]): Prop =
+      forAll { (a1: A, a2: A, a3: A) =>
+        combine(combine(a1, a2), a3) === combine(a1, combine(a2, a3)) } :| "monoid-associative"
+
+    def unit(using Arbitrary[A], Equality[A]): Prop =
+      forAll { (a: A) =>
+        (combine(a, empty) === a) :| "right-empty" &amp;&amp;
+        (combine(empty, a) === a) :| "left-empty" } :| "monoid-unit"
+
+    def monoid (using Arbitrary[A], Equality[A]): Prop =
+      (associative &amp;&amp; unit) :| "monoid-laws"</pre>
+  <p><b>Cosa fa.</b> Il trait ha le due operazioni e, dentro <code>laws</code>, le leggi come proprietà ScalaCheck: associatività e neutro a destra e sinistra. Per provare un monoide: <code>intAddition.laws.monoid</code>. <code>===</code> è l'uguaglianza che passa da <code>Equality</code> (serve per confrontare funzioni).</p>
+
+  <h3>Istanze: stringMonoid · listMonoid · int · boolean</h3>
+<pre class="cod" data-lang="scala">val stringMonoid = new Monoid[String]:
+  def combine(a1: String, a2: String) = a1 + a2
+  val empty = ""
+
+def listMonoid[A] = new Monoid[List[A]]:
+  def combine(a1: List[A], a2: List[A]) = a1 ++ a2
+  val empty = Nil
+
+lazy val intAddition: Monoid[Int] = new Monoid[Int]:
+  def combine(a1: Int, a2: Int): Int = a1 + a2
+  val empty = 0
+
+lazy val intMultiplication: Monoid[Int] = new Monoid[Int]:
+  def combine(a1: Int, a2: Int): Int = a1 * a2
+  val empty = 1
+
+lazy val booleanOr: Monoid[Boolean] = new Monoid[Boolean]:
+  def combine(a1: Boolean, a2: Boolean): Boolean = a1 || a2
+  val empty = false
+
+lazy val booleanAnd: Monoid[Boolean] = new Monoid[Boolean]:
+  def combine(a1: Boolean, a2: Boolean): Boolean = a1 &amp;&amp; a2
+  val empty = true</pre>
+  <p><b>Cosa fanno.</b> Ogni istanza sceglie operazione e neutro. Il neutro è quello che <b>non cambia</b> l'altro: 0 per la somma, 1 per il prodotto, <code>false</code> per <code>||</code>, <code>true</code> per <code>&amp;&amp;</code>, la stringa e la lista vuote.</p>
+
+  <h3>optionMonoid · optionMonoidLift · endoMonoid</h3>
+<pre class="cod" data-lang="scala">def optionMonoid[A]: Monoid[Option[A]] = new Monoid[Option[A]]:
+  def combine(a1: Option[A], a2: Option[A]) = a1 match
+    case None => a2
+    case _ => a1
+  val empty = None
+
+def optionMonoidLift[A: Monoid]: Monoid[Option[A]] = new Monoid[Option[A]]:
+  def combine(a1: Option[A], a2: Option[A]) = (a1, a2) match
+    case (None, _) => a2
+    case (_, None) => a1
+    case (Some(x), Some(y)) => Some(summon[Monoid[A]].combine(x, y))
+  val empty = None
+
+def endoMonoid[A]: Monoid[A => A] = new Monoid[A => A]:
+  def combine(f: A => A, g: A => A) = x => f(g(x))
+  val empty = (x: A) => x</pre>
+  <p><b>Cosa fanno.</b> <code>optionMonoid</code>: vince il primo <code>Some</code>, <code>None</code> è il neutro. <code>optionMonoidLift</code>: se ce ne sono due, combina i contenuti con il monoide di <code>A</code>; se ce n'è uno solo, quello. <code>endoMonoid</code>: funzioni da <code>A</code> in <code>A</code>, <code>combine</code> è la composizione, <code>empty</code> è <code>identity</code>.</p>
+
+  <h3>foldMap · homomorphism · isomorphism</h3>
+<pre class="cod" data-lang="scala">extension [B](mb: Monoid[B])
+  def foldMap[A](as: List[A])(f: A => B): B =
+    as.foldLeft(mb.empty)((acc, a) => mb.combine(acc, f(a)))
+
+extension [A: {Arbitrary, Equality}](ma: Monoid[A])
+  def homomorphism[B](f: A => B)(mb: Monoid[B]): Prop =
+    forAll { (a1: A, a2: A) => f(ma.combine(a1, a2)) === mb.combine(f(a1), f(a2)) } :| "combine" &amp;&amp;
+    (f(ma.empty) === mb.empty) :| "empty"
+
+  def isomorphism[B: Arbitrary](f: A => B, g: B => A)(mb: Monoid[B]): Prop =
+    ma.homomorphism(f)(mb) &amp;&amp; mb.homomorphism(g)(ma) &amp;&amp;
+    forAll { (a: A) => g(f(a)) === a } &amp;&amp; forAll { (b: B) => f(g(b)) === b }
+
+// usi nei test
+stringMonoid.isomorphism[List[Char]](_.toList, _.mkString)(listMonoid[Char])
+booleanOr.isomorphism[Boolean](!_, !_)(booleanAnd)</pre>
+  <p><b>Cosa fanno.</b> <code>foldMap</code>: parte da <code>empty</code>, per ogni elemento fa <code>f(a)</code> e lo combina all'accumulatore. <code>homomorphism</code> controlla che <code>f</code> rispetti l'operazione e il neutro. <code>isomorphism</code> controlla i due versi e anche che <code>g(f(a)) == a</code> e <code>f(g(b)) == b</code>. De Morgan: <code>!(a || b) == !a &amp;&amp; !b</code> è il motivo per cui la negazione collega <code>booleanOr</code> e <code>booleanAnd</code>.</p>
+
+  <h3>productMonoid · dual</h3>
+<pre class="cod" data-lang="scala">def productMonoid[A, B](ma: Monoid[A])(mb: Monoid[B]): Monoid[(A, B)] = new Monoid[(A, B)]:
+  def combine(x: (A, B), y: (A, B)) = (ma.combine(x._1, y._1), mb.combine(x._2, y._2))
+  val empty = (ma.empty, mb.empty)
+
+def dual[A](m: Monoid[A]): Monoid[A] = new:
+  def combine(x: A, y: A): A = m.combine(y, x)
+  val empty = m.empty</pre>
+  <p><b>Cosa fanno.</b> <code>productMonoid</code>: combina la prima componente con <code>ma</code> e la seconda con <code>mb</code>; il neutro è la coppia dei neutri. Serve a calcolare due cose in un solo passaggio (per esempio somma e lunghezza). <code>dual</code> scambia gli argomenti di <code>combine</code>: trasforma un fold da destra in uno da sinistra.</p>
+
+  <h3>Foldable · foldableList · toListF</h3>
+<pre class="cod" data-lang="scala">trait Foldable[F[_]]:
+  extension [A](as: F[A])
+    def foldMap[B](f: A => B)(using mb: Monoid[B]): B
+
+    def foldRight[B](z: B)(f: (A, B) => B): B =
+      as.foldMap[B => B](f.curried)(using endoMonoid[B])(z)
+
+    def foldLeft[B](z: B)(f: (B, A) => B): B =
+      as.foldMap[B => B](a => b => f(b, a))(using dual(endoMonoid[B]))(z)
+
+    def combineAll(using m: Monoid[A]): A =
+      as.foldLeft(m.empty)(m.combine)
+
+given foldableList: [A] => Foldable[List] = new Foldable[List]:
+  extension [X](as: List[X])
+    def foldMap[B](f: X => B)(using mb: Monoid[B]): B =
+      as.foldRight(mb.empty)((x, acc) => mb.combine(f(x), acc))
+
+extension [F[_]: Foldable, A] (as: F[A])
+  def toListF: List[A] =
+    as.foldRight(List.empty[A])(_ :: _)</pre>
+  <p><b>Cosa fanno.</b> L'unica cosa da scrivere per un contenitore è <code>foldMap</code>. Con <code>f.curried</code> (da <code>(A,B) =&gt; B</code> a <code>A =&gt; B =&gt; B</code>) ogni elemento diventa una funzione <code>B =&gt; B</code>; le composizioni fanno il <code>foldRight</code>, e con il <code>dual</code> il <code>foldLeft</code>. <code>toListF</code> = <code>foldRight</code> con <code>::</code>. <code>F[_]</code> è "un tipo che prende un tipo" (<code>List</code>, <code>Option</code>, non <code>List[Int]</code>).</p>
+
+  <h3>Functor · optionFunctor</h3>
+<pre class="cod" data-lang="scala">trait Functor[F[_]]:
+  extension [A](fa: F[A])
+    def map[B](f: A => B): F[B]
+
+  extension [A, B](fab: F[(A, B)])
+    def distribute: (F[A], F[B]) =
+      (fab.map(_._1), fab.map(_._2))
+
+  extension [A, B](e: Either[F[A], F[B]])
+    def codistribute: F[Either[A, B]] = e match
+      case Left(fa) => fa.map { Left(_) }
+      case Right(fb) => fb.map { Right(_) }
+
+  object functorLaws:
+    def map[A](using Arbitrary[F[A]], Equality[F[A]]): Prop =
+      forAll { (fa: F[A]) => fa.map[A](identity[A]) === fa }
+
+lazy val optionFunctor: Functor[Option] = new Functor[Option]:
+  extension [A](oa: Option[A])
+    def map[B](f: A => B): Option[B] = oa match
+      case None => None
+      case Some(a) => Some(f(a))</pre>
+  <p><b>Cosa fanno.</b> L'unica primitiva è <code>map</code>. <code>distribute</code>: da una coppia dentro il contenitore a due contenitori (prendo il primo pezzo, poi il secondo). <code>codistribute</code>: da un <code>Either</code> di contenitori a un contenitore di <code>Either</code>. La legge dice che <code>map(identity)</code> non cambia niente.</p>
+
+  <h3>Monad · optionMonad · listMonad</h3>
+<pre class="cod" data-lang="scala">trait Monad[F[_]]
+  extends Functor[F]:
+
+  def unit[A](a: => A): F[A]
+
+  extension [A](fa: F[A])
+    def flatMap[B] (f: A => F[B]): F[B]
+
+    def map[B](f: A => B): F[B] =
+      fa.flatMap[B] { a => unit(f(a)) }
+
+    def map2[B, C](fb: F[B])(f: (A, B) => C): F[C] =
+      fa.flatMap { a => fb.map { b => f(a,b) } }
+
+lazy val optionMonad: Monad[Option] = new Monad[Option]:
+  def unit[A](a: => A) = Some(a)
+  extension [A](oa: Option[A])
+    def flatMap[B](f: A => Option[B]): Option[B] = oa match
+      case None => None
+      case Some(a) => f(a)
+
+lazy val listMonad: Monad[List] = new Monad[List]:
+  def unit[A](a: => A) = List(a)
+  extension [A](la: List[A])
+    def flatMap[B](f: A => List[B]): List[B] = la.flatMap(f)</pre>
+  <p><b>Cosa fanno.</b> Per fare una monade scrivi solo <code>unit</code> (metti un valore nel contenitore) e <code>flatMap</code>; <code>map</code> e <code>map2</code> arrivano gratis. <code>optionMonad.unit</code> = <code>Some(a)</code>, <code>listMonad.unit</code> = lista di un elemento.</p>
+
+  <h3>Leggi della monade</h3>
+<pre class="cod" data-lang="scala">def associative[A, B, C](using ...): Prop =
+  forAll { (x: F[A], f: A => F[B], g: B => F[C]) =>
+    val left = x.flatMap[B](f).flatMap[C](g)
+    val right = x.flatMap[C] { a => f(a).flatMap[C](g) }
+    (left === right) :| s"left:$left right:$right" }
+
+def identityRight[A](using ...) =
+  forAll { (x: F[A], f: A => F[A]) =>
+    val result = x.flatMap[A](unit[A])
+    (result === x) :| s"got:$result expected:$x" }
+
+def identityLeft[A: Arbitrary](using ...) =
+  forAll { (y: A, f: A => F[A]) =>
+    val left = unit[A](y).flatMap[A](f)
+    val right = f(y)
+    (left === right) :| s"left:$left right:$right" }</pre>
+  <p><b>Cosa fanno.</b> <code>associative</code>: concatenare <code>f</code> e <code>g</code> da fuori o da dentro è lo stesso. <code>identityRight</code>: <code>flatMap(unit)</code> non cambia nulla. <code>identityLeft</code>: <code>unit(y).flatMap(f)</code> è proprio <code>f(y)</code>. (Le firme complete con i parametri <code>using</code> sono in <code>09-monad/Exercises.scala</code>.)</p>
+
+  <h3>sequence · replicateM · compose</h3>
+<pre class="cod" data-lang="scala">extension [F[_]](m: Monad[F])
+  def sequence[A](fas: List[F[A]]): F[List[A]] =
+    import m.*
+    fas match
+      case Nil => m.unit(Nil)
+      case fa :: rest => fa.flatMap { a => m.sequence(rest).map { as => a :: as } }
+
+  def replicateM[A](n: Int, ma: F[A]): F[List[A]] =
+    m.sequence(List.fill(n)(ma))
+
+  def compose[A, B, C](f: A => F[B], g: B => F[C]): A => F[C] =
+    import m.*
+    a => f(a).flatMap(g)</pre>
+  <p><b>Cosa fanno.</b> <code>sequence</code>: esegui il primo, poi la sequenza del resto, e metti il valore davanti. È lo stesso schema di <code>Option.sequence</code> e <code>Rand.sequence</code>, ora scritto una volta per tutte le monadi. <code>replicateM</code>: <code>sequence</code> di <code>n</code> copie. <code>compose</code>: <code>f</code> e poi <code>g</code> sul risultato avvolto, con <code>flatMap</code>.</p>
+
+  <div class="box esame" data-tit="Domande tipiche">
+    <p>Dimostra (o testa) che <code>(Int, +, 0)</code> è un monoide. Perché <code>(Int, -, 0)</code> non lo è? (Non è associativo: <code>(5-3)-1 ≠ 5-(3-1)</code>.) Scrivi <code>map</code> con <code>flatMap</code> e <code>unit</code>. Cosa fa <code>replicateM(2, List(1,2))</code>? Quali sono le tre leggi della monade?</p>
+  </div>
+</section>
+
+<section>
+  <h2>Codice completo della lezione</h2>
+<p>Il monoide e due sue istanze, <code>foldMap</code> che le sfrutta, e la monade con <code>map</code> derivato da <code>flatMap</code> e <code>unit</code>.</p>
+<figure class="codice" data-titolo="S9 · Monoid, endoMonoid, foldMap, Monad">
+<pre data-lang="scala">trait Monoid[A]:
+  def combine(a1: A, a2: A): A
+  def empty: A
+
+lazy val intAddition: Monoid[Int] = new Monoid[Int]:
+  def combine(a1: Int, a2: Int): Int = a1 + a2
+  val empty = 0
+
+def endoMonoid[A]: Monoid[A =&gt; A] = new Monoid[A =&gt; A]:
+  def combine(f: A =&gt; A, g: A =&gt; A) = x => f(g(x))
+  val empty = (x: A) => x
+
+extension [B](mb: Monoid[B])
+  def foldMap[A](as: List[A])(f: A =&gt; B): B =
+    as.foldLeft(mb.empty)((acc, a) => mb.combine(acc, f(a)))
+
+trait Monad[F[_]]
+  extends Functor[F]:
+
+  def unit[A](a: =&gt; A): F[A]
+
+  extension [A](fa: F[A])
+    def flatMap[B] (f: A =&gt; F[B]): F[B]
+
+    def map[B](f: A =&gt; B): F[B] =
+      fa.flatMap[B] { a => unit(f(a)) }
+
+lazy val optionMonad: Monad[Option] = new Monad[Option]:
+  def unit[A](a: =&gt; A) = Some(a)
+  extension [A](oa: Option[A])
+    def flatMap[B](f: A =&gt; Option[B]): Option[B] = oa match
+      case None => None
+      case Some(a) => f(a)</pre>
+<ol class="spiega">
+<li data-righe="2-3" data-segna="combine(a1: A, a2: A): A@dato|empty: A@ok"><p>Un monoide è solo questo: un modo di <b>combinare due</b> <code>A</code> in uno e un <b>elemento neutro</b>. Le leggi: <code>combine</code> è associativa, <code>empty</code> non cambia niente.</p></li>
+<li data-righe="5-7" data-segna="new Monoid[Int]:@ora|a1 + a2@ok|val empty = 0@due"><p>L'istanza per la somma: <code>combine</code> è <code>+</code>, il neutro è <code>0</code> (<code>x + 0 = x</code>). Con il prodotto sarebbero <code>*</code> e <code>1</code>.</p></li>
+<li data-righe="9-11" data-segna="Monoid[A =&gt; A]@ora|x =&gt; f(g(x))@ok|(x: A) =&gt; x@due"><p>Anche le <b>funzioni</b> da <code>A</code> in <code>A</code> sono un monoide: <code>combine</code> è la composizione, il neutro è la funzione che restituisce l'argomento.</p></li>
+<li data-righe="13-15" data-segna="mb: Monoid[B]@dato|f: A =&gt; B@due|mb.empty@ora|mb.combine(acc, f(a))@ok"><p><code>foldMap</code>: parto da <code>empty</code>; per ogni elemento <code>a</code> lo trasformo in un <code>B</code> con <code>f</code> e lo combino all'accumulatore. Con <code>intAddition</code> e <code>_.length</code> sulle parole <code>"a","bb","ccc"</code> dà 6.</p></li>
+<li data-righe="17-18" data-segna="F[_]@due|extends Functor[F]@ora"><p><code>F[_]</code> è un contenitore qualunque. <code>extends Functor[F]</code>: una <code>Monad</code> è anche un <code>Functor</code>, quindi ha già <code>map</code> (che qui ridefiniamo con <code>flatMap</code>).</p></li>
+<li data-righe="20" data-segna="a: =&gt; A@dato|F[A]@ok"><p><code>unit</code>: mette un valore dentro il contenitore (<code>Some(a)</code>, <code>List(a)</code>…).</p></li>
+<li data-righe="23" data-segna="f: A =&gt; F[B]@due|F[B]#2@ok"><p><code>flatMap</code>: <code>f</code> dà già un contenitore; il risultato è un solo <code>F[B]</code>, non annidato. Per ogni monade si scrive solo questa.</p></li>
+<li data-righe="26" data-segna="fa.flatMap[B]@ora|unit(f(a))@ok"><p><code>map</code> gratis: con <code>flatMap</code> concateno, e <code>unit</code> rimette il risultato <code>f(a)</code> nel contenitore.</p></li>
+<li data-righe="28-29" data-segna="Monad[Option]@ora|Some(a)@ok"><p>L'istanza per <code>Option</code>: <code>unit(a)</code> è <code>Some(a)</code>.</p></li>
+<li data-righe="31-33" data-segna="=&gt; None@no|f(a)@ok"><p><code>flatMap</code> di <code>Option</code>: se <code>None</code> resta <code>None</code>; se <code>Some(a)</code> restituisco <code>f(a)</code>, che è già un <code>Option</code>.</p></li>
+</ol>
+</figure>
+</section>
+
+</main>
+</body>
+</html>

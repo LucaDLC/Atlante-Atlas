@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>S3 · Alberi, Option, for: formulario</title>
+<link rel="stylesheet" href="../assets/atlas.css">
+<link rel="stylesheet" href="../assets/tema.css">
+<script src="../assets/sito.js"></script>
+<script src="../assets/atlas.js" defer></script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <div class="occhiello"><span>Formulario</span><span>S3</span></div>
+  <h1>S3 · Alberi, Option, for</h1>
+  <p class="lede">Formulario della lezione: la <b>teoria</b>, gli <b>atomi</b> (simboli, tipi, costruttori, funzioni) con cosa chiedono tra parentesi, i <b>pezzi di codice</b> dei tuoi esercizi e in fondo il <b>codice completo</b> animato, con ogni pezzo evidenziato. Torna all'<a href="formulario.html">indice del formulario</a>.</p>
+</header>
+
+<section>
+  <h2>Teoria</h2>
+<ul>
+    <li><b>Tree</b>: <code>enum Tree[+A]: case Leaf(value: A); case Branch(left, right)</code>. Funzioni sull'albero = ricorsione sui due casi. Un solo <code>fold(t)(f)(g)</code>: <code>g</code> trasforma una foglia, <code>f</code> combina i due risultati dei rami. <code>size</code>, <code>maximum</code>, <code>map</code> sono casi particolari.</li>
+    <li><b>Option</b>: <code>Some(a)</code> oppure <code>None</code>. Il fallimento diventa un <b>valore nel tipo</b>: niente <code>null</code>, niente eccezioni. Chi chiama è obbligato a gestire l'assenza.</li>
+    <li><code>map(f: A =&gt; B)</code>: applica <code>f</code> dentro, <code>None</code> resta <code>None</code>. <code>flatMap(f: A =&gt; Option[B])</code>: serve quando <code>f</code> può a sua volta fallire (con <code>map</code> verrebbe <code>Option[Option[B]]</code>). <code>filter(p)</code>: <code>Some</code> diventa <code>None</code> se <code>p</code> è falso.</li>
+    <li><code>getOrElse[B &gt;: A](default: =&gt; B): B</code>: <code>default</code> è <b>by-name</b> (valutato solo se serve); <code>B &gt;: A</code> perché <code>Option</code> è covariante e <code>A</code> non può stare in posizione di argomento.</li>
+    <li><b>for/yield</b> è zucchero sintattico: <code>for a &lt;- ao; b &lt;- bo yield f(a,b)</code> = <code>ao.flatMap(a =&gt; bo.map(b =&gt; f(a,b)))</code>. Le frecce <code>&lt;-</code> diventano <code>flatMap</code>, l'ultima <code>map</code>. Se un passo è <code>None</code>, tutto è <code>None</code>.</li>
+    <li><code>map2(ao, bo)(f)</code>: combina due Option, <code>Some</code> solo se entrambe lo sono. <code>sequence</code>: <code>List[Option[A]] =&gt; Option[List[A]]</code>, <code>Some</code> solo se <b>tutti</b> sono <code>Some</code>. <code>traverse(as)(f)</code>: come <code>sequence</code> dopo <code>map(f)</code>, ma in un solo passaggio.</li>
+    <li><b>Varianza</b>: <code>T[+A]</code> covariante (<i>produce</i> A, si legge: <code>List</code>, <code>Option</code>). <code>T[-A]</code> contravariante (<i>consuma</i> A, si scrive: funzioni sull'argomento). <code>T[A]</code> invariante (legge e scrive: <code>Array</code>). Regola: un <code>+A</code> non può comparire come tipo di argomento di un metodo, per questo <code>getOrElse[B &gt;: A]</code> e <code>append[B &gt;: A]</code>.</li>
+    <li><b>Dispatch dinamico</b>: il metodo eseguito dipende dal tipo <i>a runtime</i> dell'oggetto, non dal tipo statico. Un <b>self type</b> <code>this: java.awt.Point =&gt;</code> dice a un trait che sarà mescolato a un <code>Point</code>.</li>
+    <li><code>Nil</code> = lista vuota (valore valido). <code>None</code> = assenza di valore. <code>null</code> = da non usare. <code>Nothing</code> = tipo senza valori, sottotipo di tutti.</li>
+  </ul>
+</section>
+
+<section>
+  <h2>Atomi della lezione</h2>
+  <p>Ogni pezzo con cui è scritto il codice di questa lezione, dal più piccolo al più grande, e cosa chiede tra le parentesi.</p>
+<h3>Simboli</h3>
+<div class="tab-wrap"><table class="tab">
+<thead><tr><th>pezzo</th><th>cosa vuol dire</th><th>dove nel codice</th></tr></thead>
+<tbody>
+<tr><td><code>[+A]</code></td><td>covariante: <code>Option[Cat]</code> vale anche come <code>Option[Animal]</code> (il tipo produce <code>A</code>, non lo consuma)</td><td><code>enum Option[+A]</code>, <code>enum Tree[+A]</code></td></tr>
+<tr><td><code>this match</code></td><td>dentro un metodo dell'<code>enum</code>: guarda "me stesso" e sceglie il caso</td><td><code>map</code>, <code>flatMap</code>, <code>getOrElse</code></td></tr>
+<tr><td><code>[B &gt;: A]</code></td><td><code>B</code> è <code>A</code> o un suo supertipo. Serve perché con <code>+A</code> non posso usare <code>A</code> come tipo di un argomento</td><td><code>def getOrElse[B &gt;: A]</code></td></tr>
+<tr><td><code>default: =&gt; B</code></td><td>argomento <b>by-name</b>: non calcolato prima della chiamata, solo se serve</td><td><code>getOrElse</code></td></tr>
+<tr><td><code>fold(t)(f)(g)</code></td><td>tre liste di parametri (currying): l'albero, poi la funzione dei rami, poi quella delle foglie</td><td><code>Tree.fold</code></td></tr>
+<tr><td><code>(l, r) =&gt; 1 + l + r</code></td><td>lambda: <code>l</code> e <code>r</code> sono i risultati già calcolati dei due figli</td><td><code>size1</code></td></tr>
+<tr><td><code>_ =&gt; 1</code></td><td>lambda che <b>ignora</b> il suo argomento e dà sempre 1</td><td><code>size1</code>, foglie</td></tr>
+<tr><td><code>_ :: _</code></td><td>lambda corta a due parametri: <code>(a, lista) =&gt; a :: lista</code></td><td><code>sequence</code>, <code>traverse</code></td></tr>
+<tr><td><code>h :: t</code></td><td>nel pattern: smonta una <code>List</code> standard in testa e coda</td><td><code>headOption</code></td></tr>
+<tr><td><code>for p &lt;- … yield …</code></td><td>zucchero per <code>flatMap</code>/<code>map</code>: <code>&lt;-</code> "prendi il valore dentro", <code>yield</code> "e restituisci questo"</td><td><code>headGrade1</code></td></tr>
+<tr><td><code>_._2</code></td><td>lambda corta: secondo campo della coppia</td><td><code>headOption(lst).map(_._2)</code></td></tr>
+<tr><td><code>a.max(b)</code></td><td>operatore come metodo: il maggiore dei due</td><td><code>maximum</code></td></tr>
+<tr><td><code>this: java.awt.Point =&gt;</code></td><td>self type: il trait sarà mescolato a un <code>Point</code>, quindi può usare <code>x</code> e <code>y</code></td><td><code>OrderedPoint</code></td></tr>
+</tbody></table></div>
+
+<h3>Tipi</h3>
+<div class="tab-wrap"><table class="tab">
+<thead><tr><th>pezzo</th><th>cosa vuol dire</th></tr></thead>
+<tbody>
+<tr><td><code>Tree[+A]</code></td><td>albero binario con valori <code>A</code> nelle foglie</td></tr>
+<tr><td><code>Option[+A]</code></td><td><code>Some(a)</code> oppure <code>None</code>: un valore che può mancare, scritto nel tipo</td></tr>
+<tr><td><code>Option[Nothing]</code></td><td>il tipo di <code>None</code>: sottotipo di ogni <code>Option[A]</code></td></tr>
+<tr><td><code>Option[Option[B]]</code></td><td>quello che esce se usi <code>map</code> con una <code>f</code> che restituisce <code>Option</code>: per questo esiste <code>flatMap</code></td></tr>
+<tr><td><code>A =&gt; Option[B]</code></td><td>funzione che può fallire (argomento di <code>flatMap</code>, <code>traverse</code>)</td></tr>
+<tr><td><code>(B, B) =&gt; B</code> e <code>A =&gt; B</code></td><td>le funzioni di <code>Tree.fold</code>: combina due risultati / trasforma una foglia</td></tr>
+<tr><td><code>List[Option[A]]</code> → <code>Option[List[A]]</code></td><td>il tipo di <code>sequence</code>: da una lista di possibili a un possibile elenco</td></tr>
+<tr><td><code>Seq[Double]</code>, <code>(String, Int)</code></td><td>sequenza generica di numeri; coppia nome-voto</td></tr>
+</tbody></table></div>
+
+<h3>Costruttori</h3>
+<div class="tab-wrap"><table class="tab">
+<thead><tr><th>pezzo</th><th>chiede</th><th>cosa è</th></tr></thead>
+<tbody>
+<tr><td><code>Leaf(value)</code></td><td>un <code>A</code></td><td>foglia: un valore</td></tr>
+<tr><td><code>Branch(left, right)</code></td><td>due <code>Tree[A]</code></td><td>nodo con due sottoalberi</td></tr>
+<tr><td><code>Some(a)</code></td><td>un <code>A</code></td><td>valore presente; il campo si chiama <code>get</code></td></tr>
+<tr><td><code>None</code></td><td>niente</td><td>valore assente</td></tr>
+<tr><td><code>Some(Nil)</code></td><td>—</td><td>"c'è una lista, ed è vuota": partenza di <code>sequence</code> e <code>traverse</code></td></tr>
+</tbody></table></div>
+
+<h3>Funzioni e metodi</h3>
+<div class="tab-wrap"><table class="tab">
+<thead><tr><th>pezzo</th><th>chiede</th><th>cosa fa</th></tr></thead>
+<tbody>
+<tr><td><code>size(t)</code></td><td>un albero</td><td>conta tutti i nodi (<code>1 + size(left) + size(right)</code>)</td></tr>
+<tr><td><code>maximum(t)</code></td><td><code>Tree[Int]</code></td><td>massimo tra le foglie</td></tr>
+<tr><td><code>Tree.map(t)(f)</code></td><td>albero, poi <code>f: A =&gt; B</code></td><td>stessa forma, foglie trasformate</td></tr>
+<tr><td><code>fold(t)(f)(g)</code></td><td>albero, <code>f: (B, B) =&gt; B</code>, <code>g: A =&gt; B</code></td><td><code>g</code> sulle foglie, <code>f</code> per unire i risultati dei figli</td></tr>
+<tr><td><code>size1</code> / <code>maximum1</code> / <code>map1</code></td><td>come le prime</td><td>le stesse tre scritte con <code>fold</code></td></tr>
+<tr><td><code>.map(f)</code></td><td><code>f: A =&gt; B</code></td><td>trasforma il contenuto; <code>None</code> resta <code>None</code></td></tr>
+<tr><td><code>.getOrElse(d)</code></td><td><code>d: =&gt; B</code></td><td>il contenuto o, se <code>None</code>, <code>d</code></td></tr>
+<tr><td><code>.flatMap(f)</code></td><td><code>f: A =&gt; Option[B]</code></td><td>come <code>map</code>, ma <code>f</code> può fallire; non annida</td></tr>
+<tr><td><code>.filter(p)</code></td><td><code>p: A =&gt; Boolean</code></td><td>tiene <code>Some</code> solo se <code>p</code> è vero</td></tr>
+<tr><td><code>.forAll(p)</code></td><td><code>p: A =&gt; Boolean</code></td><td><code>p</code> sul contenuto; <code>true</code> se <code>None</code></td></tr>
+<tr><td><code>map2(ao, bo)(f)</code></td><td>due <code>Option</code> e <code>f: (A, B) =&gt; C</code></td><td><code>Some</code> solo se entrambe lo sono</td></tr>
+<tr><td><code>sequence(aos)</code></td><td><code>List[Option[A]]</code></td><td><code>Some(lista)</code> se <b>tutte</b> <code>Some</code>, altrimenti <code>None</code></td></tr>
+<tr><td><code>traverse(as)(f)</code></td><td>lista e <code>f: A =&gt; Option[B]</code></td><td>applica <code>f</code> e fa <code>sequence</code> in un passaggio</td></tr>
+<tr><td><code>headOption(lst)</code></td><td>una lista</td><td><code>Some(primo)</code> o <code>None</code></td></tr>
+<tr><td><code>headGrade(lst)</code></td><td>lista di <code>(String, Int)</code></td><td>il voto del primo studente, se c'è</td></tr>
+<tr><td><code>mean(xs)</code> / <code>variance(xs)</code></td><td><code>Seq[Double]</code></td><td>media / media degli scarti al quadrato; <code>None</code> se la sequenza è vuota</td></tr>
+<tr><td><code>compare(that)</code></td><td>un altro <code>Point</code></td><td>−1, 0, 1 secondo l'ordine lessicografico (<code>x</code>, poi <code>y</code>)</td></tr>
+</tbody></table></div>
+</section>
+
+<section>
+  <h2>Pezzi di codice e cosa fanno</h2>
+<h3>Tree · size · maximum · map</h3>
+<pre class="cod" data-lang="scala">enum Tree[+A]:
+  case Leaf(value: A)
+  case Branch(left: Tree[A], right: Tree[A])
+
+def size[A](t: Tree[A]): Int = t match
+  case Leaf(_) => 1
+  case Branch(left,right) => 1 + size(left) + size(right)
+
+def maximum(t: Tree[Int]): Int = t match
+  case Leaf(value) => value
+  case Branch(left, right) => maximum(left).max(maximum(right))
+
+def map[A, B](t: Tree[A])(f: A =&gt; B): Tree[B] = t match
+  case Leaf(value) => Leaf(f(value))
+  case Branch(left, right) => Branch(map(left)(f), map(right)(f))</pre>
+  <p><b>Cosa fanno.</b> <code>size</code> conta nodi interni e foglie (1 per ogni nodo). <code>maximum</code> prende il massimo dei due lati. <code>map</code> mantiene la forma e trasforma solo le foglie. Stesso schema tre volte: è quello che <code>fold</code> riassume.</p>
+
+  <h3>fold sugli alberi e le tre funzioni riscritte</h3>
+<pre class="cod" data-lang="scala">def fold[A,B](t: Tree[A])(f: (B, B) =&gt; B)(g: A =&gt; B): B = t match
+  case Leaf(value) => g(value)
+  case Branch(left, right) => f(fold(left)(f)(g), fold(right)(f)(g))
+
+def size1[A](t: Tree[A]): Int =
+  fold[A, Int](t)((l, r) =&gt; 1 + l + r)(_ =&gt; 1)
+
+def maximum1(t: Tree[Int]): Int =
+  fold[Int, Int](t)((l, r) =&gt; l.max(r))(identity)
+
+def map1[A, B](t: Tree[A])(f: A =&gt; B): Tree[B] =
+  fold[A, Tree[B]](t)(Branch(_, _))(a =&gt; Leaf(f(a)))</pre>
+  <p><b>Cosa fa.</b> <code>g</code> dice cosa fare di una foglia, <code>f</code> come unire i risultati dei due figli. <code>size1</code>: foglia vale 1, ramo = 1 + sx + dx. <code>maximum1</code>: foglia = il valore stesso (<code>identity</code>), ramo = massimo. <code>map1</code>: foglia = nuova foglia, ramo = ricostruisco <code>Branch</code>.</p>
+
+  <h3>Option: map · getOrElse · flatMap · filter · forAll</h3>
+<pre class="cod" data-lang="scala">enum Option[+A]:
+  case Some(get: A)
+  case None
+
+  def map[B](f: A =&gt; B): Option[B] = this match
+    case None => None
+    case Some(a) => Some(f(a))
+
+  def getOrElse[B &gt;: A] (default: =&gt; B): B = this match
+    case None => default
+    case Some(a) => a
+
+  def flatMap[B](f: A =&gt; Option[B]): Option[B] = this match
+    case None => None
+    case Some(a) => f(a)
+
+  def filter(p: A =&gt; Boolean): Option[A] = this match
+    case Some(a) => if p(a) then this else None
+    case _ => None
+
+  def forAll(p: A =&gt; Boolean): Boolean = this match
+    case None => true
+    case Some(a) => p(a)</pre>
+  <p><b>Cosa fanno.</b> Ogni metodo guarda i due casi: su <code>None</code> propaga <code>None</code> (o il default); su <code>Some(a)</code> lavora su <code>a</code>. <code>flatMap</code> non ri-avvolge: <code>f(a)</code> è già un <code>Option</code>. <code>forAll</code> su <code>None</code> è <code>true</code> (nessun elemento viola <code>p</code>).</p>
+
+  <h3>map2 · sequence · traverse</h3>
+<pre class="cod" data-lang="scala">def map2[A, B, C](ao: Option[A], bo: Option[B])(f: (A,B) =&gt; C): Option[C] =
+  ao.flatMap(a =&gt; bo.map(b =&gt; f(a, b)))
+
+def sequence[A](aos: List[Option[A]]): Option[List[A]] =
+  aos.foldRight[Option[List[A]]](Some(Nil))((ao, acc) =&gt; map2(ao,acc)(_ :: _))
+
+def traverse[A, B](as: List[A])(f: A =&gt; Option[B]): Option[List[B]] =
+  as.foldRight[Option[List[B]]](Some(Nil))((a, acc) =&gt; map2(f(a), acc)(_ :: _))</pre>
+  <p><b>Cosa fanno.</b> <code>map2</code>: se <code>ao</code> è <code>Some(a)</code> guardo <code>bo</code>; se anche <code>bo</code> è <code>Some(b)</code>, applico <code>f</code>. <code>sequence</code>: parto da <code>Some(Nil)</code> e per ogni elemento (da destra) aggancio <code>a :: resto</code> solo se entrambi sono <code>Some</code>. Esempio verificato: <code>List(Some(1), Some(2))</code> → <code>Some(List(1, 2))</code>; <code>List(Some(1), None)</code> → <code>None</code>. <code>traverse</code> applica <code>f</code> a ogni elemento e fa la stessa cosa.</p>
+
+  <h3>headOption · headGrade · for/yield · mean · variance</h3>
+<pre class="cod" data-lang="scala">def headOption[A](lst: List[A]): Option[A] = lst match
+  case Nil => None
+  case h:: t => Some(h)
+
+def headGrade(lst: List[(String,Int)]): Option[Int] =
+  headOption(lst).map(_._2)
+
+def headGrade1(lst: List[(String,Int)]): Option[Int] =
+  for p &lt;- headOption(lst) yield p._2
+
+def mean(xs: Seq[Double]): Option[Double] =
+  if xs.isEmpty then None
+  else Some(xs.sum / xs.length)
+
+def variance(xs: Seq[Double]): Option[Double] =
+  mean(xs).flatMap(mp =&gt; mean(xs.map(x =&gt; math.pow(x - mp, 2))))</pre>
+  <p><b>Cosa fanno.</b> <code>headOption</code>: primo elemento se c'è. <code>headGrade</code> prende il voto (<code>._2</code>, secondo elemento della coppia) del primo studente; <code>headGrade1</code> è lo stesso con <code>for</code>. <code>mean</code> è parziale: lista vuota → <code>None</code>. <code>variance</code> = media degli scarti al quadrato; usa <code>mean</code> due volte, quindi <code>flatMap</code>.</p>
+
+  <h3>OrderedPoint · self type</h3>
+<pre class="cod" data-lang="scala">trait OrderedPoint
+  extends scala.math.Ordered[java.awt.Point]:
+  this: java.awt.Point =>
+  override def compare(that: java.awt.Point): Int =
+    if this.x != that.x then if this.x &lt; that.x then -1 else 1
+    else if this.y == that.y then 0 else if this.y &lt; that.y then -1 else 1</pre>
+  <p><b>Cosa fa.</b> Ordine lessicografico sui punti: prima per <code>x</code>, a parità per <code>y</code>. Restituisce −1, 0, 1. <code>this: java.awt.Point =&gt;</code> permette di usare <code>x</code> e <code>y</code> dentro il trait. Uso: <code>new java.awt.Point(0,1) with OrderedPoint</code>.</p>
+
+  <div class="box esame" data-tit="Domande tipiche">
+    <p>Perché <code>getOrElse</code> ha <code>B &gt;: A</code> e <code>default: =&gt; B</code>? Scrivi <code>map2</code> con <code>for</code> e senza. Quando si usa <code>flatMap</code> invece di <code>map</code>? Cosa restituisce <code>sequence(List(Some(1), None))</code>?</p>
+  </div>
+</section>
+
+<section>
+  <h2>Codice completo della lezione</h2>
+<p>Alberi con <code>fold</code>, <code>Option</code> con i suoi metodi, e la composizione di più <code>Option</code> con <code>map2</code> e <code>sequence</code>.</p>
+<figure class="codice" data-titolo="S3 · Tree.fold, Option, map2, sequence">
+<pre data-lang="scala">enum Tree[+A]:
+  case Leaf(value: A)
+  case Branch(left: Tree[A], right: Tree[A])
+
+object Tree:
+  def fold[A,B](t: Tree[A])(f: (B, B) =&gt; B)(g: A =&gt; B): B = t match
+    case Leaf(value) => g(value)
+    case Branch(left, right) => f(fold(left)(f)(g), fold(right)(f)(g))
+
+  def size1[A](t: Tree[A]): Int =
+    fold[A, Int](t)((l, r) =&gt; 1 + l + r)(_ =&gt; 1)
+
+enum Option[+A]:
+  case Some(get: A)
+  case None
+
+  def map[B](f: A =&gt; B): Option[B] = this match
+    case None => None
+    case Some(a) => Some(f(a))
+
+  def getOrElse[B &gt;: A] (default: =&gt; B): B = this match
+    case None => default
+    case Some(a) => a
+
+  def flatMap[B](f: A =&gt; Option[B]): Option[B] = this match
+    case None => None
+    case Some(a) => f(a)
+
+def map2[A, B, C](ao: Option[A], bo: Option[B])(f: (A,B) =&gt; C): Option[C] =
+  ao.flatMap(a =&gt; bo.map(b =&gt; f(a, b)))
+
+def sequence[A](aos: List[Option[A]]): Option[List[A]] =
+  aos.foldRight[Option[List[A]]](Some(Nil))((ao, acc) =&gt; map2(ao,acc)(_ :: _))</pre>
+<ol class="spiega">
+<li data-righe="2-3" data-segna="Leaf(value: A)@ok|Branch(left: Tree[A], right: Tree[A])@due"><p>Un albero è o una <b>foglia</b> con un valore, o un <b>ramo</b> con due alberi: ricorsivo, come la lista.</p></li>
+<li data-righe="6" data-segna="(f: (B, B) =&gt; B)@due|(g: A =&gt; B)@dato"><p><code>fold</code> ha tre liste di parametri. <code>f</code> dice come <b>unire</b> i risultati di due figli; <code>g</code> come trasformare una <b>foglia</b>. Il risultato è <code>B</code>.</p></li>
+<li data-righe="7" data-segna="g(value)@ok"><p>Foglia: applico <code>g</code> al valore. Fine della ricorsione.</p></li>
+<li data-righe="8" data-segna="f(fold(left)(f)(g), fold(right)(f)(g))@ora"><p>Ramo: calcolo <code>fold</code> sui due figli (stessa <code>f</code> e <code>g</code>) e unisco i due risultati con <code>f</code>.</p></li>
+<li data-righe="11" data-segna="(l, r) =&gt; 1 + l + r@due|_ =&gt; 1@dato"><p><code>size</code> come fold: una foglia vale 1 (<code>_ =&gt; 1</code> ignora il valore), un ramo vale 1 più la somma dei figli.</p></li>
+<li data-righe="14-15" data-segna="Some(get: A)@ok|None@no"><p><code>Option</code> ha due casi: <code>Some</code> con un valore, o <code>None</code>. Il fallimento è scritto nel tipo.</p></li>
+<li data-righe="17-19" data-segna="f: A =&gt; B@dato|Some(f(a))@ok"><p><code>map</code>: su <code>None</code> resta <code>None</code>; su <code>Some(a)</code> applico <code>f</code> e rimetto in <code>Some</code>. <code>this match</code> guarda "me stesso".</p></li>
+<li data-righe="21" data-segna="B &gt;: A@due|default: =&gt; B@ora"><p><code>default</code> è <b>by-name</b>: si calcola solo se serve. <code>B &gt;: A</code>: il risultato può essere un tipo più largo di <code>A</code> (per esempio <code>Option[Int].getOrElse(0.5)</code> dà un numero generico).</p></li>
+<li data-righe="25-27" data-segna="f: A =&gt; Option[B]@dato|=&gt; f(a)@ok"><p><code>flatMap</code>: <code>f</code> restituisce già un <code>Option</code>, quindi non lo rimetto in <code>Some</code>: altrimenti avrei <code>Option[Option[B]]</code>.</p></li>
+<li data-righe="30" data-segna="ao.flatMap(a =&gt;@ora|bo.map(b =&gt;@due|f(a, b)@ok"><p><code>map2</code>: se <code>ao</code> è <code>Some(a)</code>, guardo <code>bo</code>; se anche <code>bo</code> è <code>Some(b)</code>, applico <code>f(a, b)</code>. Basta un <code>None</code> e tutto è <code>None</code>.</p></li>
+<li data-righe="33" data-segna="Some(Nil)@dato|map2(ao,acc)@ora|(_ :: _)@ok"><p><code>sequence</code>: parto da <code>Some(Nil)</code> e, da destra, unisco ogni <code>ao</code> con il resto <code>acc</code> via <code>map2</code>. <code>_ :: _</code> mette l'elemento in testa. Un solo <code>None</code> in lista dà <code>None</code>.</p></li>
+</ol>
+</figure>
+</section>
+
+</main>
+</body>
+</html>
