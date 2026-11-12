@@ -32,6 +32,28 @@ SCENE.dpk = {
 };
 })();
 </script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+const T0 = [[0,0,0,0,0,0,0],[0,1,1,1,1,1,1],[0,1,6,7,7,7,7],[0,1,6,7,7,18,19]];
+const val = T0.map(r => r.map(String));
+SCENE.dptr = {
+  w: 560, h: 240, lato: true,
+  legenda: 'ora:cella in cui sono,ok:oggetto preso,no:cella con cui confronto',
+  oggetti: [
+    {id:'g',tipo:'griglia',x:50,y:40,cw:56,ch:36,valori:val,intR:['0','1','2','3'],intC:['0','1','2','3','4','5','6']},
+    {id:'t',tipo:'testo',x:50,y:222,t:'',size:12,bold:true,anchor:'start'}
+  ],
+  passi: [
+    { nota: "Voglio sapere <b>quali</b> oggetti danno 19. Stessa tabella (oggetti (peso, valore): (1, 1), (2, 6), (5, 18); W = 6). Parto dalla risposta, cella (3, 6), e risalgo.", set:{g:{toni:{'3,6':'ora'}}, t:{t:'parto da OPT(3, 6) = 19'}} },
+    { nota: "OPT(3, 6) = 19 è diverso da OPT(2, 6) = 7: senza l'oggetto 3 non si arriva a 19, quindi l'<b>oggetto 3 è preso</b>. Mi sposto in (2, 6 − 5) = (2, 1).", set:{g:{toni:{'3,6':'ok','2,6':'no','2,1':'ora'}}, t:{t:'oggetto 3 preso → budget 1'}} },
+    { nota: "OPT(2, 1) = 1 è uguale a OPT(1, 1) = 1: l'oggetto 2 (peso 2) non ci sta in budget 1, quindi <b>non è preso</b>. Scendo in (1, 1).", set:{g:{toni:{'3,6':'ok','2,1':'no','1,1':'ora'}}, t:{t:'oggetto 2 non preso'}} },
+    { nota: "OPT(1, 1) = 1 è diverso da OPT(0, 1) = 0: l'<b>oggetto 1 è preso</b>. Budget 1 − 1 = 0, arrivo in (0, 0): finito.", set:{g:{toni:{'3,6':'ok','1,1':'ok','0,1':'no','0,0':'ora'}}, t:{t:'oggetto 1 preso → budget 0'}} },
+    { nota: "Soluzione: oggetti 1 e 3. Peso 1 + 5 = 6 ≤ 6, valore 1 + 18 = <b>19</b>. Il traceback costa O(n) dopo aver riempito la tabella.", set:{g:{toni:{'3,6':'ok','1,1':'ok'}}, t:{t:'{1, 3}: peso 6, valore 19',tono:'ok'}} }
+  ]
+};
+})();
+</script>
 </head>
 <body>
 <main class="pagina">
@@ -69,6 +91,8 @@ SCENE.dpk = {
 <p>Knapsack: <code>OPT(i, w) = max{ OPT(i−1, w), v_i + OPT(i−1, w − w_i) }</code> (la seconda solo se <code>w_i ≤ w</code>).
 Tempo e spazio <code>O(nW)</code>: è <b>pseudo-polinomiale</b>, perché <code>W</code> è un numero e non la sua lunghezza in bit (<code>log W</code>).
 Per questo knapsack resta NP-completo, pur avendo una DP.</p>
+<p>Per sapere <i>quali</i> oggetti compongono l'ottimo si fa il <b>traceback</b>: da <code>OPT(n, W)</code> si risale. Se <code>OPT(i, w) = OPT(i−1, w)</code> l'oggetto <i>i</i> non serve (non preso); altrimenti è preso e si passa a <code>OPT(i−1, w − w_i)</code>.</p>
+  <figure class="scena" data-scena="dptr" data-titolo="Traceback: quali oggetti danno 19"></figure>
 </section>
 <section>
   <h2>Gli stampi ricorrenti</h2>

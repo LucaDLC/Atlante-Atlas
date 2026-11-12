@@ -1,0 +1,476 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Le famiglie di domande</title>
+<link rel="stylesheet" href="../assets/atlas.css">
+<link rel="stylesheet" href="../assets/tema.css">
+<script src="../assets/sito.js"></script>
+<script src="../assets/atlas.js" defer></script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <div class="occhiello"><span>Esame</span><span>analisi delle prove</span></div>
+  <h1>Le famiglie di domande</h1>
+  <p class="lede">Le 78 domande delle prove 2019–2025 si riducono a dodici famiglie. Per ognuna: cosa descrive il testo, l'idea, lo schema di codice, una figura che lo esegue passo per passo, le trappole e in quali anni è comparsa.</p>
+</header>
+
+<section>
+<h2>0 · Le famiglie e dove cadono i punti</h2>
+<p>Ogni famiglia è un modo diverso di ragionare. Riconoscerla dal testo è metà dell'esame: dopo, la risposta ha quasi sempre una forma standard. La colonna "anni" dice in quante delle 7 prove la famiglia è comparsa.</p>
+<div class="tab-wrap"><table class="tab">
+<thead><tr><th></th><th>Famiglia</th><th>Settimane</th><th>Cosa devi saper fare</th><th>Anni</th></tr></thead>
+<tbody>
+<tr><td><b>A</b></td><td>Funzioni, curry, HOF</td><td>S1</td><td>trasformare funzioni seguendo i tipi: <code>curried</code>, <code>compose</code>, <code>andThen</code></td><td>2024</td></tr>
+<tr><td><b>B</b></td><td>Liste, ADT, fold</td><td>S2</td><td>pattern matching, fold al posto della ricorsione</td><td>2019, 2021, 2024</td></tr>
+<tr><td><b>C</b></td><td>Option, Either, for</td><td>S3</td><td>il fallimento come valore, propagare errori</td><td>2020, 2021, 2022</td></tr>
+<tr><td><b>D</b></td><td>LazyList</td><td>S4</td><td>non forzare, <code>take</code>/<code>zip</code>/<code>unfold</code>, spiegare la pigrizia</td><td>2019–2023, 2025</td></tr>
+<tr><td><b>E</b></td><td>State e RNG</td><td>S5</td><td>far passare lo stato con <code>for</code> su <code>State</code></td><td>2021</td></tr>
+<tr><td><b>F</b></td><td>Property-based testing</td><td>S6–S7</td><td>scrivere proprietà, <code>Arbitrary</code>, <code>Gen</code>, leggi</td><td><b>tutti e 7</b></td></tr>
+<tr><td><b>G</b></td><td>Parser combinators</td><td>S8</td><td>riusare un parser dato con <code>map</code>, scrivere nuovi parser</td><td>2020, 2023, 2024, 2025</td></tr>
+<tr><td><b>H</b></td><td>Monoid, Functor, Monad, type class</td><td>S9</td><td>istanze <code>given</code>, <code>using</code>, <code>sequence</code>, context bound</td><td>2019, 2020, 2021, 2024, 2025</td></tr>
+<tr><td><b>I</b></td><td>Sistema di tipi</td><td>S3, S9</td><td>varianza, tipi indicizzati, <code>extension</code>, polimorfismo ricorsivo</td><td>2020, 2022</td></tr>
+<tr><td><b>J</b></td><td>Programmazione probabilistica</td><td>S10</td><td>costruire un modello, campionare, condizionare</td><td>2019, 2023 (nel 2024 solo come <code>Dist</code> monade, in H)</td></tr>
+<tr><td><b>K</b></td><td>Lenses</td><td>S14</td><td>Lens o Optional, leggi Get-Put / Put-Get / Put-Put</td><td>2019, 2023, 2025</td></tr>
+<tr><td><b>L</b></td><td>Semantica e interpreti</td><td>S11</td><td>valutatore con eccezioni, stato, output; <code>flatMap</code> nell'interprete</td><td>mai (nuova nel 2026)</td></tr>
+</tbody></table></div>
+<div class="box esame" data-tit="Cosa dicono i numeri">
+<ul>
+<li><b>Il testing (F) è in ogni prova.</b> È la famiglia più sicura: da 1 a 3 domande ogni anno.</li>
+<li>LazyList (D), monadi e type class (H) e parser (G) sono i tre blocchi più pesanti dopo il testing.</li>
+<li>Dal 2023 <b>quasi tutte le domande sono "scrivi codice o test"</b>: "leggi i tipi" è sparito e "spiega in inglese" è rimasto una sola volta (2025 Q6, leggi della lente). Dal 2023 il file deve anche compilare.</li>
+<li>La programmazione probabilistica (J) c'è nelle prove 2019, 2023 e 2024, con librerie diverse: Figaro, poi Pigaro. Nel 2026 la libreria è Probula.</li>
+</ul></div>
+</section>
+<section>
+<h2>A · Funzioni, curry, funzioni di ordine superiore</h2>
+<p class="piccolo">S1 · compare nel 2024 (4 domande su 12) · si risolve seguendo i tipi</p>
+<h3>Cosa descrive il testo</h3>
+<p>Una firma con tante frecce: "trasforma <code>goodPairs</code> in una funzione curried", "scrivi <code>curriedNested</code>". Non c'è un problema da risolvere: c'è un <b>puzzle di tipi</b>.</p>
+<h3>Idea</h3>
+<p>Le uniche cose che hai in mano sono i parametri e le funzioni date. L'implementazione è quasi sempre <b>forzata dai tipi</b>: scrivi il tipo che devi produrre, apri una lambda per ogni freccia, e chiama la funzione data con i soli valori disponibili.</p>
+<h3>Schema</h3>
+<pre class="cod" data-lang="scala">def curry[A, B, C](f: (A, B) =&gt; C): A =&gt; (B =&gt; C) = a =&gt; b =&gt; f(a, b)
+def compose[A, B, C](f: B =&gt; C, g: A =&gt; B): A =&gt; C = a =&gt; f(g(a))
+
+// 2024 Q1–Q4 (compilati con Scala 3.8.4)
+def goodPairs[A](l: List[A], good: (A, A) =&gt; Boolean): Boolean =
+  l.zip(l.drop(1)).forall(good.tupled)
+def goodPairsCurried[A]: List[A] =&gt; ((A, A) =&gt; Boolean) =&gt; Boolean =
+  goodPairs[A].curried
+def curriedNested[A, B, C, D](f: ((A, B) =&gt; C) =&gt; D): (A =&gt; B =&gt; C) =&gt; D =
+  f.compose(Function.uncurried)
+def goodPairsHotCurry[A]: List[A] =&gt; (A =&gt; A =&gt; Boolean) =&gt; Boolean =
+  goodPairs[A].curried.andThen(curriedNested)</pre>
+<figure class="passi" data-titolo="Perché goodPairs[A].curried.andThen(curriedNested) ha il tipo giusto" data-legenda="dato:dato,ora:cosa cambia,due:secondo ruolo,ok:risultato,no:scartato">
+<div class="passo"><div class="espr">goodPairs[A]  :  (List[A], <mark class="dato">(A,A) => Boolean</mark>) => Boolean</div><p class="nota">Il metodo diventa una funzione a due argomenti.</p></div>
+<div class="passo"><div class="espr">.curried  :  List[A] => (<mark class="dato">((A,A) => Boolean)</mark> => Boolean)</div><p class="nota"><code>.curried</code> separa il primo argomento dal resto.</p></div>
+<div class="passo"><div class="espr">curriedNested  :  ((<mark class="dato">(A,A) => Boolean</mark>) => D) => (<mark class="ok">A => A => Boolean</mark>) => D</div><p class="nota">Prende una funzione il cui argomento è <code>(A,A)=>Boolean</code> e la rende curried.</p></div>
+<div class="passo"><div class="espr">List[A] => ( <mark class="ora">curriedNested</mark> applicato al secondo pezzo )</div><p class="nota"><code>andThen</code> applica <code>curriedNested</code> al <b>risultato</b> di <code>.curried</code>.</p></div>
+<div class="passo"><div class="espr">List[A] => (<mark class="ok">A => A => Boolean</mark>) => Boolean</div><p class="nota">Il tipo richiesto dall'esercizio.</p></div>
+</figure>
+<h3>Trappole</h3>
+<ul>
+<li><code>goodPairs[A]</code> è un <b>metodo</b>: viene trasformato in funzione (eta-espansione) prima di <code>.curried</code>. Se non usi <code>curried</code>, perdi punti.</li>
+<li><code>f.curried</code> su <code>curriedNested</code> è sbagliato: <code>f</code> ha un solo argomento. Confondere <code>compose</code> (<i>f dopo g</i>) con <code>andThen</code> (<i>g poi f</i>).</li>
+<li>Liste vuote e di un elemento in <code>goodPairs</code>: <code>true</code>. <code>sliding(2)</code> con <code>case List(a,b)</code> non è esaustivo.</li>
+</ul>
+</section>
+<section>
+<h2>B · Liste, tipi algebrici, fold</h2>
+<p class="piccolo">S2 · 2019 Q1, 2021 Q1, 2024 Q1 · è il "riscaldamento" di molte prove</p>
+<h3>Cosa descrive il testo</h3>
+<p>Una funzione su liste o su un <code>enum</code> da scrivere "con una funzione di ordine superiore", "senza ricorsione" o "con un fold". Oppure un pattern matching su un tipo semplice (<code>winner</code>, <code>hello</code>).</p>
+<h3>Idea</h3>
+<p>Scegli lo strumento nell'ordine che il corso premia: <b>funzione dedicata</b> (<code>map</code>, <code>filter</code>, <code>forall</code>, <code>zip</code>) → <b>fold</b> → ricorsione esplicita. Un <code>match</code> su coppia gestisce due valori insieme.</p>
+<h3>Schema</h3>
+<pre class="cod" data-lang="scala">// 2019 Q1: match sulla coppia, il caso "_" prende solo i pareggi
+def winner(a: Move, b: Move): Result = (a, b) match
+  case (Rock, Scissors) | (Paper, Rock) | (Scissors, Paper) =&gt; Some(P1)
+  case (Scissors, Rock) | (Rock, Paper) | (Paper, Scissors) =&gt; Some(P2)
+  case _ =&gt; None
+
+// 2023 Q1: fold con la stessa semantica della ricorsione
+l.foldLeft(0)((z, n) =&gt; if n % 2 == 1 then z + 1 else z)</pre>
+<figure class="passi" data-titolo="foldLeft contro foldRight su List(1, 2, 3), costruendo una lista" data-legenda="dato:dato,ora:cosa cambia,due:secondo ruolo,ok:risultato,no:scartato">
+<div class="passo"><div class="espr">foldLeft(Nil)((acc, a) => <mark class="ora">a :: acc</mark>)</div><p class="nota">L'accumulatore va avanti, ogni elemento va in testa.</p></div>
+<div class="passo"><div class="espr">Nil → <mark class="dato">1</mark> :: Nil → <mark class="dato">2</mark> :: 1 :: Nil → <mark class="dato">3</mark> :: 2 :: 1 :: Nil</div><p class="nota">Risultato: <mark class="ok">List(3, 2, 1)</mark> (rovesciata).</p></div>
+<div class="passo"><div class="espr">foldRight(Nil)((a, acc) => <mark class="ora">a :: acc</mark>)</div><p class="nota">Prima il resto, poi l'elemento davanti.</p></div>
+<div class="passo"><div class="espr">1 :: (2 :: (3 :: <mark class="dato">Nil</mark>))</div><p class="nota">Risultato: <mark class="ok">List(1, 2, 3)</mark> (stesso ordine).</p></div>
+</figure>
+<h3>Trappole</h3>
+<ul>
+<li>Nel 2023 la versione "elegante" <code>z + (n % 2)</code> è <b>sbagliata</b>: per i negativi <code>-3 % 2 == -1</code>. Tieni <code>n % 2 == 1</code>.</li>
+<li>Una ricorsione "a mano" dove il testo dice <i>choose the right higher order function</i> prende meno punti.</li>
+<li>Qualifica i casi di un <code>enum</code> (<code>Printable.Triangle</code>) o importali.</li>
+</ul>
+</section>
+<section>
+<h2>C · Option, Either, for</h2>
+<p class="piccolo">S3 · 2020 Q1, 2021 Q2, 2022 Q1–Q2 · funzioni totali, errori come valori</p>
+<h3>Cosa descrive il testo</h3>
+<p>"Scrivi la versione pura, nella monade Option" (<code>smashOption</code>), "restituisci <code>None</code> se c'è un'eccezione" (<code>SafeTotal</code>), "l'<b>ultimo</b> errore" (<code>sequence</code> per <code>Either</code>).</p>
+<h3>Idea</h3>
+<p>Il fallimento diventa un valore nel tipo (<code>Option</code>, <code>Either</code>). Si concatena con <code>flatMap</code> o con <code>for</code>: se un passo è <code>None</code>/<code>Left</code> tutto il resto è saltato. <b>Scrivi sempre il tipo di ritorno</b> quando il testo lo chiede.</p>
+<h3>Schema (compilati con Scala 3.8.4)</h3>
+<pre class="cod" data-lang="scala">def smashOption[A](l: List[A]): Option[List[(A, A)]] = l match
+  case Nil =&gt; Some(Nil)
+  case h1 :: h2 :: tl =&gt; for s &lt;- smashOption(tl) yield (h1, h2) :: s
+  case _ =&gt; None                          // lunghezza dispari
+
+def sequence[Err, A](as: List[Either[Err, A]]): Either[Err, List[A]] =
+  as.foldRight[Either[Err, List[A]]](Right(Nil)): (ea, eas) =&gt;
+    for xs &lt;- eas; a &lt;- ea yield a :: xs   // eas PRIMA: vince l'ultimo errore
+
+def safeTotal[A, B](f: A =&gt; B): A =&gt; Option[B] =
+  a =&gt; try Some(f(a)) catch case _: Throwable =&gt; None</pre>
+<figure class="passi" data-titolo="sequence(List(Left('a'), Right(1), Left('b'))): perché esce Left('b')" data-legenda="dato:dato,ora:cosa cambia,due:secondo ruolo,ok:risultato,no:scartato">
+<div class="passo"><div class="espr">foldRight parte da destra: acc = <mark class="dato">Right(Nil)</mark></div><p class="nota">Il "neutro".</p></div>
+<div class="passo"><div class="espr">elemento <mark class="no">Left("b")</mark>: eas = Right(Nil), ea = Left("b")</div><p class="nota">Il <code>for</code> valuta <code>eas</code> (ok) e poi <code>ea</code>: restituisce <code>Left("b")</code>.</p></div>
+<div class="passo"><div class="espr">elemento Right(1): eas = <mark class="no">Left("b")</mark></div><p class="nota"><code>eas</code> è già <code>Left</code>: il <code>for</code> si ferma, resta <code>Left("b")</code>.</p></div>
+<div class="passo"><div class="espr">elemento Left("a"): eas = <mark class="no">Left("b")</mark></div><p class="nota">Valutando <code>eas</code> per primo, <code>Left("a")</code> non viene mai letto.</p></div>
+<div class="passo"><div class="espr">risultato: <mark class="ok">Left("b")</mark></div><p class="nota">Con <code>foldLeft</code> o accumulatore uscirebbe il <b>primo</b> errore.</p></div>
+</figure>
+<h3>Trappole</h3>
+<ul>
+<li>Ordine degli errori: <code>foldLeft</code> o ricorsione in coda danno il <b>primo</b>; <code>foldRight</code> con <code>eas</code> valutato per primo dà l'<b>ultimo</b>.</li>
+<li>Tradurre in <code>Option</code> perde l'errore. <code>SafeTotal</code> restituisce una <b>funzione</b> <code>A => Option[B]</code>, non un <code>Option</code>.</li>
+<li>Propaga sempre il <code>None</code>: non lanciare eccezioni dove il testo chiede il valore puro.</li>
+</ul>
+</section>
+<section>
+<h2>D · LazyList e pigrizia</h2>
+<p class="piccolo">S4 · 2019, 2020, 2021, 2022, 2023, 2025 · codice <i>e</i> spiegazione in inglese</p>
+<h3>Cosa descrive il testo</h3>
+<p>Una lista <b>infinita</b> o potenzialmente lunga ("stream of results", "primes", "running RMSE") e una funzione da scrivere <i>senza forzarla</i>. Spesso segue una domanda in inglese: "perché <code>size(s) >= 10</code> è un problema?", "cosa succederebbe se questi operatori fossero stretti?".</p>
+<h3>Idea</h3>
+<p>Compone solo operazioni <b>pigre</b> (<code>map</code>, <code>filter</code>, <code>zip</code>, <code>take</code>, <code>zipWith</code>, <code>unfold</code>) e forza <b>alla fine</b>, dopo un <code>take</code>. <code>toList</code> su una lista infinita non termina.</p>
+<h3>Schema (compilati su <code>LazyList</code> della libreria standard)</h3>
+<pre class="cod" data-lang="scala">// 2019 Q4: take PRIMA di filter e toList, divisione in Double
+results.take(500).filter(_ == Some(P1)).toList.size / 500.0
+
+// 2025 Q1: RMSE su liste finite, senza ricorsione
+val (sum, n) = gs.zip(ps).foldLeft((0.0, 0)):
+  case ((s, k), (g, p)) =&gt; (s + (g - p) * (g - p), k + 1)
+math.sqrt(sum / n)
+
+// 2025 Q3: running RMSE su liste infinite: lo stato è (code, somma, n)
+def runningRMSE(gs: LazyList[Double], ps: LazyList[Double]): LazyList[Double] =
+  LazyList.unfold((gs, ps, 0.0, 0)):
+    case (g #:: gt, p #:: pt, s, n) =&gt;
+      val s1 = s + (g - p) * (g - p)
+      Some((math.sqrt(s1 / (n + 1)), (gt, pt, s1, n + 1)))
+    case _ =&gt; None
+
+// 2023 Q1 / 2021 Q8: take è non stretta
+def checkIfLongerEqThan[A](s: LazyList[A])(n: Int): Boolean = size(s.take(n)) == n</pre>
+<p>Verificato: <code>runningRMSE(LazyList(0.8,1.0,2.2), LazyList(1.0,1.0,2.0))</code> dà <code>0.2, 0.141…, 0.163…</code>, come nel testo del 2025.</p>
+<figure class="passi" data-titolo="l.map(f).filter(p).headOption su LazyList(1,2,3,4,5): un elemento alla volta" data-legenda="dato:dato,ora:cosa cambia,due:secondo ruolo,ok:risultato,no:scartato">
+<div class="passo"><div class="espr"><mark class="dato">map</mark> e <mark class="dato">filter</mark> restituiscono subito</div><p class="nota">Nessun elemento calcolato: due liste di "ricette".</p></div>
+<div class="passo"><div class="espr">headOption chiede la testa → map 1 → <mark class="ora">10</mark></div><p class="nota">Il filtro guarda 10: <code>10 > 15</code> falso, scartato.</p></div>
+<div class="passo"><div class="espr">il filtro chiede il successivo → map 2 → <mark class="ok">20</mark></div><p class="nota"><code>20 > 15</code> vero: si ferma.</p></div>
+<div class="passo"><div class="espr">3, 4, 5: <mark class="no">mai toccati</mark></div><p class="nota">Le stampe escono alternate: map 1, filter 10, map 2, filter 20.</p></div>
+</figure>
+<h3>Trappole</h3>
+<ul>
+<li><code>toList</code>, <code>size</code>, <code>foldLeft</code> sono <b>stretti</b>: su una lista infinita non terminano. Metti sempre un <code>take</code> prima.</li>
+<li>Divisione intera: <code>/ 500</code> invece di <code>/ 500.0</code>. Ricorsione quando il testo dice "do not use recursion".</li>
+<li>Ricalcolare <code>rmse</code> su ogni prefisso è O(n²): "running" vuol dire portarsi lo stato (somma e n).</li>
+<li>Con <code>-Xfatal-warnings</code> (2025) un <code>match</code> non esaustivo non compila: aggiungi <code>case _ =></code>.</li>
+</ul>
+<div class="box inglese" data-tit="Risposte pronte in inglese">
+<p><i>"size traverses the whole list until Empty, so on an infinite list it never terminates, and on a long list it does useless work, because after 10 elements the answer is already known."</i></p>
+<p><i>"If filter, zip and cons were strict, primeFrom would try to build all the primes, which are infinitely many, and run out of time and memory before primesApart could return its first pair."</i></p>
+<p><i>"Without liveness, filter keeps looking for the next success and never finds it: the program hangs when the head is forced. As long as nothing is forced the bug stays hidden."</i></p></div>
+</section>
+<section>
+<h2>E · State e numeri casuali</h2>
+<p class="piccolo">S5 · 2021 Q4 · è la base di <code>Gen</code> (F) e dei parser (G)</p>
+<h3>Cosa descrive il testo</h3>
+<p>"Genera una tripla casuale (a, b, x) con a ≤ x ≤ b usando <code>Rand</code>" (<code>riid</code>). Si devono <b>combinare</b> più valori casuali senza toccare lo stato a mano.</p>
+<h3>Idea</h3>
+<p>Ogni passo prende lo stato e restituisce <code>(valore, stato nuovo)</code>. Un <code>for</code> su <code>State</code> fa passare lo stato al posto tuo: <code>x &lt;- m</code> significa "esegui <code>m</code>, prendi il valore, usa lo stato aggiornato per il passo dopo".</p>
+<h3>Schema</h3>
+<pre class="cod" data-lang="scala">lazy val riid: Rand[(Int, Int, Double)] = for
+  a &lt;- State(RNG.int)
+  b &lt;- State(RNG.int)
+  x &lt;- State(RNG.double)
+yield
+  val l = a min b
+  val r = a max b
+  (l, r, l + (r.toDouble - l) * x)    // r.toDouble - l: evita l'overflow di r - l</pre>
+<figure class="passi" data-titolo="Come passa lo stato in for a <- m1; b <- m2 yield (a, b)" data-legenda="dato:dato,ora:cosa cambia,due:secondo ruolo,ok:risultato,no:scartato">
+<div class="passo"><div class="espr">stato <mark class="dato">s0</mark> → m1.run(s0) = (<mark class="ora">a</mark>, <mark class="due">s1</mark>)</div><p class="nota">Primo valore e primo stato nuovo.</p></div>
+<div class="passo"><div class="espr">stato <mark class="due">s1</mark> → m2.run(s1) = (<mark class="ora">b</mark>, <mark class="due">s2</mark>)</div><p class="nota">Il secondo parte da <code>s1</code>, <b>non</b> da <code>s0</code>.</p></div>
+<div class="passo"><div class="espr">risultato: ((<mark class="ora">a</mark>, <mark class="ora">b</mark>), <mark class="ok">s2</mark>)</div><p class="nota">Se riusi <code>s0</code> escono due numeri uguali.</p></div>
+</figure>
+<h3>Trappole</h3>
+<ul>
+<li><b>Ordina</b> <code>a</code> e <code>b</code>: a caso può essere <code>a > b</code>. Tre valori scollegati sono una soluzione debole.</li>
+<li>Niente <code>nextInt</code> a mano e niente API imperative (penalizzato). <code>RNG.double</code> è in <code>[0, 1)</code>.</li>
+<li>La sottrazione <code>r - l</code> tra <code>Int</code> può andare in overflow prima di <code>.toDouble</code>.</li>
+</ul>
+</section>
+<section>
+<h2>F · Property-based testing</h2>
+<p class="piccolo">S6–S7 · compare in <b>tutte e 7</b> le prove · è l'investimento più sicuro</p>
+<h3>Cosa descrive il testo</h3>
+<p>"Scrivi una proprietà che dice…", "dai un <code>Arbitrary</code> per…", "scrivi un generatore di…", "scrivi le due leggi come <code>Prop</code>". Si tratta quasi sempre di <b>ScalaCheck standard</b> (<code>forAll</code>, <code>Gen</code>, <code>Arbitrary</code>), non del <code>Gen</code> del libro.</p>
+<h3>Idea</h3>
+<p>Una proprietà è una frase "per ogni input che soddisfa X, vale Y". Il difficile è <b>tradurre la frase</b> e scegliere il generatore giusto. Quando serve un tipo con vincoli, componi i generatori con <code>for</code>.</p>
+<h3>Schema</h3>
+<pre class="cod" data-lang="scala">// 2021 Q9: precondizione con ==&gt;
+forAll { (s: LazyList[Int]) =&gt; (s != LazyList.Empty) ==&gt; checkIfLongerEqThan(s.append(s))(2) }
+
+// 2022 Q5: generatore ristretto ai pari + take su lista infinita
+forAll(Gen.choose(2, 20).suchThat(_ % 2 == 0)) { n =&gt;
+  primesApart(n).take(5).forAll { (a, b) =&gt; b - a == n } }
+
+// 2023 Q8: due forAll annidati (tabella, poi posizione)
+forAllNoShrink(qGen(2, 3)) { q =&gt;
+  forAll(Gen.choose(0, 1), Gen.choose(0, 2)) { (s, a) =&gt; update(q, s, a)(q(s)(a), 0.0) ?= q } }
+
+// 2024 Q7: Arbitrary come parametro implicito, ritenta se entrambe None
+def genEither[A, B](using Arbitrary[Option[A]], Arbitrary[Option[B]]): Gen[Either[A, B]] = ...
+
+// 2025 Q2: given generico per coppie di liste di EGUALE lunghezza
+given [A: Arbitrary]: Arbitrary[(LazyList[A], LazyList[A])] = Arbitrary(for
+  n &lt;- Gen.choose(1, 50)
+  xs &lt;- Gen.listOfN(n, arbitrary[A])
+  ys &lt;- Gen.listOfN(n, arbitrary[A])
+yield (LazyList(xs*), LazyList(ys*)))</pre>
+<figure class="passi" data-titolo="Da una frase italiana alla proprietà (esempio 2025 Q2: 'RMSE non è mai negativo')" data-legenda="dato:dato,ora:cosa cambia,due:secondo ruolo,ok:risultato,no:scartato">
+<div class="passo"><div class="espr">"per <mark class="dato">ogni coppia di liste finite, non vuote, di uguale lunghezza</mark>"</div><p class="nota">Serve un generatore che le costruisce: nessuno è già pronto.</p></div>
+<div class="passo"><div class="espr">given Arbitrary[(LazyList[A], LazyList[A])] = <mark class="ora">stesso n per xs e ys</mark></div><p class="nota">Due liste indipendenti avrebbero lunghezze diverse.</p></div>
+<div class="passo"><div class="espr">"<mark class="ok">rmse(gs, ps) >= 0</mark>"</div><p class="nota">La proprietà vera e propria: una riga.</p></div>
+<div class="passo"><div class="espr">lista vuota → 0/0 = <mark class="no">NaN</mark>, e NaN >= 0 è falso</div><p class="nota">Per questo <code>n</code> parte da 1. I <code>Double</code> casuali possono dare <code>NaN</code>/<code>Infinity</code>.</p></div>
+</figure>
+<h3>Trappole</h3>
+<ul>
+<li>Un solo esempio non è PBT. Dimentichi la precondizione <code>==></code>. <code>whenever</code> scarta molti casi: meglio una proprietà combinata.</li>
+<li><code>given</code> o <code>implicit def</code> con context bound <code>[A: Arbitrary]</code>: la versione generica vale i punti pieni, quella per <code>Int</code> no.</li>
+<li><code>Gen.choose</code> ha estremi <b>inclusi</b>. Annidato dentro una lista infinita usa <code>take</code>.</li>
+<li>Se entrambe le opzioni sono <code>None</code>, <code>.get</code> crasha: devi riprovare.</li>
+</ul>
+</section>
+<section>
+<h2>G · Parser combinators</h2>
+<p class="piccolo">S8 · 2020, 2023, 2024, 2025 · si incollano parser piccoli</p>
+<h3>Cosa descrive il testo</h3>
+<p>Una grammatica a parole ("righe di interi separati da virgole", "alberi <code>(42()())</code>") e un parser da scrivere. Spesso <b>un parser è già dato</b> e il compito è <i>riusarlo</i> (2023 Q2–Q3).</p>
+<h3>Idea</h3>
+<p>Una riga di grammatica diventa una riga di codice. Operatori: <code>**</code> coppia, <code>|*</code> scarta il sinistro, <code>*|</code> scarta il destro, <code>|</code> alternativa, <code>.?</code> zero o una, <code>.*</code> zero o più, <code>.map</code> trasforma. Se un parser esiste già, non riscriverlo: <b><code>parser.map(...)</code></b>.</p>
+<h3>Schema</h3>
+<pre class="cod" data-lang="scala">// 2023 Q2, Q3: riusa il parser dato
+lazy val longestLine: Parser[Int] = parser.map(l =&gt; l.map(_.size).max)
+lazy val allLinesTheSame: Parser[Boolean] = parser.map(l =&gt; l.map(_.size).toSet.size == 1)
+
+// 2020 Q9: CSV di interi (il caso del file vuoto e dell'ultimo \n)
+val row = (WS.? |* INT ** ("," |* WS.? |* INT).* *| WS.?).map((h, t) =&gt; h :: t)
+val csv = (row ** (NL |* row).* *| NL.?).map((h, t) =&gt; h :: t)
+lazy val parser = csv.?.map(_.getOrElse(Nil))
+
+// 2025 Q9: alberi, grammatica LL(1): T -&gt; '(' (B | L), B -&gt; INT T T ')', L -&gt; ')'
+lazy val parser: Parser[Tree[Int]] = char('(') |* (branch | leaf)
+lazy val branch = (int ** parser ** parser *| char(')')).map { case ((v, l), r) =&gt; Branch(v, l, r) }
+lazy val leaf   = char(')').map(_ =&gt; Leaf)</pre>
+<figure class="passi" data-titolo="(INT ** (','|*INT).*) su '1,2'" data-legenda="dato:dato,ora:cosa cambia,due:secondo ruolo,ok:risultato,no:scartato">
+<div class="passo"><div class="espr">INT legge <mark class="dato">1</mark></div><p class="nota">Resta <code>",2"</code>.</p></div>
+<div class="passo"><div class="espr">("," |* INT): legge <mark class="no">,</mark> e lo scarta, poi INT legge <mark class="dato">2</mark></div><p class="nota"><code>|*</code> tiene solo il destro.</p></div>
+<div class="passo"><div class="espr">.*: riprova; fallisce senza consumare → <mark class="ok">lista [2]</mark></div><p class="nota"><code>many</code> si ferma al primo fallimento non committed.</p></div>
+<div class="passo"><div class="espr">** unisce: (<mark class="dato">1</mark>, <mark class="dato">List(2)</mark>) → .map((h, t) => h :: t) = <mark class="ok">List(1, 2)</mark></div><p class="nota">La coppia diventa una lista.</p></div>
+</figure>
+<h3>Trappole</h3>
+<ul>
+<li>I parser <b>non tornano indietro</b> dopo aver consumato input: se due alternative iniziano con lo stesso carattere, scrivi la grammatica in forma LL(1) (2025 Q9).</li>
+<li>Parser ricorsivi o che si richiamano a vicenda: <code>lazy val</code>, altrimenti NPE/StackOverflow.</li>
+<li>File vuoto (<code>.?</code> + <code>getOrElse(Nil)</code>), <code>\n</code> finale opzionale (<code>NL.?</code>), spazi attorno ai numeri.</li>
+<li>2024 Q8: lo scheletro dice <code>Parser[Int]</code>, il testo dice <code>Parser[Option[Int]]</code>: segui il testo. Su <code>Parsers</code> astratto non esiste <code>regex</code>: costruisci con <code>char</code>, <code>|</code>, <code>many1</code>.</li>
+</ul>
+</section>
+<section>
+<h2>H · Monoid, Functor, Monad e type class</h2>
+<p class="piccolo">S9 · 2019, 2020, 2021, 2024, 2025 · given, using, context bound</p>
+<h3>Cosa descrive il testo</h3>
+<p>"Dai l'<b>evidenza</b> che <code>Tree</code> è un <code>Functor</code>", "scrivi <code>sequence</code>/<code>loop</code> per una monade qualunque", "la firma deve richiedere che <code>A</code> sia <code>Splittable</code>", "implementa <code>Monad[Dist]</code>".</p>
+<h3>Idea</h3>
+<p>Un'istanza è un <code>given</code> con i metodi richiesti. Una funzione che <b>pretende</b> un'istanza la chiede con un <b>context bound</b> <code>[A: Splittable]</code> (cioè <code>(using Splittable[A])</code>). Per la monade scrivi solo <code>unit</code> e <code>flatMap</code>; <code>map</code> arriva gratis.</p>
+<h3>Schema</h3>
+<pre class="cod" data-lang="scala">// 2020 Q2 (compilato): la firma "esige" l'istanza; il dispari va splittato, non scartato
+def smash[A: Splittable](l: List[A]): List[(A, A)] = l match
+  case Nil =&gt; Nil
+  case List(h) =&gt; summon[Splittable[A]].split(h) :: Nil
+  case h1 :: h2 :: tl =&gt; (h1, h2) :: smash(tl)
+
+// 2025 Q7: Functor di un albero con il valore nel nodo
+given Functor[Tree]:
+  extension [A](t: Tree[A])
+    def map[B](f: A =&gt; B): Tree[B] = t match
+      case Leaf =&gt; Leaf
+      case Branch(v, l, r) =&gt; Branch(f(v), l.map(f), r.map(f))
+
+// 2021 Q13: il "while" come ricorsione nella monade (unit rimette body(a) dentro)
+def loop[A, M[_]: Monad](initial: M[A])(body: A =&gt; A)(p: A =&gt; Boolean): M[A] =
+  initial.flatMap { a =&gt; if p(a) then loop(summon[Monad[M]].unit(body(a)))(body)(p) else initial }
+
+// 2024 Q5, Q6: Dist è una monade; multUni richiede l'istanza nella firma
+given distMonad: Monad[Dist]:
+  def unit[A](a: =&gt; A) = Dirac(a)
+  extension [A](fa: Dist[A]) override def flatMap[B](f: A =&gt; Dist[B]) = fa.flatMap(f)
+def multUni[T](n: Int, values: T*)(using Monad[Dist]): Dist[List[T]] =
+  summon[Monad[Dist]].sequence(List.fill(n)(Pigaro.uniform(values*)))</pre>
+<figure class="passi" data-titolo="replicateM(2, List(1, 2)) nella monade List" data-legenda="dato:dato,ora:cosa cambia,due:secondo ruolo,ok:risultato,no:scartato">
+<div class="passo"><div class="espr">sequence(List(<mark class="dato">List(1,2)</mark>, <mark class="dato">List(1,2)</mark>))</div><p class="nota"><code>replicateM</code> = <code>sequence</code> di 2 copie.</p></div>
+<div class="passo"><div class="espr">a = <mark class="ora">1</mark>: resto → List(1,2) → <mark class="ok">(1,1), (1,2)</mark></div><p class="nota"><code>flatMap</code> su List = per ogni <code>a</code>, un ramo.</p></div>
+<div class="passo"><div class="espr">a = <mark class="ora">2</mark>: <mark class="ok">(2,1), (2,2)</mark></div><p class="nota">Tutte le combinazioni: <code>List(List(1,1), List(1,2), List(2,1), List(2,2))</code>.</p></div>
+<div class="passo"><div class="espr">nella monade Option: Some(5) → <mark class="ok">Some(List(5,5))</mark></div><p class="nota">Con <code>None</code> in mezzo: <code>None</code>.</p></div>
+</figure>
+<h3>Trappole</h3>
+<ul>
+<li>Dimenticare il context bound o <code>using</code> nella firma quando il testo dice "the signature must enforce…".</li>
+<li><code>unit</code> di <code>Dist</code> è <code>Dirac</code> (valore certo), non <code>uniform</code>. <code>unit</code> è by-name. <code>override</code> sull'extension <code>flatMap</code>.</li>
+<li>Nel <code>loop</code>: <code>p</code> è la condizione per <b>continuare</b>, e <code>body(a)</code> va rimesso nella monade con <code>unit</code>.</li>
+<li>2021 Q3: la firma <code>sequence[Err, A, F[_]: Foldable]</code> ha ritorno <code>Either[Err, F[A]]</code>.</li>
+<li>L'istanza <code>given</code> va in un posto visibile alle funzioni che la usano (2025 Q7 → Q8).</li>
+</ul>
+</section>
+<section>
+<h2>I · Sistema di tipi: varianza, tipi indicizzati, extension</h2>
+<p class="piccolo">S3, S9 · 2020 Q7–Q8, 2022 Q6–Q11 (circa metà del 2022)</p>
+<h3>Cosa descrive il testo</h3>
+<p>Un tipo costruito apposta (<code>SizedList[+A, S]</code> con <code>Inc[S]</code> che conta gli elementi, <code>Box</code>, <code>Better[T]</code>). Domande: "annota il tipo di <code>l1</code>", "scrivi <code>third</code> che si può chiamare solo con almeno 3 elementi", "marca la chiamata <b>polimorficamente ricorsiva</b>", "invariante, covariante o contravariante?".</p>
+<h3>Idea</h3>
+<p>Qui <b>il tipo è il programma</b>: conta i <code>Inc</code>. Una funzione che accetta solo liste di almeno 3 elementi lo dichiara nella firma con tre <code>Inc</code>. Una ricorsione è polimorfa quando la chiamata ricorsiva usa <b>parametri di tipo diversi</b> da quelli esterni.</p>
+<h3>Schema (compilato con Scala 3.8.4)</h3>
+<pre class="cod" data-lang="scala">case class Inc[A]()
+sealed trait SizedList[+A, S]
+case object Empty extends SizedList[Nothing, Null]
+case class Cons[A, S](hd: A, tl: SizedList[A, S]) extends SizedList[A, Inc[S]]
+
+val l2: SizedList[Int, Inc[Inc[Inc[Null]]]] = Cons(3, Cons(1, Cons(4, Empty)))
+
+def third[A, S](l: SizedList[A, Inc[Inc[Inc[S]]]]): A =
+  head(tail(tail[A, Inc[Inc[S]]](l)))        // la lista deve avere 3 Inc nel TIPO
+
+// 2022 Q7: extension infissa che richiede l'istanza
+extension [T: Better](self: T)
+  infix def betterThan(that: T): Boolean = summon[Better[T]].leftBetter(self, that)</pre>
+<figure class="passi" data-titolo="append è polimorficamente ricorsiva" data-legenda="dato:dato,ora:cosa cambia,due:secondo ruolo,ok:risultato,no:scartato">
+<div class="passo"><div class="espr">append[A, <mark class="dato">S</mark>](a, <mark class="dato">l: SizedList[A, S]</mark>): SizedList[A, <mark class="ok">Inc[S]</mark>]</div><p class="nota">Il risultato ha un <code>Inc</code> in più.</p></div>
+<div class="passo"><div class="espr">caso Cons(h, tl): S = Inc[S2] per un certo <mark class="due">S2</mark></div><p class="nota"><code>S2</code> è la lunghezza della coda, nota solo dal pattern match.</p></div>
+<div class="passo"><div class="espr">Cons(h, <mark class="ora">append[A, S2](a, tl)</mark>)</div><p class="nota">La chiamata interna usa <code>S2</code>, <b>non</b> <code>S</code>: parametri di tipo diversi.</p></div>
+</figure>
+<h3>Varianza: la risposta tipo del 2022 Q11</h3>
+<ul>
+<li><code>SizedList[+A, S]</code>: <b>covariante</b> in <code>A</code>, <b>invariante</b> in <code>S</code> (nessun segno = invariante).</li>
+<li>Esempio corretto: <code>SizedList[Nothing, Inc[Null]] &lt;: SizedList[Int, Inc[Null]]</code>.</li>
+<li>Sbagliato (viola solo <code>A</code>): <code>SizedList[Int, Null] &lt;: SizedList[Nothing, Null]</code>. Sbagliato (viola solo <code>S</code>): <code>SizedList[Int, Null] &lt;: SizedList[Int, Inc[Inc[Null]]]</code>.</li>
+</ul>
+<h3>Trappole</h3>
+<ul>
+<li><code>Null</code>, non <code>Nothing</code>, per la lista vuota. Esplicita i parametri di <code>tail</code> per aiutare l'inferenza.</li>
+<li>Ogni esempio sbagliato deve violare <b>un solo</b> parametro. <code>infix</code> serve in Scala 3 per scrivere <code>a betterThan b</code>.</li>
+<li>2020 Q8 (<code>Box[+A]</code>, <code>Pack(hd: A, tl: Box[List[A]])</code>): <code>h :: flattenBox[List[A]](t).flatten</code>, con l'annotazione <code>[List[A]]</code>.</li>
+</ul>
+</section>
+<section>
+<h2>J · Programmazione probabilistica</h2>
+<p class="piccolo">S10 · 2019 (Figaro), 2023 (Pigaro); nel 2024 <code>Dist</code> compare come monade (H) · nel 2026 la libreria è Probula</p>
+<h3>Cosa descrive il testo</h3>
+<p>Un gioco o un esperimento ("Alice sceglie a caso, Bob mai Scissors") e: "costruisci le distribuzioni", "componi la partita", "stima con 10000 campioni la probabilità che Alice vinca".</p>
+<h3>Idea</h3>
+<p>Una distribuzione è una <b>monade</b>: <code>map</code>/<code>flatMap</code>/<code>map2</code> compongono modelli, <code>sample(N)</code> pesca <code>N</code> esiti, <code>.pr(evento)</code> ne dà la frequenza. Variabili <b>indipendenti</b> hanno <b>nomi distinti</b>.</p>
+<h3>Schema (2023, Pigaro) e la stessa idea in Probula (2026)</h3>
+<pre class="cod" data-lang="scala">// 2023 Q4–Q6
+val Alice = Pigaro.uniform("alice")(Rock, Paper, Scissors)
+val Bob   = Pigaro.uniform("bob")(Rock, Paper)               // 0.5 e 0.5, mai Scissors
+def game(p1: Strategy, p2: Strategy): Dist[Result] = p1.map2(p2)(winner)
+lazy val aliceFraction: Double = game(Alice, Bob).sample(10000).pr(Some(P1))
+
+// 2026, esercizio 10 (Probula): urna con n nere e 1 rossa
+def pick(n: Int): Dist[Ball] = Probula.bernoulli[Ball]((1.0 / (n + 1)).pr, Red, Black)
+def move(player: Player, n: Int): Dist[Player] =
+  pick(n).flatMap:
+    case Red   =&gt; Dirac(player)
+    case Black =&gt; move(next(player), n - 1)</pre>
+<figure class="passi" data-titolo="Urna con 2 nere e 1 rossa: chi pesca per primo vince con probabilità 2/3" data-legenda="dato:dato,ora:cosa cambia,due:secondo ruolo,ok:risultato,no:scartato">
+<div class="passo"><div class="espr">1° pesca: <mark class="ok">Red</mark> con prob. <mark class="dato">1/3</mark> → vince il primo</div><p class="nota"><code>pick(2)</code> = bernoulli(1/3, Red, Black).</p></div>
+<div class="passo"><div class="espr">altrimenti <mark class="no">Black</mark> (2/3): tocca al secondo, move(next, 1): Red con prob. 1/2</div><p class="nota">Restano 1 nera e 1 rossa.</p></div>
+<div class="passo"><div class="espr">se esce Black (1/2): tocca di nuovo al primo, move(.., 0): Red certo</div><p class="nota">Con <code>n=0</code> <code>pick</code> dà sempre Red: la ricorsione finisce.</p></div>
+<div class="passo"><div class="espr">P(primo vince) = 1/3 + 2/3 · 1/2 · 1 = <mark class="ok">2/3</mark></div><p class="nota">Formula del corso per <code>n</code> pari: <code>(1 + n/2)/(n + 1)</code>.</p></div>
+</figure>
+<h3>Trappole</h3>
+<ul>
+<li>Il primo argomento di <code>uniform</code> è il <b>nome</b> della variabile: due strategie con lo stesso nome risultano correlate.</li>
+<li>L'evento è <code>Some(P1)</code>, non <code>P1</code>. Serve il <code>given rng</code> in scope. Non chiamare <code>winner</code> direttamente su una <code>Dist</code>: usa <code>map</code>/<code>map2</code>.</li>
+<li>Probula: <code>condition</code> vuole una funzione sulla <b>coppia intera</b> (<code>_._2 == Paula</code>), non due parametri.</li>
+</ul>
+</section>
+<section>
+<h2>K · Lenses</h2>
+<p class="piccolo">S14 · 2019 Q13–Q15, 2023 Q9, 2025 Q6 · una lente è un getter e un setter con tre leggi</p>
+<h3>Cosa descrive il testo</h3>
+<p>"Scrivi una lente tra <code>Gen</code> e <code>Arbitrary</code>", "riscrivi <code>update</code> usando la lente", "questa lente è totale o parziale? <code>Lens</code> o <code>Optional</code>? Quali leggi soddisfa?".</p>
+<h3>Idea</h3>
+<p>Una <code>Lens[S, A]</code> ha <code>get: S => A</code> e <code>replace: A => S => S</code>. Se il valore <b>può non esistere</b> (indice fuori range) è un <code>Optional</code>, con <code>getOption</code>. Le leggi: <b>Get-Put</b> (rimettere ciò che leggi non cambia nulla), <b>Put-Get</b> (leggi ciò che hai scritto), <b>Put-Put</b> (la seconda scrittura vince).</p>
+<h3>Schema</h3>
+<pre class="cod" data-lang="scala">// 2025 Q6: Gen e Arbitrary sono "la stessa cosa" con un involucro
+def lens[A]: Lens[Arbitrary[A], Gen[A]] =
+  Lens[Arbitrary[A], Gen[A]](_.arbitrary)(g =&gt; _ =&gt; Arbitrary(g))
+// Put-Get: sì.  Get-Put: sì.  Put-Put: sì (replace ignora il vecchio valore)
+
+// 2023 Q9: Optional, quindi getOption e replace(valore)(struttura)
+val qsa = lens(s, a).getOption(q).get
+val value = (1 - alpha) * qsa + alpha * (reward + gamma * estimate)
+lens(s, a).replace(value)(q)</pre>
+<figure class="passi" data-titolo="Le tre leggi, a parole e con un esempio (lente sulla testa di una lista)" data-legenda="dato:dato,ora:cosa cambia,due:secondo ruolo,ok:risultato,no:scartato">
+<div class="passo"><div class="espr">put(<mark class="dato">get(s)</mark>, s) = s</div><p class="nota">Rimetto ciò che ho letto: <code>put(1, List(1,2)) = List(1,2)</code>.</p></div>
+<div class="passo"><div class="espr">get(put(<mark class="ora">a</mark>, s)) = <mark class="ora">a</mark></div><p class="nota">Leggo ciò che ho scritto: <code>get(put(9, List(1,2))) = 9</code>.</p></div>
+<div class="passo"><div class="espr">put(b, put(a, s)) = put(b, s)</div><p class="nota">La seconda scrittura cancella la prima. Fallisce se <code>put</code> cambia la <b>forma</b> (es. su lista vuota aggiunge elementi): 2019 Q15.</p></div>
+</figure>
+<h3>Trappole</h3>
+<ul>
+<li>Un'<b>Optional</b> non è una <b>Lens</b>: <code>getOption</code> restituisce <code>Option</code>. Rispondere "Lens" per un valore parziale è l'errore del 2019 Q13.</li>
+<li>Dai l'argomento di 1–2 righe per ogni legge, non solo Sì/No.</li>
+<li>Ordine di <code>replace</code>: prima il valore, poi la struttura.</li>
+</ul>
+</section>
+<section>
+<h2>L · Semantica e interpreti</h2>
+<p class="piccolo">S11 · <b>mai chiesta</b> nelle prove 2019–2025 · nuova nel 2026, quindi poco prevedibile</p>
+<h3>Cosa descrive il testo (negli esercizi del corso)</h3>
+<p>Un <b>valutatore</b> per termini <code>Cons(n)</code> e <code>Div(l, r)</code> con un effetto: eccezioni, stato (contare le divisioni), output (una traccia). Poi riscriverlo con <code>unit</code>/<code>flatMap</code> e con <code>for</code>.</p>
+<h3>Idea</h3>
+<p>La struttura dell'interprete (ricorsione sull'albero) è sempre la stessa. Cambia solo il <b>tipo del risultato</b> e il caso speciale: se il risultato è una monade, cambiare effetto vuol dire cambiare monade, non riscrivere l'interprete.</p>
+<h3>Schema (dalle slide)</h3>
+<pre class="cod" data-lang="scala">enum Term:
+  case Cons(value: Int)
+  case Div(left: Term, right: Term)
+
+enum M[+A]:                        // eccezioni
+  case Raise(e: String) extends M[Nothing]
+  case Return(a: A)
+
+def evalForYield(t: Term): M[Int] = t match
+  case Cons(n) =&gt; unit(n)
+  case Div(l, r) =&gt; for
+    lv &lt;- evalForYield(l)
+    rv &lt;- evalForYield(r)
+    res &lt;- if rv == 0 then Raise("Division by zero") else unit(lv / rv)
+  yield res</pre>
+<figure class="passi" data-titolo="Traccia dell'output per Div(Div(Cons(1972), Cons(2)), Cons(23)) (verificata dai test)" data-legenda="dato:dato,ora:cosa cambia,due:secondo ruolo,ok:risultato,no:scartato">
+<div class="passo"><div class="espr">eval(Cons(1972)) &lt;= <mark class="dato">1972</mark></div><p class="nota">Prima il figlio sinistro, poi il destro, poi la riga del nodo.</p></div>
+<div class="passo"><div class="espr">eval(Cons(2)) &lt;= <mark class="dato">2</mark></div><p class="nota">·</p></div>
+<div class="passo"><div class="espr">eval(Div(Cons(1972),Cons(2))) &lt;= <mark class="ora">986</mark></div><p class="nota"><code>1972 / 2</code>.</p></div>
+<div class="passo"><div class="espr">eval(Cons(23)) &lt;= <mark class="dato">23</mark></div><p class="nota">·</p></div>
+<div class="passo"><div class="espr">eval(Div(Div(…),Cons(23))) &lt;= <mark class="ok">42</mark></div><p class="nota"><code>986 / 23 = 42</code>. Output = concatenazione delle righe.</p></div>
+</figure>
+<div class="box attenzione" data-tit="Cosa è verificato e cosa no">
+<p>Le firme e le tracce vengono dagli esercizi e dai test del corso. Le regole di inferenza (NUM, DIV-NORM, DIV-EXC, EXC-PROP) sono dalle slide. Le pagine dell'articolo di Wadler non sono nel repo: la guida non le cita.</p></div>
+</section>
+</main>
+</body>
+</html>

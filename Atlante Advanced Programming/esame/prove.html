@@ -15,35 +15,93 @@
 <header class="testa">
   <div class="occhiello"><span>Esame</span><span>allenamento</span></div>
   <h1>Vecchie prove e allenamento</h1>
-  <p class="lede">Le prove degli anni passati <b>non sono ancora pubblicate</b>: le slide della settimana 1 dicono che lo saranno. Nel frattempo qui trovi domande nello stile degli esercizi del corso, sugli argomenti delle settimane 1–4, con soluzioni compilate e verificate.</p>
+  <p class="lede">Le prove 2019–2025 sono nel repo (<code>14-old-exams</code>). Qui: com'è fatta ogni prova, alcune domande <b>ufficiali svolte</b> con soluzioni compilate, e domande nello stile degli esercizi per allenarti. L'analisi completa è nelle <a href="famiglie.html">famiglie di domande</a> e nella <a href="banca.html">banca esercizi</a>.</p>
 </header>
 
 <section>
-  <h2>Stato delle prove ufficiali</h2>
+  <h2>Le sette prove</h2>
   <div class="tab-wrap"><table class="tab">
-    <thead><tr><th>Cosa</th><th>Stato al 15 settembre 2026</th></tr></thead>
+    <thead><tr><th>Prova</th><th>Data</th><th>Domande</th><th>Di cosa parla</th></tr></thead>
     <tbody>
-      <tr><td>Vecchi esami ADPRO</td><td>annunciati ("old exams will be published"), non ancora nel repo né su LearnIT</td></tr>
-      <tr><td>Examination Syllabus</td><td>esce su LearnIT entro l'ultima lezione</td></tr>
-      <tr><td>Lezione sull'esame</td><td>settimana 13, martedì 24 novembre</td></tr>
+      <tr><td>2019</td><td>16 dic 2019</td><td>15</td><td>Rock-Paper-Scissors (ADT, Stream, Figaro) · monadi e testing · lenses</td></tr>
+      <tr><td>2020</td><td>6 gen 2021</td><td>9</td><td>tema <code>smash</code> · stream · extension · ricorsione polimorfa · parser CSV</td></tr>
+      <tr><td>2021</td><td>10 gen 2022</td><td>13</td><td>ADT · Either/Foldable · State · LazyList + PBT · Par · Monad e <code>loop</code></td></tr>
+      <tr><td>2022</td><td>4 gen 2023</td><td>11</td><td>Option · primi su LazyList · typeclass · <code>SizedList</code> e varianza</td></tr>
+      <tr><td>2023</td><td>5 gen 2024</td><td>9</td><td>fold · parser · Pigaro · testing di <code>update</code> · lenses</td></tr>
+      <tr><td>2024</td><td>6 gen 2025</td><td>12</td><td>curry/HOF · Dist come monade · Gen · parser · type class e HKT · leggi</td></tr>
+      <tr><td>2025</td><td>5 gen 2026</td><td>9</td><td>RMSE su LazyList · PBT · lenses · Functor · parser di alberi (senza soluzione ufficiale nel repo)</td></tr>
     </tbody>
   </table></div>
-  <div class="box domanda-tua" data-tit="Quando arrivano">
-    <p>Appena le vecchie prove sono disponibili, questa pagina diventa l'analisi di com'è fatto l'esame: tipi di domande, argomenti più frequenti, soluzioni passo passo.</p>
+  <div class="box esame" data-tit="Le prove recenti sono il modello migliore">
+    <p>2023–2025 hanno lo stile attuale: Scala 3, il file deve compilare, domande indipendenti. Dal 2023 quasi tutte le domande sono "scrivi codice o test".</p>
   </div>
 </section>
 
 <section>
-  <h2>Come allenarsi adesso</h2>
+  <h2>Domande ufficiali svolte</h2>
+  <p class="piccolo">Soluzioni delle prove ufficiali, compilate con Scala 3.8.4 (<code>-Werror -source:future</code>) su liste e funzioni standard.</p>
+
+  <h3>2024 Q1–Q4 · curry e funzioni di ordine superiore</h3>
+  <p>Quattro domande indipendenti, guidate dai tipi. Chiedono di trasformare <code>goodPairs</code> "programmaticamente" con la libreria standard.</p>
+  <details class="soluzione"><summary>Mostra la soluzione</summary><div>
+<pre class="cod" data-lang="scala">def goodPairs[A](l: List[A], good: (A, A) =&gt; Boolean): Boolean =
+  l.zip(l.drop(1)).forall(good.tupled)
+
+def goodPairsCurried[A]: List[A] =&gt; ((A, A) =&gt; Boolean) =&gt; Boolean =
+  goodPairs[A].curried
+
+def curriedNested[A, B, C, D](f: ((A, B) =&gt; C) =&gt; D): (A =&gt; B =&gt; C) =&gt; D =
+  f.compose(Function.uncurried)
+
+def goodPairsHotCurry[A]: List[A] =&gt; (A =&gt; A =&gt; Boolean) =&gt; Boolean =
+  goodPairs[A].curried.andThen(curriedNested)</pre>
+    <p><code>zip</code> con la coda dà le coppie consecutive; <code>forall</code> le controlla tutte (vera sulle liste vuote e di un elemento). <code>goodPairs[A]</code> è un metodo: viene trasformato in funzione prima di <code>.curried</code>. In <code>curriedNested</code>, <code>Function.uncurried</code> trasforma <code>A =&gt; B =&gt; C</code> in <code>(A, B) =&gt; C</code> e <code>compose</code> lo passa a <code>f</code>. Provato: <code>goodPairs(List(1,2,3), _ &lt; _)</code> è vero, <code>List(1,2,2)</code> falso.</p>
+  </div></details>
+
+  <h3>2020 Q1 · smashOption nella monade Option</h3>
+  <p>"Scrivi la versione pura, <b>includi il tipo di ritorno</b>": <code>smash</code> lancia un'eccezione se la lista ha lunghezza dispari; qui diventa <code>None</code>.</p>
+  <details class="soluzione"><summary>Mostra la soluzione</summary><div>
+<pre class="cod" data-lang="scala">def smashOption[A](l: List[A]): Option[List[(A, A)]] = l match
+  case Nil =&gt; Some(Nil)
+  case h1 :: h2 :: tl =&gt; for s &lt;- smashOption(tl) yield (h1, h2) :: s
+  case _ =&gt; None</pre>
+    <p>Lista vuota: <code>Some(Nil)</code>. Due elementi o più: le coppie del resto, con <code>(h1, h2)</code> in testa; il <code>for</code> propaga il <code>None</code>. Un elemento solo: <code>None</code>. Provato: <code>List(1,2,3,4)</code> dà <code>Some(List((1,2), (3,4)))</code>, <code>List(1,2,3)</code> dà <code>None</code>.</p>
+  </div></details>
+
+  <h3>2021 Q2 · sequence per Either: l'<i>ultimo</i> errore</h3>
+  <details class="soluzione"><summary>Mostra la soluzione</summary><div>
+<pre class="cod" data-lang="scala">def sequence[Err, A](as: List[Either[Err, A]]): Either[Err, List[A]] =
+  as.foldRight[Either[Err, List[A]]](Right(Nil)): (ea, eas) =&gt;
+    for xs &lt;- eas; a &lt;- ea yield a :: xs</pre>
+    <p><code>foldRight</code> tratta il resto per primo e nel <code>for</code> si valuta <code>eas</code> <b>prima</b> di <code>ea</code>: se il resto ha già un <code>Left</code>, quello vince. Provato: <code>List(Left("a"), Right(1), Left("b"))</code> dà <code>Left("b")</code>. Con <code>foldLeft</code> uscirebbe il primo errore.</p>
+  </div></details>
+
+  <h3>2025 Q3 · runningRMSE con unfold</h3>
+  <p>Liste <b>infinite</b>; l'<code>n</code>-esimo elemento è l'RMSE delle prime <code>n</code> coppie. "Do not use direct recursion." Idea ricostruita: la soluzione ufficiale 2025 non è nel repo.</p>
+  <details class="soluzione"><summary>Mostra la soluzione</summary><div>
+<pre class="cod" data-lang="scala">def runningRMSE(gs: LazyList[Double], ps: LazyList[Double]): LazyList[Double] =
+  LazyList.unfold((gs, ps, 0.0, 0)):
+    case (g #:: gt, p #:: pt, s, n) =&gt;
+      val s1 = s + (g - p) * (g - p)
+      Some((math.sqrt(s1 / (n + 1)), (gt, pt, s1, n + 1)))
+    case _ =&gt; None</pre>
+    <p>Lo stato è (resto di <code>gs</code>, resto di <code>ps</code>, somma dei quadrati, <code>n</code>). A ogni passo si aggiorna la somma e si emette <code>sqrt(somma / n)</code>: ogni elemento costa O(1), non si ricalcola il prefisso. Provato con <code>(0.8, 1.0, 2.2)</code> contro <code>(1.0, 1.0, 2.0)</code>: <code>0.2, 0.141…, 0.163…</code>, come nel testo. Con <code>-Xfatal-warnings</code> serve il <code>case _</code>.</p>
+  </div></details>
+  <p>Tutte le altre sono nella <a href="banca.html">banca esercizi</a>, con la famiglia e l'idea.</p>
+</section>
+
+<section>
+  <h2>Come allenarti</h2>
   <ol>
-    <li>Rifai gli esercizi degli homework <b>senza guardare</b> la tua soluzione, con i test aperti (<code>scala-cli test . -w</code>).</li>
+    <li>Prendi una prova (<code>14-old-exams/2024</code>), copri la soluzione e <b>compila</b> (<code>scala-cli compile .</code>): dal 2023 il file deve compilare.</li>
     <li>Rispetta i vincoli di stile: niente <code>var</code>, <code>return</code>, eccezioni se non richieste.</li>
+    <li>Per ogni domanda scrivi prima la <b>famiglia</b> (<a href="triage.html">triage</a>) e il tipo di ritorno.</li>
     <li>Allena le domande aperte: spiega <b>in inglese</b>, in 3–4 frasi, perché una soluzione funziona.</li>
   </ol>
 </section>
 
 <section>
-  <h2>Domande in stile esame</h2>
+  <h2>Altre domande in stile esame</h2>
   <p class="piccolo">Scritte per l'atlante sul modello degli esercizi del corso: non sono prove ufficiali. Ogni soluzione è stata compilata con Scala 3.8.4.</p>
 
   <h3>1 · Contare con un fold</h3>

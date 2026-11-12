@@ -106,6 +106,25 @@ window.SCENE = window.SCENE || {};
   
 })();
 </script>
+<script>
+window.SCENE = window.SCENE || {};
+SCENE.square = {
+  w: 560, h: 240, lato: false,
+  legenda: 'ora:la riga che cambia,ok:funziona,no:fallisce',
+  oggetti: [
+    { id: 'cod', tipo: 'rett', x: 30, y: 30, w: 500, h: 44, t: 'def square(n: Int): Int = ???', tono: 'no' },
+    { id: 'out', tipo: 'rett', x: 30, y: 100, w: 500, h: 44, t: 'test Ex01: NotImplementedError', tono: 'no' },
+    { id: 'c', tipo: 'testo', x: 280, y: 190, t: '', size: 13, bold: true }
+  ],
+  passi: [
+    { nota: 'Partenza: la funzione è un segnaposto <code>???</code>. Compila, ma se la chiami lancia <code>NotImplementedError</code>: il test dell\'esercizio 1 fallisce.' },
+    { nota: 'Sostituisco <code>???</code> con <code>n * n</code>. Il quadrato è il numero moltiplicato per se stesso: niente ciclo, niente variabile.', set: { cod: { t: 'def square(n: Int): Int = n * n', tono: 'ora' } } },
+    { nota: 'Salvo: <code>scala-cli test . -w</code> rilancia i test da solo. Quello dell\'esercizio 1 ora passa.', set: { cod: { tono: 'ok' }, out: { t: 'test Ex01: passato', tono: 'ok' } } },
+    { nota: 'Punto 6: aggiungo nel main <code>println(square(4))</code> dopo il valore assoluto. Con <code>scala-cli run . -M adpro.intro.printAbs</code> escono due righe.', set: { cod: { t: 'println(formatAbs(magic - 100));  println(square(4))', tono: 'ora' }, out: { t: 'The absolute value of -58 is 58  /  16', tono: 'ok' } } },
+    { nota: 'Un limite da conoscere: <code>Int</code> ha 32 bit e il resto si "avvolge" senza errore. 65536 · 65536 = 2<sup>32</sup>, che in 32 bit fa <b>0</b>. Verificato eseguendo il codice.', set: { cod: { t: 'square(65536)', tono: 'ora' }, out: { t: '= 0  (overflow silenzioso)', tono: 'no' }, c: { t: 'Int è aritmetica modulo 2^32', tono: 'no' } } }
+  ]
+};
+</script>
 </head>
 <body>
 <main class="pagina">
@@ -188,7 +207,7 @@ end MyModule</pre>
 </section>
 
 <section>
-  <h2><code>val</code>, <code>var</code>, <code>def</code>: tre modi di dare un nome</h2>
+  <h2><code>val</code>, <code>def</code>, <code>lazy val</code>, <code>var</code>: quattro modi di dare un nome</h2>
   <div class="tab-wrap"><table class="tab">
     <thead><tr><th>Scritto</th><th>Quando calcola</th><th>Si può cambiare?</th><th>Nel corso</th></tr></thead>
     <tbody>
@@ -220,6 +239,29 @@ end MyModule</pre>
 scala&gt; abs(-7)
 val res0: Int = 7</pre>
   <figure class="scena" data-scena="scalacli" data-titolo="test -w, repl, clean"></figure>
+</section>
+
+<section>
+  <h2>Esercizio 1: completare <code>square</code></h2>
+  <p>Il primo esercizio ti chiede di sostituire <code>???</code> in <code>square</code> e di stampare il risultato dal <code>main</code>. È una funzione da una riga, ma ti fa girare tutto il giro: scrivere, salvare, vedere i test passare.</p>
+  <figure class="codice" data-titolo="square e il main con la riga in più">
+<pre data-lang="scala">def square(n: Int): Int =
+  n * n
+
+@main def printAbs: Unit =
+  assert(magic - 84 == magic.-(84))
+  println(formatAbs(magic - 100))
+  println(square(4))</pre>
+    <ol class="spiega">
+      <li data-righe="1" data-segna="(n: Int)@dato"><p>Stessa forma di <code>abs</code>: un parametro <code>n</code> di tipo <code>Int</code>, risultato <code>Int</code>.</p></li>
+      <li data-righe="2" data-segna="n * n@ok"><p>Il corpo è un'espressione. Uso <code>n * n</code> perché il quadrato è il numero moltiplicato per se stesso. Non serve <code>return</code> né nessuna variabile.</p></li>
+      <li data-righe="7" data-segna="square(4)@ora"><p>La riga aggiunta (punto 6 dell'esercizio). Stampa <code>16</code> dopo la riga del valore assoluto. Se la vedi, sai che la tua funzione è stata chiamata davvero.</p></li>
+    </ol>
+  </figure>
+  <figure class="scena" data-scena="square" data-titolo="Da ??? a square funzionante"></figure>
+  <div class="box attenzione" data-tit="Overflow">
+    <p>Se <code>n</code> è grande il risultato non entra in 32 bit e Scala non dà errore: <code>square(65536)</code> vale <code>0</code> e <code>square(46341)</code> vale <code>-2147479015</code> (verificato eseguendo). Per l'esercizio non conta, ma è bene saperlo.</p>
+  </div>
 </section>
 
 <section>

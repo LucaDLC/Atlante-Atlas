@@ -31,6 +31,28 @@ SCENE.dij = {
 };
 })();
 </script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+const N = (id,x,y,t) => ({id,tipo:'nodo',x,y,t,r:20});
+const A = (id,da,a,t,extra) => Object.assign({id,tipo:'arco',da,a,dir:true,t},extra||{});
+SCENE.dijneg = {
+  w: 520, h: 250, lato: true,
+  legenda: 'dato:distanza provvisoria,ok:fissata da Dijkstra,no:sbagliata,ora:arco negativo',
+  oggetti: [
+    N('s',60,125,'s'), N('a',260,50,'a'), N('b',260,200,'b'),
+    A('sa','s','a','2'), A('sb','s','b','3'), A('ba','b','a','−2',{tono:'ora'}),
+    {id:'c1',tipo:'testo',x:20,y:242,t:'',size:12,bold:true,anchor:'start'}
+  ],
+  passi: [
+    { nota: "Tre nodi e un arco di peso <b>−2</b> (b → a). La distanza vera di a è <code>s → b → a = 3 − 2 = 1</code>, non 2.", set:{s:{tono:'dato',sotto:'d=0'},c1:{t:'distanza vera di a: 1'}} },
+    { nota: "Dijkstra rilassa i vicini di s: <code>d(a) = 2</code>, <code>d(b) = 3</code>. Il minimo è a: lo <b>fissa come definitivo</b>.", set:{a:{tono:'ok',sotto:'d=2 fissato'},b:{tono:'dato',sotto:'d=3'},c1:{t:'a fissato con d = 2'}} },
+    { nota: "Poi fissa b (3) e guarda b → a: 3 − 2 = 1 &lt; 2. Ma a è già definitivo e Dijkstra non lo riesamina: resta <b>2, sbagliato</b>. Il presupposto «un cammino più lungo non costa meno» è falso con pesi negativi.", set:{b:{tono:'ok',sotto:'d=3'},a:{tono:'no',sotto:'d=2 ✗ (vero: 1)'},c1:{t:'Dijkstra dà 2, la risposta giusta è 1',tono:'no'}} },
+    { nota: "Bellman-Ford non fissa nulla in anticipo: ripete il rilassamento su <b>tutti</b> gli archi, quindi al giro successivo corregge a a 1.", set:{a:{tono:'ok',sotto:'d=1'},c1:{t:'Bellman-Ford: d(a) = 1',tono:'ok'}} }
+  ]
+};
+})();
+</script>
 </head>
 <body>
 <main class="pagina">
@@ -61,6 +83,7 @@ ogni arco aggiunge un costo <code>≥ 0</code>, quindi un cammino più lungo di 
 garanzia cade: un cammino che sembra più caro può diventare economico più avanti.</p>
 <div class="box attenzione" data-tit="Pesi negativi: non Dijkstra"><p>Con pesi negativi Dijkstra sbaglia, anche se non ci sono cicli negativi.
 Per quel caso si usa Bellman-Ford (pagina della programmazione dinamica).</p></div>
+<figure class="scena" data-scena="dijneg" data-titolo="Con un arco negativo Dijkstra sbaglia"></figure>
 </section>
 <section>
   <h2>Costo e coda di priorità</h2>

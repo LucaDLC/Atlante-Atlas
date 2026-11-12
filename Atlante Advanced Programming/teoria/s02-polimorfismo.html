@@ -38,6 +38,23 @@ window.SCENE = window.SCENE || {};
   const F = (id, x1, y1, x2, y2, t, extra) => Object.assign({ id, tipo: 'vett', x1, y1, x2, y2, t }, extra || {});
   const C = (id, x, y, valori, extra) => Object.assign({ id, tipo: 'celle', x, y, cw: 52, ch: 40, valori, indici: false }, extra || {});
 
+    SCENE.valori = {
+      w: 560, h: 270, lato: false,
+      legenda: 'dato:lista di partenza,ora:funzione passata a map,ok:risultato,no:valore sovrascritto',
+      oggetti: [
+        T('tm', 70, 66, 'mixed', { bold: true }), C('M', 130, 46, ['-1', '2', '-3', '4'], { cw: 60, toni: { 0: 'dato', 1: 'dato', 2: 'dato', 3: 'dato' } }),
+        T('e', 280, 125, 'map(mixed, abs)', { bold: true, size: 14, tono: 'ora' }),
+        T('tr', 70, 176, 'risultato', { bold: true }), C('R', 130, 156, ['', '', '', ''], { cw: 60, toni: {} })
+      ],
+      passi: [
+        { nota: "Una funzione è un <b>valore</b>, come un Int: si passa come argomento. <code>map</code> la riceve e la applica a ogni elemento. Qui sopra c'è la lista, sotto comparirà il risultato." },
+        { nota: "<code>map(mixed, abs)</code>: <code>abs</code> a ogni cella. Il risultato è una lista <b>nuova</b>.", set: { R: { valori: ['1', '2', '3', '4'], toni: { 0: 'ok', 1: 'ok', 2: 'ok', 3: 'ok' } } } },
+        { nota: "<code>factorial compose abs</code> è una funzione sola: prima abs, poi factorial. Per −3: abs → 3, factorial → 6. Si passa a map come prima.", set: { e: { t: 'map(mixed, factorial compose abs)' }, R: { valori: ['1', '2', '6', '24'], toni: { 0: 'ok', 1: 'ok', 2: 'ok', 3: 'ok' } } } },
+        { nota: "<b>mixed</b> è rimasta com'era: map non modifica, costruisce. Con le funzioni pure puoi riusare la lista di partenza quante volte vuoi.", set: { e: { t: 'mixed vale ancora List(-1, 2, -3, 4)', tono: 'ok' } } },
+        { nota: "Versione imperativa (Array): <code>mixed(i) = abs(mixed(i))</code> <b>sovrascrive</b> le celle. I valori originali sono persi, e per avere anche il fattoriale serve una seconda copia (mixed1, slide 7).", set: { e: { t: 'for i <- 0 until n do mixed(i) = abs(mixed(i))', tono: 'no' }, tr: { t: '' }, M: { valori: ['1', '2', '3', '4'], toni: { 0: 'no', 1: 'no', 2: 'no', 3: 'no' } }, R: { valori: ['', '', '', ''], toni: {} } } }
+      ]
+    };
+
     SCENE.generalizza = {
       w: 580, h: 230, lato: true,
       legenda: 'no:tipo fisso,dato:segnaposto A,due:segnaposto B,ok:uso con tipi diversi',
@@ -134,6 +151,35 @@ map[String, Int](List("ciao", "a"))(_.length) →   List(4, 1)</div>
     <div class="passo"><div class="espr"><mark class="ok">List(1, 2, 3)</mark></div><p class="nota">Stessa lunghezza, stesso ordine, valori trasformati. La lista originale non è cambiata.</p></div>
   </figure>
   <figure class="scena" data-scena="mappa" data-titolo="Il buco f, riempito due volte"></figure>
+</section>
+
+<section>
+  <h2>Le funzioni sono valori: <code>abs</code>, <code>compose</code></h2>
+  <p>Nella programmazione funzionale una funzione è un valore come un <code>Int</code>: la passi a un'altra funzione, la restituisci, la componi. Una funzione che riceve funzioni si chiama di <b>ordine superiore</b> (higher-order function, HOF). <code>map</code> è una HOF. Non c'è niente di speciale: sono solo funzioni.</p>
+  <figure class="codice" data-titolo="map con abs e con una composizione (slide 7)">
+<pre data-lang="scala">def abs(n: Int): Int = if n &lt; 0 then -n else n
+def factorial(n: Int): Int = if n &lt;= 1 then 1 else n * factorial(n - 1)
+
+val mixed = List(-1, 2, -3, 4)
+val a = map(mixed, abs)                                                    // List(1, 2, 3, 4)
+val b = map(mixed, factorial compose abs)                                  // List(1, 2, 6, 24)
+val c = map[Int, String](mixed, ((n: Int) => n.toString) compose factorial compose abs)  // List("1", "2", "6", "24")</pre>
+    <ol class="spiega">
+      <li data-righe="1-2" data-segna="abs@dato|factorial@dato"><p>Sono due metodi normali, <code>Int =&gt; Int</code>. Dove serve una funzione, Scala li trasforma da solo in valori-funzione: scrivi solo il nome, senza parentesi.</p></li>
+      <li data-righe="5" data-segna="map(mixed, abs)@ora"><p>Passo <code>abs</code> a <code>map</code> come argomento. Ogni cella passa per <code>abs</code>. (Le slide scrivono <code>map(mixed)(abs)</code>, con due gruppi di parametri; nel file <code>Exercises.scala</code> il corso usa <code>map(l, f)</code>.)</p></li>
+      <li data-righe="6" data-segna="factorial compose abs@due"><p><code>f compose g</code> è la funzione <code>x =&gt; f(g(x))</code>: si applica <b>prima g</b>, poi f. Qui prima <code>abs</code> (toglie il segno), poi <code>factorial</code>. È ancora una funzione <code>Int =&gt; Int</code>, quindi va bene per <code>map</code>.</p></li>
+      <li data-righe="7" data-segna="[Int, String]@due|n.toString@ok"><p>Se l'ultima funzione della catena restituisce <code>String</code>, anche <code>B</code> diventa <code>String</code>: da <code>List[Int]</code> esce <code>List[String]</code>. Il corpo di <code>map</code> non cambia (slide 8).</p></li>
+    </ol>
+  </figure>
+  <p>Il confronto della slide 7: in stile imperativo si <b>sovrascrive</b> l'array. Per calcolare anche il fattoriale serve un secondo array, perché il primo non ha più i valori originali.</p>
+  <pre class="cod" data-lang="scala">val mixed = Array(-1, 2, -3, 4)
+for i &lt;- 0 until mixed.length do
+  mixed(i) = abs(mixed(i))                  // mixed ora è Array(1, 2, 3, 4)
+
+val mixed1 = Array(-1, 2, -3, 4)
+for i &lt;- 0 until mixed1.length do
+  mixed1(i) = factorial(abs(mixed1(i)))     // mixed1 ora è Array(1, 2, 6, 24)</pre>
+  <figure class="scena" data-scena="valori" data-titolo="Funzioni passate a map, contro l'array sovrascritto"></figure>
 </section>
 
 <section>

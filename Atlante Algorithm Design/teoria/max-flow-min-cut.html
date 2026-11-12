@@ -29,6 +29,32 @@ SCENE.cut = {
 };
 })();
 </script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+const N = (id,x,y,t) => ({id,tipo:'nodo',x,y,t,r:20});
+const A = (id,da,a,t,extra) => Object.assign({id,tipo:'arco',da,a,dir:true,t},extra||{});
+const base = {s:{tono:null},a:{tono:null},b:{tono:null},t:{tono:null},sa:{tono:null},sb:{tono:null},ab:{tono:null},at:{tono:null},bt:{tono:null}};
+const mix = o => Object.assign({}, base, o);
+SCENE.cut2 = {
+  w: 540, h: 270, lato: true,
+  legenda: 'ok:lato A del taglio (con s),no:archi che contano (da A verso B)',
+  oggetti: [
+    N('s',60,135,'s'), N('a',240,55,'a'), N('b',240,215,'b'), N('t',440,135,'t'),
+    A('sa','s','a','10'), A('sb','s','b','10'), A('ab','a','b','2'), A('at','a','t','4'), A('bt','b','t','10'),
+    {id:'c1',tipo:'testo',x:20,y:258,t:'',size:12,bold:true,anchor:'start'}
+  ],
+  passi: [
+    { nota: "Una rete con capacità 10, 10, 2, 4, 10. Un taglio (A, B) ha s in A e t in B; la sua capacità è la somma degli archi che vanno da <b>A verso B</b> (quelli da B verso A non contano). Elenco i quattro tagli possibili.", set:mix({}) },
+    { nota: "A = {s}: contano sa e sb, <b>10 + 10 = 20</b>.", set:mix({s:{tono:'ok'},sa:{tono:'no'},sb:{tono:'no'},c1:{t:'A = {s}: 20'}}) },
+    { nota: "A = {s, a}: contano sb (10), ab (2), at (4): <b>16</b>.", set:mix({s:{tono:'ok'},a:{tono:'ok'},sb:{tono:'no'},ab:{tono:'no'},at:{tono:'no'},c1:{t:'A = {s, a}: 16'}}) },
+    { nota: "A = {s, b}: contano sa (10) e bt (10): <b>20</b>. L'arco ab va da B ad A: non conta.", set:mix({s:{tono:'ok'},b:{tono:'ok'},sa:{tono:'no'},bt:{tono:'no'},c1:{t:'A = {s, b}: 20'}}) },
+    { nota: "A = {s, a, b}: contano at (4) e bt (10): <b>14</b>, il minimo. Ogni flusso ha valore ≤ 14.", set:mix({s:{tono:'ok'},a:{tono:'ok'},b:{tono:'ok'},at:{tono:'no'},bt:{tono:'no'},c1:{t:'A = {s, a, b}: 14 (minimo)'}}) },
+    { nota: "E un flusso di valore 14 esiste: s → a → t con 4, s → b → t con 10. Tutti e due gli archi del taglio sono saturi. Quindi <b>max flow = min cut = 14</b>. Nella residua finale da s si raggiunge a (sa ha ancora 6) e da a si raggiunge b (ab ha ancora 2): A = {s, a, b}, proprio il taglio minimo.", set:mix({s:{tono:'ok'},a:{tono:'ok'},b:{tono:'ok'},sa:{t:'4/10'},sb:{t:'10/10'},ab:{t:'0/2'},at:{t:'4/4',tono:'no'},bt:{t:'10/10',tono:'no'},c1:{t:'max flow = min cut = 14',tono:'ok'}}) }
+  ]
+};
+})();
+</script>
 </head>
 <body>
 <main class="pagina">
@@ -48,6 +74,7 @@ capacità degli archi che vanno da <code>A</code> a <code>B</code>. Ogni flusso 
   <h2>Il teorema</h2>
 <p><b>Max-flow min-cut</b>: valore del flusso massimo = capacità del taglio minimo. Il taglio si trova alla fine: <code>A</code> è l'insieme dei nodi raggiungibili da <code>s</code>
 nella rete residua finale. Gli archi che escono da <code>A</code> sono il taglio.</p>
+  <figure class="scena" data-scena="cut2" data-titolo="Tutti i tagli di una rete: il minimo vale il flusso massimo"></figure>
 </section>
 <section>
   <h2>Menger: cammini disgiunti</h2>

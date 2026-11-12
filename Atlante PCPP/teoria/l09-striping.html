@@ -92,6 +92,25 @@
 </section>
 
 <section>
+  <h2>Le nove versioni del contatore, una per una</h2>
+  <p>Le slide confrontano nove implementazioni della stessa interfaccia (<code>add(delta)</code> e <code>longValue()</code>). Il carico di prova: N thread, da 1 a 32, aggiungono ognuno i = 1…K con K = 10 000 000 / N. Si misura il tempo totale. Buona scalabilità vuol dire che il tempo <b>scende</b> aumentando i thread (finché N è sotto il numero di core); cattiva vuol dire che resta costante o sale.</p>
+  <div class="tab-wrap"><table class="tab"><thead><tr><th>#</th><th>nome</th><th>idea</th><th>cosa risolve o non risolve</th></tr></thead><tbody>
+    <tr><td>1</td><td>SyncLongAdder</td><td>un lock solo su un <code>long</code></td><td>corretto, ma tutti si contendono lock e linea di cache</td></tr>
+    <tr><td>2</td><td>SyncLongArrayAdder</td><td>64 lock per 64 <code>long</code>, indice = threadId % 64 (lock striping)</td><td>meno contesa sui lock, ma stripe vicine stanno sulla stessa linea: false sharing</td></tr>
+    <tr><td>3</td><td>SyncLongArrayAdderPadded</td><td>come 2, con padding</td><td>ogni contatore e ogni lock su una linea propria</td></tr>
+    <tr><td>4</td><td>WrappedAtomicLong</td><td>un solo <code>AtomicLong</code> (<code>addAndGet</code>)</td><td>senza lock, ma un solo valore condiviso: ping-pong della linea</td></tr>
+    <tr><td>5</td><td>MyAtomicLong</td><td>un <code>AtomicLong</code> con ciclo CAS scritto a mano</td><td>equivale al precedente: lo stesso ciclo <code>do { … } while (!compareAndSet(…))</code> della <a href="l06-progresso.html">pagina sul progresso</a></td></tr>
+    <tr><td>6</td><td>ThreadLocalAtomicLong</td><td>un <code>AtomicLong</code> per thread (in un <code>ThreadLocal</code>, più una mappa di tutti per sommare)</td><td>nessuna contesa sulla scrittura; la slide avverte: male con moltissimi thread</td></tr>
+    <tr><td>7</td><td>LongAdderArray</td><td>un <code>AtomicLongArray</code> di 64 posti, indice = threadId % 64</td><td>come 2 ma con operazioni atomiche invece di lock; senza padding</td></tr>
+    <tr><td>8</td><td>LongAdderArrayPadded</td><td>come 7, con padding</td><td>stripe atomiche su linee diverse</td></tr>
+    <tr><td>9</td><td>WrappedLongAdder</td><td><code>java.util.concurrent.atomic.LongAdder</code></td><td>la versione ufficiale: striping e padding fatti bene</td></tr>
+  </tbody></table></div>
+  <div class="box idea" data-tit="Quattro idee, combinate">
+    <p>Le nove versioni sono combinazioni di quattro scelte: <b>lock</b> o <b>atomico</b> (CAS) per proteggere un valore; <b>un valore</b> o <b>tante stripe</b>; <b>con o senza padding</b>; <b>per thread</b> (ThreadLocal) o indicizzato dall'id del thread. Il risultato delle slide sul laptop M3 pro: il lock unico è il peggiore; le migliori sono lo striping con padding, <code>LongAdder</code> e <code>AtomicLongArray</code> con padding. Sul server AMD EPYC la slide annota che i tempi sono «molto peggiori» che sul laptop.</p>
+  </div>
+</section>
+
+<section>
   <h2>I risultati della lezione</h2>
   <p>La lezione confronta nove versioni del contatore, su un laptop Apple M3 Pro e su un server AMD EPYC 7313. Le conclusioni, dalla slide:</p>
   <ul>

@@ -25,8 +25,29 @@ SCENE.seq = {
     { nota: 'Edit distance tra <b>ALTO</b> e <b>ALTRO</b>: il minimo di inserimenti, cancellazioni e sostituzioni. <code>OPT(i, j)</code> = distanza tra i primi i caratteri di A e i primi j di B.', set:{} },
     { nota: 'Casi base: <code>OPT(i, 0) = i</code> e <code>OPT(0, j) = j</code>: prima riga e prima colonna. Già riempite.', set:{g:{valori:vuota,toni:{}}} },
     { nota: '<code>OPT(i, j) = min( OPT(i−1, j) + 1, OPT(i, j−1) + 1, OPT(i−1, j−1) + [caratteri diversi] )</code>. Cella (1,1): A[1]=A=B[1]: 0.', set:{g:{valori:D.map((r,i)=>r.map((v,j)=> (i<=1&&j<=1)||(i===0||j===0)?String(v):'')),toni:{'1,1':'ora'}}} },
-    { nota: 'Cella (4,4): ALTO contro ALTR: la diagonale dà 1, il vicino sopra 1+1, quello a sinistra 1+1. Il minimo è 1: la riga della O è <b>1 1</b>.', set:{g:{valori:D.map((r,i)=>r.map((v,j)=> (i===4&&j>=4)||(i<=3)?String(v):'')),toni:{'4,4':'ora','4,5':'ok'}}} },
+    { nota: 'Cella (4,4): ALTO contro ALTR: la diagonale dà 1, il vicino sopra 1+1, quello a sinistra 1+1. Il minimo è 1. Poi (4,5): O = O, diagonale 1 + 0 = 1.', set:{g:{valori:D.map((r,i)=>r.map((v,j)=> (i===4&&j===5)?'':String(v))),toni:{'4,4':'ora'}}} },
     { nota: 'Risposta: <b>OPT(4, 5) = 1</b>: l\'unica differenza è l\'<b>R</b> da inserire. Il costo è <code>O(n·m)</code>: una tabella di (n+1)(m+1) celle, ognuna O(1).', set:{g:{valori:D.map(r=>r.map(v=>String(v))),toni:{'4,5':'ok'}}, t:{t:'distanza = 1',tono:'ok'}} }
+  ]
+};
+})();
+</script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+const D = [[0,1,2,3,4,5],[1,0,1,2,3,4],[2,1,0,1,2,3],[3,2,1,0,1,2],[4,3,2,1,1,1]];
+SCENE.seqtr = {
+  w: 560, h: 280, lato: true,
+  legenda: 'ora:cella in cui sono,ok:cammino del traceback',
+  oggetti: [
+    {id:'g',tipo:'griglia',x:90,y:50,cw:50,ch:34,valori:D.map(r=>r.map(String)),intR:['','A','L','T','O'],intC:['','A','L','T','R','O']},
+    {id:'t',tipo:'testo',x:20,y:262,t:'',size:12,bold:true,anchor:'start'}
+  ],
+  passi: [
+    { nota: "Come per il knapsack, la tabella dà il costo ma non l'allineamento. Lo ricostruisco risalendo dalla cella finale <b>(4, 5) = 1</b> verso (0, 0), seguendo la mossa che ha dato il minimo.", set:{g:{toni:{'4,5':'ora'}}, t:{t:'parto da OPT(4, 5) = 1'}} },
+    { nota: "In (4, 5): O e O sono uguali, la diagonale dà OPT(3, 4) + 0 = 1 = valore della cella. Mossa <b>diagonale</b>: allineo O con O. Vado in (3, 4).", set:{g:{toni:{'4,5':'ok','3,4':'ora'}}, t:{t:'O con O (uguali)'}} },
+    { nota: "In (3, 4) = 1: la diagonale darebbe OPT(2, 3) + 1 (T≠R) = 2, troppo. Da sinistra: OPT(3, 3) + 1 = 1 ✓. Mossa <b>orizzontale</b>: nella seconda parola c'è una R in più, la <b>inserisco</b>. Vado in (3, 3).", set:{g:{toni:{'4,5':'ok','3,4':'ok','3,3':'ora'}}, t:{t:'inserimento di R'}} },
+    { nota: "Da (3, 3) tre diagonali di fila (T con T, L con L, A con A, costo 0) portano in (0, 0).", set:{g:{toni:{'4,5':'ok','3,4':'ok','3,3':'ok','2,2':'ok','1,1':'ok','0,0':'ok'}}, t:{t:'T–T, L–L, A–A'}} },
+    { nota: "Allineamento letto da (0, 0) a (4, 5): <code>A L T – O</code> sopra <code>A L T R O</code>. Il trattino è la R inserita: costo 1.", set:{t:{t:'A L T – O / A L T R O · costo 1',tono:'ok'}} }
   ]
 };
 })();
@@ -52,6 +73,8 @@ Il caso base è la riga e la colonna zero: <code>OPT(i, 0) = i</code>, <code>OPT
   <h2>Il costo</h2>
 <p>Tabella di <code>(n + 1)(m + 1)</code> celle, ognuna in <code>O(1)</code>: tempo e spazio <code>O(nm)</code>. Ricostruire l'allineamento si fa risalendo
 dalla cella finale verso quella che ha dato il minimo.</p>
+  <figure class="scena" data-scena="seqtr" data-titolo="Traceback: l'allineamento ALTO / ALTRO"></figure>
+<p><b>Costi diversi</b> (versione del libro, KT 6.6): un buco (gap) costa <code>δ</code> e allineare <code>p</code> con <code>q</code> costa <code>α(p, q)</code>, con <code>α = 0</code> se uguali. La ricorrenza diventa <code>OPT(i, j) = min( α(A_i, B_j) + OPT(i−1, j−1), δ + OPT(i−1, j), δ + OPT(i, j−1) )</code>. La edit distance è il caso <code>δ = 1</code>, <code>α = 1</code> se diversi. Con la tabella intera lo spazio è <code>O(nm)</code>; con l'idea di Hirschberg (KT 6.7) scende a <code>O(n + m)</code> senza cambiare il tempo.</p>
 </section>
 <section>
   <h2>Il codice, affiancato</h2>

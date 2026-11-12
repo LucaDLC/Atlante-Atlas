@@ -235,6 +235,29 @@ window.SCENE = window.SCENE || {};
   <p>Il trucco per passare da una all'altra ha un nome: <b>parametro accumulatore</b>. Invece di combinare i risultati mentre torni indietro, li combini mentre vai avanti e porti con te il risultato parziale.</p>
   <figure class="scena" data-scena="pila" data-titolo="La pila delle chiamate: normale contro in coda"></figure>
   <p>Il compilatore trasforma una ricorsione in coda in un ciclo, con spazio costante. Con <code>@annotation.tailrec</code> gli chiedi di <b>controllare</b> che sia davvero in coda: se non lo è, non compila.</p>
+  <h3>Il fattoriale con accumulatore, riga per riga</h3>
+  <p>È la terza versione di <code>01-intro/Factorial.scala</code> (oggetto <code>TailRecursive</code>). Le altre due sono quella con il <code>for</code> (<code>var result = 1</code> e <code>for i &lt;- 2 to n do result *= i</code>, la stessa che hai visto sopra purificata) e quella diretta di prima.</p>
+  <figure class="codice" data-titolo="Factorial.scala: TailRecursive">
+<pre data-lang="scala">def factorial(n: Int) =
+  def f(n: Int, r: Int): Int =
+    if n &lt;= 1 then r
+    else f(n - 1, n * r)
+  f(n, 1)</pre>
+    <ol class="spiega">
+      <li data-righe="2" data-segna="r: Int@due|n: Int@dato"><p>Funzione di lavoro nascosta dentro <code>factorial</code>. <code>r</code> è l'<b>accumulatore</b>: il prodotto già calcolato. Il suo <code>n</code> copre quello di fuori: dentro <code>f</code> vale il parametro di <code>f</code>. Una funzione ricorsiva deve dichiarare il tipo di ritorno, qui <code>Int</code>.</p></li>
+      <li data-righe="3" data-segna="n &lt;= 1@ora|r@ok"><p>Caso base. Non resta niente da moltiplicare: il risultato è già in <code>r</code>, lo restituisco.</p></li>
+      <li data-righe="4" data-segna="n - 1@dato|n * r@due"><p>Passo ricorsivo. Il problema si riduce (<code>n - 1</code>) e la moltiplicazione per <code>n</code> la faccio <b>adesso</b>, dentro <code>r</code>. Dopo la chiamata non resta niente da fare: è in coda.</p></li>
+      <li data-righe="5" data-segna="f(n, 1)@ok"><p>Si parte con <code>r = 1</code>, perché 1 è l'elemento neutro della moltiplicazione: non cambia nessun prodotto.</p></li>
+    </ol>
+  </figure>
+  <figure class="passi" data-titolo="factorial(5) con l'accumulatore" data-legenda="dato:n,due:r (accumulatore),ok:risultato">
+    <div class="passo"><div class="espr">f(<mark class="dato">5</mark>, <mark class="due">1</mark>)</div><p class="nota">Partenza: <code>f(n, 1)</code> con n = 5.</p></div>
+    <div class="passo"><div class="espr">f(<mark class="dato">4</mark>, <mark class="due">5</mark>)</div><p class="nota">5 non è ≤ 1. Nuova chiamata: n − 1 = 4, r = 5 · 1 = 5.</p></div>
+    <div class="passo"><div class="espr">f(<mark class="dato">3</mark>, <mark class="due">20</mark>)</div><p class="nota">r = 4 · 5 = 20.</p></div>
+    <div class="passo"><div class="espr">f(<mark class="dato">2</mark>, <mark class="due">60</mark>)</div><p class="nota">r = 3 · 20 = 60.</p></div>
+    <div class="passo"><div class="espr">f(<mark class="dato">1</mark>, <mark class="due">120</mark>)</div><p class="nota">r = 2 · 60 = 120. Ora n = 1.</p></div>
+    <div class="passo"><div class="espr"><mark class="ok">120</mark></div><p class="nota">n ≤ 1: restituisco r. Nessuna moltiplicazione in sospeso: ogni riga ha <b>sostituito</b> la precedente. Verificato eseguendo Factorial.scala (stampa 120 in tutte e tre le versioni).</p></div>
+  </figure>
   <div class="box attenzione" data-tit="Nel corso">
     <p>Il foglio esercizi lo dice chiaramente: non insistere sulla ricorsione in coda se non è richiesta. Il corso preferisce la semplicità. Serve quando c'è davvero il rischio di esaurire la pila.</p>
   </div>
@@ -304,6 +327,16 @@ window.SCENE = window.SCENE || {};
   <div class="box domanda-tua" data-tit="Dubbio frequente">
     <p><b>Perché basta confrontare le coppie vicine?</b> Se <code>as(0) ≤ as(1)</code> e <code>as(1) ≤ as(2)</code>, allora anche <code>as(0) ≤ as(2)</code>: l'ordine si propaga. Controllare tutte le coppie sarebbe inutile.</p>
   </div>
+  <p>I tre esempi del testo dell'esercizio. Cambia solo il criterio <code>ordered</code> che passi:</p>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Chiamata</th><th>Coppie controllate</th><th>Risultato</th></tr></thead>
+    <tbody>
+      <tr><td><code>isSorted[Int](Array(1, 2, 3), (x, y) =&gt; x &lt;= y)</code></td><td>1 ≤ 2, 2 ≤ 3</td><td class="t-ok">true</td></tr>
+      <tr><td><code>isSorted[Int](Array(2, 2, 2), (x, y) =&gt; x == y)</code></td><td>2 == 2, 2 == 2</td><td class="t-ok">true</td></tr>
+      <tr><td><code>isSorted[Int](Array(2, 2, 2), (x, y) =&gt; x &lt; y)</code></td><td>2 &lt; 2 è falso: ci si ferma</td><td class="t-no">false</td></tr>
+    </tbody>
+  </table></div>
+  <p>Il terzo esempio mostra che "ordinato" dipende dal criterio: con <code>&lt;</code> (stretto) due elementi uguali violano l'ordine, con <code>&lt;=</code> no. Risultati verificati eseguendo il codice.</p>
   <figure class="scena" data-scena="indici" data-titolo="go(i): il for sugli indici come ricorsione"></figure>
 </section>
 

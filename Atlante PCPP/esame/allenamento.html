@@ -172,6 +172,124 @@
   </div></details>
 </section>
 
+<section>
+  <h2>Lezione 5 · Testing e verifica</h2>
+
+  <h3>23 · What is the difference between safety and liveness? Which one is deadlock-freedom?</h3>
+  <p class="piccolo">Proprietà e controesempi.</p>
+  <details class="soluzione" open><summary>Risposta modello</summary><div>
+    <p>"A safety property says that something bad never happens; a counterexample is a finite prefix of an execution ending with the violating action. A liveness property says that something good eventually happens; a counterexample is an infinite execution in which it never does. Deadlock-freedom is a safety property, because a deadlock is reached after a finite sequence of steps. Starvation-freedom is liveness."</p>
+  </div></details>
+
+  <h3>24 · Your concurrent test passes. Is the class thread-safe?</h3>
+  <p class="piccolo">Scrivere test concorrenti.</p>
+  <details class="soluzione" open><summary>Risposta modello</summary><div>
+    <p>"Not necessarily. A test executes only some of the possible interleavings, so a failing test proves a bug, but a passing test proves nothing: testing shows the presence of bugs, not their absence. To increase the chance of finding a bad interleaving we use more threads than cores, a barrier to start them together, and many repetitions. To prove thread-safety we reason about happens-before, or use formal verification such as model checking."</p>
+  </div></details>
+
+  <h3>25 · Why does a model checker like JavaPathFinder not have to visit all interleavings one by one?</h3>
+  <p class="piccolo">Verifica formale e JavaPathFinder.</p>
+  <details class="soluzione" open><summary>Risposta modello</summary><div>
+    <p>"The number of interleavings grows explosively, but many of them lead to the same program state. The model checker recognises states it has already visited (state matching) and does not explore them again, so it explores the states rather than the interleavings. It still suffers from state explosion for larger programs."</p>
+  </div></details>
+</section>
+
+<section>
+  <h2>Lezione 6 · Strutture dati lock-free</h2>
+
+  <h3>26 · The addAndGet of AtomicInteger is written with a compareAndSet loop. Is it wait-free, lock-free or obstruction-free?</h3>
+  <p class="piccolo">Riquadro blu, lezione 6.</p>
+  <details class="soluzione" open><summary>Risposta modello</summary><div>
+    <p>"It is lock-free. A compareAndSet fails only when another thread changed the value, that is, when another thread's call made progress, so some call always completes. It is not wait-free, because a single thread may keep losing the race and never finish. Wait-free implies lock-free, which implies obstruction-free, so it is also obstruction-free."</p>
+  </div></details>
+
+  <h3>27 · Why is a CAS loop allowed while busy-waiting is not?</h3>
+  <p class="piccolo">Wait-free, lock-free, obstruction-free.</p>
+  <details class="soluzione" open><summary>Risposta modello</summary><div>
+    <p>"A busy-wait loop waits for another thread to change something, so if that thread stops, the loop spins forever. A CAS loop does not wait for anyone: it retries only because another thread has made progress, so with the progress conditions it terminates. We only use it in CAS-based implementations."</p>
+  </div></details>
+
+  <h3>28 · Why do two atomic fields not make NumberRange thread-safe?</h3>
+  <p class="piccolo">Wait-free, lock-free, obstruction-free.</p>
+  <details class="soluzione" open><summary>Risposta modello</summary><div>
+    <p>"Each field is atomic, but the invariant lower &lt;= upper involves both, and a CAS protects only one variable. With state (0, 5), one thread checks 4 &lt;= upper and another checks 3 &gt;= lower; both checks pass, both writes happen, and the state becomes (4, 3). The fix is to keep the pair in one immutable object and update it with a single CAS on an AtomicReference."</p>
+  </div></details>
+</section>
+
+<section>
+  <h2>Lezione 7 · Linearizzabilità</h2>
+
+  <h3>29 · What is the difference between sequential consistency and linearizability?</h3>
+  <p class="piccolo">Esercizi 7.1.1 e 7.1.2.</p>
+  <details class="soluzione" open><summary>Risposta modello</summary><div>
+    <p>"Both require that the calls can be put in a sequence that respects the specification of the object and the program order of each thread. Linearizability adds that each call takes effect at a point between its invocation and its response, so if one call finishes before another starts, even in different threads, it must come first in the sequence. Sequential consistency ignores real time between threads. Every linearizable execution is sequentially consistent, but not the other way round."</p>
+  </div></details>
+
+  <h3>30 · Where are the linearization points of the Treiber stack?</h3>
+  <p class="piccolo">Esercizio 7.2.1.</p>
+  <details class="soluzione" open><summary>Risposta modello</summary><div>
+    <p>"For push, the successful compareAndSet on top. For pop on a non-empty stack, the successful compareAndSet on top. For pop on an empty stack, the read of top that returns null. At those instants the effect becomes visible to every thread, and ordering the calls by these points gives a valid sequential LIFO execution."</p>
+  </div></details>
+
+  <h3>31 · Which methods of the CAS read-write lock are wait-free, lock-free, obstruction-free?</h3>
+  <p class="piccolo">Esercizio 7.3.1.</p>
+  <details class="soluzione" open><summary>Risposta modello</summary><div>
+    <p>"writerTryLock and writerUnlock have no loop: they are wait-free, hence also lock-free and obstruction-free. readerTryLock and readerUnlock loop on a CAS that fails only when another thread changed the holders, so they are lock-free but not wait-free. All four are obstruction-free."</p>
+  </div></details>
+</section>
+
+<section>
+  <h2>Lezione 8 · Misure di performance</h2>
+
+  <h3>32 · Why can't we just measure the time of one call with System.nanoTime()?</h3>
+  <p class="piccolo">Microbenchmark.</p>
+  <details class="soluzione" open><summary>Risposta modello</summary><div>
+    <p>"A single call is too short for the clock, and it includes warm-up: at first the code is interpreted and the JIT compiler has not optimised it yet. If the result is not used, the JIT may remove the computation altogether. So we repeat the call many times, use and return the result, double the number of calls until a round lasts long enough, and report the mean and the standard deviation of several repetitions."</p>
+  </div></details>
+</section>
+
+<section>
+  <h2>Lezione 9 · Performance e scalabilità</h2>
+
+  <h3>33 · When do you use platform threads, virtual threads or executor tasks?</h3>
+  <p class="piccolo">Riquadro blu, lezione 9.</p>
+  <details class="soluzione" open><summary>Risposta modello</summary><div>
+    <p>"Never create many platform threads. Use virtual threads for blocking operations such as I/O, because a blocked virtual thread does not occupy an operating system thread. Use tasks on an executor with a fixed number of threads for CPU-intensive work when performance is crucial. Otherwise, for simplicity, use virtual threads."</p>
+  </div></details>
+
+  <h3>34 · Why is a counter updated by many threads slow, and how do you make it scale?</h3>
+  <p class="piccolo">Cache e MESI, lock striping e LongAdder.</p>
+  <details class="soluzione" open><summary>Risposta modello</summary><div>
+    <p>"Each core has its own cache, and a cache line must be in the Modified state to be written. When many threads update the same counter, the line bounces between the caches with invalidate messages: cache ping-pong. To scale, updates should be thread-local: split the counter into stripes, each with its own lock or atomic, pad them so that they sit on different cache lines to avoid false sharing, and sum them when reading. That is what java.util.concurrent.atomic.LongAdder does."</p>
+  </div></details>
+</section>
+
+<section>
+  <h2>Lezione 10 · Parallel streams</h2>
+
+  <h3>35 · When is it safe to call .parallel() on a stream?</h3>
+  <p class="piccolo">Parallel streams.</p>
+  <details class="soluzione" open><summary>Risposta modello</summary><div>
+    <p>"When the functions in the pipeline have no side effects and do not depend on mutable shared state, and operators such as reduce are associative. The stream is split into chunks, processed as tasks, and the partial results are combined. Updating a shared variable from forEach gives lost updates, as in count++ with two threads. Even when it is safe it is not always faster: for example groupingBy has to merge many hash maps, which groupingByConcurrent avoids."</p>
+  </div></details>
+</section>
+
+<section>
+  <h2>Lezione 11 · GPU e istruzioni vettoriali</h2>
+
+  <h3>36 · When is it worthwhile to run a computation on a GPU instead of a CPU?</h3>
+  <p class="piccolo">Esercizio 11.1.</p>
+  <details class="soluzione" open><summary>Risposta modello</summary><div>
+    <p>"When there is a lot of computation per byte transferred, and many independent, regular operations. A GPU has its own memory, so data must be copied between host and device; for O(N) work like adding two arrays the copy dominates. Matrix multiplication does O(N<sup>3</sup>) operations on O(N<sup>2</sup>) data and each output element can be computed by its own thread, so it suits the GPU."</p>
+  </div></details>
+
+  <h3>37 · What are SIMD vector instructions, and how do you use them in Java?</h3>
+  <p class="piccolo">Esercizi 11.2 e 11.4.</p>
+  <details class="soluzione" open><summary>Risposta modello</summary><div>
+    <p>"A vector instruction applies the same operation to several values at once inside a single core: for example it adds 4 to 16 floats in one instruction. In Java, the jdk.incubator.vector package offers FloatVector and ShortVector with lanewise operations, masks for conditions, and reductions such as reduceLanes. The loop steps by the number of lanes of the preferred species. It needs no data copy, unlike a GPU, and works well on arrays of numbers or characters."</p>
+  </div></details>
+</section>
+
 </main>
 </body>
 </html>

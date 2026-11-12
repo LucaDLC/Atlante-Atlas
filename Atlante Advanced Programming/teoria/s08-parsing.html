@@ -1,0 +1,420 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Parser combinators</title>
+<link rel="stylesheet" href="../assets/atlas.css">
+<link rel="stylesheet" href="../assets/tema.css">
+<script src="../assets/sito.js"></script>
+<script src="../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+SCENE.ast = {
+  w: 600, h: 300, lato: false,
+  legenda: 'dato:testo di partenza,ora:nodo in costruzione,ok:albero finito',
+  oggetti: [
+    { id: 'src', tipo: 'testo', x: 300, y: 22, t: '{ "a" : 1, "b" : [null, false] }', size: 14, bold: true, tono: 'dato' },
+    { id: 'o', tipo: 'nodo', x: 300, y: 80, r: 24, t: 'JObject', nascosto: true },
+    { id: 'n1', tipo: 'nodo', x: 160, y: 170, r: 24, t: 'JNumber', sotto: '1.0', nascosto: true },
+    { id: 'ar', tipo: 'nodo', x: 440, y: 170, r: 24, t: 'JArray', nascosto: true },
+    { id: 'nl', tipo: 'nodo', x: 370, y: 255, r: 24, t: 'JNull', nascosto: true },
+    { id: 'bo', tipo: 'nodo', x: 510, y: 255, r: 24, t: 'JBool', sotto: 'false', nascosto: true },
+    { id: 'e1', tipo: 'arco', da: 'o', a: 'n1', dir: true, t: '"a"', nascosto: true },
+    { id: 'e2', tipo: 'arco', da: 'o', a: 'ar', dir: true, t: '"b"', nascosto: true },
+    { id: 'e3', tipo: 'arco', da: 'ar', a: 'nl', dir: true, nascosto: true },
+    { id: 'e4', tipo: 'arco', da: 'ar', a: 'bo', dir: true, nascosto: true }
+  ],
+  passi: [
+    { nota: 'L\'ingresso di un parser è solo una <b>stringa di caratteri</b> (la sintassi concreta). Lo scopo è ottenere un oggetto strutturato, l\'albero di sintassi astratta (AST): un valore del tipo <code>enum JSON</code>.' },
+    { nota: 'Prima si riconoscono i valori semplici: il numero <code>1</code> diventa <code>JNumber(1.0)</code>.', set: { n1: { nascosto: false, tono: 'ok' } } },
+    { nota: '<code>null</code> e <code>false</code> diventano <code>JNull</code> e <code>JBool(false)</code>. Le virgole e le parentesi quadre sono solo sintassi: non lasciano traccia nell\'albero.', set: { nl: { nascosto: false, tono: 'ok' }, bo: { nascosto: false, tono: 'ok' } } },
+    { nota: 'L\'array raccoglie i suoi elementi: <code>JArray(Vector(JNull, JBool(false)))</code>.', set: { ar: { nascosto: false, tono: 'ok' }, e3: { nascosto: false }, e4: { nascosto: false } } },
+    { nota: 'L\'oggetto ha una mappa dal nome del campo al valore: <code>JObject(Map("a" → …, "b" → …))</code>. Questo è l\'output reale del nostro parser (verificato eseguendo).', set: { o: { nascosto: false, tono: 'ok' }, e1: { nascosto: false }, e2: { nascosto: false } } }
+  ]
+};
+</script>
+<script>
+window.SCENE = window.SCENE || {};
+SCENE.digit = {
+  w: 600, h: 270, lato: false,
+  legenda: 'dato:input,ora:parser al lavoro,ok:consumato,no:fallimento',
+  oggetti: [
+    { id: 'tit', tipo: 'testo', x: 300, y: 22, t: 'digitTimesA.run("3aaawhatever")', size: 13, bold: true },
+    { id: 'in', tipo: 'celle', x: 150, y: 50, cw: 50, ch: 40, valori: ['3', 'a', 'a', 'a', 'w', 'h'], indici: false, toni: { 0: 'dato', 1: 'dato', 2: 'dato', 3: 'dato', 4: 'dato', 5: 'dato' } },
+    { id: 'cur', tipo: 'testo', x: 175, y: 112, t: '', size: 13, bold: true },
+    { id: 'c1', tipo: 'testo', x: 300, y: 165, t: '', size: 13 },
+    { id: 'c2', tipo: 'testo', x: 300, y: 195, t: '', size: 13 },
+    { id: 'c3', tipo: 'testo', x: 300, y: 235, t: '', size: 14, bold: true }
+  ],
+  passi: [
+    { nota: 'L\'idea dell\'esercizio 7: il <b>primo carattere decide quanti</b> "a" servono dopo. Ecco perché serve <code>flatMap</code>: il secondo parser dipende dal valore prodotto dal primo.' },
+    { nota: '<code>regex("[0-9]".r)</code> riconosce una cifra e consuma 1 carattere. <code>.map(_.toInt)</code> la trasforma in numero: 3.', set: { in: { toni: { 0: 'ok', 1: 'dato', 2: 'dato', 3: 'dato', 4: 'dato', 5: 'dato' } }, cur: { t: '▲ offset 1' }, c1: { t: 'valore prodotto: 3', tono: 'ora' } } },
+    { nota: '<code>flatMap</code> costruisce <b>ora</b> il parser successivo: <code>char(\'a\').listOfN(3)</code>, ovvero "tre a di fila". Parte dall\'offset 1.', set: { c2: { t: 'char(\'a\').listOfN(3)', tono: 'ora' } } },
+    { nota: 'Le tre "a" combaciano: l\'offset avanza a 4. <code>.map(_.size)</code> restituisce la loro quantità: 3.', set: { in: { toni: { 0: 'ok', 1: 'ok', 2: 'ok', 3: 'ok', 4: 'dato', 5: 'dato' } }, cur: { t: '▲ offset 4' }, c3: { t: 'Right(3)', tono: 'ok' } } },
+    { nota: 'Il resto ("whatever") non viene guardato: <code>run</code> non pretende di consumare tutto l\'input, solo di riuscire. Con <code>3aawhatever</code> (due a sole) la terza "a" trova <code>w</code>: fallimento a colonna 4.', set: { in: { valori: ['3', 'a', 'a', 'w', 'h', 'a'], toni: { 0: 'ok', 1: 'ok', 2: 'ok', 3: 'no', 4: 'dato', 5: 'dato' } }, tit: { t: 'digitTimesA.run("3aawhatever")' }, cur: { t: '▲ offset 3: atteso \'a\', trovato \'w\'' }, c1: { t: '' }, c2: { t: 'char(\'a\').listOfN(3): la terza a manca', tono: 'no' }, c3: { t: 'Left(1.4 \'a\' …)', tono: 'no' } } }
+  ]
+};
+</script>
+<script>
+window.SCENE = window.SCENE || {};
+SCENE.orcommit = {
+  w: 600, h: 250, lato: false,
+  legenda: 'dato:input,ora:alternativa in prova,ok:riuscita,no:fallita',
+  oggetti: [
+    { id: 'tit', tipo: 'testo', x: 300, y: 22, t: '(string("abra") | string("cada")).run("Xbra")', size: 13, bold: true },
+    { id: 'in', tipo: 'celle', x: 200, y: 44, cw: 50, ch: 38, valori: ['X', 'b', 'r', 'a'], indici: false, toni: { 0: 'dato', 1: 'dato', 2: 'dato', 3: 'dato' } },
+    { id: 'p1', tipo: 'rett', x: 40, y: 110, w: 250, h: 44, t: 'string("abra")', tono: 'spento' },
+    { id: 'p2', tipo: 'rett', x: 310, y: 110, w: 250, h: 44, t: 'string("cada")', tono: 'spento' },
+    { id: 'c', tipo: 'testo', x: 300, y: 190, t: '', size: 13 },
+    { id: 'c2', tipo: 'testo', x: 300, y: 218, t: '', size: 13, bold: true }
+  ],
+  passi: [
+    { nota: '<code>p | q</code> è <code>p.or(q)</code>: "prova <b>p</b>; se fallisce, prova <b>q</b> dallo stesso punto". Il secondo argomento è by-name (<code>=&gt;</code>): non viene calcolato se non serve (e permette grammatiche ricorsive).' },
+    { nota: 'Prima <code>string("abra")</code> sull\'input <code>Xbra</code>: la prima lettera è già diversa, <code>X</code> contro <code>a</code>.', set: { p1: { tono: 'ora' }, in: { toni: { 0: 'no', 1: 'dato', 2: 'dato', 3: 'dato' } } } },
+    { nota: 'Fallimento al <b>primo</b> carattere: <code>Failure(…, isCommitted = false)</code>, perché <code>i != 0</code> è falso (non ha consumato niente). Un fallimento "non committed" permette di provare un\'alternativa.', set: { p1: { tono: 'no' }, c: { t: 'Failure(isCommitted = false)', tono: 'no' } } },
+    { nota: '<code>or</code> riparte dallo stesso offset con <code>string("cada")</code>: anche questa fallisce alla prima lettera. Il risultato dell\'<code>or</code> è l\'<b>ultimo</b> errore, quello di "cada" (verificato: <code>Left(1.1 \'cada\' …)</code>).', set: { p2: { tono: 'no' }, c2: { t: 'Left(1.1 \'cada\')', tono: 'no' } } },
+    { nota: 'Con <code>abra</code> invece la prima riesce e <code>or</code> non guarda nemmeno la seconda: <code>Right("abra")</code>. Se invece la prima alternativa avesse consumato qualche lettera prima di fallire (per esempio <code>string("abra") | string("abXX")</code> su <code>abXX</code>: dà <code>Left</code>, verificato), il fallimento sarebbe <b>committed</b> e <code>or</code> non proverebbe l\'altra.', set: { p1: { tono: 'ok' }, p2: { tono: 'spento' }, in: { valori: ['a', 'b', 'r', 'a'], toni: { 0: 'ok', 1: 'ok', 2: 'ok', 3: 'ok' } }, tit: { t: '(string("abra") | string("cada")).run("abra")' }, c: { t: '' }, c2: { t: 'Right("abra")', tono: 'ok' } } }
+  ]
+};
+</script>
+</head>
+<body>
+<main class="pagina">
+  <header class="testa">
+    <h1>Parser combinators</h1>
+    <p class="lede">Un parser trasforma una stringa in una struttura. Qui lo costruisci a pezzi: pochi mattoni (<code>string</code>, <code>or</code>, <code>flatMap</code>) e un po' di colla (<code>map2</code>, <code>many</code>) bastano a leggere un file JSON. Capitolo 9 del libro.</p>
+  </header>
+
+  <section>
+    <h2>Che cosa si impara, e l'esempio guida: JSON</h2>
+    <p>Le slide dicono cosa portarsi via dalla settimana: <b>design algebrico</b> (tipi, operatori e leggi), <b>astrazione completa di un tipo</b>, <b>type constructor</b> e <b>higher-kinded polymorphism</b>, la legge di <b>map che conserva la struttura</b>, i <b>DSL interni</b> (un linguaggio dentro Scala), e infine i parser combinator stessi.</p>
+    <p>L'esempio guida è un file JSON. Il testo (sintassi concreta) è solo una stringa. L'obiettivo è un valore Scala (sintassi astratta):</p>
+    <pre class="cod" data-lang="scala" data-segna="JNull@dato|JNumber(get: Double)@dato|JArray(get: IndexedSeq[JSON])@ora|JObject(get: Map[String, JSON])@ora">enum JSON:
+  case JNull
+  case JNumber(get: Double)
+  case JString(get: String)
+  case JBool(get: Boolean)
+  case JArray(get: IndexedSeq[JSON])
+  case JObject(get: Map[String, JSON])</pre>
+    <p>È un ADT come quelli di S2. Nota che <code>JArray</code> e <code>JObject</code> contengono altri <code>JSON</code>: il tipo è <b>ricorsivo</b>, quindi anche il parser lo sarà.</p>
+    <figure class="scena" data-scena="ast" data-titolo="Da testo ad albero"></figure>
+  </section>
+
+  <section>
+    <h2>Design algebrico: l'interfaccia prima dell'implementazione</h2>
+    <p>Il libro non parte da come funziona un parser. Parte da <b>che cosa deve saper fare</b>, scrive i tipi e le leggi, e solo dopo implementa. Si chiama design algebrico (slide 9): progetti l'interfaccia insieme alle sue <b>leggi</b>, e usi tipi e leggi per correggerla. Siccome le leggi sono proprietà, sono anche test (si lavora test-first).</p>
+    <figure class="codice" data-titolo="L'interfaccia astratta (Parsers)">
+<pre data-lang="scala">trait Parsers[ParseError, Parser[+_]]:
+  def string(s: String): Parser[String]
+  def char(c: Char): Parser[Char] =
+    string(c.toString).map { _.charAt(0) }
+  def succeed[A](a: A): Parser[A]
+  def regex(r: Regex): Parser[String]
+
+  extension [A](p: Parser[A])
+    def run(input: String): Either[ParseError, A]
+    infix def or(p2: => Parser[A]): Parser[A]
+    def |(p2: => Parser[A]): Parser[A] = p.or (p2)
+    def slice: Parser[String]
+    def flatMap[B](f: A => Parser[B]): Parser[B]</pre>
+      <ol class="spiega">
+        <li data-righe="1" data-segna="ParseError@dato|Parser[+_]@ora"><p>Il trait ha <b>due parametri di tipo</b>. <code>ParseError</code> è un tipo normale. <code>Parser[+_]</code> è invece un <b>costruttore di tipo</b> (type constructor): non è un tipo finché non gli dai un argomento, come <code>List</code> che diventa un tipo solo come <code>List[Int]</code>. Il <code>+</code> lo rende covariante. Scrivere un parametro che è lui stesso un costruttore si chiama <i>higher-kinded polymorphism</i>.</p></li>
+        <li data-righe="2" data-segna="string(s: String)@ok"><p>Il primo mattone: riconosce esattamente la stringa <code>s</code> e restituisce <code>s</code>.</p></li>
+        <li data-righe="3-4" data-segna="string(c.toString)@dato"><p><code>char</code> non è nuovo: è <code>string</code> di un carattere, con <code>map</code> per prendere il primo.</p></li>
+        <li data-righe="5-6" data-segna="succeed@ok|regex@ok"><p><code>succeed(a)</code> ha sempre successo, produce <code>a</code> e non consuma input. <code>regex</code> promuove un'espressione regolare a parser.</p></li>
+        <li data-righe="8-9" data-segna="extension [A]@ora|run@ok"><p>Gli <b>extension method</b> (vedi S7) mettono i metodi su <code>Parser[A]</code>. <code>run</code> lancia il parser su una stringa e restituisce <code>Either[ParseError, A]</code>: <code>Left</code> con l'errore, <code>Right</code> con il valore.</p></li>
+        <li data-righe="10-11" data-segna="or@ok"><p>Scelta: <code>p | q</code> prova <code>p</code>, poi <code>q</code>. Il secondo argomento è <code>=&gt;Parser[A]</code> (by-name).</p></li>
+        <li data-righe="12-13" data-segna="slice@due|flatMap@ora"><p><code>slice</code> restituisce il testo consumato invece del valore (serve per efficienza). <code>flatMap</code> è il mattone che permette a un parser di <b>dipendere</b> da quello precedente.</p></li>
+      </ol>
+    </figure>
+    <div class="box idea" data-tit="Astrazione completa del tipo">
+      <p>Nel trait, <code>Parser</code> e <code>ParseError</code> sono "buchi": nessuno sa com'è fatto un parser. Eppure puoi già scrivere e compilare tutto il resto (<code>many</code>, <code>map2</code>, il parser JSON). Per questo gli esercizi 1–7 non si possono eseguire subito: il compilatore controlla i tipi, ma non c'è ancora niente da far girare. Da esercizio 8 in poi si riempiono i buchi.</p>
+    </div>
+    <p>Le <b>leggi</b> sono scritte nel trait, ma funzionano su qualunque implementazione (esercizio 15): usano solo operazioni astratte. Alcune dal file:</p>
+    <pre class="cod" data-lang="scala" data-segna="char(c).run(c.toString) == Right(c)@ok|string(s).run(s) == Right(s)@ok">val runChar   = forAll { (c: Char)   => char(c).run(c.toString) == Right(c) }
+val runString = forAll { (s: String) => string(s).run(s) == Right(s) }
+def mapStructurePreserving[A](p: Parser[A]): Boolean = p.map { a => a } == p</pre>
+    <p>La terza è la <b>legge di map</b>: mappare con l'identità non cambia il parser. Significa che <code>map</code> cambia solo i valori prodotti, mai la struttura (quanto input si consuma, quando si fallisce). Nel file esiste solo scritta (confrontare due parser non si può eseguire) e in una versione eseguibile sul parser <code>succeed(n)</code>.</p>
+  </section>
+
+  <section>
+    <h2>I combinatori derivati: map2, many, listOfN (esercizi 1–7)</h2>
+    <p>Basta <code>flatMap</code> più <code>succeed</code> per ottenere quasi tutto. Il codice sotto è quello del tuo <code>Exercises.scala</code> (compila).</p>
+    <figure class="codice" data-titolo="map2, product, map">
+<pre data-lang="scala">extension [A](p1: Parser[A])
+  def map2[B, C](p2: => Parser[B])(f: (A, B) => C): Parser[C] =
+    p1.flatMap { a => p2.map { b => f(a, b) } }
+
+  def product[B](p2: => Parser[B]): Parser[(A, B)] =
+    p1.flatMap { a => p2.map { b => (a, b) } }
+
+extension [A](p: Parser[A])
+  def map[B](f: A => B): Parser[B] =
+    p.flatMap { a => succeed(f(a)) }</pre>
+      <ol class="spiega">
+        <li data-righe="2-3" data-segna="p1.flatMap@ora|p2.map@due|f(a, b)@ok"><p><code>map2</code> esegue <code>p1</code>, poi <code>p2</code> dal punto in cui si è fermato <code>p1</code>, e combina i due valori con <code>f</code>. Con <code>flatMap</code> per il primo e <code>map</code> per il secondo: la forma classica a due livelli.</p></li>
+        <li data-righe="5-6" data-segna="(a, b)@ok"><p><code>product</code> è <code>map2</code> con <code>f</code> = "fai una coppia".</p></li>
+        <li data-righe="9-10" data-segna="succeed(f(a))@ok"><p><code>map</code> si ricava da <code>flatMap</code>: esegui <code>p</code>, applica <code>f</code> al valore, e rimetti il risultato dentro un parser che ha sempre successo senza consumare altro. Quindi <code>map</code> <b>non è primitivo</b> se hai <code>flatMap</code> (se ne riparla la prossima settimana, con la Monad).</p></li>
+      </ol>
+    </figure>
+    <div class="box esame" data-tit="Le due domande dell'esercizio 1">
+      <p><b>(1) Perché <code>map2</code> non dichiara <code>A</code>?</b> Perché <code>A</code> è già dichiarato dall'<code>extension [A](p1: Parser[A])</code> che la contiene: nella firma restano solo i parametri nuovi, <code>B</code> e <code>C</code>.</p>
+      <p><b>(2) Perché il secondo argomento è by-name?</b> Perché <code>p2</code> viene calcolato solo se serve. Se <code>p1</code> fallisce, <code>p2</code> non viene mai valutato. È indispensabile per le definizioni ricorsive (<code>many</code> richiama sé stesso come secondo argomento: senza by-name andrebbe in ricorsione infinita prima di cominciare).</p>
+    </div>
+
+    <h3><code>many</code>: ripetere finché riesce</h3>
+    <figure class="codice" data-titolo="many, many1, listOfN, manyA">
+<pre data-lang="scala">extension [A](p: Parser[A])
+  def many: Parser[List[A]] =
+    p.map2(p.many)(_ :: _) | succeed(List.empty[A])
+
+  def many1: Parser[List[A]] =
+    p.map2(p.many)(_ :: _)
+
+  def listOfN(n: Int): Parser[List[A]] =
+    if n <= 0 then succeed(List.empty[A])
+    else p.map2(p.listOfN(n - 1))(_ :: _)
+
+def manyA: Parser[Int] =
+  char('a').many.map { _.size }</pre>
+      <ol class="spiega">
+        <li data-righe="1-3" data-segna="p.map2(p.many)(_ :: _)@ora|succeed(List.empty[A])@ok"><p>Due alternative separate da <code>|</code>. La prima: un <code>p</code>, seguito da <b>altri</b> <code>many</code>, messi in testa a una lista con <code>::</code>. Se anche un solo <code>p</code> non riesce, la prima alternativa fallisce e si passa alla seconda: la lista vuota, che ha sempre successo. È così che la ripetizione si ferma.</p></li>
+        <li data-righe="5-6" data-segna="many1@due"><p>Come <code>many</code>, ma <b>senza</b> l'alternativa vuota: ne serve almeno uno. Perché è un extension method? Perché si scrive <code>p.many1</code> con il punto, e il tipo <code>A</code> viene da <code>p</code> (esercizio 5).</p></li>
+        <li data-righe="8-10" data-segna="n &lt;= 0@dato|p.listOfN(n - 1)@ora"><p>Esattamente <code>n</code> ripetizioni: con 0 non consumo niente; con <code>n</code> ne faccio una e poi <code>n − 1</code> altre.</p></li>
+        <li data-righe="12-13" data-segna="char('a').many@ora|_.size@ok"><p><code>manyA</code> conta quante "a" iniziali ci sono: <code>many</code> restituisce la lista, <code>map</code> prende la lunghezza.</p></li>
+      </ol>
+    </figure>
+    <figure class="passi" data-titolo="string(&quot;ab&quot;).many su &quot;ababx&quot;" data-legenda="dato:input rimasto,ora:chiamata in corso,ok:lista costruita,no:fallimento">
+      <div class="passo"><div class="espr"><mark class="ora">many</mark> su <mark class="dato">ababx</mark></div><p class="nota">Provo la prima alternativa: <code>p</code> seguito da <code>many</code>.</p></div>
+      <div class="passo"><div class="espr">"ab" : <mark class="ora">many</mark> su <mark class="dato">abx</mark></div><p class="nota">Il primo <code>p</code> consuma "ab". Resta "abx". Il suo risultato aspetta di essere messo in testa.</p></div>
+      <div class="passo"><div class="espr">"ab" : ("ab" : <mark class="ora">many</mark> su <mark class="dato">x</mark>)</div><p class="nota">Secondo "ab". Resta "x".</p></div>
+      <div class="passo"><div class="espr">"ab" : ("ab" : <mark class="no">p fallisce su x</mark> → <mark class="ok">Nil</mark>)</div><p class="nota">Su "x" <code>string("ab")</code> fallisce subito (nessun carattere consumato, quindi <b>non committed</b>). L'<code>or</code> sceglie la seconda alternativa: la lista vuota.</p></div>
+      <div class="passo"><div class="espr"><mark class="ok">List("ab", "ab")</mark></div><p class="nota">Le <code>::</code> si chiudono da destra. Risultato <code>Right(List(ab, ab))</code>, con "x" lasciato fuori (verificato eseguendo). Su "ababa" invece l'ultima "a" combacia a metà e il fallimento è committed (vedi più sotto).</p></div>
+    </figure>
+
+    <h3><code>digitTimesA</code>: quando serve davvero <code>flatMap</code> (esercizio 7)</h3>
+    <figure class="codice" data-titolo="digitTimesA">
+<pre data-lang="scala">def digitTimesA: Parser[Int] =
+  regex("[0-9]".r).map { _.toInt }
+    .flatMap { n => char('a').listOfN(n).map { _.size } }</pre>
+      <ol class="spiega">
+        <li data-righe="2" data-segna="regex(&quot;[0-9]&quot;.r)@dato|_.toInt@ok"><p><code>"[0-9]".r</code> trasforma la stringa in un oggetto <code>Regex</code> (l'<code>.r</code>). <code>regex</code> lo promuove a parser: riconosce una cifra e restituisce il carattere come stringa. <code>toInt</code> la converte in numero.</p></li>
+        <li data-righe="3" data-segna="flatMap { n =&gt;@ora|char('a').listOfN(n)@due"><p>Qui <code>flatMap</code> è necessario, non <code>map2</code>: il parser successivo (<i>quante</i> "a") <b>dipende dal valore</b> <code>n</code>. Con <code>map2</code> il secondo parser sarebbe già fisso.</p></li>
+      </ol>
+    </figure>
+    <figure class="scena" data-scena="digit" data-titolo="digitTimesA su 3aaawhatever"></figure>
+  </section>
+
+  <section>
+    <h2>Il linguaggio degli operatori: <code>**</code>, <code>|*</code>, <code>*|</code>, <code>?</code>, <code>*</code></h2>
+    <p>Il trait definisce anche una notazione corta, che rende la grammatica quasi simile a una EBNF. Nelle slide si parla di <b>DSL interno</b> (internal domain-specific language): un linguaggio specifico che è solo zucchero sintattico di Scala, senza strumenti esterni né magia.</p>
+    <div class="tab-wrap"><table class="tab">
+      <thead><tr><th>Scrivi</th><th>Significa</th><th>Tipo</th></tr></thead>
+      <tbody>
+        <tr><td><code>p | q</code></td><td><code>p.or(q)</code>: scelta</td><td><code>Parser[A]</code></td></tr>
+        <tr><td><code>p ** q</code></td><td><code>p.product(q)</code>: una cosa e poi l'altra, tieni <b>entrambe</b></td><td><code>Parser[(A, B)]</code></td></tr>
+        <tr><td><code>p *| q</code></td><td>sequenza: <b>tieni la sinistra</b>, scarta la destra (la barra <code>|</code> sta dal lato scartato)</td><td><code>Parser[A]</code></td></tr>
+        <tr><td><code>p |* q</code></td><td>sequenza: <b>tieni la destra</b>, scarta la sinistra</td><td><code>Parser[B]</code></td></tr>
+        <tr><td><code>p.?</code></td><td>opzionale: <code>p.map(Some(_)) | succeed(None)</code></td><td><code>Parser[Option[A]]</code></td></tr>
+        <tr><td><code>p.*</code></td><td>zero o più: <code>p.many</code> (la stella di Kleene)</td><td><code>Parser[List[A]]</code></td></tr>
+      </tbody>
+    </table></div>
+    <p>Sono metodi con nomi di simboli: <code>a ** b</code> è soltanto <code>a.**(b)</code>, e <code>ws.?</code> è <code>ws.?()</code> senza le tonde. <code>x *| y</code> è <code>(x ** y).map { (a, _) =&gt; a }</code>.</p>
+    <pre class="cod" data-lang="scala" data-segna="*| char(':')@no|** json@ora">QUOTED *| char(':') ** json *| char(',')   // è un Parser[(String, JSON)]</pre>
+    <figure class="passi" data-titolo="Leggere la riga sopra, un operatore alla volta (slide 21)" data-legenda="dato:parser di partenza,ora:operatore applicato,ok:tipo risultante">
+      <div class="passo"><div class="espr"><mark class="dato">QUOTED</mark> : Parser[String]</div><p class="nota">Il nome del campo, già senza virgolette.</p></div>
+      <div class="passo"><div class="espr"><mark class="dato">QUOTED</mark> <mark class="ora">*| char(':')</mark> : <mark class="ok">Parser[String]</mark></div><p class="nota"><code>*|</code> tiene la sinistra: riconosce anche i due punti, ma il valore resta la stringa.</p></div>
+      <div class="passo"><div class="espr">(QUOTED *| char(':')) <mark class="ora">** json</mark> : <mark class="ok">Parser[(String, JSON)]</mark></div><p class="nota"><code>**</code> fa il prodotto: ora il risultato è una coppia nome-valore.</p></div>
+      <div class="passo"><div class="espr">((QUOTED *| char(':')) ** json) <mark class="ora">*| char(',')</mark> : <mark class="ok">Parser[(String, JSON)]</mark></div><p class="nota">Ultimo <code>*|</code>: consumo anche la virgola finale ma tengo la coppia.</p></div>
+    </figure>
+    <div class="box attenzione" data-tit="Precedenza degli operatori">
+      <p>Scala decide l'ordine dal <b>primo carattere</b> del nome, come per i numeri: <code>*</code> lega più di <code>|</code>. Perciò <code>**</code> e <code>*|</code> (iniziano con <code>*</code>) legano più di <code>|</code> e <code>|*</code> (iniziano con <code>|</code>). Esempio verificato eseguendo con a, b, c = <code>string("a")</code>, <code>string("b")</code>, <code>string("c")</code> sull'input "bc": <code>a *| b | c</code> è <code>(a *| b) | c</code> e fallisce, mentre <code>a | b *| c</code> è <code>a | (b *| c)</code> e riesce. A parità di primo carattere si legge da sinistra a destra. Nel dubbio, metti le tonde.</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>Una rappresentazione concreta (esercizi 8–10)</h2>
+    <p>Ora si riempiono i buchi del trait con un'implementazione. (La slide 24 dice che questa parte è "un po' meno importante", ma gli esercizi 8–10 la chiedono.) Un parser è una <b>funzione</b>: riceve lo stato corrente (dove siamo nella stringa) e restituisce il risultato.</p>
+    <pre class="cod" data-lang="scala" data-segna="ParseState@dato|Result[A]@ok">type Parser[+A] = ParseState => Result[A]
+
+case class ParseState(loc: Location, isSliced: Boolean = false)
+case class Location(input: String, offset: Int = 0)
+
+enum Result[+A]:
+  case Success(get: A, length: Int)
+  case Failure(get: ParseError, isCommitted: Boolean) extends Result[Nothing]
+  case Slice(length: Int) extends Result[String]</pre>
+    <ul>
+      <li><code>Location(input, offset)</code>: la stringa intera e la posizione corrente. Un parser non "consuma" la stringa: sposta l'offset.</li>
+      <li><code>ParseState</code>: il <code>Location</code> più un flag <code>isSliced</code> (siamo dentro uno <code>slice</code>? allora non serve costruire il valore, basta la lunghezza).</li>
+      <li><code>Success(a, n)</code>: ha prodotto <code>a</code> consumando <code>n</code> caratteri. <code>Slice(n)</code>: successo senza valore, solo <code>n</code>. <code>Failure(err, isCommitted)</code>: errore, con un flag che spiego sotto.</li>
+    </ul>
+    <p>Perché <code>Parser</code> è covariante (<code>+A</code>, domanda dell'esercizio 8)? Perché <code>A</code> compare solo nel risultato (<code>Result[A]</code>), e <code>Result</code> è a sua volta covariante. Così un <code>Parser[JString]</code> si può usare dove serve un <code>Parser[JSON]</code>, come in <code>jstring | jnumber | …</code>.</p>
+    <figure class="codice" data-titolo="succeed, string, or, regex (Sliceable)">
+<pre data-lang="scala">def succeed[A](a: A): Parser[A] =
+  (s: ParseState) => Success(a, 0)
+
+def string(w: String): Parser[String] = (s: ParseState) =>
+  val i = firstNonmatchingIndex(s.loc.input, w, s.loc.offset)
+  if i == -1 then
+    if s.isSliced then Slice(w.length)
+    else Success(w, w.length)
+  else Failure(s.loc.advanceBy(i).toError(s"'$w'"), i != 0)
+
+extension [A](p: Parser[A])
+  def or(p2: => Parser[A]): Parser[A] =
+    (s: ParseState) =>
+      p(s) match
+        case Failure(_, false) => p2(s)
+        case pval => pval
+
+def regex(r: Regex): Parser[String] = (s: ParseState) =>
+  r.findPrefixOf(s.input) match
+    case Some(m) =>
+      if s.isSliced then Slice(m.length) else Success(m, m.length)
+    case None =>
+      Failure(s.loc.toError(s"regex $r"), false)</pre>
+      <ol class="spiega">
+        <li data-righe="1-2" data-segna="Success(a, 0)@ok"><p><code>succeed</code>: restituisce sempre successo con il valore <code>a</code> e <b>0</b> caratteri consumati. Ignora lo stato <code>s</code>.</p></li>
+        <li data-righe="5" data-segna="firstNonmatchingIndex@dato"><p><code>string</code> confronta <code>w</code> con l'input a partire dall'offset. La funzione d'appoggio ritorna −1 se combaciano, altrimenti l'indice del primo carattere diverso.</p></li>
+        <li data-righe="6-8" data-segna="Success(w, w.length)@ok"><p>Combacia: successo con <code>w</code> e <code>w.length</code> caratteri consumati (o <code>Slice</code> se siamo in modalità slice).</p></li>
+        <li data-righe="9" data-segna="i != 0@due|Failure@no"><p>Non combacia: fallimento con il messaggio e la posizione dell'errore. Il secondo campo, <code>isCommitted</code>, è vero se almeno un carattere ha combaciato (<code>i != 0</code>).</p></li>
+        <li data-righe="12-16" data-segna="Failure(_, false) =&gt; p2(s)@ora|pval@ok"><p><code>or</code> prova <code>p</code> sullo stato <code>s</code>. Solo se il fallimento è <b>non committed</b> si prova <code>p2</code> dallo <b>stesso</b> <code>s</code> (si torna indietro). Altrimenti si tiene il risultato di <code>p</code>, successo o fallimento committed.</p></li>
+        <li data-righe="18-23" data-segna="r.findPrefixOf(s.input)@dato|Success(m, m.length)@ok"><p><code>findPrefixOf</code> cerca un prefisso dell'input che combacia con l'espressione regolare. Se c'è, successo con il testo trovato e la sua lunghezza; se no, fallimento non committed.</p></li>
+      </ol>
+    </figure>
+    <figure class="scena" data-scena="orcommit" data-titolo="or e fallimenti committed"></figure>
+    <div class="box attenzione" data-tit="Il trabocchetto del committed">
+      <p>Se la prima alternativa ha già consumato qualche carattere, <code>or</code> <b>non</b> prova la seconda. Esempio verificato: <code>(string("abra") | string("abXX")).run("abXX")</code> dà <code>Left(1.3 'abra' …)</code>, perché "ab" ha combaciato e il fallimento è committed. Così si evitano ritorni indietro costosi e gli errori sono più precisi. Il libro ha <code>attempt</code> per togliere il commit; negli esercizi non serve. Stessa cosa per <code>string("ab").many.run("ababa")</code>: l'ultima "a" combacia a metà e fa fallire tutto (<code>Left</code>), anche se <code>many</code> altrimenti non fallisce mai.</p>
+    </div>
+    <p>Gli altri due pezzi sono <code>flatMap</code> e <code>run</code>:</p>
+    <figure class="codice" data-titolo="flatMap e run (Sliceable)">
+<pre data-lang="scala">extension [A](p: Parser[A])
+  def run(s: String): Either[ParseError, A] =
+    p(ParseState(Location(s), false)).extract(s)
+
+  def flatMap[B](f: A => Parser[B]): Parser[B] = (s: ParseState) =>
+    p(s.unslice) match
+    case Success(a, n) =>
+      f(a)(s.advanceBy(n).reslice(s))
+        .addCommit(n != 0)
+        .advanceSuccess(n)
+    case Slice(n) =>
+      f(s.slice(n))(s.advanceBy(n).reslice(s)).advanceSuccess(n)
+    case f @ Failure(_, _) => f</pre>
+      <ol class="spiega">
+        <li data-righe="2-3" data-segna="Location(s)@dato|extract(s)@ok"><p><code>run</code> parte dall'offset 0, lancia il parser, e <code>extract</code> trasforma il <code>Result</code> in <code>Right(valore)</code> o <code>Left(errore)</code>.</p></li>
+        <li data-righe="6" data-segna="s.unslice@due"><p>Per sapere <b>quale</b> parser seguire, <code>flatMap</code> ha bisogno del valore <code>a</code>: quindi <code>p</code> gira senza slice anche se siamo dentro uno slice.</p></li>
+        <li data-righe="7-10" data-segna="s.advanceBy(n)@ora|.addCommit(n != 0)@no|.advanceSuccess(n)@ok"><p>Con il valore <code>a</code> costruisco <code>f(a)</code> e lo lancio <b>dopo</b> i <code>n</code> caratteri già consumati. Se poi fallisce, e <code>n != 0</code>, il fallimento diventa committed. In fondo si somma <code>n</code> alla lunghezza consumata totale.</p></li>
+        <li data-righe="13" data-segna="Failure(_, _) =&gt; f@no"><p>Se <code>p</code> fallisce, <code>flatMap</code> non fa niente: propaga lo stesso fallimento.</p></li>
+      </ol>
+    </figure>
+    <p>Un errore completo, per vedere il formato (<code>digitTimesA</code> su <code>3aawhatever</code>, verificato; <code>1.4</code> = riga 1, colonna 4). La freccia sta sotto il carattere dove il parser si è bloccato; il messaggio <code>'a'</code> vuol dire "mi aspettavo una a":</p>
+    <pre class="msg">Left(1.4 'a'
+
+3aawhatever
+   ^)</pre>
+  </section>
+
+  <section>
+    <h2>Il parser JSON (esercizi 11–13)</h2>
+    <p>Il parser JSON è scritto <b>solo</b> con l'interfaccia astratta (<code>class JSONParser[ParseError, Parser[+_]](P: Parsers[…])</code>), senza toccare la rappresentazione. Funzionerebbe con qualsiasi implementazione di <code>Parsers</code>. Si costruisce dal basso: prima i <b>token</b>, poi i <b>terminali</b>, poi i valori composti.</p>
+    <h3>Token e terminali (esercizi 11–12)</h3>
+    <figure class="codice" data-titolo="QUOTED, DOUBLE, ws, jnull, jbool, jstring, jnumber">
+<pre data-lang="scala">lazy val QUOTED: Parser[String] =
+  regex("\"[^\"]*\"".r).map { _.drop(1).dropRight(1) }
+
+lazy val DOUBLE: Parser[Double] =
+  regex("""[-+]?([0-9]*\.)?[0-9]+([eE][-+]?[0-9]+)?""".r).map { _.toDouble }
+
+lazy val ws: Parser[Unit] =
+  regex("""\s+""".r).map { _ => () }
+
+lazy val jnull: Parser[JSON] =
+  string("null").map { _ => JNull }
+
+lazy val jbool: Parser[JSON] =
+  string("true").map { _ => JBool(true) } | string("false").map { _ => JBool(false) }
+
+lazy val jstring: Parser[JString] = QUOTED.map { JString(_) }
+lazy val jnumber: Parser[JNumber] = DOUBLE.map { JNumber(_) }</pre>
+      <ol class="spiega">
+        <li data-righe="1-2" data-segna="regex@dato|drop(1).dropRight(1)@ok"><p>Una stringa tra virgolette: il carattere <code>"</code>, poi qualsiasi cosa che non sia <code>"</code> (<code>[^"]*</code>), poi <code>"</code>. <code>drop(1).dropRight(1)</code> toglie la prima e l'ultima virgoletta, perché nell'AST la stringa non le contiene. Nel codice Scala le virgolette vanno protette con <code>\</code>.</p></li>
+        <li data-righe="4-5" data-segna="[-+]?@dato|([0-9]*\.)?@due|([eE][-+]?[0-9]+)?@ora|_.toDouble@ok"><p>Segno facoltativo; poi una parte intera con punto facoltativa; poi le cifre; poi un esponente facoltativo (<code>e</code> o <code>E</code>, segno, cifre). Il punto interrogativo dopo un gruppo vuol dire "zero o una volta". <code>8.38e9</code> passa, <code>toDouble</code> lo converte.</p></li>
+        <li data-righe="7-8" data-segna="\s+@dato"><p><code>\s+</code> = uno o più spazi, a capo, tabulazioni. Il risultato è <code>()</code> (unit): non interessa cosa c'era, interessa che sia stato saltato.</p></li>
+        <li data-righe="10-11" data-segna="JNull@ok"><p>Riconosce il testo <code>null</code> e lo trasforma nel valore <code>JNull</code>. Il tipo è <code>Parser[JSON]</code>.</p></li>
+        <li data-righe="13-14" data-segna="string(&quot;true&quot;)@dato|string(&quot;false&quot;)@due"><p>Due alternative: <code>true</code> oppure <code>false</code>. La scelta è sicura qui, perché le due stringhe non iniziano con la stessa lettera (non c'è il problema del committed).</p></li>
+        <li data-righe="16-17" data-segna="JString(_)@ok|JNumber(_)@ok"><p>I token diventano nodi dell'AST con <code>map</code>.</p></li>
+      </ol>
+    </figure>
+
+    <h3>Valori composti (esercizio 13)</h3>
+    <figure class="codice" data-titolo="jarray, field, jobject, json">
+<pre data-lang="scala">private lazy val commaSeparatedVals: Parser[List[JSON]] =
+  json.map2((string(",") |* json).many)(_ :: _) | succeed(Nil)
+
+lazy val jarray: Parser[JArray] =
+  (char('[') |* ws.? |* (commaSeparatedVals *| ws.?) *| char(']')).map { l => JArray(l.toVector) }
+
+lazy val field: Parser[(String, JSON)] =
+  (ws.? |* (QUOTED *| ws.?)) ** (char(':') |* json)
+
+private lazy val commaSeparatedFields: Parser[List[(String, JSON)]] =
+  field.map2((string(",") |* field).many)(_ :: _) | succeed(Nil)
+
+lazy val jobject: Parser[JObject] =
+  (char('{') |* ws.? |* (commaSeparatedFields *| ws.?) *| char('}')).map { l => JObject(l.toMap) }
+
+lazy val json: Parser[JSON] =
+  ws.? |* ((jobject | jarray | jstring | jnumber | jbool | jnull) *| ws.?)</pre>
+      <ol class="spiega">
+        <li data-righe="1-2" data-segna="json.map2@dato|.many@ora|succeed(Nil)@ok"><p>Una lista di valori separati da virgole: il primo <code>json</code>, poi zero o più coppie "virgola e valore" (<code>|*</code> scarta la virgola e tiene il valore). Le due parti si uniscono con <code>::</code>. L'alternativa <code>succeed(Nil)</code> copre la lista <b>vuota</b> <code>[]</code>.</p></li>
+        <li data-righe="4-5" data-segna="char('[')@dato|ws.?@due|commaSeparatedVals@ora|char(']')@dato|JArray(l.toVector)@ok"><p>La sequenza dell'array: parentesi aperta, spazi facoltativi (<code>ws.?</code>), la lista, spazi facoltativi, parentesi chiusa. Con <code>|*</code> e <code>*|</code> scarto le parentesi e gli spazi e tengo solo la lista. Alla fine <code>map</code> la trasforma in <code>JArray</code> (con <code>toVector</code>, come richiede il tipo).</p></li>
+        <li data-righe="7-8" data-segna="QUOTED@dato|char(':')@ora|) ** (@ok"><p>Un campo: spazi facoltativi, nome tra virgolette, spazi, i due punti, il valore. Il prodotto <code>**</code> mette insieme nome e valore in una coppia <code>(String, JSON)</code>.</p></li>
+        <li data-righe="10-11" data-segna="field.map2@dato|.many@ora"><p>Come per l'array, ma con i campi.</p></li>
+        <li data-righe="13-14" data-segna="l.toMap@ok"><p>L'oggetto: graffe, campi, graffe. <code>toMap</code> trasforma la lista di coppie in una <code>Map</code>.</p></li>
+        <li data-righe="16-17" data-segna="jobject@dato|jarray@due|jnull@ora"><p>Il simbolo iniziale: spazi, uno qualsiasi dei sei valori, spazi. L'ordine delle alternative conta, perché si prova da sinistra. Le definizioni sono <code>lazy val</code> perché si richiamano l'una con l'altra (<code>json</code> usa <code>jarray</code> che usa <code>json</code>): la pigrizia permette la ricorsione, come in una grammatica EBNF.</p></li>
+      </ol>
+    </figure>
+    <p>Esempi veri (verificati eseguendo, <code>Sliceable</code> come implementazione):</p>
+    <div class="tab-wrap"><table class="tab">
+      <thead><tr><th>Input</th><th>Risultato</th></tr></thead>
+      <tbody>
+        <tr><td><code>[1, "a", true]</code></td><td><code>Right(JArray(Vector(JNumber(1.0), JString(a), JBool(true))))</code></td></tr>
+        <tr><td><code>{ "a" : 1, "b" : [null, false] }</code></td><td><code>Right(JObject(Map(a -&gt; JNumber(1.0), b -&gt; JArray(Vector(JNull, JBool(false))))))</code></td></tr>
+        <tr><td><code>{ "a" ; 1 }</code></td><td><code>Left(1.7 ':' …)</code>, con la freccia sotto il <code>;</code></td></tr>
+      </tbody>
+    </table></div>
+    <div class="box attenzione" data-tit="Una differenza dalle slide">
+      <p>L'esempio di JSON delle slide ha una virgola finale (<code>"GOOG", ]</code>), e la sua versione di <code>jarray</code> la accetta, perché usa "valore, virgola, spazi" ripetuto. La versione del repo, qui sopra, usa le virgole come <b>separatori</b> e non la accetta: è lo JSON standard.</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>Perché le leggi stanno nel trait, e quando usare i parser combinator</h2>
+    <p><b>Esercizio 15.</b> (1) Le leggi sono scritte solo con operazioni astratte del trait (<code>string</code>, <code>run</code>, <code>or</code>…), quindi si possono scrivere anche senza un'implementazione: il compilatore le controlla nei tipi. (2) Il vantaggio: le scrivi una volta sola, e valgono per <b>ogni</b> implementazione di <code>Parsers</code> (basta istanziarle con una concreta).</p>
+    <p><b>Esercizio 14</b> (nessun codice): da console, <code>JSONParser(Sliceable).json.run("[1, 2]")</code>. Non hai davvero imparato a costruire un parser finché non sai farlo girare.</p>
+    <div class="colonne">
+      <div class="carta buona"><h4>Quando conviene</h4><ul>
+        <li>Lavori ad hoc dove le regex non bastano.</li>
+        <li>Dipendenza leggerissima, nessun passo di build in più.</li>
+        <li>Più espressivi dei generatori di parser (sono codice normale).</li>
+        <li>Li trovi nelle librerie standard di molti linguaggi.</li>
+      </ul></div>
+      <div class="carta cattiva"><h4>Limiti</h4><ul>
+        <li>Errori meno precisi durante il parsing (il libro se la cava bene).</li>
+        <li>Di solito più lenti e con più memoria dei parser generati, a meno che siano compilati (parboiled2).</li>
+        <li>Quasi mai hanno strumenti per fare il debug di una grammatica.</li>
+      </ul></div>
+    </div>
+    <div class="box inglese" data-tit="Frase pronta">
+      <p>"A parser combinator library is an internal DSL: the grammar is ordinary Scala code, built from a few primitives such as string, or and flatMap, and the other combinators are derived from them."</p>
+    </div>
+    <div class="box esame" data-tit="Alternativa per la consegna">
+      <p>Il testo dell'esercizio permette, al posto del set, di scrivere un parser JSON con <b>Parboiled2</b> in un solo file Scala: deve includere un JSON come stringa, lo parsa in un <code>main</code>, e ha almeno 5 test property-based che passano. Va comunicato ad Andrzej separatamente.</p>
+    </div>
+  </section>
+</main>
+</body>
+</html>

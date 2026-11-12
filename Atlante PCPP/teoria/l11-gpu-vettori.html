@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>GPU e istruzioni vettoriali (SIMD)</title>
+<link rel="stylesheet" href="../assets/atlas.css">
+<link rel="stylesheet" href="../assets/tema.css">
+<script src="../assets/sito.js"></script>
+<script src="../assets/atlas.js" defer></script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <div class="occhiello"><span>Settimana 11 · Parallelismo oltre i thread</span></div>
+  <h1>GPU e istruzioni vettoriali (SIMD)</h1>
+  <p class="lede">Due modi di fare tante operazioni uguali insieme: migliaia di thread semplici su una scheda grafica (GPU), oppure una sola istruzione che opera su 4–16 numeri dentro un singolo core della CPU. Quando conviene l'uno, quando l'altro, quando nessuno dei due.</p>
+</header>
+
+<section>
+  <h2>CPU e GPU: due progetti diversi</h2>
+  <p>La CPU ha pochi core (per esempio 4) molto complessi: sono bravi a eseguire codice irregolare, con molti salti e decisioni. La GPU ha moltissimi core molto semplici (per esempio 2304 in una Nvidia RTX 2070, organizzati in 36 <i>symmetric multiprocessor</i> da 64 core ciascuno), pensati per fare la <b>stessa operazione</b> su tanti dati. Nasce per la grafica, che è algebra lineare, cioè moltiplicazioni di matrici; dal 2006 circa si usa anche per il calcolo scientifico (CUDA) e oggi per il machine learning.</p>
+  <figure class="passi" data-titolo="Host e device" data-legenda="dato:host (CPU),due:device (GPU),ora:copia dei dati">
+    <div class="passo"><div class="espr"><mark class="dato">host</mark> = la CPU e la sua memoria         <mark class="due">device</mark> = la GPU e la sua memoria</div><p class="nota">Sono due computer separati nello stesso case: ognuno ha la sua memoria. La GPU lavora solo sui dati che sono nella <b>sua</b> memoria.</p></div>
+    <div class="passo"><div class="espr"><mark class="dato">host</mark>: alloca h_A, h_B, h_C        <mark class="due">device</mark>: alloca d_A, d_B, d_C</div><p class="nota">Si riservano gli array su tutti e due i lati. Convenzione: <code>h_</code> per host, <code>d_</code> per device.</p></div>
+    <div class="passo"><div class="espr"><mark class="ora">copia</mark> h_A, h_B  →  d_A, d_B</div><p class="nota">I dati di ingresso vanno dalla memoria della CPU a quella della GPU.</p></div>
+    <div class="passo"><div class="espr"><mark class="due">kernel</mark>: d_C = d_A + d_B  (sulla GPU)</div><p class="nota">Il <b>kernel</b> è la funzione che gira sulla GPU. La chiamata è asincrona: l'host può continuare subito.</p></div>
+    <div class="passo"><div class="espr"><mark class="ora">copia</mark> d_C  →  h_C</div><p class="nota">Il risultato torna all'host. Questa copia aspetta che il kernel sia finito.</p></div>
+  </figure>
+  <div class="box regola" data-tit="Il collo di bottiglia: la comunicazione">
+    <p>Sommare due array è un'operazione O(N) e anche copiare i dati è O(N): il tempo di copia domina, e la GPU <b>non conviene</b> (la slide lo dice: l'addizione di array su GPU non vale la pena). Conviene quando c'è molto calcolo per ogni byte spostato, come nella moltiplicazione di matrici.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Il kernel: un thread per elemento</h2>
+  <p>Sulla CPU si somma con un ciclo. Sulla GPU <b>non c'è il ciclo</b>: si lancia un thread per ogni elemento, ognuno esegue la stessa funzione con un indice diverso.</p>
+  <figure class="codice" data-titolo="Somma di array: CPU e kernel CUDA">
+<pre data-lang="java">// CPU (Java)
+static void arrayAdd(float[] A, float[] B, float[] C) {
+    for (int i = 0; i &lt; A.length; i++)
+        C[i] = A[i] + B[i];
+}
+
+// GPU (CUDA C): non compilato qui, manca il compilatore nvcc
+__global__ void vectorAddKernel(float* A, float* B, float* C, int N) {
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
+    C[i] = A[i] + B[i];
+}
+vectorAddKernel&lt;&lt;&lt;1, 16&gt;&gt;&gt;(d_A, d_B, d_C, 16);</pre>
+    <ol class="spiega">
+      <li data-righe="2-4" data-segna="for (int i = 0; i < A.length; i++)@no"><p>Sulla CPU un thread fa N giri e a ogni giro una somma.</p></li>
+      <li data-righe="8" data-segna="__global__@dato"><p><code>__global__</code> dichiara un <b>kernel</b>: una funzione che parte dall'host e gira sulla GPU.</p></li>
+      <li data-righe="9" data-segna="blockIdx.x * blockDim.x + threadIdx.x@ora"><p>Ogni thread calcola il proprio indice <code>i</code>. Spiegato sotto: <code>threadIdx</code> è il numero del thread dentro il suo blocco, <code>blockIdx</code> il numero del blocco, <code>blockDim</code> quanti thread ha un blocco.</p></li>
+      <li data-righe="10" data-segna="C[i] = A[i] + B[i]@ok"><p>Ogni thread fa <b>una sola somma</b>, quella del proprio elemento. Il ciclo è sparito: sono i thread a essere N.</p></li>
+      <li data-righe="12" data-segna="<<<1, 16>>>@ora"><p>Il lancio. Tra <code>&lt;&lt;&lt; &gt;&gt;&gt;</code>: prima la <b>dimensione della griglia</b> (quanti blocchi), poi la <b>dimensione del blocco</b> (quanti thread per blocco). Qui 1 blocco da 16 thread, quindi i = 0…15.</p></li>
+    </ol>
+  </figure>
+  <h3>Griglia, blocchi, thread, warp</h3>
+  <p>I thread sono organizzati in tre livelli. Un <b>thread</b> esegue il kernel una volta. Un <b>blocco</b> è un gruppo di thread (al più 1024), in 1, 2 o 3 dimensioni. Una <b>griglia</b> è un gruppo di blocchi. Dentro l'hardware i thread di un blocco sono eseguiti a <b>warp</b>: gruppi di 32 che eseguono la stessa istruzione nello stesso momento (un thread può «non partecipare» se un <code>if</code> o un <code>while</code> lo esclude).</p>
+  <p>Per le matrici si usano due dimensioni: riga e colonna del thread si calcolano come l'indice di prima, una volta per asse.</p>
+  <figure class="scena" data-scena="griglia11" data-titolo="Da blocco e thread a riga e colonna (matrice 48×48)"></figure>
+</section>
+
+<section>
+  <h2>Moltiplicazione di matrici: dove la GPU vince</h2>
+  <p>La moltiplicazione di due matrici N×N usa O(N²) dati ma O(N³) operazioni: molto calcolo per pochi dati. È il caso buono per la GPU. L'elemento C[r][c] è la somma dei prodotti della riga r di A per la colonna c di B.</p>
+  <figure class="passi" data-titolo="Matrice in un array piatto (row-major)" data-legenda="dato:riga r,due:colonna c,ok:elemento">
+    <div class="passo"><div class="espr">A = [ 1 2 3 ]      float[] A = <mark class="dato">1 2 3</mark> 4 5 6 7 8 9
+    [ 4 5 6 ]
+    [ 7 8 9 ]</div><p class="nota">Invece di <code>float[][]</code> (due livelli di array) si usa un array solo, con le righe una dopo l'altra: ordine <b>row-major</b>. È il formato di C e della GPU.</p></div>
+    <div class="passo"><div class="espr">elemento (r, c)  →  A[<mark class="dato">r</mark> * N + <mark class="due">c</mark>]</div><p class="nota">La riga r comincia in posizione <code>r * N</code>; la colonna c si trova c posti dopo. Per N = 3, (1, 2) → 1·3 + 2 = 5, che è il «6».</p></div>
+    <div class="passo"><div class="espr">C[r*N + c] += A[r*N + <mark class="ora">i</mark>] * B[<mark class="ora">i</mark>*N + c]    per i = 0 … N-1</div><p class="nota">Il ciclo interno scorre <code>i</code>: la riga r di A (indici consecutivi) e la colonna c di B (salti di N). È il codice dei tre cicli r, c, i (ordine <b>RCI</b>).</p></div>
+  </figure>
+  <figure class="codice" data-titolo="Kernel «naive»: un thread per elemento di C">
+<pre data-lang="java">// CUDA C, non compilato qui
+__global__ void matMulNaive(float* A, float* B, float* C, int N) {
+    int row = blockIdx.y * blockDim.y + threadIdx.y;
+    int col = blockIdx.x * blockDim.x + threadIdx.x;
+    if (row &lt; N &amp;&amp; col &lt; N) {
+        float sum = 0.0f;
+        for (int i = 0; i &lt; N; i++)
+            sum += A[row * N + i] * B[i * N + col];
+        C[row * N + col] = sum;
+    }
+}</pre>
+    <ol class="spiega">
+      <li data-righe="3-4" data-segna="row@dato|col@due"><p>Ogni thread conosce la sua coppia (riga, colonna) tramite gli indici di blocco e di thread, un asse per volta.</p></li>
+      <li data-righe="5" data-segna="row < N && col < N@no"><p>Se N non è multiplo della dimensione del blocco, qualche thread cade fuori dalla matrice: questo controllo evita di scrivere fuori dai bordi.</p></li>
+      <li data-righe="6-8" data-segna="sum += A[row * N + i] * B[i * N + col]@ok"><p>Ogni thread fa solo il <b>ciclo più interno</b> (su i) per il proprio elemento, e tiene la somma in una variabile locale <code>sum</code>.</p></li>
+      <li data-righe="9" data-segna="C[row * N + col] = sum@ora"><p>Una sola scrittura in memoria globale, nella cella del proprio elemento: nessun altro thread la scrive, quindi non serve sincronizzare.</p></li>
+    </ol>
+  </figure>
+  <p>Lancio: blocchi di 32×32 thread e una griglia grande abbastanza da avere almeno N×N thread. Il numero di blocchi per asse è la divisione <b>arrotondata per eccesso</b>: <code>(N + 31) / 32</code>. Per N = 96 servono 3×3 blocchi.</p>
+  <h3>Rendere più veloce: ordine dei cicli e tiling</h3>
+  <figure class="passi" data-titolo="Perché cambiare l'ordine dei cicli aiuta la cache" data-legenda="dato:A,due:B,ok:C,no:accesso a salti">
+    <div class="passo"><div class="espr">RCI: for r, for c, for i:   C[r*N+c] += A[r*N+i] * B[i*N+c]</div><p class="nota">Nel ciclo interno (i) l'accesso ad <mark class="dato">A</mark> è sequenziale (<code>rN+0, rN+1, …</code>), ma quello a <mark class="due">B</mark> salta di N ogni volta (<code>N+c, 2N+c, …</code>).</p></div>
+    <div class="passo"><div class="espr">B[i*N + c]:  <mark class="no">N+c, 2N+c, 3N+c, …</mark></div><p class="nota">Ogni accesso cade su una linea di cache diversa: la cache, che porta 64 byte alla volta, viene sfruttata male. È lento.</p></div>
+    <div class="passo"><div class="espr">RIC: for r, for <mark class="ora">i</mark>, for <mark class="ora">c</mark>:   C[r*N+c] += A[r*N+i] * B[i*N+c]</div><p class="nota">Si scambiano i cicli <code>c</code> e <code>i</code>. Ora nel ciclo interno (c) sia B sia C sono scorsi con indici consecutivi, e A è costante.</p></div>
+    <div class="passo"><div class="espr">B[i*N + c]:  <mark class="ok">iN+0, iN+1, iN+2, …</mark></div><p class="nota">Le operazioni sono le stesse, cambia solo l'ordine degli accessi. La slide mostra che i cicli riordinati in Java e C sono molto più veloci.</p></div>
+  </figure>
+  <p>L'idea più sofisticata è il <b>tiling</b>: invece di scorrere righe e colonne intere, si calcola C a pezzi da sottomatrici (<i>tile</i>, per esempio 32×32 float = 4 KB) abbastanza piccole da stare nella cache L1 della CPU, o nella <b>shared memory</b> della GPU. Il numero di somme e prodotti non cambia, cambia l'ordine degli accessi.</p>
+  <figure class="passi" data-titolo="Tiling su GPU: il blocco carica un pezzo alla volta" data-legenda="dato:tile di A,due:tile di B,ok:somma nel thread,ora:sincronizzazione">
+    <div class="passo"><div class="espr">un blocco 32×32 = un tile di C       shared memory: <mark class="dato">As</mark> (32×32) + <mark class="due">Bs</mark> (32×32)</div><p class="nota">La <b>memoria globale</b> è accessibile da tutti i thread ma lenta. La <b>shared memory</b> è visibile solo ai thread di un blocco ed è più veloce.</p></div>
+    <div class="passo"><div class="espr">per t = 0, 1, 2:   i thread copiano insieme <mark class="dato">il tile t di A</mark> e <mark class="due">il tile t di B</mark> in shared memory</div><p class="nota">Ogni thread copia un elemento: tutti insieme riempiono i due tile. Ogni dato globale viene letto una volta per blocco invece che 32 volte.</p></div>
+    <div class="passo"><div class="espr"><mark class="ora">__syncthreads()</mark></div><p class="nota">Barriera: nessun thread comincia a moltiplicare prima che <b>tutti</b> abbiano finito di copiare. I thread di un blocco stanno in più warp, eseguiti in ordine qualsiasi: senza barriera si leggerebbero celle non ancora scritte.</p></div>
+    <div class="passo"><div class="espr">sum += <mark class="dato">As[ty*TILE + k]</mark> * <mark class="due">Bs[k*TILE + tx]</mark>   per k = 0…31</div><p class="nota">Ogni thread aggiunge alla sua somma <code>sum</code> il contributo di questo tile: i dati ora vengono dalla memoria veloce.</p></div>
+    <div class="passo"><div class="espr"><mark class="ora">__syncthreads()</mark>   poi il tile successivo</div><p class="nota">Seconda barriera: nessuno sovrascrive i tile finché tutti hanno finito di usarli.</p></div>
+    <div class="passo"><div class="espr">C[row*N + col] = <mark class="ok">sum</mark></div><p class="nota">Dopo l'ultimo tile ogni thread scrive il suo risultato in memoria globale. Per N = 96: 3 tile per riga e 3×3 blocchi.</p></div>
+  </figure>
+  <p>Ordini di grandezza dalla slide (laptop): il ciclo C riordinato su un solo core arriva a 62 miliardi di operazioni in virgola mobile al secondo (grazie alle istruzioni vettoriali, vedi sotto); la GPU a 857 miliardi, 14 volte più della migliore CPU. Il massimo teorico della GPU della slide è 7465 miliardi.</p>
+</section>
+
+<section>
+  <h2>Istruzioni vettoriali dentro un core (SIMD)</h2>
+  <p>Oltre al parallelismo tra core e thread (MIMD: molte istruzioni, molti dati) c'è un parallelismo <b>dentro</b> un core: una <b>istruzione vettoriale</b> opera su 4–16 numeri in un colpo solo (SIMD: una istruzione, molti dati). Un <b>vettore</b> in questo senso è una piccola tupla di valori dello stesso tipo, e ogni posizione si chiama <b>lane</b> (corsia). Non è il vettore matematico (u₀, u₁, …): l'esercizio 11.3 distingue i due significati.</p>
+  <p>Il compilatore C può generare queste istruzioni da solo. In Java si usano esplicitamente con il pacchetto <code>jdk.incubator.vector</code> (modulo incubator: va aggiunto con <code>--add-modules jdk.incubator.vector</code> sia in compilazione sia in esecuzione). I tipi: <code>FloatVector</code>, <code>ShortVector</code>…, <code>VectorMask</code>, <code>VectorOperators</code>. Una <b>species</b> (<code>VectorSpecies</code>) descrive il hardware vettoriale per un tipo di dato: <code>FloatVector.SPECIES_PREFERRED.length()</code> è il numero ottimale di lane (provato su questo PC: 16 float, 32 short; sul Mac della slide: 4).</p>
+  <figure class="codice" data-titolo="Somma di array con vettori">
+<pre data-lang="java">static final VectorSpecies&lt;Float&gt; FLOATSPEC = FloatVector.SPECIES_PREFERRED;
+
+static void arrayAddSimd(float[] A, float[] B, float[] C) {
+    for (int i = 0; i &lt; A.length; i += FLOATSPEC.length()) {
+        FloatVector av = FloatVector.fromArray(FLOATSPEC, A, i);
+        FloatVector bv = FloatVector.fromArray(FLOATSPEC, B, i);
+        FloatVector rv = av.add(bv);
+        rv.intoArray(C, i);
+    }
+}</pre>
+    <ol class="spiega">
+      <li data-righe="4" data-segna="i += FLOATSPEC.length()@ora"><p>Il passo del ciclo non è 1 ma il numero di lane: ogni giro elabora, per esempio, 16 elementi.</p></li>
+      <li data-righe="5-6" data-segna="fromArray@dato"><p><code>fromArray(spec, A, i)</code> copia nel vettore gli elementi <code>A[i] … A[i+lane-1]</code>.</p></li>
+      <li data-righe="7" data-segna="av.add(bv)@ok"><p>Una sola istruzione somma tutte le coppie, <b>lane per lane</b>: lane 0 con lane 0, lane 1 con lane 1…</p></li>
+      <li data-righe="8" data-segna="rv.intoArray(C, i)@due"><p><code>intoArray</code> riscrive il risultato in <code>C[i] …</code>.</p></li>
+    </ol>
+  </figure>
+  <div class="box attenzione" data-tit="La lunghezza deve essere un multiplo delle lane">
+    <p>Questo ciclo assume che <code>A.length</code> sia multiplo del numero di lane: l'ultimo giro leggerebbe oltre la fine dell'array. Nell'esercizio 11.4 l'array di caratteri è riempito fino a un multiplo di 32 proprio per questo. Provato: la versione vettoriale e quella normale danno gli stessi risultati su un array di 32 elementi.</p>
+  </div>
+  <figure class="passi" data-titolo="Le operazioni lane per lane" data-legenda="dato:vettore av,due:vettore bv,ok:risultato">
+    <div class="passo"><div class="espr">av = <mark class="dato">[ 1  2  3  4 ]</mark>     bv = <mark class="due">[ 10 20 30 40 ]</mark></div><p class="nota">Due vettori a 4 lane (per semplicità).</p></div>
+    <div class="passo"><div class="espr">av.add(bv)  =  <mark class="ok">[ 11 22 33 44 ]</mark></div><p class="nota">Ogni lane combina le lane nella stessa posizione: add, mul, sub… tutte in una sola istruzione.</p></div>
+    <div class="passo"><div class="espr">av.fma(bv, cv)  =  av · bv + cv   (lane per lane)</div><p class="nota"><b>FMA</b> (fused multiply-add): moltiplica e somma in un passo solo. Serve per prodotti scalari e per la moltiplicazione di matrici.</p></div>
+    <div class="passo"><div class="espr">av.add(17)  =  <mark class="ok">[ 18 19 20 21 ]</mark></div><p class="nota">Un numero singolo viene ripetuto su ogni lane (<i>broadcast</i>).</p></div>
+    <div class="passo"><div class="espr">av.compare(VectorOperators.LT, 3)  =  mask <mark class="ok">[ T T F F ]</mark></div><p class="nota">Un confronto non dà un vettore di numeri ma una <b>maschera</b> (<code>VectorMask</code>): una lane vero/falso per posizione. Qui 1 &lt; 3 e 2 &lt; 3 sì, 3 &lt; 3 e 4 &lt; 3 no.</p></div>
+    <div class="passo"><div class="espr">cv.blend(dv, mask)   →   dove la maschera è T prende dv, altrove resta cv</div><p class="nota">La maschera serve a fare un'operazione solo su certe lane (<code>add(dv, mask)</code>) o a scegliere lane da due vettori (<code>blend</code>). Sostituisce l'<code>if</code>, che dentro un vettore non esiste.</p></div>
+    <div class="passo"><div class="espr">av.reduceLanes(VectorOperators.ADD)  =  <mark class="ok">10</mark></div><p class="nota">La <b>riduzione</b> combina tutte le lane in un numero solo: 1+2+3+4. Usata per la somma e per il prodotto scalare (esercizi 11.2 e 11.3).</p></div>
+  </figure>
+</section>
+
+<section>
+  <h2>Elaborare testo con i vettori (esercizio 11.4)</h2>
+  <p>I vettori funzionano anche sui caratteri. Non esiste un <code>CharVector</code>: si usa <code>ShortVector</code>, perché un <code>char</code> è un valore a 16 bit come uno <code>short</code>. Tre esempi, tutti compilati ed eseguiti.</p>
+  <figure class="codice" data-titolo="contains, countAZ e replace con ShortVector">
+<pre data-lang="java">static boolean containsSimd(char[] chars, char ch) {
+    for (int i = 0; i &lt; chars.length; i += SHORTSPEC.length()) {
+        ShortVector sv = ShortVector.fromCharArray(SHORTSPEC, chars, i);
+        if (sv.eq((short) ch).anyTrue())
+            return true;
+    }
+    return false;
+}
+
+static int countAZSimd(char[] chars) {
+    int count = 0;
+    for (int i = 0; i &lt; chars.length; i += SHORTSPEC.length()) {
+        ShortVector sv = ShortVector.fromCharArray(SHORTSPEC, chars, i);
+        VectorMask&lt;Short&gt; ge = sv.compare(VectorOperators.GE, (short) 'A');
+        VectorMask&lt;Short&gt; le = sv.compare(VectorOperators.LE, (short) 'Z');
+        count += ge.and(le).trueCount();
+    }
+    return count;
+}
+
+static void replaceSimd(char[] chars, char oldChar, char newChar) {
+    ShortVector nv = ShortVector.broadcast(SHORTSPEC, (short) newChar);
+    for (int i = 0; i &lt; chars.length; i += SHORTSPEC.length()) {
+        ShortVector sv = ShortVector.fromCharArray(SHORTSPEC, chars, i);
+        VectorMask&lt;Short&gt; m = sv.eq((short) oldChar);
+        sv.blend(nv, m).intoCharArray(chars, i);
+    }
+}</pre>
+    <ol class="spiega">
+      <li data-righe="3-4" data-segna="sv.eq((short) ch).anyTrue()@ora"><p><code>eq</code> confronta ogni lane con il carattere cercato e dà una maschera; <code>anyTrue()</code> chiede «almeno una lane è vera?». Si controllano 32 caratteri per volta, e si esce appena ne trovi uno.</p></li>
+      <li data-righe="16" data-segna="ge.and(le).trueCount()@ok"><p>Una lettera maiuscola è un carattere ≥ 'A' <b>e</b> ≤ 'Z'. Due confronti danno due maschere; <code>and</code> le combina lane per lane e <code>trueCount()</code> conta le lane vere: quante maiuscole in questo pezzo.</p></li>
+      <li data-righe="26" data-segna="blend(nv, m)@due"><p>La maschera <code>m</code> segna dove c'è il carattere vecchio. <code>blend</code> prende il carattere nuovo (<code>nv</code>, ripetuto su tutte le lane) solo in quelle lane e lascia le altre. Poi si riscrive nell'array.</p></li>
+    </ol>
+  </figure>
+  <p>Provato su un testo di prova (con array riempito a 64 caratteri): <code>containsSimd</code> trova '@' e non '#', <code>countAZSimd</code> conta 7 maiuscole, <code>replaceSimd(…, 'o', '0')</code> sostituisce tutte le 'o'. Le misure di tempo dell'esercizio (testo di 55 MB) non sono state eseguite.</p>
+</section>
+
+<section>
+  <h2>Quando usare la GPU? (esercizio 11.1)</h2>
+  <p>La domanda dell'esercizio è sempre la stessa: <b>quanto calcolo c'è per ogni dato spostato</b>, e <b>i thread possono lavorare indipendenti</b>? Le risposte sotto sono ragionamenti dall'idea della lezione, non una soluzione ufficiale.</p>
+  <div class="tab-wrap"><table class="tab"><thead><tr><th>problema</th><th>sulla GPU?</th><th>perché</th></tr></thead><tbody>
+    <tr><td><code>contains(char[], ch)</code></td><td>facile da scrivere, non conviene</td><td>un thread per carattere va bene, ma il calcolo è O(N) quanto la copia dei dati: la copia domina, come nella somma di array. In più la CPU può fermarsi al primo trovato; sulla CPU l'istruzione vettoriale (11.4) basta.</td></tr>
+    <tr><td><code>histogram(char[])</code></td><td>più difficile</td><td>molti thread incrementano gli stessi 256 contatori: serve sincronizzare (operazioni atomiche o istogrammi parziali per blocco da sommare dopo). Il resto è come sopra: pochissimo calcolo per dato.</td></tr>
+    <tr><td>bubblesort, heapsort</td><td>difficili</td><td>molto sequenziali: ogni passo dipende dal precedente.</td></tr>
+    <tr><td>quicksort</td><td>difficile</td><td>ricorsivo e irregolare: pezzi di dimensioni diverse, molti salti.</td></tr>
+    <tr><td>radixsort</td><td>più facile</td><td>lavora per cifre con passi regolari (conteggi e somme prefisso su tutti gli elementi), che si dividono bene tra thread.</td></tr>
+  </tbody></table></div>
+  <div class="box esame" data-tit="La frase da ricordare">
+    <p>La GPU è adatta a problemi con <b>molto calcolo per dato</b> (la moltiplicazione di matrici fa O(N³) operazioni su O(N²) dati), <b>regolari</b> (stessa operazione su ogni elemento, pochi salti) e <b>indipendenti</b> (poca sincronizzazione). Per poco calcolo per dato la copia host-device domina; per codice irregolare i warp restano a metà.</p>
+  </div>
+  <div class="box inglese" data-tit="GPU or CPU?">
+    <p>A GPU has thousands of simple cores that run the same kernel on many data elements, but it has its own memory, so the data must be copied between host and device. It pays off when there is much computation per byte transferred (like matrix multiplication, O(N³) work on O(N²) data) and the threads are independent. For O(N) work such as adding two arrays, the copy dominates. Inside a CPU core, SIMD vector instructions (<code>FloatVector</code> in Java) process 4–16 values per instruction and need no copy.</p>
+  </div>
+</section>
+
+</main>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  const T = (id, x, y, t, extra) => Object.assign({ id, tipo: 'testo', x, y, t, size: 12 }, extra || {});
+  const vals = [['0,0', '0,1', '0,2'], ['1,0', '1,1', '1,2'], ['2,0', '2,1', '2,2']];
+  SCENE.griglia11 = {
+    w: 600, h: 250, lato: true,
+    legenda: 'dato:blocco scelto,ora:thread scelto,ok:risultato',
+    oggetti: [
+      T('tit', 130, 22, 'griglia 3×3 di blocchi (y,x)', { bold: true }),
+      { id: 'g', tipo: 'griglia', x: 40, y: 40, cw: 60, ch: 50, valori: vals, toni: {} },
+      T('f1', 420, 70, '', { size: 13, anchor: 'start' }),
+      T('f2', 420, 110, '', { size: 13, anchor: 'start' }),
+      T('f3', 420, 150, '', { size: 13, anchor: 'start', bold: true }),
+      T('f4', 420, 190, '', { size: 13, anchor: 'start', bold: true })
+    ],
+    passi: [
+      { nota: '<p>Una matrice 48×48. Blocchi da 16×16 thread: la griglia ha 48/16 = 3 blocchi per asse, in tutto 9 blocchi e 3×3·16·16 = 2304 thread (uno per elemento di C). Ogni cella è un blocco, indicata con (blockIdx.y, blockIdx.x).</p>' },
+      { nota: '<p>Prendi il blocco con <code>blockIdx.y = 1</code> e <code>blockIdx.x = 2</code>.</p>', set: { g: { toni: { '1,2': 'dato' } }, f1: { t: 'blocco: y = 1, x = 2', tono: 'dato' } } },
+      { nota: '<p>Dentro il blocco prendi il thread con <code>threadIdx.y = 14</code> e <code>threadIdx.x = 4</code>. <code>blockDim</code> vale 16 su tutti e due gli assi.</p>', set: { f2: { t: 'thread: y = 14, x = 4', tono: 'ora' } } },
+      { nota: '<p><code>row = blockIdx.y * blockDim.y + threadIdx.y</code>: salta 1 blocco intero da 16 righe, poi altre 14 dentro il blocco: 1·16 + 14 = 30.</p>', set: { f3: { t: 'row = 1·16 + 14 = 30', tono: 'ok' } } },
+      { nota: '<p><code>col = blockIdx.x * blockDim.x + threadIdx.x</code>: 2 blocchi da 16 colonne, più 4: 2·16 + 4 = 36. Questo thread calcola <b>C[30][36]</b>, e tutti i 2304 thread ricevono una coppia diversa.</p>', set: { f4: { t: 'col = 2·16 + 4 = 36', tono: 'ok' } } }
+    ]
+  };
+})();
+</script>
+</body>
+</html>

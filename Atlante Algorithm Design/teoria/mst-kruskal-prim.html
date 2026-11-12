@@ -22,12 +22,35 @@ SCENE.kru = {
     {id:'c1',tipo:'testo',x:20,y:250,t:'',size:12,bold:true,anchor:'start'}
   ],
   passi: [
-    { nota: 'Archi con peso, sei nodi <b>a … e</b>. Un albero di copertura (spanning tree) collega tutti i nodi con <b>n − 1 = 4 archi</b> senza cicli, al costo minimo.', set:{ab:{tono:'dato'},bc:{tono:'dato'},de:{tono:'dato'},ac:{tono:'dato'},cd:{tono:'dato'},be:{tono:'dato'}} },
+    { nota: 'Archi con peso, cinque nodi <b>a … e</b>. Un albero di copertura (spanning tree) collega tutti i nodi con <b>n − 1 = 4 archi</b> senza cicli, al costo minimo.', set:{ab:{tono:'dato'},bc:{tono:'dato'},de:{tono:'dato'},ac:{tono:'dato'},cd:{tono:'dato'},be:{tono:'dato'}} },
     { nota: 'Ordino gli archi per peso crescente: 1, 2, 2, 3, 4, 5. Prendo il primo: <b>ab = 1</b>, non crea cicli.', set:{ab:{tono:'ok'},c1:{t:'preso: ab(1)'}} },
     { nota: '<b>bc = 2</b>: collega c alla componente di a–b, nessun ciclo. Preso.', set:{bc:{tono:'ok'},c1:{t:'preso: ab(1), bc(2)'}} },
     { nota: '<b>de = 2</b>: collega d–e, che è un\'altra componente. Preso.', set:{de:{tono:'ok'},c1:{t:'preso: ab, bc, de (1+2+2)'}} },
     { nota: '<b>ac = 3</b>: a e c sono già nella stessa componente (a–b–c). Aggiungerlo chiuderebbe un ciclo: <b>scartato</b>.', set:{ac:{tono:'no'},c1:{t:'ac scartato: chiuderebbe un ciclo'}} },
     { nota: '<b>cd = 4</b>: unisce le due componenti {a,b,c} e {d,e}. Preso: ora ho 4 = n − 1 archi, costo <b>9</b>. Mi fermo.', set:{cd:{tono:'ok'},ac:{tono:null},c1:{t:'albero: ab, bc, de, cd · costo 9',tono:'ok'}} }
+  ]
+};
+})();
+</script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+const N = (id,x,y,t) => ({id,tipo:'nodo',x,y,t,r:18});
+const A = (id,da,a,t) => ({id,tipo:'arco',da,a,dir:false,t});
+SCENE.prim = {
+  w: 520, h: 270, lato: true,
+  legenda: 'ok:nell\'albero,ora:candidato migliore,dato:candidato non scelto,no:interno (ciclo)',
+  oggetti: [
+    N('a',60,70,'a'), N('b',180,40,'b'), N('c',300,70,'c'), N('d',300,190,'d'), N('e',180,200,'e'),
+    A('ab','a','b','1'), A('bc','b','c','2'), A('de','d','e','2'), A('ac','a','c','3'), A('cd','c','d','4'), A('be','b','e','5'),
+    {id:'c1',tipo:'testo',x:20,y:250,t:'',size:12,bold:true,anchor:'start'}
+  ],
+  passi: [
+    { nota: "Stesso grafo di Kruskal. Parto dal nodo <b>a</b>: l'albero è {a}. Gli archi che escono dall'albero sono ab (1) e ac (3).", set:{a:{tono:'ok'},ab:{tono:'ora'},ac:{tono:'dato'},c1:{t:'albero {a} · candidati: ab 1, ac 3'}} },
+    { nota: "Prendo il più economico: <b>ab = 1</b>. Albero {a, b}. Ora escono ac (3), bc (2), be (5).", set:{ab:{tono:'ok'},b:{tono:'ok'},bc:{tono:'ora'},ac:{tono:'dato'},be:{tono:'dato'},c1:{t:'albero {a, b} · candidati: ac 3, bc 2, be 5'}} },
+    { nota: "Il minimo è <b>bc = 2</b>. Albero {a, b, c}. L'arco ac ora ha entrambi gli estremi nell'albero: è interno, non serve più. Escono cd (4) e be (5).", set:{bc:{tono:'ok'},c:{tono:'ok'},ac:{tono:'no'},cd:{tono:'ora'},be:{tono:'dato'},c1:{t:'albero {a, b, c} · candidati: cd 4, be 5'}} },
+    { nota: "Il minimo è <b>cd = 4</b>. Albero {a, b, c, d}. Escono de (2) e be (5).", set:{cd:{tono:'ok'},d:{tono:'ok'},de:{tono:'ora'},be:{tono:'dato'},c1:{t:'albero {a, b, c, d} · candidati: de 2, be 5'}} },
+    { nota: "Prendo <b>de = 2</b>. Tutti i nodi sono nell'albero (4 = n − 1 archi): costo 1 + 2 + 4 + 2 = <b>9</b>, come Kruskal (cambia l'ordine, non il costo).", set:{de:{tono:'ok'},e:{tono:'ok'},be:{tono:'no'},c1:{t:'costo 9',tono:'ok'}} }
   ]
 };
 })();
@@ -59,12 +82,14 @@ diverse, prendilo e unisci le componenti; altrimenti scartalo, perché chiudereb
 <p>La <b>cut property</b> (proprietà del taglio): dato un taglio del grafo (una divisione dei nodi in due gruppi), l'arco più economico
 che attraversa il taglio appartiene a <i>qualche</i> MST. Kruskal prende sempre questo tipo di arco: quello più economico che
 collega due componenti.</p>
-<p>Simmetrica, la <b>cycle property</b>: l'arco più costoso di un ciclo non sta in nessun MST. Per questo lo scarti quando chiude un ciclo.</p>
+<p>Simmetrica, la <b>cycle property</b>: l'arco più costoso di un ciclo (se è l'unico con quel peso) non sta in nessun MST. Per questo lo scarti quando chiude un ciclo.</p>
 </section>
 <section>
   <h2>Prim: fai crescere un solo albero</h2>
 <p>Prim parte da un nodo e fa crescere un solo albero: a ogni passo aggiunge l'arco <b>più economico che esce dall'albero</b> verso un nodo esterno.
 È lo stesso schema di Dijkstra: una coda di priorità sui nodi esterni, con la distanza minima dall'albero.</p>
+  <figure class="scena" data-scena="prim" data-titolo="Prim da a: l'albero cresce di un arco alla volta"></figure>
+<p>Perché è corretto: a ogni passo l'albero e il resto dei nodi sono un taglio, e l'arco scelto è il più economico che lo attraversa. Per la cut property sta in un MST. Prova: se un MST <i>T</i> non contenesse l'arco <i>e</i> = (u, v), aggiungere <i>e</i> a <i>T</i> chiude un ciclo; quel ciclo attraversa il taglio con un altro arco <i>f</i>, che costa almeno quanto <i>e</i>. Scambio <i>f</i> con <i>e</i>: resta un albero e non costa di più.</p>
 <p>Costo <code>O(m log n)</code> con binary heap, come Kruskal. Prim è più comodo quando il grafo è denso; Kruskal quando gli archi sono già ordinati
 o quando ti serve l'ordine globale.</p>
 </section>

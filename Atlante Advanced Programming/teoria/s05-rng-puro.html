@@ -123,6 +123,15 @@ case class SimpleRNG(seed: Long) extends RNG:
       <li data-righe="7-9" data-segna="&gt;&gt;&gt; 16@ora|(n, nextRNG)@ok"><p><code>&gt;&gt;&gt;</code> sposta i bit a destra riempiendo di zeri; <code>.toInt</code> tiene 32 bit, quindi il numero può essere negativo. Si restituisce il numero con il nuovo stato.</p></li>
     </ol>
   </figure>
+  <figure class="passi" data-titolo="Dentro nextInt: i conti veri, da SimpleRNG(42)" data-legenda="dato:seed,ora:cosa cambia,due:maschera 48 bit,ok:numero prodotto,no:negativo">
+    <div class="passo"><div class="espr">seed = <mark class="dato">42</mark></div><p class="nota">Lo stato di partenza. Servono tre operazioni: moltiplicare, sommare, tagliare.</p></div>
+    <div class="passo"><div class="espr">42 * 0x5DEECE66D = <mark class="ora">1059025964514</mark></div><p class="nota">Moltiplicazione. <code>0x5DEECE66D</code> è un numero in esadecimale (base 16) e vale 25214903917. La <code>L</code> in fondo lo rende un Long: serve, perché il prodotto non entra in un Int.</p></div>
+    <div class="passo"><div class="espr">1059025964514 + 0xB = <mark class="ora">1059025964525</mark></div><p class="nota">Somma di 11 (<code>0xB</code>). Questo è già il nuovo seed.</p></div>
+    <div class="passo"><div class="espr">1059025964525 <mark class="due">&amp; 0xFFFFFFFFFFFF</mark> = 1059025964525</div><p class="nota">La maschera tiene solo i 48 bit più bassi (la F ripetuta 12 volte = 12 × 4 bit). Qui il numero è già più piccolo di 2<sup>48</sup> = 281474976710656, quindi non cambia. Con seed grandi taglia la parte in eccesso.</p></div>
+    <div class="passo"><div class="espr">1059025964525 <mark class="ora">&gt;&gt;&gt; 16</mark> = <mark class="ok">16159453</mark></div><p class="nota">Spostare 16 bit a destra = dividere per 2<sup>16</sup> = 65536 buttando i decimali. Restano i 32 bit alti dei 48. Entra in un Int e resta positivo: è il numero restituito.</p></div>
+    <div class="passo"><div class="espr">seed 1059025964525 → nuovo seed = <mark class="due">197491923327988</mark> → &gt;&gt;&gt; 16 = 3013487599</div><p class="nota">Secondo giro, dallo stato <code>r1</code>. Il risultato è 3013487599, che supera Int.MaxValue (2147483647).</p></div>
+    <div class="passo"><div class="espr">3013487599 − 2<sup>32</sup> = <mark class="no">−1281479697</mark></div><p class="nota"><code>.toInt</code> tiene 32 bit e il primo è il bit del segno: se è 1 il numero è negativo (3013487599 − 4294967296). Ecco da dove vengono i negativi, e perché l'esercizio 1 deve gestirli. Numeri calcolati e controllati con Scala 3.8.4.</p></div>
+  </figure>
   <figure class="scena" data-scena="catena" data-titolo="Passare lo stato a mano"></figure>
   <p class="piccolo">Tutti i numeri sono stati ottenuti eseguendo il codice (Scala 3.8.4).</p>
 </section>
@@ -190,7 +199,7 @@ ints(3):      r2 = G3       →  (i3 :: …,  G3)</pre>
 
 <section>
   <h2>Gli errori nel tuo file</h2>
-  <p>Il tuo <code>Exercises.scala</code> della settimana 5, com'è adesso nel repo (l'ho solo letto e compilato su una copia): Scala 3.8.4 si ferma con 4 errori.</p>
+  <p>Il tuo <code>Exercises.scala</code> della settimana 5, com'era prima delle correzioni (nel repo ora è già sistemato; l'avevo solo letto e compilato su una copia): Scala 3.8.4 si fermava con 4 errori.</p>
   <div class="errori">
     <div class="errore">
 <pre data-lang="scala">val (num,rand) = rng.nextInt

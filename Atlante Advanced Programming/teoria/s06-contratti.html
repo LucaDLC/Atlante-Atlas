@@ -91,7 +91,7 @@ window.SCENE = window.SCENE || {};
     passi: [
       { nota: "Un <b>invariante</b> è una proprietà che vale <b>sempre</b>. Invariante di una struttura dati: \"questa lista è ordinata\". Ogni operazione deve riceverla ordinata e lasciarla ordinata." },
       { nota: "<code>insert(4, List(1, 3, 5, 8))</code> mette il 4 al posto giusto: List(1, 3, 4, 5, 8). L'invariante regge (con ScalaCheck: 100 liste a caso, tutte ok).", set: { l: { valori: ['1', '3', '4', '5', '8'], toni: { 0: 'ok', 1: 'ok', 2: 'ok', 3: 'ok', 4: 'ok' } }, op: { t: 'insert(4, …)' } } },
-      { nota: "Un insert sbagliato, <code>x :: l</code>, mette sempre in testa. ScalaCheck lo trova con la lista List(0) e x = 1: List(1, 0), non ordinata (verificato).", set: { l: { valori: ['1', '0', '', '', ''], toni: { 0: 'no', 1: 'no' } }, op: { t: 'insertRotto(1, List(0))' }, c: { t: 'List(1, 0): invariante rotto' } } },
+      { nota: "Un insert sbagliato, <code>x :: l</code>, mette sempre in testa. ScalaCheck lo trova: per esempio con la lista List(0) e x = 1 dà List(1, 0), non ordinata (verificato; il controesempio esatto cambia da un'esecuzione all'altra).", set: { l: { valori: ['1', '0', '', '', ''], toni: { 0: 'no', 1: 'no' } }, op: { t: 'insertRotto(1, List(0))' }, c: { t: 'List(1, 0): invariante rotto' } } },
       { nota: "In un ciclo imperativo c'è l'<b>invariante di ciclo</b> (vale a ogni giro). In FP non ci sono cicli: il suo posto lo prende il <b>contratto della funzione ricorsiva</b>. Altro esempio dalle slide: in un albero AVL le altezze dei due figli differiscono al massimo di 1, in ogni nodo.", set: { c: { t: 'ciclo → invariante di ciclo' }, c2: { t: 'ricorsione (FP) → contratto della funzione' } } }
     ]
   };
@@ -181,7 +181,7 @@ pre = <mark class="no">false</mark> → non funziona mai</div><p class="nota">Es
     <tbody>
       <tr><td><code>size(t: Tree[A])</code></td><td>size(t) ≥ 1</td><td>no: non dice quanti nodi</td></tr>
       <tr><td><code>depth(t: Tree[A])</code></td><td>depth(t) ≥ 0</td><td>no</td></tr>
-      <tr><td><code>maximum(t: Tree[Int])</code></td><td>maximum(t) ≥ get(t) (get = una foglia a caso)</td><td>no, e usa un'altra funzione: le post-condizioni possono legare più funzioni</td></tr>
+      <tr><td><code>maximum(t: Tree[Int])</code></td><td>maximum(t) ≥ get(t) (get = la foglia più a sinistra: <code>Branch(l, _) =&gt; get(l)</code>)</td><td>no, e usa un'altra funzione: le post-condizioni possono legare più funzioni</td></tr>
       <tr><td><code>nextInt</code></td><td>true</td><td>no: non garantisce niente</td></tr>
     </tbody>
   </table></div>
@@ -237,7 +237,7 @@ forAll { (l: List[Int], x: Int) =&gt; isSorted(insert(x, l.sorted)) }</pre>
     <ol class="spiega">
       <li data-righe="1-2" data-segna="l.zip(l.drop(1))@dato"><p>L'invariante scritto come funzione: ogni elemento è ≤ del successivo. <code>l.zip(l.drop(1))</code> mette in coppia ogni elemento con quello dopo.</p></li>
       <li data-righe="4-6"><p><code>insert</code> scorre la lista e mette x prima del primo elemento più grande.</p></li>
-      <li data-righe="8" data-segna="isSorted@ok|l.sorted@dato"><p>Parto da una lista ordinata (<code>l.sorted</code>), inserisco, e controllo che sia ancora ordinata. ScalaCheck: <code>+ OK, passed 100 tests.</code> Con l'insert sbagliato <code>x :: l</code>: <code>! Falsified after 3 passed tests</code>, controesempio l = List(0), x = 1. <code>forAll</code> è spiegato nella <a href="s06-pbt.html">pagina dopo</a>.</p></li>
+      <li data-righe="8" data-segna="isSorted@ok|l.sorted@dato"><p>Parto da una lista ordinata (<code>l.sorted</code>), inserisco, e controllo che sia ancora ordinata. ScalaCheck: <code>+ OK, passed 100 tests.</code> Con l'insert sbagliato <code>x :: l</code>: <code>! Falsified after 3 passed tests</code>, controesempio, per esempio, l = List(0), x = 1 (varia da un'esecuzione all'altra). <code>forAll</code> è spiegato nella <a href="s06-pbt.html">pagina dopo</a>.</p></li>
     </ol>
   </figure>
   <figure class="scena" data-scena="invariante" data-titolo="insert deve lasciare la lista ordinata"></figure>

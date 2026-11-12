@@ -54,6 +54,29 @@ SCENE.compon = {
 };
 })();
 </script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+const N = (id,x,y,t) => ({id,tipo:'nodo',x,y,t,r:20});
+const A = (id,da,a,extra) => Object.assign({id,tipo:'arco',da,a,dir:true},extra||{});
+SCENE.dfsdir = {
+  w: 520, h: 260, lato: true,
+  legenda: 'ora:nodo corrente,dato:in corso (sulla pila),ok:finito,no:arco all\'indietro (ciclo),due:arco verso un nodo finito (nessun ciclo)',
+  oggetti: [
+    N('s',60,130,'s'), N('a',180,50,'a'), N('b',320,50,'b'), N('c',320,190,'c'), N('d',180,210,'d'),
+    A('sa','s','a'), A('ab','a','b'), A('bc','b','c'), A('ca','c','a'), A('sd','s','d'), A('dc','d','c'),
+    {id:'c1',tipo:'testo',x:20,y:252,t:'',size:12,bold:true,anchor:'start'}
+  ],
+  passi: [
+    { nota: "Grafo <b>diretto</b>. La DFS dà a ogni nodo tre stati: non visto, <b>in corso</b> (sulla pila, ha ancora vicini da guardare), <b>finito</b>. Scendo s → a → b → c, scrivendo il numero di scoperta d.", set:{s:{tono:'dato',sotto:'d=1'},a:{tono:'dato',sotto:'d=2'},b:{tono:'dato',sotto:'d=3'},c:{tono:'ora',sotto:'d=4'},c1:{t:'sulla pila: s, a, b, c'}} },
+    { nota: "Da c l'arco verso <b>a</b>: a è <b>in corso</b>, cioè è un antenato di c sulla pila. È un <b>back edge</b>: chiude il ciclo a → b → c → a.", set:{ca:{tono:'no'},a:{tono:'ora'},c1:{t:'a è in corso: ciclo a → b → c → a',tono:'no'}} },
+    { nota: "c non ha altro: finisce (f=5). Poi b (f=6) e a (f=7). Tornano indietro in questo ordine.", set:{ca:{tono:null},a:{tono:'ok',sotto:'d=2 f=7'},b:{tono:'ok',sotto:'d=3 f=6'},c:{tono:'ok',sotto:'d=4 f=5'},c1:{t:'finiti: c, b, a'}} },
+    { nota: "Da s resta il vicino <b>d</b> (d=8). L'arco d → c punta a c, che è già <b>finito</b>: non è un antenato, quindi <b>non c'è ciclo</b>. Regola per i grafi diretti: ciclo solo se l'arco va verso un nodo <i>in corso</i>.", set:{d:{tono:'ora',sotto:'d=8'},dc:{tono:'due'},c1:{t:'d → c verso un nodo finito: nessun ciclo',tono:'ok'}} },
+    { nota: "d finisce (f=9), poi s (f=10). Il ciclo trovato è uno solo, quello con l'arco all'indietro. Costo O(n + m).", set:{d:{tono:'ok',sotto:'d=8 f=9'},s:{tono:'ok',sotto:'d=1 f=10'},c1:{t:'un solo back edge: un ciclo',tono:'ok'}} }
+  ]
+};
+})();
+</script>
 </head>
 <body>
 <main class="pagina">
@@ -86,6 +109,12 @@ in un grafo: basta una DFS e fermarsi al primo back edge.</p>
 lanci una visita da un nodo non visitato, marcando tutto quello che trovi; ripeti finché non restano nodi non visitati.
 Ogni lancio trova una componente. Costo totale: <code>O(n + m)</code>, perché ogni nodo e arco viene visto una volta sola.</p>
   <figure class="scena" data-scena="compon" data-titolo="Due componenti: due visite"></figure>
+</section>
+<section>
+  <h2>DFS su grafi diretti: tre stati</h2>
+<p>Nel grafo diretto la regola «visto e non è il padre» non basta. Ogni nodo ha tre stati: <b>non visto</b>, <b>in corso</b> (la sua chiamata è ancora aperta) e <b>finito</b>. Un arco <code>u → v</code> chiude un ciclo se e solo se <code>v</code> è <b>in corso</b> (è un back edge). Se <code>v</code> è già finito, l'arco è innocuo: porta in una parte già esplorata.</p>
+<p>Questo test è anche quello del topological sort con la DFS: un DAG è un grafo diretto senza back edge.</p>
+  <figure class="scena" data-scena="dfsdir" data-titolo="DFS diretta: back edge contro arco verso un nodo finito"></figure>
 </section>
 <section>
   <h2>Costo e quando usarla</h2>

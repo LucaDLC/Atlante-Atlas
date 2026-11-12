@@ -1,0 +1,338 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Programmazione probabilistica con Probula</title>
+<link rel="stylesheet" href="../assets/atlas.css">
+<link rel="stylesheet" href="../assets/tema.css">
+<script src="../assets/sito.js"></script>
+<script src="../assets/atlas.js" defer></script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <div class="occhiello"><span>S10</span><span>3 novembre</span></div>
+  <h1>Programmazione probabilistica con Probula</h1>
+  <p class="lede">Un modello probabilistico si scrive come un programma funzionale: una <b>distribuzione</b> è una monade, quindi si compone con <code>map</code> e <code>flatMap</code>. Si <b>campiona</b> per contare quante volte succede un evento, e si <b>condiziona</b> per rispondere a "sapendo che…".</p>
+</header>
+
+<section>
+  <h2>L'idea in una schermata</h2>
+  <ol>
+    <li>Scrivi un <b>modello</b>: dado, urna, partita. È un valore di tipo <code>Dist[T]</code> (distribuzione su valori <code>T</code>).</li>
+    <li><b>Campiona</b>: <code>modello.sample(N)</code> pesca <code>N</code> esiti a caso (un <code>IData[T]</code>).</li>
+    <li><b>Conta</b>: <code>.pr(evento)</code> dà la frazione di esiti in cui l'evento è successo. È una <b>stima</b>: con più campioni è più precisa.</li>
+    <li>Per "sapendo che X" usa <code>condition</code> o <code>matching</code>: scartano gli esiti in cui X non vale, <b>prima</b> di campionare.</li>
+  </ol>
+  <div class="box basi" data-tit="Se vieni dalla settimana 9">
+    <p><code>Dist</code> ha <code>map</code> e <code>flatMap</code>, quindi è una monade (S9): <code>unit</code> è <code>Dirac(a)</code>, una distribuzione che dà sempre <code>a</code>. Il <code>for</code>/<code>yield</code> funziona uguale. La casualità è nascosta come lo stato in S5: lo "stato" è il generatore casuale, passato con un <code>given</code>.</p>
+  </div>
+  <div class="box regola" data-tit="Setup (già nel file dell'esercizio)">
+    <p><code>import probula.*</code> e <code>given rng: spire.random.rng.SecureJava = spire.random.rng.SecureJava.apply</code>. Senza il <code>given</code> <code>sample</code> non compila. <code>4000.sampleSize</code> e <code>0.5.pr</code> sono numeri con "unità di misura": campioni e probabilità.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Il dado: Dist, map, sample, pr</h2>
+  <p>Esempio tutto eseguito (Scala 3.8.4, Probula 0.2.4, <code>N = 20000</code> campioni). I valori sono stime: cambiano un po' a ogni esecuzione.</p>
+  <figure class="passi" data-titolo="Un dado a 6 facce" data-legenda="dato:la distribuzione,ora:cosa succede adesso,ok:il risultato">
+    <div class="passo">
+      <div class="espr">val die: Dist[Int] =
+  Probula.<mark class="dato">uniform(1, 2, 3, 4, 5, 6)</mark></div>
+      <p class="nota"><code>uniform</code> mette la stessa probabilità (1/6) su ogni valore. <code>die</code> è una <b>ricetta</b>: non ha ancora tirato nessun dado.</p>
+    </div>
+    <div class="passo">
+      <div class="espr">val prime: Dist[Boolean] =
+  die.<mark class="ora">map { n => n == 2 || n == 3 || n == 5 }</mark></div>
+      <p class="nota"><code>map</code> trasforma ogni esito: da numero a "è primo?". Un <code>Dist</code> è un <i>Functor</i>: la forma resta, il contenuto cambia.</p>
+    </div>
+    <div class="passo">
+      <div class="espr">prime.<mark class="ora">sample(N)</mark>.pr(true)</div>
+      <p class="nota"><code>sample(N)</code> tira il dado <code>N</code> volte e applica il <code>map</code> a ogni lancio: una lista di <code>true</code>/<code>false</code>.</p>
+    </div>
+    <div class="passo">
+      <div class="espr">prime.sample(N).<mark class="ora">pr(true)</mark>  =  <mark class="ok">0.499</mark></div>
+      <p class="nota"><code>pr(true)</code> conta la frazione di <code>true</code>. Teoria: 3 primi (2, 3, 5) su 6 = 0,5. Stima ottenuta: 0,499.</p>
+    </div>
+    <div class="passo">
+      <div class="espr">die.sample(N).<mark class="ora">mean</mark>  =  <mark class="ok">3.487</mark></div>
+      <p class="nota">La media del campione: teoria (1+…+6)/6 = 3,5. <code>median</code> darebbe 3 o 4.</p>
+    </div>
+  </figure>
+</section>
+
+<section>
+  <h2>Più variabili e "sapendo che": detDep, condition</h2>
+  <p>Una distribuzione su <b>tuple</b> tiene insieme più variabili casuali. <code>detDep</code> aggiunge una variabile <b>calcolata</b> dalle precedenti (come <code>map</code>, ma <b>aggiunge</b> alla tupla invece di sostituire). <code>condition(p)</code> scarta gli esiti che non soddisfano <code>p</code>.</p>
+  <figure class="passi" data-titolo="Pr(primo | dispari) con un dado" data-legenda="dato:il lancio,ora:cosa si aggiunge,no:scartato,ok:il risultato">
+    <div class="passo">
+      <div class="espr">lancio:  <mark class="dato">1  2  3  4  5  6</mark></div>
+      <p class="nota">Sei esiti, tutti equiprobabili.</p>
+    </div>
+    <div class="passo">
+      <div class="espr">.detDep { t => <mark class="ora">primo?</mark> }
+(1,F) (2,T) (3,T) (4,F) (5,T) (6,F)</div>
+      <p class="nota"><code>detDep</code> aggiunge la variabile "primo?" a ogni lancio. La tupla ora ha due componenti.</p>
+    </div>
+    <div class="passo">
+      <div class="espr">.detDep { t => <mark class="ora">dispari?</mark> }
+(1,F,T) (2,T,F) (3,T,T) (4,F,F) (5,T,T) (6,F,F)</div>
+      <p class="nota">Una terza variabile: ora la tupla è <code>(lancio, primo, dispari)</code>.</p>
+    </div>
+    <div class="passo">
+      <div class="espr">.condition(_._3)
+(1,F,T) <mark class="no">(2,T,F)</mark> (3,T,T) <mark class="no">(4,F,F)</mark> (5,T,T) <mark class="no">(6,F,F)</mark></div>
+      <p class="nota"><code>condition</code> tiene solo gli esiti con <code>dispari = true</code>: restano 1, 3, 5. <code>_._3</code> è "la terza componente".</p>
+    </div>
+    <div class="passo">
+      <div class="espr">._2.sample(N).pr(true)  =  <mark class="ok">0.669</mark></div>
+      <p class="nota"><code>._2</code> guarda solo "primo?". Tra 1, 3, 5 i primi sono 3 e 5: <b>2 su 3</b> ≈ 0,667. Stima: 0,669.</p>
+    </div>
+  </figure>
+  <div class="box attenzione" data-tit="Errore vero di compilazione">
+    <p><code>.condition { (n, p, odd) => odd }</code> con tre parametri <b>non compila</b>: <code>Missing parameter type</code>. <code>condition</code> vuole una funzione sulla <b>tupla intera</b>: scrivi <code>.condition(_._3)</code> oppure <code>{ case (n, p, odd) => odd }</code>. Lo stesso per <code>probDep</code>: annota il tipo, <code>probDep { (n: Int) => … }</code>.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Estrarre senza reinserire: probDep e matching</h2>
+  <p>Quando la distribuzione di una variabile <b>dipende</b> dalle precedenti serve <code>probDep</code>: è un <code>flatMap</code> che <b>aggiunge</b> la nuova variabile alla tupla. Urna con due palline rosse e una verde.</p>
+  <figure class="passi" data-titolo="Urna R, R, V: due estrazioni" data-legenda="dato:il primo,ora:il resto,ok:il risultato">
+    <div class="passo">
+      <div class="espr">val urn = List(Red, Red, Green)
+Probula.<mark class="dato">uniform(urn*)</mark></div>
+      <p class="nota">Prima estrazione: una delle 3 palline, ognuna con prob. 1/3. <code>urn*</code> "spacchetta" la lista in argomenti.</p>
+    </div>
+    <div class="passo">
+      <div class="espr">.detDep { fst => <mark class="ora">urn diff List(fst)</mark> }</div>
+      <p class="nota">Aggiungo "cosa resta nell'urna": <code>diff</code> toglie <b>una</b> pallina uguale a <code>fst</code>. Se ho preso Red resta <code>[Red, Green]</code>.</p>
+    </div>
+    <div class="passo">
+      <div class="espr">.probDep { t => <mark class="ora">Probula.uniform(t._2*)</mark> }</div>
+      <p class="nota">La seconda estrazione è <b>uniforme su ciò che resta</b>: la sua distribuzione dipende dal passo prima. Ecco perché è <code>probDep</code> e non <code>detDep</code>.</p>
+    </div>
+    <div class="passo">
+      <div class="espr">model.<mark class="ora">matching { case (Green, _, _) => }</mark>
+     .sample(N).prMatching { case (_, _, Red) => }
+= <mark class="ok">1.0</mark></div>
+      <p class="nota">Dato che la prima è verde, restano due rosse: la seconda è rossa con certezza. <code>matching</code> condiziona con un pattern, <code>prMatching</code> stima la prob. di un evento scritto con un pattern.</p>
+    </div>
+    <div class="passo">
+      <div class="espr">… matching { case (Red, _, _) => } … = <mark class="ok">0.505</mark>
+… senza condizionare                  = <mark class="ok">0.670</mark></div>
+      <p class="nota">Se la prima è rossa restano R e V: 1/2 (stima 0,505). Senza condizione: 2/3 (stima 0,670).</p>
+    </div>
+  </figure>
+</section>
+
+<section>
+  <h2>L'esercizio 10: Peter e Paula</h2>
+  <p>Un'urna ha <code>n</code> palline nere e <b>una</b> rossa. A turno pescano una pallina, senza rimetterla. Chi pesca la rossa vince.</p>
+  <h3>pick e move</h3>
+  <figure class="codice" data-titolo="pick e move">
+<pre data-lang="scala">def pick (n: Int): Dist[Ball] =
+  Probula.bernoulli[Ball]((1.0 / (n + 1)).pr, Red, Black)
+
+def move(player: Player, n: Int): Dist[Player] =
+  pick(n).flatMap:
+    case Red => Dirac(player)
+    case Black => move(next(player), n - 1)</pre>
+    <ol class="spiega">
+      <li data-righe="1" data-segna="n: Int@dato|Dist[Ball]@ok"><p><code>n</code> è il numero di palline <b>nere</b>. Il risultato è una distribuzione: rossa o nera.</p></li>
+      <li data-righe="2" data-segna="(1.0 / (n + 1)).pr@ora|Red@ok|Black@no"><p>Nell'urna ci sono <code>n+1</code> palline e una sola rossa: <code>Red</code> con probabilità 1/(n+1). <code>bernoulli(p, a, b)</code> è una moneta truccata: <code>a</code> con prob. <code>p</code>, altrimenti <code>b</code>. <code>.pr</code> trasforma il <code>Double</code> in <code>Prob</code>.</p></li>
+      <li data-righe="4" data-segna="player: Player@dato|Dist[Player]@ok"><p><code>move</code> dice <b>chi vince</b> l'intero gioco, dato chi muove per primo e quante nere ci sono.</p></li>
+      <li data-righe="5" data-segna="pick(n)@ora|flatMap@due"><p>Prima pesco. Poi, in base al colore, scelgo come continuare: serve <code>flatMap</code> perché il passo dopo <b>dipende</b> dal risultato.</p></li>
+      <li data-righe="6" data-segna="Dirac(player)@ok"><p>Se è <code>Red</code> chi ha pescato ha vinto: <code>Dirac(player)</code> = "vince <code>player</code>, con certezza".</p></li>
+      <li data-righe="7" data-segna="move(next(player), n - 1)@ora"><p>Se è <code>Black</code> la nera è tolta e tocca all'altro: stesso gioco con <code>next(player)</code> e una nera in meno. Con <code>n=0</code> <code>pick</code> dà sempre <code>Red</code>, quindi la ricorsione si ferma.</p></li>
+    </ol>
+  </figure>
+  <h3>Un esempio a mano: 2 nere e 1 rossa</h3>
+  <figure class="passi" data-titolo="Chi pesca per primo vince con prob. 2/3" data-legenda="dato:un ramo,ora:chi muove,ok:il risultato,no:ramo che prosegue">
+    <div class="passo">
+      <div class="espr">1° pesca (n=2): <mark class="ok">Red</mark> con prob. <mark class="dato">1/3</mark></div>
+      <p class="nota"><code>pick(2)</code> = bernoulli(1/3, Red, Black). Se esce Red vince il primo: contributo 1/3.</p>
+    </div>
+    <div class="passo">
+      <div class="espr">altrimenti <mark class="no">Black</mark> (2/3) → tocca al secondo, n=1
+2° pesca: <mark class="ok">Red</mark> con prob. <mark class="dato">1/2</mark></div>
+      <p class="nota">Restano una nera e una rossa: <code>pick(1)</code> = bernoulli(1/2). Se esce Red vince il secondo.</p>
+    </div>
+    <div class="passo">
+      <div class="espr">altrimenti <mark class="no">Black</mark> (1/2) → tocca di nuovo al primo, n=0
+3° pesca: <mark class="ok">Red</mark> con prob. <mark class="dato">1</mark></div>
+      <p class="nota"><code>pick(0)</code> dà Red per certo: vince il primo.</p>
+    </div>
+    <div class="passo">
+      <div class="espr">P(primo vince) = 1/3 + 2/3 · 1/2 · 1 = <mark class="ok">2/3</mark></div>
+      <p class="nota">Si sommano i rami in cui vince il primo. Formula del test per <code>n</code> pari: <code>(1 + n/2)/(n + 1)</code> = (1+1)/3 = 2/3. Per <code>n</code> <b>dispari</b> è esattamente 1/2.</p>
+    </div>
+  </figure>
+  <h3>Es. 3 e 4</h3>
+  <ul>
+    <li><b>Es. 3</b>: <code>BallsNo = 8</code> è il totale, quindi <b>7 nere</b> (<code>BallsNo - 1</code>). <code>move(Paula, BallsNo - 1).sample(N).pr(Paula)</code> è "Paula vince se inizia lei"; con <code>move(Peter, …)</code> è "se inizia lui".</li>
+    <li>Con 8 palline (7 nere, dispari) il primo vince con prob. 1/2: iniziare non conviene né sconviene. Con 9 palline (8 nere, pari) il primo vince con 5/9 ≈ 0,56: conviene iniziare.</li>
+    <li><b>Es. 4</b> (carta e penna): <code>move(p, 10)</code> costruisce circa 10 variabili casuali derivate, una per ogni pesca.</li>
+  </ul>
+  <h3>Es. 5: chi ha iniziato, sapendo che Paula ha vinto</h3>
+  <figure class="passi" data-titolo="Dal modello bivariato alla condizione" data-legenda="dato:chi inizia,ora:il modello,ok:il risultato,no:scartato">
+    <div class="passo">
+      <div class="espr">Probula.<mark class="dato">uniform(Paula, Peter)</mark>
+  .probDep { first => <mark class="ora">move(first, BallsNo - 1)</mark> }</div>
+      <p class="nota">Chi inizia: prior uniforme (50 e 50). Il vincitore dipende da chi inizia: <code>probDep</code>. Il risultato è <code>Dist[(Player, Player)]</code> = (chi inizia, chi vince).</p>
+    </div>
+    <div class="passo">
+      <div class="espr">gameResult.<mark class="ora">condition(_._2 == Paula)</mark></div>
+      <p class="nota">Tengo solo le partite vinte da Paula (<code>_._2</code> è il vincitore). Ora <code>pr(Paula)</code> sul secondo elemento fa <b>1,0</b> esatto: è ciò che verifica il test.</p>
+    </div>
+    <div class="passo">
+      <div class="espr">gameWonByPaula.sample(N).<mark class="ora">prMatching { case (Paula, _) => }</mark></div>
+      <p class="nota">Tra le partite vinte da Paula, la frazione in cui aveva iniziato lei. Con 8 palline esce ≈ 0,5; con un numero dispari di nere sarebbe &gt; 0,5.</p>
+    </div>
+  </figure>
+  <h3>Es. 6: l'urna ignota</h3>
+  <p>Ora il numero di nere <code>n</code> è ignoto, tra 1 e 5, con prior uniforme. Si osserva che il primo giocatore ha vinto. Quanto è probabile che <code>n</code> sia <b>dispari</b>?</p>
+  <ul>
+    <li>Prob. che il primo vinca: <b>1/2</b> per <code>n</code>=1, 3, 5; <b>2/3</b> per <code>n</code>=2; <b>3/5</b> per <code>n</code>=4.</li>
+    <li>Posteriore (a mano): <code>1,5 / (1,5 + 2/3 + 3/5) ≈ 0,542</code>. Stima eseguita: 0,540. È sopra 1/2 solo perché ci sono <b>tre</b> valori dispari e due pari.</li>
+  </ul>
+  <details class="soluzione"><summary>Mostra la soluzione dell'esercizio (8 test su 8 passati)</summary><div>
+<pre class="cod" data-lang="scala">val SampleN = 4000.sampleSize
+
+def pick (n: Int): Dist[Ball] =
+  Probula.bernoulli[Ball]((1.0 / (n + 1)).pr, Red, Black)
+
+def move(player: Player, n: Int): Dist[Player] =
+  pick(n).flatMap:
+    case Red => Dirac(player)
+    case Black => move(next(player), n - 1)
+
+def probPaulaStarts: Prob = move(Paula, BallsNo - 1).sample(SampleN).pr(Paula)
+def probPeterStarts: Prob = move(Peter, BallsNo - 1).sample(SampleN).pr(Paula)
+
+def gameResult: Dist[(Player, Player)] =
+  Probula.uniform(Paula, Peter).probDep { (first: Player) => move(first, BallsNo - 1) }
+
+lazy val gameWonByPaula: Dist[(Player, Player)] = gameResult.condition(_._2 == Paula)
+lazy val paulaWinning: Prob = gameResult._2.sample(SampleN).pr(Paula)
+lazy val probPaulaStarted: Prob = gameWonByPaula.sample(SampleN).prMatching { case (Paula, _) => }
+
+lazy val paulaWon: Dist[Int] =
+  Probula.uniform((1 until UpperBound)*)
+    .probDep { (n: Int) => move(Paula, n) }
+    .condition(_._2 == Paula)
+    ._1
+
+lazy val posteriorOdd: Prob = paulaWon.sample(SampleN).pr((n: Int) => n % 2 == 1)</pre>
+  </div></details>
+</section>
+
+<section>
+  <h2>Le operazioni di Probula</h2>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Pezzo</th><th>Chiede</th><th>Cosa fa</th></tr></thead>
+    <tbody>
+      <tr><td><code>Probula.uniform(v1, v2, …)</code></td><td>un numero di valori (o <code>xs*</code>)</td><td>probabilità uguale su ogni valore</td></tr>
+      <tr><td><code>Probula.bernoulli(p, a, b)</code></td><td><code>p: Prob</code>, due valori</td><td><code>a</code> con prob. <code>p</code>, altrimenti <code>b</code></td></tr>
+      <tr><td><code>Dirac(a)</code></td><td>un valore</td><td>dà sempre <code>a</code> (è <code>unit</code> della monade)</td></tr>
+      <tr><td><code>d.map(f)</code></td><td><code>f: T =&gt; U</code></td><td>trasforma i valori: <code>Dist[U]</code></td></tr>
+      <tr><td><code>d.flatMap(f)</code></td><td><code>f: T =&gt; Dist[U]</code></td><td>il valore sceglie la distribuzione successiva</td></tr>
+      <tr><td><code>d.map2(e)(f)</code></td><td>un'altra <code>Dist</code> e <code>f</code></td><td>combina due distribuzioni</td></tr>
+      <tr><td><code>d.detDep(f)</code></td><td><code>f: T =&gt; U</code></td><td>aggiunge una variabile <b>calcolata</b> alla tupla</td></tr>
+      <tr><td><code>d.probDep(f)</code></td><td><code>f: T =&gt; Dist[U]</code></td><td>aggiunge una variabile <b>casuale</b> che dipende dalle precedenti</td></tr>
+      <tr><td><code>d.condition(p)</code></td><td><code>p: T =&gt; Boolean</code></td><td>scarta gli esiti che non soddisfano <code>p</code></td></tr>
+      <tr><td><code>d.matching { case … => }</code></td><td>un pattern</td><td>condiziona su un pattern</td></tr>
+      <tr><td><code>d._1</code>, <code>d._2</code></td><td>—</td><td>proietta una componente della tupla</td></tr>
+      <tr><td><code>d.sample(N)</code></td><td><code>N: SampleSize</code> (es. <code>4000.sampleSize</code>), <code>given</code> rng</td><td>campione: un <code>IData[T]</code></td></tr>
+      <tr><td><code>i.pr(v)</code> · <code>i.pr(p)</code> · <code>i.prMatching { case … => }</code></td><td>un valore · un predicato · un pattern</td><td>frazione di esiti dell'evento: un <code>Prob</code></td></tr>
+      <tr><td><code>i.mean</code> · <code>i.median</code></td><td>—</td><td>statistiche del campione</td></tr>
+      <tr><td><code>p.about(atteso, tol)</code></td><td>due <code>Prob</code></td><td>vero se <code>p</code> è vicino all'atteso (usato nei test)</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section>
+  <h2>Dentro Probula: come è fatto <code>Dist</code></h2>
+  <p>Le slide 11–18 mostrano come è costruita la libreria. Non serve saperla riscrivere, ma ti fa vedere che tutto ciò che hai usato è già nel corso: <code>map</code>, <code>flatMap</code>, <code>map2</code> (S3, S5, S9), liste pigre (S4), extension method (S7). Il codice sotto è <b>copiato e semplificato dalle slide</b>: non l'ho compilato (richiede la libreria Probula e <code>spire</code>), tranne la parte sulle unità di misura qui in fondo.</p>
+  <figure class="codice" data-titolo="Il trait Dist (slide 13)">
+<pre data-lang="scala">trait Dist[T]:
+  self =>
+  def sample(using rng: RNG): IData[T]
+
+  def map[U](f: T => U): Dist[U] = new Dist[U]:
+    def sample(using rng: RNG) = self.sample.map(f)
+
+  def detDep[U](f: T => U): Dist[(T, U)] =
+    self.map { t => (t, f(t)) }
+
+  def flatMap[U](f: T => Dist[U]): Dist[U] = new Dist[U]:
+    def sample(using rng: RNG) =
+      self.sample.flatMap { t => f(t).sample(1.sampleSize) }
+
+  def probDep[U](f: T => Dist[U]): Dist[(T, U)] =
+    self.flatMap { t => f(t).map { u => (t, u) } }
+
+  def map2[U, V](that: Dist[U])(g: (T, U) => V): Dist[V] = new Dist[V]:
+    def sample(using rng: RNG) = self.sample.map2(that.sample)(g)
+  infix def :*[U](that: Dist[U]): Dist[(T, U)] = self.map2(that)((_, _))</pre>
+    <ol class="spiega">
+      <li data-righe="3" data-segna="sample(using rng: RNG)@ora"><p>L'<b>unica</b> operazione astratta è <code>sample</code>: dato un generatore casuale (passato con <code>using</code>, come lo stato di S5), produce un campione, cioè una lista pigra di esiti. Tutto il resto è derivato.</p></li>
+      <li data-righe="5-6" data-segna="self.sample.map(f)@ok"><p><code>map</code>: una nuova distribuzione il cui campione è quello vecchio con <code>f</code> applicata a ogni esito. Nessun campionamento ora: solo la ricetta.</p></li>
+      <li data-righe="8-9" data-segna="(t, f(t))@due"><p><code>detDep</code> è un <code>map</code> che <b>tiene</b> anche la variabile di partenza: restituisce la coppia <code>(t, f(t))</code>. Per questo la tupla "cresce".</p></li>
+      <li data-righe="11-13" data-segna="f(t).sample(1.sampleSize)@ora"><p><code>flatMap</code>: per ogni esito <code>t</code> scelgo la distribuzione <code>f(t)</code> e ne pesco <b>un</b> esito (<code>1.sampleSize</code>). È la dipendenza probabilistica.</p></li>
+      <li data-righe="15-16" data-segna="f(t).map { u =&gt; (t, u) }@due"><p><code>probDep</code> è a <code>flatMap</code> come <code>detDep</code> è a <code>map</code>: tiene anche <code>t</code>.</p></li>
+      <li data-righe="18-20" data-segna="self.sample.map2(that.sample)(g)@ok|:*@dato"><p><code>map2</code> accoppia i due campioni elemento per elemento: sono due flussi indipendenti. <code>:*</code> è il prodotto indipendente, <code>map2</code> con "fai una coppia". Per questo <code>x :* x</code> non dà coppie uguali.</p></li>
+    </ol>
+  </figure>
+  <p>Un campione è una lista pigra di "particelle pesate" (slide 14): <code>opaque type Chain[+T] = LazyList[Scored[T]]</code>, dove <code>Scored</code> è un valore con un peso in scala logaritmica (<code>LogScore</code>). Le estrazioni a priori hanno peso 1.0. <code>condition</code> scarta le particelle; <code>score</code> e <code>likelihood</code> le <b>ripesano</b> sommando un logaritmo (sommare logaritmi = moltiplicare pesi). Con tanti campioni le particelle che spiegano meglio i dati pesano di più: è l'<i>importance sampling</i> (slide 12). <code>pr</code> e <code>mean</code> sono quindi stimatori pesati.</p>
+  <p>Perché <code>Dist</code> è una monade (slide 18): ha <code>flatMap</code> e ha un <code>unit</code>, che è <code>Dirac(a)</code>, la distribuzione che dà sempre <code>a</code>. <code>for/yield</code> funziona perché <code>Dist</code> ha <code>flatMap</code> e <code>map</code>. Le leggi di S9 valgono.</p>
+  <h3>Le unità di misura: tipi opachi ed extension method</h3>
+  <p>Per non scambiare per sbaglio un numero di campioni con una probabilità, Probula li distingue con tipi opachi (come <code>TestCases</code> e <code>MaxSize</code> di S7). L'unico modo di ottenere un <code>SampleSize</code> è <code>n.sampleSize</code>, che controlla <code>n &gt; 0</code> una volta sola. Verificato con Scala 3.8.4 (tipo definito in un file, usato in un altro):</p>
+  <figure class="codice" data-titolo="SampleSize (slide 15)">
+<pre data-lang="scala">opaque type SampleSize = Int
+
+extension (n: Int)
+  def sampleSize: SampleSize =
+    require(n > 0, "Sample size must be positive")
+    n
+
+def sample(n: SampleSize): Int = n</pre>
+    <ol class="spiega">
+      <li data-righe="1" data-segna="SampleSize = Int@due"><p>A runtime è un <code>Int</code>, per il compilatore (fuori dal file) è un tipo diverso: nessun costo, nessuno scambio.</p></li>
+      <li data-righe="3-6" data-segna="require(n &gt; 0@no|sampleSize@ok"><p><code>10000.sampleSize</code> è l'unica porta d'ingresso e controlla che il numero sia positivo. <code>0.sampleSize</code> lancia <code>IllegalArgumentException: requirement failed: Sample size must be positive</code>.</p></li>
+    </ol>
+  </figure>
+  <div class="errori">
+    <div class="errore">
+      <pre data-lang="scala">sample(10000)   // da un altro file</pre>
+      <pre class="msg">Found:    (10000 : Int)
+Required: units.SampleSize</pre>
+      <div class="fix">Un <code>Int</code> semplice non basta: scrivi <code>sample(10000.sampleSize)</code>. Lo stesso schema vale per <code>Prob</code> (<code>0.3.pr</code>) e <code>LogScore</code> (<code>1.5.lscore</code>).</div>
+    </div>
+  </div>
+  <div class="box idea" data-tit="Perché le API fluenti sono extension method (slide 16–17)">
+    <p>Su una <code>Dist</code> di tuple e su una di non-tuple i combinatori devono comportarsi in modo diverso (<code>detDep</code> aggiunge alla tupla, non annida), e Scala 3 distingue i due casi con un vincolo <code>NotGiven[T &lt;:&lt; Tuple]</code> solo negli extension method. Se uno dei due è un extension, devono esserlo tutti: altrimenti vincerebbe il metodo del trait. Inoltre ogni passo restituisce ancora una <code>Dist</code>, quindi le catene possono crescere.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Trasparenza referenziale e test</h2>
+  <ul>
+    <li>I modelli sono <b>referenzialmente trasparenti</b>: puoi sostituire un nome con la sua definizione. <code>x :* x</code> campiona <code>x</code> due volte <b>in modo indipendente</b>, come due dadi separati. Per avere correlazione serve <code>flatMap</code> o <code>map2</code>.</li>
+    <li>I risultati sono stime, quindi i test usano una <b>tolleranza</b> (<code>about</code>, qui 0,05 con 4000 campioni), non <code>==</code>.</li>
+    <li>Importance sampling: <code>condition</code> scarta i campioni; <code>likelihood</code>/<code>observe</code> li ripesano. Le slide lo usano per la regressione bayesiana, non serve per l'esercizio.</li>
+  </ul>
+  <div class="box esame" data-tit="Nelle prove d'esame">
+    <p>La probabilistica è stata chiesta nel 2019 (Figaro) e nel 2023 (Pigaro): costruire due strategie, comporre <code>game(p1, p2)</code> con <code>map2</code>, campionare 10000 esiti e stimare <code>pr(Some(P1))</code>. L'API cambia, le idee no. Vedi <a href="../esame/famiglie.html">le famiglie di domande</a>.</p>
+  </div>
+  <div class="box inglese" data-tit="Frasi pronte">
+    <p><i>"A distribution is a monad: map transforms the outcomes, flatMap lets one outcome decide the next distribution."</i></p>
+    <p><i>"We estimate the probability by sampling N outcomes and counting the fraction where the event holds."</i></p>
+    <p><i>"Conditioning discards the samples where the observation does not hold, before we compute the probability."</i></p>
+  </div>
+</section>
+
+</main>
+</body>
+</html>

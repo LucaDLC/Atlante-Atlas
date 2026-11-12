@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Parallel streams e programmazione funzionale</title>
+<link rel="stylesheet" href="../assets/atlas.css">
+<link rel="stylesheet" href="../assets/tema.css">
+<script src="../assets/sito.js"></script>
+<script src="../assets/atlas.js" defer></script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <div class="occhiello"><span>Settimana 10 · Programmazione funzionale e stream</span></div>
+  <h1>Parallel streams e programmazione funzionale</h1>
+  <p class="lede">Un modo di scrivere codice parallelo senza thread, lock e task: si descrive cosa calcolare con funzioni pure e Java decide come dividerlo tra i core. Funziona solo se le funzioni non hanno effetti collaterali.</p>
+</header>
+
+<section>
+  <h2>Funzioni come valori: lambda e interfacce funzionali</h2>
+  <p>Uno stream riceve funzioni come argomenti: «filtra con questa condizione», «trasforma con questa operazione». Servono quindi tre cose di Java: scrivere una funzione senza darle un nome (lambda), scrivere un riferimento a un metodo che esiste già, e un tipo per dire «questa è una funzione da A a B».</p>
+  <figure class="passi" data-titolo="Una lambda, pezzo per pezzo" data-legenda="dato:parametro,ora:freccia,ok:corpo">
+    <div class="passo"><div class="espr">Function&lt;String,Integer&gt; f = <mark class="dato">s</mark> <mark class="ora">-&gt;</mark> <mark class="ok">Integer.parseInt(s)</mark>;</div><p class="nota">Tre parti. A sinistra della freccia il <b>parametro</b> <code>s</code>: il dato che la funzione riceve. La <b>freccia</b> <code>-&gt;</code> separa ingresso e uscita. A destra il <b>corpo</b>: l'espressione che dà il risultato.</p></div>
+    <div class="passo"><div class="espr">Function&lt;<mark class="dato">String</mark>,<mark class="ok">Integer</mark>&gt; f</div><p class="nota"><code>Function&lt;T,R&gt;</code> è il tipo delle funzioni da <code>T</code> a <code>R</code>. Qui da stringa (blu, ingresso) a intero (verde, uscita). È un'<b>interfaccia funzionale</b>: ha un solo metodo astratto, <code>apply</code>.</p></div>
+    <div class="passo"><div class="espr">f.<mark class="ora">apply</mark>("004711")   →   4711</div><p class="nota">Chiamare la funzione vuol dire chiamare il suo unico metodo.</p></div>
+    <div class="passo"><div class="espr">Function&lt;String,Integer&gt; g = <mark class="ora">Integer::parseInt</mark>;</div><p class="nota"><b>Method reference</b>: <code>Integer::parseInt</code> è un'abbreviazione di <code>s -&gt; Integer.parseInt(s)</code>. I due punti <code>::</code> dicono «il metodo che si chiama così».</p></div>
+  </figure>
+  <div class="box regola" data-tit="Una lambda da sola non ha un tipo">
+    <p>La lambda prende il suo tipo dal posto dove sta: l'assegnamento a una variabile, l'argomento di un metodo (<code>list.map(Integer::parseInt)</code>), un cast o un <code>return</code>. Il compilatore chiama questo tipo <i>targeted function type</i>: «il tipo che quel posto si aspetta».</p>
+  </div>
+  <div class="tab-wrap"><table class="tab"><thead><tr><th>interfaccia</th><th>metodo</th><th>cosa fa</th></tr></thead><tbody>
+    <tr><td><code>Function&lt;T,R&gt;</code></td><td><code>R apply(T x)</code></td><td>da T a R</td></tr>
+    <tr><td><code>Predicate&lt;T&gt;</code></td><td><code>boolean test(T x)</code></td><td>una condizione (usata da <code>filter</code>)</td></tr>
+    <tr><td><code>Consumer&lt;T&gt;</code></td><td><code>void accept(T x)</code></td><td>usa un valore, non restituisce niente (<code>forEach</code>)</td></tr>
+    <tr><td><code>Supplier&lt;T&gt;</code></td><td><code>T get()</code></td><td>produce un valore</td></tr>
+    <tr><td><code>IntFunction&lt;R&gt;</code></td><td><code>R apply(int x)</code></td><td>come Function, ma l'ingresso è un <code>int</code> primitivo</td></tr>
+  </tbody></table></div>
+  <div class="box attenzione" data-tit="Perché esistono anche IntFunction, IntStream…">
+    <p><code>Function&lt;Integer,String&gt;</code> riceve un <code>Integer</code>: ogni chiamata con un <code>int</code> lo <b>incapsula</b> (boxing) in un oggetto sullo heap, e costa tempo e memoria. <code>IntFunction&lt;String&gt;</code> riceve un <code>int</code> e evita l'oggetto. La differenza è solo di prestazioni, per questo ci sono versioni specializzate per <code>int</code>, <code>long</code> e <code>double</code> anche negli stream (<code>IntStream</code>, <code>LongStream</code>, <code>DoubleStream</code>).</p>
+  </div>
+</section>
+
+<section>
+  <h2>Dati immutabili: la base della sicurezza</h2>
+  <p>Nelle slide la programmazione funzionale significa: dati immutabili invece di oggetti con stato, ricorsione invece di cicli, funzioni che prendono e restituiscono funzioni. Per questo corso interessa il primo punto, perché risolve il problema delle due settimane precedenti.</p>
+  <div class="tab-wrap"><table class="tab"><thead><tr><th></th><th>condiviso tra thread</th><th>non condiviso</th></tr></thead><tbody>
+    <tr><td><b>mutabile</b></td><td>difficile: race condition. Cache: stato M/I, lento</td><td>facile. Cache: stato M, veloce</td></tr>
+    <tr><td><b>immutabile</b></td><td>facile. Cache: stato S in tutti i core, veloce</td><td>facile. Cache: stato E, veloce</td></tr>
+  </tbody></table></div>
+  <p>Un dato che non cambia mai non può avere una data race: nessun thread lo modifica, quindi non servono lock. E, per la <a href="l09-cache-mesi.html">pagina MESI</a>, se tutti i core lo leggono soltanto la sua linea di cache resta in stato <b>S</b> ovunque, senza invalidazioni. In più i campi <code>final</code> sono visibili completi a chi riceve l'oggetto (regola «final field init» del Java Memory Model).</p>
+  <figure class="passi" data-titolo="Lista immutabile: insert senza modificare niente" data-legenda="dato:lista originale,ora:nodo nuovo,ok:risultato">
+    <div class="passo"><div class="espr">list1 = <mark class="dato">9 → 13 → 0</mark></div><p class="nota">Una lista di nodi con campi <code>final</code>: nessun nodo si cambia dopo la creazione.</p></div>
+    <div class="passo"><div class="espr">list1.insert(1, 12)   // inserisci 12 prima dell'elemento numero 1
+nodo nuovo: <mark class="ora">9 → …</mark>  (copia del primo nodo)</div><p class="nota">Il primo nodo dovrebbe puntare a 12, ma non si può modificare. Si crea una <b>copia</b> del nodo 9 che punta altrove.</p></div>
+    <div class="passo"><div class="espr">list4 = <mark class="ora">9 → 12</mark> → <mark class="dato">13 → 0</mark>
+list1 = <mark class="dato">9 → 13 → 0</mark>   (intatta)</div><p class="nota">Il nodo 12 punta ai nodi 13 e 0 della lista vecchia, che vengono <b>condivisi</b> da list1 e list4. La lista originale non è cambiata: chi la sta leggendo in un altro thread non si accorge di niente.</p></div>
+  </figure>
+  <div class="box idea" data-tit="Il prezzo">
+    <p>Immutabilità vuol dire più oggetti creati. La slide osserva che allocatori e garbage collector moderni sono veloci, e che condividere parti invece di copiarle può perfino ridurre l'allocazione.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Stream: una catena di operazioni</h2>
+  <p>Uno <code>Stream&lt;T&gt;</code> è una sequenza di valori di tipo <code>T</code>, finita o infinita, spesso generata pigramente (lazy: un elemento alla volta, solo quando serve). Non è una collezione: non contiene i dati, descrive come ottenerli. Sopra si mettono operazioni, una dopo l'altra (pipeline). Ogni operazione prende una funzione.</p>
+  <figure class="passi" data-titolo="Le operazioni su Stream.of(2, 3, 5)" data-legenda="dato:stream di partenza,ora:operazione,ok:risultato">
+    <div class="passo"><div class="espr">s = Stream.of(<mark class="dato">2, 3, 5</mark>)</div><p class="nota">Il punto di partenza: tre valori.</p></div>
+    <div class="passo"><div class="espr">s.<mark class="ora">filter</mark>(x -&gt; x % 2 == 0)   →   <mark class="ok">2</mark></div><p class="nota"><b>filter</b> tiene solo gli elementi per cui la condizione è vera. <code>x % 2</code> è il resto della divisione per 2: è 0 solo per i pari.</p></div>
+    <div class="passo"><div class="espr">s.<mark class="ora">map</mark>(x -&gt; 3 * x)   →   <mark class="ok">6, 9, 15</mark></div><p class="nota"><b>map</b> applica la funzione a ogni elemento e raccoglie i risultati. Il numero di elementi non cambia.</p></div>
+    <div class="passo"><div class="espr">s.<mark class="ora">flatMap</mark>(x -&gt; Stream.of(x, x+1))   →   <mark class="ok">2, 3, 3, 4, 5, 6</mark></div><p class="nota"><b>flatMap</b>: la funzione restituisce uno stream per ogni elemento (2 dà <code>2,3</code>, 3 dà <code>3,4</code>, 5 dà <code>5,6</code>) e i risultati vengono incollati in uno solo.</p></div>
+    <div class="passo"><div class="espr">s.<mark class="ora">reduce</mark>(1, (x, y) -&gt; x * y)   →   <mark class="ok">30</mark></div><p class="nota"><b>reduce</b> combina tutti gli elementi con un operatore, partendo da un valore iniziale: 1·2·3·5 = 30. L'operatore deve essere <b>associativo</b>: lo si vedrà tra poco.</p></div>
+  </figure>
+  <p>Gli stessi nomi in altri linguaggi: <code>map</code> è <code>Select</code> in C# LINQ; <code>flatMap</code> è <code>concatMap</code> in Haskell e <code>SelectMany</code> in C#; <code>reduce</code> è <code>fold</code> in F# e <code>Aggregate</code> in LINQ.</p>
+  <div class="box attenzione" data-tit="Uno stream si usa una volta sola">
+    <p>Dopo che un'operazione terminale (<code>count</code>, <code>forEach</code>, <code>collect</code>…) l'ha consumato, riusarlo lancia <code>IllegalStateException</code> con il messaggio «stream has already been operated upon or closed» (provato).</p>
+  </div>
+</section>
+
+<section>
+  <h2>Contare i primi: da un ciclo a un solo <code>.parallel()</code></h2>
+  <p>Lo stesso conteggio dei primi sotto 100 000 della <a href="l09-executor.html">pagina sugli executor</a>, in tre versioni. La differenza tra la seconda e la terza è una riga.</p>
+  <figure class="codice" data-titolo="Primi: ciclo, stream, parallel stream">
+<pre data-lang="java">int count = 0;
+for (int i = 0; i &lt; range; i++)
+    if (isPrime(i))
+        count++;
+
+long seq = IntStream.range(0, range)
+                    .filter(i -&gt; isPrime(i))
+                    .count();
+
+long par = IntStream.range(0, range)
+                    .parallel()
+                    .filter(i -&gt; isPrime(i))
+                    .count();</pre>
+    <ol class="spiega">
+      <li data-righe="1-4" data-segna="count++@no"><p>Il ciclo classico. <code>count</code> è una variabile modificata a ogni giro: lo stato è <b>mutabile</b>, quindi non si può dividere tra thread senza proteggerlo.</p></li>
+      <li data-righe="6-8" data-segna="IntStream.range(0, range)@dato|.filter(i -> isPrime(i))@ora|.count()@ok"><p><code>IntStream.range(0, range)</code> è lo stream dei numeri da 0 a <code>range - 1</code>. <code>filter</code> tiene i primi e <code>count()</code> li conta. Nessuna variabile cambia: è una funzione pura da <code>range</code> al numero di primi.</p></li>
+      <li data-righe="10-13" data-segna=".parallel()@ora"><p><code>.parallel()</code> è l'unica differenza. Non essendoci stato mutabile, Java può spezzare l'intervallo, contare i pezzi in parallelo e sommare. Compilato: tutte e due le versioni stampano 9592.</p></li>
+    </ol>
+  </figure>
+  <div class="tab-wrap"><table class="tab"><thead><tr><th>millisecondi, primi in 0…99 999</th><th>Intel i7</th><th>AMD Opteron</th><th>Apple M3 pro</th></tr></thead><tbody>
+    <tr><td>ciclo sequenziale</td><td>9.9</td><td>40.5</td><td>2.0</td></tr>
+    <tr><td>stream sequenziale</td><td>9.9</td><td>40.8</td><td>2.0</td></tr>
+    <tr><td>stream parallelo</td><td>2.8</td><td>1.7</td><td>0.4</td></tr>
+    <tr><td>miglior versione con thread</td><td>3.0</td><td>4.9</td><td>1.2</td></tr>
+    <tr><td>miglior versione con task</td><td>2.6</td><td>1.9</td><td>0.4</td></tr>
+  </tbody></table></div>
+  <p>Dalle slide: lo stream sequenziale costa quanto il ciclo; lo stream parallelo è quasi veloce come i task e a volte più dei thread. Speed-up dichiarati: 3,6× su i7 (4 core), 24,2× su Opteron (32 core), 5,5× su Apple M3 (6 core P). È la soluzione più semplice delle tre.</p>
+</section>
+
+<section>
+  <h2>Come lo fa Java: spliterator e work stealing</h2>
+  <p>Dietro uno stream c'è uno <code>Spliterator</code>, un iteratore che sa anche dividersi. Il metodo <code>trySplit</code> stacca una parte della sorgente e la dà a un altro task. Java divide finché i pezzi sono abbastanza piccoli, poi ogni pezzo gira come task dell'executor (con code e work stealing, come nella <a href="l09-executor.html">pagina sugli executor</a>), e infine i risultati parziali si combinano.</p>
+  <figure class="scena" data-scena="split10" data-titolo="Contare i primi in 0…15, in parallelo"></figure>
+  <div class="box idea" data-tit="Ecco perché l'operatore di reduce deve essere associativo">
+    <p>I pezzi si combinano in un ordine che dipende da come lo stream si è diviso. Se <code>(a op b) op c</code> e <code>a op (b op c)</code> danno risultati diversi, il risultato cambia con la divisione. Somma e prodotto vanno bene; la sottrazione no.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Le regole che fanno funzionare il parallelo</h2>
+  <p>Il parallelismo degli stream è corretto solo se le funzioni passate hanno questa proprietà: <b>niente effetti collaterali</b>, cioè non modificano variabili condivise e non dipendono da qualcosa che cambia. Il compilatore non lo controlla e il runtime non lo rileva: è responsabilità tua.</p>
+  <figure class="codice" data-titolo="Effetto collaterale: la stessa race di sempre">
+<pre data-lang="java">int[] c = { 0 };
+IntStream.range(0, 1_000_000).parallel().forEach(i -&gt; c[0]++);
+System.out.println(c[0]);   // MAI sicuro: meno di 1 000 000
+
+long ok = IntStream.range(0, 1_000_000).parallel().count();   // 1 000 000</pre>
+    <ol class="spiega">
+      <li data-righe="1" data-segna="int[] c = { 0 }@dato"><p>Un array di un elemento serve a «aggirare» la regola delle lambda: una lambda può usare solo variabili che non cambiano (effectively final), ma il <i>contenuto</i> di un array sì. È un trucco, e nasconde proprio lo stato mutabile condiviso.</p></li>
+      <li data-righe="2" data-segna="c[0]++@no"><p><code>c[0]++</code> è leggi-incrementa-scrivi: la lost update della <a href="l01-interleaving.html">prima settimana</a>. Con più thread due incrementi leggono lo stesso valore e se ne perde uno. Provato due volte: 86 776 e 179 837 invece di 1 000 000.</p></li>
+      <li data-righe="5" data-segna=".count()@ok"><p>La versione giusta non ha stato: ogni pezzo conta i suoi elementi e Java somma i parziali.</p></li>
+    </ol>
+  </figure>
+  <figure class="passi" data-titolo="reduce con la sottrazione: il risultato dipende da come si divide" data-legenda="dato:valori 1…8,ora:operazione,no:risultato diverso">
+    <div class="passo"><div class="espr">reduce(0, (a, b) -&gt; <mark class="ora">a - b</mark>)   su <mark class="dato">1, 2, 3, 4, 5, 6, 7, 8</mark></div><p class="nota">La sottrazione non è associativa: <code>(5-3)-1</code> vale 1, <code>5-(3-1)</code> vale 3.</p></div>
+    <div class="passo"><div class="espr">sequenziale:  ((((0-1)-2)-3)…-8)  =  <mark class="dato">-36</mark></div><p class="nota">In un solo thread l'ordine è fisso, e il risultato è meno la somma.</p></div>
+    <div class="passo"><div class="espr">parallelo:  <mark class="no">0</mark></div><p class="nota">Con <code>.parallel()</code> l'ho provato: dà 0, non -36. Ogni pezzo parte dal valore iniziale 0 e i pezzi si combinano a coppie con un'altra sottrazione (qui: (−1−(−2)), … poi 1−1, …): un ordine diverso da quello sequenziale, quindi un risultato diverso. Con la somma invece dà sempre 36 (provato).</p></div>
+  </figure>
+  <div class="box attenzione" data-tit="Anche la somma di numeri in virgola mobile dipende dall'ordine">
+    <p>La slide somma 1/i per i da 1 a 999 999 998: il ciclo in avanti dà 21.300481501348550, quello all'indietro 21.300481501346148, il valore preciso è 21.300481501347944. <code>DoubleStream.sum()</code> usa la <b>somma di Kahan</b> e arriva a 21.300481501347942, sia sequenziale sia parallela. L'addizione tra <code>double</code> non è associativa, quindi dividere in pezzi e ricombinare può cambiare le ultime cifre. (Numeri presi dalle slide, non rieseguiti.)</p>
+  </div>
+  <div class="box esame" data-tit="Quando .parallel() peggiora">
+    <p>Non basta aggiungere <code>.parallel()</code>. Le slide ricordano che a volte rallenta molto (anche con <code>limit</code>, in un generatore di sudoku) e che stream usati con try-with-resources si chiudono prima del tempo e danno <code>IOException: Stream closed</code>. Si misura sempre, come nelle settimane dei microbenchmark.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Raggruppare: groupingBy e groupingByConcurrent (esercizio 10.1)</h2>
+  <p>L'esercizio 10.1 elabora una lista di parole con stream. Gli anagrammi si trovano raggruppando le parole per la loro mappa «lettera → quante volte compare». Due parole sono anagrammi se le mappe sono uguali.</p>
+  <figure class="codice" data-titolo="Anagrammi con groupingBy">
+<pre data-lang="java">static Map&lt;Character, Long&gt; counts(String s) {
+    return s.chars().mapToObj(c -&gt; (char) c)
+            .collect(Collectors.groupingBy(c -&gt; c, TreeMap::new, Collectors.counting()));
+}
+
+List&lt;String&gt; words = List.of("acre", "care", "race", "dog", "god", "cat");
+Map&lt;Map&lt;Character, Long&gt;, List&lt;String&gt;&gt; anagram1 =
+    words.stream().collect(Collectors.groupingBy(w -&gt; counts(w)));
+anagram1.entrySet().stream()
+        .map(kv -&gt; kv.getValue())
+        .filter(l -&gt; l.size() &gt; 1)
+        .forEach(System.out::println);</pre>
+    <ol class="spiega">
+      <li data-righe="1-4" data-segna="counts(String s)@dato"><p><code>counts</code> trasforma una parola in una mappa di conteggi. <code>s.chars()</code> è lo stream dei codici dei caratteri, <code>(char) c</code> li riconverte, e <code>groupingBy(c -> c, …, counting())</code> raggruppa le lettere uguali e le conta. Per «acre» dà <code>{a=1, c=1, e=1, r=1}</code>.</p></li>
+      <li data-righe="7-8" data-segna="groupingBy(w -> counts(w))@ora"><p><code>groupingBy</code> costruisce una mappa dalla <b>chiave</b> (qui la mappa dei conteggi) alla lista delle parole con quella chiave: acre, care e race finiscono tutte sotto <code>{a=1,c=1,e=1,r=1}</code>.</p></li>
+      <li data-righe="9-12" data-segna="l.size() > 1@ok"><p>Si guardano solo i gruppi con più di una parola: gli anagrammi veri. Stampa <code>[dog, god]</code> e <code>[acre, care, race]</code> (provato; l'ordine dei due gruppi può cambiare).</p></li>
+    </ol>
+  </figure>
+  <p>Parallelizzare con <code>.parallel()</code> può peggiorare le cose: <code>groupingBy</code> costruisce una <code>HashMap</code> per pezzo e poi le fonde a coppie, ripetutamente, e la fusione costa. L'esercizio 10.1.13 propone <code>groupingByConcurrent</code>, che scrive in un unico <code>ConcurrentHashMap</code> condiviso (<a href="l09-mappe.html">pagina sulle mappe concorrenti</a>) e non fonde niente. Sulla lista piccola di sopra dà 3 gruppi, come la versione sequenziale (provato); il guadagno di tempo non è stato misurato qui.</p>
+</section>
+
+<section>
+  <h2>Array paralleli: parallelSetAll e parallelPrefix (esercizio 10.3)</h2>
+  <p>La classe <code>Arrays</code> ha operazioni parallele direttamente sugli array. <code>parallelSetAll(a, f)</code> mette in <code>a[i]</code> il valore <code>f(i)</code>, per tutti gli i insieme. <code>parallelPrefix(a, op)</code> sostituisce ogni elemento con la <b>somma cumulativa</b> (prefix sum) di quelli fino a lui, usando <code>op</code>, che deve essere associativa.</p>
+  <figure class="passi" data-titolo="Contare i primi con un array di 0/1 e le somme cumulative" data-legenda="dato:array di partenza,ora:operazione,ok:risultato">
+    <div class="passo"><div class="espr">Arrays.<mark class="ora">parallelSetAll</mark>(a, i -&gt; isPrime(i) ? 1 : 0);
+i:  0 1 2 3 4 5 6 7 8 9 10
+a:  <mark class="dato">0 0 1 1 0 1 0 1 0 0 0</mark></div><p class="nota"><code>cond ? x : y</code> vuol dire «se cond allora x, altrimenti y». L'array vale 1 nelle posizioni dei primi. Ogni posizione si calcola da sola: il lavoro si divide senza problemi.</p></div>
+    <div class="passo"><div class="espr">Arrays.<mark class="ora">parallelPrefix</mark>(a, (x, y) -&gt; x + y);
+a:  <mark class="ok">0 0 1 2 2 3 3 4 4 4 4</mark></div><p class="nota">Ogni a[i] diventa la somma dei vecchi valori da a[0] ad a[i]: cioè <b>quanti primi ci sono fino a i</b>. Il risultato dipende dai precedenti, ma l'operazione è associativa e Java la parallelizza lo stesso (scansione prefisso, Blelloch 1990).</p></div>
+    <div class="passo"><div class="espr">a[10] = <mark class="ok">4</mark>   (2, 3, 5, 7)     a[30] = <mark class="ok">10</mark></div><p class="nota">Provato con un array di 31 elementi: a[10] vale 4 e a[30] vale 10. Con N = 10 000 001 il testo dice che a[10 000 000] deve valere 664 579.</p></div>
+  </figure>
+  <p>Quindi stream e array si completano: gli stream sono pigri, anche infiniti, si usano una volta sola; gli array sono finiti, in memoria, riutilizzabili, e hanno le scansioni prefisso.</p>
+</section>
+
+<section>
+  <h2>Il mistero di k-means: cache e false sharing</h2>
+  <p>La lezione chiude con un caso di studio che lega stream e cache (sezione 9.4 degli appunti). K-means raggruppa 200 000 punti in 81 cluster: si alternano due passi finché non cambia più niente. <b>Assign</b>: ogni punto va al cluster con il centro più vicino. <b>Update</b>: ogni cluster ricalcola il suo centro come media dei suoi punti.</p>
+  <div class="tab-wrap"><table class="tab"><thead><tr><th>versione</th><th>come</th></tr></thead><tbody>
+    <tr><td><b>2P</b></td><td>due cicli paralleli: Assign scrive solo il proprio pezzo dell'array <code>myCluster</code> e legge il campo <code>mean</code> dei cluster; Update chiama <code>addToMean</code> (synchronized) sul cluster del punto</td></tr>
+    <tr><td><b>2Q</b></td><td>i due cicli fusi in uno: <code>closest(…).addToMean(…)</code>. Sembra un miglioramento</td></tr>
+    <tr><td><b>3P</b></td><td>stream paralleli: <code>groupingBy</code> per Assign, poi ogni cluster si calcola la media. Nessuno stato condiviso modificato</td></tr>
+  </tbody></table></div>
+  <div class="tab-wrap"><table class="tab"><thead><tr><th>secondi</th><th>2P</th><th>2Q</th><th>3P stream</th></tr></thead><tbody>
+    <tr><td>sequenziale</td><td>4.240</td><td>4.019</td><td>5.353</td></tr>
+    <tr><td>4 core (i7)</td><td>1.310</td><td>2.234</td><td>1.350</td></tr>
+    <tr><td>24 core (Xeon)</td><td>0.852</td><td>6.587</td><td>0.553</td></tr>
+    <tr><td>6 core P (Apple M3 pro)</td><td>0.726</td><td>1.237</td><td>0.346</td></tr>
+    <tr><td>32 core (AMD 7313)</td><td>0.910</td><td>1.944</td><td>0.257</td></tr>
+  </tbody></table></div>
+  <figure class="passi" data-titolo="Perché 2Q è più lento di 2P" data-legenda="dato:campo mean (letto),no:campi sumx, sumy, count (scritti)">
+    <div class="passo"><div class="espr">oggetto Cluster:  <mark class="dato">mean</mark>  <mark class="no">sumx  sumy  count</mark></div><p class="nota">I quattro campi di un cluster stanno vicini in memoria: probabilmente sulla <b>stessa linea di cache</b> (64 byte).</p></div>
+    <div class="passo"><div class="espr">2P, Assign:   solo letture di <mark class="dato">mean</mark>   →   linea in stato S, veloce</div><p class="nota">Nel primo ciclo nessuno scrive nei cluster: la linea resta condivisa in tutti i core, senza invalidazioni.</p></div>
+    <div class="passo"><div class="espr">2Q, ciclo fuso:   leggi <mark class="dato">mean</mark>, poi scrivi <mark class="no">sumx/sumy/count</mark></div><p class="nota">Ogni <code>addToMean</code> scrive sulla stessa linea che gli altri core stanno leggendo per <code>mean</code>.</p></div>
+    <div class="passo"><div class="espr">ogni scrittura  →  <mark class="no">invalida la linea negli altri core</mark>  →  la lettura di mean è lenta</div><p class="nota">È il <b>false sharing</b> della <a href="l09-falsa-condivisione.html">pagina dedicata</a>: <code>mean</code> e <code>sumx</code> sono dati diversi, ma stanno sulla stessa linea, quindi si disturbano. La lettura di <code>mean</code>, 200 000 volte, diventa molto più lenta.</p></div>
+    <div class="passo"><div class="espr">3P: nessuna scrittura condivisa   →   <mark class="dato">il più veloce</mark></div><p class="nota">Con gli stream ogni passo costruisce nuovi oggetti invece di modificare quelli condivisi: niente invalidazioni. Sulle tre macchine con più core è la versione più veloce (0.553, 0.346, 0.257 secondi); sull'i7 a 4 core è alla pari con 2P (1.350 contro 1.310). Eseguito in sequenziale costa di più (5.353 contro 4.240): crea molti oggetti.</p></div>
+  </figure>
+</section>
+
+<section>
+  <h2>Frasi pronte per l'orale</h2>
+  <div class="box inglese" data-tit="Quando uno stream parallelo è sicuro?">
+    <p>A parallel stream is safe when the functions passed to it are free of side effects and do not depend on mutable shared state, and when operators such as <code>reduce</code> are associative. The stream splits its source with a spliterator, runs the chunks as tasks on the fork-join work-stealing pool, and combines the partial results. Immutable data is automatically thread-safe, and read-only shared data stays in the Shared state in all caches.</p>
+  </div>
+  <div class="box inglese" data-tit="Perché .parallel() può essere più lento?">
+    <p>Adding <code>.parallel()</code> does not always help. Splitting and combining have a cost, as with <code>groupingBy</code> on a parallel stream, which merges many <code>HashMap</code>s; <code>groupingByConcurrent</code> avoids this by using one shared <code>ConcurrentHashMap</code>. Updates to shared mutable data cause cache invalidations and false sharing, as in the fused k-means loop.</p>
+  </div>
+</section>
+
+</main>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  const primi = [2, 3, 5, 7, 11, 13];
+  const val = [];
+  for (let i = 0; i < 16; i++) val.push(i);
+  const T = (id, x, y, t, extra) => Object.assign({ id, tipo: 'testo', x, y, t, size: 12 }, extra || {});
+  const tonoPezzo = (da, a, tono) => { const o = {}; for (let i = da; i < a; i++) o[i] = tono; return o; };
+  const x0 = 24, cw = 34;
+  const cx = i => x0 + cw * i + cw / 2;
+  SCENE.split10 = {
+    w: 600, h: 250, lato: true,
+    legenda: 'dato:pezzo 1,due:pezzo 2,ora:pezzo 3,ok:pezzo 4',
+    oggetti: [
+      { id: 's', tipo: 'celle', x: x0, y: 40, cw: cw, ch: 34, valori: val, toni: {}, indici: false },
+      T('t0', 300, 22, 'IntStream.range(0, 16).parallel().filter(isPrime).count()', { bold: true }),
+      T('c1', cx(1) + 17, 112, '', { bold: true }),
+      T('c2', cx(5) + 17, 112, '', { bold: true }),
+      T('c3', cx(9) + 17, 112, '', { bold: true }),
+      T('c4', cx(13) + 17, 112, '', { bold: true }),
+      T('tot', 300, 190, '', { bold: true, size: 15 })
+    ],
+    passi: [
+      { nota: '<p>Uno stream sui numeri 0…15, <code>parallel()</code>. Ogni cella è un elemento. Obiettivo: contare i primi (2, 3, 5, 7, 11, 13: sono 6).</p>' },
+      { nota: '<p><code>trySplit</code> divide lo stream in due metà: <b>0…7</b> e <b>8…15</b>. Ogni metà può essere un task.</p>', set: { s: { toni: Object.assign(tonoPezzo(0, 8, 'dato'), tonoPezzo(8, 16, 'due')) } } },
+      { nota: '<p>Si divide ancora: quattro pezzi da 4 elementi. Quando il pezzo è abbastanza piccolo non si divide più.</p>', set: { s: { toni: Object.assign(tonoPezzo(0, 4, 'dato'), tonoPezzo(4, 8, 'due'), tonoPezzo(8, 12, 'ora'), tonoPezzo(12, 16, 'ok')) } } },
+      { nota: '<p>Ogni pezzo gira come un task su un worker del pool, e conta i primi <b>solo nel suo pezzo</b>: nessuna variabile condivisa.</p>', set: { c1: { t: '2, 3 → 2', tono: 'dato' }, c2: { t: '5, 7 → 2', tono: 'due' }, c3: { t: '11 → 1', tono: 'ora' }, c4: { t: '13 → 1', tono: 'ok' } } },
+      { nota: '<p>I risultati parziali si <b>combinano</b> (somma): 2 + 2 + 1 + 1 = 6. Funziona perché la somma è associativa: l\'ordine in cui si fondono i pezzi non conta.</p>', set: { tot: { t: 'totale = 2 + 2 + 1 + 1 = 6', tono: 'ok' } } }
+    ]
+  };
+})();
+</script>
+</body>
+</html>

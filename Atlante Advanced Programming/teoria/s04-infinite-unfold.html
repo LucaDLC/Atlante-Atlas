@@ -109,6 +109,26 @@ window.SCENE = window.SCENE || {};
         { nota: "k = 0: la guardia è falsa, si cade in <code>case _ =&gt; None</code>, che raccoglie i due modi di finire (lista vuota o contatore a 0): fine. List(5, 6). Stessa idea per fibsUnfold (stato (a, b)), mapUnfold (stato: la lista), zipWith (stato: le due liste).", righe: [4], set: { st: { tono: 'no' }, c: { t: 'List(5, 6)', tono: 'ok' } } }
       ]
     };
+    SCENE.zipwith = {
+      w: 580, h: 250, lato: true,
+      legenda: 'dato:primo operando,due:secondo operando,ora:coppia in lavorazione,ok:risultato,spento:operando mai calcolato',
+      oggetti: [
+        T('t', 290, 22, '', { bold: true, size: 12 }),
+        T('la', 20, 62, 'this', { size: 12, anchor: 'start' }), C('a', 90, 44, ['1', '2', '3', '4', '…'], { cw: 60, toni: toni(5, 'dato') }),
+        T('lb', 20, 112, 'bs', { size: 12, anchor: 'start' }), C('b', 90, 94, ['1', '2', '3', '4', '…'], { cw: 60, toni: toni(5, 'due') }),
+        T('lr', 20, 162, 'risultato', { size: 12, anchor: 'start' }), C('r', 90, 144, ['', '', '', '', ''], { cw: 60, toni: {} }),
+        T('c', 290, 215, '', { size: 12 }), T('c2', 290, 238, '', { size: 12 })
+      ],
+      passi: [
+        { nota: "<code>naturals.zipWith[Int, Int](_ + _)(naturals)</code>: lo stato di <code>unfold</code> sono le <b>due liste</b>. A ogni passo guarda le due teste, le combina con <code>ope</code> e passa alle due code.", set: { t: { t: 'naturals.zipWith(_ + _)(naturals)' } } },
+        { nota: "Teste 1 e 1: <code>ope(1, 1)</code> = 2. Nuovo stato: le due code.", set: { a: { toni: { 0: 'ora', 1: 'dato', 2: 'dato', 3: 'dato', 4: 'dato' } }, b: { toni: { 0: 'ora', 1: 'due', 2: 'due', 3: 'due', 4: 'due' } }, r: { valori: ['2', '', '', '', ''], toni: { 0: 'ok' } } } },
+        { nota: "Teste 2 e 2: 4. Poi 3 + 3 = 6, 4 + 4 = 8. Una coppia alla volta, e solo se qualcuno chiede il risultato.", set: { a: { toni: { 0: 'ok', 1: 'ora', 2: 'dato', 3: 'dato', 4: 'dato' } }, b: { toni: { 0: 'ok', 1: 'ora', 2: 'due', 3: 'due', 4: 'due' } }, r: { valori: ['2', '4', '6', '8', '…'], toni: { 0: 'ok', 1: 'ok', 2: 'ok', 3: 'ok' } } } },
+        { nota: "Con <code>take(2000000000).take(5).toList</code> il risultato è <b>List(2, 4, 6, 8, 10)</b> (verificato): il primo take non costa niente, perché costruisce una cella alla volta. Si ferma appena una delle due liste finisce: il caso <code>case _ =&gt; None</code>.", set: { c: { t: 'List(2, 4, 6, 8, 10)', tono: 'ok' } } },
+        { nota: "Secondo caso del testo: <code>naturals.map(_ % 2 == 0)</code> contro <code>naturals.map(_ % 2 == 1)</code>, con <code>_ || _</code>. Primo operando: pari? Secondo: dispari?", set: { t: { t: 'zipWith[Boolean, Boolean](_ || _)' }, c: { t: '' }, a: { valori: ['false', 'true', 'false', 'true', '…'], toni: toni(5, 'dato') }, b: { valori: ['true', 'false', 'true', 'false', '…'], toni: toni(5, 'due') }, r: { valori: ['', '', '', '', ''], toni: {} } } },
+        { nota: "Prima coppia: primo operando false, quindi <code>||</code> deve guardare il secondo: true. Seconda coppia: il primo è true, e <code>true || qualcosa</code> è true <b>senza calcolare il secondo</b>: possibile solo perché <code>ope</code> prende gli operandi by-name (<code>=&gt; B</code>).", set: { a: { toni: { 0: 'ora', 1: 'ora', 2: 'ora', 3: 'ora', 4: 'dato' } }, b: { toni: { 0: 'ora', 1: 'spento', 2: 'ora', 3: 'spento', 4: 'due' } }, r: { valori: ['true', 'true', 'true', 'true', '…'], toni: { 0: 'ok', 1: 'ok', 2: 'ok', 3: 'ok' } }, c: { t: 'ogni numero è pari oppure dispari: sempre true', tono: 'ok' }, c2: { t: 'List(true, true, true, true)' } } }
+      ]
+    };
+
   
 })();
 </script>
@@ -283,6 +303,7 @@ def zipWith[B &gt;: A, C](ope: (=> B, => B) => C)(bs: LazyList[B]): LazyList[C] 
     </tbody>
   </table></div>
   <p>Il secondo: ogni numero è pari <b>oppure</b> dispari, quindi sempre <code>true</code>. Pensaci prima di eseguire, come chiede il testo.</p>
+  <figure class="scena" data-scena="zipwith" data-titolo="zipWith: due liste, una coppia alla volta"></figure>
   <div class="box inglese" data-tit="Esercizio 13: cosa devono dare i due casi di prova">
     <p>"naturals.zipWith(_ + _)(naturals) adds each number to itself, so it gives the even numbers 2, 4, 6, …; take(2000000000) costs nothing, because it builds one node at a time. The Boolean one gives only true: every number is either even or odd. Since ope takes its operands by name, || never evaluates the second one once the first is true."</p>
   </div>

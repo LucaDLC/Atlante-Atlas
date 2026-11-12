@@ -20,8 +20,8 @@ window.SITO = {
     { da: '2026-10-13', t: 'Pausa autunnale', sub: 'nessuna lezione', pausa: true },
     { da: '2026-10-20', t: 'Parser combinators', sub: 'cap. 9' },
     { da: '2026-10-27', t: 'Design funzionale: Monoid e Monad', sub: 'cap. 10–11 · slide monoid, foldable, functor, monad', h: 'teoria/s09-monoid.html' },
-    { da: '2026-11-03', t: 'Programmazione probabilistica con Probula', sub: 'slide' },
-    { da: '2026-11-10', t: 'Semantica dei linguaggi e interpreti', sub: 'articolo, sezioni 1–3' },
+    { da: '2026-11-03', t: 'Programmazione probabilistica con Probula', sub: 'slide · esercizio 10', h: 'teoria/s10-probabilistica.html' },
+    { da: '2026-11-10', t: 'Semantica dei linguaggi e interpreti', sub: 'articolo, sezioni 1–3 · esercizi 1–13', h: 'teoria/s11-semantica.html' },
     { da: '2026-11-17', t: 'Esempio di reinforcement learning', sub: 'mini progetto di 2 settimane' },
     { da: '2026-11-24', t: 'Parliamo dell\'esame', sub: 'mini progetto', h: 'esame/formato.html' },
     { da: '2026-12-01', t: 'Lenses', sub: 'articoli della reading list' },
@@ -118,6 +118,12 @@ window.SITO = {
       "Errori del compilatore": "Compiler errors",
       "Vecchie prove e allenamento": "Past exams and practice",
       "Formulario": "Formulary",
+      "Programmazione probabilistica con Probula": "Probabilistic programming with Probula",
+      "Semantica dei linguaggi e interpreti": "Language semantics and interpreters",
+      "Le famiglie di domande": "Question families",
+      "Triage e albero di decisione": "Triage and decision tree",
+      "Coppie trappola": "Trap pairs",
+      "Banca esercizi (78 domande)": "Exercise bank (78 questions)",
       "Indice e dizionario": "Index and dictionary",
       "scritto in presenza, 4 ore": "written, on campus, 4 hours"
     },
@@ -247,6 +253,12 @@ window.SITO = {
       { t: 'Property-based testing', h: 'teoria/s06-pbt.html' },
       { t: 'Esercizi: testare la LazyList', h: 'teoria/s06-esercizi.html' }
     ] },
+    { g: 'S7 · API di testing', quando: '6 ott', figli: [
+      { t: 'API del property-based testing', h: 'teoria/s07-prop.html' }
+    ] },
+    { g: 'S8 · Parser combinators', quando: '20 ott', figli: [
+      { t: 'Parser combinators', h: 'teoria/s08-parsing.html' }
+    ] },
     { g: 'S9 · Monoid e Monad', quando: '27 ott', figli: [
       { t: 'Monoid: combinare e avere un neutro', h: 'teoria/s09-monoid.html' },
       { t: 'Esempi: monoid in Scala', h: 'esempi/s09-monoid.html' },
@@ -257,11 +269,13 @@ window.SITO = {
       { t: 'Monad: unit e flatMap', h: 'teoria/s09-monad.html' },
       { t: 'Esempi: flatMap e for', h: 'esempi/s09-monad.html' }
     ] },
-    { g: 'In arrivo', quando: 'S7–S14', figli: [
-      { t: 'S7 · API di testing', arriva: '6 ott' },
-      { t: 'S8 · Parser combinators', arriva: '20 ott' },
-      { t: 'S10 · Probula', arriva: '3 nov' },
-      { t: 'S11 · Semantica', arriva: '10 nov' },
+    { g: 'S10 · Probula', quando: '3 nov', figli: [
+      { t: 'Programmazione probabilistica con Probula', h: 'teoria/s10-probabilistica.html' }
+    ] },
+    { g: 'S11 · Semantica', quando: '10 nov', figli: [
+      { t: 'Semantica dei linguaggi e interpreti', h: 'teoria/s11-semantica.html' }
+    ] },
+    { g: 'In arrivo', quando: 'S12–S14', figli: [
       { t: 'S12 · Reinforcement learning', arriva: '17 nov' },
       { t: 'S14 · Lenses', arriva: '1 dic' }
     ] },
@@ -272,6 +286,10 @@ window.SITO = {
     { t: 'Homework: come si passano', h: 'esame/homework.html', noCapito: true },
     { t: 'Errori del compilatore', h: 'esame/errori.html' },
     { t: 'Vecchie prove e allenamento', h: 'esame/prove.html' },
+    { t: 'Le famiglie di domande', h: 'esame/famiglie.html' },
+    { t: 'Triage e albero di decisione', h: 'esame/triage.html' },
+    { t: 'Coppie trappola', h: 'esame/coppie-trappola.html' },
+    { t: 'Banca esercizi (78 domande)', h: 'esame/banca.html' },
     { g: 'Formulario', quando: 'ripasso', figli: [
       { t: 'Indice e dizionario', h: 'esame/formulario.html' },
       { t: 'S1 · Funzioni e ricorsione', h: 'esame/formulario-s01.html' },

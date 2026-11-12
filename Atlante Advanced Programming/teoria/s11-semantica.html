@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Semantica dei linguaggi e interpreti</title>
+<link rel="stylesheet" href="../assets/atlas.css">
+<link rel="stylesheet" href="../assets/tema.css">
+<script src="../assets/sito.js"></script>
+<script src="../assets/atlas.js" defer></script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <div class="occhiello"><span>S11</span><span>10 novembre</span></div>
+  <h1>Semantica dei linguaggi e interpreti</h1>
+  <p class="lede">Un <b>interprete</b> è una funzione ricorsiva sull'albero del programma. Se il suo risultato è una <b>monade</b>, cambiare effetto (eccezioni, stato, output) vuol dire cambiare monade, non riscrivere l'interprete. È l'idea dell'articolo di Wadler.</p>
+</header>
+
+<section>
+  <h2>Perché serve la semantica</h2>
+  <p><code>print(1/2)</code> è un programma valido sia in Scala che in Python. Stessa sintassi, risultati diversi: <b>0</b> in Scala (divisione tra interi), <b>0,5</b> in Python. Un linguaggio è tre cose:</p>
+  <ul>
+    <li><b>Sintassi</b>: quali programmi sono validi.</li>
+    <li><b>Semantica</b>: cosa vuol dire eseguirli.</li>
+    <li><b>Implementazione</b>: come si realizza (compilatore, interprete).</li>
+  </ul>
+  <p>In questa lezione il linguaggio è minuscolo: numeri e divisioni. Basta per vedere tutte le idee.</p>
+</section>
+
+<section>
+  <h2>Sintassi astratta: i termini</h2>
+  <p>Dopo il parsing un programma è già un <b>albero</b>. La grammatica <code>e ::= num(n) | e / e</code> in Scala è un <code>enum</code> (un tipo algebrico, S2):</p>
+<pre class="cod" data-lang="scala">enum Term:
+  case Cons(value: Int)
+  case Div(left: Term, right: Term)</pre>
+  <p>Come con <code>Tree</code> (S3): una foglia con un valore e un nodo con due figli. Precedenza e ordine di valutazione li ha già decisi il parser: l'interprete vede solo l'albero. Esempio: <code>(1972 / 2) / 23</code> è <code>Div(Div(Cons(1972), Cons(2)), Cons(23))</code>.</p>
+</section>
+
+<section>
+  <h2>Semantica big-step: regole e codice</h2>
+  <p>Le <b>regole di inferenza</b> dicono come si calcola: sopra le premesse, sotto la conclusione. Premessa vuota = assioma. Una regola per ogni caso dell'albero:</p>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Regola</th><th>Premesse</th><th>Conclusione</th></tr></thead>
+    <tbody>
+      <tr><td>NUM</td><td>(nessuna)</td><td><code>num(n) → n</code></td></tr>
+      <tr><td>DIV</td><td><code>e → n₁</code> e <code>e' → n₂</code></td><td><code>e / e' → n₁ / n₂</code></td></tr>
+    </tbody>
+  </table></div>
+  <p>Ogni regola diventa un <code>case</code> dell'interprete: le premesse sono le chiamate ricorsive.</p>
+<pre class="cod" data-lang="scala">def eval (expr: Term): Int = expr match
+  case Cons(n) => n
+  case Div(left, right) => eval(left) / eval(right)</pre>
+  <p>Valutare è costruire una <b>derivazione</b>: l'albero delle regole applicate, letto dal basso. <code>eval(answer)</code> dà 42 (verificato).</p>
+  <div class="box attenzione" data-tit="Il problema">
+    <p>La regola DIV non dice cosa succede con <code>n₂ = 0</code>. Il programma "si blocca": nessun significato. In Scala <code>1 / 0</code> lancia <code>ArithmeticException</code> (verificato): un'eccezione, che il corso vieta.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Eccezioni come valori</h2>
+  <p>Stessa sintassi, nuovo tipo di risultato: o un valore o un'eccezione. Le regole diventano cinque:</p>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Regola</th><th>Premesse</th><th>Conclusione</th></tr></thead>
+    <tbody>
+      <tr><td>NUM</td><td>—</td><td><code>num(n) → Return(n)</code></td></tr>
+      <tr><td>DIV-EXC</td><td><code>e → Return(n₁)</code>, <code>e' → Return(0)</code></td><td><code>e / e' → Raise("Division by zero")</code></td></tr>
+      <tr><td>DIV-NORM</td><td><code>e → Return(n₁)</code>, <code>e' → Return(n₂)</code>, <code>n₂ ≠ 0</code></td><td><code>e / e' → Return(n₁ / n₂)</code></td></tr>
+      <tr><td>EXC-PROP-1</td><td><code>e → Raise(msg)</code></td><td><code>e / e' → Raise(msg)</code></td></tr>
+      <tr><td>EXC-PROP-2</td><td><code>e' → Raise(msg)</code></td><td><code>e / e' → Raise(msg)</code></td></tr>
+    </tbody>
+  </table></div>
+  <figure class="codice" data-titolo="L'interprete con eccezioni (pattern matching sul risultato)">
+<pre data-lang="scala">enum M[+A]:
+  case Raise(e: String) extends M[Nothing]
+  case Return(a: A)
+
+def eval(t: Term): M[Int] = t match
+  case Cons(n) => Return(n)
+  case Div(l, r) => eval(l) match
+    case Raise(e) => Raise(e)
+    case Return(lv) => eval(r) match
+      case Raise(e) => Raise(e)
+      case Return(rv) =>
+        if rv == 0 then Raise("Division by zero") else Return(lv / rv)</pre>
+    <ol class="spiega">
+      <li data-righe="1-3" data-segna="Raise(e: String)@no|Return(a: A)@ok"><p><code>M[A]</code> è o un valore (<code>Return</code>) o un'eccezione (<code>Raise</code>). È essenzialmente <code>Either[String, A]</code>. Attenzione: qui seguo le slide (messaggio <code>String</code>); nel template <code>Exercises.scala</code> del corso <code>Raise</code> porta invece un <code>Exception</code> (<code>Raise(e: Exception)</code>) I test controllano solo <code>Raise(_)</code>, qualunque sia il contenuto. <code>Raise</code> è <code>M[Nothing]</code>: va bene per ogni <code>A</code>.</p></li>
+      <li data-righe="6" data-segna="Return(n)@ok"><p>Regola NUM: una costante è un <code>Return</code>.</p></li>
+      <li data-righe="7-8" data-segna="eval(l) match@dato|Raise(e) => Raise(e)@no"><p>EXC-PROP-1: valuto il sinistro; se è un'eccezione la propago.</p></li>
+      <li data-righe="9-10" data-segna="eval(r) match@dato"><p>Se il sinistro è <code>Return(lv)</code>, valuto il destro. Se è un'eccezione, EXC-PROP-2.</p></li>
+      <li data-righe="12" data-segna="if rv == 0 then Raise(&quot;Division by zero&quot;)@no|Return(lv / rv)@ok"><p>Entrambi riusciti: DIV-EXC se <code>rv = 0</code>, altrimenti DIV-NORM. Il codice è la copia diretta delle regole.</p></li>
+    </ol>
+  </figure>
+</section>
+
+<section>
+  <h2>Il problema: ogni effetto riscrive tutto</h2>
+  <p><code>eval</code> di base e <code>eval</code> con eccezioni sono molto diversi: tipo di ritorno, pattern matching sui risultati, caso speciale. In un linguaggio imperativo basterebbe cambiare <b>una riga</b> (quella della divisione). Vogliamo la stessa manutenibilità.</p>
+  <p>Cosa è <b>comune</b>: la sintassi astratta e la struttura (ricorsione sull'albero). Cosa <b>varia</b>: il tipo del risultato e la gestione dei casi speciali. L'idea: nascondere ciò che varia in una <b>monade</b>.</p>
+</section>
+
+<section>
+  <h2>Interprete monadico: unit, flatMap, for</h2>
+  <p>La monade eccezione ha le solite due operazioni (S9). Tutto il pattern matching sui risultati sparisce dall'interprete: lo fa <code>flatMap</code>.</p>
+<pre class="cod" data-lang="scala">def unit[A](a: A): M[A] = Return(a)
+
+extension [A](ma: M[A])
+  def flatMap[B](f: A => M[B]): M[B] = ma match
+    case Raise(e) => Raise(e)
+    case Return(a) => f(a)
+  def map[B](f: A => B): M[B] = ma.flatMap(a => Return(f(a)))</pre>
+  <figure class="codice" data-titolo="L'interprete monadico con for/yield">
+<pre data-lang="scala">def eval(t: Term): M[Int] = t match
+  case Cons(n) => unit(n)
+  case Div(l, r) =>
+    for
+      lv <- eval(l)
+      rv <- eval(r)
+      res <- (if rv == 0 then Raise("Division by zero") else unit(lv / rv))
+    yield res</pre>
+    <ol class="spiega">
+      <li data-righe="2" data-segna="unit(n)@ok"><p>Le costanti: <code>unit</code> mette il valore nella monade.</p></li>
+      <li data-righe="5-6" data-segna="lv <- eval(l)@dato|rv <- eval(r)@due"><p><code>lv &lt;- eval(l)</code> significa "valuta, e se riesce chiama <code>lv</code> il valore". Se <code>eval(l)</code> è <code>Raise</code>, tutto il resto è saltato: la propagazione è dentro <code>flatMap</code>, non nel tuo codice.</p></li>
+      <li data-righe="7" data-segna="if rv == 0 then Raise(&quot;Division by zero&quot;)@no|unit(lv / rv)@ok"><p>L'<b>unico</b> caso speciale rimasto: la divisione per zero.</p></li>
+      <li data-righe="8" data-segna="yield res@ok"><p>Il <code>for</code> è zucchero per <code>flatMap</code> annidati e un <code>map</code> finale (S3).</p></li>
+    </ol>
+  </figure>
+  <p>Verificato (Scala 3.8.4): <code>eval(answer)</code> = <code>Return(42)</code> e <code>eval(Div(Cons(1), Cons(0)))</code> = <code>Raise(Division by zero)</code>, identici nelle tre scritture (pattern matching, <code>flatMap</code>, <code>for</code>).</p>
+  <div class="box idea" data-tit="Identity monad: l'interprete base, monadico">
+    <p>Con <code>type M[A] = A</code>, <code>unit(a) = a</code> e <code>flatMap(ma)(f) = f(ma)</code> l'<i>identica</i> funzione <code>eval</code> con <code>for</code> riproduce l'interprete di base. Passare da un effetto all'altro vuol dire cambiare il tipo di ritorno e il caso speciale, come nell'imperativo.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Gli altri effetti: stato e output</h2>
+  <p>Le slide arrivano a eccezioni e Identity. <b>Stato</b> e <b>output</b> sono negli esercizi (dall'articolo di Wadler): stessa struttura, monade diversa.</p>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Effetto</th><th>Tipo <code>M[A]</code></th><th>Cosa fa il valutatore</th><th><code>unit(a)</code></th></tr></thead>
+    <tbody>
+      <tr><td>Eccezioni</td><td><code>Raise(e)</code> o <code>Return(a)</code></td><td><code>Raise</code> sulla divisione per zero</td><td><code>Return(a)</code></td></tr>
+      <tr><td>Stato</td><td><code>M(step: Int => (A, Int))</code></td><td>conta le divisioni: <code>tick</code> aggiunge 1 allo stato</td><td>valore e stato invariato</td></tr>
+      <tr><td>Output</td><td><code>M(o: String, a: A)</code></td><td>scrive una riga per ogni nodo valutato</td><td><code>M("", a)</code></td></tr>
+    </tbody>
+  </table></div>
+  <figure class="passi" data-titolo="Output: la traccia di (1972 / 2) / 23" data-legenda="dato:foglia,ora:nodo interno,ok:il risultato">
+    <div class="passo">
+      <div class="espr">eval(Cons(1972)) <= <mark class="dato">1972</mark></div>
+      <p class="nota">Il figlio sinistro dell'albero interno: una foglia, una riga.</p>
+    </div>
+    <div class="passo">
+      <div class="espr">eval(Cons(1972)) <= 1972
+eval(Cons(2)) <= <mark class="dato">2</mark></div>
+      <p class="nota">Poi il destro. L'ordine è: sinistra, destra, poi la riga del nodo.</p>
+    </div>
+    <div class="passo">
+      <div class="espr">…
+eval(Div(Cons(1972),Cons(2))) <= <mark class="ora">986</mark></div>
+      <p class="nota">Il nodo interno: <code>1972 / 2 = 986</code>. La traccia di un nodo è <b>concatenazione</b> delle tracce dei figli più la sua riga.</p>
+    </div>
+    <div class="passo">
+      <div class="espr">…
+eval(Cons(23)) <= <mark class="dato">23</mark>
+eval(Div(Div(Cons(1972),Cons(2)),Cons(23))) <= <mark class="ok">42</mark></div>
+      <p class="nota">Il figlio destro e la radice: <code>986 / 23 = 42</code>. Questa è la traccia esatta che verificano i test del corso (cinque righe).</p>
+    </div>
+  </figure>
+  <p>Con la monade <b>stato</b> la stessa catena di <code>flatMap</code> passa il contatore da una chiamata all'altra, come <code>State</code> in S5. Per <code>answer</code> le divisioni sono 2, quindi <code>eval(answer).step(n) = (42, n+2)</code> (come verificano i test).</p>
+</section>
+
+<section>
+  <h2>Gli esercizi, in breve</h2>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Es.</th><th>Cosa si chiede</th><th>Nota</th></tr></thead>
+    <tbody>
+      <tr><td>1–4</td><td>Eccezioni: <code>eval</code> con pattern matching, istanza <code>Monad[M]</code>, <code>evalMonad</code>, <code>evalForYield</code></td><td>Il <code>for</code> non può avere <code>if</code> (manca <code>withFilter</code>): si scrive il caso con un <code>if/else</code> dentro</td></tr>
+      <tr><td>5–8</td><td>Stato: conta le divisioni con <code>tick</code>, istanza <code>Monad[M]</code>, versioni monadica e <code>for</code></td><td><code>M</code> è essenzialmente <code>State</code>. Non incrementare il contatore dentro <code>flatMap</code>: contarebbe anche altro</td></tr>
+      <tr><td>9–12</td><td>Output: la traccia con <code>out</code> e <code>line</code>, istanza, versioni monadica e <code>for</code></td><td><code>unit</code> = output vuoto; <code>flatMap</code> concatena le stringhe</td></tr>
+      <tr><td>13</td><td>Rivedere i quattro esercizi monadici e scrivere 5–10 righe di riflessione</td><td>"Cambiare un effetto richiede una piccola modifica all'interprete?"</td></tr>
+    </tbody>
+  </table></div>
+  <div class="box esame" data-tit="All'esame">
+    <p>La semantica non è mai stata chiesta nelle prove 2019–2025: è nuova nel corso 2026. Aspettati domande sul pattern <b>valutatore → monade</b>: scrivere un <code>eval</code> con <code>for</code>, o istanza <code>Monad</code> per un nuovo effetto. Le leggi della monade (identità sinistra e destra, associatività) sono le stesse di S9.</p>
+  </div>
+  <div class="box domanda-tua" data-tit="Da verificare">
+    <p>L'articolo di Wadler <i>Monads for functional programming</i> (sezioni 1–3 nel README, "le prime due" nel PDF degli esercizi) non è nel repo: questa pagina si basa sulle slide e sugli esercizi del corso. Le sezioni 2.7–2.9 dell'articolo servono all'esercizio 13.</p>
+  </div>
+  <div class="box inglese" data-tit="Frasi pronte">
+    <p><i>"The interpreter keeps the same structure; only the monad changes, so adding an effect needs a small change."</i></p>
+    <p><i>"The exception monad propagates Raise through flatMap, so the interpreter does not pattern match on results."</i></p>
+  </div>
+</section>
+
+</main>
+</body>
+</html>

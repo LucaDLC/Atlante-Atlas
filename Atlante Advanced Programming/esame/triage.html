@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Triage: riconoscere la famiglia</title>
+<link rel="stylesheet" href="../assets/atlas.css">
+<link rel="stylesheet" href="../assets/tema.css">
+<script src="../assets/sito.js"></script>
+<script src="../assets/atlas.js" defer></script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <div class="occhiello"><span>Esame</span><span>metodo</span></div>
+  <h1>Triage: riconoscere la famiglia</h1>
+  <p class="lede">Su ogni domanda fai sette osservazioni, nell'ordine: le prime tre bastano quasi sempre per capire la famiglia. Poi l'albero di decisione, dalla firma alla famiglia.</p>
+</header>
+
+<section>
+<h2>2 · Il triage in 7 osservazioni</h2>
+<p>Su ogni domanda fai queste osservazioni, nell'ordine. Le prime tre bastano quasi sempre per capire la famiglia; le altre servono a scegliere lo strumento.</p>
+<ol>
+<li><b>Cosa chiede la firma?</b> Se il testo dà una firma con <code>[A: Qualcosa]</code>, <code>using</code> o <code>F[_]</code>, è <b>H</b> o <b>I</b>. Se ha <code>Option</code>/<code>Either</code> nel ritorno, è <b>C</b>. Se ha <code>LazyList</code>/<code>Stream</code>, <b>D</b>. Se ha <code>Rand</code>/<code>State</code>, <b>E</b>. Se ha <code>Parser</code>, <b>G</b>. Se ha <code>Prop</code>/<code>Gen</code>/<code>Arbitrary</code>, <b>F</b>. Se ha <code>Dist</code>/<code>sample</code>, <b>J</b>. Se ha <code>Lens</code>/<code>Optional</code>, <b>K</b>.</li>
+<li><b>Che verbo usa il testo?</b> "Implement" = codice. "Write a property / test" = F. "Explain in English" = risposta scritta. "Provide evidence" = un <code>given</code>. "Annotate the type" = tipi. "Which laws" = leggi.</li>
+<li><b>C'è già un pezzo dato da riusare?</b> Un parser, una funzione <code>winner</code>, <code>primeFrom</code>, <code>goodPairs</code>, una lente. Allora la risposta è <b>una riga</b> che lo trasforma: <code>parser.map(...)</code>, <code>.sample(N).pr(...)</code>, <code>.curried</code>.</li>
+<li><b>Il testo vieta qualcosa?</b> "Do not use recursion", "using a fold", "without using your instance", "do not use lengthCompare". È il 90% della differenza tra un voto medio e uno alto.</li>
+<li><b>La struttura è infinita o potenzialmente lunga?</b> Allora ogni operazione deve essere pigra e c'è un <code>take</code> prima di forzare.</li>
+<li><b>Un valore dipende dal precedente?</b> Se sì, serve <code>flatMap</code> / <code>for</code>. Se i valori sono indipendenti, <code>map2</code> (o <code>sequence</code>).</li>
+<li><b>Che tipo deve avere la risposta?</b> Scrivilo per primo, anche se il testo non lo chiede. Se la firma non torna, hai sbagliato famiglia.</li>
+</ol>
+<div class="box esame" data-tit="Metodo in aula (4 ore)">
+<ol>
+<li>Leggi tutte le domande, solo le firme e i verbi (15 minuti). A margine scrivi la lettera della famiglia.</li>
+<li>Prima le <b>sicure</b>: tipicamente curry/HOF (A), un <code>given</code> (H), un parser da riusare (G), un test (F).</li>
+<li>Poi le <b>domande di tipi</b> (I): sono meccaniche, si fanno contando.</li>
+<li>Poi LazyList, State e probabilistica. Lascia per ultime le domande "design" (HKT astratto del 2024 Q11).</li>
+<li>Compila ogni 3 risposte. Se un pezzo non compila, commentalo accanto a <code>???</code> e vai avanti.</li>
+<li>Rileggi con la checklist in fondo (80 colonne, niente <code>var</code>, tipi di ritorno scritti, nessun <code>match</code> non esaustivo).</li>
+</ol></div>
+</section>
+<section>
+<h2>3 · Albero di decisione</h2>
+<p>Parti dalla firma e scendi. Ogni foglia è una famiglia della Parte I.</p>
+<div class="tab-wrap"><table class="tab">
+<thead><tr><th style="width:42%">Se nel testo vedi…</th><th>Famiglia</th><th>Primo gesto</th></tr></thead>
+<tbody>
+<tr><td>una firma fatta solo di frecce e parametri di tipo</td><td><b>A</b> curry/HOF</td><td>apri una lambda per ogni freccia</td></tr>
+<tr><td>"fold", "higher order function", <code>List</code>, <code>enum</code> semplice</td><td><b>B</b> liste</td><td>scegli: dedicata → fold → ricorsione</td></tr>
+<tr><td><code>Option</code> / <code>Either</code>, "None se…", "last error"</td><td><b>C</b></td><td><code>for</code> / <code>flatMap</code>, tipo di ritorno scritto</td></tr>
+<tr><td>"infinite", "lazy", "stream", "running", "primes"</td><td><b>D</b></td><td><code>take</code> prima di forzare; <code>unfold</code> se c'è uno stato</td></tr>
+<tr><td><code>Rand</code>, <code>RNG</code>, "random", <code>State</code></td><td><b>E</b></td><td><code>for</code> su <code>State</code>, un valore per riga</td></tr>
+<tr><td>"property", "forAll", "Arbitrary", "law", <code>Prop</code></td><td><b>F</b></td><td>traduci la frase in "per ogni X vale Y"</td></tr>
+<tr><td>"parser", grammatica, <code>**</code> <code>|*</code> <code>*|</code></td><td><b>G</b></td><td>c'è un parser già dato? <code>.map</code>. Altrimenti una riga per riga di grammatica</td></tr>
+<tr><td>"evidence", "instance", <code>given</code>, <code>[A: …]</code>, <code>F[_]</code>, "Monad", "Functor"</td><td><b>H</b></td><td>scrivi il <code>given</code> con i metodi del trait</td></tr>
+<tr><td>"variance", "covariant", "polymorphically recursive", tipi con <code>Inc</code></td><td><b>I</b></td><td>conta i parametri e scrivi il tipo per primo</td></tr>
+<tr><td><code>Dist</code>, <code>uniform</code>, <code>sample</code>, <code>.pr</code>, "probability"</td><td><b>J</b></td><td>modello → campione → frequenza</td></tr>
+<tr><td><code>Lens</code>, <code>Optional</code>, "lens laws"</td><td><b>K</b></td><td>totale o parziale? poi le tre leggi</td></tr>
+<tr><td>"interpreter", "evaluator", <code>Term</code>, "semantics"</td><td><b>L</b></td><td>ricorsione sui termini; effetto nella monade</td></tr>
+</tbody></table></div>
+<div class="box regola" data-tit="La regola che vale su tutto">
+<p>Dopo aver scelto la famiglia, scrivi <b>il tipo di ritorno</b> e <b>un esempio piccolo</b> a margine. Eseguilo a mano. Se il risultato non è quello del testo, la famiglia è sbagliata, non l'esempio.</p></div>
+</section>
+</main>
+</body>
+</html>

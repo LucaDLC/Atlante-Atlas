@@ -106,6 +106,36 @@ window.SCENE = window.SCENE || {};
   
 })();
 </script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  const N = (id, x, y, t, extra) => Object.assign({ id, tipo: 'nodo', x, y, r: 24, t }, extra || {});
+  const E = (id, da, a, t, extra) => Object.assign({ id, tipo: 'arco', da, a, dir: true, t, nascosto: true }, extra || {});
+  const T = (id, x, y, t, extra) => Object.assign({ id, tipo: 'testo', x, y, t, size: 13 }, extra || {});
+  // numeri ricalcolati con NumPy sui 30 punti della scena PCA: W = PC1ᵀ = (0.83, 0.55), x = (6.31, 3.88), μ = (5.00, 2.89)
+  SCENE.pcaae = {
+    w: 640, h: 300, lato: true,
+    legenda: 'dato:ingresso,ora:codice a,ok:ricostruzione,due:pesi condivisi,no:errore',
+    oggetti: [
+      N('x1', 70, 90, 'x₁−μ₁', { tono: 'dato', sotto: '' }), N('x2', 70, 210, 'x₂−μ₂', { tono: 'dato', sotto: '' }),
+      N('a', 300, 150, 'a', { tono: 'spento' }),
+      N('y1', 530, 90, 'x̂₁', { tono: 'spento' }), N('y2', 530, 210, 'x̂₂', { tono: 'spento' }),
+      T('e1', 70, 40, 'ingresso (d = 2)', { size: 12 }), T('e2', 300, 40, 'codice (k = 1)', { size: 12 }), T('e3', 530, 40, 'uscita (d = 2)', { size: 12 }),
+      E('w1', 'x1', 'a', '0.83', { tono: 'due' }), E('w2', 'x2', 'a', '0.55', { tono: 'due' }),
+      E('d1', 'a', 'y1', '0.83', { tono: 'due' }), E('d2', 'a', 'y2', '0.55', { tono: 'due' }),
+      T('c', 320, 275, '', { size: 12, bold: true })
+    ],
+    passi: [
+      { nota: "<p>Una rete con <b>tre strati lineari</b> (nessuna funzione di attivazione): 2 ingressi, 1 neurone nel mezzo, 2 uscite. Il neurone di mezzo è un <b>collo di bottiglia</b>: 2 numeri devono passare per 1 solo. Si chiama <b>autoencoder</b>: impara a ricostruire il proprio ingresso.</p>" },
+      { nota: "<p>Ingresso: il punto x = (6.31, 3.88) <b>centrato</b>, cioè x − μ = (1.31, 0.99). Il centraggio è il bias della rete: lo stesso passo 1 della PCA.</p>", set: { x1: { sotto: '1.31' }, x2: { sotto: '0.99' }, c: { t: 'ingresso: x − μ = (1.31, 0.99)', tono: 'dato' } } },
+      { nota: "<p><b>Encoder</b> (codificatore): a = W (x − μ), con W = (0.83, 0.55) una matrice 1 × 2, cioè la riga PC1ᵀ. Un neurone lineare calcola un prodotto interno: a = 0.83·1.31 + 0.55·0.99 = <b>1.64</b>. È la coordinata di x lungo PC1.</p>", set: { w1: { nascosto: false }, w2: { nascosto: false }, a: { tono: 'ora', sotto: 'a = 1.64' }, c: { t: 'encoder: a = W(x − μ) = 1.64', tono: 'ora' } } },
+      { nota: "<p><b>Decoder</b> (decodificatore): x̂ = Wᵀ a + μ. Gli stessi pesi, <b>trasposti</b>: Wᵀ è 2 × 1, un peso per ogni uscita. 1.64·0.83 = 1.37 e 1.64·0.55 = 0.91; sommando μ si ottiene x̂ = (6.36, 3.80). È la ricostruzione x̂ = Φa + μ della PCA, con Φ = Wᵀ.</p>", set: { d1: { nascosto: false }, d2: { nascosto: false }, y1: { tono: 'ok', sotto: '1.37 → 6.36' }, y2: { tono: 'ok', sotto: '0.91 → 3.80' }, c: { t: 'decoder: x̂ = Wᵀa + μ = (6.36, 3.80)', tono: 'ok' } } },
+      { nota: "<p>Errore di ricostruzione di questo punto: ‖x − x̂‖² = (6.31 − 6.36)² + (3.88 − 3.80)² = <b>0.009</b>. Allenare la rete vuol dire scegliere W che minimizza questo errore, in media su tutti i punti (MSE).</p>", set: { y1: { tono: 'no' }, y2: { tono: 'no' }, c: { t: 'errore del punto: ‖x − x̂‖² = 0.009', tono: 'no' } } },
+      { nota: "<p>Sui 30 punti, errore medio per direzione di W: PC1 = <b>0.293</b>, asse x₁ = 1.280, diagonale a 45° = 0.417, asse x₂ = 2.520. Il minimo vale 0.293 = <b>λ₂</b>, l'autovalore scartato. Quindi: <b>errore minimo ⇔ W = i primi k autovettori</b> (Eckart–Young).</p>", set: { w1: { tono: 'ok' }, w2: { tono: 'ok' }, d1: { tono: 'ok' }, d2: { tono: 'ok' }, y1: { tono: 'ok' }, y2: { tono: 'ok' }, c: { t: 'errore minimo = λ₂ = 0.293 con W = PC1ᵀ', tono: 'ok' } } }
+    ]
+  };
+})();
+</script>
 </head>
 <body>
 <main class="pagina">
@@ -191,6 +221,24 @@ x_hat = Phi @ a + mu          # ricostruzione</pre>
   <p><b>3 · Le distanze si somigliano tutte.</b> Prendendo 500 punti a caso nel cubo [0, 1]ᵈ, il rapporto fra (distanza massima − distanza minima) e distanza minima da un punto vale circa 29 in 2D, 2.5 in 10D, 0.41 in 100D e 0.11 in 1000D. Il "vicino più vicino" non è molto più vicino degli altri: i metodi basati sulle distanze, come k-NN, perdono significato.</p>
   <p>Il rimedio è quello di questa settimana: <b>ridurre le dimensioni</b> prima di misurare distanze, con la PCA (le prime componenti tengono quasi tutta la varianza, come i 5 componenti su 146 dei volti) oppure scegliendo poche feature buone.</p>
   <figure class="scena" data-scena="maledizione" data-titolo="In alta dimensione le distanze si somigliano"></figure>
+</section>
+
+<section>
+  <h2>PCA e architetture neurali: l'autoencoder lineare</h2>
+  <p>Domanda di riflessione del corso: <i>qual è la relazione tra PCA e le architetture neurali?</i> Risposta in breve: la PCA <b>è</b> una piccola rete neurale, lineare, che impara a comprimere e ricostruire i dati. Un passo alla volta.</p>
+  <figure class="passi" data-titolo="Dalla PCA alla rete">
+    <div class="passo"><div class="espr">a = <mark class="ora">W</mark> (x − <mark class="dato">μ</mark>),   W = Φᵀ   (k × d)</div><p class="nota"><b>W</b> è la matrice dei <b>pesi</b> di uno strato lineare (nella rete: <code>W @ x</code>). Le sue k righe sono i k autovettori scelti (Φᵀ è Φ trasposta: righe al posto di colonne). <b>a</b> è il vettore dei k numeri in uscita: il <b>codice</b> (spazio latente). Questo è l'encoder.</p></div>
+    <div class="passo"><div class="espr">x̂ = <mark class="ora">Wᵀ</mark> a + <mark class="dato">μ</mark>   (d × k)(k) → d</div><p class="nota">Il decoder usa la <b>trasposta</b> di W: torna da k a d numeri. Con righe ortonormali Wᵀ è l'inversa "più vicina" di W. Pesi legati (<i>tied weights</i>): il decoder non ha parametri propri.</p></div>
+    <div class="passo"><div class="espr">errore = <mark class="no">(1/N) Σ ‖x − x̂‖²</mark></div><p class="nota">È la funzione di perdita (loss) dell'autoencoder: errore quadratico medio di ricostruzione. Σ somma sugli N punti; ‖·‖² è la lunghezza al quadrato dell'errore.</p></div>
+    <div class="passo"><div class="espr">minimo dell'errore  ⇔  righe di W = <mark class="ok">i primi k autovettori</mark>;  errore minimo = <mark class="ok">λ<sub>k+1</sub> + … + λ<sub>d</sub></mark></div><p class="nota">Teorema di Eckart–Young: la migliore approssimazione di rango k è la PCA. L'errore che resta è la varianza delle direzioni scartate (nell'esempio 0.293 = λ₂). Allenando la stessa rete con la discesa del gradiente si trova lo <b>stesso sottospazio</b>, non per forza gli stessi vettori: una base ruotata dà la stessa ricostruzione.</p></div>
+    <div class="passo"><div class="espr">strato lineare:  a<sub>i</sub> = <mark class="due">w<sub>i</sub></mark> · x  (prodotto interno)</div><p class="nota">Ogni neurone di uno strato lineare è un prodotto interno tra la sua riga di pesi w<sub>i</sub> e l'ingresso: misura <b>quanto x va nella direzione w<sub>i</sub></b>. Un intero strato lineare è quindi una <b>proiezione</b> su k direzioni; se le righe sono ortonormali è una proiezione ortogonale, come la PCA.</p></div>
+    <div class="passo"><div class="espr">con attivazioni non lineari:  <mark class="ora">autoencoder non lineare</mark></div><p class="nota">Con funzioni di attivazione (ReLU, tanh) negli strati la rete generalizza la PCA: descrive superfici curve, non solo sottospazi piatti. Con attivazione lineare e pesi legati si ritrova esattamente la PCA.</p></div>
+  </figure>
+  <figure class="scena" data-scena="pcaae" data-titolo="PCA come autoencoder lineare"></figure>
+  <p class="piccolo">Pesi, codice, ricostruzione ed errori ricalcolati con NumPy sui 30 punti della scena PCA (covarianza con 1/N).</p>
+  <div class="box inglese" data-tit="Frase pronta">
+    <p>"PCA is a linear autoencoder: the encoder W projects the data onto the first k eigenvectors, the decoder Wᵀ reconstructs them, and this choice minimises the mean squared reconstruction error. Each neuron of a linear layer is an inner product, so the layer is a projection; non-linear activations turn it into a non-linear autoencoder."</p>
+  </div>
 </section>
 
 </main>

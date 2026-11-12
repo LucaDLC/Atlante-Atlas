@@ -29,9 +29,28 @@ while lo <= hi:
     { nota: 'Array ordinato, cerco x = 15. Non posso leggere tutto: ogni passo deve <b>scartare metà</b> dell\'intervallo.', set:{} },
     { nota: '<code>lo = 0, hi = 7</code>. Centro <code>mid = (0 + 7)/2 = 3</code>: A[3] = 7 &lt; 15. Il bersaglio sta a destra: scarto la metà sinistra, <code>lo = 4</code>.', set:{c3:{tono:'ora'},lo:{t:'lo = 4, hi = 7'}} },
     { nota: 'Nuovo centro <code>mid = (4 + 7)/2 = 5</code>: A[5] = 11 &lt; 15. Scarto ancora: <code>lo = 6</code>.', set:{c3:{tono:'no'},c5:{tono:'ora'},lo:{t:'lo = 6, hi = 7'}} },
-    { nota: 'Centro <code>mid = 6</code>: A[6] = 15 = x. <b>Trovato</b> in 3 passi. Con n = 8 il massimo è ⌈log₂ 8⌉ = 3.', set:{c5:{tono:'no'},c6:{tono:'ok'},lo:{t:'trovato: A[6] = 15',tono:'ok'}} }
+    { nota: 'Centro <code>mid = 6</code>: A[6] = 15 = x. <b>Trovato</b> in 3 passi. Con n = 8 il caso peggiore è ⌊log₂ 8⌋ + 1 = 4 confronti (qui è bastato 3).', set:{c5:{tono:'no'},c6:{tono:'ok'},lo:{t:'trovato: A[6] = 15',tono:'ok'}} }
   ]
 };
+})();
+</script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+const casi = [
+  {nome:'a=4, b=2, c=1', v:[16,32,64,128,256], tono:'ora', fin:'le foglie dominano: Θ(n²)'},
+  {nome:'a=2, b=2, c=1', v:[16,16,16,16,16], tono:'dato', fin:'ogni livello pesa uguale: Θ(n log n)'},
+  {nome:'a=2, b=2, c=2', v:[256,128,64,32,16], tono:'due', fin:'la radice domina: Θ(n²)'}
+];
+const og = [{id:'tit',tipo:'testo',x:20,y:24,t:'',size:13,bold:true,anchor:'start'},{id:'fin',tipo:'testo',x:20,y:262,t:'',size:13,bold:true,anchor:'start'}];
+casi.forEach((c,k) => c.v.forEach((v,l) => {
+  og.push({id:'l'+k+l,tipo:'testo',x:20,y:62+l*38,t:'livello '+l,size:11,anchor:'start',nascosto:true});
+  og.push({id:'b'+k+l,tipo:'rett',x:100,y:46+l*38,w:Math.round(v*1.5),h:28,t:String(v),tono:c.tono,nascosto:true});
+}));
+const mostra = k => { const s = {}; casi.forEach((c,j) => c.v.forEach((v,l) => { s['l'+j+l] = {nascosto: j !== k}; s['b'+j+l] = {nascosto: j !== k}; })); return s; };
+const passi = [{nota: "Albero della ricorsione per <code>n = 16</code>, <code>T(n) = a·T(n/b) + n<sup>c</sup></code>. Al livello <i>i</i> ci sono <code>a<sup>i</sup></code> sottoproblemi di taglia <code>n/b<sup>i</sup></code>, ognuno costa <code>(n/b<sup>i</sup>)<sup>c</sup></code>. Ogni barra è il lavoro totale di un livello.", set:Object.assign(mostra(-1),{tit:{t:'lavoro per livello (livelli 0 … 4)'}})}];
+casi.forEach((c,k) => passi.push({nota: "<b>"+c.nome+"</b>. Lavoro per livello: " + c.v.join(', ') + ". Somma " + c.v.reduce((x,y)=>x+y,0) + ". " + (k===0?"c = 1 &lt; log₂ 4 = 2: le barre crescono verso il fondo.":k===1?"c = 1 = log₂ 2: le barre sono tutte uguali, con log n livelli.":"c = 2 &gt; log₂ 2 = 1: le barre calano verso il fondo."), set:Object.assign(mostra(k),{tit:{t:'caso '+c.nome},fin:{t:c.fin,tono:'ok'}})}));
+SCENE.mast = {w: 540, h: 290, lato: true, legenda: 'ora:foglie dominano,dato:ogni livello uguale,due:radice domina', oggetti: og, passi};
 })();
 </script>
 </head>
@@ -69,6 +88,7 @@ in quale metà può stare la risposta, e scarti l'altra. L'intervallo si dimezza
   <li>se <code>c = log_b a</code>: <code>T(n) = Θ(n^c · log n)</code> (ogni livello pesa uguale);</li>
   <li>se <code>c &gt; log_b a</code>: <code>T(n) = Θ(n^c)</code> (la radice domina).</li>
 </ul>
+  <figure class="scena" data-scena="mast" data-titolo="Dove sta il lavoro: i tre casi del master theorem"></figure>
 <div class="box attenzione" data-tit="Quando non si applica"><p>Il numero di sottoproblemi deve essere costante, e il lavoro extra deve essere della forma <code>n^c</code>.
 Un <code>n log n</code> di lavoro extra, o sottoproblemi di taglia diversa, richiedono un'altra analisi (si srotola la ricorsione).</p></div>
 </section>

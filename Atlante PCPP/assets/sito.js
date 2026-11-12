@@ -20,8 +20,8 @@ window.SITO = {
     { da: '2026-10-12', t: 'Pausa autunnale', sub: 'nessuna lezione', pausa: true },
     { da: '2026-10-19', t: 'Misure di performance', sub: 'Peter Sestoft', h: 'teoria/l08-microbenchmark.html' },
     { da: '2026-10-26', t: 'Performance e scalabilità', sub: 'oral feedback · Assignment 4 · Goetz 6.1, 6.2, 11 · Sestoft cap. 8–9', h: 'teoria/l09-thread-virtuali.html' },
-    { da: '2026-11-02', t: 'Parallel streams (React)', sub: '' },
-    { da: '2026-11-09', t: 'Programmazione GPU', sub: 'oral feedback · Assignment 5' },
+    { da: '2026-11-02', t: 'Parallel streams', sub: 'Java Precisely cap. 24 · note 9.4', h: 'teoria/l10-parallel-streams.html' },
+    { da: '2026-11-09', t: 'Programmazione GPU e vettori', sub: 'oral feedback · Assignment 5', h: 'teoria/l11-gpu-vettori.html' },
     { da: '2026-11-16', t: 'Message passing I (Erlang)', sub: 'serve Erlang installato' },
     { da: '2026-11-23', t: 'Message passing II', sub: '' },
     { da: '2026-11-30', t: 'Lezione ospite e preparazione all\'esame', sub: 'oral feedback · Assignment 6', h: 'esame/formato.html' },
@@ -233,9 +233,13 @@ window.SITO = {
       { t: 'Lock striping e LongAdder', h: 'teoria/l09-striping.html' },
       { t: 'Mappe concorrenti', h: 'teoria/l09-mappe.html' }
     ] },
-    { g: 'In arrivo', quando: 'L9–L14', figli: [
-      { t: 'L10 · Parallel streams', arriva: '2 nov' },
-      { t: 'L11 · GPU', arriva: '9 nov' },
+    { g: 'L10 · Parallel streams', quando: '2 nov', figli: [
+      { t: 'Parallel streams e programmazione funzionale', h: 'teoria/l10-parallel-streams.html' }
+    ] },
+    { g: 'L11 · GPU e vettori', quando: '9 nov', figli: [
+      { t: 'GPU e istruzioni vettoriali (SIMD)', h: 'teoria/l11-gpu-vettori.html' }
+    ] },
+    { g: 'In arrivo', quando: 'L12–L13', figli: [
       { t: 'L12 · Message passing I', arriva: '16 nov' },
       { t: 'L13 · Message passing II', arriva: '23 nov' }
     ] },

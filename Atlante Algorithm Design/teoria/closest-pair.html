@@ -15,7 +15,7 @@ const P = [['A',0.5,1.0],['B',1.5,3.0],['C',2.5,1.2],['D',3.5,3.5],['E',4.2,1.4]
 const SX = x => 40 + x * 75, SY = y => 230 - y * 55;
 const og = P.map(([n,x,y],i) => ({id:n,tipo:'punto',x:SX(x),y:SY(y),r:6,t:n,tx:8,ty:-8}));
 og.push({id:'mid',tipo:'linea',x1:SX(3),y1:20,x2:SX(3),y2:235,tratt:true,tono:'due',nascosto:true});
-og.push({id:'band',tipo:'rett',x:SX(2.5),y:20,w:SX(3.5)-SX(2.5),h:215,t:'',nascosto:true,tono:'spento'});
+og.push({id:'band',tipo:'rett',x:SX(3-1.703),y:20,w:2*1.703*75,h:215,t:'',nascosto:true,tono:'spento'});
 og.push({id:'c',tipo:'testo',x:20,y:262,t:'',size:12,bold:true,anchor:'start'});
 og.push({id:'pair',tipo:'linea',x1:SX(P[0][1]),y1:SY(P[0][2]),x2:SX(P[0][1]),y2:SY(P[0][2]),nascosto:true,tono:'ok'});
 SCENE.cp = {
@@ -25,9 +25,9 @@ SCENE.cp = {
   passi: [
     { nota: 'Sei punti nel piano. Trovo la coppia più vicina: confrontare tutte le coppie costa O(n²).', set:{} },
     { nota: '<b>Divido</b> con una retta verticale: metà punti a sinistra (A, B, C), metà a destra (D, E, F).', set:{mid:{nascosto:false}} },
-    { nota: 'Ricorro a sinistra e a destra: la coppia più vicina è la migliore delle due metà, con distanza <code>δ</code>.', set:{mid:{nascosto:false},c:{t:'δ = min(sinistra, destra)'}} },
-    { nota: 'Resta la coppia che <b>attraversa</b> la retta. Basta controllare una striscia larga 2δ attorno alla retta: fuori, la distanza è già ≥ δ.', set:{band:{nascosto:false}} },
-    { nota: 'Risultato: la coppia più vicina è <b>E–F</b>, distanza 1.70. Costo <code>O(n log n)</code> con l\'ordinamento per x.', set:{c:{t:'coppia più vicina: E–F',tono:'ok'}} }
+    { nota: 'Ricorro a sinistra e a destra: la coppia più vicina è la migliore delle due metà, con distanza <code>δ</code>.', set:{mid:{nascosto:false},c:{t:'δ = min(2.01, 1.70) = 1.70 (E–F, a destra)'}} },
+    { nota: 'Resta la coppia che <b>attraversa</b> la retta. Basta controllare una striscia larga 2δ attorno alla retta: fuori, la distanza è già ≥ δ. Qui δ = 1.70: la striscia va da x = 1.30 a x = 4.70 e contiene B, C, D, E. Ordinati per y: C (1.2), E (1.4), B (3.0), D (3.5). La coppia C–E dista 1.71, più di δ: nessun miglioramento.', set:{band:{nascosto:false}} },
+    { nota: 'Risultato: la coppia più vicina è <b>E–F</b>, distanza 1.70. Costo <code>O(n log n)</code> con l\'ordinamento per x.', set:{pair:{nascosto:false,x1:SX(4.2),y1:SY(1.4),x2:SX(5.5),y2:SY(2.5)},c:{t:'coppia più vicina: E–F (δ = 1.70)',tono:'ok'}} }
   ]
 };
 })();
@@ -51,7 +51,8 @@ o <b>attraversa</b> la retta. Le prime due si risolvono ricorsivamente: sia <cod
   <h2>La striscia</h2>
 <p>Per la coppia che attraversa la retta basta guardare una <b>striscia</b> larga <code>2δ</code> attorno alla retta: un punto fuori dalla striscia
 è già più lontano di <code>δ</code> da qualunque punto dell'altra metà. Dentro la striscia, ordinando per <code>y</code>, ogni punto va confrontato
-solo con pochi vicini (al massimo una manciata): il lavoro è lineare.</p>
+solo con pochi vicini: il lavoro è lineare.</p>
+<p>Perché pochi? Dividi la striscia in quadratini di lato <code>δ/2</code>. In ogni quadratino ci sta al più un punto: due punti nello stesso quadratino starebbero a distanza ≤ δ/√2 &lt; δ, ma dentro ciascuna metà la distanza minima è già ≥ δ. Se due punti della striscia distano più di 2 righe di quadratini in verticale (cioè più di δ), non servono. Quindi basta confrontare ogni punto con i <b>7 successivi</b> nell'ordine per y (il libro KT usa la stima 15, più larga).</p>
 </section>
 <section>
   <h2>Il costo</h2>

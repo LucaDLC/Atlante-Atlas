@@ -13,20 +13,21 @@ window.SCENE = window.SCENE || {};
 (function () {
 const B = (id,x,y,t) => ({id,tipo:'rett',x,y,w:150,h:40,t});
 const F = (id,x1,y1,x2,y2) => ({id,tipo:'vett',x1,y1,x2,y2,t:''});
+const Bx = (id,x,y,t) => ({id,tipo:'rett',x,y,w:118,h:40,t});
 SCENE.cat = {
   w: 540, h: 300, lato: true,
-  legenda: 'dato:problema noto (P2),ora:problema della prova (P1),ok:riduzione verificata',
+  legenda: 'dato:problema noto,ok:riduzione verificata',
   oggetti: [
-    B('is',30,30,'Independent Set'), B('vc',360,30,'Vertex Cover'),
-    B('sc',30,130,'Set Cover'), B('sat',360,130,'3SAT'),
-    B('ham',30,230,'Hamiltonian cycle'), B('cl',360,230,'Clique'),
-    F('f1',180,50,355,50), F('f2',180,150,355,150), F('f3',180,250,355,250),
+    Bx('sat',10,30,'3SAT'), Bx('is',145,30,'Independent Set'), Bx('vc',280,30,'Vertex Cover'), Bx('sc',415,30,'Set Cover'),
+    F('f1',128,50,145,50), F('f2',263,50,280,50), F('f3',398,50,415,50),
+    Bx('tsp',10,150,'TSP'), Bx('ham',145,150,'Ham. cycle'), Bx('lp',280,150,'Longest Path'), Bx('cl',415,150,'Clique'),
+    F('g1',145,170,128,170), F('g2',280,170,263,170),
     {id:'c1',tipo:'testo',x:20,y:270,t:'',size:12,bold:true,anchor:'start'}
   ],
   passi: [
-    { nota: 'Il catalogo: problemi decisionali NP-completi. Per la prova scegli un P2 noto con la stessa struttura del tuo P1.', set:{is:{tono:'dato'},vc:{tono:'dato'},sc:{tono:'dato'},sat:{tono:'dato'},ham:{tono:'dato'},cl:{tono:'dato'}} },
-    { nota: '<b>Independent Set ≡ Vertex Cover</b>: G ha un independent set di taglia k se e solo se il complemento è una vertex cover di taglia n − k. Equivalenti.', set:{f1:{tono:'ok'},c1:{t:'IS ≡ VC'}} },
-    { nota: '<b>Set Cover</b> generalizza VC (VC è il caso in cui ogni insieme ha due elementi). <b>3SAT → Independent Set</b> con un gadget. Ogni freccia è una riduzione polinomiale, nella direzione dal noto al nuovo.', set:{f2:{tono:'ok'},f3:{tono:'ok'},c1:{t:'freccia = riduzione P2 ≤p P1 (dal noto al nuovo)',tono:'ok'}} }
+    { nota: 'Il catalogo: problemi decisionali NP-completi. Ogni freccia A → B è una riduzione A ≤p B: si va <b>dal noto al nuovo</b>. Per la prova scegli un P2 noto con la stessa struttura del tuo P1.', set:{sat:{tono:'dato'},is:{tono:'dato'},vc:{tono:'dato'},sc:{tono:'dato'},tsp:{tono:'dato'},ham:{tono:'dato'},lp:{tono:'dato'},cl:{tono:'dato'}} },
+    { nota: '<b>3SAT → Independent Set</b> con un gadget (un triangolo per clausola). <b>Independent Set ≡ Vertex Cover</b>: G ha un independent set di taglia k se e solo se ha una vertex cover di taglia n − k (il complemento). <b>Vertex Cover → Set Cover</b>: VC è il caso in cui ogni insieme ha due elementi (gli estremi di un arco).', set:{f1:{tono:'ok'},f2:{tono:'ok'},f3:{tono:'ok'},c1:{t:'3SAT → IS ≡ VC → Set Cover'}} },
+    { nota: '<b>Hamiltonian cycle → TSP</b> (distanza 1 sugli archi, 2 altrove) e <b>→ Longest Path</b> (via Hamiltonian path). <b>Clique</b> è Independent Set nel grafo complemento: stessa difficoltà.', set:{g1:{tono:'ok'},g2:{tono:'ok'},c1:{t:'Ham. cycle → TSP, Longest Path · Clique = IS sul complemento',tono:'ok'}} }
   ]
 };
 })();
@@ -57,6 +58,19 @@ SCENE.cat = {
   <h2>Il test del caso particolare</h2>
 <p>Prima di costruire la riduzione, verifica che il tuo P1 contenga P2 come caso particolare: fissa un parametro di P1 al valore estremo
 (<code>k = 2</code>, <code>r = n</code>, <code>W = V</code>, <code>t = 0</code>) e controlla se ottieni proprio P2. È il modo più veloce di scegliere il P2 giusto.</p>
+</section>
+<section>
+  <h2>Il gadget 3-SAT → Independent Set</h2>
+  <p>Voglio decidere se una formula 3-SAT è soddisfacibile usando una scatola che risolve Independent Set. Formula d'esempio, due clausole:
+  <code>(x ∨ y ∨ z) ∧ (¬x ∨ ¬y ∨ z)</code>. Un <b>letterale</b> è una variabile o la sua negazione (<code>¬</code> = "non"); una clausola è vera se almeno un suo letterale è vero.</p>
+  <p>Costruisco un grafo in tre mosse, ciascuna con un perché:</p>
+  <ol>
+    <li><b>Un triangolo per clausola</b>, un nodo per letterale. In un triangolo ogni coppia è collegata, quindi un insieme indipendente ne contiene al massimo uno: "scelgo un letterale per clausola".</li>
+    <li><b>Un arco tra ogni letterale e il suo opposto</b> (<code>x</code> e <code>¬x</code>) in clausole diverse. Così non posso scegliere insieme due letterali che si contraddicono.</li>
+    <li><b>k = numero di clausole</b> (qui 2). Un independent set di taglia k ha esattamente un nodo per triangolo: ogni clausola ha il suo letterale vero.</li>
+  </ol>
+  <p>La formula è soddisfacibile se e solo se il grafo ha un independent set di taglia k. Da un assegnamento che soddisfa la formula scelgo un letterale vero per clausola: non possono contraddirsi, perché sono tutti veri insieme. Da un independent set di taglia k leggo i letterali scelti e li pongo veri; le variabili non toccate valgono come vuoi. La costruzione è polinomiale: 3 nodi per clausola.</p>
+  <figure class="scena" data-scena="gadget3sat" data-titolo="(x ∨ y ∨ z) ∧ (¬x ∨ ¬y ∨ z) → grafo, k = 2"></figure>
 </section>
 <section>
   <h2>La catena delle riduzioni</h2>
@@ -102,6 +116,35 @@ Errore frequente: confondere la direzione della riduzione.</p>
 </section>
 
 </main>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  const N = (id,x,y,t) => ({id,tipo:'nodo',x,y,t,r:20});
+  const E = (id,da,a) => ({id,tipo:'arco',da,a,dir:false,t:''});
+  SCENE.gadget3sat = {
+    w: 540, h: 300, lato: true,
+    legenda: 'dato:triangolo di clausola,due:arco di conflitto,ok:independent set scelto,no:letterale non scelto',
+    oggetti: [
+      N('x1',70,50,'x'), N('y1',230,50,'y'), N('z1',150,120,'z'),
+      N('x2',70,250,'¬x'), N('y2',230,250,'¬y'), N('z2',150,180,'z'),
+      E('t1a','x1','y1'), E('t1b','y1','z1'), E('t1c','x1','z1'),
+      E('t2a','x2','y2'), E('t2b','y2','z2'), E('t2c','x2','z2'),
+      E('cx','x1','x2'), E('cy','y1','y2'),
+      {id:'l1',tipo:'testo',x:290,y:50,t:'C1 = (x ∨ y ∨ z)',size:12,bold:true,anchor:'start'},
+      {id:'l2',tipo:'testo',x:290,y:250,t:'C2 = (¬x ∨ ¬y ∨ z)',size:12,bold:true,anchor:'start'},
+      {id:'c',tipo:'testo',x:290,y:150,t:'',size:12,bold:true,anchor:'start'}
+    ],
+    passi: [
+      { nota: 'Formula con due clausole. Voglio un grafo G e un numero k tali che la formula è soddisfacibile se e solo se G ha un independent set di taglia k.', set: {} },
+      { nota: '<b>Passo 1</b>: un nodo per ogni letterale, un triangolo per ogni clausola. In un triangolo tutti i nodi sono adiacenti: un independent set ne prende al massimo <b>uno</b> per clausola.', set: { x1:{tono:'dato'},y1:{tono:'dato'},z1:{tono:'dato'},x2:{tono:'dato'},y2:{tono:'dato'},z2:{tono:'dato'},t1a:{tono:'dato'},t1b:{tono:'dato'},t1c:{tono:'dato'},t2a:{tono:'dato'},t2b:{tono:'dato'},t2c:{tono:'dato'},c:{t:'al massimo 1 nodo per triangolo'} } },
+      { nota: '<b>Passo 2</b>: collego ogni letterale al suo opposto nell\'altra clausola: <code>x</code>–<code>¬x</code> e <code>y</code>–<code>¬y</code>. I due nodi <code>z</code> non sono opposti (stesso letterale): nessun arco. Non si possono scegliere due letterali contraddittori.', set: { cx:{tono:'due'}, cy:{tono:'due'}, c:{t:'archi viola = letterali opposti'} } },
+      { nota: '<b>Passo 3</b>: fisso <b>k = 2</b>, il numero di clausole. Con al massimo uno per triangolo, taglia 2 significa esattamente uno per triangolo: ogni clausola ha il suo letterale scelto.', set: { c:{t:'k = 2 (numero di clausole)'} } },
+      { nota: '<b>Soddisfacibile ⇒ IS di taglia 2</b>. Assegnamento x = vero, y = falso, z = falso. C1 è vera per <code>x</code>, C2 è vera per <code>¬y</code>. Scelgo quei due nodi: non sono adiacenti (x e ¬y non sono opposti). Independent set di taglia 2.', set: { x1:{tono:'ok'}, y2:{tono:'ok'}, y1:{tono:'no'}, z1:{tono:'no'}, x2:{tono:'no'}, z2:{tono:'no'}, c:{t:'x=V, y=F, z=F: scelgo x (C1) e ¬y (C2)', tono:'ok'} } },
+      { nota: '<b>IS di taglia 2 ⇒ soddisfacibile</b>. Un independent set di taglia 2 ha un nodo per triangolo e nessuna coppia di opposti. Pongo veri i letterali scelti: è consistente (nessuno è l\'opposto di un altro) e ogni clausola ha un letterale vero. La riduzione funziona nei due versi.', set: { c:{t:'letterali scelti veri: ogni clausola è vera', tono:'ok'} } }
+    ]
+  };
+})();
+</script>
 <script>
 window.SCENE = window.SCENE || {};
 (function () {

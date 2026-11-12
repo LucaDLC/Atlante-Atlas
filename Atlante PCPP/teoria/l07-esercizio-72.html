@@ -14,7 +14,7 @@
 
 <header class="testa">
   <h1>Esercizio 7.2: Treiber stack</h1>
-  <p class="lede">Lo stack lock-free di Treiber: dove sono i punti di linearizzazione, come si testa <code>push</code>, e quali punti i test raggiungono davvero. Il punto che si sbaglia più spesso è il 7.2.4: due test non bastano.</p>
+  <p class="lede">Lo stack lock-free di Treiber: dove sono i punti di linearizzazione, come si testa <code>push</code>, e quali punti i test raggiungono davvero. Il punto che si sbaglia più spesso è il 7.2.4: due test non bastano. In fondo, anche gli esercizi 7.3 (progresso del read-write lock) e 7.4 (una coda non linearizzabile).</p>
 </header>
 
 <section>
@@ -75,6 +75,79 @@
   </div>
   <div class="box inglese" data-tit="Risposta pronta 7.2.4">
     <p>No. The push test exercises the linearization point of push (the successful CAS) concurrently, and the pop test exercises the linearization point of a successful pop (the successful CAS). But the linearization point of a pop on an empty stack (the <code>top.get()</code> that returns null) is never reached concurrently: in the pop test there are exactly n elements for n pops, so in a correct execution no pop finds the stack empty, and in the push test the stack is emptied by a single thread. Moreover, pushes and pops never run at the same time. We therefore add a test where n threads pop concurrently from a stack with m &lt; n elements, and check that exactly m pops return elements whose sum equals the sum pushed and n − m pops return null.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Esercizio 7.3: progresso del read-write lock</h2>
+  <p>Si riprende il lock dell'esercizio 6.2 (<a href="l06-esercizio-62.html">Esercizio 6.2</a>) e si classifica ogni metodo con le tre condizioni di <a href="l06-progresso.html">Wait-free, lock-free, obstruction-free</a>. La domanda per ogni metodo è una sola: <b>c'è un ciclo, e perché ripete?</b></p>
+  <figure class="passi" data-titolo="7.3.1: una riga per metodo" data-legenda="ok:wait-free,ora:lock-free,dato:obstruction-free">
+    <div class="passo"><div class="espr">writerTryLock:  <mark class="ok">un solo CAS, nessun ciclo</mark></div><p class="nota">Riesce o fallisce, e restituisce subito. Il numero di passi non dipende dagli altri thread: <b>wait-free</b>.</p></div>
+    <div class="passo"><div class="espr">writerUnlock:   <mark class="ok">get, controllo, set: nessun ciclo</mark></div><p class="nota">Finché lo scrittore tiene il lock nessun altro può cambiare <code>holders</code>, quindi il <code>set</code> non può essere disturbato. Anche il ramo con l'eccezione termina in pochi passi: <b>wait-free</b>.</p></div>
+    <div class="passo"><div class="espr">readerTryLock:  <mark class="ora">ciclo CAS</mark></div><p class="nota">Il CAS fallisce solo se un altro lettore è entrato o uscito, cioè se un altro thread ha finito la sua operazione. Qualcuno avanza sempre: <b>lock-free</b>. Un singolo thread può perdere sempre: non è wait-free.</p></div>
+    <div class="passo"><div class="espr">readerUnlock:   <mark class="ora">ciclo CAS</mark></div><p class="nota">Stesso ragionamento: ripete solo perché un altro thread ha cambiato la lista. <b>Lock-free</b>, non wait-free.</p></div>
+    <div class="passo"><div class="espr">tutti e quattro: <mark class="dato">obstruction-free</mark></div><p class="nota">Se un thread esegue da solo nessun CAS fallisce, quindi finisce. È la condizione più debole, implicata dalle altre due.</p></div>
+  </figure>
+  <div class="box attenzione" data-tit="Wait-free implica anche lock-free e obstruction-free">
+    <p>Nella tabella di risposta si segnano "sì" in tutte le colonne per <code>writerTryLock</code> e <code>writerUnlock</code>, perché wait-free ⇒ lock-free ⇒ obstruction-free. I due metodi dei lettori hanno "no" solo nella colonna wait-free.</p>
+  </div>
+  <div class="box inglese" data-tit="Risposta pronta 7.3.1">
+    <p><code>writerTryLock</code> and <code>writerUnlock</code> are wait-free (hence also lock-free and obstruction-free): they contain no loop, so they finish in a bounded number of steps whatever the other threads do. <code>readerTryLock</code> and <code>readerUnlock</code> are lock-free but not wait-free: they loop on a CAS, and a CAS fails only when another thread changed <code>holders</code>, i.e. completed an operation, so some call always finishes, but one thread may keep losing. All four are obstruction-free, since a thread running alone never fails its CAS.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Esercizio 7.4: una coda lock-free non linearizzabile</h2>
+  <p>La coda <code>IQueue</code> (Herlihy, esercizio 3.7) usa due indici atomici. Il testo marca due punti di linearizzazione, <b>E4</b> (il CAS su <code>tail</code> in <code>enq</code>) e <b>D8</b> (il CAS su <code>head</code> in <code>deq</code>), e chiede di mostrare che <b>con questi punti</b> la coda non è linearizzabile.</p>
+  <figure class="codice" data-titolo="IQueue">
+<pre data-lang="java">class IQueue&lt;T&gt; {
+    AtomicInteger head = new AtomicInteger(0);
+    AtomicInteger tail = new AtomicInteger(0);
+    T[] items = (T[]) new Object[Integer.MAX_VALUE];
+
+    public void enq(T x) {
+        int slot;
+        do {
+            slot = tail.get();
+        } while (!tail.compareAndSet(slot, slot+1)); // E4
+        items[slot] = x;
+    }
+
+    public T deq() throws EmptyException {
+        T value;
+        int slot;
+        do {
+            slot = head.get();
+            value = items[slot];
+            if (value == null)
+                throw new EmptyException();
+        } while (!head.compareAndSet(slot, slot+1)); // D8
+        return value;
+    }
+}</pre>
+    <ol class="spiega">
+      <li data-righe="10" data-segna="tail.compareAndSet(slot, slot+1)@ora"><p><code>enq</code> prima <b>prenota</b> un posto: il CAS incrementa <code>tail</code> e il thread si tiene il numero <code>slot</code>. Da qui in poi nessun altro prenota lo stesso posto.</p></li>
+      <li data-righe="11" data-segna="items[slot] = x@no"><p>Solo dopo scrive il valore nella cella. Tra la prenotazione (E4) e questa scrittura la cella è ancora <code>null</code>: è la finestra in cui nasce il problema.</p></li>
+      <li data-righe="19-21" data-segna="value == null@no"><p><code>deq</code> legge la cella in cima. Se è <code>null</code> pensa che la coda sia vuota e lancia l'eccezione, senza distinguere "mai riempita" da "prenotata ma non ancora scritta".</p></li>
+    </ol>
+  </figure>
+  <figure class="passi" data-titolo="7.4: l'esecuzione che rompe E4 e D8" data-legenda="dato:thread A,due:thread B,no:errore">
+    <div class="passo"><div class="espr"><mark class="dato">A: enq(x)</mark>  CAS su tail: 0 → 1  (E4)
+   A viene sospeso prima di items[0] = x</div><p class="nota">Il punto di linearizzazione di <code>enq(x)</code> è già passato: per E4, x è nella coda. Ma <code>items[0]</code> è ancora <code>null</code>.</p></div>
+    <div class="passo"><div class="espr"><mark class="due">B: enq(y)</mark>  CAS su tail: 1 → 2, poi items[1] = y
+   la chiamata termina</div><p class="nota">Anche y è nella coda, dietro x (E4 di A viene prima di E4 di B). La chiamata di B è completa.</p></div>
+    <div class="passo"><div class="espr"><mark class="due">B: deq()</mark>  legge items[0] = null  →  <mark class="no">EmptyException</mark></div><p class="nota">Questa <code>deq</code> comincia dopo che <code>enq(y)</code> è finita, e secondo i punti E4 la coda contiene x e y. Una coda FIFO con x e y deve restituire x, non lanciare «vuota».</p></div>
+    <div class="passo"><div class="espr">ordine dei punti: E4(x) &lt; E4(y) &lt; deq  →  la coda ha [x, y]
+risposta osservata: <mark class="no">vuota</mark></div><p class="nota">Nessun'altra scelta dei punti di <code>deq</code> salva l'esecuzione, perché <code>deq</code> comincia dopo la risposta di <code>enq(y)</code>. Con E4 e D8 la coda <b>non è linearizzabile</b>.</p></div>
+  </figure>
+  <div class="box idea" data-tit="Cosa si impara">
+    <p>Un punto di linearizzazione deve essere l'istante in cui l'effetto diventa visibile a tutti. In <code>enq</code> la prenotazione (E4) non rende visibile il valore: lo rende visibile la scrittura in <code>items</code>. Un punto scelto troppo presto dichiara "dentro" un elemento che gli altri non possono ancora vedere.</p>
+  </div>
+  <div class="box esame" data-tit="Provato al computer">
+    <p>L'esecuzione è stata riprodotta in Java con una versione ridotta della coda (array di 16 celle, eccezione unchecked al posto di <code>EmptyException</code>, un <code>CountDownLatch</code> per sospendere A tra il CAS e la scrittura): <code>deq</code> lancia l'eccezione, e dopo la ripartenza di A restituisce x.</p>
+  </div>
+  <div class="box inglese" data-tit="Risposta pronta 7.4.1">
+    <p>Thread A calls <code>enq(x)</code> and performs the CAS on <code>tail</code> (E4) but is suspended before writing <code>items[0]</code>. Thread B then completes <code>enq(y)</code>. With E4 as linearization point, <code>enq(x)</code> is linearized before <code>enq(y)</code>, so the queue is [x, y]. A <code>deq</code> that starts after <code>enq(y)</code> has returned reads <code>items[0] == null</code> and throws <code>EmptyException</code>, which no FIFO queue containing x and y would do. Hence the implementation is not linearizable with these linearization points.</p>
   </div>
 </section>
 

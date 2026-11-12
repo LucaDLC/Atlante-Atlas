@@ -1,0 +1,398 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>API del property-based testing</title>
+<link rel="stylesheet" href="../assets/atlas.css">
+<link rel="stylesheet" href="../assets/tema.css">
+<script src="../assets/sito.js"></script>
+<script src="../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+SCENE.pezzi = {
+  w: 600, h: 250, lato: false,
+  legenda: 'dato:generatore,ora:pezzo in lavorazione,due:seme casuale,ok:risultato',
+  oggetti: [
+    { id: 'gen', tipo: 'rett', x: 20, y: 40, w: 150, h: 54, t: 'Gen[A]', tono: 'dato' },
+    { id: 'prop', tipo: 'rett', x: 225, y: 40, w: 150, h: 54, t: 'Prop', nascosto: true },
+    { id: 'res', tipo: 'rett', x: 430, y: 40, w: 150, h: 54, t: 'Result', nascosto: true },
+    { id: 'a1', tipo: 'vett', x1: 170, y1: 67, x2: 225, y2: 67, t: 'forAll', nascosto: true },
+    { id: 'a2', tipo: 'vett', x1: 375, y1: 67, x2: 430, y2: 67, t: 'run', nascosto: true },
+    { id: 'in', tipo: 'testo', x: 300, y: 150, t: '', size: 13, bold: true },
+    { id: 'in2', tipo: 'testo', x: 300, y: 178, t: '', size: 13 },
+    { id: 'rng', tipo: 'nodo', x: 495, y: 205, r: 22, t: 'rng', tono: 'due', nascosto: true }
+  ],
+  passi: [
+    { nota: 'Un <b>generatore</b> <code>Gen[A]</code> produce valori casuali di tipo <code>A</code>. È il pezzo di partenza: senza dati di prova non c\'è niente da controllare.' },
+    { nota: '<code>forAll(gen)(f)</code> lega il generatore a una funzione <code>f: A =&gt; Boolean</code> (la legge da verificare) e restituisce una <b>proprietà</b> <code>Prop</code>. Costruire una <code>Prop</code> non esegue nessun test.', set: { prop: { nascosto: false, tono: 'ora' }, a1: { nascosto: false }, in: { t: 'forAll(choose(0, 10))(n => n < 10)' } } },
+    { nota: 'Una <code>Prop</code> è una <b>funzione</b>: riceve la taglia massima, il numero di prove e un seme casuale, e restituisce un <code>Result</code>. Il test parte solo quando la chiami.', set: { prop: { tono: 'dato' }, res: { nascosto: false, tono: 'ok' }, a2: { nascosto: false }, rng: { nascosto: false }, in: { t: 'Prop = (MaxSize, TestCases, RNG) => Result' }, in2: { t: 'Result è Passed oppure Falsified(controesempio, quante prove sono passate)' } } },
+    { nota: 'Tutto il resto del capitolo è <b>progettare queste tre cose</b> perché si compongano: generatori che si combinano (<code>map</code>, <code>flatMap</code>, <code>listOfN</code>), proprietà che si combinano (<code>&amp;&amp;</code>, <code>||</code>), e un modo di non dover passare i generatori a mano (type class).', set: { in: { t: 'Gen ⟶ Prop ⟶ Result' }, in2: { t: '' } } }
+  ]
+};
+</script>
+<script>
+window.SCENE = window.SCENE || {};
+SCENE.choose = {
+  w: 600, h: 270, lato: false,
+  legenda: 'dato:seme,ora:conto che cambia,due:numero casuale grezzo,ok:risultato',
+  oggetti: [
+    { id: 'tit', tipo: 'testo', x: 300, y: 24, t: 'choose(10, 20).toLazyList(RNG.Simple(42))', size: 13, bold: true },
+    { id: 'r0', tipo: 'nodo', x: 60, y: 110, r: 26, t: 'rng', sotto: 'seed 42', tono: 'dato' },
+    { id: 'r1', tipo: 'nodo', x: 300, y: 110, r: 26, t: 'r1', nascosto: true },
+    { id: 'r2', tipo: 'nodo', x: 540, y: 110, r: 26, t: 'r2', nascosto: true },
+    { id: 'e1', tipo: 'arco', da: 'r0', a: 'r1', dir: true, nascosto: true },
+    { id: 'e2', tipo: 'arco', da: 'r1', a: 'r2', dir: true, nascosto: true },
+    { id: 'n1', tipo: 'testo', x: 180, y: 78, t: '', size: 13, bold: true },
+    { id: 'n2', tipo: 'testo', x: 420, y: 78, t: '', size: 13, bold: true },
+    { id: 'c1', tipo: 'testo', x: 180, y: 175, t: '', size: 13 },
+    { id: 'c2', tipo: 'testo', x: 420, y: 175, t: '', size: 13 },
+    { id: 'out', tipo: 'celle', x: 215, y: 205, cw: 85, ch: 36, valori: ['', ''], indici: false }
+  ],
+  passi: [
+    { nota: 'La formula di <code>choose</code> è <code>start + n % (stopExclusive - start)</code>. Qui <code>start</code> = 10 e <code>stopExclusive</code> = 20, quindi l\'ampiezza è 20 − 10 = <b>10</b>. Lo stato è un <code>RNG</code>: la lista infinita nasce passandolo da un numero al successivo.' },
+    { nota: 'Primo numero: <code>nonNegativeInt</code> dà 16159453. Il resto della divisione per 10 è 3, e 10 + 3 = <b>13</b>.', set: { r1: { nascosto: false }, e1: { nascosto: false, tono: 'ora' }, n1: { t: 'n = 16159453', tono: 'due' }, c1: { t: '16159453 % 10 = 3', tono: 'ora' }, out: { valori: ['13', ''], toni: { 0: 'ok' } } } },
+    { nota: 'Secondo numero, dal nuovo stato <code>r1</code>. <code>nextInt</code> dà −1281479697, negativo: <code>nonNegativeInt</code> lo trasforma in −(i + 1) = 1281479696. Resto per 10: 6, e 10 + 6 = <b>16</b>.', set: { r2: { nascosto: false }, e2: { nascosto: false, tono: 'ora' }, n2: { t: 'n = 1281479696', tono: 'due' }, c2: { t: '1281479696 % 10 = 6', tono: 'ora' }, out: { valori: ['13', '16'], toni: { 0: 'ok', 1: 'ok' } } } },
+    { nota: 'Il risultato resta sempre dentro [10, 20): il resto è tra 0 e 9. Con lo <b>stesso seme</b> ottengo sempre 13, 16, 11, 19…: i test sono riproducibili, perché non c\'è niente di davvero casuale (verificato eseguendo).' }
+  ]
+};
+</script>
+<script>
+window.SCENE = window.SCENE || {};
+SCENE.sgen = {
+  w: 600, h: 250, lato: false,
+  legenda: 'dato:taglie provate,ora:taglia in lavorazione,ok:prove passate',
+  oggetti: [
+    { id: 't', tipo: 'testo', x: 300, y: 24, t: 'forAll(g: SGen[A])(f) con max = 3, n = 10', size: 13, bold: true },
+    { id: 'tl', tipo: 'testo', x: 20, y: 76, t: 'taglia', size: 12, anchor: 'start' },
+    { id: 'sz', tipo: 'celle', x: 100, y: 58, cw: 100, ch: 36, valori: ['0', '1', '2', '3'], indici: false },
+    { id: 'pl', tipo: 'testo', x: 20, y: 136, t: 'prove', size: 12, anchor: 'start' },
+    { id: 'pr', tipo: 'celle', x: 100, y: 118, cw: 100, ch: 36, valori: ['', '', '', ''], indici: false },
+    { id: 'c', tipo: 'testo', x: 300, y: 195, t: '', size: 13 },
+    { id: 'c2', tipo: 'testo', x: 300, y: 222, t: '', size: 13 }
+  ],
+  passi: [
+    { nota: 'Un <code>SGen[A]</code> è una funzione <code>Int =&gt; Gen[A]</code>: dalla <b>taglia</b> ottiene un generatore. Per <code>list</code>, la taglia è la lunghezza della lista.' },
+    { nota: 'Prima: quante prove per ogni taglia? <code>casesPerSize = (n - 1) / max + 1</code> = (10 − 1) / 3 + 1 = 3 + 1 = <b>4</b>. La divisione è tra interi: 9 / 3 = 3. Il "+ 1" fa arrotondare per eccesso.', set: { c: { t: 'casesPerSize = (10 - 1) / 3 + 1 = 4', tono: 'ora' } } },
+    { nota: 'Poi le taglie: da 0 fino a <code>min(n, max)</code>, cioè min(10, 3) = 3. Sono 3 + 1 = <b>4</b> taglie (0, 1, 2, 3).', set: { sz: { toni: { 0: 'dato', 1: 'dato', 2: 'dato', 3: 'dato' } }, c: { t: 'taglie: 0 … min(10, 3) = 3  →  4 taglie' } } },
+    { nota: 'Per ogni taglia <code>i</code> costruisco <code>forAll(g(i))(f)</code> (quello senza taglia) e lo faccio girare con 4 prove.', set: { pr: { valori: ['4', '4', '4', '4'], toni: { 0: 'ora', 1: 'ora', 2: 'ora', 3: 'ora' } } } },
+    { nota: 'Le quattro proprietà si combinano con <code>&amp;&amp;</code>: la prima che fallisce ferma tutto. Totale 4 × 4 = 16 prove, almeno le 10 richieste: l\'arrotondamento per eccesso garantisce "almeno n".', set: { pr: { toni: { 0: 'ok', 1: 'ok', 2: 'ok', 3: 'ok' } }, c2: { t: '4 taglie × 4 prove = 16 ≥ 10', tono: 'ok' } } },
+    { nota: 'Con i valori di default (<code>max</code> = 100, <code>n</code> = 100) è (100 − 1) / 100 + 1 = 1 prova per ciascuna delle 101 taglie (0…100): la lista lunga 100 la provi una volta sola.', set: { c: { t: 'default: casesPerSize = 99 / 100 + 1 = 1', tono: 'dato' }, c2: { t: '101 taglie × 1 prova', tono: 'dato' } } }
+  ]
+};
+</script>
+</head>
+<body>
+<main class="pagina">
+  <header class="testa">
+    <h1>API del property-based testing</h1>
+    <p class="lede">Settimana scorsa hai <b>usato</b> ScalaCheck. Questa settimana lo <b>costruisci</b>: generatori che si combinano, proprietà che si combinano, e givens per non passare i generatori a mano. È un esercizio di progettazione di API.</p>
+  </header>
+
+  <section>
+    <h2>Che cosa stiamo costruendo</h2>
+    <p>Il problema (slide 4): disegnare una libreria per il property-based testing, tipo ScalaCheck, con tre ingredienti: <b>generazione</b> dei dati, <b>verifica</b> della proprietà, <b>controllo della taglia</b> dei casi di prova.</p>
+    <p>La soluzione ha tre pezzi, che si incastrano come i mattoni dei capitoli precedenti:</p>
+    <ul>
+      <li><code>Gen[A]</code>: un generatore di <code>A</code>. È un automa con stato, come <code>Rand</code>. Lo stato è il generatore di numeri casuali (<code>RNG</code>) del capitolo 6.</li>
+      <li><code>Prop</code>: una proprietà. È una funzione che, dato un seme, dice se ha trovato un controesempio.</li>
+      <li><code>Result</code>: l'esito, <code>Passed</code> oppure <code>Falsified</code>.</li>
+    </ul>
+    <figure class="scena" data-scena="pezzi" data-titolo="Gen, Prop, Result"></figure>
+    <div class="box attenzione" data-tit="Non è ScalaCheck">
+      <p>Il testo dell'esercizio lo dice chiaro: la libreria che costruiamo è <b>molto simile ma non identica</b> a ScalaCheck. Non tutto ciò che hai imparato la settimana scorsa si trasferisce. Solo l'esercizio 3 usa ScalaCheck vero; il resto usa il nostro <code>Gen</code> e <code>Prop</code>.</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>Basi: tipi opachi ed extension method</h2>
+    <p>Due meccanismi di Scala 3 servono dappertutto in questa pagina. Spiego prima loro.</p>
+    <h3><code>opaque type</code></h3>
+    <p>Un <b>tipo opaco</b> è un alias (un secondo nome) per un altro tipo, ma <b>solo dentro il file che lo definisce</b>. Fuori da lì, il compilatore non sa cosa c'è sotto. Così gli utenti non possono sfruttare la rappresentazione interna. Ecco i quattro del corso:</p>
+    <pre class="cod" data-lang="scala" data-segna="opaque type@dato|Int@due">opaque type TestCases = Int
+opaque type MaxSize = Int
+opaque type FailedCase = String
+opaque type SuccessCount = Int</pre>
+    <p>Perché non usare direttamente <code>Int</code>? Perché una funzione con tre <code>Int</code> in fila è facile da sbagliare: <code>MaxSize</code> e <code>TestCases</code> sono due tipi <b>diversi</b> e il compilatore ti blocca se li scambi. La slide lo dice così: una classe avrebbe lo stesso effetto ma costa un oggetto in più (boxing); un alias opaco non costa niente a runtime.</p>
+    <h3>Extension method</h3>
+    <p>Un <b>extension method</b> aggiunge un metodo a un tipo <b>senza cambiarne il codice</b>, e si chiama come un metodo normale. È statico: il compilatore lo trasforma in una chiamata di funzione ordinaria. La slide 2 lo confronta con C#; l'esempio di Scala:</p>
+    <figure class="codice" data-titolo="wordCount su String (slide 2)">
+<pre data-lang="scala">extension (str: String)
+  def wordCount: Int =
+    str.split(" .?".toArray).filter { !_.isEmpty }.length
+
+"Hello Extension Methods".wordCount</pre>
+      <ol class="spiega">
+        <li data-righe="1" data-segna="extension@ora|(str: String)@dato"><p><code>extension (str: String)</code> dice: i metodi qui sotto si applicano a un <code>String</code>, che dentro il corpo si chiama <code>str</code>. È come un "this" scelto da te.</p></li>
+        <li data-righe="3" data-segna="split@dato|filter { !_.isEmpty }@due|.length@ok"><p>Spezza la stringa sui caratteri spazio, punto e punto interrogativo; scarta i pezzi vuoti; conta quelli che restano.</p></li>
+        <li data-righe="5" data-segna="wordCount@ok"><p>Si chiama con la notazione col punto, come se <code>String</code> avesse sempre avuto quel metodo. Risultato: <code>3</code> (verificato eseguendo). Per questo <code>String</code> in Scala ha più metodi che in Java, pur essendo la stessa classe.</p></li>
+      </ol>
+    </figure>
+    <div class="box regola" data-tit="Perché servono con i tipi opachi">
+      <p>Un tipo opaco non è una classe: non ha un corpo dove scrivere metodi. Gli extension method sono l'unico modo di dargliene, e lo limitano a <b>quel</b> tipo (<code>extension (self: Prop)</code> vale solo per <code>Prop</code>, non per ogni funzione).</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>Gen[A]: un generatore è uno State (esercizi 5–6)</h2>
+    <p>Un generatore, dato un <code>RNG</code>, restituisce un valore <b>e il nuovo RNG</b>. È esattamente il tipo <code>State[S, A]</code> del capitolo 6 con <code>S = RNG</code>:</p>
+    <pre class="cod" data-lang="scala" data-segna="Gen[+A]@ora|State[RNG, A]@dato">opaque type Gen[+A] = State[RNG, A]</pre>
+    <p>Il <code>+</code> rende <code>Gen</code> covariante: un <code>Gen[Int]</code> si può usare dove serve un <code>Gen[Any]</code>, come per <code>List</code>. È sicuro perché <code>A</code> compare solo come risultato. Poiché <code>Gen</code> è uno <code>State</code>, eredita <code>map</code>, <code>flatMap</code>, <code>map2</code>, <code>sequence</code> già scritti; gli extension method li fanno vedere anche su <code>Gen</code>.</p>
+    <figure class="codice" data-titolo="choose, unit, boolean, double">
+<pre data-lang="scala">def choose(start: Int, stopExclusive: Int): Gen[Int] =
+  State(RNG.nonNegativeInt).map { n => start + n % (stopExclusive - start) }
+
+def unit[A](a: =>A): Gen[A] =
+  State.unit(a)
+
+def boolean: Gen[Boolean] =
+  State(RNG.boolean)
+
+def double: Gen[Double] =
+  State(RNG.double)</pre>
+      <ol class="spiega">
+        <li data-righe="1-2" data-segna="State(RNG.nonNegativeInt)@dato|.map { n =&gt;@ora|start + n % (stopExclusive - start)@ok"><p><code>State(f)</code> impacchetta la funzione <code>RNG =&gt; (Int, RNG)</code> in un <code>Gen</code>. Poi <code>map</code> trasforma il numero grezzo <code>n</code>. <code>n % k</code> è il resto della divisione per <code>k</code>, quindi sta in [0, k); sommando <code>start</code> lo sposto in [start, stopExclusive). Con start ≥ 0 e <code>nonNegativeInt</code> non esce mai fuori.</p></li>
+        <li data-righe="4-5" data-segna="a: =&gt;A@due|State.unit(a)@ok"><p><code>unit</code> produce sempre lo stesso valore e lascia l'<code>RNG</code> com'è. L'argomento è by-name (<code>=&gt;A</code>): non viene calcolato finché qualcuno non lo usa.</p></li>
+        <li data-righe="7-8" data-segna="RNG.boolean@dato"><p>Una moneta. <code>RNG.boolean</code> è già nel capitolo 6: prende il resto di <code>nextInt</code> per 2 e confronta con 0.</p></li>
+        <li data-righe="10-11" data-segna="RNG.double@dato"><p>Un numero in [0, 1). Si riusa il generatore di <code>double</code> del capitolo 5, non si ricostruisce da zero (è il suggerimento (iii) dell'esercizio 6).</p></li>
+      </ol>
+    </figure>
+    <div class="box attenzione" data-tit="Nel tuo repo">
+      <p>Nel tuo <code>Exercises.scala</code>, <code>double</code> fa <code>State(RNG.int).map { n =&gt; n.toDouble }</code>: restituisce un intero convertito in double (numeri enormi, anche negativi), non un double in [0, 1). Compila e non è bloccato dal test, ma non è quello che chiede l'esercizio. La versione sopra, con <code>State(RNG.double)</code>, è verificata: da <code>RNG.Simple(42)</code> dà 0.00752…, 0.59673… (compilata, non eseguita nei test del corso).</p>
+    </div>
+    <p>Per vedere i valori serve una lista infinita di valori generati. Nel file c'è già l'extension <code>toLazyList(rng)</code> (un <code>unfold</code> che passa l'<code>RNG</code> di mano in mano):</p>
+    <figure class="scena" data-scena="choose" data-titolo="choose(10, 20): il conto, passo per passo"></figure>
+  </section>
+
+  <section>
+    <h2>Comporre generatori: listOfN, flatMap, listOf, union (esercizi 7–11)</h2>
+    <p>Un generatore di <i>una</i> cosa non basta: servono liste, coppie, scelte. Tutto si costruisce con <code>map</code> e <code>flatMap</code>.</p>
+    <figure class="codice" data-titolo="Gen: i combinatori">
+<pre data-lang="scala">extension [A](self: Gen[A])
+  def listOfN(n: Int): Gen[List[A]] =
+    State.sequence(List.fill(n)(self))
+
+  def flatMap[B](f: A => Gen[B]): Gen[B] =
+    State.flatMap(self)(f)
+
+  def map[B](f: A => B): Gen[B] =
+    self.flatMap { a => unit(f(a)) }
+
+  def listOf(size: Gen[Int]): Gen[List[A]] =
+    size.flatMap { n => self.listOfN(n) }
+
+  def union(that: Gen[A]): Gen[A] =
+    boolean.flatMap { b => if b then self else that }</pre>
+      <ol class="spiega">
+        <li data-righe="1" data-segna="extension [A]@ora|(self: Gen[A])@dato"><p>Il parametro di tipo <code>A</code> e il "this" <code>self</code>: ogni metodo qui sotto è un metodo di <code>Gen[A]</code>. Non può essere un metodo normale perché <code>Gen</code> è opaco (esercizio 8).</p></li>
+        <li data-righe="2-3" data-segna="List.fill(n)(self)@dato|State.sequence@ok"><p><code>List.fill(n)(self)</code> costruisce una lista di <b>n copie dello stesso generatore</b>. <code>sequence</code> le esegue in fila, passando l'<code>RNG</code> dall'una alla successiva, e raccoglie i valori in una lista. Non sono valori uguali: lo stato cambia a ogni passo.</p></li>
+        <li data-righe="5-6" data-segna="State.flatMap(self)(f)@ok"><p><code>flatMap</code>: esegui <code>self</code>, ottieni <code>a</code>, poi usa <code>f(a)</code> come <b>prossimo generatore</b> sul nuovo stato. Si delega a <code>State</code>, che l'ha già.</p></li>
+        <li data-righe="8-9" data-segna="unit(f(a))@ok"><p><code>map</code> è un caso particolare: la funzione restituisce un valore normale, che metto in <code>unit</code>.</p></li>
+        <li data-righe="11-12" data-segna="size.flatMap@ora|self.listOfN(n)@ok"><p>La lunghezza non è fissa: la sceglie un altro generatore (<code>size</code>). Prima lo estraggo, poi con <code>n</code> in mano creo la lista.</p></li>
+        <li data-righe="14-15" data-segna="boolean.flatMap@ora|if b then self else that@ok"><p>Tiro una moneta e ne uso il risultato per scegliere uno dei due generatori: ciascuno con la stessa probabilità.</p></li>
+      </ol>
+    </figure>
+    <p>Con <code>RNG.Simple(42)</code> (le prime due righe sono le prime due liste generate; verificato eseguendo):</p>
+    <div class="tab-wrap"><table class="tab">
+      <thead><tr><th>Generatore</th><th>Valori prodotti</th></tr></thead>
+      <tbody>
+        <tr><td><code>choose(0, 10).listOfN(5)</code></td><td><code>List(3, 6, 1, 9, 8)</code>, poi <code>List(8, 2, 0, 8, 4)</code></td></tr>
+        <tr><td><code>choose(0, 10).listOf(choose(0, 4))</code></td><td><code>List(6)</code>, <code>List(9)</code>, <code>List(8, 2)</code>, <code>List()</code></td></tr>
+        <tr><td><code>choose(0, 10).union(choose(100, 110))</code></td><td><code>106, 9, 8, 0, 104, 2, 100, 101</code></td></tr>
+        <tr><td><code>choose(0, 3).map(_ * 10)</code></td><td><code>10, 20, 10, 0, 10</code></td></tr>
+      </tbody>
+    </table></div>
+    <p>Su <code>union</code>: il primo valore è 106. La prima moneta ha dato <code>false</code> (16159453 è dispari), quindi si è scelto <code>that</code>, cioè <code>choose(100, 110)</code>. La seconda moneta (il terzo numero casuale, vedi <code>boolean</code>: false, false, true…) ha dato <code>true</code>: si usa <code>self</code>, cioè <code>choose(0, 10)</code>, e viene 9.</p>
+    <div class="box idea" data-tit="Perché flatMap è la chiave">
+      <p><code>map</code> trasforma il valore ma il generatore resta lo stesso. <code>flatMap</code> permette di <b>scegliere il generatore in base a un valore appena generato</b>: la lunghezza decide la lista, la moneta decide il ramo. Senza, i generatori non potrebbero dipendere l'uno dall'altro.</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>Type class, <code>given</code>, <code>using</code>, <code>summon</code> (esercizio 12)</h2>
+    <p>Problema (slide 13–14): per fare una lista di studenti devi scrivere <code>listOf[Student](anyInt, anyStudent)</code>. Passare i generatori a mano è noioso, e se <code>A</code> è un tipo complesso come <code>List[LazyList[Option[(Double, Double)]]]</code> è insostenibile. Il tipo <code>A</code> è già scritto tra le parentesi quadre: il compilatore dovrebbe <b>trovare da solo</b> il generatore giusto.</p>
+    <p>Una <b>type class</b> è proprio questo: un "attrezzo" (qui, saper generare) che puoi aggiungere a un tipo <i>dopo</i> che il tipo esiste, senza modificarlo, e che chi usa la libreria può pretendere. In Scala si fa con tre parole:</p>
+    <ul>
+      <li><code>given</code> definisce un'istanza ("per <code>Int</code> il generatore è questo").</li>
+      <li><code>using</code> dichiara un parametro che il compilatore riempie da solo cercando un <code>given</code> del tipo giusto.</li>
+      <li><code>summon[T]</code> recupera il <code>given</code> di tipo <code>T</code> quando non ha nome.</li>
+    </ul>
+    <figure class="codice" data-titolo="listOfN e listOf con givens">
+<pre data-lang="scala">def listOfN[A: Gen](n: Int): Gen[List[A]] =
+  summon[Gen[A]].listOfN(n)
+
+def listOfN__[A](n: Int)(using genA: Gen[A]): Gen[List[A]] =
+  genA.listOfN(n)
+
+def listOf[A: Gen](using genInt: Gen[Int]): Gen[List[A]] =
+  summon[Gen[A]].listOf(genInt)</pre>
+      <ol class="spiega">
+        <li data-righe="1" data-segna="A: Gen@ora"><p><code>[A: Gen]</code> è la forma breve ("context bound"): significa "per questo <code>A</code> deve esistere un <code>Gen[A]</code>". Sotto il cofano il compilatore aggiunge un parametro <code>using</code> senza nome.</p></li>
+        <li data-righe="2" data-segna="summon[Gen[A]]@ok"><p>Per prendere quel parametro senza nome si usa <code>summon</code>. Poi si delega a <code>listOfN</code> dell'esercizio 7.</p></li>
+        <li data-righe="4-5" data-segna="(using genA: Gen[A])@due|genA.listOfN(n)@ok"><p>Stessa cosa scritta per esteso: il parametro ha un nome (<code>genA</code>), quindi lo usi direttamente. Il comportamento è identico.</p></li>
+        <li data-righe="7-8" data-segna="genInt: Gen[Int]@due"><p><code>listOf</code> ha bisogno di due prove: un generatore di <code>A</code> (nel context bound) e uno di <code>Int</code> (per scegliere la lunghezza).</p></li>
+      </ol>
+    </figure>
+    <p>Per usarle basta che nel contesto ci sia un <code>given Gen[Int]</code> (verificato eseguendo con <code>given Gen[Int] = choose(0, 5)</code> e <code>RNG.Simple(42)</code>):</p>
+    <pre class="cod" data-lang="scala" data-segna="given Gen[Int]@dato|listOfN[Int](4)@ok|listOf[Int]@ok">given Gen[Int] = Gen.choose(0, 5)
+Exercise_12.listOfN[Int](4)   // primi valori: List(3, 1, 1, 4), List(3, 3, 2, 0)
+Exercise_12.listOf[Int]       // primi valori: List(1, 1, 4), List(3, 2, 0), List(4, 3, 2)</pre>
+    <p>Senza il <code>given</code> non compila (messaggio vero di Scala 3.8.4 per <code>listOfN[String](3)</code> senza un <code>Gen[String]</code>):</p>
+    <div class="errori">
+      <div class="errore">
+        <pre data-lang="scala">Exercise_12.listOfN[String](3)</pre>
+        <pre class="msg">No given instance of type adpro.prop.Gen[String] was found for a context parameter of method listOfN in object Exercise_12</pre>
+        <div class="fix">Manca un <code>given Gen[String]</code>. Va definito (o importato) dove chiami <code>listOfN</code>. Se vuoi usare un generatore diverso da quello nel contesto, passalo a mano: <code>listOfN[Int](5)(altroGen)</code>.</div>
+      </div>
+    </div>
+    <div class="box regola" data-tit="given contro valori di default">
+      <p>Un parametro <code>using</code> è più generale di un valore di default (slide 17): per un tipo generico <code>A</code> non puoi inventare un default, perché non sai cosa sia <code>A</code>; il <code>given</code> viene scelto da chi chiama, quando <code>A</code> è noto. In ScalaCheck il tipo si chiama <code>Arbitrary[A]</code> e il <code>Gen[A]</code> serve a costruirlo; qui li abbiamo fusi in uno solo.</p>
+    </div>
+    <div class="box basi" data-tit="Se leggi blog o Stack Overflow">
+      <p>In Scala 2 si chiamavano <code>implicit</code>: <code>given</code> era un <code>implicit val</code>, <code>using</code> un parametro <code>implicit</code>, <code>summon[A]</code> era <code>implicitly[A]</code>. Le slide avvertono: diffida di Stack Overflow e degli LLM che usano ancora la sintassi vecchia.</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>Prop e Result: forAll, &amp;&amp;, || (esercizi 4 e 13)</h2>
+    <p>Una proprietà è una funzione: riceve quanto grande al massimo possono essere i dati, quante prove fare e un seme, e dice se ha trovato un controesempio.</p>
+    <figure class="codice" data-titolo="Result, Prop, forAll e le due combinazioni">
+<pre data-lang="scala">enum Result:
+  case Passed
+  case Falsified(failure: FailedCase, successes: SuccessCount)
+
+opaque type Prop = (MaxSize, TestCases, RNG) => Result
+
+def forAll[A](as: Gen[A])(f: A => Boolean): Prop =
+  (max, n, rng) =>
+    randomLazyList(as)(rng)
+      .zip(LazyList.from(0))
+      .take(n)
+      .map { (a, i) =>
+        try if f(a) then Passed else Falsified(a.toString, i)
+        catch case e: Exception => Falsified(buildMsg(a, e), i) }
+      .find(_.isFalsified)
+      .getOrElse(Passed)
+
+extension (self: Prop)
+  infix def &amp;&amp; (that: Prop): Prop = (maxSize, tcs, rng) =>
+    val first = self(maxSize, tcs, rng)
+    if first.isFalsified then first else that(maxSize, tcs, rng)
+
+  infix def || (that: Prop): Prop = (maxSize, tcs, rng) =>
+    val first = self(maxSize, tcs, rng)
+    if first.isFalsified then that(maxSize, tcs, rng) else first</pre>
+      <ol class="spiega">
+        <li data-righe="1-3" data-segna="Passed@ok|Falsified(failure: FailedCase, successes: SuccessCount)@no"><p>Due esiti. <code>Falsified</code> porta il <b>controesempio</b> (come stringa) e quante prove erano passate prima.</p></li>
+        <li data-righe="5" data-segna="(MaxSize, TestCases, RNG)@dato|Result@ok"><p>La proprietà è una funzione da tre ingredienti a un <code>Result</code>. Per questo costruirla non esegue niente.</p></li>
+        <li data-righe="9-10" data-segna="randomLazyList(as)(rng)@dato|.zip(LazyList.from(0))@due"><p>Prendo la lista infinita di valori generati dal seme, e la affianco a 0, 1, 2… (l'indice <code>i</code>, cioè quanti test sono già passati).</p></li>
+        <li data-righe="11" data-segna=".take(n)@ora"><p>Solo le prime <code>n</code> coppie. Essendo pigra, la lista infinita non viene mai calcolata oltre questo punto.</p></li>
+        <li data-righe="12-14" data-segna="if f(a) then Passed else Falsified(a.toString, i)@ok|catch case e: Exception@no"><p>Per ogni valore <code>a</code>, applico la legge <code>f</code>. Se è vera: <code>Passed</code>. Altrimenti <code>Falsified</code> con il valore e l'indice. Anche un'eccezione è un fallimento, con il messaggio costruito da <code>buildMsg</code>.</p></li>
+        <li data-righe="15-16" data-segna=".find(_.isFalsified)@ora|.getOrElse(Passed)@ok"><p>Cerca il primo fallimento. Grazie alla pigrizia, appena lo trova si ferma: i valori successivi non vengono nemmeno generati. Se non ce n'è, <code>Passed</code>.</p></li>
+        <li data-righe="19-21" data-segna="first.isFalsified then first@no|that(maxSize, tcs, rng)@ok"><p><code>&amp;&amp;</code>: eseguo la prima proprietà. Se fallisce, ho già il risultato e non guardo la seconda. Altrimenti il risultato è quello della seconda.</p></li>
+        <li data-righe="23-25" data-segna="then that(maxSize, tcs, rng)@ok|else first@no"><p><code>||</code>: se la prima fallisce, provo la seconda e il risultato è il suo. Se la prima passa, il risultato è quello (non guardo l'altra). Fallisce solo se falliscono entrambe.</p></li>
+      </ol>
+    </figure>
+    <p><code>infix</code> permette di scrivere <code>p &amp;&amp; q</code> senza il punto. Valori veri con <code>RNG.Simple(42)</code> (verificato eseguendo):</p>
+    <div class="tab-wrap"><table class="tab">
+      <thead><tr><th>Proprietà</th><th>Result</th><th>Perché</th></tr></thead>
+      <tbody>
+        <tr><td><code>p = forAll(choose(0, 10))(n =&gt; n &lt; 10)</code></td><td><code>Passed</code></td><td>nessun valore è ≥ 10</td></tr>
+        <tr><td><code>q = forAll(choose(0, 10))(n =&gt; n &lt; 5)</code></td><td><code>Falsified(6,1)</code></td><td>i valori sono 3, 6…: il 3 passa, il 6 no; era passata 1 prova</td></tr>
+        <tr><td><code>p &amp;&amp; q</code></td><td><code>Falsified(6,1)</code></td><td>basta che una fallisca</td></tr>
+        <tr><td><code>p || q</code></td><td><code>Passed</code></td><td>basta che una passi</td></tr>
+      </tbody>
+    </table></div>
+    <div class="box esame" data-tit="Esercizio 4 contro esercizio 13">
+      <p>L'esercizio 4 fa <code>&amp;&amp;</code> su un <code>Prop</code> semplice con un metodo <code>check: Boolean</code>. La regola è: <b>non chiamare <code>check</code> dentro <code>&amp;&amp;</code></b>, ma solo dentro il <code>check</code> del risultato (<code>new Prop: def check = self.check &amp;&amp; that.check</code>). Così la proprietà combinata resta pigra, come una funzione. L'esercizio 13 fa lo stesso con la rappresentazione vera (la funzione) e la logica sopra.</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>Controllare la taglia: SGen e forAll con taglia (esercizi 14–15)</h2>
+    <p>Un test su liste lunghe 3 trova bug diversi da uno su liste lunghe 80. ScalaCheck usa lo shrinking (riduce il controesempio). Noi, più semplici, usiamo la <b>taglia crescente</b>: si prova prima con dati piccoli (0, 1, 2…), così il primo fallimento è anche quello più piccolo.</p>
+    <figure class="codice" data-titolo="SGen, unsized, list">
+<pre data-lang="scala">opaque type SGen[+A] = Int => Gen[A]
+
+extension [A](self: Gen[A])
+  def unsized: SGen[A] =
+    n => self
+
+extension [A](self: Gen[A])
+  def list: SGen[List[A]] =
+    n => self.listOfN(n)</pre>
+      <ol class="spiega">
+        <li data-righe="1" data-segna="Int =&gt; Gen[A]@dato"><p>Un generatore con taglia: data la taglia, dà il generatore.</p></li>
+        <li data-righe="3-5" data-segna="n =&gt; self@ok"><p><code>unsized</code> trasforma un <code>Gen</code> normale in un <code>SGen</code> che <b>ignora</b> la taglia. È una scorciatoia per riusare i generatori che hai già.</p></li>
+        <li data-righe="7-9" data-segna="self.listOfN(n)@ok"><p><code>list</code>: la taglia è la lunghezza. Una lista di taglia 3 ha 3 elementi.</p></li>
+      </ol>
+    </figure>
+    <p>Il <code>forAll</code> con <code>SGen</code> fa girare la versione senza taglia per ogni taglia da 0 in su (codice nelle slide 8 e nell'esercizio):</p>
+    <figure class="codice" data-titolo="forAll con taglia">
+<pre data-lang="scala">def forAll[A](g: SGen[A])(f: A => Boolean): Prop =
+  (max, n, rng) =>
+    val casesPerSize = (n.toInt - 1)/max.toInt + 1
+    val props: LazyList[Prop] =
+      LazyList.from(0)
+        .take((n.toInt min max.toInt) + 1)
+        .map { i => forAllNotSized(g(i))(f) }
+    val prop: Prop =
+      props.map[Prop](p => (max, n, rng) =>
+        p(max, casesPerSize, rng)).toList.reduce(_ &amp;&amp; _)
+    prop(max, n, rng)</pre>
+      <ol class="spiega">
+        <li data-righe="3" data-segna="(n.toInt - 1)/max.toInt + 1@due"><p>Quante prove per ogni taglia: <code>n</code> diviso <code>max</code>, <b>arrotondato per eccesso</b> (la divisione tra interi arrotonda per difetto, il <code>- 1 ... + 1</code> corregge).</p></li>
+        <li data-righe="5-6" data-segna="LazyList.from(0)@dato|.take((n.toInt min max.toInt) + 1)@ora"><p>Le taglie 0, 1, 2… fino a <code>min(n, max)</code>, comprese: quindi un elemento in più.</p></li>
+        <li data-righe="7" data-segna="forAllNotSized(g(i))(f)@ok"><p>Per ogni taglia <code>i</code>: il generatore <code>g(i)</code> e il <code>forAll</code> senza taglia già scritto.</p></li>
+        <li data-righe="9-10" data-segna="p(max, casesPerSize, rng)@ora|.reduce(_ &amp;&amp; _)@ok"><p>Ogni proprietà gira con <code>casesPerSize</code> prove; poi si combinano tutte con <code>&amp;&amp;</code>. La prima taglia che fallisce vince: è anche la più piccola.</p></li>
+      </ol>
+    </figure>
+    <figure class="scena" data-scena="sgen" data-titolo="Quante taglie, quante prove"></figure>
+  </section>
+
+  <section>
+    <h2>Eseguire e provare con i minimi (esercizi 3 e 16)</h2>
+    <p>Un <code>Prop</code> non fa niente finché non lo lanci con <code>run</code>: ha valori di default (<code>maxSize = 100</code>, <code>testCases = 100</code>, un seme preso dall'orologio, quindi diverso a ogni lancio).</p>
+    <figure class="codice" data-titolo="run (slide 9)">
+<pre data-lang="scala">extension (self: Prop)
+  def run(
+    maxSize: MaxSize = 100,
+    testCases: TestCases = 100,
+    rng: RNG = RNG.Simple(System.currentTimeMillis)): Boolean =
+
+    self(maxSize, testCases, rng) match
+    case Result.Falsified(msg, n) =>
+      println(s"! Falsified after $n passed tests:\n $msg")
+      false
+    case Result.Passed =>
+      println(s"+ OK, passed $testCases tests.")
+      true</pre>
+      <ol class="spiega">
+        <li data-righe="3-5" data-segna="= 100@dato|System.currentTimeMillis@due"><p>Valori di default. Il seme dall'orologio rende ogni lancio diverso; per riprodurre un fallimento passi tu un seme fisso: <code>run(rng = RNG.Simple(42))</code>.</p></li>
+        <li data-righe="8-10" data-segna="Result.Falsified(msg, n)@no|false@no"><p>Un fallimento: stampa il controesempio e quante prove erano passate, e restituisce <code>false</code>.</p></li>
+        <li data-righe="11-13" data-segna="Result.Passed@ok|true@ok"><p>Nessun controesempio: stampa il conteggio e restituisce <code>true</code>. (Nel file del corso i messaggi sono colorati in blu per distinguerli da quelli di ScalaCheck.)</p></li>
+      </ol>
+    </figure>
+    <p>L'esercizio 3 chiede due proprietà di <code>minimum</code>, e l'esercizio 16 le ripete con la nostra libreria. Sono le stesse due leggi che hai visto per il massimo:</p>
+    <ul>
+      <li><b>Nessun elemento è più piccolo del risultato:</b> <code>list.forall(_ &gt;= m)</code>.</li>
+      <li><b>Il risultato è un elemento della lista:</b> <code>list.contains(m)</code>.</li>
+    </ul>
+    <p>Servono <b>entrambe</b>: la prima da sola accetta <code>_ =&gt; Int.MinValue</code>, la seconda da sola accetta <code>_.head</code>. Con il nostro framework e il seme 42 (verificato eseguendo; <code>p1Min</code> e <code>p2Min</code> sono le funzioni dell'esercizio 16):</p>
+    <div class="tab-wrap"><table class="tab">
+      <thead><tr><th>Chiamata</th><th>Esito</th></tr></thead>
+      <tbody>
+        <tr><td><code>p1Min(_.min).run()</code></td><td class="t-ok"><code>+ OK, passed 100 tests</code></td></tr>
+        <tr><td><code>p1Min(_.max).run(rng = RNG.Simple(42))</code></td><td class="t-no"><code>! Falsified after 0 passed tests: List(-47, -4)</code></td></tr>
+        <tr><td><code>p2Min(_.head).run(rng = RNG.Simple(42))</code></td><td class="t-ok"><code>+ OK, passed 100 tests</code> (la proprietà 2 da sola non vede che <code>head</code> non è il minimo)</td></tr>
+        <tr><td><code>p2Min(_.min - 1).run(rng = RNG.Simple(42))</code></td><td class="t-no"><code>! Falsified after 0 passed tests: List(-47)</code></td></tr>
+      </tbody>
+    </table></div>
+    <p>La seconda riga mostra l'idea: <code>max</code> di <code>List(-47, -4)</code> è −4, ma −47 è più piccolo, quindi la proprietà 1 fallisce subito. Le liste vengono da <code>nonEmptyList</code>, che usa <code>n max 1</code> per non produrre liste vuote (il minimo di una lista vuota non esiste).</p>
+    <div class="box esame" data-tit="All'esame">
+      <p>L'esercizio 8 chiede <i>in inglese</i> perché <code>listOfN</code> è un extension method: "Gen is an opaque type, an alias of State[RNG, A]; it is not a class, so it has no body where a member method could be defined. An extension method adds listOfN from the outside, while Gen stays opaque."</p>
+    </div>
+  </section>
+</main>
+</body>
+</html>

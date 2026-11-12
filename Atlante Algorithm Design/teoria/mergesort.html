@@ -31,6 +31,42 @@ SCENE.ms = {
 };
 })();
 </script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+const L = [2,4,5,7], Rr = [1,2,3,6];
+const passi = [{nota: "Due liste ordinate, <b>L</b> e <b>R</b>, e un output vuoto. Tengo due indici: <b>i</b> su L e <b>j</b> su R.", set:{}}];
+let i = 0, j = 0; const out = [];
+const tonoL = k => { const t = {}; for (let x = 0; x < k; x++) t[x] = 'ok'; return t; };
+while (i < L.length || j < Rr.length) {
+  let nota, sceltaL;
+  if (i < L.length && j < Rr.length) {
+    sceltaL = L[i] <= Rr[j];
+    nota = "Confronto L[" + i + "] = " + L[i] + " con R[" + j + "] = " + Rr[j] + ". " + (sceltaL ? "Il minore è " + L[i] + " (a parità prendo L, così l'ordinamento è stabile)." : "Il minore è " + Rr[j] + ".") + " Lo sposto nell'output e avanzo l'indice di quella lista.";
+  } else if (i < L.length) { sceltaL = true; nota = "R è finita: copio il resto di L (" + L[i] + ")."; }
+  else { sceltaL = false; nota = "L è finita: copio il resto di R (" + Rr[j] + ")."; }
+  const toniL = tonoL(i), toniR = tonoL(j);
+  if (i < L.length) toniL[i] = 'ora'; if (j < Rr.length) toniR[j] = 'ora';
+  out.push(sceltaL ? L[i++] : Rr[j++]);
+  const o = out.map(String).concat(Array(8 - out.length).fill(''));
+  const toniO = {}; toniO[out.length - 1] = 'ok';
+  passi.push({nota, set:{L:{toni:toniL}, R:{toni:toniR}, O:{valori:o, toni:toniO}}});
+}
+passi.push({nota: "Ogni elemento è stato spostato una sola volta: <b>n</b> spostamenti, e ogni confronto ne sposta uno. La fusione costa <b>O(n)</b>.", set:{L:{toni:tonoL(4)}, R:{toni:tonoL(4)}}});
+SCENE.mrg = {
+  w: 540, h: 250, lato: true, legenda: 'ora:elementi confrontati,ok:già spostato',
+  oggetti: [
+    {id:'tl',tipo:'testo',x:20,y:20,t:'L',size:13,bold:true,anchor:'start'},
+    {id:'L',tipo:'celle',x:50,y:28,cw:50,ch:30,valori:L.map(String),indici:false,toni:{}},
+    {id:'tr',tipo:'testo',x:290,y:20,t:'R',size:13,bold:true,anchor:'start'},
+    {id:'R',tipo:'celle',x:320,y:28,cw:50,ch:30,valori:Rr.map(String),indici:false,toni:{}},
+    {id:'to',tipo:'testo',x:20,y:110,t:'output',size:13,bold:true,anchor:'start'},
+    {id:'O',tipo:'celle',x:50,y:120,cw:50,ch:30,valori:Array(8).fill(''),indici:false,toni:{}}
+  ],
+  passi
+};
+})();
+</script>
 </head>
 <body>
 <main class="pagina">
@@ -50,6 +86,7 @@ Se <code>n ≤ 1</code> l'array è già ordinato.</p>
   <h2>La fusione (merge)</h2>
 <p>Due liste già ordinate si fondono con due indici: confronti i primi elementi, sposti il più piccolo nell'output, avanzi di uno nella sua lista.
 Ogni elemento viene spostato una volta sola: la fusione costa <code>O(n)</code>.</p>
+  <figure class="scena" data-scena="mrg" data-titolo="Fondere [2 4 5 7] e [1 2 3 6]"></figure>
 </section>
 <section>
   <h2>Il costo</h2>

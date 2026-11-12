@@ -113,6 +113,40 @@ window.SCENE = window.SCENE || {};
   
 })();
 </script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  // calcolato con NumPy: f = [1,1,1,5,5,5], h = [-1, 1]; np.correlate(f, h, 'valid') = [0,0,4,0,0]
+  const f = [1, 1, 1, 5, 5, 5], y = [0, 0, 4, 0, 0];
+  const og = [];
+  f.forEach((v, i) => og.push({ id: 'i' + i, tipo: 'nodo', forma: 'quadrato', x: 50 + i * 90, y: 60, r: 20, t: String(v), tono: 'dato' }));
+  y.forEach((v, j) => og.push({ id: 'o' + j, tipo: 'nodo', forma: 'quadrato', x: 95 + j * 90, y: 200, r: 20, t: '', tono: 'spento' }));
+  y.forEach((v, j) => {
+    og.push({ id: 'a' + j, tipo: 'arco', da: 'i' + j, a: 'o' + j, dir: true, t: '−1', tono: 'due', nascosto: true });
+    og.push({ id: 'b' + j, tipo: 'arco', da: 'i' + (j + 1), a: 'o' + j, dir: true, t: '+1', tono: 'due', nascosto: true });
+  });
+  og.push({ id: 'ti', tipo: 'testo', x: 300, y: 18, t: 'ingresso f', size: 12 }, { id: 'to', tipo: 'testo', x: 300, y: 262, t: 'mappa di feature', size: 12 }, { id: 'c', tipo: 'testo', x: 300, y: 290, t: '', size: 12, bold: true });
+  const pos = (j, tonoOut, valore, extra) => {
+    const s = {};
+    for (let k = 0; k < 5; k++) { s['a' + k] = { nascosto: k !== j }; s['b' + k] = { nascosto: k !== j }; }
+    s['o' + j] = { tono: tonoOut, t: valore };
+    return Object.assign(s, extra || {});
+  };
+  SCENE.convneurone = {
+    w: 600, h: 310, lato: true,
+    legenda: 'dato:ingresso,due:pesi del filtro (gli stessi ovunque),ora:neurone attivo,ok:mappa di feature',
+    oggetti: og,
+    passi: [
+      { nota: "<p>Un segnale f = [1, 1, 1, 5, 5, 5] con un gradino. Vogliamo un <b>neurone</b> che risponda al salto. Il neurone ha solo <b>2 pesi</b>, h = [−1, +1]: guarda 2 campioni vicini, non tutto il segnale.</p>" },
+      { nota: "<p>Posizione 0: <b>y₀ = −1·f₀ + 1·f₁ = −1 + 1 = 0</b>. È un prodotto interno tra i pesi e la finestra [f₀, f₁]: la correlazione di prima, calcolata da un neurone.</p>", set: pos(0, 'ora', '0', { c: { t: 'y₀ = −1·1 + 1·1 = 0', tono: 'ora' } }) },
+      { nota: "<p>Il neurone <b>scorre</b> di una posizione. I pesi sono <b>gli stessi</b> (−1, +1): sono <b>condivisi</b> (weight sharing). Cambia solo la finestra: y₁ = −1·1 + 1·1 = 0.</p>", set: pos(1, 'ora', '0', { o0: { tono: 'ok', t: '0' }, c: { t: 'y₁ = −1·1 + 1·1 = 0  (stessi pesi)', tono: 'ora' } }) },
+      { nota: "<p>Posizione 2, sul gradino: <b>y₂ = −1·1 + 1·5 = 4</b>. Il neurone si accende solo dove il segnale sale.</p>", set: pos(2, 'ora', '4', { o1: { tono: 'ok', t: '0' }, c: { t: 'y₂ = −1·1 + 1·5 = 4', tono: 'ora' } }) },
+      { nota: "<p>Posizioni 3 e 4 (campioni costanti): y = −5 + 5 = 0. Tutte le uscite insieme sono la <b>mappa di feature</b> (feature map): [0, 0, 4, 0, 0]. Dice <i>dove</i> nel segnale compare la caratteristica cercata, qui un salto verso l'alto. Verificato con <code>np.correlate(f, h, 'valid')</code>.</p>", set: Object.assign(pos(2, 'ok', '4'), { o0: { tono: 'ok', t: '0' }, o1: { tono: 'ok', t: '0' }, o3: { tono: 'ok', t: '0' }, o4: { tono: 'ok', t: '0' }, a0: { nascosto: false }, b0: { nascosto: false }, a1: { nascosto: false }, b1: { nascosto: false }, a2: { nascosto: false }, b2: { nascosto: false }, a3: { nascosto: false }, b3: { nascosto: false }, a4: { nascosto: false }, b4: { nascosto: false }, c: { t: 'mappa di feature = [0, 0, 4, 0, 0]', tono: 'ok' } }) },
+      { nota: "<p>Perché è utile: uno strato <b>denso</b> da 6 ingressi a 5 uscite avrebbe 6·5 = <b>30 pesi</b>, uno strato convoluzionale con questo filtro <b>2</b>. In un'immagine 28 × 28 con filtro 3 × 3 (uscita 26 × 26): 9 pesi contro 784·676 = 529 984. Meno parametri, e il filtro funziona in qualunque posizione (invarianza alla traslazione).</p>", set: { c: { t: 'denso: 30 pesi · convoluzionale: 2 pesi', tono: 'due' } } }
+    ]
+  };
+})();
+</script>
 </head>
 <body>
 <main class="pagina">
@@ -211,6 +245,23 @@ skimage.filters.gaussian(image, sigma=5)          # 2D gaussiano pronto</pre>
     <p>"Convolution flips the filter; for symmetric filters such as the Gaussian it gives the same result as correlation."</p>
   </div>
   <figure class="scena" data-scena="incodice" data-titolo="valid contro full"></figure>
+</section>
+
+<section>
+  <h2>La correlazione dentro una rete neurale (strato convoluzionale)</h2>
+  <p>Domanda di riflessione del corso: <i>come si implementa la correlazione in un'architettura neurale?</i> Si prende un filtro, lo si legge come un neurone e si fa scorrere sull'immagine. Un passo alla volta.</p>
+  <figure class="passi" data-titolo="Dal filtro al neurone">
+    <div class="passo"><div class="espr">y<sub>n</sub> = Σ<sub>m</sub> <mark class="due">h<sub>m</sub></mark> · <mark class="dato">f<sub>n+m</sub></mark> + <mark class="ora">b</mark></div><p class="nota">Un neurone calcola un prodotto interno tra i suoi <b>pesi</b> e l'ingresso, più un <b>bias</b> b (un numero che si somma). Se i pesi sono h e l'ingresso è una finestra del segnale, è la formula della correlazione, più b.</p></div>
+    <div class="passo"><div class="espr">stessi pesi <mark class="due">h</mark> per ogni posizione <mark class="dato">n</mark></div><p class="nota"><b>Pesi condivisi</b> (weight sharing): non c'è un neurone diverso per ogni posizione, ma lo stesso neurone applicato ovunque. Il filtro del corso = i pesi appresi del neurone.</p></div>
+    <div class="passo"><div class="espr">mappa di feature = <mark class="ok">[y₀, y₁, y₂, …]</mark></div><p class="nota">Le uscite del neurone in tutte le posizioni, messe in fila (1D) o in griglia (2D), sono una <b>mappa di feature</b> (feature map). Uno strato convoluzionale ha tanti filtri (canali), quindi tante mappe.</p></div>
+    <div class="passo"><div class="espr">uscita = <mark class="ok">ReLU</mark>(y) = max(0, y)</div><p class="nota">Dopo la correlazione si applica una funzione di attivazione non lineare. ReLU azzera i valori negativi: resta solo dove il filtro "vede" la caratteristica. Senza di lei, più strati lineari si ridurrebbero a uno solo.</p></div>
+    <div class="passo"><div class="espr">filtri a mano  →  filtri <mark class="due">appresi</mark></div><p class="nota">Nella settimana 8 i pesi (Sobel, media) si scelgono a mano. In una rete convoluzionale (CNN) li trova l'allenamento: i bordi e le forme utili emergono dai dati. Per ragioni storiche lo strato si chiama "convoluzione" ma calcola una <b>correlazione</b>: poiché i pesi si apprendono, il capovolgimento non cambia cosa la rete può rappresentare.</p></div>
+  </figure>
+  <figure class="scena" data-scena="convneurone" data-titolo="Un neurone con pesi condivisi che scorre sul segnale"></figure>
+  <p class="piccolo">Mappa [0, 0, 4, 0, 0] verificata con <code>np.correlate</code>; conteggio dei pesi: 6·5 = 30, 784·676 = 529 984.</p>
+  <div class="box inglese" data-tit="Frase pronta">
+    <p>"A correlation filter is a neuron whose weights are shared across all positions: it slides over the image computing an inner product, and its outputs form a feature map. A convolutional layer is a set of such filters followed by a non-linearity, with far fewer parameters than a dense layer."</p>
+  </div>
 </section>
 
 </main>

@@ -14,18 +14,22 @@ window.SCENE = window.SCENE || {};
 const N = (id,x,y,t) => ({id,tipo:'nodo',x,y,t,r:20});
 const A = (id,da,a) => ({id,tipo:'arco',da,a,dir:true});
 SCENE.uf = {
-  w: 520, h: 250, lato: true,
+  w: 520, h: 270, lato: true,
   legenda: 'ora:operazione in corso,dato:radice (rappresentante),ok:risultato',
   oggetti: [
-    N('a',60,60,'a'), N('b',170,60,'b'), N('c',280,60,'c'), N('d',390,60,'d'), N('e',470,160,'e'),
-    {id:'c1',tipo:'testo',x:20,y:225,t:'',size:12,bold:true,anchor:'start'}
+    N('a',200,40,'a'), N('b',100,130,'b'), N('c',300,130,'c'), N('d',300,220,'d'), N('e',450,130,'e'),
+    {id:'ab',tipo:'arco',da:'b',a:'a',dir:true,nascosto:true},
+    {id:'cd',tipo:'arco',da:'d',a:'c',dir:true,nascosto:true},
+    {id:'ac',tipo:'arco',da:'c',a:'a',dir:true,nascosto:true},
+    {id:'da',tipo:'arco',da:'d',a:'a',dir:true,nascosto:true},
+    {id:'c1',tipo:'testo',x:20,y:262,t:'',size:12,bold:true,anchor:'start'}
   ],
   passi: [
-    { nota: 'Ogni nodo è un insieme a sé. Ogni insieme è un albero, e la <b>radice</b> è il suo rappresentante. Qui: 5 radici.', set:{a:{tono:'dato'},b:{tono:'dato'},c:{tono:'dato'},d:{tono:'dato'},e:{tono:'dato'},c1:{t:'5 insiemi: {a} {b} {c} {d} {e}'}} },
-    { nota: '<code>union(a, b)</code>: trovo le radici (a e b), e appendo l\'albero più piccolo sotto l\'altro. Entrambi hanno dimensione 1: appendo b sotto a.', set:{b:{tono:'ora',sotto:'figlio di a'}, a:{tono:'dato'}, ab:{tono:'ok'}, c1:{t:'{a, b} con radice a'}} },
-    { nota: '<code>union(c, d)</code>: stessa cosa. d sotto c.', set:{d:{tono:'ora',sotto:'figlio di c'}, c:{tono:'dato'}, cd:{tono:'ok'}, c1:{t:'{a, b} · {c, d} · {e}'}} },
-    { nota: '<code>union(a, c)</code>: radici a e c, dimensioni uguali: c sotto a. Ora {a, b, c, d} ha radice a.', set:{c:{tono:'ora',sotto:'figlio di a'}, d:{tono:'dato',sotto:'figlio di c'}, ac:{tono:'ok'}, c1:{t:'un solo insieme: {a, b, c, d} con radice a'}} },
-    { nota: '<code>find(d)</code>: risalgo d → c → a. Con <b>path compression</b> collego d direttamente ad a: la prossima ricerca costa un passo solo.', set:{d:{tono:'ok',sotto:'figlio di a'},c:{tono:'dato'},da:{tono:'ok'},c1:{t:'find(d) = a, e d ora punta direttamente ad a',tono:'ok'}} }
+    { nota: 'Ogni nodo è un insieme a sé. Ogni insieme è un albero, e la <b>radice</b> è il suo rappresentante. Le frecce vanno dal figlio al padre. Qui: 5 radici.', set:{a:{tono:'dato'},b:{tono:'dato'},c:{tono:'dato'},d:{tono:'dato'},e:{tono:'dato'},c1:{t:'5 insiemi: {a} {b} {c} {d} {e}'}} },
+    { nota: '<code>union(a, b)</code>: trovo le radici (a e b), e appendo l\'albero più piccolo sotto l\'altro. Entrambi hanno dimensione 1: appendo b sotto a.', set:{b:{tono:'ora',sotto:'figlio di a'}, ab:{nascosto:false,tono:'ok'}, c1:{t:'{a, b} con radice a'}} },
+    { nota: '<code>union(c, d)</code>: stessa cosa. d sotto c.', set:{d:{tono:'ora',sotto:'figlio di c'}, b:{tono:null,sotto:'figlio di a'}, cd:{nascosto:false,tono:'ok'}, c1:{t:'{a, b} · {c, d} · {e}'}} },
+    { nota: '<code>union(a, c)</code>: radici a e c, dimensioni uguali (2 e 2): c sotto a. Ora {a, b, c, d} ha radice a.', set:{c:{tono:'ora',sotto:'figlio di a'}, d:{tono:null}, ac:{nascosto:false,tono:'ok'}, c1:{t:'un solo insieme: {a, b, c, d} con radice a'}} },
+    { nota: '<code>find(d)</code>: risalgo d → c → a. Con <b>path compression</b> collego d direttamente ad a: la prossima ricerca costa un passo solo.', set:{c:{tono:null},d:{tono:'ok',sotto:'figlio di a'},cd:{nascosto:true},da:{nascosto:false,tono:'ok'},c1:{t:'find(d) = a, e d ora punta direttamente ad a',tono:'ok'}} }
   ]
 };
 })();
@@ -54,7 +58,7 @@ SCENE.uf = {
 <p>Senza accorgimenti un albero può diventare una catena lunga, e <code>find</code> costerebbe <code>O(n)</code>.
 Due regole lo evitano:</p>
 <ul>
-  <li><b>link by size / rank</b>: sotto la radice più grande va la più piccola. L'altezza cresce solo quando due alberi della stessa altezza si uniscono, quindi resta <code>≤ log n</code>.</li>
+  <li><b>link by size / rank</b>: sotto la radice più grande va la più piccola. Quando la profondità di un nodo aumenta di 1, il suo albero finisce sotto uno almeno grande quanto lui: la sua dimensione almeno raddoppia. Si può raddoppiare al più <code>log₂ n</code> volte, quindi la profondità resta <code>≤ log n</code>.</li>
   <li><b>path compression</b>: durante un <code>find</code>, ogni nodo incontrato viene collegato direttamente alla radice.</li>
 </ul>
 </section>

@@ -15,16 +15,18 @@ const N = (id,x,y,t) => ({id,tipo:'nodo',x,y,t,r:18});
 const A = (id,da,a,t,extra) => Object.assign({id,tipo:'arco',da,a,dir:true,t},extra||{});
 SCENE.gad = {
   w: 540, h: 240, lato: true,
-  legenda: 'dato:altri nodi,ora:v spezzato,no:passaggio che il gadget impedisce',
+  legenda: 'dato:altri nodi,ora:nodo spezzato,ok:capacità 1,no:passaggio impedito',
   oggetti: [
-    N('u',60,60,'u'), N('w',60,180,'w'), N('v',260,120,'v'), N('x',470,60,'x'), N('y',470,180,'y'),
-    A('uv','u','v','',{tono:'dato'}), A('wv','w','v','',{tono:'dato'}), A('vx','v','x','',{tono:'dato'}), A('vy','v','y','',{tono:'dato'}),
+    N('u',60,60,'u'), N('w',60,180,'w'), N('vin',250,120,'v'), N('vout',250,120,''), N('x',480,60,'x'), N('y',480,180,'y'),
+    A('uv','u','vin','',{tono:'dato'}), A('wv','w','vin','',{tono:'dato'}), A('vx','vout','x','',{tono:'dato'}), A('vy','vout','y','',{tono:'dato'}),
+    A('vv','vin','vout','',{nascosto:true}),
     {id:'c1',tipo:'testo',x:20,y:225,t:'',size:12,bold:true,anchor:'start'}
   ],
   passi: [
-    { nota: 'Voglio che il nodo <b>v</b> sia usato da <b>al più un cammino</b>. Il flusso mette capacità sugli <b>archi</b>, non sui nodi.', set:{} },
-    { nota: 'Spezzo v in due nodi: <b>v_in</b> riceve gli archi entranti, <b>v_out</b> emette quelli uscenti, e l\'arco <b>v_in → v_out</b> ha la capacità del nodo: 1.', set:{v:{tono:'ora',t:'v_in'}, c1:{t:'v_in → v_out con capacità 1'}} },
-    { nota: 'Ora tutto il flusso che passa per v deve attraversare l\'arco di capacità 1: non può superare 1. Il vincolo sul nodo è diventato un vincolo sull\'arco, e il max flow sa risolverlo.', set:{c1:{t:'capacità del nodo = capacità dell\'arco',tono:'ok'}} }
+    { nota: 'Voglio che il nodo <b>v</b> sia usato da <b>al più un cammino</b>. Il flusso mette capacità sugli <b>archi</b>, non sui nodi: qui v ha due archi entranti (da u e da w) e due uscenti (verso x e y).', set:{vin:{tono:'ora'}} },
+    { nota: 'Spezzo v in due nodi: <b>v_in</b> riceve gli archi entranti, <b>v_out</b> emette quelli uscenti. Tra i due metto un arco nuovo <b>v_in → v_out</b>.', set:{vin:{t:'v_in',tono:'ora'}, vout:{x:370,t:'v_out',tono:'ora'}, vv:{nascosto:false}, c1:{t:'v_in → v_out'}} },
+    { nota: 'Alla nuova freccia do la capacità del nodo: <b>1</b>. Ora qualunque flusso che passa per v deve attraversarla, e non può superare 1.', set:{vv:{t:'1',tono:'ok'}, c1:{t:'capacità del nodo = capacità di v_in → v_out',tono:'ok'}} },
+    { nota: 'Prova: un cammino u → v → x usa la freccia v_in → v_out (satura). Un secondo cammino w → v → y dovrebbe usarla di nuovo: <b>non può</b>. Il vincolo sul nodo è diventato un vincolo sull\'arco, e il max flow lo sa risolvere.', set:{uv:{tono:'ok'}, vx:{tono:'ok'}, vv:{tono:'ok'}, wv:{tono:'no'}, vy:{tono:'no'}, c1:{t:'un solo cammino attraversa v',tono:'ok'}} }
   ]
 };
 })();

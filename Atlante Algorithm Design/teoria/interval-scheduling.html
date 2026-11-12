@@ -48,9 +48,9 @@ ogg.push({id:'c',tipo:'testo',x:40,y:302,t:'',size:12,bold:true,anchor:'start'})
 const passi = [{nota:'Interval partitioning: assegno tutti gli intervalli ad <b>aule</b>, senza sovrapposizioni in una stessa aula. Quante aule servono al minimo?', set:{}}];
 const mostra = [];
 passi.push({nota:'Ordino per <b>inizio</b> crescente. Ecco tutti gli intervalli: A(0–3), B(1–4), C(2–6), D(5–8), E(6–9).', set:Object.fromEntries(J.map(([n])=>[n,{nascosto:false}]))});
-passi.push({nota:'Aula 1: prendo A. B inizia a 1, A non è finito: serve un\'aula nuova. Aula 2: B. C inizia a 2: sia aula 1 che aula 2 sono occupate, apro l\'aula 3: C.', set:{A:{tono:'ok'},B:{tono:'due'},C:{tono:'ora'},c:{t:'aule aperte: 3'}}});
-passi.push({nota:'D inizia a 5: l\'aula 1 è libera (A finì a 3). D va nell\'aula 1.', set:{D:{tono:'ok'},A:{tono:'dato'},c:{t:'D nell\'aula 1'}}});
-passi.push({nota:'E inizia a 6: l\'aula 2 è libera (B finì a 4). E va nell\'aula 2. Totale: <b>3 aule</b>. Il minimo è la <b>profondità</b>: il massimo numero di intervalli che si sovrappongono nello stesso istante, cioè 3 (a t = 2: A, B, C).', set:{E:{tono:'ok'},c:{t:'aule = profondità = 3',tono:'ok'}}});
+passi.push({nota:'Aula 1: prendo A. B inizia a 1, A non è finito: serve un\'aula nuova. Aula 2: B. C inizia a 2: sia aula 1 che aula 2 sono occupate, apro l\'aula 3: C.', set:{A:{tono:'ok',t:'A · aula 1'},B:{tono:'due',t:'B · aula 2'},C:{tono:'ora',t:'C · aula 3'},c:{t:'aule aperte: 3'}}});
+passi.push({nota:'D inizia a 5: l\'aula 1 è libera (A finì a 3). D va nell\'aula 1.', set:{D:{tono:'ok',t:'D · aula 1'},A:{tono:'dato'},c:{t:'D nell\'aula 1'}}});
+passi.push({nota:'E inizia a 6: l\'aula 2 è libera (B finì a 4). E va nell\'aula 2. Totale: <b>3 aule</b>. Il minimo è la <b>profondità</b>: il massimo numero di intervalli che si sovrappongono nello stesso istante, cioè 3 (a t = 2: A, B, C).', set:{E:{tono:'ok',t:'E · aula 2'},c:{t:'aule = profondità = 3',tono:'ok'}}});
 SCENE.part = {w:540,h:320,lato:true,legenda:'ok:assegnato,due:occupato in questo istante,ora:aula nuova',oggetti:ogg,passi};
 })();
 </script>
@@ -73,10 +73,12 @@ un intervallo che finisce presto lascia libero più tempo per gli altri.</p>
 </section>
 <section>
   <h2>Perché è ottimo</h2>
-<p>Dimostrazione <b>greedy stays ahead</b>: dopo <code>k</code> scelte, il greedy ha il primo intervallo che finisce non più tardi di
-qualunque altra soluzione con <code>k</code> intervalli. Quindi ha sempre spazio almeno quanto un'altra soluzione per la scelta successiva.</p>
+<p>Dimostrazione <b>greedy stays ahead</b>: dopo <code>k</code> scelte, il <code>k</code>-esimo intervallo del greedy finisce non più tardi del <code>k</code>-esimo di
+qualunque altra soluzione (ordinata per fine). Quindi ha sempre spazio almeno quanto un'altra soluzione per la scelta successiva.</p>
 <p>Oppure l'<b>exchange argument</b>: se un'ottima sceglie un intervallo che finisce più tardi di quello del greedy, lo sostituisci
 con quello del greedy senza creare sovrapposizioni (il greedy finisce prima). Il numero resta lo stesso.</p>
+  <p>Su un esempio. Intervalli A(0–2), B(1–4), C(3–5), D(4–7), E(6–8), F(7–10). Il greedy prende <b>A, C, E</b>. Un'altra soluzione ottima, della stessa taglia, è <b>B, D, F</b>. Chiamo <i>i₁, i₂, i₃</i> gli intervalli del greedy e <i>j₁, j₂, j₃</i> quelli dell'altra, in ordine di fine. La tesi: <code>f(iᵣ) ≤ f(jᵣ)</code> per ogni <i>r</i>, dove <code>f</code> è il tempo di fine.</p>
+  <figure class="scena" data-scena="ahead" data-titolo="Greedy stays ahead: f(iᵣ) ≤ f(jᵣ)"></figure>
 </section>
 <section>
   <h2>Il costo</h2>
@@ -90,7 +92,7 @@ a due lunghi che insieme sono compatibili. Ordinare per <i>inizio</i> sbaglia: u
 <p>Variante diversa: tutti gli intervalli devono essere assegnati, usando il <b>minimo numero di aule</b>. Un'aula contiene intervalli non sovrapposti.</p>
 <p>Il greedy: ordina per <b>inizio</b> crescente. Per ogni intervallo, usa un'aula libera se c'è, altrimenti apri un'aula nuova.
 Il numero di aule è la <b>profondità</b> degli intervalli, cioè il massimo numero che si sovrappongono nello stesso istante. Quindi è ottimo:
-nessuna soluzione può usare meno aule della profondità.</p>
+nessuna soluzione può usare meno aule della profondità. Perché il greedy non ne apre di più: se per l'intervallo <i>j</i> servisse l'aula <i>d</i> + 1, le <i>d</i> aule esistenti avrebbero ciascuna un intervallo ancora in corso all'inizio di <i>j</i> (sono partiti prima, nell'ordine per inizio): con <i>j</i> sarebbero <i>d</i> + 1 intervalli sovrapposti, più della profondità.</p>
   <figure class="scena" data-scena="part" data-titolo="Aule: il massimo di intervalli sovrapposti"></figure>
 </section>
 <section>
@@ -134,6 +136,29 @@ Frase: <i>"Sort the jobs in increasing order of finish time. Take a job if it st
 </section>
 
 </main>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+const X = t => 40 + t * 45;
+const G = [['A',0,2],['C',3,5],['E',6,8]], O = [['B',1,4],['D',4,7],['F',7,10]];
+const ogg = [];
+for (let t = 0; t <= 10; t++) ogg.push({id:'tk'+t,tipo:'testo',x:X(t),y:200,t:String(t),size:11});
+ogg.push({id:'asse',tipo:'linea',x1:X(0),y1:188,x2:X(10),y2:188});
+ogg.push({id:'lg',tipo:'testo',x:40,y:22,t:'greedy: i₁, i₂, i₃',size:12,bold:true,anchor:'start'});
+ogg.push({id:'lo',tipo:'testo',x:40,y:112,t:'altra soluzione: j₁, j₂, j₃',size:12,bold:true,anchor:'start'});
+G.forEach(([n,s,f]) => ogg.push({id:n,tipo:'rett',x:X(s),y:34,w:(f-s)*45,h:30,t:n,tono:'spento'}));
+O.forEach(([n,s,f]) => ogg.push({id:n,tipo:'rett',x:X(s),y:124,w:(f-s)*45,h:30,t:n,tono:'spento'}));
+ogg.push({id:'c',tipo:'testo',x:40,y:250,t:'',size:13,bold:true,anchor:'start'});
+const passi = [
+ {nota:'Due soluzioni compatibili di tre intervalli. Le ordino per fine: <i>iᵣ</i> e <i>jᵣ</i> sono l\'<i>r</i>-esimo di ciascuna.', set:{A:{tono:'dato'},C:{tono:'dato'},E:{tono:'dato'},B:{tono:'due'},D:{tono:'due'},F:{tono:'due'},c:{t:'confronto le fini, una coppia alla volta'}}},
+ {nota:'<b>r = 1</b>. Il greedy sceglie, tra tutti, l\'intervallo che finisce prima in assoluto: nessun altro può finire prima di lui. A finisce a 2, B a 4: <b>2 ≤ 4</b>.', set:{A:{tono:'ok'},B:{tono:'dato'},c:{t:'f(i₁) = 2 ≤ f(j₁) = 4',tono:'ok'}}},
+ {nota:'<b>r = 2</b>. D (<i>j₂</i>) inizia a 4, dopo la fine di B (4). Siccome 2 ≤ 4, D inizia anche dopo la fine di A (2): D era un candidato compatibile quando il greedy ha scelto <i>i₂</i>. Il greedy prende il candidato che finisce prima, quindi <i>i₂</i> = C finisce non dopo D: <b>5 ≤ 7</b>.', set:{C:{tono:'ok'},D:{tono:'dato'},A:{tono:'spento'},B:{tono:'spento'},c:{t:'f(i₂) = 5 ≤ f(j₂) = 7',tono:'ok'}}},
+ {nota:'<b>r = 3</b>, stesso ragionamento. F (<i>j₃</i>) inizia a 7, dopo la fine di D. Siccome 5 ≤ 7, F inizia anche dopo la fine di C: era candidato. Il greedy ha preso E, che finisce a 8: <b>8 ≤ 10</b>.', set:{E:{tono:'ok'},F:{tono:'dato'},C:{tono:'spento'},D:{tono:'spento'},c:{t:'f(i₃) = 8 ≤ f(j₃) = 10',tono:'ok'}}},
+ {nota:'<b>Perché il greedy non ne prende di meno</b>. Se l\'altra soluzione avesse un <i>(k+1)</i>-esimo intervallo, inizierebbe dopo <i>f(jₖ) ≥ f(iₖ)</i>: sarebbe compatibile con l\'ultimo del greedy, che non si sarebbe fermato. Contraddizione. Il greedy ne prende almeno quanti qualunque altra soluzione: è ottimo.', set:{c:{t:'greedy ≥ ogni soluzione: ottimo',tono:'ok'}}}
+];
+SCENE.ahead = {w:540,h:280,lato:true,legenda:'ok:intervallo del greedy,dato:intervallo dell\'altra soluzione,spento:già confrontato',oggetti:ogg,passi};
+})();
+</script>
 <script>
 window.SCENE = window.SCENE || {};
 (function () {

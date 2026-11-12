@@ -26,8 +26,31 @@ SCENE.topo = {
     { nota: 'Grado entrante 0: <b>a</b> e <b>b</b>. Nessuna freccia entra in loro: possono andare per primi. Li metto nella lista.', set: { a:{tono:'dato'}, b:{tono:'dato'} } },
     { nota: 'Scrivo <b>a</b> e lo tolgo dal grafo. Le sue frecce uscenti (verso c ed e) spariscono: c scende a 1, e scende a 0.', set: { a:{tono:'ok'}, c:{tono:null,sotto:'in 1'}, e:{tono:'dato',sotto:'in 0'}, ord:{t:'ordine: a'} } },
     { nota: 'Scrivo <b>b</b>. Ora c scende a 0. La lista contiene e e c, entrambi con grado 0.', set: { b:{tono:'ok'}, c:{tono:'dato',sotto:'in 0'}, ord:{t:'ordine: a, b'} } },
-    { nota: 'Scrivo <b>e</b>: d scende a 1. Scrivo <b>c</b>: d scende a 0.', set: { e:{tono:'ok'}, c:{tono:'dato',sotto:'in 0'}, d:{tono:'dato',sotto:'in 0'}, ord:{t:'ordine: a, b, e, c'} } },
+    { nota: 'Scrivo <b>e</b>: d scende a 1. Scrivo <b>c</b>: d scende a 0.', set: { e:{tono:'ok'}, c:{tono:'ok',sotto:'in 0'}, d:{tono:'dato',sotto:'in 0'}, ord:{t:'ordine: a, b, e, c'} } },
     { nota: 'Scrivo <b>d</b>. Ordine finale: a, b, e, c, d. Ogni arco va da sinistra a destra: per questo esiste. Se a un certo punto la lista fosse vuota con nodi ancora rimasti, c\'è un ciclo e un ordine non esiste.', set: { d:{tono:'ok'}, ord:{t:'ordine: a, b, e, c, d',tono:'ok'} } }
+  ]
+};
+})();
+</script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+const N = (id,x,y,t) => ({id,tipo:'nodo',x,y,t,r:20});
+const A = (id,da,a) => ({id,tipo:'arco',da,a,dir:true});
+SCENE.topodfs = {
+  w: 520, h: 250, lato: true,
+  legenda: 'ora:nodo in visita,ok:finito (con il suo numero di fine f)',
+  oggetti: [
+    N('a',50,60,'a'), N('b',50,190,'b'), N('c',200,120,'c'), N('e',340,60,'e'), N('d',340,190,'d'),
+    A('ac','a','c'), A('bc','b','c'), A('ae','a','e'), A('cd','c','d'), A('ed','e','d'),
+    {id:'ord',tipo:'testo',x:260,y:240,t:'',size:13,bold:true}
+  ],
+  passi: [
+    { nota: "Stesso DAG. Lancio la DFS da <b>a</b> e scrivo per ogni nodo il numero di <b>fine</b> f, cioè l'ordine in cui il nodo finisce. a ha vicini c ed e: scendo su <b>c</b>, poi su <b>d</b>.", set:{a:{tono:'ora'},c:{tono:'ora'},d:{tono:'ora'}} },
+    { nota: "d non ha archi uscenti: <b>finisce per primo</b>, f = 1. Torno a c: il suo unico vicino è finito, quindi finisce c, f = 2.", set:{d:{tono:'ok',sotto:'f=1'},c:{tono:'ok',sotto:'f=2'}} },
+    { nota: "Da a resta il vicino <b>e</b>. Il suo vicino d è già visitato: e finisce, f = 3. Poi finisce a, f = 4.", set:{e:{tono:'ok',sotto:'f=3'},a:{tono:'ok',sotto:'f=4'}} },
+    { nota: "b non è ancora stato visitato: nuova DFS da <b>b</b>. Il suo vicino c è già finito, quindi b finisce subito, f = 5.", set:{b:{tono:'ok',sotto:'f=5'},ord:{t:'ordine di fine: d, c, e, a, b'}} },
+    { nota: "Leggo l'ordine di fine <b>al contrario</b>: b, a, e, c, d. Controllo: b→c, a→c, a→e, c→d, e→d vanno tutti da sinistra a destra. È un ordinamento topologico (diverso da quello di Kahn, ma valido).", set:{ord:{t:'ordine topologico: b, a, e, c, d',tono:'ok'}} }
   ]
 };
 })();
@@ -64,8 +87,8 @@ legale è un ordinamento topologico.</p>
   <h2>Il metodo con la DFS</h2>
 <p>Alternativa: fai una DFS su tutto il grafo, e scrivi ogni nodo quando <b>finisce</b> (quando tutti i suoi vicini sono stati visitati).
 Poi leggi la lista di fine <b>al contrario</b>: è un ordinamento topologico. Se la DFS trova un back edge, il grafo ha un ciclo.</p>
-<div class="box regola" data-tit="Fine al contrario"><p>Il nodo che finisce per ultimo, in un DAG, è una sorgente: nessun arco entra in lui
-dal resto del grafo che non sia già finito. Per questo va per primo nell'ordine rovesciato.</p></div>
+<div class="box regola" data-tit="Fine al contrario"><p>In un DAG, per ogni arco <code>u → v</code> il nodo <code>v</code> finisce <b>prima</b> di <code>u</code> (o la DFS ci arriva da <code>u</code>, o <code>v</code> era già finito). Quindi, leggendo i nodi dall'ultimo che finisce al primo, <code>u</code> viene prima di <code>v</code>: l'arco va da sinistra a destra.</p></div>
+  <figure class="scena" data-scena="topodfs" data-titolo="Topological sort con la DFS: ordine di fine al contrario"></figure>
 </section>
 <section>
   <h2>Quando esiste</h2>

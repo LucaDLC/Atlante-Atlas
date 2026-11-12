@@ -30,6 +30,27 @@ SCENE.bf = {
 };
 })();
 </script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+const R = [['0','∞','∞','∞'],['0','4','5','∞'],['0','4','1','6'],['0','4','1','6']];
+const vista = n => R.map((r,i) => i < n ? r : ['','','','']);
+SCENE.bftab = {
+  w: 480, h: 250, lato: true,
+  legenda: 'ora:cella che calcolo,dato:riga già nota,ok:valori stabili',
+  oggetti: [
+    {id:'g',tipo:'griglia',x:90,y:40,cw:70,ch:34,valori:vista(1),intR:['i=0','i=1','i=2','i=3'],intC:['s','a','b','c']},
+    {id:'t',tipo:'testo',x:20,y:235,t:'',size:12,bold:true,anchor:'start'}
+  ],
+  passi: [
+    { nota: "<code>OPT(i, v)</code> = costo minimo da s a v usando <b>al più i archi</b>. Riga 0: con zero archi arrivo solo in s (costo 0); gli altri valgono ∞.", set:{g:{valori:vista(1),toni:{'0,0':'dato','0,1':'dato','0,2':'dato','0,3':'dato'}}} },
+    { nota: "Riga 1: <code>OPT(1, v) = min( OPT(0, v), min su u→v di OPT(0, u) + peso )</code>. a: 0 + 4 = 4. b: 0 + 5 = 5. c: nessun arco esce da s verso c, resta ∞.", set:{g:{valori:vista(2),toni:{'0,0':'dato','1,1':'ora','1,2':'ora'}},t:{t:'riga 1: a = 4, b = 5'}} },
+    { nota: "Riga 2. b: min(5, OPT(1, a) + (−3) = 1) = <b>1</b>: il peso negativo migliora b. c: min(OPT(1, a) + 2 = 6, OPT(1, b) + 6 = 11) = <b>6</b>. Si usa sempre la riga <i>sopra</i>.", set:{g:{valori:vista(3),toni:{'2,2':'ora','2,3':'ora'}},t:{t:'riga 2: b = 1, c = 6'}} },
+    { nota: "Riga 3 = riga 2: nessun valore cambia, quindi si può fermare il calcolo. Con n = 4 nodi bastano n − 1 = 3 righe. Se la riga n cambiasse ancora, un ciclo negativo raggiungibile abbasserebbe i costi all'infinito.", set:{g:{valori:vista(4),toni:{'3,0':'ok','3,1':'ok','3,2':'ok','3,3':'ok'}},t:{t:'stabile: s 0 · a 4 · b 1 · c 6',tono:'ok'}} }
+  ]
+};
+})();
+</script>
 </head>
 <body>
 <main class="pagina">
@@ -44,6 +65,8 @@ SCENE.bf = {
 <p>Un cammino minimo semplice ha al più <code>n − 1</code> archi. Quindi basta ripetere <code>n − 1</code> volte: rilassa <i>tutti</i> gli archi.
 Ogni giro fissa cammini più lunghi di un arco in più. Equivalente DP: <code>OPT(i, v)</code> = costo minimo da <code>s</code> a <code>v</code> con al più <code>i</code> archi.</p>
   <figure class="scena" data-scena="bf" data-titolo="Un arco negativo migliora una distanza già fissata"></figure>
+  <p>Nella pagina del codice i giri aggiornano le distanze <i>sul posto</i>, quindi possono convergere prima. La tabella qui sotto è la versione DP, che per ogni riga legge solo la riga sopra:</p>
+  <figure class="scena" data-scena="bftab" data-titolo="OPT(i, v) per lo stesso grafo, riga per riga"></figure>
 </section>
 <section>
   <h2>Cicli negativi</h2>

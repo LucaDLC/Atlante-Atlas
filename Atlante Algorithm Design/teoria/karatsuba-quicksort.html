@@ -81,6 +81,17 @@ per questo il pivot si sceglie a caso.</p>
   <figure class="scena" data-scena="qs" data-titolo="Partizione attorno al pivot"></figure>
 </section>
 <section>
+  <h2>Quicksort: perché in media costa n log n</h2>
+  <p>Il costo è il numero di <b>confronti</b>: ogni confronto è tra il pivot e un altro elemento. Conto quante coppie vengono confrontate, e con quale probabilità. Ragiono sull'ordine finale: chiamo <i>z₁ &lt; z₂ &lt; … &lt; zₙ</i> gli elementi in ordine crescente (posizione <i>rank</i>).</p>
+  <ol>
+    <li>Due elementi <i>zᵢ</i> e <i>zⱼ</i> (con <i>i &lt; j</i>) vengono confrontati <b>al più una volta</b>: solo quando uno dei due è il pivot, e dopo quel momento il pivot esce dal gioco.</li>
+    <li>Finché nessun pivot cade tra <i>zᵢ</i> e <i>zⱼ</i> inclusi, i due stanno nella stessa parte. Il <b>primo</b> pivot scelto tra <i>zᵢ, zᵢ₊₁, …, zⱼ</i> decide tutto: se è <i>zᵢ</i> o <i>zⱼ</i> i due si confrontano; se è uno degli elementi in mezzo li separa per sempre.</li>
+    <li>Il pivot è casuale, quindi ognuno dei <i>j − i + 1</i> elementi ha la stessa probabilità di essere il primo scelto. I favorevoli sono 2. Dunque <code>P(zᵢ e zⱼ confrontati) = 2 / (j − i + 1)</code>.</li>
+    <li>Sommo su tutte le coppie: <code>E[confronti] = Σ<sub>i&lt;j</sub> 2/(j − i + 1)</code>. Per ogni distanza <i>d = j − i</i> ci sono <i>n − d</i> coppie, e <code>Σ 1/(d+1) ≈ ln n</code> (somma armonica). Il totale è circa <code>2n ln n</code>, cioè <code>O(n log n)</code>.</li>
+  </ol>
+  <figure class="scena" data-scena="qsatteso" data-titolo="P(confrontati) = 2/(j−i+1) e la somma"></figure>
+</section>
+<section>
   <h2>All’esame</h2>
 <div class="box esame" data-tit="All’esame">
 <p>Moltiplicazione di interi grandi → Karatsuba, <code>O(n^log₂3)</code>. Ordinamento in media → quicksort randomizzato, O(n log n) atteso.
@@ -93,5 +104,31 @@ Frase: <i>"Karatsuba uses three recursive multiplications of half size, so T(n) 
 </section>
 
 </main>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+const z = (i) => 'z' + i;
+const toni = (m) => m;
+SCENE.qsatteso = {
+  w: 540, h: 280, lato: true,
+  legenda: 'dato:z₂ e z₆ (i e j),due:elementi in mezzo,ok:confrontati,no:separati',
+  oggetti: [
+    {id:'cel',tipo:'celle',x:30,y:50,cw:60,ch:36,valori:['z1','z2','z3','z4','z5','z6','z7','z8'],toni:{}},
+    {id:'t1',tipo:'testo',x:30,y:30,t:'elementi in ordine crescente',size:12,bold:true,anchor:'start'},
+    {id:'t2',tipo:'testo',x:30,y:130,t:'',size:13,bold:true,anchor:'start'},
+    {id:'t3',tipo:'testo',x:30,y:165,t:'',size:13,bold:true,anchor:'start'},
+    {id:'t4',tipo:'testo',x:30,y:200,t:'',size:13,bold:true,anchor:'start'}
+  ],
+  passi: [
+    { nota: 'Gli 8 elementi nell\'ordine in cui finiranno. Prendo la coppia <b>z₂</b> (<i>i</i> = 2) e <b>z₆</b> (<i>j</i> = 6): con quale probabilità il quicksort li confronta?', set:{cel:{toni:{1:'dato',5:'dato'}}, t2:{t:'i = 2, j = 6'}} },
+    { nota: 'Finché non si sceglie un pivot tra <b>z₂ … z₆</b> (5 elementi: <i>j − i + 1</i> = 5), i due stanno nella stessa parte. Un pivot fuori da questo intervallo non li separa.', set:{cel:{toni:{1:'dato',2:'due',3:'due',4:'due',5:'dato'}}, t2:{t:'z₂ … z₆: 5 elementi'}} },
+    { nota: 'Il primo pivot scelto in z₂ … z₆ è uniforme tra i 5. Se è <b>z₃, z₄ o z₅</b>, z₂ va a sinistra e z₆ a destra: non si incontreranno mai.', set:{cel:{toni:{1:'no',2:'no',3:'no',4:'no',5:'no'}}, t3:{t:'pivot z₃, z₄ o z₅ (3 su 5): separati'}} },
+    { nota: 'Se è <b>z₂</b> o <b>z₆</b>, uno è il pivot e l\'altro è nella stessa parte: vengono confrontati. Casi favorevoli: <b>2 su 5</b>.', set:{cel:{toni:{1:'ok',2:'spento',3:'spento',4:'spento',5:'ok'}}, t3:{t:'pivot z₂ o z₆ (2 su 5): confrontati'}, t4:{t:'P = 2/(j−i+1) = 2/5 = 0.4', tono:'ok'}} },
+    { nota: 'Sommo <code>2/(j−i+1)</code> su tutte le 28 coppie di n = 8. Il calcolo dà <b>circa 16.9</b> confronti attesi (contro 28 di tutte le coppie).', set:{cel:{toni:{}}, t2:{t:'Σ su 28 coppie (n = 8)'}, t3:{t:'confronti attesi ≈ 16.92'}, t4:{t:'', tono:null}} },
+    { nota: 'Per n grande la somma tende a <code>2n ln n</code>. Con n = 1000 il calcolo esatto dà circa 10 986 confronti, contro 499 500 di tutte le coppie: un fattore 45 in meno. Per questo il quicksort casuale è <b>O(n log n)</b> atteso.', set:{t2:{t:'n = 1000: ≈ 10 986 confronti'}, t3:{t:'tutte le coppie: 499 500'}, t4:{t:'attesi ≈ 2n ln n = O(n log n)', tono:'ok'}} }
+  ]
+};
+})();
+</script>
 </body>
 </html>

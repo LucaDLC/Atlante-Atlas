@@ -133,6 +133,30 @@ B: --|         <mark class="due">q.deq(y)</mark>          |-></div><p class="not
   </div>
 </section>
 
+<section>
+  <h2>Due code insieme (7.1.5, difficile)</h2>
+  <p>Qui gli oggetti sono due, <code>p</code> e <code>q</code>, e ognuno è una coda FIFO. È l'esempio della slide 38 in versione d'esercizio: la domanda è se l'esecuzione <b>nel suo insieme</b> è sequentially consistent. Il metodo è sempre lo stesso: scrivere i vincoli e cercare una fila che li rispetta.</p>
+  <figure class="passi" data-titolo="7.1.5: cerco una fila, trovo un ciclo" data-legenda="dato:thread A,due:thread B,no:contraddizione">
+    <div class="passo"><div class="espr">A: <mark class="dato">p.enq(x)</mark> → <mark class="dato">q.enq(x)</mark> → <mark class="dato">p.deq(y)</mark>
+B: <mark class="due">q.enq(y)</mark> → <mark class="due">p.enq(y)</mark> → <mark class="due">q.deq(x)</mark></div><p class="nota">Le sei chiamate, nell'ordine di programma di ogni thread. Per la consistenza sequenziale il tempo reale tra A e B non conta: restano solo questi due ordini.</p></div>
+    <div class="passo"><div class="espr">coda <b>p</b>: la <mark class="dato">p.deq(y)</mark> restituisce y, quindi y deve essere entrato per primo:
+<mark class="due">p.enq(y)</mark> prima di <mark class="dato">p.enq(x)</mark></div><p class="nota">FIFO: esce il primo entrato. Se esce y, nessun'altra cosa è entrata in <code>p</code> prima di lui.</p></div>
+    <div class="passo"><div class="espr">coda <b>q</b>: la <mark class="due">q.deq(x)</mark> restituisce x, quindi x deve essere entrato per primo:
+<mark class="dato">q.enq(x)</mark> prima di <mark class="due">q.enq(y)</mark></div><p class="nota">Stesso ragionamento sull'altra coda, con i ruoli scambiati.</p></div>
+    <div class="passo"><div class="espr"><mark class="dato">p.enq(x)</mark> → <mark class="dato">q.enq(x)</mark>   (ordine di A)
+<mark class="dato">q.enq(x)</mark> → <mark class="due">q.enq(y)</mark>   (FIFO di q)
+<mark class="due">q.enq(y)</mark> → <mark class="due">p.enq(y)</mark>   (ordine di B)
+<mark class="due">p.enq(y)</mark> → <mark class="dato">p.enq(x)</mark>   (FIFO di p)</div><p class="nota">Metto in fila i quattro vincoli: ognuno dice "questa chiamata viene prima di quella".</p></div>
+    <div class="passo"><div class="espr"><mark class="no">p.enq(x) → q.enq(x) → q.enq(y) → p.enq(y) → p.enq(x)</mark></div><p class="nota">Seguendo le frecce si torna al punto di partenza: <code>p.enq(x)</code> dovrebbe venire prima di se stessa. Nessuna fila lo permette, quindi <b>non è sequentially consistent</b>.</p></div>
+  </figure>
+  <div class="box idea" data-tit="Perché è l'esempio della composizione">
+    <p>Se guardi <code>p</code> da sola (con le sue tre chiamate) una fila c'è; lo stesso per <code>q</code>. Ogni oggetto, preso da solo, è sequentially consistent. Il ciclo nasce solo mettendo insieme i due ordini di programma. Per questo la consistenza sequenziale non è composizionale, mentre la linearizzabilità sì.</p>
+  </div>
+  <div class="box inglese" data-tit="Risposta pronta 7.1.5">
+    <p>No, it is not sequentially consistent. In any sequential execution, <code>p.deq(y)</code> returning y requires <code>p.enq(y)</code> to come before <code>p.enq(x)</code>, and <code>q.deq(x)</code> returning x requires <code>q.enq(x)</code> to come before <code>q.enq(y)</code>. Together with the program orders (A: <code>p.enq(x)</code>, <code>q.enq(x)</code>; B: <code>q.enq(y)</code>, <code>p.enq(y)</code>) this gives <code>p.enq(x)</code> &lt; <code>q.enq(x)</code> &lt; <code>q.enq(y)</code> &lt; <code>p.enq(y)</code> &lt; <code>p.enq(x)</code>, a cycle, so no valid sequential execution exists.</p>
+  </div>
+</section>
+
 </main>
 </body>
 </html>
