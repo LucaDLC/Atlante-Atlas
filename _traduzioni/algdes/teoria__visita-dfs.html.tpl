@@ -54,52 +54,81 @@ SCENE.compon = {
 };
 })();
 </script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+const N = (id,x,y,t) => ({id,tipo:'nodo',x,y,t,r:20});
+const A = (id,da,a,extra) => Object.assign({id,tipo:'arco',da,a,dir:true},extra||{});
+SCENE.dfsdir = {
+  w: 520, h: 260, lato: true,
+  legenda: '{{j|s012|'}}',
+  oggetti: [
+    N('s',60,130,'s'), N('a',180,50,'a'), N('b',320,50,'b'), N('c',320,190,'c'), N('d',180,210,'d'),
+    A('sa','s','a'), A('ab','a','b'), A('bc','b','c'), A('ca','c','a'), A('sd','s','d'), A('dc','d','c'),
+    {id:'c1',tipo:'testo',x:20,y:252,t:'',size:12,bold:true,anchor:'start'}
+  ],
+  passi: [
+    { nota: "Grafo <b>diretto</b>. La DFS dà a ogni nodo tre stati: non visto, <b>in corso</b> (sulla pila, ha ancora vicini da guardare), <b>finito</b>. Scendo s → a → b → c, scrivendo il numero di scoperta d.", set:{s:{tono:'dato',sotto:'d=1'},a:{tono:'dato',sotto:'d=2'},b:{tono:'dato',sotto:'d=3'},c:{tono:'ora',sotto:'d=4'},c1:{t:'sulla pila: s, a, b, c'}} },
+    { nota: "Da c l'arco verso <b>a</b>: a è <b>in corso</b>, cioè è un antenato di c sulla pila. È un <b>back edge</b>: chiude il ciclo a → b → c → a.", set:{ca:{tono:'no'},a:{tono:'ora'},c1:{t:'a è in corso: ciclo a → b → c → a',tono:'no'}} },
+    { nota: "c non ha altro: finisce (f=5). Poi b (f=6) e a (f=7). Tornano indietro in questo ordine.", set:{ca:{tono:null},a:{tono:'ok',sotto:'d=2 f=7'},b:{tono:'ok',sotto:'d=3 f=6'},c:{tono:'ok',sotto:'d=4 f=5'},c1:{t:'finiti: c, b, a'}} },
+    { nota: "Da s resta il vicino <b>d</b> (d=8). L'arco d → c punta a c, che è già <b>finito</b>: non è un antenato, quindi <b>non c'è ciclo</b>. Regola per i grafi diretti: ciclo solo se l'arco va verso un nodo <i>in corso</i>.", set:{d:{tono:'ora',sotto:'d=8'},dc:{tono:'due'},c1:{t:'d → c verso un nodo finito: nessun ciclo',tono:'ok'}} },
+    { nota: "d finisce (f=9), poi s (f=10). Il ciclo trovato è uno solo, quello con l'arco all'indietro. Costo O(n + m).", set:{d:{tono:'ok',sotto:'d=8 f=9'},s:{tono:'ok',sotto:'d=1 f=10'},c1:{t:'un solo back edge: un ciclo',tono:'ok'}} }
+  ]
+};
+})();
+</script>
 </head>
 <body>
 <main class="pagina">
 
 <header class="testa">
-  <h1>{{s|s012|}}</h1>
-  <p class="lede">{{s|s013|}}</p>
+  <h1>{{s|s013|}}</h1>
+  <p class="lede">{{s|s014|}}</p>
 </header>
 
 <section>
-  <h2>{{s|s014|}}</h2>
-<p>{{s|s015|}}</p>
+  <h2>{{s|s015|}}</h2>
 <p>{{s|s016|}}</p>
-  <figure class="scena" data-scena="dfs" data-titolo="{{a|s017|}}"></figure>
+<p>{{s|s017|}}</p>
+  <figure class="scena" data-scena="dfs" data-titolo="{{a|s018|}}"></figure>
 </section>
 <section>
-  <h2>{{s|s018|}}</h2>
-<p>{{s|s019|}}</p>
+  <h2>{{s|s019|}}</h2>
 <p>{{s|s020|}}</p>
-<div class="box attenzione" data-tit="{{a|s021|}}"><p>{{s|s022|}}</p></div>
+<p>{{s|s021|}}</p>
+<div class="box attenzione" data-tit="{{a|s022|}}"><p>{{s|s023|}}</p></div>
 </section>
 <section>
-  <h2>{{s|s023|}}</h2>
-<p>{{s|s024|}}</p>
-  <figure class="scena" data-scena="compon" data-titolo="{{a|s025|}}"></figure>
+  <h2>{{s|s024|}}</h2>
+<p>{{s|s025|}}</p>
+  <figure class="scena" data-scena="compon" data-titolo="{{a|s026|}}"></figure>
 </section>
 <section>
-  <h2>{{s|s026|}}</h2>
-<p>{{s|s027|}}</p>
+  <h2>{{s|s027|}}</h2>
 <p>{{s|s028|}}</p>
+<p>{{s|s029|}}</p>
+  <figure class="scena" data-scena="dfsdir" data-titolo="{{a|s030|}}"></figure>
 </section>
 <section>
-  <h2>{{s|s029|}}</h2>
-  <p>{{s|s030|}}</p>
-  <p>{{s|s031|}}</p>
+  <h2>{{s|s031|}}</h2>
+<p>{{s|s032|}}</p>
+<p>{{s|s033|}}</p>
 </section>
 <section>
-  <h2>{{s|s032|}}</h2>
-<div class="box esame" data-tit="{{a|s033|}}">
-<p>{{s|s034|}}</p>
-<p>{{s|s035|}}</p>
+  <h2>{{s|s034|}}</h2>
+  <p>{{s|s035|}}</p>
+  <p>{{s|s036|}}</p>
+</section>
+<section>
+  <h2>{{s|s037|}}</h2>
+<div class="box esame" data-tit="{{a|s038|}}">
+<p>{{s|s039|}}</p>
+<p>{{s|s040|}}</p>
 </div>
 </section>
 <section>
-  <h2>{{s|s036|}}</h2>
-<div class="tab-wrap"><table class="tab"><thead><tr><th>{{s|s037|}}</th><th>{{s|s038|}}</th><th>{{s|s039|}}</th></tr></thead><tbody><tr><td>{{s|s040|}}</td><td>{{s|s041|}}</td><td>{{s|s042|}}</td></tr><tr><td>{{s|s043|}}</td><td>{{s|s044|}}</td><td>{{s|s045|}}</td></tr><tr><td>{{s|s046|}}</td><td>O(n + m)</td><td>{{s|s047|}}</td></tr><tr><td>{{s|s048|}}</td><td>{{s|s049|}}</td><td>{{s|s050|}}</td></tr></tbody></table></div>
+  <h2>{{s|s041|}}</h2>
+<div class="tab-wrap"><table class="tab"><thead><tr><th>{{s|s042|}}</th><th>{{s|s043|}}</th><th>{{s|s044|}}</th></tr></thead><tbody><tr><td>{{s|s045|}}</td><td>{{s|s046|}}</td><td>{{s|s047|}}</td></tr><tr><td>{{s|s048|}}</td><td>{{s|s049|}}</td><td>{{s|s050|}}</td></tr><tr><td>{{s|s051|}}</td><td>O(n + m)</td><td>{{s|s052|}}</td></tr><tr><td>{{s|s053|}}</td><td>{{s|s054|}}</td><td>{{s|s055|}}</td></tr></tbody></table></div>
 </section>
 
 </main>

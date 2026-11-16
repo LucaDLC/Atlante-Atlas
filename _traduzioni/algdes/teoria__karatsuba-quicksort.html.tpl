@@ -78,15 +78,52 @@ SCENE.qs = {
 </section>
 <section>
   <h2>{{s|s023|}}</h2>
-<div class="box esame" data-tit="{{a|s024|}}">
-<p>{{s|s025|}}</p>
+  <p>{{s|s024|}}</p>
+  <ol>
+    <li>{{s|s025|}}</li>
+    <li>{{s|s026|}}</li>
+    <li>{{s|s027|}}</li>
+    <li>{{s|s028|}}</li>
+  </ol>
+  <figure class="scena" data-scena="qsatteso" data-titolo="{{a|s029|}}"></figure>
+</section>
+<section>
+  <h2>{{s|s030|}}</h2>
+<div class="box esame" data-tit="{{a|s031|}}">
+<p>{{s|s032|}}</p>
 </div>
 </section>
 <section>
-  <h2>{{s|s026|}}</h2>
-<div class="tab-wrap"><table class="tab"><thead><tr><th>{{s|s027|}}</th><th>{{s|s028|}}</th><th>{{s|s029|}}</th></tr></thead><tbody><tr><td>{{s|s030|}}</td><td>{{s|s031|}}</td><td>O(n^1.585)</td></tr><tr><td>{{s|s032|}}</td><td>{{s|s033|}}</td><td>{{s|s034|}}</td></tr></tbody></table></div>
+  <h2>{{s|s033|}}</h2>
+<div class="tab-wrap"><table class="tab"><thead><tr><th>{{s|s034|}}</th><th>{{s|s035|}}</th><th>{{s|s036|}}</th></tr></thead><tbody><tr><td>{{s|s037|}}</td><td>{{s|s038|}}</td><td>O(n^1.585)</td></tr><tr><td>{{s|s039|}}</td><td>{{s|s040|}}</td><td>{{s|s041|}}</td></tr></tbody></table></div>
 </section>
 
 </main>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+const z = (i) => 'z' + i;
+const toni = (m) => m;
+SCENE.qsatteso = {
+  w: 540, h: 280, lato: true,
+  legenda: '{{j|s042|'}}',
+  oggetti: [
+    {id:'cel',tipo:'celle',x:30,y:50,cw:60,ch:36,valori:['z1','z2','z3','z4','z5','z6','z7','z8'],toni:{}},
+    {id:'t1',tipo:'testo',x:30,y:30,t:'elementi in ordine crescente',size:12,bold:true,anchor:'start'},
+    {id:'t2',tipo:'testo',x:30,y:130,t:'',size:13,bold:true,anchor:'start'},
+    {id:'t3',tipo:'testo',x:30,y:165,t:'',size:13,bold:true,anchor:'start'},
+    {id:'t4',tipo:'testo',x:30,y:200,t:'',size:13,bold:true,anchor:'start'}
+  ],
+  passi: [
+    { nota: '{{j|s043|'}}', set:{cel:{toni:{1:'dato',5:'dato'}}, t2:{t:'i = 2, j = 6'}} },
+    { nota: '{{j|s044|'}}', set:{cel:{toni:{1:'dato',2:'due',3:'due',4:'due',5:'dato'}}, t2:{t:'z₂ … z₆: 5 elementi'}} },
+    { nota: '{{j|s045|'}}', set:{cel:{toni:{1:'no',2:'no',3:'no',4:'no',5:'no'}}, t3:{t:'pivot z₃, z₄ o z₅ (3 su 5): separati'}} },
+    { nota: '{{j|s046|'}}', set:{cel:{toni:{1:'ok',2:'spento',3:'spento',4:'spento',5:'ok'}}, t3:{t:'pivot z₂ o z₆ (2 su 5): confrontati'}, t4:{t:'P = 2/(j−i+1) = 2/5 = 0.4', tono:'ok'}} },
+    { nota: '{{j|s047|'}}', set:{cel:{toni:{}}, t2:{t:'Σ su 28 coppie (n = 8)'}, t3:{t:'confronti attesi ≈ 16.92'}, t4:{t:'', tono:null}} },
+    { nota: '{{j|s048|'}}', set:{t2:{t:'n = 1000: ≈ 10 986 confronti'}, t3:{t:'tutte le coppie: 499 500'}, t4:{t:'attesi ≈ 2n ln n = O(n log n)', tono:'ok'}} }
+  ]
+};
+})();
+</script>
 </body>
 </html>

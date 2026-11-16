@@ -34,52 +34,72 @@ while lo <= hi:
 };
 })();
 </script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+const casi = [
+  {nome:'a=4, b=2, c=1', v:[16,32,64,128,256], tono:'ora', fin:'le foglie dominano: Θ(n²)'},
+  {nome:'a=2, b=2, c=1', v:[16,16,16,16,16], tono:'dato', fin:'ogni livello pesa uguale: Θ(n log n)'},
+  {nome:'a=2, b=2, c=2', v:[256,128,64,32,16], tono:'due', fin:'la radice domina: Θ(n²)'}
+];
+const og = [{id:'tit',tipo:'testo',x:20,y:24,t:'',size:13,bold:true,anchor:'start'},{id:'fin',tipo:'testo',x:20,y:262,t:'',size:13,bold:true,anchor:'start'}];
+casi.forEach((c,k) => c.v.forEach((v,l) => {
+  og.push({id:'l'+k+l,tipo:'testo',x:20,y:62+l*38,t:'livello '+l,size:11,anchor:'start',nascosto:true});
+  og.push({id:'b'+k+l,tipo:'rett',x:100,y:46+l*38,w:Math.round(v*1.5),h:28,t:String(v),tono:c.tono,nascosto:true});
+}));
+const mostra = k => { const s = {}; casi.forEach((c,j) => c.v.forEach((v,l) => { s['l'+j+l] = {nascosto: j !== k}; s['b'+j+l] = {nascosto: j !== k}; })); return s; };
+const passi = [{nota: "Albero della ricorsione per <code>n = 16</code>, <code>T(n) = a·T(n/b) + n<sup>c</sup></code>. Al livello <i>i</i> ci sono <code>a<sup>i</sup></code> sottoproblemi di taglia <code>n/b<sup>i</sup></code>, ognuno costa <code>(n/b<sup>i</sup>)<sup>c</sup></code>. Ogni barra è il lavoro totale di un livello.", set:Object.assign(mostra(-1),{tit:{t:'lavoro per livello (livelli 0 … 4)'}})}];
+casi.forEach((c,k) => passi.push({nota: "<b>"+c.nome+"</b>. Lavoro per livello: " + c.v.join(', ') + ". Somma " + c.v.reduce((x,y)=>x+y,0) + ". " + (k===0?"c = 1 &lt; log₂ 4 = 2: le barre crescono verso il fondo.":k===1?"c = 1 = log₂ 2: le barre sono tutte uguali, con log n livelli.":"c = 2 &gt; log₂ 2 = 1: le barre calano verso il fondo."), set:Object.assign(mostra(k),{tit:{t:'caso '+c.nome},fin:{t:c.fin,tono:'ok'}})}));
+SCENE.mast = {w: 540, h: 290, lato: true, legenda: '{{j|s007|'}}', oggetti: og, passi};
+})();
+</script>
 </head>
 <body>
 <main class="pagina">
 
 <header class="testa">
-  <h1>{{s|s007|}}</h1>
-  <p class="lede">{{s|s008|}}</p>
+  <h1>{{s|s008|}}</h1>
+  <p class="lede">{{s|s009|}}</p>
 </header>
 
 <section>
-  <h2>{{s|s009|}}</h2>
+  <h2>{{s|s010|}}</h2>
 <ol>
-  <li>{{s|s010|}}</li>
   <li>{{s|s011|}}</li>
   <li>{{s|s012|}}</li>
   <li>{{s|s013|}}</li>
   <li>{{s|s014|}}</li>
   <li>{{s|s015|}}</li>
+  <li>{{s|s016|}}</li>
 </ol>
 </section>
 <section>
-  <h2>{{s|s016|}}</h2>
-<p>{{s|s017|}}</p>
+  <h2>{{s|s017|}}</h2>
 <p>{{s|s018|}}</p>
-  <figure class="scena" data-scena="bin" data-titolo="{{a|s019|}}"></figure>
+<p>{{s|s019|}}</p>
+  <figure class="scena" data-scena="bin" data-titolo="{{a|s020|}}"></figure>
 </section>
 <section>
-  <h2>{{s|s020|}}</h2>
-<p>{{s|s021|}}</p>
+  <h2>{{s|s021|}}</h2>
+<p>{{s|s022|}}</p>
 <ul>
-  <li>{{s|s022|}}</li>
   <li>{{s|s023|}}</li>
   <li>{{s|s024|}}</li>
+  <li>{{s|s025|}}</li>
 </ul>
-<div class="box attenzione" data-tit="{{a|s025|}}"><p>{{s|s026|}}</p></div>
+  <figure class="scena" data-scena="mast" data-titolo="{{a|s026|}}"></figure>
+<div class="box attenzione" data-tit="{{a|s027|}}"><p>{{s|s028|}}</p></div>
 </section>
 <section>
-  <h2>{{s|s027|}}</h2>
-<div class="box esame" data-tit="{{a|s028|}}">
-<p>{{s|s029|}}</p>
-<p>{{s|s030|}}</p>
+  <h2>{{s|s029|}}</h2>
+<div class="box esame" data-tit="{{a|s030|}}">
+<p>{{s|s031|}}</p>
+<p>{{s|s032|}}</p>
 </div>
 </section>
 <section>
-  <h2>{{s|s031|}}</h2>
-<div class="tab-wrap"><table class="tab"><thead><tr><th>{{s|s032|}}</th><th>{{s|s033|}}</th><th>{{s|s034|}}</th></tr></thead><tbody><tr><td>T(n) = T(n/2) + O(1)</td><td>{{s|s035|}}</td><td>{{s|s036|}}</td></tr><tr><td>T(n) = 2T(n/2) + O(n)</td><td>{{s|s037|}}</td><td>{{s|s038|}}</td></tr><tr><td>T(n) = 3T(n/2) + O(n)</td><td>O(n^1.585)</td><td>{{s|s039|}}</td></tr><tr><td>T(n) = 4T(n/2) + O(1)</td><td>O(n²)</td><td>{{s|s040|}}</td></tr></tbody></table></div>
+  <h2>{{s|s033|}}</h2>
+<div class="tab-wrap"><table class="tab"><thead><tr><th>{{s|s034|}}</th><th>{{s|s035|}}</th><th>{{s|s036|}}</th></tr></thead><tbody><tr><td>T(n) = T(n/2) + O(1)</td><td>{{s|s037|}}</td><td>{{s|s038|}}</td></tr><tr><td>T(n) = 2T(n/2) + O(n)</td><td>{{s|s039|}}</td><td>{{s|s040|}}</td></tr><tr><td>T(n) = 3T(n/2) + O(n)</td><td>O(n^1.585)</td><td>{{s|s041|}}</td></tr><tr><td>T(n) = 4T(n/2) + O(1)</td><td>O(n²)</td><td>{{s|s042|}}</td></tr></tbody></table></div>
 </section>
 
 </main>

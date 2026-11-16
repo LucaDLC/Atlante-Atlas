@@ -22,9 +22,9 @@ SCENE.np = {
     {id:'c1',tipo:'testo',x:20,y:250,t:'',size:12,bold:true,anchor:'start'}
   ],
   passi: [
-    { nota: '{{j|s003|'}}', set:{b:{tono:'dato'},d:{tono:'dato'},c1:{t:'certificato: {b, d}'}} },
-    { nota: '{{j|s004|'}}', set:{ab:{tono:'ok'},bc:{tono:'ok'},ad:{tono:'ok'},bd:{tono:'ok'},be:{tono:'ok'},de:{tono:'ok'},ce:{tono:'no'},c1:{t:'ce non è coperto: il certificato è sbagliato',tono:'no'}} },
-    { nota: '{{j|s005|'}}', set:{d:{tono:'no'},e:{tono:'dato'},ab:{tono:'ok'},bc:{tono:'ok'},ad:{tono:'ok'},bd:{tono:'ok'},be:{tono:'ok'},ce:{tono:'ok'},de:{tono:'ok'},c1:{t:'{b, e} copre tutti gli archi: sì',tono:'ok'}} }
+    { nota: '{{j|s003|'}}', set:{a:{tono:'dato'},b:{tono:'dato'},d:{tono:'dato'},c1:{t:'certificato proposto: {a, b, d}'}} },
+    { nota: '{{j|s004|'}}', set:{ab:{tono:'ok'},bc:{tono:'ok'},ad:{tono:'ok'},bd:{tono:'ok'},be:{tono:'ok'},de:{tono:'ok'},ce:{tono:'no'},c1:{t:'ce non è coperto: certificato sbagliato',tono:'no'}} },
+    { nota: '{{j|s005|'}}', set:{a:{tono:'no'},e:{tono:'dato'},ab:{tono:'ok'},bc:{tono:'ok'},ad:{tono:'ok'},bd:{tono:'ok'},be:{tono:'ok'},ce:{tono:'ok'},de:{tono:'ok'},c1:{t:'{b, d, e} copre tutti gli archi: sì',tono:'ok'}} }
   ]
 };
 })();

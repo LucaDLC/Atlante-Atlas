@@ -10,32 +10,45 @@
 @@s010 La rete e il flusso
 @@s011 Una <b>rete</b> è un grafo diretto con una sorgente <code>s</code>, un pozzo <code>t</code> e una capacità <code>c(e) ≥ 0</code> su ogni arco. Un <b>flusso</b> <code>f</code> assegna a ogni arco un valore con <code>0 ≤ f(e) ≤ c(e)</code>, e in ogni nodo diverso da s e t entra quanto esce (conservazione). Il valore del flusso è quanto esce da <code>s</code>.
 @@s012 La rete residua
-@@s013 Per ogni arco <code>e = u → v</code> con capacità <code>c</code> e flusso <code>f</code>, la <b>rete residua</b> contiene: un arco in avanti <code>u → v</code> con capacità <code>c − f</code> (quanto puoi ancora mandare), e un arco all'indietro <code>v → u</code> con capacità <code>f</code> (quanto puoi <b>disfare</b>). Il arco all'indietro è ciò che permette di correggere una scelta fatta prima.
+@@s013 Per ogni arco <code>e = u → v</code> con capacità <code>c</code> e flusso <code>f</code>, la <b>rete residua</b> contiene: un arco in avanti <code>u → v</code> con capacità <code>c − f</code> (quanto puoi ancora mandare), e un arco all'indietro <code>v → u</code> con capacità <code>f</code> (quanto puoi <b>disfare</b>). L'arco all'indietro è ciò che permette di correggere una scelta fatta prima.
 @@s014 Il metodo: cammini aumentanti
 @@s015 Finché esiste un cammino <code>s → t</code> nella rete residua, prendi il suo <b>collo di bottiglia</b> (la capacità minima sul cammino) e aumenta il flusso di quella quantità. Trovare il cammino: BFS o DFS. Quando non c'è più nessun cammino, il flusso è massimo.
 @@s016 Primo cammino, poi un cammino che disfa
 @@s017 Il teorema e il costo
 @@s018 <b>Augmenting path theorem</b>: un flusso è massimo se e solo se nella rete residua non c'è un cammino <code>s → t</code>. <b>Integralità</b>: con capacità intere esiste un flusso massimo intero, e Ford-Fulkerson lo trova. Per questo un flusso 0/1 si legge come un assegnamento.
 @@s019 Costo <code>O(m · |f*|)</code>: con capacità intere, dipende dal valore del flusso. Con capacità 1: <code>O(mn)</code>.
-@@s020 Il codice, affiancato
-@@s021 Questa pagina spiega il concetto. Il codice Java che lo implementa, con una spiegazione riga per riga e le note di sintassi che servono, è nella pagina affiancata.
-@@s022 <a href="../codice/ford-fulkerson.html"><b>→ Codice Java di questo argomento</b></a>
-@@s023 All’esame
-@@s024 All’esame
-@@s025 Quando la domanda ha <b>assegnamenti con limiti</b>, <b>cammini disgiunti</b> o un <b>taglio minimo</b>, costruisci una rete e leggi il max flow. Frase: <i>"Build a flow network with source s and sink t. Arc capacities encode the limits. By the integrality theorem there is an integral maximum flow of value k, which is the answer. Ford–Fulkerson runs in O(m·|f*|)."</i>
-@@s026 Formulario rapido
-@@s027 concetto
-@@s028 significato
-@@s029 nota
-@@s030 rete residua
-@@s031 archi avanti c − f, indietro f
-@@s032 disfare flusso
-@@s033 cammino aumentante
-@@s034 s → t nella residua
-@@s035 collo di bottiglia
-@@s036 integralità
-@@s037 capacità intere ⇒ flusso intero
-@@s038 matching 0/1
-@@s039 tempo
-@@s040 O(m·|f*|), O(mn) con capacità 1
-@@s041 varia con il metodo
+@@s020 Il caso lento e il rimedio di Edmonds–Karp
+@@s021 Il costo <code>O(m·|f*|)</code> dipende dal <b>valore</b> del flusso, non solo dalla dimensione della rete: con capacità grandi può essere pessimo. Esempio: quattro archi di capacità <code>C</code> grande e un arco centrale <code>a → b</code> di capacità <b>1</b>. Il flusso massimo è <code>2C</code> (<i>s → a → t</i> manda C, <i>s → b → t</i> manda C).
+@@s022 Se il cammino aumentante è scelto male, si alterna <i>s → a → b → t</i> e <i>s → b → a → t</i>. Entrambi passano per l'arco centrale (in avanti o, nel secondo, disfatto), quindi il collo di bottiglia è sempre 1. Ogni cammino aggiunge 1: servono <b>2C</b> aumenti. Con C = 100 sono 200 cammini per una rete di 4 nodi.
+@@s023 Il rimedio è <b>Edmonds–Karp</b>: scegliere sempre il cammino con il <b>minor numero di archi</b>, cioè usare la BFS. Qui <i>s → a → t</i> ha 2 archi e <i>s → a → b → t</i> ne ha 3: la BFS prende subito i cammini corti e basta aumentare 2 volte. In generale il numero di aumenti è <code>O(nm)</code> (a ogni aumento la distanza di un nodo da s non diminuisce, e ogni arco può essere collo di bottiglia solo O(n) volte). Ogni BFS costa <code>O(m)</code>: totale <code>O(nm²)</code>, indipendente dalle capacità.
+@@s024 Caso lento (2C aumenti) e Edmonds–Karp (2 aumenti)
+@@s025 Il codice, affiancato
+@@s026 Questa pagina spiega il concetto. Il codice Java che lo implementa, con una spiegazione riga per riga e le note di sintassi che servono, è nella pagina affiancata.
+@@s027 <a href="../codice/ford-fulkerson.html"><b>→ Codice Java di questo argomento</b></a>
+@@s028 All’esame
+@@s029 All’esame
+@@s030 Quando la domanda ha <b>assegnamenti con limiti</b>, <b>cammini disgiunti</b> o un <b>taglio minimo</b>, costruisci una rete e leggi il max flow. Frase: <i>"Build a flow network with source s and sink t. Arc capacities encode the limits. By the integrality theorem there is an integral maximum flow of value k, which is the answer. Ford–Fulkerson runs in O(m·|f*|)."</i>
+@@s031 Formulario rapido
+@@s032 concetto
+@@s033 significato
+@@s034 nota
+@@s035 rete residua
+@@s036 archi avanti c − f, indietro f
+@@s037 disfare flusso
+@@s038 cammino aumentante
+@@s039 s → t nella residua
+@@s040 collo di bottiglia
+@@s041 integralità
+@@s042 capacità intere ⇒ flusso intero
+@@s043 matching 0/1
+@@s044 tempo
+@@s045 O(m·|f*|), O(mn) con capacità 1
+@@s046 varia con il metodo
+@@s047 dato:capacità disponibile,ora:cammino scelto,ok:flusso passato,no:flusso disfatto
+@@s048 Rete con capacità <b>C</b> grande (esempio C = 100) e arco centrale <b>a → b</b> di capacità 1. Flusso massimo: 2C, perché <i>s → a → t</i> e <i>s → b → t</i> portano C ciascuno.
+@@s049 <b>Caso lento, aumento 1</b>: cammino <i>s → a → b → t</i>. L'arco centrale ha capacità 1, quindi il collo di bottiglia è 1. Il flusso sale di 1 soltanto.
+@@s050 <b>Aumento 2</b>: cammino <i>s → b → a → t</i>, che passa per l'arco rovesciato b → a e disfa il flusso centrale. Collo di bottiglia ancora 1: il flusso sale di 1.
+@@s051 <b>Aumento 3</b> torna a <i>s → a → b → t</i> e <b>aumento 4</b> a <i>s → b → a → t</i>. Ogni cammino usa o disfa l'arco da 1, quindi aggiunge sempre 1.
+@@s052 Continuando, servono <b>2C aumenti</b> per arrivare al flusso 2C: con C = 100, 200 cammini per una rete minuscola. Il tempo dipende dal valore del flusso, non dalla dimensione del grafo.
+@@s053 <b>Edmonds–Karp</b>: ricomincio dal flusso 0 ma prendo sempre il cammino con meno archi (BFS). Il più corto è <i>s → a → t</i>, 2 archi: collo di bottiglia C. Un solo aumento manda C.
+@@s054 Il cammino più corto rimasto è <i>s → b → t</i>, ancora 2 archi: collo di bottiglia C. Secondo aumento, flusso 2C. Non esiste più un cammino nella residua: finito in <b>2 aumenti</b>. L'arco centrale non è mai servito.

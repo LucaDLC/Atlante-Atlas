@@ -48,9 +48,9 @@ ogg.push({id:'c',tipo:'testo',x:40,y:302,t:'',size:12,bold:true,anchor:'start'})
 const passi = [{nota:'{{j|s008|'}}', set:{}}];
 const mostra = [];
 passi.push({nota:'{{j|s009|'}}', set:Object.fromEntries(J.map(([n])=>[n,{nascosto:false}]))});
-passi.push({nota:'{{j|s010|'}}', set:{A:{tono:'ok'},B:{tono:'due'},C:{tono:'ora'},c:{t:'aule aperte: 3'}}});
-passi.push({nota:'{{j|s011|'}}', set:{D:{tono:'ok'},A:{tono:'dato'},c:{t:'D nell\'aula 1'}}});
-passi.push({nota:'{{j|s012|'}}', set:{E:{tono:'ok'},c:{t:'aule = profondità = 3',tono:'ok'}}});
+passi.push({nota:'{{j|s010|'}}', set:{A:{tono:'ok',t:'A · aula 1'},B:{tono:'due',t:'B · aula 2'},C:{tono:'ora',t:'C · aula 3'},c:{t:'aule aperte: 3'}}});
+passi.push({nota:'{{j|s011|'}}', set:{D:{tono:'ok',t:'D · aula 1'},A:{tono:'dato'},c:{t:'D nell\'aula 1'}}});
+passi.push({nota:'{{j|s012|'}}', set:{E:{tono:'ok',t:'E · aula 2'},c:{t:'aule = profondità = 3',tono:'ok'}}});
 SCENE.part = {w:540,h:320,lato:true,legenda:'{{j|s013|'}}',oggetti:ogg,passi};
 })();
 </script>
@@ -73,57 +73,82 @@ SCENE.part = {w:540,h:320,lato:true,legenda:'{{j|s013|'}}',oggetti:ogg,passi};
   <h2>{{s|s020|}}</h2>
 <p>{{s|s021|}}</p>
 <p>{{s|s022|}}</p>
+  <p>{{s|s023|}}</p>
+  <figure class="scena" data-scena="ahead" data-titolo="{{a|s024|}}"></figure>
 </section>
 <section>
-  <h2>{{s|s023|}}</h2>
-<p>{{s|s024|}}</p>
-<div class="box attenzione" data-tit="{{a|s025|}}"><p>{{s|s026|}}</p></div>
+  <h2>{{s|s025|}}</h2>
+<p>{{s|s026|}}</p>
+<div class="box attenzione" data-tit="{{a|s027|}}"><p>{{s|s028|}}</p></div>
 </section>
 <section>
-  <h2>{{s|s027|}}</h2>
-<p>{{s|s028|}}</p>
-<p>{{s|s029|}}</p>
-  <figure class="scena" data-scena="part" data-titolo="{{a|s030|}}"></figure>
+  <h2>{{s|s029|}}</h2>
+<p>{{s|s030|}}</p>
+<p>{{s|s031|}}</p>
+  <figure class="scena" data-scena="part" data-titolo="{{a|s032|}}"></figure>
 </section>
 <section>
-  <h2>{{s|s031|}}</h2>
-  <p>{{s|s032|}}</p>
-  <p>{{s|s033|}}</p>
-</section>
-<section>
-  <h2>{{s|s034|}}</h2>
+  <h2>{{s|s033|}}</h2>
+  <p>{{s|s034|}}</p>
   <p>{{s|s035|}}</p>
-  <p>{{s|s036|}}</p>
+</section>
+<section>
+  <h2>{{s|s036|}}</h2>
   <p>{{s|s037|}}</p>
-  <div class="tab-wrap"><table class="tab"><thead><tr><th>{{s|s038|}}</th><th>{{s|s039|}}</th></tr></thead><tbody>
-    <tr><td>{{s|s040|}}</td><td>{{s|s041|}}</td></tr>
+  <p>{{s|s038|}}</p>
+  <p>{{s|s039|}}</p>
+  <div class="tab-wrap"><table class="tab"><thead><tr><th>{{s|s040|}}</th><th>{{s|s041|}}</th></tr></thead><tbody>
     <tr><td>{{s|s042|}}</td><td>{{s|s043|}}</td></tr>
+    <tr><td>{{s|s044|}}</td><td>{{s|s045|}}</td></tr>
   </tbody></table></div>
-  <p>{{s|s044|}}</p>
-  <figure class="scena" data-scena="lat" data-titolo="{{a|s045|}}"></figure>
-  <div class="box idea" data-tit="{{a|s046|}}">
+  <p>{{s|s046|}}</p>
+  <figure class="scena" data-scena="lat" data-titolo="{{a|s047|}}"></figure>
+  <div class="box idea" data-tit="{{a|s048|}}">
     <ol>
-      <li>{{s|s047|}}</li>
-      <li>{{s|s048|}}</li>
       <li>{{s|s049|}}</li>
       <li>{{s|s050|}}</li>
       <li>{{s|s051|}}</li>
+      <li>{{s|s052|}}</li>
+      <li>{{s|s053|}}</li>
     </ol>
   </div>
 </section>
 <section>
-  <h2>{{s|s052|}}</h2>
-<div class="box esame" data-tit="{{a|s053|}}">
-<p>{{s|s054|}}</p>
-<p>{{s|s055|}}</p>
+  <h2>{{s|s054|}}</h2>
+<div class="box esame" data-tit="{{a|s055|}}">
+<p>{{s|s056|}}</p>
+<p>{{s|s057|}}</p>
 </div>
 </section>
 <section>
-  <h2>{{s|s056|}}</h2>
-<div class="tab-wrap"><table class="tab"><thead><tr><th>{{s|s057|}}</th><th>{{s|s058|}}</th><th>{{s|s059|}}</th></tr></thead><tbody><tr><td>{{s|s060|}}</td><td>{{s|s061|}}</td><td>{{s|s062|}}</td></tr><tr><td>{{s|s063|}}</td><td>{{s|s064|}}</td><td>{{s|s065|}}</td></tr><tr><td>{{s|s066|}}</td><td>{{s|s067|}}</td><td>{{s|s068|}}</td></tr></tbody></table></div>
+  <h2>{{s|s058|}}</h2>
+<div class="tab-wrap"><table class="tab"><thead><tr><th>{{s|s059|}}</th><th>{{s|s060|}}</th><th>{{s|s061|}}</th></tr></thead><tbody><tr><td>{{s|s062|}}</td><td>{{s|s063|}}</td><td>{{s|s064|}}</td></tr><tr><td>{{s|s065|}}</td><td>{{s|s066|}}</td><td>{{s|s067|}}</td></tr><tr><td>{{s|s068|}}</td><td>{{s|s069|}}</td><td>{{s|s070|}}</td></tr></tbody></table></div>
 </section>
 
 </main>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+const X = t => 40 + t * 45;
+const G = [['A',0,2],['C',3,5],['E',6,8]], O = [['B',1,4],['D',4,7],['F',7,10]];
+const ogg = [];
+for (let t = 0; t <= 10; t++) ogg.push({id:'tk'+t,tipo:'testo',x:X(t),y:200,t:String(t),size:11});
+ogg.push({id:'asse',tipo:'linea',x1:X(0),y1:188,x2:X(10),y2:188});
+ogg.push({id:'lg',tipo:'testo',x:40,y:22,t:'greedy: i₁, i₂, i₃',size:12,bold:true,anchor:'start'});
+ogg.push({id:'lo',tipo:'testo',x:40,y:112,t:'altra soluzione: j₁, j₂, j₃',size:12,bold:true,anchor:'start'});
+G.forEach(([n,s,f]) => ogg.push({id:n,tipo:'rett',x:X(s),y:34,w:(f-s)*45,h:30,t:n,tono:'spento'}));
+O.forEach(([n,s,f]) => ogg.push({id:n,tipo:'rett',x:X(s),y:124,w:(f-s)*45,h:30,t:n,tono:'spento'}));
+ogg.push({id:'c',tipo:'testo',x:40,y:250,t:'',size:13,bold:true,anchor:'start'});
+const passi = [
+ {nota:'{{j|s071|'}}', set:{A:{tono:'dato'},C:{tono:'dato'},E:{tono:'dato'},B:{tono:'due'},D:{tono:'due'},F:{tono:'due'},c:{t:'confronto le fini, una coppia alla volta'}}},
+ {nota:'{{j|s072|'}}', set:{A:{tono:'ok'},B:{tono:'dato'},c:{t:'f(i₁) = 2 ≤ f(j₁) = 4',tono:'ok'}}},
+ {nota:'{{j|s073|'}}', set:{C:{tono:'ok'},D:{tono:'dato'},A:{tono:'spento'},B:{tono:'spento'},c:{t:'f(i₂) = 5 ≤ f(j₂) = 7',tono:'ok'}}},
+ {nota:'{{j|s074|'}}', set:{E:{tono:'ok'},F:{tono:'dato'},C:{tono:'spento'},D:{tono:'spento'},c:{t:'f(i₃) = 8 ≤ f(j₃) = 10',tono:'ok'}}},
+ {nota:'{{j|s075|'}}', set:{c:{t:'greedy ≥ ogni soluzione: ottimo',tono:'ok'}}}
+];
+SCENE.ahead = {w:540,h:280,lato:true,legenda:'{{j|s076|'}}',oggetti:ogg,passi};
+})();
+</script>
 <script>
 window.SCENE = window.SCENE || {};
 (function () {
@@ -148,7 +173,7 @@ const passi = [
 ];
 SCENE.lat = {
   w: 540, h: 310, lato: true,
-  legenda: '{{j|s069|'}}',
+  legenda: '{{j|s077|'}}',
   oggetti: ogg, passi
 };
 })();

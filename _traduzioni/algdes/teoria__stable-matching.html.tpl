@@ -63,50 +63,80 @@ SCENE.gs = {
   <h2>{{s|s021|}}</h2>
 <p>{{s|s022|}}</p>
 <p>{{s|s023|}}</p>
+<p>{{s|s024|}}</p>
+<figure class="passi" data-titolo="{{a|s025|}}" data-legenda="{{a|s026|}}">
+  <div class="passo">
+    <div class="espr testo">{{s|s027|}}</div>
+    <p class="nota">{{s|s028|}}</p>
+  </div>
+  <div class="passo">
+    <div class="espr testo">{{s|s029|}}</div>
+    <p class="nota">{{s|s030|}}</p>
+  </div>
+  <div class="passo">
+    <div class="espr testo">{{s|s031|}}</div>
+    <p class="nota">{{s|s032|}}</p>
+  </div>
+  <div class="passo">
+    <div class="espr testo">{{s|s033|}}</div>
+    <p class="nota">{{s|s034|}}</p>
+  </div>
+  <div class="passo">
+    <div class="espr testo">{{s|s035|}}</div>
+    <p class="nota">{{s|s036|}}</p>
+  </div>
+  <div class="passo">
+    <div class="espr testo">{{s|s037|}}</div>
+    <p class="nota">{{s|s038|}}</p>
+  </div>
+</figure>
+<div class="box domanda-tua" data-tit="{{a|s039|}}">
+<p>{{s|s040|}}</p>
+</div><p>{{s|s041|}}</p>
 </section>
 <section>
-  <h2>{{s|s024|}}</h2>
-<p>{{s|s025|}}</p>
+  <h2>{{s|s042|}}</h2>
+<p>{{s|s043|}}</p>
 </section>
 <section>
-  <h2>{{s|s026|}}</h2>
-  <p>{{s|s027|}}</p>
-  <p>{{s|s028|}}</p>
-</section>
-<section>
-  <h2>{{s|s029|}}</h2>
-  <p>{{s|s030|}}</p>
-  <div class="tab-wrap"><table class="tab"><thead><tr><th>{{s|s031|}}</th><th>{{s|s032|}}</th></tr></thead><tbody>
-    <tr><td>{{s|s033|}}</td><td>{{s|s034|}}</td></tr>
-    <tr><td>{{s|s035|}}</td><td>{{s|s036|}}</td></tr>
-    <tr><td>{{s|s037|}}</td><td>{{s|s038|}}</td></tr>
-    <tr><td>{{s|s039|}}</td><td>{{s|s040|}}</td></tr>
-  </tbody></table></div>
-  <p>{{s|s041|}}</p>
-  <p>{{s|s042|}}</p>
-</section>
-<section>
-  <h2>{{s|s043|}}</h2>
-  <p>{{s|s044|}}</p>
+  <h2>{{s|s044|}}</h2>
   <p>{{s|s045|}}</p>
-  <ul>
-    <li>{{s|s046|}}</li>
-    <li>{{s|s047|}}</li>
-    <li>{{s|s048|}}</li>
-  </ul>
-  <figure class="scena" data-scena="cap" data-titolo="{{a|s049|}}"></figure>
-  <p>{{s|s050|}}</p>
+  <p>{{s|s046|}}</p>
 </section>
 <section>
-  <h2>{{s|s051|}}</h2>
-<div class="box esame" data-tit="{{a|s052|}}">
-<p>{{s|s053|}}</p>
-<p>{{s|s054|}}</p>
+  <h2>{{s|s047|}}</h2>
+  <p>{{s|s048|}}</p>
+  <div class="tab-wrap"><table class="tab"><thead><tr><th>{{s|s049|}}</th><th>{{s|s050|}}</th></tr></thead><tbody>
+    <tr><td>{{s|s051|}}</td><td>{{s|s052|}}</td></tr>
+    <tr><td>{{s|s053|}}</td><td>{{s|s054|}}</td></tr>
+    <tr><td>{{s|s055|}}</td><td>{{s|s056|}}</td></tr>
+    <tr><td>{{s|s057|}}</td><td>{{s|s058|}}</td></tr>
+  </tbody></table></div>
+  <p>{{s|s059|}}</p>
+  <p>{{s|s060|}}</p>
+</section>
+<section>
+  <h2>{{s|s061|}}</h2>
+  <p>{{s|s062|}}</p>
+  <p>{{s|s063|}}</p>
+  <ul>
+    <li>{{s|s064|}}</li>
+    <li>{{s|s065|}}</li>
+    <li>{{s|s066|}}</li>
+  </ul>
+  <figure class="scena" data-scena="cap" data-titolo="{{a|s067|}}"></figure>
+  <p>{{s|s068|}}</p>
+</section>
+<section>
+  <h2>{{s|s069|}}</h2>
+<div class="box esame" data-tit="{{a|s070|}}">
+<p>{{s|s071|}}</p>
+<p>{{s|s072|}}</p>
 </div>
 </section>
 <section>
-  <h2>{{s|s055|}}</h2>
-<div class="tab-wrap"><table class="tab"><thead><tr><th>{{s|s056|}}</th><th>{{s|s057|}}</th><th>{{s|s058|}}</th></tr></thead><tbody><tr><td>{{s|s059|}}</td><td>{{s|s060|}}</td><td>{{s|s061|}}</td></tr><tr><td>{{s|s062|}}</td><td>{{s|s063|}}</td><td>{{s|s064|}}</td></tr><tr><td>{{s|s065|}}</td><td>{{s|s066|}}</td><td>{{s|s067|}}</td></tr><tr><td>{{s|s068|}}</td><td>O(n²)</td><td>{{s|s069|}}</td></tr></tbody></table></div>
+  <h2>{{s|s073|}}</h2>
+<div class="tab-wrap"><table class="tab"><thead><tr><th>{{s|s074|}}</th><th>{{s|s075|}}</th><th>{{s|s076|}}</th></tr></thead><tbody><tr><td>{{s|s077|}}</td><td>{{s|s078|}}</td><td>{{s|s079|}}</td></tr><tr><td>{{s|s080|}}</td><td>{{s|s081|}}</td><td>{{s|s082|}}</td></tr><tr><td>{{s|s083|}}</td><td>{{s|s084|}}</td><td>{{s|s085|}}</td></tr><tr><td>{{s|s086|}}</td><td>O(n²)</td><td>{{s|s087|}}</td></tr></tbody></table></div>
 </section>
 
 </main>
@@ -131,7 +161,7 @@ const passi = [
 ];
 SCENE.cap = {
   w: 540, h: 270, lato: true,
-  legenda: '{{j|s070|'}}',
+  legenda: '{{j|s088|'}}',
   oggetti: ogg, passi
 };
 })();

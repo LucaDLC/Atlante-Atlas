@@ -54,6 +54,80 @@ SCENE.uf = {
   <figure class="scena" data-scena="uf" data-titolo="make-set, union, find con path compression"></figure>
 </section>
 <section>
+  <h2>In memoria: due array</h2>
+<p>Gli alberi del disegno non si costruiscono con nodi e puntatori. Bastano due array, uno slot per elemento:</p>
+<ul>
+  <li><b>parent[x]</b> (padre): il nodo sopra <code>x</code>. Se <code>parent[x] = x</code>, allora <code>x</code> è una <b>radice</b>: è il rappresentante del suo gruppo.</li>
+  <li><b>size[x]</b> (dimensione): quanti elementi ha l'albero di cui <code>x</code> è radice. Conta solo per le radici.</li>
+</ul>
+<p>È lo stesso esempio dell'animazione, con gli elementi in ordine <code>a b c d e</code>. Ogni passo cambia una cosa sola.</p>
+<figure class="passi" data-titolo="union-find negli array" data-legenda="dato:radice,ora:cambia adesso,ok:risultato">
+  <div class="passo">
+    <div class="espr">        a b c d e
+parent  <mark class="dato">a b c d e</mark>
+size    1 1 1 1 1</div>
+    <p class="nota"><code>make-set</code> su tutti: ognuno è padre di sé stesso, quindi 5 radici e 5 gruppi.</p>
+  </div>
+  <div class="passo">
+    <div class="espr">        a b c d e
+parent  a <mark class="ora">a</mark> c d e
+size    <mark class="ora">2</mark> 1 1 1 1</div>
+    <p class="nota"><code>union(a, b)</code>: <code>find(a) = a</code>, <code>find(b) = b</code>. Stessa dimensione, quindi b va sotto a: <code>parent[b] = a</code>, e la dimensione di a diventa 1 + 1 = 2.</p>
+  </div>
+  <div class="passo">
+    <div class="espr">        a b c d e
+parent  a a c <mark class="ora">c</mark> e
+size    2 1 <mark class="ora">2</mark> 1 1</div>
+    <p class="nota"><code>union(c, d)</code>: stessa cosa, d va sotto c. Ora ci sono tre gruppi: {a, b}, {c, d}, {e}.</p>
+  </div>
+  <div class="passo">
+    <div class="espr">        a b c d e
+parent  a a <mark class="ora">a</mark> c e
+size    <mark class="ora">4</mark> 1 2 1 1</div>
+    <p class="nota"><code>union(a, c)</code>: le radici sono a e c, entrambe di dimensione 2. c va sotto a, e la dimensione di a diventa 2 + 2 = 4. Il <code>size[c] = 2</code> che resta non conta più: c non è più una radice.</p>
+  </div>
+  <div class="passo">
+    <div class="espr">find(d):  d → parent[d] = c → parent[c] = <mark class="ok">a</mark> → parent[a] = a, stop
+        a b c d e
+parent  a a a <mark class="ora">a</mark> e</div>
+    <p class="nota"><code>find(d)</code> risale d → c → a e si ferma perché <code>parent[a] = a</code>. Con la <b>path compression</b> scrive <code>parent[d] = a</code>: la prossima volta d arriva alla radice in un passo.</p>
+  </div>
+  <div class="passo">
+    <div class="espr">find(b) = a,  find(d) = a   →  <mark class="ok">stesso gruppo</mark>
+find(e) = e                 →  <mark class="no">gruppo diverso</mark></div>
+    <p class="nota">La domanda «x e y sono nello stesso gruppo?» si riduce a confrontare due radici.</p>
+  </div>
+</figure>
+<figure class="codice" data-titolo="union-find in pseudocodice">
+<pre data-lang="pseudo">make-set(x):  parent[x] = x;  size[x] = 1
+
+find(x):
+  if parent[x] == x: return x
+  r = find(parent[x])
+  parent[x] = r
+  return r
+
+union(x, y):
+  rx = find(x);  ry = find(y)
+  if rx == ry: return
+  if size[rx] &lt; size[ry]: swap(rx, ry)
+  parent[ry] = rx
+  size[rx] = size[rx] + size[ry]</pre>
+  <ol class="spiega">
+    <li data-righe="1" data-segna="parent[x] = x@dato|size[x] = 1@dato"><p>Uso <code>parent[x] = x</code> perché è il modo di dire «x è radice» senza un valore speciale: la radice è l'unico nodo padre di sé stesso.</p></li>
+    <li data-righe="4" data-segna="parent[x] == x@dato"><p>Caso base di <code>find</code>: se x è padre di sé stesso, è la radice e la restituisco.</p></li>
+    <li data-righe="5" data-segna="find(parent[x])@ora"><p>Altrimenti chiedo la radice al padre: la ricorsione sale di un livello per chiamata.</p></li>
+    <li data-righe="6-7" data-segna="parent[x] = r@ok"><p><b>Path compression</b>: tornando indietro dalla ricorsione, ogni nodo del percorso viene attaccato direttamente alla radice r. Uso la ricorsione perché così il «tornare indietro» visita proprio i nodi del percorso.</p></li>
+    <li data-righe="10-11" data-segna="rx == ry@no"><p><code>union</code> lavora sulle <b>radici</b>, non su x e y. Se le radici coincidono, x e y sono già nello stesso gruppo e non faccio niente.</p></li>
+    <li data-righe="12-13" data-segna="swap(rx, ry)@ora|parent[ry] = rx@ok"><p><b>Link by size</b>: con lo <code>swap</code> mi assicuro che <code>rx</code> sia la radice più grande, poi appendo la più piccola (<code>ry</code>) sotto di lei.</p></li>
+    <li data-righe="14" data-segna="size[rx] + size[ry]@ok"><p>Aggiorno solo la dimensione della nuova radice: il suo albero ora contiene anche tutti gli elementi dell'altro.</p></li>
+  </ol>
+</figure>
+<div class="box domanda-tua" data-tit="Il tuo dubbio: come funziona davvero">
+<p>Ogni gruppo è un albero e la sua <b>radice</b> fa da nome del gruppo. <code>find</code> risale fino alla radice: è la domanda «chi è il capo del tuo gruppo?». <code>union</code> fonde due gruppi attaccando una radice sotto l'altra: il capo del gruppo più piccolo smette di essere capo. Tutto il resto (link by size, path compression) serve solo a tenere corti i percorsi verso la radice.</p>
+</div>
+</section>
+<section>
   <h2>Perché tiene gli alberi bassi</h2>
 <p>Senza accorgimenti un albero può diventare una catena lunga, e <code>find</code> costerebbe <code>O(n)</code>.
 Due regole lo evitano:</p>
@@ -61,6 +135,26 @@ Due regole lo evitano:</p>
   <li><b>link by size / rank</b>: sotto la radice più grande va la più piccola. Quando la profondità di un nodo aumenta di 1, il suo albero finisce sotto uno almeno grande quanto lui: la sua dimensione almeno raddoppia. Si può raddoppiare al più <code>log₂ n</code> volte, quindi la profondità resta <code>≤ log n</code>.</li>
   <li><b>path compression</b>: durante un <code>find</code>, ogni nodo incontrato viene collegato direttamente alla radice.</li>
 </ul>
+<p>Perché con link by size la profondità resta <code>≤ log₂ n</code>, un passo alla volta:</p>
+<figure class="passi" data-titolo="profondità ≤ log n con link by size" data-legenda="dato:nodo x,ora:cambia adesso,ok:conclusione">
+  <div class="passo">
+    <div class="espr testo">La profondità del nodo <mark class="dato">x</mark> cresce di 1 solo quando la radice del suo albero finisce sotto un'altra radice.</div>
+    <p class="nota">Un <code>find</code> non abbassa mai x (la path compression lo alza). Solo una <code>union</code> può allontanarlo dalla radice.</p>
+  </div>
+  <div class="passo">
+    <div class="espr testo">Con link by size va sotto solo l'albero <mark class="ora">più piccolo</mark> (o uguale): quello nuovo ha almeno il <mark class="ora">doppio</mark> dei nodi.</div>
+    <p class="nota">Se l'albero di x ha s nodi e l'altro ne ha almeno s, l'unione ne ha almeno 2s.</p>
+  </div>
+  <div class="passo">
+    <div class="espr">profondità di x:   0     1     2     3    …    k
+nodi dell'albero: ≥ 1   ≥ 2   ≥ 4   ≥ 8   …   <mark class="ora">≥ 2ᵏ</mark></div>
+    <p class="nota">Ogni livello in più raddoppia almeno la dimensione dell'albero che contiene x.</p>
+  </div>
+  <div class="passo">
+    <div class="espr">2ᵏ ≤ n   ⇒   <mark class="ok">k ≤ log₂ n</mark></div>
+    <p class="nota">Un albero non può avere più di n nodi. Quindi nessun nodo è più profondo di log₂ n, e <code>find</code> costa O(log n) anche senza path compression.</p>
+  </div>
+</figure>
 </section>
 <section>
   <h2>Il costo</h2>

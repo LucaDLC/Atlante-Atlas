@@ -18,15 +18,16 @@ SCENE.exch = {
   oggetti: [
     {id:'l1',tipo:'testo',x:20,y:60,t:'ottimo O',size:12,bold:true,anchor:'start'},
     {id:'l2',tipo:'testo',x:20,y:150,t:'greedy G',size:12,bold:true,anchor:'start'},
-    N('o1',110,40,'1','dato'), N('o2',180,40,'2','dato'), N('o3',250,40,'3','dato'), N('o4',320,40,'4','spento'),
-    N('g1',110,130,'1','dato'), N('g2',180,130,'2','spento'), N('g3',250,130,'3','spento'), N('g4',320,130,'4','dato'),
+    N('o1',110,40,'1','dato'), N('o2',180,40,'2','dato'), N('o3',250,40,'4','dato'),
+    N('g1',110,130,'1','dato'), N('g2',180,130,'2','dato'), N('g3',250,130,'3','dato'),
     {id:'x',tipo:'testo',x:440,y:60,t:'',size:12,bold:true},
     {id:'c',tipo:'testo',x:20,y:210,t:'',size:13,bold:true,anchor:'start'}
   ],
   passi: [
-    { nota: '{{j|s003|'}}', set: {} },
-    { nota: '{{j|s004|'}}', set: { o2:{tono:'ora'}, o1:{tono:'ok'}, c:{t:'scambio: O\' = O − {2} + {1}: stessa taglia, costo non maggiore'} } },
-    { nota: '{{j|s005|'}}', set: { o3:{tono:'ora'}, g3:{tono:'dato'}, x:{t:'O\' = G',tono:'ok'}, c:{t:'ad ogni scambio la soluzione resta valida e ottima',tono:'ok'} } }
+    { nota: "Scelgo 3 elementi di costo totale minimo. I numeri nei riquadri sono i <b>costi</b>. Il greedy G prende sempre il più economico rimasto: 1, 2, 3. Prendo una soluzione ottima <b>O</b> qualsiasi: qui O = {1, 2, 4}.", set: {c:{t:'costo G = 6 · costo O = 7'}} },
+    { nota: "Guardo O e G in ordine di costo. Le prime due scelte coincidono (1 e 2). La <b>prima differenza</b> è la terza: G ha 3, O ha 4.", set: { o3:{tono:'ora'}, g3:{tono:'ora'}, c:{t:'prima differenza: G prende 3, O prende 4'} } },
+    { nota: "Scambio in O il 4 con il 3: O' = O − {4} + {3}. Il numero di elementi non cambia e 3 non costa più di 4 (il greedy ha preso il più economico rimasto), quindi O' è valido e <b>non costa di più</b>: 6 ≤ 7.", set: { o3:{t:'3',tono:'ok'}, g3:{tono:'dato'}, x:{t:"O' = G",tono:'ok'}, c:{t:"O' = {1, 2, 3}: costo 6 ≤ 7",tono:'ok'} } },
+    { nota: "Ripeto per ogni differenza: a ogni scambio O si avvicina a G e non peggiora. Alla fine O' = G, e G costa quanto un ottimo: <b>il greedy è ottimo</b>. È l'exchange argument (argomento di scambio).", set: { c:{t:"ogni scambio: valida e non peggiore, fino a O' = G",tono:'ok'} } }
   ]
 };
 })();
@@ -36,31 +37,36 @@ SCENE.exch = {
 <main class="pagina">
 
 <header class="testa">
-  <h1>{{s|s006|}}</h1>
-  <p class="lede">{{s|s007|}}</p>
+  <h1>{{s|s003|}}</h1>
+  <p class="lede">{{s|s004|}}</p>
 </header>
 
 <section>
-  <h2>{{s|s008|}}</h2>
-<p>{{s|s009|}}</p>
+  <h2>{{s|s005|}}</h2>
+<p>{{s|s006|}}</p>
 <ol>
-  <li>{{s|s010|}}</li>
-  <li>{{s|s011|}}</li>
+  <li>{{s|s007|}}</li>
+  <li>{{s|s008|}}</li>
 </ol>
-<p>{{s|s012|}}</p>
-<p>{{s|s013|}}</p>
+<p>{{s|s009|}}</p>
+<p>{{s|s010|}}</p>
 </section>
 <section>
-  <h2>{{s|s014|}}</h2>
-<p>{{s|s015|}}</p>
+  <h2>{{s|s011|}}</h2>
+<p>{{s|s012|}}</p>
 <ol>
+  <li>{{s|s013|}}</li>
+  <li>{{s|s014|}}</li>
+  <li>{{s|s015|}}</li>
   <li>{{s|s016|}}</li>
-  <li>{{s|s017|}}</li>
-  <li>{{s|s018|}}</li>
-  <li>{{s|s019|}}</li>
 </ol>
-<div class="box regola" data-tit="{{a|s020|}}"><p>{{s|s021|}}</p></div>
-  <figure class="scena" data-scena="exch" data-titolo="{{a|s022|}}"></figure>
+<div class="box regola" data-tit="{{a|s017|}}"><p>{{s|s018|}}</p></div>
+  <figure class="scena" data-scena="exch" data-titolo="{{a|s019|}}"></figure>
+</section>
+<section>
+  <h2>{{s|s020|}}</h2>
+<p>{{s|s021|}}</p>
+<p>{{s|s022|}}</p>
 </section>
 <section>
   <h2>{{s|s023|}}</h2>
@@ -69,19 +75,14 @@ SCENE.exch = {
 </section>
 <section>
   <h2>{{s|s026|}}</h2>
-<p>{{s|s027|}}</p>
+<div class="box esame" data-tit="{{a|s027|}}">
 <p>{{s|s028|}}</p>
-</section>
-<section>
-  <h2>{{s|s029|}}</h2>
-<div class="box esame" data-tit="{{a|s030|}}">
-<p>{{s|s031|}}</p>
-<p>{{s|s032|}}</p>
+<p>{{s|s029|}}</p>
 </div>
 </section>
 <section>
-  <h2>{{s|s033|}}</h2>
-<div class="tab-wrap"><table class="tab"><thead><tr><th>{{s|s034|}}</th><th>{{s|s035|}}</th><th>{{s|s036|}}</th></tr></thead><tbody><tr><td>{{s|s037|}}</td><td>{{s|s038|}}</td><td>{{s|s039|}}</td></tr><tr><td>{{s|s040|}}</td><td>{{s|s041|}}</td><td>{{s|s042|}}</td></tr><tr><td>{{s|s043|}}</td><td>{{s|s044|}}</td><td>{{s|s045|}}</td></tr><tr><td>{{s|s046|}}</td><td>{{s|s047|}}</td><td>{{s|s048|}}</td></tr></tbody></table></div>
+  <h2>{{s|s030|}}</h2>
+<div class="tab-wrap"><table class="tab"><thead><tr><th>{{s|s031|}}</th><th>{{s|s032|}}</th><th>{{s|s033|}}</th></tr></thead><tbody><tr><td>{{s|s034|}}</td><td>{{s|s035|}}</td><td>{{s|s036|}}</td></tr><tr><td>{{s|s037|}}</td><td>{{s|s038|}}</td><td>{{s|s039|}}</td></tr><tr><td>{{s|s040|}}</td><td>{{s|s041|}}</td><td>{{s|s042|}}</td></tr><tr><td>{{s|s043|}}</td><td>{{s|s044|}}</td><td>{{s|s045|}}</td></tr></tbody></table></div>
 </section>
 
 </main>

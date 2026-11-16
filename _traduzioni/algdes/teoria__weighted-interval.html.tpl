@@ -19,10 +19,31 @@ J.forEach(([s,f,v],i) => og.push({id:'j'+i,tipo:'rett',x:X(s),y:20+i*40,w:(f-s)*
 og.push({id:'c',tipo:'testo',x:40,y:292,t:'',size:12,bold:true,anchor:'start'});
 const passi = [{nota:'{{j|s002|'}}', set:{}}];
 passi.push({nota:'{{j|s003|'}}', set:{c:{t:'p(1)=0, p(2)=0, p(3)=1, p(4)=2, p(5)=3'}}});
-passi.push({nota:'{{j|s004|'}}', set:{j0:{tono:'ok'},c:{t:'OPT(1)=2, OPT(2)=4'}}});
-passi.push({nota:'{{j|s005|'}}', set:{j2:{tono:'ok'},j3:{tono:'ok'},c:{t:'OPT(3)=6, OPT(4)=11'}}});
-passi.push({nota:'{{j|s006|'}}', set:{j4:{tono:'no'},c:{t:'OPT(5) = 11: scelgo j2 e j4',tono:'ok'}}});
+passi.push({nota:'{{j|s004|'}}', set:{j0:{tono:'ora'},j1:{tono:'ora'},c:{t:'OPT(1)=2, OPT(2)=4'}}});
+passi.push({nota:'{{j|s005|'}}', set:{j0:{tono:null},j1:{tono:null},j2:{tono:'ora'},j3:{tono:'ora'},c:{t:'OPT(3)=6, OPT(4)=11'}}});
+passi.push({nota:'{{j|s006|'}}', set:{j2:{tono:'no'},j3:{tono:'ok'},j1:{tono:'ok'},j4:{tono:'no'},c:{t:'OPT(5) = 11: scelgo j2 e j4',tono:'ok'}}});
 SCENE.wis = {w:540,h:300,lato:true,legenda:'{{j|s007|'}}',oggetti:og,passi};
+})();
+</script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+const X = t => 40 + t * 44;
+SCENE.wgre = {
+  w: 540, h: 200, lato: true,
+  legenda: '{{j|s008|'}}',
+  oggetti: [
+    {id:'big',tipo:'rett',x:X(0),y:20,w:10*44,h:30,t:'v = 10',tono:'dato'},
+    {id:'p',tipo:'rett',x:X(0),y:70,w:5*44,h:30,t:'v = 1',tono:'dato'},
+    {id:'q',tipo:'rett',x:X(5),y:70,w:5*44,h:30,t:'v = 1',tono:'dato'},
+    {id:'c',tipo:'testo',x:40,y:150,t:'',size:12,bold:true,anchor:'start'}
+  ],
+  passi: [
+    { nota: "Tre intervalli: uno lungo con valore 10 (da 0 a 10) e due corti da 1 (0–5 e 5–10).", set:{} },
+    { nota: "Il greedy per fine prende prima i corti (finiscono a 5 e 10): ne prende due, valore <b>2</b>. Il lungo si sovrappone e viene scartato.", set:{p:{tono:'ok'},q:{tono:'ok'},big:{tono:'no'},c:{t:'greedy per fine: valore 2',tono:'no'}} },
+    { nota: "L'ottimo è il lungo da solo: valore <b>10</b>. Con i pesi serve la DP (prendere o saltare, job per job).", set:{p:{tono:'no'},q:{tono:'no'},big:{tono:'ok'},c:{t:'ottimo: valore 10',tono:'ok'}} }
+  ]
+};
 })();
 </script>
 </head>
@@ -30,33 +51,35 @@ SCENE.wis = {w:540,h:300,lato:true,legenda:'{{j|s007|'}}',oggetti:og,passi};
 <main class="pagina">
 
 <header class="testa">
-  <h1>{{s|s008|}}</h1>
-  <p class="lede">{{s|s009|}}</p>
+  <h1>{{s|s009|}}</h1>
+  <p class="lede">{{s|s010|}}</p>
 </header>
 
 <section>
-  <h2>{{s|s010|}}</h2>
-<p>{{s|s011|}}</p>
-  <figure class="scena" data-scena="wis" data-titolo="{{a|s012|}}"></figure>
-</section>
-<section>
-  <h2>{{s|s013|}}</h2>
+  <h2>{{s|s011|}}</h2>
+<p>{{s|s012|}}</p>
+  <figure class="scena" data-scena="wis" data-titolo="{{a|s013|}}"></figure>
 <p>{{s|s014|}}</p>
+  <figure class="scena" data-scena="wgre" data-titolo="{{a|s015|}}"></figure>
 </section>
 <section>
-  <h2>{{s|s015|}}</h2>
-  <p>{{s|s016|}}</p>
-  <p>{{s|s017|}}</p>
+  <h2>{{s|s016|}}</h2>
+<p>{{s|s017|}}</p>
 </section>
 <section>
   <h2>{{s|s018|}}</h2>
-<div class="box esame" data-tit="{{a|s019|}}">
-<p>{{s|s020|}}</p>
-</div>
+  <p>{{s|s019|}}</p>
+  <p>{{s|s020|}}</p>
 </section>
 <section>
   <h2>{{s|s021|}}</h2>
-<div class="tab-wrap"><table class="tab"><thead><tr><th>{{s|s022|}}</th><th>{{s|s023|}}</th><th>{{s|s024|}}</th></tr></thead><tbody><tr><td>{{s|s025|}}</td><td>{{s|s026|}}</td><td>{{s|s027|}}</td></tr><tr><td>{{s|s028|}}</td><td>{{s|s029|}}</td><td>{{s|s030|}}</td></tr></tbody></table></div>
+<div class="box esame" data-tit="{{a|s022|}}">
+<p>{{s|s023|}}</p>
+</div>
+</section>
+<section>
+  <h2>{{s|s024|}}</h2>
+<div class="tab-wrap"><table class="tab"><thead><tr><th>{{s|s025|}}</th><th>{{s|s026|}}</th><th>{{s|s027|}}</th></tr></thead><tbody><tr><td>{{s|s028|}}</td><td>{{s|s029|}}</td><td>{{s|s030|}}</td></tr><tr><td>{{s|s031|}}</td><td>{{s|s032|}}</td><td>{{s|s033|}}</td></tr></tbody></table></div>
 </section>
 
 </main>

@@ -24,7 +24,7 @@
 <section>
   <h2>{{s|s025|}}</h2>
 <p>{{s|s026|}}</p>
-<div class="tab-wrap"><table class="tab"><thead><tr><th>{{s|s027|}}</th><th>{{s|s028|}}</th><th>{{s|s029|}}</th></tr></thead><tbody><tr><td>{{s|s030|}}</td><td>{{s|s031|}}</td><td>34</td></tr><tr><td>{{s|s032|}}</td><td>{{s|s033|}}</td><td>4</td></tr><tr><td>{{s|s034|}}</td><td>{{s|s035|}}</td><td>46</td></tr><tr><td>{{s|s036|}}</td><td>{{s|s037|}}</td><td>56</td></tr><tr><td>{{s|s038|}}</td><td>{{s|s039|}}</td><td>5</td></tr><tr><td>{{s|s040|}}</td><td>{{s|s041|}}</td><td>5</td></tr></tbody></table></div>
+<div class="tab-wrap"><table class="tab"><thead><tr><th>{{s|s027|}}</th><th>{{s|s028|}}</th><th>{{s|s029|}}</th></tr></thead><tbody><tr><td>{{s|s030|}}</td><td>{{s|s031|}}</td><td>3–4</td></tr><tr><td>{{s|s032|}}</td><td>{{s|s033|}}</td><td>4</td></tr><tr><td>{{s|s034|}}</td><td>{{s|s035|}}</td><td>4–6</td></tr><tr><td>{{s|s036|}}</td><td>{{s|s037|}}</td><td>5–6</td></tr><tr><td>{{s|s038|}}</td><td>{{s|s039|}}</td><td>5</td></tr><tr><td>{{s|s040|}}</td><td>{{s|s041|}}</td><td>5</td></tr></tbody></table></div>
 </section>
 <section>
   <h2>{{s|s042|}}</h2>

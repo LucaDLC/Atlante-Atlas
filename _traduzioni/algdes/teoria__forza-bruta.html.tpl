@@ -13,7 +13,7 @@ window.SCENE = window.SCENE || {};
 (function () {
 const ELEM = ['1','2','3'];
 const righe = [[0,'{}'],[1,'{1}'],[2,'{2}'],[3,'{1, 2}'],[4,'{3}'],[5,'{1, 3}'],[6,'{2, 3}'],[7,'{1, 2, 3}']];
-const celle = (k) => ['','',''].map((_,i) => ((k >> i) & 1) ? '1' : '0');
+const celle = (k) => [2,1,0].map(i => ((k >> i) & 1) ? '1' : '0');
 SCENE.bits = {
   w: 540, h: 290, lato: true,
   legenda: '{{j|s002|'}}',

@@ -31,51 +31,74 @@ SCENE.dij = {
 };
 })();
 </script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+const N = (id,x,y,t) => ({id,tipo:'nodo',x,y,t,r:20});
+const A = (id,da,a,t,extra) => Object.assign({id,tipo:'arco',da,a,dir:true,t},extra||{});
+SCENE.dijneg = {
+  w: 520, h: 250, lato: true,
+  legenda: '{{j|s008|'}}',
+  oggetti: [
+    N('s',60,125,'s'), N('a',260,50,'a'), N('b',260,200,'b'),
+    A('sa','s','a','2'), A('sb','s','b','3'), A('ba','b','a','−2',{tono:'ora'}),
+    {id:'c1',tipo:'testo',x:20,y:242,t:'',size:12,bold:true,anchor:'start'}
+  ],
+  passi: [
+    { nota: "Tre nodi e un arco di peso <b>−2</b> (b → a). La distanza vera di a è <code>s → b → a = 3 − 2 = 1</code>, non 2.", set:{s:{tono:'dato',sotto:'d=0'},c1:{t:'distanza vera di a: 1'}} },
+    { nota: "Dijkstra rilassa i vicini di s: <code>d(a) = 2</code>, <code>d(b) = 3</code>. Il minimo è a: lo <b>fissa come definitivo</b>.", set:{a:{tono:'ok',sotto:'d=2 fissato'},b:{tono:'dato',sotto:'d=3'},c1:{t:'a fissato con d = 2'}} },
+    { nota: "Poi fissa b (3) e guarda b → a: 3 − 2 = 1 &lt; 2. Ma a è già definitivo e Dijkstra non lo riesamina: resta <b>2, sbagliato</b>. Il presupposto «un cammino più lungo non costa meno» è falso con pesi negativi.", set:{b:{tono:'ok',sotto:'d=3'},a:{tono:'no',sotto:'d=2 ✗ (vero: 1)'},c1:{t:'Dijkstra dà 2, la risposta giusta è 1',tono:'no'}} },
+    { nota: "Bellman-Ford non fissa nulla in anticipo: ripete il rilassamento su <b>tutti</b> gli archi, quindi al giro successivo corregge a a 1.", set:{a:{tono:'ok',sotto:'d=1'},c1:{t:'Bellman-Ford: d(a) = 1',tono:'ok'}} }
+  ]
+};
+})();
+</script>
 </head>
 <body>
 <main class="pagina">
 
 <header class="testa">
-  <h1>{{s|s008|}}</h1>
-  <p class="lede">{{s|s009|}}</p>
+  <h1>{{s|s009|}}</h1>
+  <p class="lede">{{s|s010|}}</p>
 </header>
 
 <section>
-  <h2>{{s|s010|}}</h2>
-<p>{{s|s011|}}</p>
+  <h2>{{s|s011|}}</h2>
 <p>{{s|s012|}}</p>
-  <figure class="scena" data-scena="dij" data-titolo="{{a|s013|}}"></figure>
+<p>{{s|s013|}}</p>
+  <figure class="scena" data-scena="dij" data-titolo="{{a|s014|}}"></figure>
 </section>
 <section>
-  <h2>{{s|s014|}}</h2>
-<p>{{s|s015|}}</p>
+  <h2>{{s|s015|}}</h2>
 <p>{{s|s016|}}</p>
 <p>{{s|s017|}}</p>
+<p>{{s|s018|}}</p>
 </section>
 <section>
-  <h2>{{s|s018|}}</h2>
-<p>{{s|s019|}}</p>
-<div class="box attenzione" data-tit="{{a|s020|}}"><p>{{s|s021|}}</p></div>
-</section>
-<section>
-  <h2>{{s|s022|}}</h2>
-<p>{{s|s023|}}</p>
+  <h2>{{s|s019|}}</h2>
+<p>{{s|s020|}}</p>
+<div class="box attenzione" data-tit="{{a|s021|}}"><p>{{s|s022|}}</p></div>
+<figure class="scena" data-scena="dijneg" data-titolo="{{a|s023|}}"></figure>
 </section>
 <section>
   <h2>{{s|s024|}}</h2>
-  <p>{{s|s025|}}</p>
-  <p>{{s|s026|}}</p>
+<p>{{s|s025|}}</p>
 </section>
 <section>
-  <h2>{{s|s027|}}</h2>
-<div class="box esame" data-tit="{{a|s028|}}">
-<p>{{s|s029|}}</p>
-<p>{{s|s030|}}</p>
+  <h2>{{s|s026|}}</h2>
+  <p>{{s|s027|}}</p>
+  <p>{{s|s028|}}</p>
+</section>
+<section>
+  <h2>{{s|s029|}}</h2>
+<div class="box esame" data-tit="{{a|s030|}}">
+<p>{{s|s031|}}</p>
+<p>{{s|s032|}}</p>
 </div>
 </section>
 <section>
-  <h2>{{s|s031|}}</h2>
-<div class="tab-wrap"><table class="tab"><thead><tr><th>{{s|s032|}}</th><th>{{s|s033|}}</th><th>{{s|s034|}}</th></tr></thead><tbody><tr><td>{{s|s035|}}</td><td>{{s|s036|}}</td><td>{{s|s037|}}</td></tr><tr><td>d(v)</td><td>{{s|s038|}}</td><td>{{s|s039|}}</td></tr><tr><td>{{s|s040|}}</td><td>{{s|s041|}}</td><td>{{s|s042|}}</td></tr><tr><td>{{s|s043|}}</td><td>{{s|s044|}}</td><td>{{s|s045|}}</td></tr></tbody></table></div>
+  <h2>{{s|s033|}}</h2>
+<div class="tab-wrap"><table class="tab"><thead><tr><th>{{s|s034|}}</th><th>{{s|s035|}}</th><th>{{s|s036|}}</th></tr></thead><tbody><tr><td>{{s|s037|}}</td><td>{{s|s038|}}</td><td>{{s|s039|}}</td></tr><tr><td>d(v)</td><td>{{s|s040|}}</td><td>{{s|s041|}}</td></tr><tr><td>{{s|s042|}}</td><td>{{s|s043|}}</td><td>{{s|s044|}}</td></tr><tr><td>{{s|s045|}}</td><td>{{s|s046|}}</td><td>{{s|s047|}}</td></tr></tbody></table></div>
 </section>
 
 </main>
