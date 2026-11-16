@@ -285,6 +285,8 @@ window.SITO = {
     { t: 'Banca dei problemi', h: 'esame/banca.html' },
     { t: 'Formulario rapido', h: 'esame/formulario.html' },
     { t: 'Vecchie prove (2023 svolto)', h: 'esame/prove.html' },
+    { t: 'Esercitazione SAD1 (svolta)', h: 'esame/esercitazione-sad1.html' },
+    { t: 'Prova 2020 (svolta)', h: 'esame/prova-2020.html' },
     { t: 'Kattis e Red Scare', h: 'esame/obbligatori.html', noCapito: true }
   ]
 };

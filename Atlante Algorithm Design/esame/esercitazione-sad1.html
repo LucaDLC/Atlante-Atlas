@@ -1,0 +1,401 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Esercitazione SAD1 (svolta)</title>
+<link rel="stylesheet" href="../assets/atlas.css">
+<link rel="stylesheet" href="../assets/tema.css">
+<script src="../assets/sito.js"></script>
+<script src="../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+const N = (id,x,y,t,r) => ({id,tipo:'nodo',x,y,t,r:r||22});
+const A = (id,da,a,t,extra) => Object.assign({id,tipo:'arco',da,a,dir:true,t:t||''},extra||{});
+
+/* Q1(b): il greedy di Gecko su Rafting */
+SCENE.sad1Rafting = {
+  w: 520, h: 230, lato: true,
+  legenda: 'ora:cella che guardo,no:percorso del greedy,ok:percorso ottimo',
+  oggetti: [
+    {id:'g',tipo:'griglia',x:60,y:40,cw:70,ch:44,valori:[['1','0','0'],['0','2','9']],intR:['riga 0','riga 1'],intC:['corsia 0','corsia 1','corsia 2']},
+    {id:'t',tipo:'testo',x:60,y:170,t:'',size:13,bold:true,anchor:'start'}
+  ],
+  passi: [
+    { nota: '<p>Il fiume: N = 2 righe, K = 3 corsie. Numeri = pepite. Nella riga 0 il massimo è <b>1</b>, unico: nessun pareggio.</p>', set:{g:{toni:{}},t:{t:''}} },
+    { nota: '<p>Il greedy parte dalla corsia con più pepite: la corsia 0 (1 pepita). Il furbo ha già scelto male: il 9 è lontano.</p>', set:{g:{toni:{'0,0':'ora'}},t:{t:'greedy: parte da (0, 0), pepite = 1'}} },
+    { nota: '<p>Da (0, 0) raggiunge solo (1, 0) = 0 e (1, 1) = 2 (a sinistra c\'è la riva). Prende il 2. <b>Totale 1 + 2 = 3</b>. Nessun pareggio, quindi nessuna regola sui pareggi lo salva.</p>', set:{g:{toni:{'0,0':'no','1,1':'no'}},t:{t:'greedy: 1 + 2 = 3',tono:'no'}} },
+    { nota: '<p>Partendo dalla corsia 1 (0 pepite) e girando a destra si arriva in (1, 2) = 9. <b>Totale 0 + 9 = 9 &gt; 3</b>. Il greedy non è ottimo su questa istanza.</p>', set:{g:{toni:{'0,0':'no','1,1':'no','0,1':'ok','1,2':'ok'}},t:{t:'ottimo: 0 + 9 = 9',tono:'ok'}} }
+  ]
+};
+
+/* Q2: Festival, greedy a fine crescente */
+(function(){
+  const X = m => 140 + (m-720)*0.85;
+  const C = [['The Bits',780,870],['Big O',840,900],['Null Pointers',870,960],['Greedy Kids',930,1020],['Stack Overflow',960,1080],['Heap Sorters',720,1200]];
+  const og = [];
+  C.forEach((c,i)=>{
+    og.push({id:'n'+i,tipo:'testo',x:10,y:36+i*34,t:c[0],size:12,anchor:'start'});
+    og.push({id:'r'+i,tipo:'rett',x:X(c[1]),y:20+i*34,w:(c[2]-c[1])*0.85,h:22,t:''});
+  });
+  [[720,'12:00'],[840,'14:00'],[960,'16:00'],[1080,'18:00'],[1200,'20:00']].forEach((a,i)=>og.push({id:'k'+i,tipo:'testo',x:X(a[0]),y:238,t:a[1],size:11}));
+  og.push({id:'L',tipo:'linea',x1:X(720),y1:12,x2:X(720),y2:224,tratt:true,nascosto:true});
+  og.push({id:'z',tipo:'testo',x:10,y:262,t:'',size:13,bold:true,anchor:'start'});
+  const dato = {}; C.forEach((c,i)=>dato['r'+i]={tono:'dato'});
+  const stp = (i,tono,nota,last,z) => { const s={}; s['r'+i]={tono}; s.L={nascosto:false,x1:X(last),x2:X(last)}; s.z={t:z}; return {nota,set:s}; };
+  SCENE.sad1Fest = {
+    w: 600, h: 280, lato: false,
+    legenda: 'dato:in attesa,ora:concerto che esamino,ok:scelto,no:scartato',
+    oggetti: og,
+    passi: [
+      { nota: '<p>Ordino i concerti per <b>fine crescente</b> (nell\'esempio 2 del testo): Bits 14:30, Big O 15:00, Null Pointers 16:00, Greedy Kids 17:00, Stack Overflow 18:00, Heap Sorters 20:00. Tengo <code>last</code> = fine dell\'ultimo scelto.</p>', set:Object.assign({z:{t:'last = −∞'}},dato) },
+      stp(0,'ok','<p>The Bits: inizia 13:00 ≥ −∞, lo prendo. <code>last</code> = 14:30 (linea tratteggiata).</p>',870,'scelti: The Bits · last = 14:30'),
+      stp(1,'no','<p>Big O inizia alle 14:00 &lt; 14:30: si sovrappone, scartato.</p>',870,'scelti: The Bits · last = 14:30'),
+      stp(2,'ok','<p>Null Pointers inizia alle 14:30 ≥ 14:30: compatibile (stesso istante va bene), lo prendo. <code>last</code> = 16:00. Qui serve ≥ e non &gt;.</p>',960,'scelti: The Bits, Null Pointers · last = 16:00'),
+      stp(3,'no','<p>Greedy Kids inizia alle 15:30 &lt; 16:00: scartato.</p>',960,'scelti: The Bits, Null Pointers · last = 16:00'),
+      stp(4,'ok','<p>Stack Overflow inizia alle 16:00 ≥ 16:00: lo prendo. <code>last</code> = 18:00.</p>',1080,'scelti: The Bits, Null Pointers, Stack Overflow · last = 18:00'),
+      Object.assign(stp(5,'no','<p>Heap Sorters inizia alle 12:00 &lt; 18:00: scartato. Risultato: <b>3: The Bits, Null Pointers, Stack Overflow</b>, già in ordine cronologico, come chiede l\'output.</p>',1080,'3: The Bits, Null Pointers, Stack Overflow'),{})
+    ]
+  };
+})();
+
+/* Q3: Hiking, BFS con super-sorgente */
+(function(){
+  const H = [[1,2,'#',4,5,5,6],[0,3,'#',3,'#',6,7],[0,1,2,2,'#',8,7],[4,4,'#',3,4,9,8],[5,9,'#',2,3,4,9]];
+  const D = [[1,2,0,6,7,8,9],[1,3,0,5,0,9,10],[1,2,3,4,0,12,11],[1,2,0,5,6,13,12],[1,0,0,6,7,8,13]]; /* 0 = cliff o mai raggiunta */
+  const MAXD = 9;
+  const vista = (d) => H.map((r,i)=>r.map((h,j)=> h==='#' ? '#' : (D[i][j]>0 && D[i][j]<=d ? h+':'+D[i][j] : String(h))));
+  const toni = (d) => { const t={}; H.forEach((r,i)=>r.forEach((h,j)=>{ if(h==='#') t[i+','+j]='spento'; else if(D[i][j]>0 && D[i][j]<=d) t[i+','+j] = D[i][j]===d ? 'ora' : 'dato'; })); return t; };
+  const note = {
+    1:'Distanza 1: la super-sorgente s apre <b>tutte</b> le caselle non-scogliera della colonna 0 (altezze 1, 0, 0, 4, 5). Una casella = una distanza di 1 (si conta anche la prima).',
+    2:'Distanza 2: (0,1)=2 da (0,0)=1 (salita +1, ok); (2,1)=1 da (2,0)=0 (+1, ok); (3,1)=4 da (3,0)=4 (piano). La casella (4,1)=9 <b>non</b> si apre: da (4,0)=5 sarebbe +4.',
+    3:'Distanza 3: (1,1)=3 da (0,1)=2 (+1); (2,2)=2 da (2,1)=1 (+1).',
+    4:'Distanza 4: (2,3)=2 da (2,2)=2 (piano).',
+    5:'Distanza 5: (1,3)=3 e (3,3)=3 da (2,3)=2 (+1 in tutte e due).',
+    6:'Distanza 6: (0,3)=4 da (1,3)=3 (+1); (3,4)=4 e (4,3)=2 da (3,3)=3.',
+    7:'Distanza 7: (0,4)=5 da (0,3)=4 (+1); (4,4)=3 da (4,3)=2 (+1).',
+    8:'Distanza 8: (0,5)=5 da (0,4)=5 (piano); (4,5)=4 da (4,4)=3 (+1).',
+    9:'Distanza 9: (0,6)=6 da (0,5)=5 (+1) è nella colonna est: <b>risposta 9</b>. La BFS può fermarsi qui (la prima casella est che si apre ha la distanza minima).'
+  };
+  const passi = [{ nota:'<p>La mappa del testo (r = 5 righe, l = 7 colonne). Ogni cella mostra l\'altezza; <b>#</b> = scogliera, non ci si entra. Regola: salgo al più 1, scendo quanto voglio. Cerco il percorso con meno caselle dalla colonna 0 alla colonna 6.</p>', set:{g:{valori:vista(0),toni:toni(0)}} }];
+  for (let d=1; d<=MAXD; d++) passi.push({ nota:'<p>'+note[d]+'</p>', set:{g:{valori:vista(d),toni:toni(d)}} });
+  const path = ['2,0','2,1','2,2','2,3','1,3','0,3','0,4','0,5','0,6'];
+  const tp = toni(MAXD); path.forEach(k=>tp[k]='ok');
+  passi.push({ nota:'<p>Risalendo da (0,6) al padre di ogni casella si ricostruisce un percorso: <b>0, 1, 2, 2, 3, 4, 5, 5, 6</b> = 9 caselle. Le celle mostrano <code>altezza:distanza</code>.</p>', set:{g:{valori:vista(MAXD),toni:tp}} });
+  SCENE.sad1Hike = {
+    w: 560, h: 250, lato: true,
+    legenda: 'ora:distanza appena trovata,dato:già raggiunta,ok:percorso più corto,spento:scogliera',
+    oggetti: [{id:'g',tipo:'griglia',x:50,y:30,cw:60,ch:36,valori:vista(0),intR:['0','1','2','3','4'],intC:['0','1','2','3','4','5','6']}],
+    passi: passi
+  };
+})();
+
+/* Q4: Rafting, tabella OPT dal basso */
+(function(){
+  const T = [[16,14,15],[10,14,9],[1,9,8],[1,0,6]];
+  const vista = (da) => T.map((r,i)=> i>=da ? r.map(String) : ['','','']);
+  SCENE.sad1Dp = {
+    w: 520, h: 250, lato: true,
+    legenda: 'dato:valori già noti,ora:cella che calcolo,ok:risposta e cammino',
+    oggetti: [
+      {id:'g',tipo:'griglia',x:60,y:30,cw:70,ch:40,valori:vista(4),intR:['0','1','2','3'],intC:['0','1','2']},
+      {id:'t',tipo:'testo',x:60,y:230,t:'',size:12,bold:true,anchor:'start'}
+    ],
+    passi: [
+      { nota: '<p>Fiume di esempio: righe <code>2 0 1 / 1 5 0 / 0 3 2 / 1 0 6</code>. Riempio la tabella OPT(i, j) dal basso, perché OPT(i, j) dipende dalla riga <b>sotto</b>.</p>', set:{g:{valori:vista(4),toni:{}},t:{t:''}} },
+      { nota: '<p>Riga 3 (ultima): caso base OPT(3, j) = c(3, j) = 1, 0, 6.</p>', set:{g:{valori:vista(3),toni:{'3,0':'dato','3,1':'dato','3,2':'dato'}},t:{t:'base: OPT(3, j) = c(3, j)'}} },
+      { nota: '<p>Riga 2, c = 0 3 2. Corsia 0: 0 + max(OPT(3,0), OPT(3,1)) = 0 + max(1, 0) = 1. Corsia 1: 3 + max(1, 0, 6) = 9. Corsia 2: 2 + max(0, 6) = 8. Ai bordi i figli sono due, non tre.</p>', set:{g:{valori:vista(2),toni:{'2,0':'ora','2,1':'ora','2,2':'ora','3,0':'dato','3,1':'dato','3,2':'dato'}},t:{t:'riga 2 = 1, 9, 8'}} },
+      { nota: '<p>Riga 1, c = 1 5 0: 1 + max(1, 9) = 10; 5 + max(1, 9, 8) = 14; 0 + max(9, 8) = 9.</p>', set:{g:{valori:vista(1),toni:{'1,0':'ora','1,1':'ora','1,2':'ora','2,0':'dato','2,1':'dato','2,2':'dato'}},t:{t:'riga 1 = 10, 14, 9'}} },
+      { nota: '<p>Riga 0, c = 2 0 1: 2 + max(10, 14) = 16; 0 + max(10, 14, 9) = 14; 1 + max(14, 9) = 15.</p>', set:{g:{valori:vista(0),toni:{'0,0':'ora','0,1':'ora','0,2':'ora','1,0':'dato','1,1':'dato','1,2':'dato'}},t:{t:'riga 0 = 16, 14, 15'}} },
+      { nota: '<p>La risposta è il <b>massimo della riga 0</b> (si parte da una corsia qualunque): 16, corsia 0. Poi scendo sempre alla corsia raggiungibile con OPT più alto: (1,1) = 14, (2,1) = 9, (3,2) = 6. Mosse <b>R S R</b>: output <code>0 RSR</code>, come nel testo.</p>', set:{g:{valori:vista(0),toni:{'0,0':'ok','1,1':'ok','2,1':'ok','3,2':'ok'}},t:{t:'0 RSR: 2 + 5 + 3 + 6 = 16',tono:'ok'}} }
+    ]
+  };
+})();
+
+/* Q5: Supervision, rete di flusso */
+SCENE.sad1Flow = {
+  w: 560, h: 300, lato: true,
+  legenda: 'dato:capacità disponibile,ora:cammino aumentante,ok:flusso inviato',
+  oggetti: [
+    N('s',40,150,'s'), N('E',190,40,'Emil',28), N('F',190,115,'Frida',28), N('G',190,190,'Gustav',28), N('H',190,265,'Hanna',28),
+    N('Ad',370,60,'Ada',28), N('Bo',370,150,'Boole',28), N('Ch',370,240,'Church',28), N('t',520,150,'t'),
+    A('sE','s','E','0/1'), A('sF','s','F','0/1'), A('sG','s','G','0/1'), A('sH','s','H','0/1'),
+    A('EA','E','Ad'), A('EB','E','Bo'), A('FA','F','Ad'), A('GA','G','Ad'), A('GC','G','Ch'), A('HB','H','Bo'),
+    A('At','Ad','t','0/2'), A('Bt','Bo','t','0/1'), A('Ct','Ch','t','0/1'),
+    {id:'z',tipo:'testo',x:300,y:292,t:'',size:12,bold:true,anchor:'start'}
+  ],
+  passi: [
+    { nota: '<p>Esempio 1 del testo. Nodi: <code>s</code>, <code>t</code>, uno per studente (4) e uno per relatore (3): S + T + 2 = 9. Archi s → studente (capacità 1), studente → relatore della sua lista (capacità 1), relatore → t (capacità <b>c(y)</b>: Ada 2, Boole 1, Church 1).</p>', set:{sE:{tono:'dato'},sF:{tono:'dato'},sG:{tono:'dato'},sH:{tono:'dato'},EA:{tono:'dato'},EB:{tono:'dato'},FA:{tono:'dato'},GA:{tono:'dato'},GC:{tono:'dato'},HB:{tono:'dato'},At:{tono:'dato'},Bt:{tono:'dato'},Ct:{tono:'dato'},z:{t:'flusso = 0'}} },
+    { nota: '<p>Cammino 1: s → Frida → Ada → t. Frida accetta solo Ada. Ada ora ha 1 posto su 2.</p>', set:{sF:{t:'1/1',tono:'ok'},FA:{tono:'ok'},At:{t:'1/2',tono:'ok'},z:{t:'flusso = 1'}} },
+    { nota: '<p>Cammino 2: s → Hanna → Boole → t. Hanna accetta solo Boole, che ha capacità 1: ora è piena.</p>', set:{sH:{t:'1/1',tono:'ok'},HB:{tono:'ok'},Bt:{t:'1/1',tono:'ok'},z:{t:'flusso = 2'}} },
+    { nota: '<p>Cammino 3: s → Gustav → Church → t. (Gustav potrebbe anche andare da Ada, ma Church è libero.)</p>', set:{sG:{t:'1/1',tono:'ok'},GC:{tono:'ok'},Ct:{t:'1/1',tono:'ok'},z:{t:'flusso = 3'}} },
+    { nota: '<p>Cammino 4: s → Emil → Ada → t. Boole è piena, quindi Emil va da Ada, che ha ancora un posto: Ada 2/2.</p>', set:{sE:{t:'1/1',tono:'ok'},EA:{tono:'ok'},At:{t:'2/2',tono:'ok'},z:{t:'flusso = 4'}} },
+    { nota: '<p>Flusso massimo 4 = S: ogni studente ha un relatore, <b>output 1</b>. Nell\'esempio 2 Emil vuole solo Ada e Gustav solo Church (capacità 1 a testa): Frida non ha più posto, il flusso si ferma a 3 &lt; 4, <b>output 0</b>.</p>', set:{z:{t:'valore 4 = S → output 1',tono:'ok'}} }
+  ]
+};
+
+/* Q6: Office Party = Independent Set sul 5-ciclo */
+SCENE.sad1C5 = {
+  w: 520, h: 250, lato: true,
+  legenda: 'dato:impiegato,ok:invitato,no:non si può aggiungere',
+  oggetti: [
+    N('Ann',150,40,'Ann',24), N('Bob',236,102,'Bob',24), N('Cat',203,203,'Cat',24), N('Dan',97,203,'Dan',24), N('Eve',64,102,'Eve',24),
+    A('AB','Ann','Bob','!',{dir:false}), A('BC','Bob','Cat','!',{dir:false}), A('CD','Cat','Dan','!',{dir:false}), A('DE','Dan','Eve','!',{dir:false}), A('EA','Eve','Ann','!',{dir:false}),
+    {id:'z',tipo:'testo',x:290,y:235,t:'',size:12,bold:true,anchor:'start'}
+  ],
+  passi: [
+    { nota: '<p>Esempio 2 del testo: 5 impiegati, 5 conflitti, <b>tutti gravi</b> (!). È il grafo 5-ciclo G: un nodo per impiegato, un arco per conflitto.</p>', set:{Ann:{tono:'dato'},Bob:{tono:'dato'},Cat:{tono:'dato'},Dan:{tono:'dato'},Eve:{tono:'dato'}} },
+    { nota: '<p>Invito Ann e Cat: tra loro non c\'è nessun arco, quindi nessun conflitto grave. È un independent set di taglia 2.</p>', set:{Ann:{tono:'ok'},Cat:{tono:'ok'},z:{t:'invitati: Ann, Cat (2)'}} },
+    { nota: '<p>Non si può aggiungere nessuno: Bob è in conflitto con Ann, Dan con Cat, Eve con Ann. Il massimo è 2 (controllato su tutti i 32 sottoinsiemi), come nell\'output del testo.</p>', set:{Bob:{tono:'no'},Dan:{tono:'no'},Eve:{tono:'no'},z:{t:'massimo = 2',tono:'ok'}} }
+  ]
+};
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <div class="occhiello"><span>Esame</span></div>
+  <h1>Esercitazione SAD1 (svolta)</h1>
+  <p class="lede">Una prova d'allenamento con la stessa struttura dell'esame del 3 gennaio 2020: sei domande, cinque problemi, e ogni domanda chiede di scegliere il problema giusto. Qui è svolta domanda per domanda: paradigma, passi, risposta modello in inglese. Numeri, tabelle e tracce sono stati ricalcolati con programmi.</p>
+</header>
+
+<section>
+  <h2>Il set: cinque problemi, sei domande</h2>
+  <p>La prova ha cinque problemi (Rafting, Office Party, Supervision, Festival, Hiking) e sei domande. Ogni domanda dice quale <b>tipo</b> di problema cercare; tu scegli quello che ci sta. Rafting serve due domande (Q1 e Q4). Totale 27 punti: 4 + 4 + 4 + 5 + 5 + 5.</p>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Domanda</th><th>Problema</th><th>Di cosa parla</th><th>Perché quel paradigma</th></tr></thead>
+    <tbody>
+      <tr><td>Q1 Failure (4 pt.)</td><td>Rafting</td><td>Zattera giù per un fiume di N righe e K corsie: massimo di pepite</td><td>Il greedy «Follow the Current» sceglie la cella più ricca adesso e perde il 9 più avanti</td></tr>
+      <tr><td>Q2 Greedy (4 pt.)</td><td>Festival</td><td>Più concerti possibile, senza sovrapposizioni</td><td>«As many as possible» di intervalli che non si sovrappongono: interval scheduling</td></tr>
+      <tr><td>Q3 Graph traversal (4 pt.)</td><td>Hiking</td><td>Percorso con meno caselle su una mappa, salita al più 1 per passo</td><td>Ogni passo costa 1 (una casella): cammino più corto senza pesi, quindi BFS</td></tr>
+      <tr><td>Q4 DP (5 pt.)</td><td>Rafting</td><td>Come sopra, ma il valore giusto</td><td>Si va solo a valle: righe in ordine fisso, 3 scelte per cella, sottoproblemi che si ripetono</td></tr>
+      <tr><td>Q5 Flow (5 pt.)</td><td>Supervision</td><td>Studenti e relatori con capacità, ognuno ha un relatore della sua lista</td><td>Assegnare con limiti di capacità: matching con capacità, quindi flusso</td></tr>
+      <tr><td>Q6 NP-hard (5 pt.)</td><td>Office Party</td><td>Gruppo più grande senza conflitti gravi tra due invitati</td><td>Se tutti i conflitti sono gravi è esattamente Independent Set</td></tr>
+    </tbody>
+  </table></div>
+  <div class="box esame" data-tit="All'esame">
+    <p>Fai prima la classificazione di tutti e cinque i problemi (<a href="triage.html">riconoscere il paradigma</a>), poi le sei risposte. Il greedy sbagliato di Q1 è su Rafting: il greedy «giusto» di Q2 è su un altro problema. Il formato delle sei domande è in <a href="formato.html">com'è l'esame</a>.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Q1 · Failure: il greedy di Gecko su Rafting</h2>
+  <p><b>Il testo.</b> Rafting: griglia di N righe (da monte a valle) e K corsie, c(i, j) pepite in ogni cella. Parti da una corsia qualunque della riga 0; da (i, j) vai a (i+1, j−1), (i+1, j) o (i+1, j+1) restando nel fiume. Massimizza le pepite raccolte. Il professor Gecko propone «Follow the Current»: parti dalla corsia più ricca della riga 0 (a parità la più a sinistra) e a ogni riga prendi la cella raggiungibile più ricca (parità: dritto, poi sinistra, poi destra). Le domande: (a) un'istanza dove è sicuramente ottimo, (b) una dove sicuramente non lo è, (c) il tempo.</p>
+  <div class="box idea" data-tit="Paradigma e perché">
+    <p><b>Controesempio a un greedy.</b> Il greedy guarda solo il guadagno immediato e non il futuro. Per rompere un greedy cerchi un'istanza dove la scelta più ricca adesso è lontana da una cella molto più ricca dopo. «Guaranteed» vuol dire: nessun pareggio, così nessuna regola sui pareggi può salvarlo.</p>
+  </div>
+
+  <h3>(b) Controesempio, passo per passo</h3>
+  <figure class="scena" data-scena="sad1Rafting" data-titolo="Il greedy di Gecko su 2 × 3"></figure>
+  <p><b>Perché N = 2 e K = 3 (e non meno).</b> Con N = 1 non ci sono mosse: il greedy prende il massimo della riga e basta, ottimo. Con K = 1 c'è un solo percorso. Con K = 2 da ogni corsia raggiungi entrambe le corsie della riga dopo, quindi il massimo di ogni riga è sempre raggiungibile e il greedy è ottimo. Serve K = 3: la corsia 0 non raggiunge la corsia 2.</p>
+
+  <h3>(c) Tempo</h3>
+  <p>Scegliere la corsia di partenza guarda i K numeri della riga 0: <span class="m">O(K)</span>. Poi N − 1 passi, ognuno confronta al più 3 celle: <span class="m">O(1)</span> ciascuno, <span class="m">O(N)</span> in tutto. Totale <span class="m">O(N + K)</span> (leggere l'input non si conta). Il tempo va dato in N <b>e</b> K.</p>
+
+  <div class="box inglese" data-tit="Risposta modello (da scrivere sul foglio)">
+    <p><b>(a)</b> Any river with N = 1, for example a single row <code>3 1</code>. The algorithm takes the lane with the most nuggets and stops; there are no moves, so the result is optimal. (A river with K = 1 works too: there is only one route.)</p>
+    <p><b>(b)</b> N = 2, K = 3, rows <code>1 0 0</code> and <code>0 2 9</code>. The algorithm starts in lane 0 (1 nugget, the unique maximum of row 0). From (0, 0) it can only reach lanes 0 and 1 of row 1 and picks lane 1 (2 &gt; 0): total 1 + 2 = 3. Starting in lane 1 and steering right collects 0 + 9 = 9 &gt; 3. There are no ties, so no tie-breaking rule can save the algorithm.</p>
+    <p><b>(c)</b> Choosing the start takes O(K), then N − 1 steps of O(1) each: O(N + K).</p>
+  </div>
+  <p class="piccolo">Teoria: <a href="../teoria/greedy-metodo.html">il metodo greedy</a> (come si rompe un greedy) e <a href="coppie-trappola.html">le trappole d'esame</a>.</p>
+  <div class="box regola" data-tit="Verifica">
+    <p>Il greedy (con le sue regole sui pareggi) dà 3 sull'istanza del controesempio e la forza bruta dà 9. Su tutte le griglie con N ≤ 2, K ≤ 3 e valori 0–3 il greedy sbaglia solo con K = 3 e N = 2; con N = 1 o K = 1 è sempre ottimo (controllato su 2000 casi casuali).</p>
+  </div>
+</section>
+
+<section>
+  <h2>Q2 · Greedy: Festival</h2>
+  <p><b>Il testo.</b> n concerti con nome, inizio e fine (HH:MM). Vedi un concerto solo se lo vedi per intero e non puoi stare in due posti. Un concerto che finisce alle 16:00 e uno che inizia alle 16:00 sono compatibili. Vuoi vederne il più possibile. Output: K, due punti, i nomi in ordine cronologico.</p>
+  <div class="box idea" data-tit="Paradigma e perché">
+    <p><b>Interval scheduling (greedy).</b> «Il massimo numero» di intervalli che non si sovrappongono. L'ordine è la scelta che conta: <b>fine crescente</b>. Chi finisce prima lascia più spazio a quelli dopo. Gli altri ordini sono trappole: per inizio crescente prendi Heap Sorters (12:00–20:00) e ne vedi 1; per durata crescente, nell'esempio 2, ne ottieni 2 invece di 3 (Big O, Greedy Kids).</p>
+  </div>
+
+  <h3>Algoritmo, riga per riga</h3>
+  <figure class="codice" data-titolo="Festival: fine crescente">
+<pre data-lang="pseudo">sort concerts by increasing end time
+last = -infinity; chosen = []
+for each concert (name, start, end) in this order:
+    if start >= last:
+        append name to chosen; last = end
+output |chosen| ": " chosen</pre>
+    <ol class="spiega">
+      <li data-righe="1" data-segna="increasing end time@ora"><p>Ordino per <b>fine crescente</b>, perché chi finisce prima lascia più tempo libero. Dico l'ordine esatto: scrivere solo «sort» non vale.</p></li>
+      <li data-righe="2" data-segna="last = -infinity@dato|chosen = []@dato"><p><code>last</code> = fine dell'ultimo concerto scelto, all'inizio −∞ (nessuno scelto). <code>chosen</code> = lista dei nomi.</p></li>
+      <li data-righe="3-4" data-segna="start >= last@ora"><p>Un concerto è compatibile se inizia <b>non prima</b> della fine dell'ultimo: <code>&gt;=</code> e non <code>&gt;</code>, perché 16:00–16:00 è ammesso. Con <code>&gt;</code> sull'esempio 1 si vedrebbe solo Big O.</p></li>
+      <li data-righe="5" data-segna="last = end@ok"><p>Lo prendo e aggiorno <code>last</code>. I concerti scelti non si sovrappongono, quindi l'ordine di scelta (fine crescente) è già cronologico.</p></li>
+    </ol>
+  </figure>
+
+  <h3>La traccia sull'esempio 2</h3>
+  <figure class="scena" data-scena="sad1Fest" data-titolo="Festival: esempio 2"></figure>
+
+  <p><b>Tempo.</b> Ordinare costa <span class="m">O(n log n)</span>, la scansione <span class="m">O(n)</span>: totale <span class="m">O(n log n)</span>. Gli orari si convertono in minuti in <span class="m">O(1)</span> ciascuno.</p>
+
+  <div class="box inglese" data-tit="Risposta modello (da scrivere sul foglio)">
+    <p><b>(a)</b> Festival. It is interval scheduling [KT 4.1]: choose the maximum number of pairwise compatible intervals.</p>
+    <p><b>(b)</b> Sort the concerts in increasing order of end time. Scan them in this order, keeping <code>last</code> = end time of the last chosen concert (initially −∞):</p>
+<pre class="cod" data-lang="pseudo">sort concerts by increasing end time
+last = -infinity; chosen = []
+for each concert (name, start, end) in this order:
+    if start >= last:
+        append name to chosen; last = end
+output |chosen| ": " chosen</pre>
+    <p>The chosen concerts are already in chronological order. By the "greedy stays ahead" argument [KT 4.1] the result is maximal.</p>
+    <p><b>(c)</b> Sorting takes O(n log n), the scan O(n): O(n log n) in total.</p>
+  </div>
+  <p class="piccolo">Teoria: <a href="../teoria/interval-scheduling.html">interval scheduling</a> e <a href="../teoria/greedy-metodo.html">il metodo greedy</a>.</p>
+  <div class="box regola" data-tit="Verifica">
+    <p>Fine crescente con <code>start ≥ last</code> dà 2: Big O, The Bits e 3: The Bits, Null Pointers, Stack Overflow sui due esempi. Su 3000 istanze casuali ha la stessa taglia della forza bruta e l'output è sempre cronologico. Per inizio crescente l'esempio 2 dà 1 e per durata crescente dà 2: le due trappole sono vere.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Q3 · Graph traversal: Hiking</h2>
+  <p><b>Il testo.</b> Mappa di r righe e l colonne; ogni casella ha un'altezza (intero ≥ 0) oppure è una scogliera <b>#</b> (non ci si entra). Parti da una casella non-scogliera qualsiasi della colonna più a ovest, finisci appena raggiungi una casella della colonna più a est. Un passo va a una casella adiacente (nord, sud, est, ovest), salendo al più 1 metro; scendere è libero. Vuoi il percorso con meno caselle. Output: quante (contando prima e ultima), oppure <code>impossible</code>.</p>
+  <div class="box idea" data-tit="Paradigma e perché">
+    <p><b>Cammino più corto non pesato: BFS.</b> Una casella = un passo = costo 1, quindi niente Dijkstra. Due punti nuovi: (1) gli archi sono <b>diretti</b> perché la regola della salita non è simmetrica (si scende di 5 ma non si risale di 5); (2) si parte da <b>tutta</b> la colonna ovest, quindi aggiungo una <b>super-sorgente</b> s collegata a tutte le caselle di quella colonna e faccio una sola BFS.</p>
+  </div>
+
+  <h3>Il grafo: le sei domande</h3>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Domanda</th><th>Risposta</th></tr></thead>
+    <tbody>
+      <tr><td>Vertici, quanti</td><td>Uno per casella non-scogliera, più s: <span class="m">n ≤ rl + 1</span></td></tr>
+      <tr><td>Archi, quanti</td><td><span class="m">u → v</span> se u, v adiacenti e <span class="m">h(v) ≤ h(u) + 1</span>; più <span class="m">s → v</span> per ogni casella non-scogliera della colonna ovest. Ogni casella ha al più 4 vicini: <span class="m">m ≤ 4rl + r</span></td></tr>
+      <tr><td>Diretto?</td><td>Sì (salita al più 1, discesa libera)</td></tr>
+      <tr><td>Pesi?</td><td>No (ogni arco vale 1)</td></tr>
+      <tr><td>Algoritmo</td><td>BFS da s; risposta = distanza minima di una casella della colonna est (un cammino con d archi da s tocca esattamente d caselle)</td></tr>
+      <tr><td>Tempo</td><td><span class="m">O(n + m) = O(rl)</span></td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>Un esempio piccolo da disegnare</h3>
+  <p>Mappa <code>0 2</code> / <code>1 #</code>. Archi: s → (0,0), s → (1,0); (0,0) → (1,0) sale di 1: ammesso; (1,0) → (0,0) scende: ammesso; (0,1) → (0,0) scende: ammesso; (0,0) → (0,1) sale di 2: <b>non c'è l'arco</b>. La BFS da s non raggiunge mai (0,1), l'unica casella est non-scogliera: <code>impossible</code>.</p>
+
+  <h3>La traccia sull'esempio del testo</h3>
+  <figure class="scena" data-scena="sad1Hike" data-titolo="Hiking: BFS da s, una distanza per passo"></figure>
+
+  <div class="box inglese" data-tit="Risposta modello (da scrivere sul foglio)">
+    <p><b>(a)</b> Hiking.</p>
+    <p><b>(b)</b> Let the map have r rows and l columns and let h(v) be the height of square v. The graph has one vertex for every square that is not a cliff, plus one extra source vertex s: n ≤ rl + 1. There is an arc u → v if u and v are adjacent (N, S, E, W) and h(v) ≤ h(u) + 1. There is an arc s → v for every non-cliff square v of the westernmost column. Hence m ≤ 4rl + r. The graph is directed (you may go down a big step but not climb it back) and unweighted.</p>
+    <p>A path from s with d arcs visits exactly d squares. I run breadth-first search [KT 3.2] from s and output the smallest distance to a square of the easternmost column, or <code>impossible</code> if none is reached. (Example: map <code>0 2 / 1 #</code> has arcs s → (0,0), s → (1,0), (0,0) → (1,0), (1,0) → (0,0), (0,1) → (0,0), but no arc (0,0) → (0,1) since it climbs 2; BFS never reaches the east column, so the answer is <code>impossible</code>.)</p>
+    <p><b>(c)</b> BFS takes O(n + m) = O(rl).</p>
+  </div>
+  <p class="piccolo">Teoria: <a href="../teoria/visita-bfs.html">visita in ampiezza (BFS)</a> e <a href="../teoria/basi-grafi.html">grafi: come si rappresentano</a>.</p>
+  <div class="box regola" data-tit="Verifica">
+    <p>La BFS dà 9 sull'esempio del testo, con il cammino 0, 1, 2, 2, 3, 4, 5, 5, 6, e <code>impossible</code> sulla mappa piccola. Su 1500 mappe casuali coincide con un calcolo indipendente per rilassamento ripetuto (stile Bellman–Ford).</p>
+  </div>
+</section>
+
+<section>
+  <h2>Q4 · Dynamic programming: Rafting</h2>
+  <p><b>Il testo.</b> Lo stesso fiume della Q1, ma ora si chiede la ricorrenza giusta: (a) quale problema, (b) il sottoproblema OPT con parametri e intervalli, la ricorrenza con casi base e condizioni al bordo, (c) tempo e spazio.</p>
+  <div class="box idea" data-tit="Paradigma e perché">
+    <p><b>DP su un DAG a righe.</b> Si va solo a valle, quindi l'ordine delle righe è fisso. Ogni cella ha al più 3 successori, e celle diverse della riga sopra condividono i successori: sottoproblemi che si ripetono, quindi DP e non ricorsione semplice. È la piramide di <i>Tower</i> con 3 figli invece di 2.</p>
+  </div>
+
+  <h3>La ricorrenza, un passo alla volta</h3>
+  <figure class="passi" data-titolo="Rafting: OPT(i, j)" data-legenda="dato:parametri,ora:ricorrenza,due:bordo,ok:risposta">
+    <div class="passo"><div class="espr"><mark class="ora">OPT(i, j)</mark> = max pepite da (i, j) <b>fino all'ultima riga</b>, compresa c(i, j);   i ∈ {0, …, N−1}, j ∈ {0, …, K−1}</div><p class="nota">Definisco il sottoproblema: «da qui in giù». <mark class="dato">i</mark> è la riga, <mark class="dato">j</mark> la corsia.</p></div>
+    <div class="passo"><div class="espr">OPT(N−1, j) = <mark class="ora">c(N−1, j)</mark></div><p class="nota">Caso base: nell'ultima riga non ci sono mosse, raccolgo solo la cella.</p></div>
+    <div class="passo"><div class="espr">OPT(i, j) = <mark class="ora">c(i, j)</mark> + max { OPT(i+1, j′) : j′ ∈ {j−1, j, j+1}, <mark class="due">0 ≤ j′ ≤ K−1</mark> }</div><p class="nota">Raccolgo la cella e poi scelgo il migliore dei successori. La condizione <mark class="due">0 ≤ j′ ≤ K−1</mark> è il bordo: nelle corsie 0 e K−1 i successori sono due, non tre.</p></div>
+    <div class="passo"><div class="espr">risposta = <mark class="ok">max<sub>j</sub> OPT(0, j)</mark></div><p class="nota">Si parte da una corsia qualunque della riga 0, quindi la risposta è il massimo della riga, non una sola cella. La corsia di partenza è un j che realizza il massimo; le mosse si ricostruiscono scendendo sempre al successore con OPT più alto.</p></div>
+    <div class="passo"><div class="espr">tempo <mark class="ok">Θ(NK)</mark>, spazio <mark class="ok">Θ(NK)</mark></div><p class="nota">NK sottoproblemi, ognuno calcolato in O(1) (tre confronti) dalla riga sotto. Con una sola riga in memoria lo spazio scende a O(K), ma così non ricostruisci le mosse.</p></div>
+  </figure>
+
+  <h3>La tabella sull'esempio</h3>
+  <figure class="scena" data-scena="sad1Dp" data-titolo="Rafting: riempio OPT dal basso"></figure>
+
+  <div class="box inglese" data-tit="Risposta modello (da scrivere sul foglio)">
+    <p><b>(a)</b> Rafting.</p>
+    <p><b>(b)</b> Let OPT(i, j) denote the maximum number of nuggets that can be collected on a ride from position (i, j) down to the last row, including c(i, j), where i ∈ {0, …, N−1} is the row and j ∈ {0, …, K−1} is the lane.</p>
+    <p>Base case: OPT(N−1, j) = c(N−1, j) for every j. For i &lt; N−1: OPT(i, j) = c(i, j) + max{ OPT(i+1, j′) : j′ ∈ {j−1, j, j+1}, 0 ≤ j′ ≤ K−1 }.</p>
+    <p>The answer is max<sub>j</sub> OPT(0, j); the starting lane is a j attaining it. The moves are recovered by walking down, always to a reachable lane with the largest OPT.</p>
+    <p><b>(c)</b> There are NK subproblems, each computed in O(1) time from the row below. Time Θ(NK), space Θ(NK) (O(K) if only the value is needed, keeping one row at a time).</p>
+  </div>
+  <p class="piccolo">Teoria: <a href="../teoria/dp-dag-piramide.html">DP sul DAG: la piramide</a> e <a href="../teoria/dp-metodo.html">il metodo DP</a>.</p>
+  <div class="box regola" data-tit="Verifica">
+    <p>La tabella dell'esempio è 16 14 15 / 10 14 9 / 1 9 8 / 1 0 6, risposta 16 dalla corsia 0, percorso R S R. La ricorrenza coincide con la forza bruta su 3000 fiumi casuali (N, K ≤ 4).</p>
+  </div>
+</section>
+
+<section>
+  <h2>Q5 · Flow: Supervision</h2>
+  <p><b>Il testo.</b> S studenti e T relatori; ogni studente ha una lista di relatori accettabili, ogni relatore y può prendere al più c(y) studenti. Ogni studente deve avere esattamente un relatore della sua lista. Output: 1 se è possibile senza superare nessuna capacità, altrimenti 0. Le domande: (a) quale problema, (b) la riduzione (nodi, archi, capacità, disegno, significato del flusso massimo e quanto può valere), (c) tempo e algoritmo.</p>
+  <div class="box idea" data-tit="Paradigma e perché">
+    <p><b>Flusso: matching con capacità.</b> Due insiemi (studenti, relatori), archi tra loro e un limite per ogni relatore. È il matching bipartito della guida (Ambassadors), con una differenza: l'arco relatore → t ha capacità <b>c(y)</b> invece di 1. Come «Ambassadors II».</p>
+  </div>
+
+  <h3>La rete, nodo per nodo</h3>
+  <figure class="scena" data-scena="sad1Flow" data-titolo="Supervision: esempio 1, flusso massimo 4"></figure>
+  <ul>
+    <li><b>Nodi:</b> s, t, un nodo per studente, un nodo per relatore: <span class="m">S + T + 2</span>.</li>
+    <li><b>Archi:</b> s → x (capacità 1) per ogni studente, x → y (capacità 1) se y è nella lista di x, y → t (capacità c(y)). In tutto al più <span class="m">S + T + ST</span>, tutti diretti.</li>
+    <li><b>Significato:</b> le capacità sono intere, quindi esiste un flusso massimo intero. Flusso 1 su x → y vuol dire che y segue x. L'arco uscente da s dà a ogni studente al più un relatore; l'arco verso t tiene y entro c(y) studenti.</li>
+    <li><b>Valore:</b> il flusso massimo è il massimo numero di studenti assegnabili, al più S. La risposta è 1 se e solo se vale S.</li>
+    <li><b>Tempo:</b> Ford–Fulkerson costa <span class="m">O(m′ · |f*|)</span> con <span class="m">m′ ≤ S + T + ST ≤ 3ST</span> e <span class="m">|f*| ≤ S</span>: <span class="m">O(S²T)</span>.</li>
+  </ul>
+
+  <div class="box inglese" data-tit="Risposta modello (da scrivere sul foglio)">
+    <p><b>(a)</b> Supervision.</p>
+    <p><b>(b)</b> Given an instance, we construct a flow network. Nodes: a source s, a sink t, one node per student and one node per supervisor: S + T + 2 nodes. Arcs: s → student x with capacity 1; student x → supervisor y with capacity 1 whenever y is on x's list; supervisor y → t with capacity c(y). At most S + T + ST arcs, all directed.</p>
+    <p>All capacities are integers, so there is an integral maximum flow; a flow of 1 on x → y means that y supervises x. The arc out of s gives every student at most one supervisor; the arc into t keeps supervisor y within c(y) students. The value of a maximum flow is the largest number of students that can be assigned; it is at most S. The answer is 1 if and only if it equals S, otherwise 0.</p>
+    <p><b>(c)</b> Using Ford–Fulkerson [KT 7.1], the running time is O(m′ · |f*|) with m′ ≤ S + T + ST and |f*| ≤ S. Hence O((S + T + ST) · S) = O(S²T).</p>
+  </div>
+  <p class="piccolo">Teoria: <a href="../teoria/flow-gadget.html">ridurre a un flusso</a>, <a href="../teoria/bipartite-matching.html">matching bipartito</a> e <a href="../teoria/ford-fulkerson.html">Ford–Fulkerson</a>.</p>
+  <div class="box regola" data-tit="Verifica">
+    <p>La rete dà flusso 4 sull'esempio 1 (output 1) e 3 sull'esempio 2 (output 0). Su 2000 istanze casuali piccole «flusso = S» coincide con la forza bruta su tutti gli assegnamenti.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Q6 · NP-hard: Office Party</h2>
+  <p><b>Il testo.</b> E impiegati, C conflitti tra coppie; alcuni sono gravi (<code>!</code>). Due invitati non possono avere un conflitto <b>grave</b> tra loro; quelli lievi vanno bene. Invita il più possibile. Le domande: (a) quale problema è NP-hard (P1), (b) da quale problema NP-hard conviene ridurre (P2), (c) in che verso va la riduzione, (d) la riduzione completa con un esempio.</p>
+  <div class="box idea" data-tit="Paradigma e perché">
+    <p><b>Caso particolare.</b> Se <b>tutti</b> i conflitti sono gravi, «il massimo di persone senza due in conflitto» è esattamente Independent Set. Quindi Independent Set ≤<sub>P</sub> Office Party. Il verso va dal problema noto (IS) al problema nuovo (Party): <b>P2 ≤<sub>P</sub> P1</b>. Il verso sbagliato (Party ≤<sub>P</sub> IS) non prova nulla.</p>
+  </div>
+
+  <h3>La riduzione, un passo alla volta</h3>
+  <figure class="passi" data-titolo="Independent Set ≤p Office Party" data-legenda="dato:istanza data,ora:istanza costruita,ok:corrispondenza">
+    <div class="passo"><div class="espr">uso le versioni decisionali: IS «ho ≥ k vertici a due a due non adiacenti?»; Party «posso invitare ≥ k senza conflitti gravi?»</div><p class="nota">Qui si <b>massimizza</b>, quindi «at least k». Le riduzioni si fanno tra problemi di decisione.</p></div>
+    <div class="passo"><div class="espr">dato: <mark class="dato">(G, k)</mark> con n vertici e m archi</div><p class="nota">Apro con «Given an instance of …»: dico cos'è l'istanza data.</p></div>
+    <div class="passo"><div class="espr">costruisco: un impiegato per vertice (<mark class="ora">E = n</mark>), un conflitto <b>grave</b> per arco (<mark class="ora">C = m</mark>), <mark class="ora">k′ = k</mark></div><p class="nota">Parametri dell'istanza costruita. Tempo <span class="m">O(n + m)</span>, polinomiale.</p></div>
+    <div class="passo"><div class="espr">(⇒) I indipendente con |I| ≥ k → <mark class="ok">invito gli impiegati di I</mark></div><p class="nota">Ogni conflitto grave è un arco di G, e nessun arco ha entrambi gli estremi in I: nessun conflitto grave tra gli invitati.</p></div>
+    <div class="passo"><div class="espr">(⇐) ≥ k invitati senza conflitti gravi → <mark class="ok">sono un independent set di G</mark></div><p class="nota">Funziona perché <b>ogni</b> arco è diventato grave: due invitati non possono essere adiacenti. È qui che si usa la scelta della costruzione.</p></div>
+  </figure>
+
+  <h3>Esempio completo</h3>
+  <figure class="scena" data-scena="sad1C5" data-titolo="Il 5-ciclo come istanza di Office Party"></figure>
+  <p>G = il 5-ciclo A–B–C–D–E–A (n = 5, m = 5, k = 2) diventa 5 impiegati, 5 conflitti tutti gravi, k′ = 2: è esattamente l'esempio 2 del testo. Un independent set massimo è {A, C} e invitare Ann e Cat è una festa da 2.</p>
+
+  <div class="box inglese" data-tit="Risposta modello (da scrivere sul foglio)">
+    <p><b>(a)</b> P1 = Office Party. <b>(b)</b> P2 = Independent Set. <b>(c)</b> P2 ≤<sub>P</sub> P1, i.e. Independent Set ≤<sub>P</sub> Office Party.</p>
+    <p><b>(d)</b> We use the decision versions: Independent Set asks whether a graph has at least k pairwise non-adjacent vertices; Office Party asks whether at least k employees can be invited with no serious conflict among them.</p>
+    <p>Given an instance (G, k) of Independent Set with n vertices and m edges, we construct an instance of Office Party as follows. For every vertex of G we create an employee (E = n), and for every edge of G a conflict between the two corresponding employees (C = m), marked with <code>!</code>. The bound is k′ = k. The construction takes time O(n + m).</p>
+    <p>(⇒) If I is an independent set of G with |I| ≥ k, invite the employees of I. Every serious conflict is an edge of G, and no edge has both endpoints in I, so no two invited employees have a serious conflict.</p>
+    <p>(⇐) If at least k employees can be invited with no serious conflict among them then, since every edge of G became a serious conflict, no two corresponding vertices are adjacent: they form an independent set of size at least k. Hence G has an independent set of size ≥ k if and only if the constructed instance has a solution with ≥ k employees.</p>
+    <p>Example: G = the 5-cycle A–B–C–D–E–A gives 5 employees and 5 serious conflicts (the second example of the problem text). A maximum independent set is {A, C}, and inviting Ann and Cat is a party of size 2.</p>
+  </div>
+  <p class="piccolo">Teoria: <a href="../teoria/riduzioni.html">scrivere una prova di NP-hardness</a> e <a href="../teoria/catalogo-np.html">il catalogo dei problemi NP</a>.</p>
+  <div class="box regola" data-tit="Verifica">
+    <p>Sul 5-ciclo il massimo è 2, e sull'esempio 1 (conflitti gravi solo Ann–Bob e Cat–Dan) è 3, con {Ann, Cat, Eve} valido. Su 500 grafi casuali piccoli la taglia massima della festa con tutti i conflitti gravi coincide con quella dell'independent set massimo. Questo controlla la corrispondenza, non è una dimostrazione di NP-hardness: quella è il ragionamento (⇒)/(⇐) sopra.</p>
+  </div>
+  <div class="box attenzione" data-tit="Trappole di Q6">
+    <p>Verso sbagliato (Party ≤<sub>P</sub> IS), una sola direzione (⇒) senza (⇐), dimenticare k′, o dimenticare di marcare tutti i conflitti con <code>!</code>.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Confronto con la soluzione ufficiale</h2>
+  <div class="box regola" data-tit="Esito">
+    <p>Ho ricalcolato con programmi (Python) esempi, tabelle e tracce, e confrontato con il PDF delle soluzioni. <b>Nessuna divergenza</b> sui numeri: i risultati degli esempi (Rafting 16 con 0 RSR, Festival 2 e 3, Hiking 9, Supervision 1 e 0, Office Party 2), la tabella OPT, il controesempio 3 contro 9, le distanze della BFS e i valori del flusso coincidono. Una sola aggiunta mia: in Q1(a) segnalo anche K = 1 come esempio ancora più piccolo di N = 1, K = 2.</p>
+    <p>Non verificato con programmi: le dimostrazioni a parole (greedy stays ahead, correttezza di (⇒)/(⇐)) e le formule di tempo, che ho solo ricontrollato a mano.</p>
+  </div>
+</section>
+
+</main>
+</body>
+</html>

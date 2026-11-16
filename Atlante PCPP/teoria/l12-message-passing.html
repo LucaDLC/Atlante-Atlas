@@ -1,0 +1,720 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Message passing e modello ad attori (Erlang)</title>
+<link rel="stylesheet" href="../assets/atlas.css">
+<link rel="stylesheet" href="../assets/tema.css">
+<script src="../assets/sito.js"></script>
+<script src="../assets/atlas.js" defer></script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <div class="occhiello"><span>Settimana 12 · Message passing I</span></div>
+  <h1>Message passing e modello ad attori (Erlang)</h1>
+  <p class="lede">Invece di far toccare gli stessi dati a più thread, si impedisce di condividere: ogni attore ha i suoi dati e gli altri possono solo mandargli messaggi. Il modello (Hewitt, Agha), il linguaggio Erlang che lo realizza, e quattro sistemi della lezione: ping-pong, tornelli con contatore, chatroom e bounded buffer.</p>
+</header>
+
+<div class="box attenzione" data-tit="Codice non compilato">
+  <p>Su questo PC <code>erl</code> ed <code>erlc</code> non sono installati, quindi <b>nessuno snippet di questa pagina è stato compilato o eseguito</b>. Il codice viene dai file del corso (<code>week12/code-lecture</code>), riportato con piccole abbreviazioni (tolti gli <code>export</code> e i messaggi di prova non necessari, emoji nelle stampe, <code>NewState</code> scritto dentro la chiamata). Gli esempi marcati «mio esempio» e le soluzioni degli esercizi sono ragionamenti, non codice provato. Prima di citare un output all'orale, provalo con <code>erl</code>.</p>
+</div>
+
+<section>
+  <h2>Memoria condivisa contro scambio di messaggi</h2>
+  <p>Goetz lo dice così: scrivere codice thread-safe vuol dire <b>gestire l'accesso a dati mutabili condivisi</b>. Nelle settimane scorse i problemi erano le <i>race condition</i> (il risultato dipende dall'ordine dei thread), le <i>data race</i> (due accessi alla stessa variabile, almeno uno è scrittura, senza ordine happens-before) e la <i>visibilità</i> (un thread non vede la scrittura di un altro). Le cure: ragionare con happens-before e linearizzabilità; mutua esclusione (lock, ma con rischio di mancato progresso), immutabilità, algoritmi con compare-and-swap; <code>volatile</code>, <code>final</code> e pubblicazione sicura per la visibilità.</p>
+  <p>Il <b>message passing</b> toglie il problema alla radice: perché non evitare di condividere? I thread non hanno stato in comune e lavorano solo sulla propria memoria locale. Se un thread ha bisogno di un dato di un altro, quel dato gli viene <b>inviato in un messaggio</b>. La sincronizzazione avviene mandando messaggi, non scrivendo nella stessa cella di memoria.</p>
+  <figure class="scena" data-scena="cond12" data-titolo="Incrementare x: memoria condivisa e attore"></figure>
+  <div class="tab-wrap"><table class="tab"><thead><tr><th></th><th>Memoria condivisa</th><th>Message passing</th></tr></thead><tbody>
+    <tr><td>come si coordinano</td><td>scrivendo e leggendo la stessa memoria</td><td>mandando e ricevendo messaggi</td></tr>
+    <tr><td>stato</td><td>condiviso e mutabile</td><td>locale a ogni attore</td></tr>
+    <tr><td>data race</td><td>possibili: serve lock, volatile, CAS</td><td>impossibili sullo stato (nessuno lo tocca da fuori)</td></tr>
+    <tr><td>visibilità</td><td>problema del modello di memoria</td><td>sparisce: si legge solo memoria locale</td></tr>
+    <tr><td>cosa resta</td><td>race condition, deadlock, mancato progresso</td><td>race condition tra messaggi (l'ordine di arrivo), deadlock (si aspettano a vicenda), coordinamento</td></tr>
+  </tbody></table></div>
+  <p>Come si realizza il message passing? Si può appoggiarsi a sistemi di comunicazione standard (socket, chiamate di procedura remote RPC, Java RMI, MPI) combinandoli con la concorrenza vista finora. Oppure si sceglie un modello di concorrenza che ha lo scambio di messaggi <b>incorporato</b>: il modello ad attori, introdotto da Hewitt nel 1973 e formalizzato da Agha nel 1985 (il capitolo 2 di Agha è la lettura del corso: confronta in modo oggettivo memoria condivisa e attori).</p>
+</section>
+
+<section>
+  <h2>Il modello ad attori</h2>
+  <p>Un <b>attore</b> (<i>actor</i>) è un'unità di calcolo <b>sequenziale</b>: si può pensare a un thread. Formalmente il modello permetterebbe parallelismo dentro un attore, ma per ragionare basta assumere che dentro un attore non ci siano problemi di concorrenza. Gli attori comunicano <b>solo</b> mandandosi messaggi, e non c'è memoria condivisa.</p>
+  <p>Un attore può eseguire solo quattro azioni: (1) <b>ricevere</b> messaggi da altri attori; (2) <b>inviare</b> messaggi asincroni ad altri attori; (3) <b>creare</b> nuovi attori; (4) <b>cambiare comportamento</b>, cioè lo stato locale e/o come gestisce i messaggi. Ha accesso soltanto al suo <b>stato locale</b> e alla sua <b>mailbox</b> (la «casella», un multinsieme di messaggi ricevuti; di default illimitata ma di dimensione finita a ogni istante, con messaggi in ordine FIFO).</p>
+  <p>Ogni attore ha un identificatore unico, il suo «indirizzo» (<i>mail address</i> o <i>actor reference</i>). Un messaggio contiene un contenuto arbitrario (<i>payload</i>). Un attore può inviare e ricevere un numero finito di messaggi.</p>
+  <figure class="scena" data-scena="attore12" data-titolo="Le quattro azioni di un attore"></figure>
+  <p>Il modello si applica bene a un <b>sistema distribuito</b> (più computer in rete, con un livello di middleware in mezzo), ma funziona anche su un solo computer. Il corso usa questo secondo caso: tutti gli attori girano nella stessa macchina Erlang.</p>
+</section>
+
+<section>
+  <h2>Comunicazione asincrona e ordine dei messaggi</h2>
+  <p>L'<b>invio asincrono</b> mette il messaggio nella mailbox del destinatario e <b>non blocca</b> chi invia: il mittente prosegue subito. La <b>ricezione</b> prende un messaggio dalla mailbox e <b>blocca</b> chi riceve se la mailbox è vuota. Nella comunicazione <i>sincrona</i> l'invio bloccherebbe finché il messaggio non è ricevuto. Si sceglie l'asincrona perché la sincrona si può costruire sopra l'asincrona (si vedrà con il <code>Ref</code> nella chatroom), mentre il contrario no.</p>
+  <p>Il modello <b>non garantisce nessun ordine di arrivo</b>: se l'Attore 1 manda M1 e poi M2 all'Attore 2, non si può assumere che M1 arrivi prima di M2. L'ordine di arrivo è una fonte di <b>non determinismo</b>. La regola di progetto della lezione: <b>se il sistema funziona senza assumere un ordine, funzionerà anche quando un ordine è imposto</b>. (Erlang in pratica mantiene l'ordine tra la stessa coppia mittente-destinatario, ma non tra mittenti diversi; non conviene appoggiarsi nemmeno a questo.)</p>
+  <figure class="scena" data-scena="ordine12" data-titolo="M2 può arrivare prima di M1"></figure>
+  <p>Per ragionare serve la relazione <b>happens-before</b> di Lamport, simile a quella del modello di memoria Java: un'azione <i>a</i> precede <i>b</i> se sono dello stesso attore e <i>a</i> è eseguita prima; e <code>send(m)</code> precede sempre il suo <code>receive(m)</code>. Al posto dei lock si ragiona sullo scambio di messaggi; i problemi di coordinamento restano, ma i problemi di visibilità spariscono.</p>
+</section>
+
+<section>
+  <h2>Erlang: la sintassi che serve</h2>
+  <p>Erlang è il linguaggio che realizza il modello ad attori. Nato in Ericsson nel 1986 (Armstrong, Virding, Williams) per la telefonia, aperto al pubblico nel 1998; famoso per WhatsApp, che nel 2014 serviva 450 milioni di utenti con 32 ingegneri. Il nome viene dal matematico danese Agner Erlang. Il corso usa solo una piccola parte di Erlang (la base); sopra c'è la libreria OTP con <code>gen_server</code>, HTTP, il database Mnesia e molto altro, che qui non serve. Prima del codice, ogni simbolo che incontrerai:</p>
+  <figure class="passi" data-titolo="Leggere Erlang, un simbolo alla volta" data-legenda="dato:atomo,due:variabile,ora:simbolo in esame,ok:risultato,no:fallisce">
+    <div class="passo"><div class="espr">-module(<mark class="dato">counter</mark>).</div><p class="nota">Ogni file <code>.erl</code> è un <b>modulo</b>. Il nome nella direttiva (la riga che comincia con <code>-</code>) deve coincidere con il nome del file: <code>counter.erl</code>. Il <mark class="ora">.</mark> finale chiude la frase.</p></div>
+    <div class="passo"><div class="espr">-export([<mark class="dato">start</mark><mark class="ora">/0</mark>, <mark class="dato">init</mark><mark class="ora">/1</mark>]).</div><p class="nota"><code>nome/n</code> è <b>nome e arità</b>: <code>n</code> è il numero di argomenti. <code>init/1</code> è una funzione diversa da <code>init/2</code>. Solo le funzioni esportate si possono chiamare da altri moduli, e soprattutto sono le uniche che <code>spawn</code> può avviare.</p></div>
+    <div class="passo"><div class="espr"><mark class="dato">increment</mark>   <mark class="dato">print_total</mark>   <mark class="dato">ok</mark>        <mark class="due">State</mark>   <mark class="due">Ref</mark>   <mark class="due">_PID</mark>   <mark class="due">_</mark></div><p class="nota">Con la <b>minuscola</b> sono <b>atomi</b>: costanti che valgono il proprio nome (come i valori di un enum). Con la <b>maiuscola</b> sono <b>variabili</b>, che si legano <b>una volta sola</b>. <code>_</code> e i nomi che iniziano con <code>_</code> dicono «questo valore non mi serve».</p></div>
+    <div class="passo"><div class="espr"><mark class="due">X</mark> <mark class="ora">=</mark> 5        poi        X <mark class="ora">=</mark> 6  <mark class="no">→ errore badmatch</mark></div><p class="nota"><code>=</code> non è un'assegnazione ma un <b>match</b> (confronto con legatura): la prima volta lega X a 5; la seconda confronta 5 con 6 e fallisce. Per questo lo stato non si modifica: si crea un nuovo valore e lo si passa alla chiamata successiva.</p></div>
+    <div class="passo"><div class="espr"><mark class="ora">{</mark>ping, Pid<mark class="ora">}</mark>      <mark class="ora">[</mark>a, b, c<mark class="ora">]</mark>      <mark class="ora">[</mark>H<mark class="ora">|</mark>T<mark class="ora">]</mark></div><p class="nota"><b>Tupla</b> con le graffe: dimensione fissa; nei messaggi il primo elemento è di solito un atomo-etichetta. <b>Lista</b> con le quadre. <code>[H|T]</code> è una lista con testa <code>H</code> (primo elemento) e coda <code>T</code> (il resto): come pattern separa il primo dal resto, come espressione mette <code>H</code> davanti a <code>T</code>.</p></div>
+    <div class="passo"><div class="espr">loop(State) <mark class="ora">-&gt;</mark> azione1<mark class="ora">,</mark> azione2<mark class="ora">;</mark>
+loop(_) <mark class="ora">-&gt;</mark> altro<mark class="ora">.</mark></div><p class="nota"><code>-&gt;</code> separa la testa dal corpo. <code>,</code> separa le espressioni eseguite in sequenza. <code>;</code> separa le <b>clausole</b> (i casi) della stessa funzione, e anche i rami di <code>receive</code> e <code>case</code>. <code>.</code> chiude la funzione. Il valore di una funzione è quello dell'ultima espressione.</p></div>
+    <div class="passo"><div class="espr">-record(counter_state, {total}).
+Nuovo = <mark class="ora">#counter_state{total = 0}</mark>
+Nuovo<mark class="ora">#counter_state.total</mark>            <mark class="ok">→ 0</mark>
+Nuovo<mark class="ora">#counter_state{total = 7}</mark>      <mark class="ok">→ una copia con total = 7</mark></div><p class="nota">Un <b>record</b> è una tupla con i campi dotati di nome. La prima riga lo definisce; poi <code>#nome{campo = valore}</code> lo crea; <code>Var#nome.campo</code> legge un campo; <code>Var#nome{campo = nuovo}</code> dà una <b>copia</b> con il campo cambiato (l'originale non si tocca). È il modo comune di scrivere lo stato di un attore.</p></div>
+    <div class="passo"><div class="espr">io:format("Totale ~p~n", [<mark class="due">X</mark>])        lists:foreach(<mark class="ora">fun (P) -&gt; P ! ciao end</mark>, Lista)</div><p class="nota"><code>modulo:funzione(...)</code> chiama una funzione di un altro modulo. In <code>io:format</code>, <code>~p</code> stampa un valore qualsiasi e <code>~n</code> va a capo; i valori sono in una <b>lista</b> (le quadre). <code>fun (P) -&gt; … end</code> è una funzione anonima.</p></div>
+    <div class="passo"><div class="espr">[ <mark class="ok">User</mark> || User &lt;- Users, User <mark class="ora">/=</mark> UserPID ]      L1 <mark class="ora">++</mark> [Elem]</div><p class="nota">La <b>list comprehension</b> si legge «la lista degli <code>User</code> presi da <code>Users</code>, tali che <code>User</code> è diverso da <code>UserPID</code>». <code>/=</code> è «diverso», <code>==</code> «uguale». <code>++</code> concatena due liste: <code>L1 ++ [Elem]</code> aggiunge <code>Elem</code> in fondo.</p></div>
+    <div class="passo"><div class="espr">handle_put(Ref, Elem, S) <mark class="ora">when</mark> length(L) <mark class="ora">&lt;</mark> Max<mark class="ora">,</mark> Pending == 0 -&gt; …</div><p class="nota"><code>when</code> introduce una <b>guardia</b>: una condizione in più perché la clausola sia scelta. Nella guardia la virgola significa «e» (tutte vere).</p></div>
+  </figure>
+  <h3>Pattern matching: come si sceglie la clausola</h3>
+  <p>Il <b>pattern matching</b> confronta un valore con un modello: atomi e numeri devono essere uguali; una variabile <b>libera</b> (non ancora legata) si lega al pezzo corrispondente; una variabile <b>già legata</b> deve avere lo stesso valore, altrimenti il match fallisce. È così che <code>receive</code> sceglie il ramo e smonta il messaggio in pezzi.</p>
+  <figure class="scena" data-scena="match12" data-titolo="Un messaggio contro tre modelli"></figure>
+</section>
+
+<section>
+  <h2>Processi, mailbox e receive</h2>
+  <p>In Erlang un attore è un <b>processo</b> (leggero, non un thread di sistema). Le quattro azioni diventano quattro costrutti; la corrispondenza uno a uno è nella tabella.</p>
+  <div class="tab-wrap"><table class="tab"><thead><tr><th>Modello ad attori</th><th>Erlang</th></tr></thead><tbody>
+    <tr><td>attore</td><td>modulo (il codice) + processo (l'istanza che gira)</td></tr>
+    <tr><td>indirizzo della mailbox</td><td><b>Pid</b> (<i>process identifier</i>), per esempio <code>&lt;0.85.0&gt;</code>; <code>self()</code> dà il proprio</td></tr>
+    <tr><td>messaggio</td><td>un termine Erlang (di solito un atomo o una tupla)</td></tr>
+    <tr><td>stato</td><td>un termine (di solito un record), passato come parametro di <code>loop</code></td></tr>
+    <tr><td>comportamento</td><td>la funzione <code>loop(...)</code></td></tr>
+    <tr><td>creare un attore</td><td><code>spawn(Modulo, funzione, [Argomenti])</code>, restituisce il Pid</td></tr>
+    <tr><td>inviare</td><td><code>Pid ! Messaggio</code></td></tr>
+    <tr><td>ricevere</td><td><code>receive … end</code></td></tr>
+  </tbody></table></div>
+  <p>Passo per passo. <code>spawn(M, f, Args)</code> crea un nuovo processo che esegue <code>M:f(Args)</code> e subito restituisce il suo Pid (la <code>f</code> deve essere esportata). <code>Pid ! Msg</code> mette <code>Msg</code> nella mailbox del processo <code>Pid</code> e <b>non aspetta</b>. <code>receive</code> è l'unica operazione che legge la mailbox: <b>blocca</b> finché arriva un messaggio che corrisponde a uno dei rami. Un messaggio che non corrisponde a nessun ramo <b>resta nella mailbox</b>, e se si accumulano rallentano tutto: per questo la lezione consiglia un ramo «jolly» (una variabile qualsiasi come ultimo pattern, per esempio <code>Animal</code>), che prende tutto ciò che resta.</p>
+  <p>Ricevere funziona così: i messaggi si guardano in ordine di arrivo (FIFO); per ogni messaggio si provano i rami dall'alto in basso come nei casi di una funzione; il <b>primo messaggio che corrisponde a un ramo</b> viene tolto dalla mailbox ed eseguito; gli altri restano dove sono.</p>
+  <figure class="scena" data-scena="receive12" data-titolo="receive con dog, cat, snake: dove va a finire owl?"></figure>
+  <h3>Lo stato sta nei parametri della ricorsione</h3>
+  <p>Un attore non ha un campo che modifica: il suo stato è il parametro della funzione che si richiama. Dopo ogni messaggio la funzione si <b>richiama con lo stato nuovo</b> (o con lo stesso, se non è cambiato). È una chiamata in coda (<i>tail call</i>): non riempie la pila, quindi il ciclo può durare per sempre. Per questo non ci sono problemi di visibilità: lo stato è visto da un solo processo.</p>
+  <figure class="codice" data-titolo="Mio esempio: un attore con lo stato nei parametri (non compilato)">
+<pre data-lang="erlang">loop(State) -&gt;
+    receive
+        {add, N} -&gt;
+            loop(State + N);
+        {get, From} -&gt;
+            From ! {total, State},
+            loop(State)
+    end.</pre>
+    <ol class="spiega">
+      <li data-righe="1" data-segna="loop(State)@dato"><p>Lo stato qui è semplicemente un numero, il parametro <code>State</code>.</p></li>
+      <li data-righe="3-4" data-segna="loop(State + N)@ok"><p>Messaggio <code>{add, N}</code>: <code>N</code> si lega al secondo elemento della tupla. Si richiama <code>loop</code> con il <b>valore nuovo</b> <code>State + N</code>: il vecchio stato non esiste più.</p></li>
+      <li data-righe="5-7" data-segna="From ! {total, State}@ora|loop(State)@due"><p>Messaggio <code>{get, From}</code>: il messaggio contiene il Pid di chi chiede (nessun messaggio dice da solo chi l'ha mandato). Si risponde con <code>!</code> e si richiama <code>loop</code> con lo stato <b>invariato</b>.</p></li>
+    </ol>
+  </figure>
+  <h3>Com'è fatto un modulo-attore</h3>
+  <p>Ogni modulo della lezione ha sei parti, nello stesso ordine: <b>1. stato</b> (record); <b>2. funzioni di creazione</b> (<code>start</code>, che fa <code>spawn</code>); <b>3. funzioni di inizializzazione</b> (<code>init</code>, che costruisce lo stato iniziale e chiama <code>loop</code>); <b>4. <code>loop</code></b> con il <code>receive</code>; <b>5. gestori dei messaggi</b> (<code>handle_…</code>, facoltativi); <b>6. API</b> (funzioni che nascondono il formato dei messaggi, facoltativa). La struttura è come una classe <code>Thread</code> in Java: <code>start</code> ≈ <code>start()</code>, <code>init</code> ≈ costruttore.</p>
+</section>
+
+<section>
+  <h2>Ping-pong: invio, ricezione e Pid</h2>
+  <p>Il primo sistema: un attore <code>ping</code> manda un messaggio a un attore <code>pong</code> e aspetta la risposta. Serve per vedere <code>spawn</code>, <code>!</code>, <code>receive</code> e <code>self()</code> insieme. Il messaggio non dice chi lo manda, quindi <code>ping</code> mette il proprio Pid dentro il messaggio.</p>
+  <figure class="codice" data-titolo="ping_pong.erl: un solo ping">
+<pre data-lang="erlang">-module(ping_pong).
+-export([start1/0, ping/1, pong/0]).
+
+start1() -&gt;
+    Pong_PID = spawn(ping_pong, pong, []),
+    spawn(ping_pong, ping, [Pong_PID]).
+
+ping(PID) -&gt;
+    PID ! {ping, self()},
+    io:format("ping send to ~p~n", [PID]),
+    receive
+        pong -&gt;
+            io:format("Got it!~n")
+    end.
+
+pong() -&gt;
+    receive
+        {ping, Ping_PID} -&gt;
+            io:format("Got ping from ~p~n", [Ping_PID]),
+            Ping_PID ! pong,
+            pong()
+    end.</pre>
+    <ol class="spiega">
+      <li data-righe="1-2" data-segna="-export([start1/0, ping/1, pong/0])@dato"><p>Il modulo si chiama come il file. Si esportano <code>ping/1</code> e <code>pong/0</code> perché <code>spawn</code> può avviare solo funzioni esportate.</p></li>
+      <li data-righe="4-6" data-segna="spawn(ping_pong, pong, [])@ora|spawn(ping_pong, ping, [Pong_PID])@due"><p><code>spawn(modulo, funzione, argomenti)</code>: il primo avvia <code>pong()</code> (nessun argomento, lista vuota) e restituisce il suo Pid, che si lega a <code>Pong_PID</code>. Il secondo avvia <code>ping(Pong_PID)</code>: il Pid di pong è l'<b>argomento</b> con cui ping sa a chi scrivere.</p></li>
+      <li data-righe="8-9" data-segna="PID ! {ping, self()}@ora"><p>Dentro il processo ping, <code>self()</code> è il Pid <b>di ping</b>. Il messaggio è la tupla <code>{ping, Pid_di_ping}</code>: l'atomo <code>ping</code> è l'etichetta, il Pid serve a pong per rispondere. L'invio non blocca.</p></li>
+      <li data-righe="10-14" data-segna="pong -&gt;@ok"><p>Ora ping si ferma nella <code>receive</code> e aspetta un messaggio che sia l'atomo <code>pong</code>. Appena arriva, stampa e la funzione finisce (il processo ping termina).</p></li>
+      <li data-righe="16-18" data-segna="{ping, Ping_PID}@dato"><p>Pong aspetta una tupla con primo elemento <code>ping</code>. <code>Ping_PID</code> è libera: si lega al Pid contenuto nel messaggio.</p></li>
+      <li data-righe="20-21" data-segna="Ping_PID ! pong@ok|pong()@due"><p>Pong risponde al Pid appena letto, poi <b>richiama se stesso</b>: <code>pong()</code> in coda, quindi torna in attesa di un altro ping. Non termina mai da solo.</p></li>
+    </ol>
+  </figure>
+  <figure class="scena" data-scena="pingpong12" data-titolo="start1(): cosa succede"></figure>
+  <h3>N ping e il nome registrato</h3>
+  <figure class="codice" data-titolo="ping_pong.erl: N ping, e un processo con nome">
+<pre data-lang="erlang">startN(N) -&gt;
+    Pong_PID = spawn(ping_pong, pong, []),
+    spawn(ping_pong, ping, [N, Pong_PID]).
+
+ping(0, _PID) -&gt;
+    io:format("Done pinging~n");
+ping(N, PID) -&gt;
+    ping(PID),
+    ping(N-1, PID).
+
+startReg(N) -&gt;
+    register(pong, spawn(ping_pong, pong, [])),
+    spawn(ping_pong, ping, [N, pong]).</pre>
+    <ol class="spiega">
+      <li data-righe="5-9" data-segna="ping(0, _PID)@dato|ping(N-1, PID)@ora"><p><code>ping/2</code> ha due clausole (arità diversa da <code>ping/1</code>, quindi è un'altra funzione). Con <code>N = 0</code> stampa e si ferma (il <code>;</code> separa le clausole); altrimenti fa un ping con <code>ping(PID)</code> (la funzione a un argomento, che aspetta la risposta) e poi ripete con <code>N-1</code>. <code>_PID</code> dice «non mi serve».</p></li>
+      <li data-righe="11-13" data-segna="register(pong, spawn(ping_pong, pong, []))@ora|[N, pong]@ok"><p><code>register(nome, Pid)</code> associa un <b>atomo</b> al processo: da quel momento si può scrivere <code>pong ! Msg</code> senza conoscere il Pid. Qui l'atomo <code>pong</code> è passato al posto del Pid. Il nome registrato e l'atomo <code>pong</code> usato come messaggio sono due usi indipendenti della stessa parola.</p></li>
+    </ol>
+  </figure>
+</section>
+
+<section>
+  <h2>Tornelli e contatore: un attore al posto del lock</h2>
+  <p>Il problema: contare i visitatori che passano da più tornelli, a Tivoli. Con i thread si avrebbe un contatore condiviso e un lock (o un <code>AtomicInteger</code>). Con gli attori il <b>contatore</b> è un attore che possiede <code>total</code>; ogni <b>tornello</b> è un attore che, a ogni persona che passa, manda un messaggio <code>increment</code> al contatore. I messaggi si accodano nella mailbox del contatore, che li gestisce uno per volta: <b>non serve nessun lock</b>.</p>
+  <figure class="codice" data-titolo="counter.erl">
+<pre data-lang="erlang">-module(counter).
+-export([start/0, init/1]).
+
+-record(counter_state, {total}).
+
+start() -&gt;
+    spawn(?MODULE, init, [0]).
+
+init(InitialValue) -&gt;
+    InitialState = #counter_state{total = InitialValue},
+    loop(InitialState).
+
+loop(State) -&gt;
+    receive
+        increment -&gt;
+            CurrentTotal = State#counter_state.total,
+            NewState = State#counter_state{total = CurrentTotal + 1},
+            io:format("A visitor arrived~n"),
+            loop(NewState);
+        print_total -&gt;
+            io:format("The counter value is ~p~n",
+                      [State#counter_state.total]),
+            loop(State)
+    end.</pre>
+    <ol class="spiega">
+      <li data-righe="4" data-segna="-record(counter_state, {total})@dato"><p>Lo stato: un record con un solo campo, <code>total</code>.</p></li>
+      <li data-righe="6-7" data-segna="spawn(?MODULE, init, [0])@ora"><p><code>?MODULE</code> è una macro che al momento della compilazione diventa l'atomo del modulo corrente (<code>counter</code>). <code>spawn</code> avvia <code>counter:init(0)</code>: il valore iniziale è 0.</p></li>
+      <li data-righe="9-11" data-segna="#counter_state{total = InitialValue}@dato"><p><code>init</code> costruisce il primo stato e chiama <code>loop</code>. Si separa da <code>start</code> perché <code>spawn</code> deve avviare una funzione che poi non finisce.</p></li>
+      <li data-righe="13-14" data-segna="receive@ora"><p>Il corpo di <code>loop</code> è un <code>receive</code> con un ramo per ogni tipo di messaggio. Si ferma finché non arriva un <code>increment</code> o un <code>print_total</code>.</p></li>
+      <li data-righe="15-19" data-segna="State#counter_state.total@dato|State#counter_state{total = CurrentTotal + 1}@ok|loop(NewState)@ora"><p>Per <code>increment</code>: si legge il totale, si costruisce un <b>nuovo</b> record con <code>total + 1</code>, si stampa e ci si richiama con <code>NewState</code>. Il vecchio stato scompare.</p></li>
+      <li data-righe="20-23" data-segna="loop(State)@due"><p>Per <code>print_total</code> si stampa e ci si richiama con lo <b>stesso</b> <code>State</code>: nulla è cambiato.</p></li>
+    </ol>
+  </figure>
+  <figure class="codice" data-titolo="turnstile.erl">
+<pre data-lang="erlang">-module(turnstile).
+-export([start/1, init/1]).
+
+-record(turnstile_state, {counter_server}).
+
+start(CounterPID) -&gt;
+    spawn(?MODULE, init, [CounterPID]).
+
+init(CounterPID) -&gt;
+    State = #turnstile_state{counter_server = CounterPID},
+    loop(State).
+
+loop(State) -&gt;
+    receive
+        person_crossing -&gt;
+            State#turnstile_state.counter_server ! increment,
+            loop(State)
+    end.</pre>
+    <ol class="spiega">
+      <li data-righe="4" data-segna="counter_server@dato"><p>Lo stato del tornello è una sola cosa: il Pid del contatore a cui scrivere. Un Pid è un normale valore e si può tenere in un record.</p></li>
+      <li data-righe="6-11" data-segna="CounterPID@due"><p><code>start</code> e <code>init</code> sono come nel contatore; cambia che prendono un parametro, il Pid del contatore, che finisce nello stato.</p></li>
+      <li data-righe="13-17" data-segna="State#turnstile_state.counter_server ! increment@ora"><p>Un solo ramo: quando una persona passa (<code>person_crossing</code>), il tornello legge il Pid dal suo stato e gli manda <code>increment</code> con <code>!</code>. Lo stato non cambia, e quindi <code>loop(State)</code>.</p></li>
+    </ol>
+  </figure>
+  <figure class="scena" data-scena="turnstile12" data-titolo="Due tornelli, un contatore"></figure>
+  <figure class="codice" data-titolo="system_utilities.erl (versione semplificata, non compilata)">
+<pre data-lang="erlang">CounterPID = counter:start(),
+Turnstile1 = turnstile:start(CounterPID),
+Turnstile2 = turnstile:start(CounterPID),
+Send = fun (PID) -&gt; PID ! person_crossing end,
+lists:foreach(Send, lists:duplicate(N, Turnstile1)),
+lists:foreach(Send, lists:duplicate(N, Turnstile2)),
+CounterPID ! print_total.</pre>
+    <ol class="spiega">
+      <li data-righe="1-3" data-segna="counter:start()@dato"><p>Si crea il contatore e due tornelli che lo conoscono. <code>modulo:funzione()</code> chiama una funzione di un altro modulo della stessa cartella.</p></li>
+      <li data-righe="4-6" data-segna="lists:duplicate(N, Turnstile1)@ora"><p>Si manda <code>person_crossing</code> a ogni tornello N volte: <code>lists:duplicate(N, X)</code> è una lista di N copie di X e <code>foreach</code> applica la funzione a ognuna. (Il file del corso fa lo stesso con <code>zip</code> e <code>seq</code>.)</p></li>
+      <li data-righe="7" data-segna="CounterPID ! print_total@due"><p>Infine si chiede al contatore di stampare il totale. <b>Attenzione:</b> questo messaggio parte da un processo diverso (la shell), mentre gli <code>increment</code> passano per i tornelli. Tra mittenti diversi non c'è ordine garantito, quindi <code>print_total</code> può arrivare <b>prima</b> di qualche <code>increment</code> e stampare meno di 2N. Il totale <i>finale</i> è però sempre 2N.</p></li>
+    </ol>
+  </figure>
+  <div class="box idea" data-tit="Perché non servono lock">
+    <p>Il valore <code>total</code> esiste solo nel parametro di <code>loop</code> del contatore. I tornelli non possono leggerlo né scriverlo: possono solo mandare un messaggio. Il contatore ne elabora uno alla volta, quindi due incrementi non si sovrappongono mai: nessuna data race, nessun aggiornamento perso. Il costo: il contatore è un punto sequenziale, tutti i messaggi passano da lui.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Chatroom: sincrono sopra l'asincrono (Ref)</h2>
+  <p>Il secondo sistema: degli attori <b>utente</b> si iscrivono a un attore <b>chatroom</b>; la chatroom conferma l'iscrizione; quando un utente emette un messaggio, la chatroom lo inoltra a tutti gli iscritti <b>tranne il mittente</b>; l'utente può disiscriversi e la chatroom conferma. I messaggi (protocollo): utente verso chatroom <code>{subscribe, {Ref, UserPID}}</code>, <code>{unsubscribe, {Ref, UserPID}}</code>, <code>{broadcast, {Message, UserPID}}</code> (nelle slide l'ordine è scritto al contrario, <code>{UserPID, Message}</code>; nel codice è questo); chatroom verso utente <code>{subscription_ok, Ref}</code>, <code>{already_subscribed, Ref}</code>, <code>{unsubscription_ok, Ref}</code>, <code>{user_not_subscribed, Ref}</code>, <code>{message_from_chatroom, {SenderPID, Message}}</code>.</p>
+  <p>Il punto chiave: un messaggio non porta con sé il mittente. Se serve una risposta, il Pid di chi chiede (<code>self()</code>) va <b>dentro</b> il messaggio.</p>
+  <figure class="codice" data-titolo="chatroom.erl (stato, loop, iscrizione, broadcast)">
+<pre data-lang="erlang">loop(State) -&gt;
+    receive
+        {subscribe, {Ref, UserPID}} -&gt;
+            handle_subscribe(UserPID, Ref, State);
+        {unsubscribe, {Ref, UserPID}} -&gt;
+            handle_unsubscribe(UserPID, Ref, State);
+        {broadcast, {Message, UserPID}} -&gt;
+            handle_send_message(Message, UserPID, State)
+    end.
+
+handle_subscribe(UserPID, Ref, State) -&gt;
+    Users = State#cr_state.users,
+    case lists:member(UserPID, Users) of
+        false -&gt;
+            NewState = State#cr_state{users = [UserPID|Users]},
+            UserPID ! {subscription_ok, Ref},
+            loop(NewState);
+        true -&gt;
+            UserPID ! {already_subscribed, Ref},
+            loop(State)
+    end.
+
+handle_send_message(Message, UserPID, State) -&gt;
+    Users = State#cr_state.users,
+    Send = fun (PID) -&gt;
+                   PID ! {message_from_chatroom, {UserPID, Message}}
+           end,
+    case lists:member(UserPID, Users) of
+        true -&gt;
+            UsersWOSender = [User || User &lt;- Users, User /= UserPID],
+            lists:foreach(Send, UsersWOSender);
+        false -&gt;
+            user_not_subscribed
+    end,
+    loop(State).</pre>
+    <ol class="spiega">
+      <li data-righe="1-9" data-segna="{subscribe, {Ref, UserPID}}@dato"><p>Tre messaggi, tre rami. Ogni ramo smonta una tupla annidata (<code>{etichetta, {Ref, Pid}}</code>) e passa i pezzi a una funzione <code>handle_…</code>: il <code>loop</code> resta corto.</p></li>
+      <li data-righe="12-13" data-segna="State#cr_state.users@dato|lists:member(UserPID, Users)@ora"><p>Gli iscritti sono una lista nello stato. <code>case … of</code> sceglie un ramo secondo il valore di <code>lists:member</code>, che dà <code>true</code> o <code>false</code> (l'atomo).</p></li>
+      <li data-righe="14-17" data-segna="State#cr_state{users@ok|UserPID ! {subscription_ok, Ref}@ora"><p>Se non è già iscritto: nuovo stato con il Pid messo in testa alla lista (<code>[UserPID|Users]</code>), conferma all'utente <b>con lo stesso <code>Ref</code></b> che ha ricevuto, e <code>loop</code> con lo stato nuovo.</p></li>
+      <li data-righe="18-20" data-segna="UserPID ! {already_subscribed, Ref}@no"><p>Se è già iscritto: nessun cambio di stato, risposta diversa, <code>loop(State)</code>.</p></li>
+      <li data-righe="23-27" data-segna="Send@due"><p><code>Send</code> è una funzione anonima che manda al Pid <code>PID</code> la tupla <code>{message_from_chatroom, {chi, testo}}</code>.</p></li>
+      <li data-righe="28-35" data-segna="User /= UserPID@no|lists:foreach(Send, UsersWOSender)@ok"><p>Solo un iscritto può trasmettere. La list comprehension toglie il mittente dalla lista; <code>foreach</code> manda il messaggio a tutti gli altri. Se non è iscritto non si manda nulla. In ogni caso <code>loop(State)</code>.</p></li>
+    </ol>
+  </figure>
+  <h3>Comunicazione sincrona con make_ref()</h3>
+  <p>L'iscrizione richiede <b>sincronia</b>: l'utente, dopo <code>subscribe</code>, deve aspettare la risposta. In Erlang non esiste una chiamata sincrona, ma si costruisce con un invio e una <code>receive</code>. Il trucco è <code>make_ref()</code>: crea un valore <b>unico</b> (una <i>reference</i>), che l'utente mette nella richiesta; la chatroom lo rimanda nella risposta; l'utente ha nella <code>receive</code> un pattern con <b>quella</b> variabile <code>Ref</code>, già legata, che corrisponde solo alla risposta a <b>quella</b> richiesta.</p>
+  <figure class="codice" data-titolo="user.erl: iscriversi e API">
+<pre data-lang="erlang">handle_subscribe(ChatroomPID, State) -&gt;
+    Ref = make_ref(),
+    ChatroomPID ! {subscribe, {Ref, self()}},
+    receive
+        {subscription_ok, Ref} -&gt;
+            NewState = State#user_state{chatroom = ChatroomPID},
+            io:format("Successfully subscribed in the chatroom!~n"),
+            loop(NewState);
+        {already_subscribed, Ref} -&gt;
+            io:format("The chatroom says I am already subscribed.~n"),
+            loop(State)
+    end.
+
+subscribe_to_chatroom(UserPID, ChatroomPID) -&gt;
+    UserPID ! {subscribe, ChatroomPID}.</pre>
+    <ol class="spiega">
+      <li data-righe="2" data-segna="make_ref()@dato"><p>Un identificatore irripetibile per questa richiesta.</p></li>
+      <li data-righe="3" data-segna="{subscribe, {Ref, self()}}@ora"><p>La richiesta porta il <code>Ref</code> e il Pid dell'utente (<code>self()</code>: qui è il processo utente).</p></li>
+      <li data-righe="4-9" data-segna="{subscription_ok, Ref}@ok"><p>Questa <code>receive</code> è <b>annidata</b> dentro un gestore: l'utente non torna al <code>loop</code> finché la risposta non arriva. <code>Ref</code> è già legata, quindi il pattern corrisponde solo se il <code>Ref</code> del messaggio è lo stesso. Altri messaggi restano in attesa nella mailbox.</p></li>
+      <li data-righe="14-15" data-segna="UserPID ! {subscribe, ChatroomPID}@due"><p>L'<b>API</b>: funzioni che nascondono il formato dei messaggi. Dalla shell si scrive <code>user:subscribe_to_chatroom(UserPID, ChatroomPID)</code> invece del messaggio.</p></li>
+    </ol>
+  </figure>
+  <p>Con <code>start_reg(Username)</code> il processo è registrato con un nome (<code>register(Username, PID)</code>), e si può scrivere <code>raul ! …</code> invece di un Pid. Nel codice del corso, dopo <code>unsubscription_ok</code> l'utente rimette nello stato <code>chatroom = ChatroomPID</code> invece di <code>undefined</code>: sembra una svista, perché la prossima disiscrizione tornerebbe a chiedere alla chatroom invece di dire «non sei iscritto».</p>
+  <figure class="scena" data-scena="chat12" data-titolo="Iscrizione e broadcast"></figure>
+  <div class="box regola" data-tit="Domanda della lezione: user2 può ricevere il messaggio di user1?">
+    <p>Scenario: (1) user1 si iscrive, (2) la chatroom conferma, (3) user1 manda un messaggio, (4) user2 manda la sua iscrizione. Le azioni 3 e 4 sono di attori diversi e non hanno happens-before tra loro, quindi la chatroom può vedere i due messaggi in uno dei due ordini. Se riceve prima l'iscrizione di user2, user2 riceve il messaggio di user1; se riceve prima il messaggio, no. (Ragionamento mio dal modello: la FIFO della mailbox ordina solo ciò che arriva, non l'ordine di arrivo tra mittenti diversi.)</p>
+  </div>
+</section>
+
+<section>
+  <h2>Bounded buffer: attese gestite nello stato</h2>
+  <p>Il problema produttore-consumatore: dei <b>produttori</b> mettono elementi in una struttura di dimensione fissa, dei <b>consumatori</b> li tolgono. Un consumatore deve aspettare se il buffer è vuoto; un produttore se è pieno. Con i thread servivano lock e condizioni. Con gli attori il <b>buffer è un attore</b> e le richieste che non può soddisfare subito le <b>mette da parte</b> nello stato.</p>
+  <p>Protocollo: produttore verso buffer <code>{put, {Ref, Elem, SenderPID}}</code>; consumatore verso buffer <code>{get, {Ref, SenderPID}}</code>; risposte <code>{put_ok, Ref}</code> e <code>{get_ok, {Ref, Elem}}</code>. Dopo una richiesta il produttore/consumatore <b>aspetta la risposta</b> (sincrono, con il <code>Ref</code> come nella chatroom).</p>
+  <figure class="codice" data-titolo="buffer.erl: stato, loop e put (abbreviato)">
+<pre data-lang="erlang">-record(buffer_state, {buffer, max_size, pending_puts, pending_gets}).
+
+loop(State) -&gt;
+    receive
+        {put, {Ref, Elem, SenderPID}} -&gt;
+            handle_put(Ref, Elem, SenderPID, State);
+        {get, {Ref, SenderPID}} -&gt;
+            handle_get(Ref, SenderPID, State);
+        print_state -&gt;
+            handle_print_state(State)
+    end.
+
+handle_put(Ref, Elem, SenderPID, State)
+  when length(State#buffer_state.buffer) == 0,
+       length(State#buffer_state.pending_gets) &gt; 0 -&gt;
+    [{GetRef, GetSenderPID} | TPendingGets] = State#buffer_state.pending_gets,
+    GetSenderPID ! {get_ok, {GetRef, Elem}},
+    SenderPID ! {put_ok, Ref},
+    loop(State#buffer_state{pending_gets = TPendingGets});
+
+handle_put(Ref, Elem, SenderPID, State)
+  when length(State#buffer_state.buffer) &lt; State#buffer_state.max_size,
+       length(State#buffer_state.pending_gets) == 0 -&gt;
+    NewBuffer = State#buffer_state.buffer ++ [Elem],
+    SenderPID ! {put_ok, Ref},
+    loop(State#buffer_state{buffer = NewBuffer});
+
+handle_put(Ref, Elem, SenderPID, State)
+  when length(State#buffer_state.buffer) == State#buffer_state.max_size -&gt;
+    NewPendingPuts = State#buffer_state.pending_puts ++ [{Ref, SenderPID, Elem}],
+    loop(State#buffer_state{pending_puts = NewPendingPuts}).</pre>
+    <ol class="spiega">
+      <li data-righe="1" data-segna="pending_puts@due|pending_gets@due"><p>Lo stato ha quattro campi: gli elementi presenti (<code>buffer</code>, una lista), la capienza (<code>max_size</code>) e due liste di <b>richieste in attesa</b>: i <code>put</code> che non hanno trovato posto e i <code>get</code> che non hanno trovato elementi. Di ogni richiesta si tiene il <code>Ref</code> e il Pid, per poter rispondere dopo.</p></li>
+      <li data-righe="3-11" data-segna="handle_put(Ref, Elem, SenderPID, State)@ora|handle_get(Ref, SenderPID, State)@ora"><p>Il <code>loop</code> smista: ogni messaggio va al suo gestore con lo stato corrente.</p></li>
+      <li data-righe="13-19" data-segna="length(State#buffer_state.buffer) == 0@dato|GetSenderPID ! {get_ok, {GetRef, Elem}}@ok|SenderPID ! {put_ok, Ref}@ok"><p><b>Caso 1</b>: buffer vuoto e c'è un <code>get</code> in attesa. L'elemento non entra nemmeno nel buffer: si prende il primo <code>get</code> della lista (<code>[{GetRef, GetSenderPID} | TPendingGets]</code> separa la testa dalla coda), gli si manda <code>get_ok</code> con l'elemento, e si risponde <code>put_ok</code> al produttore. La lista dei <code>get</code> perde il primo.</p></li>
+      <li data-righe="21-26" data-segna="State#buffer_state.buffer ++ [Elem]@ora"><p><b>Caso 2</b>: c'è posto e nessun <code>get</code> aspetta. L'elemento è aggiunto in fondo alla lista (<code>++ [Elem]</code>), e il produttore riceve <code>put_ok</code>. La virgola nella guardia significa «e».</p></li>
+      <li data-righe="28-31" data-segna="{Ref, SenderPID, Elem}@due"><p><b>Caso 3</b>: il buffer è pieno. Il produttore <b>non riceve risposta</b>: la sua richiesta (con elemento) va in fondo a <code>pending_puts</code>. Il produttore resta bloccato nella sua <code>receive</code> finché un consumatore non libera posto.</p></li>
+    </ol>
+  </figure>
+  <p><code>handle_get</code> (non riportato per esteso) è speculare. Piena e con <code>put</code> in attesa: si risponde <code>get_ok</code> con il primo elemento, poi il primo <code>put</code> in attesa viene rielaborato con <code>handle_put</code> (che ora trova posto). Non vuota e senza <code>put</code> in attesa: <code>get_ok</code> e si toglie la testa. Vuota: il <code>get</code> va in <code>pending_gets</code>. I due commenti «Is it possible?» del codice hanno risposta no: <code>pending_gets</code> è non vuota <b>solo se</b> il buffer è vuoto, e <code>pending_puts</code> solo se è pieno, perché ogni richiesta in attesa è servita non appena la condizione cambia (invariante). Se l'invariante fallisse, nessuna clausola corrisponderebbe e il processo si fermerebbe con un errore <code>function_clause</code>.</p>
+  <figure class="codice" data-titolo="L'API e una situazione di deadlock">
+<pre data-lang="erlang">put(BufferPID, Elem) -&gt;
+    Ref = make_ref(),
+    BufferPID ! {put, {Ref, Elem, self()}},
+    receive
+        {put_ok, Ref} -&gt;
+            put_ok
+    end.
+
+deadlock_situation() -&gt;
+    BufferPID = buffer:start(1),
+    A = fun () -&gt;
+            buffer:get(BufferPID),
+            buffer:put(BufferPID, something),
+            io:format("Done~n")
+        end,
+    spawn(A), spawn(A).</pre>
+    <ol class="spiega">
+      <li data-righe="1-7" data-segna="receive@due|{put_ok, Ref}@ok"><p><code>put/2</code> è un'API sincrona: manda la richiesta con un <code>Ref</code> nuovo e blocca nella <code>receive</code> finché arriva <code>put_ok</code> con lo stesso <code>Ref</code>. <code>get/1</code> è identica con <code>{get_ok, {Ref, Elem}}</code>.</p></li>
+      <li data-righe="9-16" data-segna="buffer:get(BufferPID)@no|buffer:put(BufferPID, something)@ora"><p>Qui (mio adattamento: nel corso sono due funzioni identiche A1 e A2) due attori fanno ciascuno <code>get</code> e poi <code>put</code>, su un buffer di capienza 1 <b>vuoto</b>. Entrambi si bloccano sul <code>get</code>, e il <code>put</code> che li sbloccherebbe è la riga successiva dello stesso attore: <b>deadlock</b>. Un sistema di attori può dunque avere deadlock, anche senza lock.</p></li>
+    </ol>
+  </figure>
+  <figure class="scena" data-scena="buffer12" data-titolo="Deadlock, e come cambiare l'ordine lo evita"></figure>
+  <p>Se un attore fa prima <code>put</code> e poi <code>get</code> (<code>non_deadlock_situation1</code>), il <code>put</code> trova il <code>get</code> in attesa dell'altro e lo serve: finiscono tutti e due. Anche con due consumatori e due produttori (<code>non_deadlock_situation2</code>) si finisce sempre, perché ogni attore fa una sola operazione.</p>
+</section>
+
+<section>
+  <h2>Esercizi 12: banca, conti e app mobile</h2>
+  <p>I file del corso (<code>account.erl</code>, <code>bank.erl</code>, <code>mobile_app.erl</code>) sono solo scheletri con commenti: non c'è ancora una soluzione. Qui sotto c'è l'<b>idea</b> di progetto, non il codice completo (da scrivere e provare con <code>erl</code>). Tre tipi di attori: <b>app mobile</b> (manda le transazioni), <b>banca</b> (le esegue), <b>conto</b> (tiene il saldo).</p>
+  <div class="tab-wrap"><table class="tab"><thead><tr><th>attore</th><th>stato</th><th>messaggi che gestisce</th><th>cosa fa</th></tr></thead><tbody>
+    <tr><td>account</td><td>record con <code>balance</code></td><td><code>{deposit, Amount}</code>, <code>print_balance</code></td><td>somma <code>Amount</code> (negativo = prelievo) e richiama <code>loop</code> con il saldo nuovo; stampa il saldo</td></tr>
+    <tr><td>bank</td><td>(quasi) niente</td><td><code>{transaction, {Payer, Payee, Amount}}</code></td><td>manda <code>{deposit, -Amount}</code> al pagante e <code>{deposit, Amount}</code> al beneficiario</td></tr>
+    <tr><td>mobile_app</td><td>record con il Pid della banca</td><td><code>{payment_request, {Payer, Payee, Amount}}</code></td><td>inoltra una <code>transaction</code> alla banca</td></tr>
+  </tbody></table></div>
+  <figure class="scena" data-scena="banca12" data-titolo="Tre richieste da 1 DKK, e print_balance a metà"></figure>
+  <p><b>Punto 4 (system_start2)</b>: una funzione che fa <code>spawn</code> di due app, due banche e due conti, e li registra con nomi (<code>register</code>) o ne restituisce i Pid, così dalla shell si può mandare <code>payment_request</code>. Poi una funzione manda due richieste (da a1 ad a2 tramite ma1, da a2 ad a1 tramite ma2). <b>Punto 5 (send_N_requests)</b>: una funzione che manda <code>n</code> messaggi <code>payment_request</code> da 1 DKK all'app, in un ciclo ricorsivo con contatore (<code>0</code> = si ferma, <code>N</code> = manda e richiama con <code>N-1</code>, come <code>ping/2</code>).</p>
+  <div class="box esame" data-tit="Punto 6: quale saldo viene stampato?">
+    <p>La funzione manda <code>n = 100</code> richieste e poi <code>print_balance</code> ai due conti. Dato che gli invii sono <b>asincroni</b>, i <code>print_balance</code> possono arrivare al conto <b>prima</b> che tutti i depositi siano stati elaborati: (a) con tutti i depositi già arrivati il saldo è quello atteso (a1 scende di 100, a2 sale di 100 rispetto al saldo di partenza); (b) non è l'unico possibile; (c) per ogni conto il saldo stampato è uno qualsiasi tra il saldo iniziale e quello finale, a passi di 1 DKK (da 0 a 100 depositi già eseguiti), e i due conti sono indipendenti, quindi possono non sommare al totale. Il motivo: messaggi di mittenti diversi (il mittente di <code>print_balance</code> è la shell, quello dei depositi è la banca) non hanno ordine garantito. Il saldo <i>finale</i> è però sempre lo stesso.</p>
+  </div>
+  <p><b>Punto 7 (due depositi insieme)</b>: nessuna data race. L'attore conto elabora un messaggio alla volta e il saldo è una variabile locale (il parametro di <code>loop</code>): i due depositi aspettano in mailbox e sono eseguiti uno dopo l'altro. Cambia al massimo l'ordine (non determinismo), ma la somma è la stessa e non c'è aggiornamento perso.</p>
+  <h3>Punti difficili (8 e 9)</h3>
+  <p><b>Punto 8</b>: il conto ha nello stato il Pid della propria banca e il deposito porta il Pid del mittente (<code>{deposit, Amount, From}</code>). Si scrive una clausola per i depositi positivi (da chiunque) e una per quelli negativi con guardia <code>when Amount &lt; 0, From == Bank</code>; ogni altro caso è ignorato (o risponde con un rifiuto).</p>
+  <p><b>Punto 9</b>: il saldo non deve scendere sotto 0. Il conto deve poter <b>rispondere</b>: dopo un prelievo che porterebbe sotto zero manda <code>{rejected, Ref}</code> alla banca, altrimenti <code>{ok, Ref}</code>. La banca, per ogni transazione, manda <b>prima</b> il prelievo al pagante, con un <code>Ref</code> nuovo, e <b>aspetta la risposta</b> (come <code>user:handle_subscribe</code>); solo se è <code>ok</code> manda il deposito positivo al beneficiario, altrimenti informa l'app e non fa nulla. In alternativa la banca tiene le transazioni in attesa nello stato (come <code>pending_puts</code> nel buffer) e non si blocca. Se la banca attende, serializza le transazioni; non c'è rischio di deadlock perché il conto non aspetta mai la banca.</p>
+</section>
+
+<section>
+  <h2>Frasi pronte per l'orale</h2>
+  <div class="box inglese" data-tit="Message passing or shared memory?">
+    <p>In shared memory concurrency, threads synchronise by writing to the same memory, so we need locks, volatile fields or CAS to avoid race conditions, data races and visibility problems. In message passing, threads do not share state: each one works on its own local memory and data is communicated by sending messages. Data races and visibility problems disappear, but we still have to reason about the order in which messages arrive, and about deadlocks.</p>
+  </div>
+  <div class="box inglese" data-tit="What is an actor?">
+    <p>An actor is a sequential unit of computation with its own local state and a mailbox. It can do only four things: receive messages, send asynchronous messages to other actors, create new actors, and change its behaviour. Sending is non-blocking, receiving blocks if the mailbox is empty. The model makes no assumption about the order in which messages from different senders arrive, so if a system works without assuming an order, it also works when an order is imposed.</p>
+  </div>
+  <div class="box inglese" data-tit="An actor in Erlang">
+    <p>In Erlang an actor is a module with a state, usually a record, a <code>start</code> function that calls <code>spawn</code>, an <code>init</code> function that builds the initial state, and a <code>loop</code> function whose body is a <code>receive</code> with one case per type of message. The state is a parameter of <code>loop</code>: after each message the actor calls itself with the new state. We send with <code>Pid ! Message</code>, and a message that matches no case stays in the mailbox.</p>
+  </div>
+  <div class="box inglese" data-tit="Synchronous communication with actors">
+    <p>Erlang only has asynchronous send. To get a reply, the sender creates a unique reference with <code>make_ref()</code>, puts it and its own <code>self()</code> in the message, and then waits in a <code>receive</code> whose pattern contains that same reference. This builds synchronous communication from the asynchronous primitives, which is why the actor model can use asynchronous communication.</p>
+  </div>
+  <div class="box inglese" data-tit="The turnstile example">
+    <p>In the turnstile example the counter is an actor that owns the total. The turnstile actors do not touch it, they only send it <code>increment</code> messages. The counter handles one message at a time, so no lock is needed and no update can be lost. The price is that every message goes through a single actor.</p>
+  </div>
+</section>
+
+</main>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+  const T = (id, x, y, t, e) => Object.assign({ id, tipo: 'testo', x, y, t, size: 13 }, e || {});
+  const R = (id, x, y, w, h, t, e) => Object.assign({ id, tipo: 'rett', x, y, w, h, t }, e || {});
+  const V = (id, x1, y1, x2, y2, t, e) => Object.assign({ id, tipo: 'vett', x1, y1, x2, y2, t: t || '' }, e || {});
+  const H = { nascosto: true };
+
+  // 1. memoria condivisa e attore
+  SCENE.cond12 = {
+    w: 600, h: 260, lato: true,
+    legenda: 'dato:valore letto,ora:scrittura,no:aggiornamento perso,ok:risultato corretto',
+    oggetti: [
+      T('tit', 300, 26, 'Memoria condivisa: x è toccata da tutti', { bold: true }),
+      R('t1', 30, 90, 120, 46, 'Thread A'),
+      R('t2', 450, 90, 120, 46, 'Thread B'),
+      R('mem', 225, 85, 150, 56, 'x = 0', { tono: 'dato' }),
+      V('v1', 225, 100, 150, 100, '', H),
+      V('v2', 375, 100, 450, 100, '', H),
+      T('s1', 90, 165, ''), T('s2', 510, 165, ''),
+      R('mb', 225, 175, 150, 34, '', Object.assign({ tono: 'spento' }, H)),
+      T('mbl', 300, 228, 'mailbox del Counter', Object.assign({ size: 11 }, H)),
+      R('m1', 155, 55, 68, 22, 'increment', Object.assign({ tono: 'ora' }, H)),
+      R('m2', 377, 55, 68, 22, 'increment', Object.assign({ tono: 'ora' }, H))
+    ],
+    passi: [
+      { nota: '<p>Due thread vogliono fare <code>x = x + 1</code>, con <code>x</code> che vale 0. Se tutto va bene deve risultare 2.</p>' },
+      { nota: '<p>Il thread A <b>legge</b> x e ottiene 0.</p>', set: { v1: { nascosto: false, x1: 225, y1: 100, x2: 150, y2: 100, tono: 'dato' }, s1: { t: 'legge x → 0', tono: 'dato' } } },
+      { nota: '<p>Prima che A scriva, anche il thread B <b>legge</b> x e ottiene 0.</p>', set: { v2: { nascosto: false, x1: 375, y1: 100, x2: 450, y2: 100, tono: 'dato' }, s2: { t: 'legge x → 0', tono: 'dato' } } },
+      { nota: '<p>A scrive 0 + 1 = 1.</p>', set: { v1: { x1: 150, y1: 125, x2: 225, y2: 125, tono: 'ora' }, mem: { t: 'x = 1', tono: 'ora' }, s1: { t: 'scrive 1', tono: 'ora' } } },
+      { nota: '<p>B scrive anch\'essa 0 + 1 = 1: due incrementi, ma <code>x</code> vale 1. È l\'aggiornamento perso (<i>lost update</i>), una race condition. Servirebbe un lock.</p>', set: { v2: { x1: 450, y1: 125, x2: 375, y2: 125, tono: 'no' }, mem: { t: 'x = 1 ?', tono: 'no' }, s2: { t: 'scrive 1', tono: 'no' } } },
+      { nota: '<p>Con i messaggi il dato <code>total</code> sta dentro un solo attore, il Counter. A e B non possono né leggerlo né scriverlo: ciascuno prepara un messaggio <code>increment</code>.</p>', set: { tit: { t: 'Messaggi: solo il Counter vede total' }, mem: { t: 'Counter: total = 0', tono: 'dato' }, t1: { t: 'Attore A' }, t2: { t: 'Attore B' }, v1: { nascosto: true }, v2: { nascosto: true }, s1: { t: '', tono: null }, s2: { t: '', tono: null }, mb: { nascosto: false }, mbl: { nascosto: false }, m1: { nascosto: false }, m2: { nascosto: false } } },
+      { nota: '<p>I messaggi finiscono nella <b>mailbox</b> del Counter. L\'invio non blocca A e B.</p>', set: { m1: { x: 230, y: 181 }, m2: { x: 302, y: 181 } } },
+      { nota: '<p>Il Counter prende <b>un messaggio per volta</b>: primo <code>increment</code>, total = 1.</p>', set: { m1: { nascosto: true }, mem: { t: 'Counter: total = 1', tono: 'ora' } } },
+      { nota: '<p>Secondo <code>increment</code>, total = 2. Nessun aggiornamento perso, e nessun lock: gli incrementi non si possono sovrapporre perché li esegue un attore sequenziale.</p>', set: { m2: { nascosto: true }, mem: { t: 'Counter: total = 2', tono: 'ok' } } }
+    ]
+  };
+
+  // 2. le quattro azioni
+  SCENE.attore12 = {
+    w: 600, h: 300, lato: true,
+    legenda: 'dato:stato,due:comportamento,ora:azione in corso,ok:attore o messaggio nuovo',
+    oggetti: [
+      T('tA', 140, 34, 'Attore A', { bold: true }), T('tB', 460, 34, 'Attore B', { bold: true }),
+      R('A', 30, 46, 220, 160, '', { tono: 'spento' }),
+      R('aS', 45, 56, 190, 36, 'stato: total = 0', { tono: 'dato' }),
+      R('aC', 45, 100, 190, 36, 'comportamento: loop', { tono: 'due' }),
+      R('aM', 45, 146, 190, 50, '', { tono: 'spento' }),
+      T('aml', 52, 160, 'mailbox', { size: 11, anchor: 'start' }),
+      R('mA', 140, 160, 90, 26, 'm1', Object.assign({ tono: 'ora' }, H)),
+      R('B', 350, 46, 220, 160, '', { tono: 'spento' }),
+      R('bS', 365, 56, 190, 36, 'stato di B', { tono: 'dato' }),
+      R('bC', 365, 100, 190, 36, 'comportamento di B', { tono: 'due' }),
+      R('bM', 365, 146, 190, 50, '', { tono: 'spento' }),
+      T('bml', 372, 160, 'mailbox', { size: 11, anchor: 'start' }),
+      R('mB', 255, 108, 90, 26, 'm2', Object.assign({ tono: 'ora' }, H)),
+      R('C', 215, 246, 170, 40, 'Attore C (nuovo)', Object.assign({ tono: 'ok' }, H)),
+      V('spawn', 140, 206, 250, 246, 'spawn', Object.assign({ tono: 'ok', tx: -45, ty: 0 }, H))
+    ],
+    passi: [
+      { nota: '<p>Un attore ha uno <b>stato</b> locale, un <b>comportamento</b> (come gestisce i messaggi) e una <b>mailbox</b>. In Erlang: un record, la funzione <code>loop</code>, la coda dei messaggi del processo.</p>' },
+      { nota: '<p><b>1. Ricevere.</b> Un messaggio, mandato da un altro attore, arriva nella mailbox di A.</p>', set: { mA: { nascosto: false }, aM: { tono: 'dato' } } },
+      { nota: '<p>Il <code>receive</code> prende il messaggio dalla mailbox e il comportamento lo gestisce. Se la mailbox fosse vuota, A resterebbe fermo ad aspettare.</p>', set: { mA: { nascosto: true }, aC: { t: 'comportamento: gestisce m1', tono: 'ora' }, aM: { tono: 'spento' } } },
+      { nota: '<p><b>4. Cambiare comportamento.</b> Il messaggio ha cambiato lo stato: <code>loop(NewState)</code>. Nel modello, anche il modo di gestire i messaggi successivi può cambiare.</p>', set: { aS: { t: 'stato: total = 1', tono: 'ora' }, aC: { t: 'comportamento: loop', tono: 'due' } } },
+      { nota: '<p><b>2. Inviare.</b> A prepara un messaggio per B: <code>PidB ! m2</code>.</p>', set: { mB: { nascosto: false }, aS: { tono: 'dato' } } },
+      { nota: '<p>Il messaggio va nella mailbox di B. A <b>non ha aspettato</b> la consegna né la risposta: l\'invio è asincrono.</p>', set: { mB: { x: 460, y: 158, tono: 'ok' }, bM: { tono: 'dato' } } },
+      { nota: '<p><b>3. Creare.</b> A crea un nuovo attore con <code>spawn</code>. Ottiene il suo Pid e da quel momento può mandargli messaggi.</p>', set: { C: { nascosto: false }, spawn: { nascosto: false }, bM: { tono: 'spento' } } }
+    ]
+  };
+
+  // 3. ordine
+  SCENE.ordine12 = {
+    w: 600, h: 240, lato: true,
+    legenda: 'dato:M1,due:M2,ora:fuori ordine,ok:ordine garantito',
+    oggetti: [
+      R('S', 30, 70, 110, 50, 'Attore 1'),
+      R('Rr', 470, 70, 100, 50, 'Attore 2'),
+      R('mb', 320, 60, 140, 70, '', { tono: 'spento' }),
+      T('mbl', 390, 50, 'mailbox di Attore 2', { size: 11 }),
+      R('m1', 150, 55, 60, 26, 'M1', Object.assign({ tono: 'dato' }, H)),
+      R('m2', 150, 105, 60, 26, 'M2', Object.assign({ tono: 'due' }, H)),
+      V('hb', 140, 175, 470, 175, '', Object.assign({ tono: 'ok' }, H)),
+      T('hbl', 305, 205, '', { tono: 'ok' })
+    ],
+    passi: [
+      { nota: '<p>L\'Attore 1 invierà due messaggi all\'Attore 2, prima M1 poi M2.</p>' },
+      { nota: '<p>Prima M1, poi M2: in quest\'ordine li ha spediti.</p>', set: { m1: { nascosto: false }, m2: { nascosto: false } } },
+      { nota: '<p>Durante il percorso M2 può sorpassare M1. Il modello non lo vieta.</p>', set: { m1: { x: 215, tono: 'ora' }, m2: { x: 290, tono: 'ora' } } },
+      { nota: '<p>Nella mailbox dell\'Attore 2 arriva <b>prima M2</b>, poi M1. Il sistema va progettato perché funzioni anche così. (Erlang in pratica conserva l\'ordine tra la stessa coppia mittente-destinatario, ma non conviene farci conto.)</p>', set: { m2: { x: 395, y: 82, tono: 'due' }, m1: { x: 330, y: 82, tono: 'dato' } } },
+      { nota: '<p>L\'unico ordine sicuro è l\'<b>happens-before</b>: <code>send(m)</code> precede sempre <code>receive(m)</code>, e le azioni di uno stesso attore sono in sequenza.</p>', set: { hb: { nascosto: false }, hbl: { t: 'send(M) → receive(M)' } } }
+    ]
+  };
+
+  // 4. pattern matching
+  SCENE.match12 = {
+    w: 560, h: 230, lato: true,
+    legenda: 'dato:atomo,due:variabile,ok:corrisponde,no:non corrisponde',
+    oggetti: [
+      T('l1', 30, 28, 'messaggio ricevuto', { anchor: 'start', size: 11 }),
+      T('msg', 30, 52, '{ping, <0.85.0>}', { anchor: 'start', bold: true, size: 15 }),
+      T('l2', 30, 100, 'clausola provata', { anchor: 'start', size: 11 }),
+      T('pat', 30, 124, '', { anchor: 'start', bold: true, size: 15 }),
+      T('res', 30, 170, '', { anchor: 'start', bold: true }),
+      T('res2', 30, 196, '', { anchor: 'start' })
+    ],
+    passi: [
+      { nota: '<p>Una tupla di due elementi: l\'atomo <code>ping</code> e un Pid.</p>', set: { msg: { tono: 'dato' } } },
+      { nota: '<p>Clausola <code>pong</code>: un atomo contro una tupla. I tipi sono diversi, non corrisponde.</p>', set: { pat: { t: 'pong', tono: 'no' }, res: { t: 'no: atomo contro tupla', tono: 'no' }, res2: { t: '' } } },
+      { nota: '<p>Clausola <code>{ping, Ping_PID}</code>: due elementi come il messaggio, e <code>ping</code> = <code>ping</code>. <code>Ping_PID</code> è libera, quindi si lega al secondo pezzo.</p>', set: { pat: { t: '{ping, Ping_PID}', tono: 'ok' }, res: { t: 'sì: Ping_PID si lega a <0.85.0>', tono: 'ok' }, res2: { t: 'il ramo può usare Ping_PID, per esempio Ping_PID ! pong', tono: 'ok' } } },
+      { nota: '<p>Variabile <b>già legata</b>: nella chatroom <code>Ref</code> vale già la reference della richiesta. Il pattern <code>{subscription_ok, Ref}</code> corrisponde solo se il messaggio porta <b>quella</b> reference.</p>', set: { msg: { t: '{subscription_ok, #Ref<0.7>}', tono: 'dato' }, pat: { t: '{subscription_ok, Ref}   con Ref = #Ref<0.3>', tono: 'no' }, res: { t: 'no: Ref è già legata e i valori sono diversi', tono: 'no' }, res2: { t: 'il messaggio resta nella mailbox: è la risposta a un\'altra richiesta', tono: 'no' } } }
+    ]
+  };
+
+  // 5. receive e mailbox
+  SCENE.receive12 = {
+    w: 600, h: 250, lato: true,
+    legenda: 'no:non corrisponde (resta),ok:preso,ora:in corso',
+    oggetti: [
+      T('l1', 40, 30, 'mailbox (il più vecchio a sinistra)', { anchor: 'start', bold: true }),
+      { id: 'mb', tipo: 'celle', x: 40, y: 44, cw: 80, ch: 36, valori: ['owl', 'dog', 'cat'], toni: {}, etichette: ['1°', '2°', '3°'] },
+      T('l2', 40, 125, 'receive', { anchor: 'start', bold: true }),
+      T('c1', 60, 150, 'dog -> …', { anchor: 'start' }),
+      T('c2', 60, 172, 'cat -> …', { anchor: 'start' }),
+      T('c3', 60, 194, 'snake -> …', { anchor: 'start' }),
+      T('c4', 60, 216, 'Animal -> …   (ramo jolly)', Object.assign({ anchor: 'start' }, H)),
+      T('st', 300, 172, '', { anchor: 'start', bold: true })
+    ],
+    passi: [
+      { nota: '<p>Nella mailbox ci sono tre messaggi in ordine di arrivo: <code>owl</code>, <code>dog</code>, <code>cat</code>. Il <code>receive</code> ha tre rami: <code>dog</code>, <code>cat</code>, <code>snake</code>.</p>' },
+      { nota: '<p>Si comincia dal messaggio più vecchio, <code>owl</code>, provando i rami dall\'alto in basso: nessuno corrisponde. <code>owl</code> <b>resta</b> in mailbox e si passa al messaggio successivo.</p>', set: { mb: { toni: { 0: 'no' } }, st: { t: 'owl: nessun ramo → resta', tono: 'no' } } },
+      { nota: '<p><code>dog</code> corrisponde al primo ramo. Viene tolto dalla mailbox ed eseguito.</p>', set: { mb: { toni: { 0: 'no', 1: 'ok' } }, c1: { tono: 'ok' }, st: { t: 'dog = ramo 1 → preso', tono: 'ok' } } },
+      { nota: '<p>La funzione si richiama (<code>loop()</code>) e il <code>receive</code> riparte dalla mailbox, che ora è owl, cat.</p>', set: { mb: { valori: ['owl', '—', 'cat'], toni: { 0: 'no' } }, c1: { tono: null }, st: { t: 'loop() → receive di nuovo', tono: 'ora' } } },
+      { nota: '<p><code>owl</code> ancora niente; <code>cat</code> corrisponde al secondo ramo.</p>', set: { mb: { toni: { 0: 'no', 2: 'ok' } }, c2: { tono: 'ok' }, st: { t: 'cat = ramo 2 → preso', tono: 'ok' } } },
+      { nota: '<p>Resta solo <code>owl</code>: nessun ramo lo prenderà mai. Ogni <code>receive</code> lo riscorre, e se se ne accumulano molti il processo rallenta.</p>', set: { mb: { valori: ['owl', '—', '—'], toni: { 0: 'no' } }, c2: { tono: null }, st: { t: 'owl resta per sempre', tono: 'no' } } },
+      { nota: '<p>Con un ramo jolly in fondo (<code>Animal</code> è una variabile libera: corrisponde a tutto) <code>owl</code> viene preso e la mailbox si svuota.</p>', set: { c4: { nascosto: false, tono: 'ok' }, mb: { valori: ['—', '—', '—'], toni: {} }, st: { t: 'Animal prende owl', tono: 'ok' } } }
+    ]
+  };
+
+  // 6. ping-pong
+  SCENE.pingpong12 = {
+    w: 600, h: 250, lato: true,
+    legenda: 'dato:ping,due:pong,ora:messaggio,ok:risposta',
+    oggetti: [
+      R('pg', 30, 80, 130, 60, 'ping', Object.assign({ tono: 'dato' }, H)),
+      R('po', 440, 80, 130, 60, 'pong', { tono: 'due' }),
+      T('sp', 95, 165, ''), T('sq', 505, 165, 'receive: in attesa'),
+      V('v1', 160, 100, 440, 100, '', Object.assign({ tono: 'ora' }, H)),
+      V('v2', 440, 125, 160, 125, '', Object.assign({ tono: 'ok' }, H)),
+      T('l1', 300, 90, '', { tono: 'ora' }), T('l2', 300, 150, '', { tono: 'ok' })
+    ],
+    passi: [
+      { nota: '<p><code>Pong_PID = spawn(ping_pong, pong, [])</code>: parte il processo pong, che entra subito in <code>receive</code> e aspetta.</p>' },
+      { nota: '<p><code>spawn(ping_pong, ping, [Pong_PID])</code>: parte il processo ping, che conosce il Pid di pong perché gli è passato come argomento.</p>', set: { pg: { nascosto: false }, sp: { t: 'ha Pong_PID', tono: 'dato' } } },
+      { nota: '<p><code>PID ! {ping, self()}</code>: ping invia la tupla con il suo Pid. Poi stampa <i>ping send to …</i> senza aspettare la consegna.</p>', set: { v1: { nascosto: false }, l1: { t: '{ping, self()}' }, sp: { t: 'stampa «ping send to»', tono: 'ora' } } },
+      { nota: '<p>Ping entra in <code>receive</code> e aspetta l\'atomo <code>pong</code>. Pong riceve la tupla: <code>Ping_PID</code> si lega al Pid di ping.</p>', set: { sp: { t: 'receive: aspetta pong', tono: 'dato' }, sq: { t: 'riceve {ping, Ping_PID}', tono: 'ora' } } },
+      { nota: '<p><code>Ping_PID ! pong</code>: pong risponde all\'indirizzo che ha letto nel messaggio.</p>', set: { v2: { nascosto: false }, l2: { t: 'pong' }, sq: { t: 'Ping_PID ! pong', tono: 'ok' } } },
+      { nota: '<p>Ping riceve <code>pong</code>, stampa <i>Got it!</i> e finisce. Pong si richiama (<code>pong()</code>) e torna ad aspettare: potrebbe servire altri ping.</p>', set: { sp: { t: 'stampa «Got it!» e termina', tono: 'ok' }, sq: { t: 'pong() → aspetta ancora', tono: 'due' }, v1: { tono: 'spento' }, v2: { tono: 'spento' } } }
+    ]
+  };
+
+  // 7. tornelli
+  SCENE.turnstile12 = {
+    w: 600, h: 290, lato: true,
+    legenda: 'dato:stato del Counter,ora:messaggio,ok:risultato',
+    oggetti: [
+      R('t1', 20, 40, 130, 44, 'Turnstile 1'),
+      R('t2', 20, 200, 130, 44, 'Turnstile 2'),
+      R('cn', 390, 50, 180, 110, '', { tono: 'dato' }),
+      T('cnl', 480, 78, 'Counter', { bold: true }),
+      T('tot', 480, 122, 'total = 0', { size: 17, bold: true }),
+      R('mb', 390, 180, 180, 40, '', { tono: 'spento' }),
+      T('mbl', 480, 240, 'mailbox del Counter', { size: 11 }),
+      R('i1', 165, 52, 72, 22, 'increment', Object.assign({ tono: 'ora' }, H)),
+      R('i2', 165, 211, 72, 22, 'increment', Object.assign({ tono: 'ora' }, H))
+    ],
+    passi: [
+      { nota: '<p>Due tornelli e un contatore. <code>total</code> sta solo dentro il Counter. I tornelli conoscono il suo Pid.</p>' },
+      { nota: '<p>Una persona attraversa il tornello 1 e una il tornello 2: ognuno riceve <code>person_crossing</code> e lo gestisce.</p>', set: { t1: { tono: 'ora' }, t2: { tono: 'ora' } } },
+      { nota: '<p>Ogni tornello esegue <code>Counter ! increment</code>.</p>', set: { i1: { nascosto: false }, i2: { nascosto: false } } },
+      { nota: '<p>I due messaggi arrivano nella mailbox del Counter, uno dopo l\'altro. L\'ordine tra i due non importa.</p>', set: { i1: { x: 395, y: 189 }, i2: { x: 475, y: 189 }, t1: { tono: null }, t2: { tono: null } } },
+      { nota: '<p>Il Counter prende il primo: <code>NewState</code> con <code>total + 1</code>, poi <code>loop(NewState)</code>.</p>', set: { i1: { nascosto: true }, tot: { t: 'total = 1', tono: 'ora' } } },
+      { nota: '<p>Poi il secondo. Gli incrementi non possono sovrapporsi: un attore fa una cosa sola alla volta. Nessun lock.</p>', set: { i2: { nascosto: true }, tot: { t: 'total = 2', tono: 'ok' } } }
+    ]
+  };
+
+  // 8. chatroom
+  SCENE.chat12 = {
+    w: 600, h: 300, lato: true,
+    legenda: 'ora:richiesta,ok:conferma o messaggio,dato:stato della chatroom,no:non lo riceve',
+    oggetti: [
+      R('u1', 20, 40, 110, 44, 'user1'),
+      R('u2', 20, 210, 110, 44, 'user2'),
+      R('ch', 420, 110, 150, 60, 'chatroom'),
+      T('us', 495, 200, 'users = [ ]', { bold: true, tono: 'dato' }),
+      R('m', 150, 50, 100, 26, 'subscribe', Object.assign({ tono: 'ora' }, H)),
+      R('n', 150, 220, 100, 26, 'subscribe', Object.assign({ tono: 'ora' }, H)),
+      R('b', 150, 50, 100, 26, 'broadcast', Object.assign({ tono: 'ora' }, H)),
+      R('f', 300, 125, 150, 26, 'message_from_chatroom', Object.assign({ tono: 'ok' }, H)),
+      T('no1', 75, 110, '(non riceve nulla)', Object.assign({ tono: 'no', size: 11 }, H))
+    ],
+    passi: [
+      { nota: '<p>Due utenti e una chatroom. L\'utente manda <code>{subscribe, {Ref, self()}}</code>.</p>' },
+      { nota: '<p>user1 si iscrive: la richiesta parte.</p>', set: { m: { nascosto: false } } },
+      { nota: '<p>La chatroom mette user1 nella lista, nel nuovo stato.</p>', set: { m: { x: 320, y: 100 }, us: { t: 'users = [user1]' } } },
+      { nota: '<p>Risposta <code>{subscription_ok, Ref}</code> con lo stesso Ref: user1 era in <code>receive</code> in attesa proprio di questa.</p>', set: { m: { x: 150, y: 50, t: 'subscription_ok', tono: 'ok' } } },
+      { nota: '<p>user2 si iscrive allo stesso modo.</p>', set: { m: { nascosto: true }, n: { nascosto: false } } },
+      { nota: '<p>La chatroom aggiunge anche user2 (in testa alla lista) e conferma.</p>', set: { n: { x: 320, y: 140 }, us: { t: 'users = [user2, user1]' } } },
+      { nota: '<p><code>subscription_ok</code> torna a user2.</p>', set: { n: { x: 150, y: 220, t: 'subscription_ok', tono: 'ok' } } },
+      { nota: '<p>user1 emette un messaggio: <code>{broadcast, {Message, user1}}</code>.</p>', set: { n: { nascosto: true }, b: { nascosto: false } } },
+      { nota: '<p>La chatroom lo riceve. Toglie il mittente dalla lista con la list comprehension: restano gli altri iscritti.</p>', set: { b: { x: 320, y: 100 } } },
+      { nota: '<p>Inoltra <code>{message_from_chatroom, {user1, Message}}</code> solo a user2. user1, il mittente, non riceve nulla.</p>', set: { b: { nascosto: true }, f: { nascosto: false, x: 140, y: 225 }, no1: { nascosto: false } } }
+    ]
+  };
+
+  // 9. buffer
+  SCENE.buffer12 = {
+    w: 600, h: 300, lato: true,
+    legenda: 'dato:richiesta in attesa,ora:richiesta,ok:risposta,no:bloccato per sempre',
+    oggetti: [
+      T('tit', 300, 24, 'A1 e A2: ciascuno fa get, poi put', { bold: true }),
+      R('bu', 210, 90, 180, 100, ''),
+      T('bl', 300, 110, 'buffer (max = 1)', { bold: true }),
+      T('bs', 300, 140, 'buffer = [ ]'),
+      T('bp', 300, 166, 'pending_gets = [ ]'),
+      R('a1', 20, 50, 110, 44, 'A1'),
+      R('a2', 20, 210, 110, 44, 'A2'),
+      V('g1', 130, 72, 210, 120, 'get', Object.assign({ tono: 'ora', tx: -70, ty: -6 }, H)),
+      V('g2', 130, 232, 210, 165, 'get', Object.assign({ tono: 'ora', tx: -70, ty: 14 }, H)),
+      V('r1', 210, 110, 130, 80, 'get_ok', Object.assign({ tono: 'ok', tx: -60, ty: 12 }, H)),
+      V('r2', 210, 175, 130, 225, 'put_ok', Object.assign({ tono: 'ok', tx: -50, ty: -14 }, H)),
+      T('s1', 75, 120, '', { size: 12 }), T('s2', 75, 282, '', { size: 12 })
+    ],
+    passi: [
+      { nota: '<p>Buffer di capienza 1, vuoto. Due attori: ciascuno fa <code>get</code> e poi <code>put</code>.</p>' },
+      { nota: '<p>A1 invia <code>get</code>. Il buffer è vuoto: non può rispondere, mette la richiesta in <code>pending_gets</code>. A1 è bloccato nella sua <code>receive</code>.</p>', set: { g1: { nascosto: false }, bp: { t: 'pending_gets = [A1]', tono: 'dato' }, s1: { t: 'attende get_ok', tono: 'dato' } } },
+      { nota: '<p>Anche A2 manda <code>get</code>: stesso destino, buffer ancora vuoto.</p>', set: { g2: { nascosto: false }, bp: { t: 'pending_gets = [A1, A2]' }, s2: { t: 'attende get_ok', tono: 'dato' } } },
+      { nota: '<p><b>Deadlock.</b> Il <code>get_ok</code> arriverebbe solo dopo un <code>put</code>, ma i soli attori che potrebbero farlo sono A1 e A2, e il loro <code>put</code> viene dopo il <code>get</code> che li blocca. Nessuno può muoversi.</p>', set: { a1: { tono: 'no' }, a2: { tono: 'no' }, g1: { tono: 'no' }, g2: { tono: 'no' }, s1: { tono: 'no' }, s2: { tono: 'no' } } },
+      { nota: '<p>Cambio l\'ordine di A2: <b>prima put, poi get</b>. Ripartiamo: A1 fa <code>get</code> su un buffer vuoto, ed è in attesa.</p>', set: { tit: { t: 'A1: get poi put   ·   A2: put poi get' }, a1: { tono: null }, a2: { tono: null }, g1: { tono: 'ora' }, g2: { nascosto: true, tono: 'ora' }, bp: { t: 'pending_gets = [A1]' }, s1: { t: 'attende get_ok', tono: 'dato' }, s2: { t: '', tono: null } } },
+      { nota: '<p>A2 manda <code>put</code>. Il buffer è vuoto <b>e</b> c\'è un <code>get</code> in attesa: l\'elemento va direttamente ad A1 con <code>get_ok</code>, e A2 riceve <code>put_ok</code>.</p>', set: { g2: { nascosto: false, x1: 130, y1: 232, x2: 210, y2: 165, t: 'put' }, r1: { nascosto: false }, r2: { nascosto: false }, bp: { t: 'pending_gets = [ ]' }, s1: { t: 'sbloccato', tono: 'ok' }, s2: { t: 'sbloccato', tono: 'ok' } } },
+      { nota: '<p>Ora A1 fa il suo <code>put</code> e A2 il suo <code>get</code>: ci sarà sempre l\'uno o l\'altro disponibile, e in entrambi gli ordini il <code>get</code> trova l\'elemento (o aspetta il <code>put</code> che sta per arrivare). Entrambi stampano <i>Done</i>.</p>', set: { a1: { tono: 'ok' }, a2: { tono: 'ok' }, s1: { t: 'Done' }, s2: { t: 'Done' } } }
+    ]
+  };
+
+  // 10. banca
+  SCENE.banca12 = {
+    w: 640, h: 300, lato: true,
+    legenda: 'ora:messaggio,dato:saldo parziale,ok:saldo finale,no:stampa troppo presto',
+    oggetti: [
+      R('ma', 20, 110, 110, 44, 'ma1'),
+      R('bk', 250, 110, 110, 44, 'b1'),
+      R('a1', 500, 40, 110, 44, 'a1'),
+      R('a2', 500, 190, 110, 44, 'a2'),
+      T('ba1', 555, 105, 'balance = 0'), T('ba2', 555, 255, 'balance = 0'),
+      R('sh', 250, 10, 110, 34, 'shell', H),
+      V('tx', 130, 132, 250, 132, 'transaction ×3', Object.assign({ tono: 'ora', tx: -112, ty: -16 }, H)),
+      V('d1', 360, 120, 500, 70, 'deposit −1', Object.assign({ tono: 'ora', tx: -90, ty: -12 }, H)),
+      V('d2', 360, 145, 500, 205, 'deposit +1', Object.assign({ tono: 'ora', tx: -90, ty: 18 }, H)),
+      V('pr', 360, 30, 500, 58, 'print_balance', Object.assign({ tono: 'no', tx: -140, ty: -8 }, H))
+    ],
+    passi: [
+      { nota: '<p>Esempio con n = 3 richieste da 1 DKK da a1 ad a2 (l\'esercizio ne usa 100). Il saldo di partenza è 0 per semplicità.</p>' },
+      { nota: '<p>L\'app mobile inoltra le tre transazioni alla banca: <code>{transaction, {a1, a2, 1}}</code> ognuna.</p>', set: { tx: { nascosto: false } } },
+      { nota: '<p>La banca gestisce la prima: manda <code>{deposit, -1}</code> ad a1 e <code>{deposit, 1}</code> ad a2. Ripeterà per le altre due.</p>', set: { d1: { nascosto: false }, d2: { nascosto: false } } },
+      { nota: '<p>I due conti aggiornano il loro saldo.</p>', set: { ba1: { t: 'balance = -1', tono: 'dato' }, ba2: { t: 'balance = 1', tono: 'dato' } } },
+      { nota: '<p>Nel frattempo la shell manda <code>print_balance</code> ad a1. Il messaggio arriva quando la banca non ha ancora mandato gli altri depositi: a1 stampa <b>-1</b>. Mittenti diversi, nessun ordine garantito.</p>', set: { sh: { nascosto: false }, pr: { nascosto: false }, ba1: { t: 'stampa: -1', tono: 'no' } } },
+      { nota: '<p>Alla fine, esauriti tutti i messaggi, i saldi sono -3 e +3. Il valore finale è unico, ma una stampa fatta prima può vederne uno qualsiasi tra 0 e -3 (con 100 richieste, tra 0 e -100).</p>', set: { ba1: { t: 'balance = -3', tono: 'ok' }, ba2: { t: 'balance = 3', tono: 'ok' }, pr: { tono: 'spento' } } }
+    ]
+  };
+})();
+</script>
+</body>
+</html>

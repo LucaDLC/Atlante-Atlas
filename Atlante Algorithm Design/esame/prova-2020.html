@@ -1,0 +1,470 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Prova 2020 (svolta)</title>
+<link rel="stylesheet" href="../assets/atlas.css">
+<link rel="stylesheet" href="../assets/tema.css">
+<script src="../assets/sito.js"></script>
+<script src="../assets/atlas.js" defer></script>
+<script>
+window.SCENE = window.SCENE || {};
+(function () {
+const N = (id,x,y,t,r,extra) => Object.assign({id,tipo:'nodo',x,y,t,r:r||22},extra||{});
+const A = (id,da,a,t,extra) => Object.assign({id,tipo:'arco',da,a,dir:true,t:t||''},extra||{});
+
+/* ---------- Q1(b) e Q4: la piramide di Tower ---------- */
+const torre = (c, sotto) => [
+  N('t00',260,50,c[0],22,{sotto:sotto?sotto[0]:''}),
+  N('t10',200,130,c[1],22,{sotto:sotto?sotto[1]:''}), N('t11',320,130,c[2],22,{sotto:sotto?sotto[2]:''}),
+  N('t20',140,210,c[3],22,{sotto:sotto?sotto[3]:''}), N('t21',260,210,c[4],22,{sotto:sotto?sotto[4]:''}), N('t22',380,210,c[5],22,{sotto:sotto?sotto[5]:''}),
+  A('a0010','t00','t10'), A('a0011','t00','t11'), A('a1020','t10','t20'), A('a1021','t10','t21'), A('a1121','t11','t21'), A('a1122','t11','t22'),
+  {id:'z',tipo:'testo',x:20,y:262,t:'',size:13,bold:true,anchor:'start'}
+];
+const tuttiDato = {t00:{tono:'dato'},t10:{tono:'dato'},t11:{tono:'dato'},t20:{tono:'dato'},t21:{tono:'dato'},t22:{tono:'dato'}};
+
+SCENE.a20Gecko = {
+  w: 520, h: 280, lato: true,
+  legenda: 'dato:casella,ora:le due che il greedy confronta,no:percorso del greedy,ok:percorso ottimo',
+  oggetti: torre(['1','1','2','2','0','0']),
+  passi: [
+    { nota: '<p>La torre del testo: N = 3 livelli, c(0,0) = 1; c(1,0) = 1, c(1,1) = 2; c(2,0) = 2, c(2,1) = 0, c(2,2) = 0. Ogni freccia è una mossa (L = in basso a sinistra, R = in basso a destra).</p>', set:Object.assign({z:{t:''}},tuttiDato) },
+    { nota: '<p>Il greedy parte da (0,0) e guarda solo la riga sotto: l = c(1,0) = <b>1</b>, r = c(1,1) = <b>2</b>. «l &gt; r?» No, quindi va a destra (R).</p>', set:{t10:{tono:'ora'},t11:{tono:'ora'},z:{t:'(0,0): l = 1, r = 2 → R'}} },
+    { nota: '<p>Ha raccolto 1 (la cima) + 2 = 3. È in (1,1).</p>', set:{t00:{tono:'no'},t11:{tono:'no'},t10:{tono:'dato'},a0011:{tono:'no'},z:{t:'finora: 1 + 2 = 3'}} },
+    { nota: '<p>Da (1,1): l = c(2,1) = <b>0</b>, r = c(2,2) = <b>0</b>. È un pareggio, ma l\'algoritmo lo risolve da solo: «if l &gt; r go left, <b>else go right</b>». 0 &gt; 0 è falso, quindi R. Il pareggio non è un buco del testo: la regola c\'è.</p>', set:{t21:{tono:'ora'},t22:{tono:'ora'},z:{t:'(1,1): l = 0, r = 0 → R (else)'}} },
+    { nota: '<p>Il greedy finisce in (2,2): totale <b>1 + 2 + 0 = 3</b>, percorso R R.</p>', set:{t22:{tono:'no'},t21:{tono:'dato'},a1122:{tono:'no'},z:{t:'greedy: R R = 1 + 2 + 0 = 3',tono:'no'}} },
+    { nota: '<p>Andando a sinistra due volte: 1 + 1 + 2 = <b>4 &gt; 3</b>. Il greedy ha scelto il 2 subito e ha chiuso la strada verso il 2 più giù. Controesempio.</p>', set:{t00:{tono:'ok'},t10:{tono:'ok'},t20:{tono:'ok'},a0010:{tono:'ok'},a1020:{tono:'ok'},z:{t:'ottimo: L L = 1 + 1 + 2 = 4',tono:'ok'}} }
+  ]
+};
+
+SCENE.a20Dp = {
+  w: 520, h: 280, lato: true,
+  legenda: 'dato:valore già noto,ora:OPT che calcolo,ok:percorso letto dalla tabella',
+  oggetti: torre(['1','1','2','2','0','0']),
+  passi: [
+    { nota: '<p>Dentro ogni cerchio c\'è c(i, j). Sotto metterò OPT(i, j) = il massimo di monete da quella casella <b>in giù</b>, compresa la casella stessa. Si calcola dal basso.</p>', set:Object.assign({z:{t:''}},tuttiDato) },
+    { nota: '<p>Ultimo livello: caso base OPT(2, j) = c(2, j) = 2, 0, 0. Sotto non c\'è niente da raccogliere.</p>', set:{t20:{sotto:'OPT = 2',tono:'ok'},t21:{sotto:'OPT = 0',tono:'ok'},t22:{sotto:'OPT = 0',tono:'ok'},z:{t:'base: OPT(2, j) = c(2, j)'}} },
+    { nota: '<p>Livello 1. OPT(1,0) = c(1,0) + max(OPT(2,0), OPT(2,1)) = 1 + max(2, 0) = <b>3</b>. OPT(1,1) = c(1,1) + max(OPT(2,1), OPT(2,2)) = 2 + max(0, 0) = <b>2</b>.</p>', set:{t10:{sotto:'OPT = 3',tono:'ora'},t11:{sotto:'OPT = 2',tono:'ora'},t20:{tono:'dato'},t21:{tono:'dato'},t22:{tono:'dato'},z:{t:'OPT(1,0) = 3, OPT(1,1) = 2'}} },
+    { nota: '<p>Livello 0. OPT(0,0) = c(0,0) + max(OPT(1,0), OPT(1,1)) = 1 + max(3, 2) = <b>4</b>. Questa è la risposta.</p>', set:{t00:{sotto:'OPT = 4',tono:'ora'},t10:{tono:'dato'},t11:{tono:'dato'},z:{t:'OPT(0,0) = 4'}} },
+    { nota: '<p>Le mosse: da (0,0) scendo al figlio con OPT maggiore, (1,0) con 3 contro 2: L. Da (1,0) il figlio migliore è (2,0) con 2 contro 0: L. Output <b>LL</b> (N − 1 = 2 mosse, non tre come scrive il refuso del testo).</p>', set:{t00:{tono:'ok'},t10:{tono:'ok'},t20:{tono:'ok'},t11:{tono:'dato'},t21:{tono:'dato'},t22:{tono:'dato'},a0010:{tono:'ok'},a1020:{tono:'ok'},z:{t:'mosse: L L',tono:'ok'}} }
+  ]
+};
+
+/* ---------- Q2: Sweden, esempio 2 ---------- */
+SCENE.a20Sweden = {
+  w: 520, h: 210, lato: false,
+  legenda: 'dato:in attesa,ora:partito che esamino,ok:entra,no:non entra (mi fermo),spento:mai esaminato',
+  oggetti: [
+    {id:'c',tipo:'celle',x:60,y:50,cw:70,ch:44,valori:['7','9','9','12','14'],etichette:['A','B','E','D','C']},
+    {id:'z',tipo:'testo',x:60,y:140,t:'',size:13,bold:true,anchor:'start'},
+    {id:'w',tipo:'testo',x:60,y:166,t:'',size:12,anchor:'start'}
+  ],
+  passi: [
+    { nota: '<p>Esempio 2 del testo, seggi A = 7, B = 9, C = 14, D = 12, E = 9. Totale m = 51, la metà è 25,5: la coalizione deve avere <b>meno di 25,5</b> seggi, cioè al più 25. Ordino per seggi <b>crescenti</b> (a pari seggi B prima di E) e tengo la somma <code>t</code> = 0.</p>', set:{c:{toni:{0:'dato',1:'dato',2:'dato',3:'dato',4:'dato'}},z:{t:'t = 0, m = 51'},w:{t:''}} },
+    { nota: '<p>A (7): 2·(0 + 7) = 14 &lt; 51, entra. <code>t</code> = 7.</p>', set:{c:{toni:{0:'ok',1:'ora',2:'dato',3:'dato',4:'dato'}},z:{t:'t = 7'},w:{t:'2·(0 + 7) = 14 < 51 → entra'}} },
+    { nota: '<p>B (9): 2·(7 + 9) = 32 &lt; 51, entra. <code>t</code> = 16.</p>', set:{c:{toni:{0:'ok',1:'ok',2:'ora',3:'dato',4:'dato'}},z:{t:'t = 16'},w:{t:'2·(7 + 9) = 32 < 51 → entra'}} },
+    { nota: '<p>E (9): 2·(16 + 9) = 50 &lt; 51, entra. <code>t</code> = 25 (25 &lt; 25,5: giusto sotto la metà).</p>', set:{c:{toni:{0:'ok',1:'ok',2:'ok',3:'ora',4:'dato'}},z:{t:'t = 25'},w:{t:'2·(16 + 9) = 50 < 51 → entra'}} },
+    { nota: '<p>D (12): 2·(25 + 12) = 74 ≥ 51, <b>non</b> entra. Mi fermo: tutti i successivi hanno almeno 12 seggi, non entrerebbero neanche loro (C non viene nemmeno esaminato).</p>', set:{c:{toni:{0:'ok',1:'ok',2:'ok',3:'no',4:'spento'}},z:{t:'t = 25'},w:{t:'2·(25 + 12) = 74 ≥ 51 → stop'}} },
+    { nota: '<p>Coalizione: A, B, E (3 partiti, 25 seggi). Il primo ministro è il capo dell\'ultimo aggiunto, E (9 seggi, il più grande della coalizione): <b>Eric</b>. Anche Bob è giusto (9 seggi come E), come dice il testo.</p>', set:{c:{toni:{0:'ok',1:'ok',2:'ok',3:'no',4:'spento'}},z:{t:'output: Eric (anche Bob vale)',tono:'ok'},w:{t:''}} }
+  ]
+};
+
+/* ---------- Q3: Wall, Dijkstra con super-sorgente (calcolato qui) ---------- */
+(function(){
+  const TXT = [
+    '. U U U U U U',
+    'P 7 9 8 8 7 5 U . . . U U U',
+    'P 2 2 2 1 1 6 6 U U U 5 5 U A',
+    'P 1 2 3 2 2 2 2 4 5 5 4 2 5 A',
+    '. M M M 3 3 3 2 6 5 4 2 2 2 A',
+    '. . . . M M 2 2 2 2 3 7 2 2 A',
+    '. . . . . . M 2 3 2 7 7 7 7 A',
+    '. . . . . . . M 7 7 7 7 7 7 A',
+    '. . . . . . . M 7 7 7 M M 7 A',
+    '. . . . . . . . M 7 M',
+    '. . . . . . . . . M'
+  ];
+  const G = TXT.map(r => r.split(' '));
+  const R = G.length, C = 15;
+  const at = (i,j) => (G[i] && G[i][j] !== undefined) ? G[i][j] : '';
+  const vuota = x => x === '' || x === '.';
+  const chiusa = x => x === 'U' || x === 'M' || vuota(x);
+  const costo = x => x === 'A' ? 0 : parseInt(x,10);
+  const dist = {}, padre = {}, fatto = {};
+  const k = (i,j) => i + ',' + j;
+  for (let i=0;i<R;i++) for (let j=0;j<C;j++) if (at(i,j) === 'P') dist[k(i,j)] = 0;
+  for (;;) {
+    let best = null;
+    for (const kk in dist) if (!fatto[kk] && (best === null || dist[kk] < dist[best])) best = kk;
+    if (best === null) break;
+    fatto[best] = true;
+    const [i,j] = best.split(',').map(Number);
+    if (at(i,j) === 'A') continue;
+    [[1,0],[-1,0],[0,1],[0,-1]].forEach(([di,dj]) => {
+      const a = i+di, b = j+dj, x = at(a,b);
+      if (a < 0 || a >= R || b < 0 || b >= C || chiusa(x) || x === 'P') return;
+      const nd = dist[best] + costo(x);
+      if (dist[k(a,b)] === undefined || nd < dist[k(a,b)]) { dist[k(a,b)] = nd; padre[k(a,b)] = best; }
+    });
+  }
+  let fine = null;
+  for (const kk in dist) { const [i,j] = kk.split(',').map(Number); if (at(i,j) === 'A' && (fine === null || dist[kk] < dist[fine])) fine = kk; }
+  const MIN = dist[fine];
+  const T = [0,5,10,15,20,25,30,MIN];
+  const vista = (t) => G.length && Array.from({length:R},(_,i)=>Array.from({length:C},(_,j)=>{
+    const x = at(i,j), d = dist[k(i,j)];
+    if (vuota(x)) return '';
+    if (x === 'P') return 'P';
+    if (d !== undefined && d <= t) return x + ':' + d;
+    return x;
+  }));
+  const toni = (t, prec) => { const o = {}; for (let i=0;i<R;i++) for (let j=0;j<C;j++) {
+    const x = at(i,j), d = dist[k(i,j)];
+    if (x === 'U' || x === 'M' || vuota(x)) { if (x !== '') o[k(i,j)] = 'spento'; continue; }
+    if (x === 'P') { o[k(i,j)] = 'dato'; continue; }
+    if (d !== undefined && d <= t) o[k(i,j)] = d > prec ? 'ora' : 'dato';
+  } return o; };
+  const passi = [{ nota:'<p>La mappa del testo: r = 11 righe, l = 15 colonne (le righe finali sono più corte: i quadrati mancanti non esistono). <b>P</b> = Pacifico (sorgenti), <b>A</b> = Atlantico, i numeri sono i costi. U, M e « . » (grigie) non sono vertici: non si può costruire lì. Aggiungo una super-sorgente <code>s</code> con un arco di peso 0 verso ogni P.</p>', set:{g:{valori:vista(-1),toni:toni(-1,-1)},z:{t:''}} }];
+  T.forEach((t,idx) => {
+    const prec = idx === 0 ? -1 : T[idx-1];
+    const ult = idx === T.length-1;
+    passi.push({ nota: '<p>' + (idx === 0 ? 'Dijkstra parte da s: le P hanno distanza 0.' : ult ? 'Distanza ' + t + ': esce dalla coda la prima casella <b>A</b> ((4,14), distanza ' + t + '). È la risposta: <b>' + t + '</b>, come nel testo. Dijkstra si ferma qui.' : 'Dijkstra estrae sempre il vertice con distanza minore. Ora sono fissate tutte le caselle con distanza ≤ ' + t + ' (arancio: quelle appena entrate).') + ' Ogni casella mostra <code>costo:distanza</code>.</p>', set:{g:{valori:vista(t),toni:toni(t,prec)},z:{t:'distanze fissate: ≤ ' + t}} });
+  });
+  /* percorso */
+  const tp = toni(MIN,MIN), path = [];
+  for (let c = fine; c !== undefined; c = padre[c]) path.push(c);
+  path.reverse();
+  let somma = 0, nq = 0;
+  path.forEach(c => { const [i,j] = c.split(',').map(Number); const x = at(i,j); tp[c] = 'ok'; if (x !== 'P' && x !== 'A') { somma += costo(x); nq++; } });
+  passi.push({ nota:'<p>Risalendo dai predecessori da A fino a una P si legge un muro da <b>' + nq + ' caselle</b> con costo totale <b>' + somma + '</b>. (Può esserci più di un muro da 35: Dijkstra ne restituisce uno.)</p>', set:{g:{valori:vista(MIN),toni:tp},z:{t:'muro più economico: ' + somma,tono:'ok'}} });
+  SCENE.a20Wall = {
+    w: 640, h: 372, lato: false,
+    legenda: 'dato:P o già fissata,ora:appena fissata,ok:muro più economico,spento:non si può costruire',
+    oggetti: [
+      {id:'g',tipo:'griglia',x:14,y:14,cw:38,ch:26,valori:vista(-1),intR:G.map((_,i)=>String(i)),intC:Array.from({length:C},(_,j)=>String(j))},
+      {id:'z',tipo:'testo',x:14,y:352,t:'',size:13,bold:true,anchor:'start'}
+    ],
+    passi: passi
+  };
+  SCENE.a20WallInfo = { MIN: MIN, somma: somma, nq: nq };
+})();
+
+/* ---------- Q5: Ambassadors, esempio 1 ---------- */
+SCENE.a20Flow = {
+  w: 560, h: 300, lato: true,
+  legenda: 'dato:capacità disponibile,ok:flusso inviato',
+  oggetti: [
+    N('s',36,150,'s'), N('Rex',180,50,'Rex',28), N('Iv',180,150,'Ivanka',28), N('As',180,250,'Ashton',28),
+    N('Ru',380,50,'Russia',28), N('Az',380,150,'Azerb.',28), N('Sa',380,250,'Saudi',28), N('t',524,150,'t'),
+    A('sR','s','Rex','0/1'), A('sI','s','Iv','0/1'), A('sA','s','As','0/1'),
+    A('RRu','Rex','Ru'), A('IAz','Iv','Az'), A('IRu','Iv','Ru'), A('ARu','As','Ru'), A('AAz','As','Az'), A('ASa','As','Sa'),
+    A('Rut','Ru','t','0/1'), A('Azt','Az','t','0/1'), A('Sat','Sa','t','0/1'),
+    {id:'z',tipo:'testo',x:290,y:292,t:'',size:12,bold:true,anchor:'start'}
+  ],
+  passi: [
+    { nota: '<p>Esempio 1 del testo. Nodi: <code>s</code>, <code>t</code>, un nodo per candidato (N = 3) e uno per paese (M = 3): N + M + 2 = 8. Archi: s → candidato (capacità 1), candidato → paese dove ha affari (capacità 1), paese → t (capacità 1). Rex: Russia; Ivanka: Azerbajdzjan, Russia; Ashton: tutti e tre.</p>', set:{sR:{tono:'dato'},sI:{tono:'dato'},sA:{tono:'dato'},RRu:{tono:'dato'},IAz:{tono:'dato'},IRu:{tono:'dato'},ARu:{tono:'dato'},AAz:{tono:'dato'},ASa:{tono:'dato'},Rut:{tono:'dato'},Azt:{tono:'dato'},Sat:{tono:'dato'},z:{t:'flusso = 0'}} },
+    { nota: '<p>Cammino 1: s → Rex → Russia → t. Rex conosce solo la Russia, quindi la sua unica strada è questa.</p>', set:{sR:{t:'1/1',tono:'ok'},RRu:{tono:'ok'},Rut:{t:'1/1',tono:'ok'},z:{t:'flusso = 1'}} },
+    { nota: '<p>Cammino 2: s → Ivanka → Azerbajdzjan → t. La Russia ha già il suo ambasciatore (capacità 1 piena): Ivanka va dove c\'è posto.</p>', set:{sI:{t:'1/1',tono:'ok'},IAz:{tono:'ok'},Azt:{t:'1/1',tono:'ok'},z:{t:'flusso = 2'}} },
+    { nota: '<p>Cammino 3: s → Ashton → Saudi Arabia → t. Ashton ha ancora il suo arco libero e l\'Arabia Saudita è libera.</p>', set:{sA:{t:'1/1',tono:'ok'},ASa:{tono:'ok'},Sat:{t:'1/1',tono:'ok'},z:{t:'flusso = 3'}} },
+    { nota: '<p>Flusso massimo 3 = M: ogni paese ha un candidato, <b>output 1</b>. Esempio 2: Rex, Ivanka e Rudy conoscono solo la Russia, Ashton è l\'unico che conosce anche gli altri due paesi ma può servirne uno solo: il flusso si ferma a 2 &lt; 3, <b>output 0</b>.</p>', set:{z:{t:'valore 3 = M → output 1',tono:'ok'}} }
+  ]
+};
+
+/* ---------- Q6: Vertex Cover ≤p Russian Hacking ---------- */
+SCENE.a20Vc = {
+  w: 520, h: 260, lato: true,
+  legenda: 'dato:vertice o router,ora:filo con «?»,ok:dispositivo installato',
+  oggetti: [
+    N('A',110,60,'A',24), N('B',110,200,'B',24), N('C',250,130,'C',24), N('D',410,130,'D',24),
+    A('AB','A','B','',{dir:false}), A('BC','B','C','',{dir:false}), A('AC','A','C','',{dir:false}), A('CD','C','D','',{dir:false}),
+    {id:'z',tipo:'testo',x:20,y:250,t:'',size:12,bold:true,anchor:'start'}
+  ],
+  passi: [
+    { nota: '<p>Istanza di Vertex Cover: G = triangolo A, B, C più l\'arco C–D (n = 4, m = 4), con k = 2.</p>', set:{A:{tono:'dato'},B:{tono:'dato'},C:{tono:'dato'},D:{tono:'dato'},z:{t:'(G, k) con k = 2'}} },
+    { nota: '<p>La costruzione: ogni vertice diventa un router, ogni arco diventa un filo <b>con «?»</b> (R = 4, W = 4), k′ = k = 2. Tutti i fili sono da monitorare: è il caso particolare «tutti marcati».</p>', set:{AB:{t:'?',tono:'ora'},BC:{t:'?',tono:'ora'},AC:{t:'?',tono:'ora'},CD:{t:'?',tono:'ora'},z:{t:'R = 4, W = 4, tutti con «?», k′ = 2'}} },
+    { nota: '<p>Soluzione: dispositivi nei router A e C. Il filo A–B è monitorato da A, B–C da C, A–C da entrambi, C–D da C. Quindi K = 2 e {A, C} è anche una vertex cover di G. (Anche {B, C} funziona.)</p>', set:{A:{tono:'ok'},C:{tono:'ok'},AB:{tono:'ok'},BC:{tono:'ok'},AC:{tono:'ok'},CD:{tono:'ok'},z:{t:'output: 2: A, C',tono:'ok'}} }
+  ]
+};
+})();
+</script>
+</head>
+<body>
+<main class="pagina">
+
+<header class="testa">
+  <div class="occhiello"><span>Esame</span></div>
+  <h1>Prova 2020 (svolta)</h1>
+  <p class="lede">L'esame SAD1 del 3 gennaio 2020 (Thore Husfeldt, 4 ore, open book): sei domande, cinque problemi, tutte svolte domanda per domanda. Per ognuna: paradigma e perché, passi, risposta modello in inglese. Numeri, tabelle e tracce sono stati ricalcolati con programmi.</p>
+</header>
+
+<section>
+  <h2>Il set: cinque problemi, sei domande</h2>
+  <p>I cinque problemi sono Tower, Russian Hacking, Ambassadors, Sweden e Wall. Ogni domanda chiede di scegliere <b>quale</b> problema si risolve con un certo paradigma: Tower serve due domande (Q1 e Q4). Punti: 4 + 4 + 4 + 5 + 5 + 5 = 27.</p>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Domanda</th><th>Problema</th><th>Di cosa parla</th><th>Perché quel paradigma</th></tr></thead>
+    <tbody>
+      <tr><td>Q1 Failure (4 pt.)</td><td>Tower</td><td>Piramide di monete, giù a sinistra o a destra: massimo oro</td><td>Il greedy «Follow the Money» guarda solo la riga sotto e perde il premio più in basso</td></tr>
+      <tr><td>Q2 Greedy (4 pt.)</td><td>Sweden</td><td>Più partiti possibile in una coalizione con meno della metà dei seggi</td><td>«As many as possible» sotto un limite, senza valori: i più piccoli per primi</td></tr>
+      <tr><td>Q3 Graph traversal (4 pt.)</td><td>Wall</td><td>Muro più economico da un P a una A su una griglia di costi</td><td>Cammino più economico con costi non negativi: Dijkstra</td></tr>
+      <tr><td>Q4 DP (5 pt.)</td><td>Tower</td><td>Come sopra, ma il valore giusto</td><td>Si scende soltanto, ordine fisso, sottoproblemi che si ripetono</td></tr>
+      <tr><td>Q5 Flow (5 pt.)</td><td>Ambassadors</td><td>Candidati e paesi: un candidato per paese, nessuno ripetuto</td><td>Due insiemi da accoppiare: matching bipartito, quindi flusso</td></tr>
+      <tr><td>Q6 NP-hard (5 pt.)</td><td>Russian Hacking</td><td>Meno dispositivi possibile sui router per monitorare i fili con «?»</td><td>Se tutti i fili hanno «?» è esattamente Vertex Cover</td></tr>
+    </tbody>
+  </table></div>
+  <div class="box esame" data-tit="All'esame">
+    <p>Fai prima la classificazione dei cinque problemi (<a href="triage.html">riconoscere il paradigma</a>), poi le sei risposte. Il formato è in <a href="formato.html">com'è l'esame</a>; lo stesso schema, su problemi diversi, è nell'<a href="esercitazione-sad1.html">esercitazione SAD1</a>.</p>
+  </div>
+  <div class="box attenzione" data-tit="Tre refusi nel testo">
+    <p>(1) L'output d'esempio di Tower è scritto «LLL», ma con 3 livelli le mosse sono <b>2</b> (LL). (2) Il greedy di Gecko dice «repeat until i = N»: con le righe numerate da 0 l'ultima è N − 1, quindi si ferma a i = N − 1. (3) Nell'esempio di Sweden «Bob» e «Eric» sono entrambi risposte valide: l'output non è unico.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Q1 · Failure: il greedy di Gecko su Tower</h2>
+  <p><b>Il testo.</b> Tower: piramide con N livelli; le posizioni sono (i, j) con 0 ≤ j ≤ i, la cima è (0, 0). Da (i, j) scendi a (i+1, j) (<b>L</b>, left) o a (i+1, j+1) (<b>R</b>, right). In ogni posizione ci sono c(i, j) monete, raccolte anche in cima. Vuoi più monete possibile; l'output è la sequenza delle N − 1 mosse. Esempio: livelli <code>1 / 1 2 / 2 0 0</code>, ottimo LL con 4 monete. Il professor Gecko propone «Follow the Money»: da (i, j) confronta l = c(i+1, j) e r = c(i+1, j+1); se l &gt; r va a sinistra, altrimenti a destra. Domande: (a) un input dove è <b>sicuramente</b> ottimo (disegno, il più piccolo possibile), (b) uno dove sicuramente <b>non</b> lo è, (c) il tempo in funzione di N.</p>
+  <div class="box idea" data-tit="Paradigma e perché">
+    <p><b>Controesempio a un greedy.</b> Il greedy guarda solo il guadagno immediato (la riga sotto) e non sa cosa c'è due righe più giù. Per rompere un greedy cerchi un'istanza dove la cella più ricca <i>adesso</i> chiude la strada verso un premio uguale o maggiore <i>dopo</i>. «Sicuramente» (guaranteed) si può leggere in modo semplice: l'algoritmo è <b>deterministico</b> e la regola dei pareggi è scritta nel testo («else go right»), quindi anche un pareggio non lascia scelta all'algoritmo.</p>
+  </div>
+
+  <h3>(b) Controesempio, passo per passo</h3>
+  <figure class="scena" data-scena="a20Gecko" data-titolo="Il greedy di Gecko sulla torre del testo"></figure>
+  <p><b>Perché serve N = 3.</b> Con N = 1 non c'è nessuna mossa. Con N = 2 c'è una sola decisione: il greedy prende la più ricca delle due caselle dell'ultimo livello, e questa è la scelta ottima. Con N = 3 la prima decisione ignora il livello più basso, ed è lì che si sbaglia.</p>
+  <p><b>Una versione senza pareggi</b> (più solida se temi che il correttore non accetti il pareggio): cima 0, riga 1 = <code>0 1</code>, riga 2 = <code>3 0 1</code>. Il greedy confronta 0 con 1 e va a destra; poi 0 con 1 e va ancora a destra: totale 0 + 1 + 1 = 2. Con LL si ha 0 + 0 + 3 = 3. Nessun pareggio sul percorso del greedy, e servono valori fino a 3: con valori al più 2 e senza pareggi non esiste un controesempio.</p>
+
+  <h3>(c) Tempo</h3>
+  <p>N − 1 passi, ognuno confronta due numeri: <span class="m">O(1)</span>. Totale <span class="m">O(N)</span>. Leggere l'input (N(N+1)/2 numeri) non si conta: l'algoritmo ne guarda solo 2(N − 1).</p>
+
+  <div class="box inglese" data-tit="Risposta modello (da scrivere sul foglio)">
+    <p><b>(a)</b> Any tower with N ≤ 2 levels, for example N = 2 with c(0,0) = 0, c(1,0) = 1, c(1,1) = 2. There is exactly one decision, and the algorithm takes the larger of the two cells, so it is optimal. (N = 1, a single cell, is even smaller: there is no move at all.)</p>
+    <p><b>(b)</b> The tower of the problem text, with rows <code>1</code>, <code>1 2</code>, <code>2 0 0</code>. At (0,0) the algorithm compares l = c(1,0) = 1 with r = c(1,1) = 2 and goes right. At (1,1) it compares c(2,1) = 0 with c(2,2) = 0; since l &gt; r is false it goes right again. Total 1 + 2 + 0 = 3. Going left twice collects 1 + 1 + 2 = 4 &gt; 3. The algorithm is deterministic, so the tie is resolved by its own rule. Alternatively, with no tie at all: rows <code>0</code>, <code>0 1</code>, <code>3 0 1</code>; the algorithm collects 0 + 1 + 1 = 2, the optimum LL collects 0 + 0 + 3 = 3.</p>
+    <p><b>(c)</b> N − 1 steps, each O(1): O(N) (reading the input is not counted).</p>
+  </div>
+  <p class="piccolo">Teoria: <a href="../teoria/greedy-metodo.html">il metodo greedy</a> (come si rompe un greedy) e <a href="coppie-trappola.html">le trappole d'esame</a>.</p>
+  <div class="box regola" data-tit="Verifica">
+    <p>Sulla torre del testo il greedy dà 3 (RR) e la forza bruta 4 (LL). Sulla versione senza pareggi dà 2 contro 3. Su tutte le 225 torri con N = 2 e valori 0–4 il greedy è ottimo. Su tutte le 4096 torri con N = 3 e valori 0–3 ci sono 360 controesempi: 48 senza pareggi sul percorso del greedy, nessuno con valori ≤ 2; con i pareggi basta il valore 1.</p>
+    <p><b>Differenza con lo studio:</b> lo studio legge «guaranteed» come «niente pareggi» e scarta la torre del testo perché ha un pareggio. È prudente, ma non sbagliato: la regola «else go right» fa parte dell'algoritmo, quindi anche la torre del testo (valori ≤ 2, già disegnata) vale. Qui sono riportate tutte e due. Per (a) lo studio dà N = 2; N = 1 è ancora più piccola.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Q2 · Greedy: Sweden</h2>
+  <p><b>Il testo.</b> n partiti, ognuno con nome, seggi e capo; m è il totale dei seggi. Devi formare una coalizione (1) con <b>più partiti possibile</b> e (2) <b>senza maggioranza</b>: la somma dei seggi è <b>minore della metà</b> di m. Il primo ministro è il capo del partito più grande della coalizione (a pari seggi, uno qualunque). Output: il suo nome. Domande: (a) quale problema, (b) l'algoritmo con l'<b>ordine</b> esplicito (non basta «sort the input»), (c) il tempo nei parametri originali.</p>
+  <div class="box idea" data-tit="Paradigma e perché">
+    <p><b>Greedy: i più piccoli per primi.</b> «Il massimo numero» di oggetti sotto un unico limite (la somma dei seggi), e ogni partito vale 1: nessun valore, quindi non è knapsack. Per far entrare più partiti possibile prendo prima i più piccoli. Se li prendessi dal più grande, sull'esempio 2 entrerebbe solo C (14 seggi) e poi più nessuno: 1 partito invece di 3. Il problema gemello «meno partiti possibile per <i>superare</i> la metà» si risolve con l'ordine opposto: una parola, «restando sotto» o «per superare», decide il verso.</p>
+  </div>
+
+  <h3>L'algoritmo, riga per riga</h3>
+  <figure class="codice" data-titolo="Sweden: seggi crescenti">
+<pre data-lang="pseudo">m = sum of the seats of all parties
+sort parties by increasing number of seats
+t = 0; last = none
+for each party p in this order:
+    if 2 * (t + seats(p)) < m:
+        t = t + seats(p); last = p
+    else:
+        stop
+output the leader of last</pre>
+    <ol class="spiega">
+      <li data-righe="1" data-segna="m = @dato"><p><code>m</code> = totale dei seggi in parlamento. Serve per il limite «meno della metà».</p></li>
+      <li data-righe="2" data-segna="increasing number of seats@ora"><p>Ordino per <b>seggi crescenti</b>. Dico chiave (seggi) e verso (crescente): «sort the input» da solo non vale.</p></li>
+      <li data-righe="3" data-segna="t = 0@dato|last = none@dato"><p><code>t</code> = seggi della coalizione finora; <code>last</code> = l'ultimo partito aggiunto.</p></li>
+      <li data-righe="5" data-segna="2 * (t + seats(p)) &lt; m@ora"><p>Test di ammissibilità. Scrivo <code>2·(t + seggi) &lt; m</code> invece di «meno di m/2» per non usare frazioni. È stretto (<code>&lt;</code>) perché il testo dice «less than half».</p></li>
+      <li data-righe="6" data-segna="last = p@ok"><p>Il partito entra. In ordine crescente <code>last</code> è sempre il più grande della coalizione.</p></li>
+      <li data-righe="7-8" data-segna="stop@no"><p>Se un partito non entra, nessuno dei successivi (almeno altrettanto grandi) può entrare: mi fermo.</p></li>
+      <li data-righe="9" data-segna="leader of last@ok"><p>Il primo ministro è il capo dell'ultimo aggiunto.</p></li>
+    </ol>
+  </figure>
+
+  <h3>La traccia sull'esempio 2</h3>
+  <figure class="scena" data-scena="a20Sweden" data-titolo="Sweden: esempio 2, seggi crescenti"></figure>
+
+  <p><b>Perché è ottimo (exchange argument).</b> Sia O una coalizione valida di dimensione massima q. Se non è formata dai q partiti più piccoli, esistono x in O e y fuori da O con seggi(y) ≤ seggi(x). Scambio x con y: la dimensione resta q e la somma non aumenta, quindi O resta valida. Ripetendo, i q più piccoli formano una coalizione valida di dimensione q: la scansione ne trova esattamente q.</p>
+  <p><b>Tempo.</b> Calcolare m: <span class="m">O(n)</span>. Ordinare: <span class="m">O(n log n)</span>. Scansione: <span class="m">O(n)</span>. Totale <span class="m">O(n log n)</span>, polinomiale in n.</p>
+
+  <div class="box inglese" data-tit="Risposta modello (da scrivere sul foglio)">
+    <p><b>(a)</b> Sweden.</p>
+    <p><b>(b)</b> Let m be the total number of seats and s<sub>i</sub> the seats of party i. Sort the parties in <b>increasing order of the number of seats</b>. Set t := 0. Scan the parties in this order: if 2·(t + s<sub>i</sub>) &lt; m, add party i to the coalition and set t := t + s<sub>i</sub>; otherwise stop. Output the leader of the last party added, which is the largest party of the coalition (ties arbitrarily).</p>
+    <p>Correctness (exchange argument): let O be a valid coalition of maximum size q. If x ∈ O and y ∉ O with s<sub>y</sub> ≤ s<sub>x</sub>, then O − {x} + {y} is still valid and has the same size. Repeating this, the q smallest parties form a valid coalition of size q, and the scan finds exactly these.</p>
+    <p><b>(c)</b> Computing m takes O(n), sorting O(n log n), the scan O(n): O(n log n) in total.</p>
+  </div>
+  <p class="piccolo">Teoria: <a href="../teoria/greedy-metodo.html">il metodo greedy</a> (scambio, ordine giusto).</p>
+  <div class="box regola" data-tit="Verifica">
+    <p>Sull'esempio 1 l'algoritmo dà Alice; sull'esempio 2 dà Eric (con ordinamento stabile B viene prima di E, quindi l'ultimo aggiunto è E), e Bob è ugualmente valido. Su 3000 istanze casuali (n da 2 a 8) confrontate con tutti i sottoinsiemi: la dimensione è sempre la massima e il primo ministro è sempre tra le risposte valide. In ordine decrescente l'esempio 2 darebbe una coalizione di 1 partito.</p>
+    <p><b>Due casi che il testo lascia aperti</b> (dichiara la tua lettura in una riga). (1) Più coalizioni massime con partiti più grandi di taglia diversa: nelle 3000 istanze casuali succedeva in 1780. L'algoritmo sceglie quella con il partito più grande più piccolo possibile (verificato su tutte le istanze), quindi la risposta è valida ma non unica. (2) Nessuna coalizione non vuota: se anche il partito più piccolo ha almeno m/2 seggi (due partiti da 10) non esiste, e il testo non dice cosa stampare (nelle 3000 istanze 37 casi).</p>
+  </div>
+</section>
+
+<section>
+  <h2>Q3 · Graph traversal: Wall</h2>
+  <p><b>Il testo.</b> Una mappa a griglia; due quadrati sono adiacenti se condividono un lato (niente diagonali). I quadrati con un numero sono un pezzo di muro e il numero è il <b>costo</b>. P (Pacifico), A (Atlantico), U (Stati Uniti interni) e M (Messico) sono quadrati dove non si costruisce; « . » è un quadrato vuoto. Devi collegare una P a una A con una catena di pezzi di muro adiacenti, al costo totale minimo. Input: la griglia riga per riga, separata da spazi (le righe possono essere più corte). Output: il costo del muro più economico (35 sull'esempio). Domande: (a) quale problema, (b) come si risolve (vertici, archi, diretti, pesi; disegno; algoritmo), (c) il tempo.</p>
+  <div class="box idea" data-tit="Paradigma e perché">
+    <p><b>Cammino più economico con pesi ≥ 0: Dijkstra.</b> Il costo è sui quadrati, non sugli archi, e quadrati diversi costano diverso: BFS conta solo i passi e non va bene. Due trucchi: (1) <b>il costo del nodo diventa peso dell'arco entrante</b>; (2) si parte da <i>una</i> P qualunque: aggiungo una <b>super-sorgente</b> s con archi di peso 0 verso tutte le P, e faccio una sola esecuzione. Frase pronta se ti chiedono perché non BFS: «I could not have used BFS, because the edges have different weights».</p>
+  </div>
+
+  <h3>Il grafo: le sei domande</h3>
+  <div class="tab-wrap"><table class="tab">
+    <thead><tr><th>Domanda</th><th>Risposta</th></tr></thead>
+    <tbody>
+      <tr><td>Vertici, quanti</td><td>Uno per ogni quadrato che è una P, una A o ha un costo (U, M e « . » non sono vertici), più la sorgente s: <span class="m">n ≤ rl + 1</span></td></tr>
+      <tr><td>Archi, quanti</td><td><span class="m">u → v</span> se u e v sono adiacenti e v non è una P; peso c(v) se v ha un costo, 0 se v è una A. Più <span class="m">s → v</span> di peso 0 per ogni P. Al più 4 vicini per quadrato: <span class="m">m ≤ 4rl + rl = 5rl</span></td></tr>
+      <tr><td>Diretto?</td><td>Sì: il costo si paga entrando nel quadrato, quindi l'arco u → v e l'arco v → u hanno pesi diversi</td></tr>
+      <tr><td>Pesi?</td><td>Sì, interi non negativi (condizione di Dijkstra)</td></tr>
+      <tr><td>Cosa vuol dire un cammino</td><td>La lunghezza di un cammino da s a una A è il costo dei quadrati in cui entra, cioè il costo del muro</td></tr>
+      <tr><td>Algoritmo</td><td>Dijkstra da s; risposta = la distanza minima verso una qualunque A</td></tr>
+      <tr><td>Tempo</td><td>Con una heap binaria <span class="m">O(m log n) = O(rl log(rl))</span></td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>Un esempio piccolo da disegnare</h3>
+  <p>Mappa 2 × 3: riga 0 = <code>P 4 A</code>, riga 1 = <code>P 2 A</code>. Vertici: le due P, i quadrati 4 e 2, le due A, più s (7 vertici). Archi: s → ogni P (peso 0); P(0,0) → 4 (peso 4); P(1,0) → 2 (peso 2); 4 → 2 (peso 2) e 2 → 4 (peso 4); 4 → A(0,2) e 2 → A(1,2) (peso 0). Non ci sono archi verso le P. Il cammino migliore è s → P(1,0) → 2 → A(1,2), lunghezza 2: il muro è il solo quadrato da 2.</p>
+
+  <h3>L'algoritmo, riga per riga</h3>
+  <figure class="codice" data-titolo="Wall: Dijkstra con super-sorgente">
+<pre data-lang="pseudo">build G: vertices = P, A and cost squares, plus s
+for each P square v: add arc (s, v) of weight 0
+for each vertex u and each neighbour v of u:
+    if v is not a P square:
+        add arc (u, v) with weight c(v)   (0 if v is an A square)
+run Dijkstra from s
+output min over all A squares of dist(A)</pre>
+    <ol class="spiega">
+      <li data-righe="1" data-segna="plus s@dato"><p>Tolgo U, M e « . »: lì non si costruisce, quindi non sono vertici. Aggiungo s.</p></li>
+      <li data-righe="2" data-segna="weight 0@ora"><p>La super-sorgente: da s si arriva a ogni P senza pagare nulla (le P non hanno costo, non ci si costruisce).</p></li>
+      <li data-righe="3-5" data-segna="c(v)@ok"><p>L'arco entrante nel quadrato v porta il costo c(v). Non entro mai in una P (altrimenti si tornerebbe indietro sulla costa senza senso, a costo 0).</p></li>
+      <li data-righe="6-7" data-segna="min over all A squares@ok"><p>Dijkstra calcola la distanza da s a tutti i vertici; la risposta è la più piccola tra le A.</p></li>
+    </ol>
+  </figure>
+
+  <h3>La traccia sull'esempio del testo</h3>
+  <figure class="scena" data-scena="a20Wall" data-titolo="Wall: Dijkstra da s, per soglie di distanza"></figure>
+
+  <div class="box inglese" data-tit="Risposta modello (da scrivere sul foglio)">
+    <p><b>(a)</b> Wall.</p>
+    <p><b>(b)</b> Let the map have r rows and l columns. The graph has one vertex for every square that is a P, an A or has a cost (squares U, M and "." are not vertices), plus one extra source vertex s. So n ≤ rl + 1. There is an arc from u to v if v is one of the four neighbours of u and v is not a P square; the arc has weight c(v) if v has a cost, and weight 0 if v is an A square. There is also an arc of weight 0 from s to every P square. Hence m ≤ 5rl. The graph is directed and the weights are non-negative.</p>
+    <p>The length of a path from s is the total cost of the squares it enters, that is, the cost of the wall. [Draw a small map and its graph.] I run Dijkstra's algorithm [KT 4.4] from s and output the smallest distance to any A square. I could not have used BFS, because the edges have different weights.</p>
+    <p><b>(c)</b> With a binary heap Dijkstra takes O(m log n) = O(rl log(rl)).</p>
+  </div>
+  <p class="piccolo">Teoria: <a href="../teoria/dijkstra.html">Dijkstra</a> e <a href="../teoria/basi-grafi.html">grafi: come si rappresentano</a>.</p>
+  <div class="box regola" data-tit="Verifica">
+    <p>Dijkstra con super-sorgente dà <b>35</b> sull'esempio del testo. Ci sono più muri da 35: uno è la catena di 17 quadrati 2 2 2 1 1 2 2 2 2 2 2 2 3 4 2 2 2, un altro (quello che trova la scena) ne ha 16. Un Bellman–Ford indipendente dà lo stesso valore e i due coincidono su 3000 griglie casuali. BFS che conta i quadrati troverebbe un muro di 13 quadrati, ma ogni muro di 13 quadrati costa almeno 39 e i muri da 35 ne hanno almeno 16: contare i passi non basta. La traccia della scena è calcolata dalla pagina stessa con lo stesso algoritmo e finisce a 35.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Q4 · Dynamic programming: Tower</h2>
+  <p><b>Il testo.</b> Lo stesso problema della Q1, ma ora serve l'algoritmo giusto: (a) quale problema, (b) il sottoproblema OPT con parametri e <b>intervalli</b> («where i ∈ {…}»), la ricorrenza con casi base e condizioni al bordo, (c) tempo <b>e spazio</b>.</p>
+  <div class="box idea" data-tit="Paradigma e perché">
+    <p><b>DP su un DAG a livelli.</b> Si va solo in basso, quindi l'ordine è fisso. Il valore migliore da una casella dipende solo dalle due caselle sotto di lei, e caselle vicine condividono i figli: sottoproblemi che si ripetono, quindi DP e non ricorsione semplice. Perché la DP funziona dove il greedy falliva: il greedy confrontava le <i>due caselle</i> sotto; la DP confronta il <i>valore dei sottoalberi</i> che partono da loro, quindi non si fa ingannare da un 2 che chiude la strada.</p>
+  </div>
+
+  <h3>La ricorrenza, un passo alla volta</h3>
+  <figure class="passi" data-titolo="Tower: OPT(i, j)" data-legenda="dato:parametri,ora:ricorrenza,due:caso base,ok:risposta">
+    <div class="passo"><div class="espr"><mark class="ora">OPT(i, j)</mark> = max monete su una discesa da (i, j) <b>all'ultimo livello</b>, compresa c(i, j);   <mark class="dato">i</mark> ∈ {0, …, N−1}, <mark class="dato">j</mark> ∈ {0, …, i}</div><p class="nota">Il sottoproblema a parole, con i range che l'esame chiede. <mark class="dato">i</mark> è il livello, <mark class="dato">j</mark> la posizione nel livello. Da (i, j) il resto è una torre più piccola dello stesso tipo: nessun parametro extra.</p></div>
+    <div class="passo"><div class="espr">OPT(N−1, j) = <mark class="due">c(N−1, j)</mark>   per ogni j</div><p class="nota">Caso base: nell'ultimo livello non ci sono mosse, raccolgo solo la casella.</p></div>
+    <div class="passo"><div class="espr">OPT(i, j) = <mark class="ora">c(i, j)</mark> + max { OPT(i+1, j), OPT(i+1, j+1) }   per i &lt; N−1</div><p class="nota">Raccolgo la casella e poi scelgo il meglio dei due figli. Nessuna condizione al bordo da gestire: la posizione (i, j) con 0 ≤ j ≤ i ha sempre due figli (i+1, j) e (i+1, j+1) esistenti.</p></div>
+    <div class="passo"><div class="espr">risposta = <mark class="ok">OPT(0, 0)</mark></div><p class="nota">Si parte dalla cima. Va detto quale cella è la risposta: «risposta non detta» è una trappola.</p></div>
+    <div class="passo"><div class="espr">mosse: da (i, j) vai a <mark class="ok">L</mark> se OPT(i+1, j) ≥ OPT(i+1, j+1), altrimenti <mark class="ok">R</mark></div><p class="nota">L'output di Tower è la sequenza di mosse, quindi aggiungo come si ricostruisce: N − 1 mosse.</p></div>
+    <div class="passo"><div class="espr">tempo <mark class="ok">Θ(N²)</mark>, spazio <mark class="ok">Θ(N²)</mark></div><p class="nota">N(N+1)/2 sottoproblemi, ognuno calcolato in O(1) (un confronto) dal livello sotto. Con un solo livello in memoria lo spazio scende a O(N), ma così non ricostruisci le mosse.</p></div>
+  </figure>
+
+  <h3>La tabella sull'esempio</h3>
+  <figure class="scena" data-scena="a20Dp" data-titolo="Tower: OPT dal basso sulla torre del testo"></figure>
+
+  <div class="box inglese" data-tit="Risposta modello (da scrivere sul foglio)">
+    <p><b>(a)</b> Tower.</p>
+    <p><b>(b)</b> Let OPT(i, j) denote the maximum number of coins that can be collected on a walk from position (i, j) down to the last level, including c(i, j), where i ∈ {0, …, N−1} is the level and j ∈ {0, …, i} is the position in the level.</p>
+    <p>Base case: OPT(N−1, j) = c(N−1, j) for every j. For i &lt; N−1: OPT(i, j) = c(i, j) + max{ OPT(i+1, j), OPT(i+1, j+1) }.</p>
+    <p>The answer is OPT(0, 0). The moves are recovered by walking down from (0, 0), always going to the child with the larger OPT (L if OPT(i+1, j) ≥ OPT(i+1, j+1), R otherwise): N − 1 moves.</p>
+    <p><b>(c)</b> There are N(N+1)/2 = Θ(N²) subproblems, each computed in O(1) time from the level below. Time Θ(N²) and space Θ(N²) (O(N) if only the value is needed, keeping one level at a time).</p>
+  </div>
+  <p class="piccolo">Teoria: <a href="../teoria/dp-dag-piramide.html">DP sul DAG: la piramide</a> e <a href="../teoria/dp-metodo.html">il metodo DP</a>.</p>
+  <div class="box regola" data-tit="Verifica">
+    <p>Sulla torre del testo la tabella è 4 / 3 2 / 2 0 0, risposta 4, mosse LL. La ricorrenza (con la ricostruzione delle mosse) coincide con la forza bruta su 3000 torri casuali (N da 1 a 6, valori 0–9): stesso valore, e il percorso ricostruito raccoglie esattamente OPT(0, 0) con N − 1 mosse. Nessuna differenza con lo studio.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Q5 · Flow: Ambassadors</h2>
+  <p><b>Il testo.</b> N candidati e M paesi con N ≥ M. Ogni candidato ha affari con alcuni paesi. A ogni paese va <b>esattamente un</b> candidato con cui ha affari, e nessun candidato può essere ambasciatore di due paesi. Output: 1 se esiste un assegnamento che serve tutti i paesi, 0 altrimenti. Domande: (a) quale problema, (b) la riduzione (nodi, archi, capacità, disegno; cosa vuol dire un flusso massimo e quanto vale), (c) tempo, con l'algoritmo di flusso nominato (qui basta una risposta corretta, non la più furba).</p>
+  <div class="box idea" data-tit="Paradigma e perché">
+    <p><b>Flusso: matching bipartito.</b> Due insiemi diversi (candidati, paesi), archi dove ci sono affari, ogni elemento usato al più una volta. Un'unità di flusso = un candidato assegnato a un paese. Il teorema di integralità è il motivo per cui un flusso intero 0/1 si legge come un assegnamento.</p>
+  </div>
+
+  <h3>La rete, nodo per nodo</h3>
+  <figure class="scena" data-scena="a20Flow" data-titolo="Ambassadors: esempio 1, flusso massimo 3"></figure>
+  <ul>
+    <li><b>Nodi:</b> s, t, un nodo per candidato, un nodo per paese: <span class="m">N + M + 2</span>.</li>
+    <li><b>Archi:</b> s → candidato (capacità 1: un candidato non ha due paesi), candidato → paese dove ha affari (capacità 1), paese → t (capacità 1: ogni paese riceve un solo candidato). In tutto al più <span class="m">N + M + NM</span>, tutti diretti.</li>
+    <li><b>Significato:</b> le capacità sono intere, quindi esiste un flusso massimo intero. Flusso 1 su i → j vuol dire che il candidato i è ambasciatore del paese j.</li>
+    <li><b>Valore:</b> il flusso massimo è il massimo numero di paesi che si possono servire, al più M. La risposta è 1 se e solo se vale M.</li>
+    <li><b>Tempo:</b> Ford–Fulkerson costa <span class="m">O(m′ · |f*|)</span> con <span class="m">m′ ≤ N + M + NM ≤ 3NM</span> e <span class="m">|f*| ≤ M</span>: <span class="m">O(NM²)</span>.</li>
+  </ul>
+
+  <div class="box inglese" data-tit="Risposta modello (da scrivere sul foglio)">
+    <p><b>(a)</b> Ambassadors.</p>
+    <p><b>(b)</b> Given an instance, we construct a flow network. Nodes: a source s, a sink t, one node for every candidate and one node for every country: N + M + 2 nodes. Arcs: s → candidate i with capacity 1; candidate i → country j with capacity 1 whenever i has business deals with j; country j → t with capacity 1. There are at most N + M + NM arcs, all directed.</p>
+    <p>All capacities are integers, so by the integrality theorem there is an integral maximum flow, and a flow of 1 on the arc i → j means that candidate i becomes ambassador to country j. The arc out of s makes sure no candidate gets two countries, and the arc into t that no country gets two candidates. Hence the value of a maximum flow is the maximum number of countries that can be served; it is at most M, and the answer is 1 if and only if the maximum flow has value M, and 0 otherwise. [Draw the small example above.]</p>
+    <p><b>(c)</b> Using Ford–Fulkerson [KT 7.1] the running time is O(m′·|f*|), where m′ ≤ N + M + NM and |f*| ≤ M. So O((N + M + NM)·M) = O(NM²), since N ≥ M ≥ 1.</p>
+  </div>
+  <p class="piccolo">Teoria: <a href="../teoria/flow-gadget.html">ridurre a un flusso</a>, <a href="../teoria/bipartite-matching.html">matching bipartito</a> e <a href="../teoria/ford-fulkerson.html">Ford–Fulkerson</a>.</p>
+  <div class="box regola" data-tit="Verifica">
+    <p>La rete dà flusso 3 sull'esempio 1 (output 1) e 2 sull'esempio 2 (output 0). Su 4000 istanze casuali (M fino a 4, N fino a 6; 2331 con risposta 1) «flusso = M» coincide con la ricerca esaustiva di un assegnamento. Nessuna differenza con lo studio.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Q6 · NP-hard: Russian Hacking</h2>
+  <p><b>Il testo.</b> R router collegati da W fili. Un filo è monitorato se almeno uno dei suoi due router ha un dispositivo. Alcuni fili hanno un «?»: sono quelli da monitorare. Installa meno dispositivi possibile. Input: i fili come <code>UTAH -- SRI ?</code>. Output: <code>K: nomi dei router</code> (esempio 1: <code>2: SRI, UCLA</code>; esempio 2: <code>1: SRI</code>). Domande: (a) quale problema è NP-hard (P1), (b) da quale problema NP-hard conviene ridurre (P2), (c) in che verso va la riduzione (0 punti, ma sbagliarlo rende nulla la (d)), (d) la riduzione completa, in generale e su un esempio piccolo e completo. Si assume P ≠ NP.</p>
+  <div class="box idea" data-tit="Paradigma e perché">
+    <p><b>Caso particolare.</b> Se <b>tutti</b> i fili hanno il «?», il problema diventa «scegli meno router possibile così che ogni filo abbia un estremo scelto»: è esattamente Vertex Cover (router = vertici, fili = archi). Quindi <b>Vertex Cover ≤<sub>P</sub> Russian Hacking</b>: dal problema noto (P2) al problema nuovo (P1), cioè <b>P2 ≤<sub>P</sub> P1</b>. Il verso sbagliato (Russian Hacking ≤<sub>P</sub> Vertex Cover) non prova nulla.</p>
+  </div>
+
+  <h3>La riduzione, un passo alla volta</h3>
+  <figure class="passi" data-titolo="Vertex Cover ≤p Russian Hacking" data-legenda="dato:istanza data,ora:istanza costruita,ok:corrispondenza">
+    <div class="passo"><div class="espr">uso le versioni decisionali: VC «esistono ≤ k vertici che toccano ogni arco?»; RH «bastano ≤ k router per monitorare tutti i fili con ?»</div><p class="nota">I problemi sono di ottimo (minimo), quindi «at most k». Le riduzioni si fanno tra problemi di decisione.</p></div>
+    <div class="passo"><div class="espr">dato: <mark class="dato">(G, k)</mark> con n vertici e m archi</div><p class="nota">Apro con «Given an instance (G, k) of Vertex Cover …».</p></div>
+    <div class="passo"><div class="espr">costruisco: un router per vertice (<mark class="ora">R = n</mark>), un filo per arco (<mark class="ora">W = m</mark>), <b>«?» su ogni filo</b>, <mark class="ora">k′ = k</mark></div><p class="nota">Parametri dell'istanza costruita in funzione di quelli di partenza. Tempo <span class="m">O(n + m)</span>, polinomiale.</p></div>
+    <div class="passo"><div class="espr">(⇒) C copertura di G con |C| ≤ k → <mark class="ok">dispositivi nei router di C</mark></div><p class="nota">Ogni filo è un arco con un estremo in C, quindi è monitorato, con al più k dispositivi.</p></div>
+    <div class="passo"><div class="espr">(⇐) ≤ k dispositivi monitorano tutti i fili marcati → <mark class="ok">i vertici corrispondenti sono una copertura di G</mark></div><p class="nota">Funziona perché <b>ogni</b> filo è marcato: ogni arco di G ha un estremo tra i router scelti. È qui che si usa la scelta della costruzione.</p></div>
+  </figure>
+
+  <h3>Esempio completo</h3>
+  <figure class="scena" data-scena="a20Vc" data-titolo="Vertex Cover come istanza di Russian Hacking"></figure>
+  <p>G = triangolo A, B, C più l'arco C–D (n = 4, m = 4, k = 2). L'istanza costruita:</p>
+<pre class="cod" data-lang="pseudo">4 4
+A -- B ?
+B -- C ?
+A -- C ?
+C -- D ?</pre>
+  <p>L'output è <code>2: A, C</code>. Il triangolo richiede almeno 2 router, e A, C coprono anche C–D.</p>
+
+  <div class="box inglese" data-tit="Risposta modello (da scrivere sul foglio)">
+    <p><b>(a)</b> P1 = Russian Hacking. <b>(b)</b> P2 = Vertex Cover. <b>(c)</b> P2 ≤<sub>P</sub> P1, i.e. Vertex Cover ≤<sub>P</sub> Russian Hacking.</p>
+    <p><b>(d)</b> We use the decision versions: Vertex Cover asks for a set of at most k vertices touching every edge, Russian Hacking for at most k routers monitoring all marked wires.</p>
+    <p>Given an instance (G, k) of Vertex Cover with n vertices and m edges, we will construct an instance of Russian Hacking as follows. For every vertex of G we create a router (R = n), and for every edge of G a wire (W = m) between the routers of its endpoints. We put a question mark after every wire. The bound is k′ = k. The instance has size O(n + m) and is built in time O(n + m).</p>
+    <p>(⇒) If C is a vertex cover of G with |C| ≤ k, install the devices at the routers of C. Every wire corresponds to an edge with an endpoint in C, so it is monitored, using at most k devices.</p>
+    <p>(⇐) If at most k devices monitor all marked wires then, since every wire is marked, every edge of G has an endpoint among the chosen routers, so the corresponding vertices form a vertex cover of size at most k. Hence G has a vertex cover of size ≤ k if and only if the constructed instance has a solution with ≤ k devices.</p>
+    <p>Example: G = the triangle A, B, C plus the edge C–D gives the 4 routers and 4 marked wires drawn above. A minimum vertex cover is {A, C}, and installing devices at A and C monitors all four wires, with K = 2.</p>
+  </div>
+  <p class="piccolo">Teoria: <a href="../teoria/riduzioni.html">scrivere una prova di NP-hardness</a> e <a href="../teoria/catalogo-np.html">il catalogo dei problemi NP</a>.</p>
+  <div class="box regola" data-tit="Verifica">
+    <p>Sugli esempi del testo il minimo è 2 (esempio 1, fili marcati UTAH–SRI e UCSB–UCLA, che non hanno router in comune) e 1 (esempio 2, entrambi i fili passano da SRI). Sul grafo dell'esempio il minimo è 2 e le coperture da 2 sono {A, C} e {B, C}. Su 1500 grafi casuali piccoli il minimo dell'istanza costruita coincide con il minimo di Vertex Cover. Questo controlla la corrispondenza, non è una dimostrazione di NP-hardness: quella è il ragionamento (⇒)/(⇐) sopra. Nessuna differenza con lo studio.</p>
+  </div>
+  <div class="box attenzione" data-tit="Trappole di Q6">
+    <p>Verso sbagliato (Russian Hacking ≤<sub>P</sub> Vertex Cover), una sola direzione (⇒) senza (⇐), dimenticare cosa diventa k, dimenticare di marcare <b>tutti</b> i fili con «?» (se uno non è marcato, la direzione (⇐) cade). Non discutere il caso P = NP: la nota 2 dice di assumere P ≠ NP.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Confronto con lo studio e con le soluzioni ufficiali</h2>
+  <div class="box regola" data-tit="Esito">
+    <p><b>Soluzioni ufficiali:</b> per la prova del 3 gennaio 2020 non c'è un documento di soluzioni tra i file; la raccolta «roaring twenties» contiene solo le prove di dic 2020, dic 2021, gen 2023 e mar 2023. Quindi il confronto è con lo studio e con ricalcoli indipendenti.</p>
+    <p><b>Numeri e tracce:</b> tutti coincidono con il testo e con lo studio (Wall 35, Tower 4 con LL, Ambassadors 1 e 0, Russian Hacking 2 e 1, Sweden Alice e Bob/Eric). <b>Unica differenza:</b> in Q1 la torre del testo, con un pareggio, è un controesempio valido perché la regola dei pareggi è scritta nell'algoritmo; lo studio la considera meno solida.</p>
+    <p>Non verificato con programmi: le dimostrazioni a parole (exchange argument, correttezza di (⇒)/(⇐)) e le formule di tempo, ricontrollate solo a mano. Non so cosa il correttore consideri completo: controlla le regole del 2026 su LearnIT.</p>
+  </div>
+</section>
+
+</main>
+</body>
+</html>

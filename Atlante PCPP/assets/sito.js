@@ -22,7 +22,7 @@ window.SITO = {
     { da: '2026-10-26', t: 'Performance e scalabilità', sub: 'oral feedback · Assignment 4 · Goetz 6.1, 6.2, 11 · Sestoft cap. 8–9', h: 'teoria/l09-thread-virtuali.html' },
     { da: '2026-11-02', t: 'Parallel streams', sub: 'Java Precisely cap. 24 · note 9.4', h: 'teoria/l10-parallel-streams.html' },
     { da: '2026-11-09', t: 'Programmazione GPU e vettori', sub: 'oral feedback · Assignment 5', h: 'teoria/l11-gpu-vettori.html' },
-    { da: '2026-11-16', t: 'Message passing I (Erlang)', sub: 'serve Erlang installato' },
+    { da: '2026-11-16', t: 'Message passing I (Erlang)', sub: 'serve Erlang installato', h: 'teoria/l12-message-passing.html' },
     { da: '2026-11-23', t: 'Message passing II', sub: '' },
     { da: '2026-11-30', t: 'Lezione ospite e preparazione all\'esame', sub: 'oral feedback · Assignment 6', h: 'esame/formato.html' },
     { da: '2027-01-21', giorni: 9, t: 'Esami orali', sub: 'dal 21 al 29 gennaio 2027, 30 minuti a testa', h: 'esame/formato.html', esame: true, etichetta: '21–29 gen' }
@@ -239,8 +239,10 @@ window.SITO = {
     { g: 'L11 · GPU e vettori', quando: '9 nov', figli: [
       { t: 'GPU e istruzioni vettoriali (SIMD)', h: 'teoria/l11-gpu-vettori.html' }
     ] },
-    { g: 'In arrivo', quando: 'L12–L13', figli: [
-      { t: 'L12 · Message passing I', arriva: '16 nov' },
+    { g: 'L12 · Message passing I', quando: '16 nov', figli: [
+      { t: 'Message passing e modello ad attori (Erlang)', h: 'teoria/l12-message-passing.html' }
+    ] },
+    { g: 'In arrivo', quando: 'L13', figli: [
       { t: 'L13 · Message passing II', arriva: '23 nov' }
     ] },
 
